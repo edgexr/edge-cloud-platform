@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	fmt "fmt"
 	"testing"
 	"time"
 
@@ -78,14 +77,12 @@ func TestAlertApi(t *testing.T) {
 	testCloudletInfo := testutil.CloudletInfoData()[0]
 	testCloudletInfo.Key.Name = testCloudlet.Key.Name
 	insertCloudletInfo(ctx, apis, []edgeproto.CloudletInfo{testCloudletInfo})
-	fmt.Printf("Cloudlet is %v\n", testCloudlet)
 	getAlertsCount := func() (int, int) {
 		count := 0
 		totalCount := 0
 		for _, data := range apis.alertApi.cache.Objs {
 			val := data.Obj
 			totalCount++
-			fmt.Printf("Alert %v\n", val)
 			if cloudletName, found := val.Labels[edgeproto.CloudletKeyTagName]; !found ||
 				cloudletName != testCloudlet.Key.Name {
 				continue

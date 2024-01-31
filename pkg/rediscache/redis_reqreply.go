@@ -64,6 +64,7 @@ func (s *UnaryAPI) DoStreamRequest(ctx context.Context, methodName string, reque
 	defer func() {
 		if reterr != nil {
 			reterr = fmt.Errorf("redis send request %s failed, %s", methodName, reterr)
+			log.SpanLog(ctx, log.DebugLevelApi, "redis send request failed", "method", methodName, "err", reterr)
 		}
 	}()
 
@@ -107,7 +108,6 @@ func (s *UnaryAPI) DoStreamRequest(ctx context.Context, methodName string, reque
 		return false, nil
 	})
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "redis send request failed", "method", methodName, "err", err)
 		return err
 	}
 	return nil

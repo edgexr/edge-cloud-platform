@@ -12,15 +12,9 @@ import (
 )
 
 func (s *CCRMHandler) GetCloudletManifest(ctx context.Context, key *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error) {
-	cloudlet := edgeproto.Cloudlet{}
-	if !s.caches.CloudletCache.Get(key, &cloudlet) {
-		return nil, key.NotFoundError()
-	}
-	cloudletPlatform, found := s.caches.getPlatform(cloudlet.PlatformType)
-	if !found {
-		// ignore, some other CCRM should handle it
-		log.SpanLog(ctx, log.DebugLevelApi, "cloudletManifest ignoring unknown platform", "platform", cloudlet.PlatformType)
-		return nil, nil
+	cloudlet, cloudletPlatform, err := s.getCloudletPlatform(ctx, key)
+	if err != nil {
+		return nil, err
 	}
 	features := cloudletPlatform.GetFeatures()
 
@@ -32,18 +26,18 @@ func (s *CCRMHandler) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 			}
 		}
 	}
-	accessKeys, err := accessvars.GetCRMAccessKeys(ctx, s.flags.Region, &cloudlet, s.nodeMgr.VaultConfig)
+	accessKeys, err := accessvars.GetCRMAccessKeys(ctx, s.flags.Region, cloudlet, s.nodeMgr.VaultConfig)
 	if err != nil {
 		return nil, err
 	}
-	pfConfig, err := s.getPlatformConfig(ctx, &cloudlet, accessKeys)
+	pfConfig, err := s.getPlatformConfig(ctx, cloudlet, accessKeys)
 	if err != nil {
 		return nil, err
 	}
 	caches := s.caches.getPlatformCaches()
-	accessApi := s.vaultClient.CloudletContext(&cloudlet)
+	accessApi := s.vaultClient.CloudletContext(cloudlet)
 
-	manifest, err := cloudletPlatform.GetCloudletManifest(ctx, &cloudlet, pfConfig, accessApi, &pfFlavor, caches)
+	manifest, err := cloudletPlatform.GetCloudletManifest(ctx, cloudlet, pfConfig, accessApi, &pfFlavor, caches)
 	if err != nil {
 		return nil, err
 	}
@@ -90,28 +84,21 @@ func (s *CCRMHandler) GetClusterAdditionalResourceMetric(ctx context.Context, in
 }
 
 func (s *CCRMHandler) GetRestrictedCloudletStatus(ctx context.Context, key *edgeproto.CloudletKey, send func(*edgeproto.StreamStatus) error) error {
-	cloudlet := edgeproto.Cloudlet{}
-	if !s.caches.CloudletCache.Get(key, &cloudlet) {
-		return key.NotFoundError()
-	}
-
-	cloudletPlatform, found := s.caches.getPlatform(cloudlet.PlatformType)
-	if !found {
-		// ignore, some other CCRM should handle it
-		log.SpanLog(ctx, log.DebugLevelApi, "cloudletManifest ignoring unknown platform", "platform", cloudlet.PlatformType)
-		return nil
-	}
-
-	accessKeys, err := accessvars.GetCRMAccessKeys(ctx, s.flags.Region, &cloudlet, s.nodeMgr.VaultConfig)
+	cloudlet, cloudletPlatform, err := s.getCloudletPlatform(ctx, key)
 	if err != nil {
 		return err
 	}
-	pfConfig, err := s.getPlatformConfig(ctx, &cloudlet, accessKeys)
+
+	accessKeys, err := accessvars.GetCRMAccessKeys(ctx, s.flags.Region, cloudlet, s.nodeMgr.VaultConfig)
 	if err != nil {
 		return err
 	}
-	accessApi := s.vaultClient.CloudletContext(&cloudlet)
-	err = cloudletPlatform.GetRestrictedCloudletStatus(ctx, &cloudlet, pfConfig, accessApi, func(updateType edgeproto.CacheUpdateType, value string) {
+	pfConfig, err := s.getPlatformConfig(ctx, cloudlet, accessKeys)
+	if err != nil {
+		return err
+	}
+	accessApi := s.vaultClient.CloudletContext(cloudlet)
+	err = cloudletPlatform.GetRestrictedCloudletStatus(ctx, cloudlet, pfConfig, accessApi, func(updateType edgeproto.CacheUpdateType, value string) {
 		reply := &edgeproto.StreamStatus{
 			CacheUpdateType: int32(updateType),
 			Status:          value,

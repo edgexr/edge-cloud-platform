@@ -984,17 +984,6 @@ func (m *MetricVal) MarshalJSON() ([]byte, error) {
 	return json.Marshal(mv)
 }
 
-/*
-func (m *MetricVal_Ival) MarshalJSON() ([]byte, error) {
-	// override default behavior of omitting value, otherwise
-	// we can't tell what value type it is on unmarshal
-	out, err := json.Marshal(m.Ival)
-	if err != nil {
-		return nil, err
-	}
-	return []byte(fmt.Sprintf(`{"ival": %s}`, string(out))), nil
-}*/
-
 type MetricValJSONRaw struct {
 	Name  string `json:"name,omitempty"`
 	Value json.RawMessage

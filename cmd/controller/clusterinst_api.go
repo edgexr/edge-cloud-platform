@@ -16,7 +16,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -797,9 +796,6 @@ func (s *ClusterInstApi) getCloudletResourceMetric(ctx context.Context, stm conc
 	resMetric.AddIntVal(cloudcommon.ResourceMetricVcpus, vcpusUsed)
 	resMetric.AddIntVal(cloudcommon.ResourceMetricGpus, gpusUsed)
 	resMetric.AddIntVal(cloudcommon.ResourceMetricExternalIPs, externalIPsUsed)
-
-	resJS, _ := json.Marshal(resMetric)
-	log.SpanLog(ctx, log.DebugLevelApi, "resMetric json", "out", string(resJS))
 
 	// get additional infra specific metric
 	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmRedisapiTimeout.TimeDuration())
