@@ -3303,17 +3303,6 @@ var CloudletMetricsComments = map[string]string{
 	"foo": "what goes here?",
 }
 var CloudletMetricsSpecialArgs = map[string]string{}
-var StreamStatusRequiredArgs = []string{}
-var StreamStatusOptionalArgs = []string{
-	"cacheupdatetype",
-	"status",
-}
-var StreamStatusAliasArgs = []string{}
-var StreamStatusComments = map[string]string{
-	"cacheupdatetype": "Cache update type",
-	"status":          "Status value",
-}
-var StreamStatusSpecialArgs = map[string]string{}
 var UpdateGPUDriverRequiredArgs = []string{
 	"gpudrivername",
 }

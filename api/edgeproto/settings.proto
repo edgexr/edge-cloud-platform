@@ -111,6 +111,8 @@ message Settings {
   int64 platform_ha_instance_poll_interval = 42 [(gogoproto.casttype) = "Duration"];
     // Platform HA instance active time
   int64 platform_ha_instance_active_expire_time = 43 [(gogoproto.casttype) = "Duration"];
+  // Timeout for controller platform-specific API calls to CCRM
+  int64 ccrm_redisapi_timeout = 44 [(gogoproto.casttype) = "Duration"];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cache) = true;

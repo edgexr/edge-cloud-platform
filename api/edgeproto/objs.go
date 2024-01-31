@@ -15,6 +15,7 @@
 package edgeproto
 
 import (
+	"encoding/json"
 	"errors"
 	fmt "fmt"
 	"net"
@@ -954,6 +955,70 @@ func (m *Metric) AddStringVal(name string, sval string) {
 	val := MetricVal{Name: name}
 	val.Value = &MetricVal_Sval{Sval: sval}
 	m.Vals = append(m.Vals, &val)
+}
+
+func (m *MetricVal) MarshalJSON() ([]byte, error) {
+	mv := MetricValJSONRaw{}
+	val := map[string]interface{}{}
+
+	// override default behavior of omitting value, otherwise
+	// we can't tell what value type it is on unmarshal
+	switch v := m.Value.(type) {
+	case *MetricVal_Dval:
+		val["dval"] = v.Dval
+	case *MetricVal_Ival:
+		val["ival"] = v.Ival
+	case *MetricVal_Bval:
+		val["bval"] = v.Bval
+	case *MetricVal_Sval:
+		val["sval"] = v.Sval
+	default:
+		return nil, fmt.Errorf("unhandled value type in MetricVal,%v", v)
+	}
+	mv.Name = m.Name
+	valout, err := json.Marshal(val)
+	if err != nil {
+		return nil, err
+	}
+	mv.Value = valout
+	return json.Marshal(mv)
+}
+
+/*
+func (m *MetricVal_Ival) MarshalJSON() ([]byte, error) {
+	// override default behavior of omitting value, otherwise
+	// we can't tell what value type it is on unmarshal
+	out, err := json.Marshal(m.Ival)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(fmt.Sprintf(`{"ival": %s}`, string(out))), nil
+}*/
+
+type MetricValJSONRaw struct {
+	Name  string `json:"name,omitempty"`
+	Value json.RawMessage
+}
+
+func (m *MetricVal) UnmarshalJSON(b []byte) error {
+	mv := MetricValJSONRaw{}
+	err := json.Unmarshal(b, &mv)
+	if err != nil {
+		return err
+	}
+	m.Name = mv.Name
+	if strings.HasPrefix(string(mv.Value), `{"dval"`) {
+		m.Value = &MetricVal_Dval{}
+	} else if strings.HasPrefix(string(mv.Value), `{"ival"`) {
+		m.Value = &MetricVal_Ival{}
+	} else if strings.HasPrefix(string(mv.Value), `{"bval"`) {
+		m.Value = &MetricVal_Bval{}
+	} else if strings.HasPrefix(string(mv.Value), `{"sval"`) {
+		m.Value = &MetricVal_Sval{}
+	} else {
+		return fmt.Errorf("unmarshal MetricVal unable to determine value type from %s", string(mv.Value))
+	}
+	return json.Unmarshal(mv.Value, m.Value)
 }
 
 func GetLProto(s string) (dme.LProto, error) {

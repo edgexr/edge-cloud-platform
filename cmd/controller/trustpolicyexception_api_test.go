@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
@@ -42,6 +43,8 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	// create supporting data

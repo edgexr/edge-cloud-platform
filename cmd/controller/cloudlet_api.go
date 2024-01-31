@@ -31,7 +31,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -196,7 +195,7 @@ func (s *StreamObjApi) StreamCloudlet(key *edgeproto.CloudletKey, cb edgeproto.S
 	}
 
 	updatecb := updateCloudletCallback{cloudlet, cb}
-	reqCtx, reqCancel := context.WithTimeout(ctx, 10*time.Minute)
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CreateCloudletTimeout.TimeDuration())
 	defer reqCancel()
 
 	client := rediscache.GetCCRMAPIClient(redisClient, features.NodeType)
@@ -1924,7 +1923,7 @@ func (s *CloudletApi) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 		return &edgeproto.CloudletManifest{}, err
 	}
 
-	reqCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmRedisapiTimeout.TimeDuration())
 	defer cancel()
 	client := rediscache.GetCCRMAPIClient(redisClient, features.NodeType)
 	return client.GetCloudletManifest(reqCtx, key)
@@ -2207,10 +2206,11 @@ func (s *CloudletApi) GetCloudletResourceInfo(ctx context.Context, stm concurren
 		}
 	}
 
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType, nodeMgr.UpdateNodeProps)
+	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 	if err != nil {
 		return nil, err
 	}
+
 	resInfo := make(map[string]edgeproto.InfraResource)
 	for resName, resUnits := range cloudcommon.CommonCloudletResources {
 		infraResMax := uint64(0)
@@ -2271,7 +2271,25 @@ func (s *CloudletApi) GetCloudletResourceInfo(ctx context.Context, stm concurren
 			}
 		}
 	}
-	addResInfo := cloudletPlatform.GetClusterAdditionalResources(ctx, cloudlet, vmResources, infraResMap)
+	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmRedisapiTimeout.TimeDuration())
+	defer cancel()
+	client := rediscache.GetCCRMAPIClient(redisClient, features.NodeType)
+	req := &edgeproto.ClusterResourcesReq{
+		CloudletKey:    &cloudlet.Key,
+		VmResources:    vmResources,
+		InfraResources: make(map[string]*edgeproto.InfraResource),
+	}
+	for k, v := range infraResMap {
+		req.InfraResources[k] = &v
+	}
+	res, err := client.GetClusterAdditionalResources(reqCtx, req)
+	if err != nil {
+		return nil, err
+	}
+	addResInfo := make(map[string]edgeproto.InfraResource)
+	for k, v := range res.InfraResources {
+		addResInfo[k] = *v
+	}
 	for k, v := range addResInfo {
 		thresh := cloudlet.DefaultResourceAlertThreshold
 		quotaMax := uint64(0)

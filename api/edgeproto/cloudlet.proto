@@ -1022,17 +1022,3 @@ enum ReportSchedule {
   // avoid dropping "Every"
   option (protogen.common_prefix) = "";
 }
-
-message StreamStatus {
-  // Cache update type
-  int32 cache_update_type = 3;
-  // Status value
-  string status = 4;
-  option (protogen.notify_message) = true;
-}
-
-service CCRMAPI {
-  rpc GetCloudletManifest(CloudletKey) returns (CloudletManifest) {}
-  rpc GetRestrictedCloudletStatus(CloudletKey) returns (stream StreamStatus) {}
-  option (protogen.redis_api) = true;
-}

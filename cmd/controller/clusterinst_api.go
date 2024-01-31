@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -27,7 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
+	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/gogo/protobuf/types"
 	"github.com/opentracing/opentracing-go"
@@ -435,11 +436,15 @@ func (s *ClusterInstApi) getClusterFlavorInfo(ctx context.Context, stm concurren
 }
 
 func (s *ClusterInstApi) GetRootLBFlavorInfo(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo) (*edgeproto.FlavorInfo, error) {
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType, nodeMgr.UpdateNodeProps)
+	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 	if err != nil {
 		return nil, err
 	}
-	rootlbFlavor, err := cloudletPlatform.GetRootLBFlavor(ctx)
+
+	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmRedisapiTimeout.TimeDuration())
+	defer cancel()
+	client := rediscache.GetCCRMAPIClient(redisClient, features.NodeType)
+	rootlbFlavor, err := client.GetRootLbFlavor(reqCtx, &cloudlet.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -747,7 +752,7 @@ func (s *ClusterInstApi) getCloudletResourceMetric(ctx context.Context, stm conc
 	}
 	cloudletRefs := edgeproto.CloudletRefs{}
 	s.all.cloudletRefsApi.store.STMGet(stm, key, &cloudletRefs)
-	cloudletPlatform, err := pfutils.GetPlatform(ctx, cloudlet.PlatformType, nodeMgr.UpdateNodeProps)
+	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 	if err != nil {
 		return nil, err
 	}
@@ -793,11 +798,23 @@ func (s *ClusterInstApi) getCloudletResourceMetric(ctx context.Context, stm conc
 	resMetric.AddIntVal(cloudcommon.ResourceMetricGpus, gpusUsed)
 	resMetric.AddIntVal(cloudcommon.ResourceMetricExternalIPs, externalIPsUsed)
 
+	resJS, _ := json.Marshal(resMetric)
+	log.SpanLog(ctx, log.DebugLevelApi, "resMetric json", "out", string(resJS))
+
 	// get additional infra specific metric
-	err = cloudletPlatform.GetClusterAdditionalResourceMetric(ctx, &cloudlet, &resMetric, allResources)
+	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmRedisapiTimeout.TimeDuration())
+	defer cancel()
+	client := rediscache.GetCCRMAPIClient(redisClient, features.NodeType)
+	req := edgeproto.ClusterResourceMetricReq{
+		CloudletKey: &cloudlet.Key,
+		ResMetric:   &resMetric,
+		VmResources: allResources,
+	}
+	resMetricOut, err := client.GetClusterAdditionalResourceMetric(reqCtx, &req)
 	if err != nil {
 		return nil, err
 	}
+	resMetric = *resMetricOut
 
 	metrics := []*edgeproto.Metric{}
 	metrics = append(metrics, &resMetric)

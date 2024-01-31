@@ -25,11 +25,13 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
@@ -118,6 +120,8 @@ func TestAppInstApi(t *testing.T) {
 	defer sync.Done()
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
 
 	reduceInfoTimeouts(t, ctx, apis)
 
@@ -449,6 +453,8 @@ func TestAutoClusterInst(t *testing.T) {
 	defer sync.Done()
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
 
 	reduceInfoTimeouts(t, ctx, apis)
 
@@ -1099,12 +1105,28 @@ func testKVStoreHasKey(kvstore objstore.KVStore, keystr string) bool {
 	return true
 }
 
+// testNameSanitizer matches NameSanitize func of platform.Platform interface.
+type testNameSanitizer interface {
+	NameSanitize(string) string
+}
+
+type testNameSanitizerWrapper struct {
+	sanitizer testNameSanitizer
+}
+
+func (s *testNameSanitizerWrapper) NameSanitize(name string) (string, error) {
+	return s.sanitizer.NameSanitize(name), nil
+}
+
 func TestAppInstIdDelimiter(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelApi)
 
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
+	sanitizer := &testNameSanitizerWrapper{
+		sanitizer: &fake.Platform{},
+	}
 	// The generated AppInstId must not have any '.'
 	// in it. That will allow any platform-specific code
 	// to append further strings to it, delimited by '.',
@@ -1113,7 +1135,7 @@ func TestAppInstIdDelimiter(t *testing.T) {
 		// need the app definition as well
 		for _, app := range testutil.AppData() {
 			if app.Key.Matches(&ai.AppKey) {
-				id, _ := pfutils.GetAppInstId(ctx, &ai, &app, "", platform.PlatformTypeFake)
+				id, _ := GetAppInstID(ctx, &ai, &app, "", sanitizer)
 				require.NotContains(t, id, ".", "id must not contain '.'")
 			}
 		}
@@ -1128,7 +1150,7 @@ func TestAppInstIdDelimiter(t *testing.T) {
 	appInst.ClusterKey.Organization += "."
 	appInst.Key.CloudletKey.Name += "."
 	appInst.Key.CloudletKey.Organization += "."
-	id, _ := pfutils.GetAppInstId(ctx, &appInst, &app, ".", platform.PlatformTypeFake)
+	id, _ := GetAppInstID(ctx, &appInst, &app, ".", sanitizer)
 	require.NotContains(t, id, ".", "id must not contain '.'")
 
 	// test name sanitization
@@ -1151,9 +1173,10 @@ func TestAppInstIdDelimiter(t *testing.T) {
 		},
 	}
 
-	id, _ = pfutils.GetAppInstId(ctx, &appInstOrgStartWithNumber, &appOrgStartWithNumber, ".", platform.PlatformTypeFake)
+	id, _ = GetAppInstID(ctx, &appInstOrgStartWithNumber, &appOrgStartWithNumber, ".", sanitizer)
 	require.Regexp(t, startWithNumReg, id, "fake id not sanitized")
-	id, _ = pfutils.GetAppInstId(ctx, &appInstOrgStartWithNumber, &appOrgStartWithNumber, ".", platform.PlatformTypeOpenstack)
+	sanitizer.sanitizer = &openstack.OpenstackPlatform{}
+	id, _ = GetAppInstID(ctx, &appInstOrgStartWithNumber, &appOrgStartWithNumber, ".", sanitizer)
 	require.NotRegexp(t, startWithNumReg, id, "openstack id must not start with number")
 }
 

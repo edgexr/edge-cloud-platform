@@ -1459,6 +1459,8 @@ func GetReferencesMap() map[string][]string {
 	refs["ClusterInstKey"] = []string{"Cloudlet"}
 	refs["ClusterInstKeyV1"] = []string{"Cloudlet"}
 	refs["ClusterRefs"] = []string{"AppInst"}
+	refs["ClusterResourceMetricReq"] = []string{"Cloudlet"}
+	refs["ClusterResourcesReq"] = []string{"Cloudlet"}
 	refs["DeploymentCloudletRequest"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
 	refs["ExecRequest"] = []string{"Cloudlet"}
 	refs["GPUConfig"] = []string{"GPUDriver"}

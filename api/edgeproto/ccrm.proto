@@ -1,0 +1,66 @@
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "github.com/edgexr/edge-cloud-platform/tools/protogen/protogen.proto";
+import "cloudletkey.proto";
+import "cloudlet.proto";
+import "flavor.proto";
+import "refs.proto";
+import "metric.proto";
+import "result.proto";
+import "infraresources.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+
+message StreamStatus {
+    // Cache update type
+    int32 cache_update_type = 3;
+    // Status value
+    string status = 4;
+    option (protogen.notify_message) = true;
+}
+  
+message InfraResourceMap {
+    // Infra resources map
+    map<string, InfraResource> infra_resources = 1;
+}
+
+message ClusterResourcesReq {
+    // Cloudlet
+    CloudletKey cloudlet_key = 1;
+    // VM Resources
+    repeated VMResource vm_resources = 2 [(gogoproto.nullable) = false];
+    // Infra Resources Map
+    map<string, InfraResource> infra_resources = 3;
+}
+
+message ClusterResourceMetricReq {
+    // Cloudlet
+    CloudletKey cloudlet_key = 1;
+    // Resource Metric
+    Metric res_metric = 2;
+    // VM Resources
+    repeated VMResource vm_resources = 3 [(gogoproto.nullable) = false];
+}
+
+message NameSanitizeReq {
+    // Cloudlet
+    CloudletKey cloudlet_key = 1;
+    // String value
+    string message = 2;
+}
+
+service CCRMAPI {
+    rpc GetCloudletManifest(CloudletKey) returns (CloudletManifest) {}
+    rpc GetClusterAdditionalResources(ClusterResourcesReq) returns (InfraResourceMap) {}
+    rpc GetClusterAdditionalResourceMetric(ClusterResourceMetricReq) returns (Metric) {}
+    rpc GetRestrictedCloudletStatus(CloudletKey) returns (stream StreamStatus) {}
+    rpc GetRootLbFlavor(CloudletKey) returns (Flavor) {}
+    option (protogen.redis_api) = true;
+    rpc NameSanitize(NameSanitizeReq) returns(Result) {}
+}

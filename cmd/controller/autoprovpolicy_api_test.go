@@ -23,6 +23,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -36,7 +37,9 @@ func TestAutoProvPolicyApi(t *testing.T) {
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
-	testSvcs := testinit(ctx, t)
+	// Note: mock redis does not work well with the autoprov
+	// stress test and controller -> ccrm redis api calls.
+	testSvcs := testinit(ctx, t, WithLocalRedis())
 	defer testfinish(testSvcs)
 
 	dummy := dummyEtcd{}
@@ -50,6 +53,8 @@ func TestAutoProvPolicyApi(t *testing.T) {
 
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
@@ -455,20 +460,27 @@ func (s *autoProvPolicyTest) delete(t *testing.T, ctx context.Context) {
 func (s *autoProvPolicyTest) goDoAppInsts(t *testing.T, ctx context.Context, app *edgeproto.App, action cloudcommon.Action, reason string) {
 	log.SpanLog(ctx, log.DebugLevelInfo, "Start goDoAppInsts", "action", action.String(), "key", app.Key, "reason", reason)
 	var wg sync.WaitGroup
+	var md metadata.MD
 	if reason != "" {
 		// This impersonates the AutoProv service by setting the
 		// grpc metadata. We also spawn threads to simulate race
 		// conditions. The test expects some of these to fail so
 		// we do not check the error result.
-		md := metadata.Pairs(
+		md = metadata.Pairs(
 			cloudcommon.CallerAutoProv, "",
 			cloudcommon.AutoProvReason, reason,
 			cloudcommon.AutoProvPolicyName, s.policy.Key.Name)
-		ctx = metadata.NewIncomingContext(ctx, md)
 	}
 	for ii, _ := range s.cloudlets {
 		wg.Add(1)
 		go func(ii int) {
+			span := log.StartSpan(log.DebugLevelApi, "goDoAppInst thread")
+			ctx := log.ContextWithSpan(context.Background(), span)
+			if md != nil {
+				ctx = metadata.NewIncomingContext(ctx, md)
+			}
+			defer span.Finish()
+
 			inst := edgeproto.AppInst{}
 			inst.Key.Name = "inst" + strconv.Itoa(ii)
 			inst.Key.Organization = app.Key.Organization
