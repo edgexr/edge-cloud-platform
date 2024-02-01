@@ -20,10 +20,8 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
-	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 )
 
 // Set up dummy responses for info data expected from CRM.
@@ -384,26 +382,4 @@ func (d *DummyInfoResponder) vmPoolChanged(ctx context.Context, inst *edgeproto.
 func (d *DummyInfoResponder) vmPoolDeleted(ctx context.Context, old *edgeproto.VMPool) {
 	info := edgeproto.VMPoolInfo{Key: old.Key}
 	d.VMPoolInfoCache.Delete(ctx, &info, 0)
-}
-
-func (d *DummyInfoResponder) SetupDummyCCRM(ctx context.Context) func() {
-	// ccrm apis
-	hctx, cancel := context.WithCancel(ctx)
-	server := rediscache.GetCCRMAPIServer(redisClient, node.NodeTypeCCRM, d)
-	server.Start(hctx)
-	return cancel
-}
-
-func (d *DummyInfoResponder) GetCloudletManifest(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error) {
-	return &edgeproto.CloudletManifest{
-		Manifest: "foo",
-	}, nil
-}
-
-func (d *DummyInfoResponder) GetRestrictedCloudletStatus(ctx context.Context, in *edgeproto.CloudletKey, send func(*edgeproto.StreamStatus) error) error {
-	reply := &edgeproto.StreamStatus{
-		CacheUpdateType: int32(edgeproto.UpdateTask),
-		Status:          "Setting up cloudlet",
-	}
-	return send(reply)
 }

@@ -29,6 +29,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
@@ -128,6 +129,8 @@ func testC(t *testing.T) {
 		RecvCloudletOnboardingInfo: apis.cloudletInfoApi,
 	}
 	dummyResponder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
 	for ii, _ := range testutil.CloudletInfoData() {
 		crmNotify.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData()[ii], 0)
 	}

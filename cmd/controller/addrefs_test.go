@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -40,6 +41,12 @@ func TestAddRefsChecks(t *testing.T) {
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
+	responder := DefaultDummyInfoResponder(apis)
+	responder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
+
+	reduceInfoTimeouts(t, ctx, apis)
 
 	dataGen := AddRefsDataGen{}
 	allAddRefsChecks(t, ctx, apis, &dataGen)

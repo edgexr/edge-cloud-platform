@@ -163,6 +163,8 @@ func (s *Settings) Validate(fields map[string]struct{}) error {
 			v.CheckGTE(f, s.PlatformHaInstanceActiveExpireTime, Duration(500*time.Millisecond))
 		case SettingsFieldPlatformHaInstancePollInterval:
 			v.CheckGT(f, s.PlatformHaInstancePollInterval, Duration(10*time.Millisecond))
+		case SettingsFieldCcrmRedisapiTimeout:
+			v.CheckGT(f, s.CcrmRedisapiTimeout, dur0)
 		default:
 			// If this is a setting field (and not "fields"), ensure there is an entry in the switch
 			// above.  If no validation is to be done for a field, make an empty case entry
@@ -231,6 +233,7 @@ func GetDefaultSettings() *Settings {
 	s.ResourceSnapshotThreadInterval = Duration(10 * time.Minute)
 	s.PlatformHaInstanceActiveExpireTime = Duration(1 * time.Second)
 	s.PlatformHaInstancePollInterval = Duration(300 * time.Millisecond)
+	s.CcrmRedisapiTimeout = Duration(30 * time.Second)
 
 	return &s
 }

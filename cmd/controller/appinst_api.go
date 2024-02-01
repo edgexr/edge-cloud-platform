@@ -30,7 +30,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	pfutils "github.com/edgexr/edge-cloud-platform/pkg/platform/utils"
+	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/gogo/protobuf/types"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	v1 "k8s.io/api/core/v1"
@@ -846,12 +847,13 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		// be fairly low because the STM has a limit on the number of
 		// keys it can manage.
 		in.UniqueId = ""
+		sanitizer := NewAppInstIDSanitizer(ctx, s, &cloudlet)
 		for ii := 0; ii < 10; ii++ {
 			salt := ""
 			if ii != 0 {
 				salt = strconv.Itoa(ii)
 			}
-			id, err := pfutils.GetAppInstId(ctx, in, &app, salt, cloudletPlatformType)
+			id, err := GetAppInstID(ctx, in, &app, salt, sanitizer)
 			if err != nil {
 				return err
 			}
@@ -2256,4 +2258,71 @@ func (s *AppInstApi) RecordAppInstEvent(ctx context.Context, appInst *edgeproto.
 
 func clusterInstReservationEvent(ctx context.Context, eventName string, appInst *edgeproto.AppInst) {
 	nodeMgr.Event(ctx, eventName, appInst.Key.Organization, appInst.GetTags(), nil, edgeproto.ClusterKeyTagName, appInst.ClusterKey.Name, edgeproto.ClusterKeyTagOrganization, appInst.ClusterKey.Organization)
+}
+
+// GetAppInstID returns a string for this AppInst that is likely to be
+// unique within the region. It does not guarantee uniqueness.
+// The delimiter '.' is removed from the AppInstId so that it can be used
+// to append further strings to this ID to build derived unique names.
+// Salt can be used by the caller to add an extra field if needed
+// to ensure uniqueness. In all cases, any requirements for uniqueness
+// must be guaranteed by the caller. Name sanitization for the platform is performed
+func GetAppInstID(ctx context.Context, appInst *edgeproto.AppInst, app *edgeproto.App, salt string, sanitizer NameSanitizer) (string, error) {
+	fields := []string{}
+
+	name := util.DNSSanitize(appInst.Key.Name)
+	dev := util.DNSSanitize(appInst.Key.Organization)
+	fields = append(fields, dev, name)
+
+	loc := util.DNSSanitize(appInst.Key.CloudletKey.Name)
+	fields = append(fields, loc)
+
+	oper := util.DNSSanitize(appInst.Key.CloudletKey.Organization)
+	fields = append(fields, oper)
+
+	if salt != "" {
+		salt = util.DNSSanitize(salt)
+		fields = append(fields, salt)
+	}
+	appInstID := strings.Join(fields, "-")
+	return sanitizer.NameSanitize(appInstID)
+}
+
+// NameSanitizer is broken out as an interface for unit tests
+type NameSanitizer interface {
+	NameSanitize(name string) (string, error)
+}
+
+type AppInstIDSanitizer struct {
+	ctx        context.Context
+	appInstApi *AppInstApi
+	cloudlet   *edgeproto.Cloudlet
+}
+
+func NewAppInstIDSanitizer(ctx context.Context, appInstApi *AppInstApi, cloudlet *edgeproto.Cloudlet) *AppInstIDSanitizer {
+	return &AppInstIDSanitizer{
+		ctx:        ctx,
+		appInstApi: appInstApi,
+		cloudlet:   cloudlet,
+	}
+}
+
+func (s *AppInstIDSanitizer) NameSanitize(name string) (string, error) {
+	features, err := s.appInstApi.all.platformFeaturesApi.GetCloudletFeatures(s.ctx, s.cloudlet.PlatformType)
+	if err != nil {
+		return "", err
+	}
+
+	reqCtx, cancel := context.WithTimeout(s.ctx, 3*time.Second)
+	defer cancel()
+	client := rediscache.GetCCRMAPIClient(redisClient, features.NodeType)
+	req := edgeproto.NameSanitizeReq{
+		CloudletKey: &s.cloudlet.Key,
+		Message:     name,
+	}
+	res, err := client.NameSanitize(reqCtx, &req)
+	if err != nil {
+		return "", err
+	}
+	return res.Message, nil
 }

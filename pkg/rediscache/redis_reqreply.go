@@ -55,12 +55,18 @@ func (s *UnaryAPI) DoRequest(ctx context.Context, methodName string, request, re
 // for multiple replies. Each reply is handled serially and written to
 // the replyBuf parameter. The callback function is called and must
 // return before it processes the next reply.
-func (s *UnaryAPI) DoStreamRequest(ctx context.Context, methodName string, request, replyBuf interface{}, cb func() error) error {
+func (s *UnaryAPI) DoStreamRequest(ctx context.Context, methodName string, request, replyBuf interface{}, cb func() error) (reterr error) {
 	// Set unique ID so we can only subscribe to responses from our request
 	msgReq := APIMessageRequest{
 		ID:  uuid.New().String(),
 		Msg: request,
 	}
+	defer func() {
+		if reterr != nil {
+			reterr = fmt.Errorf("redis send request %s failed, %s", methodName, reterr)
+			log.SpanLog(ctx, log.DebugLevelApi, "redis send request failed", "method", methodName, "err", reterr)
+		}
+	}()
 
 	// subscribe to capture responses
 	pubsub := s.client.Subscribe(ctx, getReplyChannel(methodName, msgReq.ID))

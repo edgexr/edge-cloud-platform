@@ -136,7 +136,7 @@ func TestRedisAPIMessages(t *testing.T) {
 	replyBuf = testMessageReply{}
 	err = api.DoRequest(reqCtx, unaryMethod, &unaryReq, &replyBuf)
 	require.NotNil(t, err)
-	require.Equal(t, failHandlerErr.Error(), err.Error())
+	require.Contains(t, err.Error(), failHandlerErr.Error())
 
 	// test stream - failure
 	replyCount = 0
@@ -144,7 +144,7 @@ func TestRedisAPIMessages(t *testing.T) {
 	// still should have gotten intermediate replies
 	require.Equal(t, streamReplyCount, replyCount)
 	require.NotNil(t, err)
-	require.Equal(t, failHandlerErr.Error(), err.Error())
+	require.Contains(t, err.Error(), failHandlerErr.Error())
 
 	// --- cleanup ---
 

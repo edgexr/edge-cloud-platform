@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client/influxq_testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -51,6 +52,8 @@ func TestClusterInstApi(t *testing.T) {
 
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
 
 	reduceInfoTimeouts(t, ctx, apis)
 
@@ -246,6 +249,7 @@ func reduceInfoTimeouts(t *testing.T, ctx context.Context, apis *AllApis) {
 	settings.DeleteAppInstTimeout = edgeproto.Duration(1 * time.Second)
 	settings.CloudletMaintenanceTimeout = edgeproto.Duration(2 * time.Second)
 	settings.UpdateVmPoolTimeout = edgeproto.Duration(1 * time.Second)
+	settings.CcrmRedisapiTimeout = edgeproto.Duration(3 * time.Second)
 
 	settings.Fields = []string{
 		edgeproto.SettingsFieldCreateCloudletTimeout,
@@ -257,6 +261,7 @@ func reduceInfoTimeouts(t *testing.T, ctx context.Context, apis *AllApis) {
 		edgeproto.SettingsFieldDeleteClusterInstTimeout,
 		edgeproto.SettingsFieldCloudletMaintenanceTimeout,
 		edgeproto.SettingsFieldUpdateVmPoolTimeout,
+		edgeproto.SettingsFieldCcrmRedisapiTimeout,
 	}
 	_, err = apis.settingsApi.UpdateSettings(ctx, settings)
 	require.Nil(t, err)
@@ -933,6 +938,8 @@ func TestDefaultMTCluster(t *testing.T) {
 
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())

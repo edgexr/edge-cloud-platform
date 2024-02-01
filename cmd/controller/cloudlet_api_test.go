@@ -27,6 +27,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -157,7 +158,7 @@ func TestCloudletApi(t *testing.T) {
 	defer sync.Done()
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
-	ccrmStop := responder.SetupDummyCCRM(ctx)
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
 	defer ccrmStop()
 
 	reduceInfoTimeouts(t, ctx, apis)
@@ -1014,6 +1015,8 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	// without a responder, clusterInst create waits forever
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
 
 	reduceInfoTimeouts(t, ctx, apis)
 

@@ -22,6 +22,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -54,20 +55,24 @@ func TestAlertApi(t *testing.T) {
 	responder.InitDummyInfoResponder()
 	reduceInfoTimeouts(t, ctx, apis)
 
+	testCloudletName := "testcloudlet"
 	alertData := testutil.AlertData()
+	cloudletData := testutil.CloudletData()
+	testCloudlet := cloudletData[0]
 	for _, alert := range alertData {
+		if alert.Labels[edgeproto.CloudletKeyTagName] == testCloudlet.Key.Name && alert.Labels[edgeproto.CloudletKeyTagOrganization] == testCloudlet.Key.Organization {
+			alert.Labels[edgeproto.CloudletKeyTagName] = testCloudletName
+		}
 		apis.alertApi.Update(ctx, &alert, 0)
 	}
 	testutil.InternalAlertTest(t, "show", apis.alertApi, alertData)
 
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
-	cloudletData := testutil.CloudletData()
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, cloudletData)
-	testCloudlet := cloudletData[0]
-	testCloudlet.Key.Name = "testcloudlet"
+	testCloudlet.Key.Name = testCloudletName
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, []edgeproto.Cloudlet{testCloudlet})
 	testCloudletInfo := testutil.CloudletInfoData()[0]
 	testCloudletInfo.Key.Name = testCloudlet.Key.Name
@@ -121,6 +126,8 @@ func TestAppInstDownAlert(t *testing.T) {
 	defer sync.Done()
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
+	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
+	defer ccrmStop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	// create supporting data
