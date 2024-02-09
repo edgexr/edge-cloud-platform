@@ -20,11 +20,11 @@ import (
 	"strings"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type SettingsApi struct {
@@ -159,6 +159,10 @@ func (s *SettingsApi) initDefaults(ctx context.Context) error {
 		}
 		if cur.PlatformHaInstancePollInterval == 0 {
 			cur.PlatformHaInstancePollInterval = edgeproto.GetDefaultSettings().PlatformHaInstancePollInterval
+			modified = true
+		}
+		if cur.CcrmRedisapiTimeout == 0 {
+			cur.CcrmRedisapiTimeout = edgeproto.GetDefaultSettings().CcrmRedisapiTimeout
 			modified = true
 		}
 		if modified {

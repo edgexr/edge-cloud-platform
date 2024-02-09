@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -23,18 +24,21 @@ type MessageHandler struct {
 // message being sent. After that code, call WaitForMessage().
 // The desired Message parameter must have its key value set.
 // An example of this would be:
-// desired := &edgeproto.Info{
-//   Key: someKey,
-// }
+//
+//	desired := &edgeproto.Info{
+//	  Key: someKey,
+//	}
+//
 // h := Subscribe(ctx, client, desired)
 // defer h.Close()
 // <code to trigger message send>
-// err := h.WaitForMessage(10*time.Second, func() bool {
-//   if desired.State == TARGET_STATE {
-//     return true
-//   }
-//   return false
-// })
+//
+//	err := h.WaitForMessage(10*time.Second, func() bool {
+//	  if desired.State == TARGET_STATE {
+//	    return true
+//	  }
+//	  return false
+//	})
 func Subscribe(ctx context.Context, client *redis.Client, desired Message) *MessageHandler {
 	h := MessageHandler{}
 	h.desired = desired
@@ -85,6 +89,7 @@ func waitForMessage(ctx context.Context, ch <-chan *redis.Message, cb waitForHan
 			if !ok {
 				return errors.New("unexpected channel close while waiting for reply")
 			}
+			log.SpanLog(ctx, log.DebugLevelApi, "redis got reply", "message", msg)
 			done, err := cb(msg.Payload)
 			if err != nil {
 				return err
