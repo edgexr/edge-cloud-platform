@@ -69,8 +69,14 @@ func (s *UnaryAPI) DoStreamRequest(ctx context.Context, methodName string, reque
 	}()
 
 	// subscribe to capture responses
-	pubsub := s.client.Subscribe(ctx, getReplyChannel(methodName, msgReq.ID))
+	replyChannel := getReplyChannel(methodName, msgReq.ID)
+	pubsub := s.client.Subscribe(ctx, replyChannel)
 	defer pubsub.Close()
+	// wait for confirmation that subscription is created
+	_, err := pubsub.Receive(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to subscribe to redis API reply channel %s, %s", replyChannel, err)
+	}
 	// note: channel is closed when pubsub is closed
 	subCh := pubsub.Channel()
 
@@ -79,9 +85,10 @@ func (s *UnaryAPI) DoStreamRequest(ctx context.Context, methodName string, reque
 	if err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "redis send request", "method", methodName, "reqData", string(reqData))
+	requestChannel := getRequestChannel(methodName)
+	log.SpanLog(ctx, log.DebugLevelApi, "redis send request", "method", methodName, "reqChan", requestChannel, "waitOnReplyChan", replyChannel, "reqData", string(reqData))
 
-	err = s.client.RPush(ctx, getRequestChannel(methodName), string(reqData)).Err()
+	err = s.client.RPush(ctx, requestChannel, string(reqData)).Err()
 	if err != nil {
 		return err
 	}
@@ -145,9 +152,10 @@ func (s *UnaryAPI) HandleStreamRequests(ctx context.Context, methodName string, 
 }
 
 func (s *UnaryAPI) handleRequestsInternal(ctx context.Context, methodName string, getReqBuf GetRequestBuf, handler RequestHandler, streamHandler StreamRequestHandler) {
-	log.SpanLog(ctx, log.DebugLevelApi, "redis handling api requests", "method", methodName)
+	requestChan := getRequestChannel(methodName)
+	log.SpanLog(ctx, log.DebugLevelApi, "redis handling api requests", "method", methodName, "reqChan", requestChan)
 	for {
-		vals, err := s.client.BLPop(ctx, 0, getRequestChannel(methodName)).Result()
+		vals, err := s.client.BLPop(ctx, 0, requestChan).Result()
 		if ctx.Err() != nil {
 			// context cancelled
 			log.SpanLog(ctx, log.DebugLevelApi, "redis handle request cancelled", "method", methodName, "ctxErr", ctx.Err(), "err", err)
@@ -181,6 +189,7 @@ func (s *UnaryAPI) handleRequestsInternal(ctx context.Context, methodName string
 				ctx:        ctx,
 				methodName: methodName,
 				id:         reqMsg.ID,
+				replyChan:  getReplyChannel(methodName, reqMsg.ID),
 			}
 			var handlerErr error
 			var reply interface{}
@@ -190,7 +199,7 @@ func (s *UnaryAPI) handleRequestsInternal(ctx context.Context, methodName string
 			} else {
 				// stream intermediate replies
 				sendCb := func(reply interface{}) error {
-					return sender.send(reply, "", ReplyStatusStreaming)
+					return sender.send(ctx, reply, "", ReplyStatusStreaming)
 				}
 				handlerErr = streamHandler(ctx, reqMsg.Msg, sendCb)
 			}
@@ -206,7 +215,7 @@ func (s *UnaryAPI) handleRequestsInternal(ctx context.Context, methodName string
 				reply = nil
 				errMsg = handlerErr.Error()
 			}
-			sendErr := sender.send(reply, errMsg, status)
+			sendErr := sender.send(ctx, reply, errMsg, status)
 			// log
 			log.SpanLog(ctx, log.DebugLevelApi, "redis handled request", "method", methodName, "reqID", reqMsg.ID, "handlerErr", handlerErr, "sendErr", sendErr)
 		}(vals[1])
@@ -219,9 +228,10 @@ type replySender struct {
 	methodName string
 	id         string
 	sendFailed bool
+	replyChan  string
 }
 
-func (s *replySender) send(reply interface{}, replyErr string, status ReplyStatus) error {
+func (s *replySender) send(ctx context.Context, reply interface{}, replyErr string, status ReplyStatus) error {
 	replyMsg := APIMessageReply{
 		Msg:    reply,
 		Error:  replyErr,
@@ -231,7 +241,8 @@ func (s *replySender) send(reply interface{}, replyErr string, status ReplyStatu
 	if err != nil {
 		return fmt.Errorf("Failed to marshal reply, %v", err)
 	}
-	err = s.client.Publish(s.ctx, getReplyChannel(s.methodName, s.id), string(replyData)).Err()
+	err = s.client.Publish(s.ctx, s.replyChan, string(replyData)).Err()
+	log.SpanLog(ctx, log.DebugLevelApi, "redis sent reply", "replyChan", s.replyChan, "err", err)
 	if err != nil {
 		s.sendFailed = true
 		return fmt.Errorf("Failed to send reply, %v", err)
