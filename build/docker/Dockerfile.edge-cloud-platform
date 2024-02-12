@@ -1,0 +1,66 @@
+# syntax=docker/dockerfile:1.3
+#
+# docker build -t mobiledgex/edge-cloud -f Dockerfile.edge-cloud .
+# docker run -it --rm mobiledgex/edge-cloud 
+#   entry point here is bash. Inside docker ls /go/bin, you will
+#   see protoc-gen-gomex
+# This is just a starting point. It let's you compile Go code here.
+# Once service is coded, entry point will point to service.
+# Also, please see Dockderfile.protoc. That one will let you 
+# create the protocol buffer stubs from proto files.
+# All the tools will be inside the docker.
+#
+
+ARG REGISTRY=ghcr.io/edgexr
+ARG EDGE_CLOUD_INFRA_BASE=scratch
+
+FROM $REGISTRY/build:go1.21.6 AS build
+
+ENV GOPATH=/go
+ENV PATH="/go/bin:${PATH}"
+ENV GO111MODULE=on
+ENV DOCKER_BUILD=yes
+
+WORKDIR /go/src/github.com/edgexr
+# Do dependencies first so they can be cached
+COPY edge-cloud-platform/go.mod edge-cloud-platform/go.mod
+COPY edge-cloud-platform/go.sum edge-cloud-platform/go.sum
+#COPY edge-cloud-platform/Makefile.tools edge-cloud-platform/Makefile.tools
+WORKDIR /go/src/github.com/edgexr/edge-cloud-platform
+RUN go mod download
+
+# Will be overridden during build from the command line
+ARG BUILD_TAG=latest
+
+WORKDIR /go/src/github.com/edgexr
+COPY . .
+WORKDIR /go/src/github.com/edgexr/edge-cloud-platform
+ENV CGO_ENABLED=1
+RUN --mount=type=cache,id=go-build,target=/root/.cache/go-build make gobuild install
+
+FROM $EDGE_CLOUD_INFRA_BASE
+
+WORKDIR /go/src/github.com/edgexr
+ADD ./edge-cloud-platform/build/docker/mex-docker.env /root/mex-docker.env
+ADD ./edge-cloud-platform/build/docker/edge-cloud-entrypoint.sh /usr/local/bin
+ADD ./edge-cloud-platform/build/docker/atomic-certs-update.sh /usr/local/bin
+RUN chmod +x /usr/local/bin/edge-cloud-entrypoint.sh \
+	     /usr/local/bin/atomic-certs-update.sh
+
+COPY --from=build /go/bin/controller \
+		  /go/bin/ccrm \
+		  /go/bin/crm \
+		  /go/bin/dme \
+		  /go/bin/cluster-svc \
+		  /go/bin/edgectl \
+		  /go/bin/edgeturn \
+		  /go/bin/shepherd \
+		  /go/bin/resource-tracker \
+		  /go/bin/autoprov \
+		  /go/bin/notifyroot \
+		  /go/bin/kubectl \
+		  /usr/local/bin/
+
+COPY --from=build /go/src/github.com/edgexr/edge-cloud-platform/pkg/version/version.yaml /version.yaml
+
+CMD [ "edge-cloud-entrypoint.sh" ]

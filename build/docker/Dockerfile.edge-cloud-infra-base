@@ -1,0 +1,43 @@
+FROM curlimages/curl as curler
+WORKDIR /tmp
+RUN curl -Lf -o /tmp/kubectl-v1.18.0 "https://dl.k8s.io/release/v1.18.0/bin/linux/amd64/kubectl" \
+	&& chmod ug+rx /tmp/kubectl-v1.18.0
+RUN curl -Lf -o /tmp/kubectl-v1.25.0 "https://dl.k8s.io/release/v1.25.0/bin/linux/amd64/kubectl" \
+	&& chmod ug+rx /tmp/kubectl-v1.25.0
+RUN curl -Lf -o /tmp/kubectl-v1.26.5 "https://dl.k8s.io/release/v1.26.5/bin/linux/amd64/kubectl" \
+	&& chmod ug+rx /tmp/kubectl-v1.26.5
+
+## GOVC +32 MB
+RUN curl -sL https://github.com/vmware/govmomi/releases/download/v0.23.0/govc_linux_amd64.gz \
+	| gunzip >/tmp/govc \
+	&& chmod ug+rx /tmp/govc
+
+## Helm +44 MB
+RUN curl -fsSL -o /tmp/get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 \
+	&& chmod ug+rx /tmp/get_helm.sh
+
+# Note: bullseye is debian11, bookworm is debian12
+FROM python:3.11.7-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+COPY --from=curler /tmp/kubectl-v1.18.0 /usr/bin/kubectl-v1.18.0
+COPY --from=curler /tmp/kubectl-v1.25.0 /usr/bin/kubectl-v1.25.0
+COPY --from=curler /tmp/kubectl-v1.26.5 /usr/bin/kubectl-v1.26.5
+COPY --from=curler /tmp/govc /usr/bin/govc
+COPY --from=curler /tmp/get_helm.sh /tmp/get_helm.sh
+
+COPY requirements-infra.txt .
+RUN pip install -r requirements-infra.txt
+
+RUN apt-get update && apt-get install -y \
+	apt-transport-https \
+	ca-certificates \
+	curl \
+	wget \
+	jq \
+	sudo \
+	skopeo \
+	qemu-utils
+
+RUN /tmp/get_helm.sh

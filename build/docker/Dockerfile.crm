@@ -1,0 +1,19 @@
+ARG ALLINONE=default
+ARG EDGE_CLOUD_INFRA_BASE=scratch
+ARG NON_INFRA_BASE_IMAGE=default
+
+FROM $ALLINONE as allinone
+
+FROM $EDGE_CLOUD_INFRA_BASE
+
+COPY --from=allinone /usr/local/bin/crm /usr/local/bin/crmserver
+COPY --from=allinone /usr/local/bin/kubectl /usr/bin/kubectl
+COPY --from=allinone \
+	/usr/local/bin/atomic-certs-update.sh \
+	/usr/local/bin/resource-tracker \
+	/usr/local/bin/shepherd \
+	/usr/local/bin/
+COPY --from=allinone /version.yaml /version.yaml
+
+ENTRYPOINT []
+CMD [ "/usr/local/bin/crmserver" ]

@@ -66,3 +66,21 @@ There are an extensive set of unit tests. Some unit tests depend on local instal
 ``` shell
 make unit-test
 ```
+
+# Building Images
+
+Scripts for building container images are in `/build/docker`. You will need to have [docker](https://www.docker.com/) installed on your machine. You may need to set the `REGISTRY` environment variable to the registry and parent path to push to, i.e.
+
+```shell
+export REGISTRY=ghcr.io/edgexr
+```
+
+``` shell
+cd build/docker
+make build-platform
+```
+
+To build without pushing:
+``` shell
+make build-platform-local
+```
