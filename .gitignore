@@ -8,52 +8,23 @@ link-gogo-protobuf
 link-grpc-gateway
 pkg/version/version.yaml
 api/distributed_match_engine/*.proto
-pkg/cloudcommon/node/vault.log
-pkg/cloudcommon/node/vault_pki
-pkg/cloudcommon/node/roles.yaml
 tools/edgeprotogen/edgeprotogen.proto
 pkg/vault/vault.log
 pkg/vault/vault_pki
 pkg/vault/roles.yaml
-cmd/crm/envoy
-cmd/controller/envoy
 cmd/controller/data_test.json
-cmd/controller/etcdLocal_data/*
 cmd/controller/influxdb.log
 cmd/controller/influxq_client/.influxdb
 cmd/controller/influxq_client/influxdb.log
-cmd/controller/.influxdb/*
-pkg/tls/out
-pkg/cloudcommon/node/out
 pkg/ccrm/ansible.tar.gz
-
-pkg/mc/orm/dump.sql
-pkg/mc/orm/vault.log
-pkg/mc/orm/vault_pki
-pkg/mc/orm/roles.yaml
-*.postgres*
-ansible.auto.tfvars
-.terraform.init.done
-pkg/vault/letsencrypt-plugin/letsencrypt/version.go
-/edgebox_bin
-
-e2e-tests/chef/chef_guid
-e2e-tests/chef/syntaxcache
 
 # leftovers after regression tests
 envoy/certs/envoyTlsCerts.key
 envoy/certs/envoyTlsCerts.crt
 plugin/platform/common/foo
-deploy/ansible/mex_inventory
-deploy/ansible/playbooks/setup.yml
 
-# unit-test file
-pkg/mc/orm/alertmgr/testAlertMgrConfig.yml
-pkg/mc/orm/testAlertMgrConfig.yml
-
-# terraform vars
-*.auto.tfvars
-*.auto.tfvars.json
-
-# redis
-dump.rdb
+# generated unit test files
+pkg/proxy/test-envoy-config.yaml
+pkg/proxy/test-envoy-sds.yaml
+pkg/platform/common/vmlayer/TestSetupForwardingIptables.sh
+pkg/platform/common/vmlayer/TestSetupIptablesRulesForRootLB.sh
