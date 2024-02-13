@@ -78,7 +78,15 @@ third_party:
 
 # adds license header to all files, see https://github.com/google/addlicense
 addlicense:
-	addlicense -c "EdgeXR, Inc" -l apache .
+	addlicense -c "EdgeXR, Inc" -l apache \
+		-ignore pkg/ccrm/test_node_attributes_exp.yml \
+		-ignore pkg/platform/common/infracommon/test-netplan-config.yaml \
+		-ignore pkg/platform/common/infracommon/test-netplan-config2-expected.yaml \
+		-ignore pkg/platform/common/vmlayer/TestSetupForwardingIptables-expected.sh \
+		-ignore pkg/platform/common/vmlayer/TestSetupIptablesRulesForRootLB-expected.sh \
+		-ignore pkg/proxy/test-envoy-config-expected.yaml \
+		-ignore pkg/proxy/test-envoy-sds-expected.yaml \
+		.
 
 lint:
 	(cd $(GOPATH)/src/github.com/uber/prototool; go install ./cmd/prototool)
