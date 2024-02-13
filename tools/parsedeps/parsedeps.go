@@ -204,6 +204,11 @@ func getSourceMirror(pkgDir string) (string, error) {
 	for to, from := range pathXlat {
 		repo = strings.Replace(repo, to, from, -1)
 	}
+	if strings.HasPrefix(repo, "github.com/") {
+		// just point to github repo, we don't need to maintain a copy
+		repo = strings.Replace(repo, "@", "/releases/tag/", 1)
+		return repo, nil
+	}
 	repo = strings.Replace(repo, "/", "-", -1)
 	repo = strings.Replace(repo, "@", ".", -1)
 	repo += ".tar"
