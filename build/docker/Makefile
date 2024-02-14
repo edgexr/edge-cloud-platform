@@ -32,7 +32,7 @@ EDGE_CLOUD_INFRA_BASE ?= ghcr.io/edgexr/edge-cloud-infra-base@sha256:d251d83ad71
 
 EDGE_CLOUD_IMAGE ?= $(REGISTRY)/edge-cloud
 
-build-platform:
+build-platform-common:
 	rsync --checksum dockerignore.edge-cloud $(TOP)/.dockerignore
 	docker buildx build \
 		--build-arg BUILD_TAG=$(VERSION) \
@@ -40,6 +40,8 @@ build-platform:
 		--build-arg EDGE_CLOUD_INFRA_BASE=$(EDGE_CLOUD_INFRA_BASE) \
 		--build-arg REGISTRY=$(REGISTRY) \
 		-t $(EDGE_CLOUD_IMAGE):$(VERSION) -f Dockerfile.edge-cloud-platform $(TOP)
+
+build-platform: build-platform-common
 	for COMP in autoprov cluster-svc controller ccrm crm dme edgeturn notifyroot; do \
 		docker buildx build $(PUSH) -t $(EDGE_CLOUD_IMAGE)-$$COMP:$(VERSION) \
 			--build-arg NON_INFRA_BASE_IMAGE=$(NON_INFRA_BASE_IMAGE) \
