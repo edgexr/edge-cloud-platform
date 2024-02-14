@@ -519,6 +519,7 @@ func handleWWWAuth(ctx context.Context, method, regUrl, authHeader string, auth 
 				authTok.Token = authResp[AuthRespAccessToken]
 			} else {
 				log.SpanLog(ctx, log.DebugLevelApi, "no token found in www-auth request", "resp", authResp, "decodeErr", decErr)
+				return nil, fmt.Errorf("no token found in auth response for URL %s", authURL)
 			}
 			authTok.AuthType = TokenAuth
 
