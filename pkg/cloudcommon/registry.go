@@ -36,14 +36,16 @@ import (
 )
 
 const (
-	NoAuth            = "noauth"
-	BasicAuth         = "basic"
-	TokenAuth         = "token"
-	ApiKeyAuth        = "apikey"
-	DockerHub         = "docker.io"
-	DockerHubRegistry = "registry-1.docker.io"
-	MaxOvfVmVersion   = 14
-	AllOrgs           = ""
+	NoAuth              = "noauth"
+	BasicAuth           = "basic"
+	TokenAuth           = "token"
+	ApiKeyAuth          = "apikey"
+	DockerHub           = "docker.io"
+	DockerHubRegistry   = "registry-1.docker.io"
+	MaxOvfVmVersion     = 14
+	AllOrgs             = ""
+	AuthRespToken       = "token"
+	AuthRespAccessToken = "access_token"
 )
 
 type RegistryAuth struct {
@@ -508,7 +510,17 @@ func handleWWWAuth(ctx context.Context, method, regUrl, authHeader string, auth 
 		defer resp.Body.Close()
 		if resp.StatusCode == http.StatusOK {
 			authTok := RegistryAuth{}
-			json.NewDecoder(resp.Body).Decode(&authTok)
+			authResp := map[string]string{}
+			decErr := json.NewDecoder(resp.Body).Decode(&authResp)
+			if authResp[AuthRespToken] != "" {
+				authTok.Token = authResp[AuthRespToken]
+			} else if authResp[AuthRespAccessToken] != "" {
+				// Azure returns "access_token" instead of "token"
+				authTok.Token = authResp[AuthRespAccessToken]
+			} else {
+				log.SpanLog(ctx, log.DebugLevelApi, "no token found in www-auth request", "resp", authResp, "decodeErr", decErr)
+				return nil, fmt.Errorf("no token found in auth response for URL %s", authURL)
+			}
 			authTok.AuthType = TokenAuth
 
 			log.SpanLog(ctx, log.DebugLevelApi, "retrying request with auth-token")
