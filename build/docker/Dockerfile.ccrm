@@ -1,0 +1,14 @@
+ARG ALLINONE=default
+ARG EDGE_CLOUD_INFRA_BASE=default
+ARG NON_INFRA_BASE_IMAGE=default
+
+FROM $ALLINONE as allinone
+
+FROM $EDGE_CLOUD_INFRA_BASE
+
+COPY --from=allinone /usr/local/bin/kubectl /usr/bin/kubectl
+COPY --from=allinone /usr/local/bin/ccrm /usr/bin/ccrm
+COPY --from=allinone /version.yaml /version.yaml
+
+ENTRYPOINT []
+CMD [ "/usr/bin/ccrm" ]

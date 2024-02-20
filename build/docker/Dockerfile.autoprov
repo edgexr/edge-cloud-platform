@@ -1,0 +1,12 @@
+ARG ALLINONE=default
+ARG NON_INFRA_BASE_IMAGE=default
+
+FROM $ALLINONE as allinone
+
+FROM $NON_INFRA_BASE_IMAGE
+
+COPY --from=allinone /usr/local/bin/autoprov /usr/bin/autoprov
+COPY --from=allinone /version.yaml /version.yaml
+
+ENTRYPOINT []
+CMD [ "/usr/bin/autoprov" ]
