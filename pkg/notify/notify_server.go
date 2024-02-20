@@ -146,8 +146,8 @@ func (mgr *ServerMgr) Start(name, addr string, tlsConfig *tls.Config, ops ...Ser
 	}
 
 	mgr.serv = grpc.NewServer(cloudcommon.GrpcCreds(tlsConfig),
-		grpc.KeepaliveParams(serverParams),
-		grpc.KeepaliveEnforcementPolicy(serverEnforcement),
+		grpc.KeepaliveParams(cloudcommon.GRPCServerKeepaliveParams),
+		grpc.KeepaliveEnforcementPolicy(cloudcommon.GRPCServerKeepaliveEnforcement),
 		opts.unaryInterceptor,
 		opts.streamInterceptor,
 		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),

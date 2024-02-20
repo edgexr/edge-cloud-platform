@@ -390,6 +390,7 @@ func (s *AccessKeyClient) ConnectController(ctx context.Context) (*grpc.ClientCo
 			log.StreamClientTraceGrpc,
 			s.StreamAddAccessKey,
 		)),
+		grpc.WithKeepaliveParams(cloudcommon.GRPCClientKeepaliveParams),
 		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
 	)
 }
