@@ -17,14 +17,17 @@ package cloudcommon
 import (
 	"context"
 	ctls "crypto/tls"
+	"math"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 )
 
 func ParseGrpcMethod(method string) (path string, cmd string) {
@@ -100,4 +103,27 @@ func GrpcCreds(cfg *ctls.Config) grpc.ServerOption {
 	} else {
 		return grpc.Creds(credentials.NewTLS(cfg))
 	}
+}
+
+// Keepalive parameters to close the connection if the other end
+// goes away unexpectedly. The server and client parameters must be balanced
+// correctly or the connection may be closed incorrectly.
+const (
+	infinity   = time.Duration(math.MaxInt64)
+	kpInterval = 30 * time.Second
+)
+
+var GRPCServerKeepaliveParams = keepalive.ServerParameters{
+	MaxConnectionIdle:     3 * kpInterval,
+	MaxConnectionAge:      infinity,
+	MaxConnectionAgeGrace: infinity,
+	Time:                  kpInterval,
+	Timeout:               kpInterval,
+}
+var GRPCClientKeepaliveParams = keepalive.ClientParameters{
+	Time:    kpInterval,
+	Timeout: kpInterval,
+}
+var GRPCServerKeepaliveEnforcement = keepalive.EnforcementPolicy{
+	MinTime: 1 * time.Second,
 }

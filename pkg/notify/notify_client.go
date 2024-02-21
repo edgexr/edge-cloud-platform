@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"google.golang.org/grpc"
@@ -161,7 +162,7 @@ func (s *Client) connect() (StreamNotify, error) {
 	conn, err := grpc.DialContext(ctx, addr,
 		s.tlsDialOption,
 		grpc.WithStatsHandler(&grpcStatsHandler{client: s}),
-		grpc.WithKeepaliveParams(clientParams),
+		grpc.WithKeepaliveParams(cloudcommon.GRPCClientKeepaliveParams),
 		grpc.WithChainUnaryInterceptor(s.options.unaryInterceptors...),
 		grpc.WithChainStreamInterceptor(s.options.streamInterceptors...),
 	)

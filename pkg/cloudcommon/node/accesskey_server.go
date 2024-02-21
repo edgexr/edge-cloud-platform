@@ -370,6 +370,8 @@ func (s *AccessKeyGrpcServer) Start(addr string, keyServer *AccessKeyServer, tls
 			cloudcommon.AuditStreamInterceptor,
 			s.AccessKeyServer.StreamRequireAccessKey,
 		)),
+		grpc.KeepaliveParams(cloudcommon.GRPCServerKeepaliveParams),
+		grpc.KeepaliveEnforcementPolicy(cloudcommon.GRPCServerKeepaliveEnforcement),
 		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}),
 	)
 	if registerHandlers != nil {
