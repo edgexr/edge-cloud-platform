@@ -95,7 +95,7 @@ func CloudletPrometheusScraper(done chan bool) {
 		case <-time.After(settings.ShepherdMetricsCollectionInterval.TimeDuration()):
 			//TODO  - cloudletEnvoyStats, err := getEnvoyStats
 
-			aspan := log.StartSpan(log.DebugLevelMetrics, "send-cloudlet-alerts")
+			aspan := log.StartSpan(log.DebugLevelMetrics, "send-cloudlet-alerts", log.WithSuppressWithoutLogs{})
 			log.SetTags(aspan, cloudletKey.GetTags())
 			actx := log.ContextWithSpan(context.Background(), aspan)
 			if shepherd_common.ShepherdPlatformActive {

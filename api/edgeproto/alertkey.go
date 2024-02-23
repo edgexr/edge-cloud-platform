@@ -99,3 +99,13 @@ func AlertKeyStringParse(str string, obj *Alert) {
 		log.FatalLog("Failed to unmarshal AlertKey key string", "str", str)
 	}
 }
+
+// JSONMarshalState gets a JSON string of the "state" of the Alert, i.e. the
+// entire alert struct minus fields used to track the origin of the alert.
+// This can be used to see if the Alert was updated.
+func (s *Alert) JSONMarshalState() ([]byte, error) {
+	a := *s
+	a.NotifyId = 0
+	a.Controller = ""
+	return json.Marshal(a)
+}

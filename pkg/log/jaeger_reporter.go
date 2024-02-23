@@ -79,7 +79,7 @@ func reportMetrics(metrics *metricstest.Backend, done chan struct{}) {
 		select {
 		case <-done:
 			return
-		case <-time.After(5 * time.Minute):
+		case <-time.After(24 * time.Hour):
 		}
 		counters, gauges := metrics.Snapshot()
 		span := StartSpan(DebugLevelInfo, "reporter metrics")

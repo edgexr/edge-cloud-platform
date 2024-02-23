@@ -214,7 +214,7 @@ func (p *ClusterWorker) RunNotify() {
 			span.Finish()
 
 			// create another span for alerts that is always logged
-			aspan := log.StartSpan(log.DebugLevelMetrics, "alerts check")
+			aspan := log.StartSpan(log.DebugLevelMetrics, "alerts check", log.WithSuppressWithoutLogs{})
 			log.SetTags(aspan, p.clusterInstKey.GetTags())
 			actx := log.ContextWithSpan(context.Background(), aspan)
 			clusterAlerts := p.clusterStat.GetAlerts(actx)

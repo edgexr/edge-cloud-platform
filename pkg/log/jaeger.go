@@ -154,18 +154,40 @@ func (t TraceData) ForeachKey(handler func(key, val string) error) error {
 	return nil
 }
 
+func CheckSpan(ctx context.Context) {
+	span := SpanFromContext(ctx)
+	if span == nil {
+		panic("span is nil")
+	}
+	if sp, ok := span.(*Span); ok {
+		if sp.Span == nil {
+			panic("internal span is nil")
+		}
+	}
+}
+
+type SpanCarrier struct {
+	Data   TraceData
+	Config SpanConfig
+}
+
 func SpanToString(ctx context.Context) string {
 	span := SpanFromContext(ctx)
 	if span == nil {
 		return ""
 	}
-	if espan, ok := span.(*Span); ok && espan.noTracing {
-		return ""
+	carrier := SpanCarrier{
+		Data: TraceData{},
 	}
-	var t TraceData
-	t = make(map[string]string)
-	tracer.Inject(span.Context(), opentracing.TextMap, t)
-	val, err := json.Marshal(t)
+	espan, ok := span.(*Span)
+	if ok {
+		if espan.config.NoTracing {
+			return ""
+		}
+		carrier.Config = espan.config
+	}
+	tracer.Inject(span.Context(), opentracing.TextMap, carrier.Data)
+	val, err := json.Marshal(carrier)
 	if err != nil {
 		return ""
 	}
@@ -175,13 +197,19 @@ func SpanToString(ctx context.Context) string {
 func NewSpanFromString(lvl uint64, val, spanName string) opentracing.Span {
 	linenoOpt := WithSpanLineno{GetLineno(1)}
 	if val != "" {
-		var t TraceData
-		t = make(map[string]string)
-		err := json.Unmarshal([]byte(val), &t)
+		carrier := SpanCarrier{
+			Data: TraceData{},
+		}
+		err := json.Unmarshal([]byte(val), &carrier)
 		if err == nil {
-			spanCtx, err := tracer.Extract(opentracing.TextMap, t)
+			spanCtx, err := tracer.Extract(opentracing.TextMap, carrier.Data)
 			if err == nil {
-				return StartSpan(lvl, spanName, ext.RPCServerOption(spanCtx), linenoOpt)
+				opts := []opentracing.StartSpanOption{
+					ext.RPCServerOption(spanCtx),
+					linenoOpt,
+				}
+				opts = append(opts, carrier.Config.ToOptions()...)
+				return StartSpan(lvl, spanName, opts...)
 			}
 		}
 	}

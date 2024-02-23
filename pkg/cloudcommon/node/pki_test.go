@@ -172,6 +172,7 @@ func TestInternalPki(t *testing.T) {
 		ExpectErr:     "",
 	})
 
+	log.CheckSpan(ctx)
 	for _, cfg := range cfgTests {
 		testGetTlsConfig(t, ctx, vaultAddr, vroles, &cfg)
 	}

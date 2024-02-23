@@ -17,6 +17,7 @@ package log
 import (
 	"context"
 	"runtime"
+	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -29,13 +30,36 @@ import (
 // Wrap Span so we can override Finish()
 type Span struct {
 	*jaeger.Span
-	suppress  bool // ignore log for show commands etc
-	noTracing bool // special span that only logs to disk
+	config    SpanConfig
+	startTime time.Time
 }
 
 var IgnoreLvl uint64 = 99999
-var SuppressLvl uint64 = 99998
 var SamplingEnabled = true
+
+type SpanConfig struct {
+	Suppress            bool // ignore log for show commands etc
+	NoTracing           bool // special span that only logs to disk
+	SuppressWithoutLogs bool // ignore start, and ignore finish unless span has logs
+	HasLogs             bool
+}
+
+func (s *SpanConfig) ToOptions() []opentracing.StartSpanOption {
+	ops := []opentracing.StartSpanOption{}
+	if s.Suppress {
+		ops = append(ops, WithSuppress{})
+	}
+	if s.NoTracing {
+		ops = append(ops, WithNoTracing{})
+	}
+	if s.SuppressWithoutLogs {
+		ops = append(ops, WithSuppressWithoutLogs{})
+	}
+	if s.HasLogs {
+		ops = append(ops, WithHasLogs{})
+	}
+	return ops
+}
 
 func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
 	if tracer == nil {
@@ -46,14 +70,25 @@ func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOp
 	// This check avoids duplicate calls to runtime.Caller() which
 	// is expensive.
 	var withSpanLineno *WithSpanLineno
+	span := &Span{
+		startTime: time.Now(),
+	}
 	for _, op := range opts {
-		if v, ok := op.(WithSpanLineno); ok {
+		switch v := op.(type) {
+		case WithSpanLineno:
 			withSpanLineno = &v
-			break
+		case WithSuppress:
+			span.config.Suppress = true
+		case WithNoTracing:
+			span.config.NoTracing = true
+		case WithSuppressWithoutLogs:
+			span.config.SuppressWithoutLogs = true
+		case WithHasLogs:
+			span.config.HasLogs = true
 		}
 	}
 	ospan := tracer.StartSpan(operationName, opts...)
-	if lvl == SuppressLvl {
+	if span.config.Suppress {
 		// log to span but not to disk, allows caller to decide
 		// right before Finish whether or not to log the whole thing.
 		ext.SamplingPriority.Set(ospan, 1)
@@ -78,10 +113,7 @@ func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOp
 	if !ok {
 		panic("non-jaeger span not supported")
 	}
-	span := &Span{Span: jspan}
-	if lvl == SuppressLvl {
-		span.suppress = true
-	}
+	span.Span = jspan
 
 	// passing the option into StartSpan to try to set the tag didn't work
 	// because of checking for sampling in jaeger code, so set lineno tag
@@ -94,7 +126,7 @@ func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOp
 	}
 	span.SetTag("lineno", lineno)
 
-	if jspan.SpanContext().IsSampled() && !span.suppress {
+	if jspan.SpanContext().IsSampled() && !span.config.Suppress && !span.config.SuppressWithoutLogs {
 		spanlogger.Info(getSpanMsg(span, lineno, "start "+operationName))
 	}
 
@@ -106,7 +138,9 @@ func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOp
 // is initialized, or for unit tests.
 func NoTracingSpan() opentracing.Span {
 	span := &Span{
-		noTracing: true,
+		config: SpanConfig{
+			NoTracing: true,
+		},
 	}
 	return span
 }
@@ -159,12 +193,13 @@ func SpanLog(ctx context.Context, lvl uint64, msg string, keysAndValues ...inter
 	if !ok {
 		panic("non-edge-cloud Span not supported")
 	}
-	if !span.noTracing && !span.SpanContext().IsSampled() {
+	if !span.config.NoTracing && !span.SpanContext().IsSampled() {
 		return
 	}
+	span.config.HasLogs = true
 
 	lineno := GetLineno(1)
-	if span.noTracing {
+	if span.config.NoTracing {
 		// just log to disk
 		zfields := getFields(keysAndValues)
 		spanlogger.Info(getSpanMsg(nil, lineno, msg), zfields...)
@@ -186,7 +221,7 @@ func SpanLog(ctx context.Context, lvl uint64, msg string, keysAndValues ...inter
 	// both implemented by uber, don't use the same Field struct.
 	zfields := getFields(keysAndValues)
 	// don't write to log file if deferring log decision
-	if !span.suppress {
+	if !span.config.Suppress {
 		spanlogger.Info(getSpanMsg(span, lineno, msg), zfields...)
 	}
 }
@@ -216,16 +251,20 @@ func StartTestSpan(ctx context.Context) context.Context {
 }
 
 func (s *Span) Tracer() opentracing.Tracer {
-	if s.noTracing {
+	if s.config.NoTracing {
 		return nil
 	}
 	return s.Span.Tracer()
 }
 
 func (s *Span) Finish() {
-	if s.suppress || s.noTracing {
+	if s.config.Suppress || s.config.NoTracing {
 		return
 	}
+	if s.config.SuppressWithoutLogs && !s.config.HasLogs {
+		return
+	}
+
 	s.Span.Finish()
 
 	jspan := s.Span
@@ -236,6 +275,10 @@ func (s *Span) Finish() {
 	lineno := GetLineno(1)
 
 	fields := []zap.Field{}
+	if s.config.SuppressWithoutLogs {
+		// we didn't log start, so note time started here
+		fields = append(fields, zap.Time("startTime", s.startTime))
+	}
 	for k, v := range jspan.Tags() {
 		if IgnoreSpanTag(k) {
 			continue
@@ -251,7 +294,7 @@ func Unsuppress(ospan opentracing.Span) {
 	if !ok {
 		panic("non-edge-cloud Span not supported")
 	}
-	s.suppress = false
+	s.config.Suppress = false
 }
 
 func getSpanMsg(s *Span, lineno, msg string) string {
@@ -280,6 +323,28 @@ type WithSpanLineno struct {
 }
 
 func (s WithSpanLineno) Apply(options *opentracing.StartSpanOptions) {}
+
+// WithSuppress suppresses the span (effectively disables it)
+type WithSuppress struct{}
+
+func (s WithSuppress) Apply(options *opentracing.StartSpanOptions) {}
+
+// WithNoTracing only logs to disk
+type WithNoTracing struct{}
+
+func (s WithNoTracing) Apply(options *opentracing.StartSpanOptions) {}
+
+// WithSuppressWithoutLogs suppresses the span unless there are logs associated
+// with the span. Note the start and finish log messages to disk are always
+// skipped.
+type WithSuppressWithoutLogs struct{}
+
+func (s WithSuppressWithoutLogs) Apply(options *opentracing.StartSpanOptions) {}
+
+// WithHasLogs is used to propagate the hasLogs state of a span across process API calls
+type WithHasLogs struct{}
+
+func (s WithHasLogs) Apply(options *opentracing.StartSpanOptions) {}
 
 func IgnoreSpanTag(tag string) bool {
 	if tag == "internal.span.format" ||
