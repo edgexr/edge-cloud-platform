@@ -18,10 +18,10 @@ import (
 	"context"
 	"errors"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
@@ -82,8 +82,9 @@ func AuditStreamInterceptor(srv interface{}, stream grpc.ServerStream, info *grp
 		modmsg := util.CapitalizeMessage(err.Error())
 		err = errors.New(modmsg)
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "finished", "err", err)
-
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "finished", "err", err)
+	}
 	return err
 }
 

@@ -456,7 +456,7 @@ func (s *NodeMgr) SpanTerms(ctx context.Context, search *SpanSearch) (*SpanTerms
 	log.SpanLog(ctx, log.DebugLevelEvents, "log terms", "query", string(dat))
 
 	req := opensearchapi.SearchRequest{
-		Index: []string{"jaeger-span-*"},
+		Index: []string{"*jaeger-span-*"},
 		Body:  strings.NewReader(string(dat)),
 	}
 	res, err := req.Do(ctx, s.OSClient)
