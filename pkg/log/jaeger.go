@@ -154,18 +154,6 @@ func (t TraceData) ForeachKey(handler func(key, val string) error) error {
 	return nil
 }
 
-func CheckSpan(ctx context.Context) {
-	span := SpanFromContext(ctx)
-	if span == nil {
-		panic("span is nil")
-	}
-	if sp, ok := span.(*Span); ok {
-		if sp.Span == nil {
-			panic("internal span is nil")
-		}
-	}
-}
-
 type SpanCarrier struct {
 	Data   TraceData
 	Config SpanConfig
