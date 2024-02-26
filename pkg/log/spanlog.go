@@ -31,7 +31,7 @@ import (
 type Span struct {
 	*jaeger.Span
 	config    SpanConfig
-	startTime time.Time
+	startTime time.Time // used when SuppressWithoutLogs is specified
 }
 
 var IgnoreLvl uint64 = 99999
