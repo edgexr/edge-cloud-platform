@@ -45,6 +45,16 @@ func IsErrNoSecretsAtPath(err error) bool {
 	return strings.Contains(err.Error(), "no secrets at path")
 }
 
+// IsErrUpgradingNonVersionedToVersionedData can happen right after start-up
+// during a read to the KV secrets engine. A wait or retry is apparently the
+// recommended recourse by Hashicorp. See https://github.com/hashicorp/terraform-provider-vault/issues/677.
+func IsErrUpgradingNonVersionedToVersionedData(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "Upgrading from non-versioned to versioned data")
+}
+
 func GetData(config *Config, path string, version int, data interface{}) error {
 	if config == nil {
 		return fmt.Errorf("no vault Config specified")

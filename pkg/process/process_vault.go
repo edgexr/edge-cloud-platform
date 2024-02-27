@@ -28,6 +28,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+	"runtime"
+	"path/filepath"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -143,6 +145,12 @@ func (p *Vault) StartLocal(logfile string, opts ...StartOp) error {
 	return nil
 }
 
+var (
+        _, b, _, _ = runtime.Caller(0)
+        basepath = filepath.Dir(b)
+        rootpath = strings.TrimSuffix(basepath, "/pkg/process")
+)
+
 func (p *Vault) Setup(opts ...StartOp) error {
 	var err error
 	options := StartOptions{}
@@ -151,8 +159,7 @@ func (p *Vault) Setup(opts ...StartOp) error {
 	mcormSecret := "mc-secret"
 
 	// run setup script
-	gopath := os.Getenv("GOPATH")
-	setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/pkg/vault/setup.sh"
+	setup := rootpath + "/pkg/vault/setup.sh"
 	out := p.Run("/bin/sh", setup, &err)
 	fmt.Println(out)
 	if err != nil {
@@ -188,7 +195,7 @@ func (p *Vault) Setup(opts ...StartOp) error {
 	}
 	for _, region := range strings.Split(p.Regions, ",") {
 		// run setup script
-		setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/pkg/vault/setup-region.sh " + region
+		setup := rootpath + "/pkg/vault/setup-region.sh " + region
 		out := p.Run("/bin/sh", setup, &err)
 		if err != nil {
 			fmt.Println(out)

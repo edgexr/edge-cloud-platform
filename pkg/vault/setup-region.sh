@@ -45,6 +45,10 @@ fi
 # set up regional kv database
 vault secrets enable -path=$REGION/jwtkeys kv
 vault kv enable-versioning $REGION/jwtkeys
+# time buffer required after new mount
+# https://github.com/hashicorp/terraform-provider-vault/issues/677#issuecomment-609116328
+# Code 400: Errors: Upgrading from non-versioned to versioned data. This backend will be unavailable for a brief period and will resume service shortly.
+sleep 2
 vault write $REGION/jwtkeys/config max_versions=2
 vault secrets enable -path=$REGION/totp totp
 
