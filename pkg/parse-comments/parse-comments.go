@@ -15,6 +15,7 @@
 package parsecomments
 
 import (
+	"bufio"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -132,19 +133,34 @@ func (s *ParseComments) ParseFile(fileName string) error {
 		return err
 	}
 	// remove the filename to the get the pkg directory
-	pkgPath := filepath.Dir(filePath)
-	// remove leading directories to get the import path
-	pkgPath = strings.TrimPrefix(pkgPath, goPath+"/src/")
-	pkgPath = strings.TrimPrefix(pkgPath, goPath+"/pkg/mod/")
-	if before, after, found := strings.Cut(pkgPath, "@"); found {
-		// for go/pkg/mod directories, remove version tag to get path
-		idx := strings.Index(after, "/")
-		if idx == -1 {
-			pkgPath = before
-		} else {
-			pkgPath = before + after[idx:]
+	dirPath := filepath.Dir(filePath)
+	pkgPath := dirPath
+	modPath := ""
+	// find parent go.mod
+	for len(dirPath) > 1 {
+		if _, err := os.Stat(dirPath + "/go.mod"); err == nil {
+			file, err := os.Open(dirPath + "/go.mod")
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				line := scanner.Text()
+				if strings.HasPrefix(line, "module") {
+					modPath = strings.TrimSpace(strings.TrimPrefix(line, "module "))
+					break
+				}
+			}
+			break
 		}
+		dirPath = filepath.Dir(dirPath)
 	}
+	if modPath == "" {
+		return fmt.Errorf("unable to find module path from go.mod for %s", pkgPath)
+	}
+	// replace directory prefix with module
+	pkgPath = modPath + strings.TrimPrefix(pkgPath, dirPath)
 	s.curPkg = pkgPath
 	s.curImports = make(map[string]string)
 
