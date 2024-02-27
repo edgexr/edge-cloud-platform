@@ -17,7 +17,7 @@
 REPO=$1
 OUT=version.yaml
 # if no local/branch commits beyond master, master and head will be the same
-BUILD_MASTER=`git describe --tags --always origin/master`
+BUILD_MASTER=`git describe --tags --always origin/main`
 BUILD_HEAD=`git describe --tags --always --dirty=+`
 BUILD_AUTHOR=`git config user.name`
 DATE=`date`
