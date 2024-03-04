@@ -23,7 +23,7 @@ gen-test-certs:
 gen-vers:
 	(cd pkg/version; ./version.sh)
 
-generate: check-go-vers gen-vers
+generate: check-go-vers gen-vers gen-ansible
 	go install $(GO_BUILD_FLAGS) \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger \
@@ -42,9 +42,11 @@ generate: check-go-vers gen-vers
 	make -C api/distributed_match_engine
 	make -C api/edgeproto
 	make -C test/testgen
+
+gen-ansible:
 	make -C pkg/ccrm
 
-gobuild: check-go-vers gen-vers
+gobuild: check-go-vers gen-vers gen-ansible
 	go build $(GO_BUILD_FLAGS) ./...
 	go vet ./...
 
@@ -127,7 +129,7 @@ install-internal-linux:
 
 UNIT_TEST_LOG ?= /tmp/edge-cloud-unit-test.log
 
-unit-test: gen-test-certs
+unit-test: gen-test-certs gen-ansible
 	go test -timeout=3m ./... > $(UNIT_TEST_LOG) || \
 		((grep -A6 "\--- FAIL:" $(UNIT_TEST_LOG) || \
 		grep -A20 "panic: " $(UNIT_TEST_LOG) || \
