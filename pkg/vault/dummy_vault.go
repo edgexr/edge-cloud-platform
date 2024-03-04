@@ -15,12 +15,19 @@
 package vault
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 
 	"github.com/hashicorp/vault/api"
 )
+
+//go:embed setup.sh
+var SetupScript []byte
+
+//go:embed setup-region.sh
+var SetupRegionScript []byte
 
 // DummServer for unit testing responds to all requests with empty data.
 func DummyServer() (*httptest.Server, *Config) {

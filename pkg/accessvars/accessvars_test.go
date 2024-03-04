@@ -18,6 +18,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -118,6 +119,10 @@ func testCloudletAccessVars(t *testing.T, ctx context.Context, vaultConfig *vaul
 	// check func
 	check := func(expVars map[string]string) {
 		varsOut, err := GetCloudletAccessVars(ctx, region, cloudlet, vaultConfig)
+		if err != nil && vault.IsErrUpgradingNonVersionedToVersionedData(err) {
+			time.Sleep(time.Second)
+			varsOut, err = GetCloudletAccessVars(ctx, region, cloudlet, vaultConfig)
+		}
 		if expVars == nil {
 			require.NotNil(t, err)
 			require.True(t, vault.IsErrNoSecretsAtPath(err))

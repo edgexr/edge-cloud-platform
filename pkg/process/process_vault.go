@@ -22,27 +22,29 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	yaml "gopkg.in/yaml.v2"
 )
 
 type Vault struct {
-	Common     `yaml:",inline"`
-	DmeSecret  string
-	Regions    string
-	VaultDatas []VaultData
-	ListenAddr string
-	RootToken  string
-	CADir      string
-	RunCACert  string
-	PKIDomain  string
-	cmd        *exec.Cmd
+	Common            `yaml:",inline"`
+	DmeSecret         string
+	Regions           string
+	VaultDatas        []VaultData
+	ListenAddr        string
+	RootToken         string
+	CADir             string
+	RunCACert         string
+	PKIDomain         string
+	cmd               *exec.Cmd
+	setupScript       string
+	setupRegionScript string
 }
 
 type VaultData struct {
@@ -150,10 +152,12 @@ func (p *Vault) Setup(opts ...StartOp) error {
 
 	mcormSecret := "mc-secret"
 
+	err = p.writeSetupScript()
+	if err != nil {
+		return err
+	}
 	// run setup script
-	gopath := os.Getenv("GOPATH")
-	setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/pkg/vault/setup.sh"
-	out := p.Run("/bin/sh", setup, &err)
+	out := p.Run("/bin/sh", p.setupScript, &err)
 	fmt.Println(out)
 	if err != nil {
 		return err
@@ -186,9 +190,13 @@ func (p *Vault) Setup(opts ...StartOp) error {
 	if p.Regions == "" {
 		p.Regions = "local"
 	}
+	err = p.writeSetupRegionScript()
+	if err != nil {
+		return err
+	}
 	for _, region := range strings.Split(p.Regions, ",") {
 		// run setup script
-		setup := gopath + "/src/github.com/edgexr/edge-cloud-platform/pkg/vault/setup-region.sh " + region
+		setup := p.setupRegionScript + " " + region
 		out := p.Run("/bin/sh", setup, &err)
 		if err != nil {
 			fmt.Println(out)
@@ -219,7 +227,7 @@ func (p *Vault) Setup(opts ...StartOp) error {
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(options.RolesFile, roleYaml, 0644)
+		err = os.WriteFile(options.RolesFile, roleYaml, 0644)
 		if err != nil {
 			return err
 		}
@@ -244,6 +252,12 @@ func (p *Vault) Setup(opts ...StartOp) error {
 
 func (p *Vault) StopLocal() {
 	StopLocal(p.cmd)
+	if p.setupScript != "" {
+		os.Remove(p.setupScript)
+	}
+	if p.setupRegionScript != "" {
+		os.Remove(p.setupRegionScript)
+	}
 }
 
 func (p *Vault) GetExeName() string { return "vault" }
@@ -255,6 +269,26 @@ func (p *Vault) GetBindAddrs() []string {
 		p.ListenAddr = defaultVaultAddress
 	}
 	return []string{p.ListenAddr}
+}
+
+func (p *Vault) writeSetupScript() error {
+	file := "/tmp/" + p.Name + "-vault-setup.sh"
+	err := os.WriteFile(file, vault.SetupScript, 0755)
+	if err != nil {
+		return err
+	}
+	p.setupScript = file
+	return nil
+}
+
+func (p *Vault) writeSetupRegionScript() error {
+	file := "/tmp/" + p.Name + "-vault-setup-region.sh"
+	err := os.WriteFile(file, vault.SetupRegionScript, 0755)
+	if err != nil {
+		return err
+	}
+	p.setupRegionScript = file
+	return nil
 }
 
 func (p *Vault) GetAppRole(region, name string, roleID, secretID *string, err *error) {
@@ -344,7 +378,7 @@ func (p *Vault) StartLocalRoles() (*VaultRoles, error) {
 	}
 
 	// rolesfile contains the roleIDs/secretIDs needed to access vault
-	dat, err := ioutil.ReadFile(rolesfile)
+	dat, err := os.ReadFile(rolesfile)
 	if err != nil {
 		p.StopLocal()
 		return nil, err
