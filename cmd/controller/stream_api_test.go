@@ -37,12 +37,6 @@ func TestStreamObjs(t *testing.T) {
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	t.Run("dummy-server", func(t *testing.T) {
-		// Test with dummy server
-		testSvcs := testinit(ctx, t)
-		defer testfinish(testSvcs)
-		testStreamObjsWithServer(t, ctx)
-	})
 	t.Run("local-server", func(t *testing.T) {
 		// Test with local server
 		testSvcs := testinit(ctx, t, WithLocalRedis())

@@ -59,6 +59,9 @@ build-linux:
 install:
 	go install $(GO_BUILD_FLAGS) ./...
 
+install-unit-test:
+	go install $(GO_BUILD_FLAGS) ./cmd/crm
+
 install-linux:
 	${LINUX_XCOMPILE_ENV} go install $(GO_BUILD_FLAGS) ./...
 
