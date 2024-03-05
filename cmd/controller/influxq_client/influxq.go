@@ -17,7 +17,6 @@ package influxq
 import (
 	"context"
 	"fmt"
-	"net"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -114,10 +113,7 @@ func (q *InfluxQ) initDB() error {
 		// batch point writes will fail
 		_, err := q.QueryDB(fmt.Sprintf("create database %s", q.dbName))
 		if err != nil {
-			if _, ok := err.(net.Error); !ok {
-				// only log for non-network errors
-				log.SpanLog(ctx, log.DebugLevelInfo, "create database", "name", q.dbName, "err", err)
-			}
+			log.SpanLog(ctx, log.DebugLevelInfo, "create database", "name", q.dbName, "err", err)
 			return err
 		}
 		q.dbcreated = true

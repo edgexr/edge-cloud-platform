@@ -131,9 +131,10 @@ install-internal-linux:
 #
 
 UNIT_TEST_LOG ?= /tmp/edge-cloud-unit-test.log
+UNIT_TEST_TIMEOUT ?= 3m
 
 unit-test: gen-test-certs gen-ansible
-	go test -timeout=3m ./... > $(UNIT_TEST_LOG) || \
+	go test -timeout=$(UNIT_TEST_TIMEOUT) ./... > $(UNIT_TEST_LOG) || \
 		((grep -A6 "\--- FAIL:" $(UNIT_TEST_LOG) || \
 		grep -A20 "panic: " $(UNIT_TEST_LOG) || \
 		grep -A2 "FATAL" $(UNIT_TEST_LOG)) && \

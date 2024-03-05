@@ -351,7 +351,7 @@ func (s *VMPoolApi) updateVMPoolInternal(cctx *CallContext, ctx context.Context,
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateVmPoolTimeout.TimeDuration())
 	defer reqCancel()
 
-	err = edgeproto.WaitForVMPoolInfo(reqCtx, key, edgeproto.TrackedState_READY,
+	err = edgeproto.WaitForVMPoolInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
 		UpdateVMPoolTransitions, edgeproto.TrackedState_UPDATE_ERROR,
 		"Updated VM Pool Successfully", nil,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))

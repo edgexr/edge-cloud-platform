@@ -1208,7 +1208,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CreateAppInstTimeout.TimeDuration())
 	defer reqCancel()
 
-	err = edgeproto.WaitForAppInstInfo(reqCtx, &in.Key,
+	err = edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, s.store,
 		edgeproto.TrackedState_READY,
 		CreateAppInstTransitions, edgeproto.TrackedState_CREATE_ERROR,
 		"Created AppInst successfully", cb.Send,
@@ -1411,7 +1411,7 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 		reqCtx, reqCancel := context.WithTimeout(cb.Context(), s.all.settingsApi.Get().UpdateAppInstTimeout.TimeDuration())
 		defer reqCancel()
 
-		err = edgeproto.WaitForAppInstInfo(reqCtx, &key, edgeproto.TrackedState_READY,
+		err = edgeproto.WaitForAppInstInfo(reqCtx, &key, s.store, edgeproto.TrackedState_READY,
 			UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
 			"", cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
 		)
@@ -1838,7 +1838,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().DeleteAppInstTimeout.TimeDuration())
 		defer reqCancel()
 
-		err = edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, edgeproto.TrackedState_NOT_PRESENT,
+		err = edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_NOT_PRESENT,
 			DeleteAppInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
 			"Deleted AppInst successfully", cb.Send,
 			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),

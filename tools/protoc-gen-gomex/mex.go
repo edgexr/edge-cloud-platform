@@ -1765,18 +1765,45 @@ func (c *{{.Name}}Cache) SyncListEnd(ctx context.Context) {
 
 {{if ne (.WaitForState) ("")}}
 {{if eq (.WaitForState) ("TrackedState")}}
-func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState {{.WaitForState}}, transitionStates map[{{.WaitForState}}]struct{}, errorState {{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, store {{.ParentObjName}}Store, targetState {{.WaitForState}}, transitionStates map[{{.WaitForState}}]struct{}, errorState {{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 {{- else}}
-func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState distributed_match_engine.{{.WaitForState}}, transitionStates map[distributed_match_engine.{{.WaitForState}}]struct{}, errorState distributed_match_engine.{{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, store {{.Name}}Store, targetState distributed_match_engine.{{.WaitForState}}, transitionStates map[distributed_match_engine.{{.WaitForState}}]struct{}, errorState distributed_match_engine.{{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 {{- end}}
 	var lastMsgCnt int
 	var err error
 
+	handleTargetState := func() {
+		{{- if eq (.WaitForState) ("TrackedState")}}
+		if targetState == TrackedState_NOT_PRESENT {
+			send(&Result{Message: {{.WaitForState}}_CamelName[int32(targetState)]})
+		}
+		{{- end}}
+		if successMsg != "" && send != nil {
+			send(&Result{Message: successMsg})
+		}
+	}
+
+	// State updates come via Redis, since they are bundled with status updates.
+	// However, the Redis channel is set up after the Etcd transaction to commit
+	// the state change (i.e. CREATE_REQUESTED) in order to treat Etcd as the
+	// source of truth for concurrent changes, so there is a small timing window
+	// where the state may be updated by the info (from CRM) before the Redis
+	// subscription is set up. So here our initial state needs to come from Etcd
+	// in case both it and Redis were updated before the crmMsgCh was set up.
 	{{- if eq (.WaitForState) ("TrackedState")}}
-	curState := {{.WaitForState}}_TRACKED_STATE_UNKNOWN
+	curState := {{.WaitForState}}_NOT_PRESENT
+	buf := {{.ParentObjName}}{}
 	{{- else}}
-	curState := distributed_match_engine.{{.WaitForState}}_CLOUDLET_STATE_UNKNOWN
+	curState := distributed_match_engine.{{.WaitForState}}_CLOUDLET_STATE_NOT_PRESENT
+	buf := {{.Name}}{}
 	{{- end}}
+	if store.Get(ctx, key, &buf) {
+		curState = buf.State
+	}
+	if curState == targetState {
+		handleTargetState()
+		return nil
+	}
 
 	var wSpec WaitStateSpec
 	for _, op := range opts {
@@ -1823,14 +1850,7 @@ func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, targetState distri
 				err = fmt.Errorf("Encountered failures: %s", errs)
 				return err
 			case targetState:
-				{{- if eq (.WaitForState) ("TrackedState")}}
-				if targetState == TrackedState_NOT_PRESENT {
-					send(&Result{Message: {{.WaitForState}}_CamelName[int32(targetState)]})
-				}
-				{{- end}}
-				if successMsg != "" && send != nil {
-					send(&Result{Message: successMsg})
-				}
+				handleTargetState()
 				return nil
 			}
 		case <-ctx.Done():

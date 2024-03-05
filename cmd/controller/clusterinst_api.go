@@ -1131,7 +1131,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CreateClusterInstTimeout.TimeDuration())
 	defer reqCancel()
 
-	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, edgeproto.TrackedState_READY, CreateClusterInstTransitions,
+	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_READY, CreateClusterInstTransitions,
 		edgeproto.TrackedState_CREATE_ERROR,
 		"Created ClusterInst successfully", cb.Send,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
@@ -1326,7 +1326,7 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateClusterInstTimeout.TimeDuration())
 	defer reqCancel()
 
-	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, edgeproto.TrackedState_READY,
+	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_READY,
 		UpdateClusterInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
 		"Updated ClusterInst successfully", cb.Send,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
@@ -1602,7 +1602,7 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().DeleteClusterInstTimeout.TimeDuration())
 	defer reqCancel()
 
-	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, edgeproto.TrackedState_NOT_PRESENT,
+	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_NOT_PRESENT,
 		DeleteClusterInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
 		"Deleted ClusterInst successfully", cb.Send,
 		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),

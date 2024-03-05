@@ -33,6 +33,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 	"github.com/gogo/protobuf/types"
@@ -40,14 +41,15 @@ import (
 )
 
 type CloudletApi struct {
-	all                 *AllApis
-	sync                *Sync
-	store               edgeproto.CloudletStore
-	cache               *edgeproto.CloudletCache
-	accessKeyServer     *node.AccessKeyServer
-	dnsLabelStore       edgeproto.CloudletDnsLabelStore
-	objectDnsLabelStore edgeproto.CloudletObjectDnsLabelStore
-	vaultClient         *accessapi.VaultClient
+	all                   *AllApis
+	sync                  *Sync
+	store                 edgeproto.CloudletStore
+	cache                 *edgeproto.CloudletCache
+	accessKeyServer       *node.AccessKeyServer
+	dnsLabelStore         edgeproto.CloudletDnsLabelStore
+	objectDnsLabelStore   edgeproto.CloudletObjectDnsLabelStore
+	vaultClient           *accessapi.VaultClient
+	defaultMTClustWorkers tasks.KeyWorkers
 }
 
 // Vault roles for all services
@@ -107,6 +109,7 @@ func NewCloudletApi(sync *Sync, all *AllApis) *CloudletApi {
 	cloudletApi.cache = nodeMgr.CloudletLookup.GetCloudletCache(node.NoRegion)
 	sync.RegisterCache(cloudletApi.cache)
 	cloudletApi.accessKeyServer = node.NewAccessKeyServer(cloudletApi.cache, nodeMgr.VaultAddr)
+	cloudletApi.defaultMTClustWorkers.Init("UpdateMultiTenantCluster", cloudletApi.updateDefaultMultiTenantClusterWorker)
 	return &cloudletApi
 }
 
@@ -778,7 +781,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		}
 	}()
 	err = edgeproto.WaitForCloudletInfo(
-		reqCtx, &in.Key,
+		reqCtx, &in.Key, s.all.cloudletInfoApi.store,
 		dme.CloudletState_CLOUDLET_STATE_READY,
 		CreateCloudletTransitions, dme.CloudletState_CLOUDLET_STATE_ERRORS,
 		"Created Cloudlet successfully", cb.Send,
@@ -1012,9 +1015,11 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 	var newMaintenanceState dme.MaintenanceState
 	maintenanceChanged := false
 	_, privPolUpdateRequested := fmap[edgeproto.CloudletFieldTrustPolicy]
+	updateDefaultMultiTenantCluster := false
 
 	var gpuDriver edgeproto.GPUDriver
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
+		updateDefaultMultiTenantCluster = false
 		if !s.store.STMGet(stm, &in.Key, cur) {
 			return in.Key.NotFoundError()
 		}
@@ -1132,10 +1137,8 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 				if !features.SupportsMultiTenantCluster {
 					return fmt.Errorf("Serverless cluster not supported on %s", cur.PlatformType)
 				}
-				go s.all.clusterInstApi.createDefaultMultiTenantCluster(ctx, cur.Key, features)
-			} else {
-				go s.all.clusterInstApi.deleteDefaultMultiTenantCluster(ctx, cur.Key)
 			}
+			updateDefaultMultiTenantCluster = true
 		}
 
 		if crmUpdateReqd && !ignoreCRM(cctx) {
@@ -1157,6 +1160,10 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 
 	if err != nil {
 		return err
+	}
+
+	if updateDefaultMultiTenantCluster {
+		s.defaultMTClustWorkers.NeedsWork(ctx, in.Key)
 	}
 
 	defer func() {
@@ -1241,7 +1248,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 		reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateCloudletTimeout.TimeDuration())
 		defer reqCancel()
 		err = edgeproto.WaitForCloudletInfo(
-			reqCtx, &in.Key,
+			reqCtx, &in.Key, s.all.cloudletInfoApi.store,
 			dme.CloudletState_CLOUDLET_STATE_READY,
 			UpdateCloudletTransitions, dme.CloudletState_CLOUDLET_STATE_ERRORS,
 			"Cloudlet updated successfully", cb.Send,
@@ -2528,4 +2535,33 @@ func (s *CloudletApi) GetCloudletGPUDriverLicenseConfig(ctx context.Context, key
 		return &edgeproto.Result{}, fmt.Errorf("Cloudlet license config storage path is empty")
 	}
 	return s.all.gpuDriverApi.GetGPUDriverLicenseConfig(ctx, &cloudlet.GpuConfig.Driver)
+}
+
+func (s *CloudletApi) updateDefaultMultiTenantClusterWorker(ctx context.Context, k interface{}) {
+	key, ok := k.(edgeproto.CloudletKey)
+	if !ok {
+		log.SpanLog(ctx, log.DebugLevelApi, "Unexpected failure, key not CloudletKey", "key", k)
+		return
+	}
+	log.SetContextTags(ctx, key.GetTags())
+	log.SpanLog(ctx, log.DebugLevelApi, "update default multi tenant cluster", "cloudlet", key)
+	cloudlet := edgeproto.Cloudlet{}
+	if !s.store.Get(ctx, &key, &cloudlet) {
+		log.SpanLog(ctx, log.DebugLevelApi, "cloudlet not found", "cloudlet", key)
+		return
+	}
+	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to get features for cloudlet", "cloudlet", key, "err", err)
+		return
+	}
+	if !features.SupportsMultiTenantCluster {
+		log.SpanLog(ctx, log.DebugLevelApi, "cloudlet does not support multi-tenant clusters", "cloudlet", key, "platform", features.PlatformType)
+		return
+	}
+	if cloudlet.EnableDefaultServerlessCluster {
+		s.all.clusterInstApi.createDefaultMultiTenantCluster(ctx, key, features)
+	} else {
+		s.all.clusterInstApi.deleteDefaultMultiTenantCluster(ctx, key)
+	}
 }

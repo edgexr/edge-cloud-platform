@@ -212,31 +212,38 @@ func testStreamObjsWithServer(t *testing.T, ctx context.Context) {
 	// race conditions. Only the targetID should be left in the
 	// stream, although other messages from stop may also be
 	// present (but will be ignored during read).
-	numThreads := 100
-	targetModRev := int64(numThreads + 10)
+	// Max numThread is 10, as redis connection pool is 10 connections
+	// per CPU, and we don't know how many CPUs will be available for
+	// the unit-tests.
+	numThreads := 10
+	numTimes := 10
+	targetModRev := int64(numThreads*numTimes + 10)
 	// precreate spans
 	spans := []opentracing.Span{}
 	for ii := 0; ii < numThreads; ii++ {
 		spans = append(spans, log.StartSpan(log.DebugLevelApi, "testSpan"))
 	}
 	for ii := 0; ii < numThreads; ii++ {
-		// lower IDs and cleanup should be ignored
-		modRev := int64(ii)
-		cleanup := CleanupStream
-		// put target in the middle of the spawned threads
-		if ii == numThreads/2 {
-			modRev = targetModRev
-			cleanup = NoCleanupStream
-		}
 		wg.Add(1)
-		go func(_ii int, _modRev int64, _cleanup CleanupStreamAction) {
+		go func(_ii int) {
 			xctx := log.ContextWithSpan(context.Background(), spans[_ii])
 			defer spans[_ii].Finish()
-			_, streamObj := startStream(xctx, _modRev)
-			writeMsg(xctx, fmt.Sprintf("msg%d", _modRev))
-			stop(xctx, streamObj, _cleanup, nil)
-			wg.Done()
-		}(ii, modRev, cleanup)
+			defer wg.Done()
+			for jj := 0; jj < numTimes; jj++ {
+				n := 10*_ii + jj
+				// lower IDs and cleanup should be ignored
+				modRev := int64(n)
+				cleanup := CleanupStream
+				// put target in the middle of the spawned threads
+				if _ii == numThreads/2 && jj == numTimes/2 {
+					modRev = targetModRev
+					cleanup = NoCleanupStream
+				}
+				_, streamObj := startStream(xctx, modRev)
+				writeMsg(xctx, fmt.Sprintf("msg%d", modRev))
+				stop(xctx, streamObj, cleanup, nil)
+			}
+		}(ii)
 	}
 	wg.Wait()
 

@@ -105,8 +105,6 @@ func TestShepherdUpdate(t *testing.T) {
 
 	// check global config based on settings
 	configFile := intprocess.GetCloudletPrometheusConfigHostFilePath()
-	fileContents, err := ioutil.ReadFile(configFile)
-	require.Nil(t, err)
 	expected := `global:
   evaluation_interval: 3s
 rule_files:
@@ -125,11 +123,9 @@ scrape_configs:
     - regex: 'instance|envoy_cluster_name'
       action: labeldrop
 `
-	require.Equal(t, expected, string(fileContents))
+	requireFileContents(t, configFile, expected)
 
 	// check targets based on appinsts
-	fileContents, err = ioutil.ReadFile(*promTargetsFile)
-	require.Nil(t, err)
 	expected = `[
 {
 	"targets": ["0.0.0.0:9091"],
@@ -147,13 +143,11 @@ scrape_configs:
 		"__metrics_path__":"/metrics/AppInstTest-"
 	}
 }]`
-	require.Equal(t, expected, string(fileContents))
+	requireFileContents(t, *promTargetsFile, expected)
 
 	// check alerts based on appinsts and policy
 
 	rulesFile := getAppInstRulesFileName(&shepherd_test.TestAppInst.Key)
-	fileContents, err = ioutil.ReadFile(rulesFile)
-	require.Nil(t, err)
 	expected = `groups:
 - name: autoprov-feature
   rules:
@@ -162,7 +156,7 @@ scrape_configs:
       3
     for: 15m
 `
-	require.Equal(t, expected, string(fileContents))
+	requireFileContents(t, rulesFile, expected)
 
 	// update settings, check for changes
 	set.ShepherdAlertEvaluationInterval = edgeproto.Duration(5 * time.Second)
@@ -177,8 +171,6 @@ scrape_configs:
 	}
 	appInstAlertWorkers.WaitIdle()
 	// check global config (new eval time)
-	fileContents, err = ioutil.ReadFile(configFile)
-	require.Nil(t, err)
 	expected = `global:
   evaluation_interval: 5s
 rule_files:
@@ -197,10 +189,8 @@ scrape_configs:
     - regex: 'instance|envoy_cluster_name'
       action: labeldrop
 `
-	require.Equal(t, expected, string(fileContents))
+	requireFileContents(t, configFile, expected)
 	// check rules file (new "for" time)
-	fileContents, err = ioutil.ReadFile(rulesFile)
-	require.Nil(t, err)
 	expected = `groups:
 - name: autoprov-feature
   rules:
@@ -209,7 +199,7 @@ scrape_configs:
       3
     for: 45s
 `
-	require.Equal(t, expected, string(fileContents))
+	requireFileContents(t, rulesFile, expected)
 
 	// update policy, check for changes
 	policy := shepherd_test.TestAutoProvPolicy
@@ -225,8 +215,6 @@ scrape_configs:
 	}
 	appInstAlertWorkers.WaitIdle()
 	// check rules file (new expr)
-	fileContents, err = ioutil.ReadFile(rulesFile)
-	require.Nil(t, err)
 	expected = `groups:
 - name: autoprov-feature
   rules:
@@ -235,7 +223,7 @@ scrape_configs:
       5
     for: 45s
 `
-	require.Equal(t, expected, string(fileContents))
+	requireFileContents(t, rulesFile, expected)
 
 	// remove appinst, check for changes
 	crm.AppInstCache.Delete(ctx, &shepherd_test.TestAppInst, 0)
@@ -243,12 +231,37 @@ scrape_configs:
 	targetFileWorkers.WaitIdle()
 	appInstAlertWorkers.WaitIdle()
 	// check targets file (should be empty)
-	fileContents, err = ioutil.ReadFile(*promTargetsFile)
-	require.Nil(t, err)
 	expected = `[{}]`
-	require.Equal(t, expected, string(fileContents))
+	requireFileContents(t, *promTargetsFile, expected)
 	// check rules file (should be removed)
-	_, err = os.Stat(rulesFile)
-	require.True(t, os.IsNotExist(err), "error is %v", err)
+	requireFileRemoved(t, rulesFile)
 	require.Equal(t, 0, len(AppInstByAutoProvPolicy.PolicyKeys))
+}
+
+func requireFileContents(t *testing.T, file string, expected string) {
+	timeout := 2 * time.Second
+	var contents []byte
+	var err error
+	for ii := 0; ii < 10; ii++ {
+		contents, err = os.ReadFile(file)
+		require.Nil(t, err)
+		if string(contents) == expected {
+			return
+		}
+		time.Sleep(timeout / time.Duration(10))
+	}
+	require.Equal(t, expected, string(contents))
+}
+
+func requireFileRemoved(t *testing.T, file string) {
+	timeout := 2 * time.Second
+	var err error
+	for ii := 0; ii < 10; ii++ {
+		_, err = os.Stat(file)
+		if os.IsNotExist(err) {
+			return
+		}
+		time.Sleep(timeout / time.Duration(10))
+	}
+	require.True(t, os.IsNotExist(err), "require file removed error is %v", err)
 }
