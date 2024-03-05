@@ -85,10 +85,12 @@ func testDummyRedisServer(t *testing.T, client *redis.Client, server *DummyRedis
 	// =================
 
 	pubsub1 := client.Subscribe(ctx, "ch1")
+	_, err = pubsub1.Receive(ctx)
 	require.Nil(t, err, "initialize channel to recv messages")
 	require.NotNil(t, pubsub1)
 
 	pubsub2 := client.Subscribe(ctx, "ch2")
+	_, err = pubsub2.Receive(ctx)
 	require.Nil(t, err, "initialize another channel to recv messages")
 	require.NotNil(t, pubsub2)
 

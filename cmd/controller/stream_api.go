@@ -448,6 +448,7 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 	// Wait for confirmation that subscription is created before publishing anything.
 	_, err := pubsub.Receive(ctx)
 	if err != nil {
+		pubsub.Close()
 		return nil, fmt.Errorf("Failed to subscribe to stream %s, %v", streamKey, err)
 	}
 

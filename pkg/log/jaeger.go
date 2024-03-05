@@ -183,7 +183,7 @@ func SpanToString(ctx context.Context) string {
 }
 
 func NewSpanFromString(lvl uint64, val, spanName string) opentracing.Span {
-	linenoOpt := WithSpanLineno{GetLineno(1)}
+	linenoOpt := WithSpanLineno(GetLineno(1))
 	if val != "" {
 		carrier := SpanCarrier{
 			Data: TraceData{},

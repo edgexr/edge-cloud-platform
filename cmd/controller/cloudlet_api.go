@@ -513,7 +513,10 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	onboardingInfo := edgeproto.CloudletOnboardingInfo{
 		Key: in.Key,
 	}
-	onboardingSub := rediscache.Subscribe(ctx, redisClient, &onboardingInfo)
+	onboardingSub, err := rediscache.Subscribe(ctx, redisClient, &onboardingInfo)
+	if err != nil {
+		return err
+	}
 	defer onboardingSub.Close()
 
 	vmPool := edgeproto.VMPool{}
@@ -1568,11 +1571,14 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		deboardingInfo := edgeproto.CloudletOnboardingInfo{
 			Key: in.Key,
 		}
-		deboardingSub := rediscache.Subscribe(ctx, redisClient, &deboardingInfo)
+		deboardingSub, err := rediscache.Subscribe(ctx, redisClient, &deboardingInfo)
+		if err != nil {
+			return err
+		}
 		defer deboardingSub.Close()
 
 		// Set delete requested to trigger CCRM to run platform-specific delete
-		err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+		err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 			if !s.store.STMGet(stm, &in.Key, in) {
 				return in.Key.NotFoundError()
 			}

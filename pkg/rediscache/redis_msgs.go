@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	fmt "fmt"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/go-redis/redis/v8"
@@ -53,12 +54,18 @@ type MessageHandler struct {
 //	  }
 //	  return false
 //	})
-func Subscribe(ctx context.Context, client *redis.Client, desired Message) *MessageHandler {
+func Subscribe(ctx context.Context, client *redis.Client, desired Message) (*MessageHandler, error) {
 	h := MessageHandler{}
 	h.desired = desired
 	h.pubsub = client.Subscribe(ctx, desired.MessageKey())
+	// wait for confirmation that subscription is created.
+	// this avoids missing messages that are sent immediately after this call.
+	if _, err := h.pubsub.Receive(ctx); err != nil {
+		h.pubsub.Close()
+		return nil, fmt.Errorf("failed to subscribe to redis channel %s, %s", desired.MessageKey(), err)
+	}
 	h.ch = h.pubsub.Channel()
-	return &h
+	return &h, nil
 }
 
 // Close cleans up the MessageHandler.

@@ -69,14 +69,14 @@ func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOp
 	// Add lineno tag if not specified by caller.
 	// This check avoids duplicate calls to runtime.Caller() which
 	// is expensive.
-	var withSpanLineno *WithSpanLineno
+	var spanLineno *SpanLineno
 	span := &Span{
 		startTime: time.Now(),
 	}
 	for _, op := range opts {
 		switch v := op.(type) {
-		case WithSpanLineno:
-			withSpanLineno = &v
+		case SpanLineno:
+			spanLineno = &v
 		case WithSuppress:
 			span.config.Suppress = true
 		case WithNoTracing:
@@ -119,8 +119,8 @@ func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOp
 	// because of checking for sampling in jaeger code, so set lineno tag
 	// after span is created here.
 	lineno := ""
-	if withSpanLineno != nil {
-		lineno = withSpanLineno.lineno
+	if spanLineno != nil {
+		lineno = spanLineno.lineno
 	} else {
 		lineno = GetLineno(1)
 	}
@@ -244,8 +244,17 @@ func getFields(args []interface{}) []zap.Field {
 }
 
 // Convenience function for test routines. Does not require InitTracer().
-func StartTestSpan(ctx context.Context) context.Context {
-	span := StartSpan(DebugLevelInfo, "test")
+func StartTestSpan(ctx context.Context, opts ...opentracing.StartSpanOption) context.Context {
+	hasSpanLineno := false
+	for _, op := range opts {
+		if _, ok := op.(SpanLineno); ok {
+			hasSpanLineno = true
+		}
+	}
+	if !hasSpanLineno {
+		opts = append(opts, WithSpanLineno(GetLineno(1)))
+	}
+	span := StartSpan(DebugLevelInfo, "test", opts...)
 	// ignore span.Finish()
 	return opentracing.ContextWithSpan(ctx, span)
 }
@@ -318,11 +327,17 @@ func GetLineno(skip int) string {
 	return ec.TrimmedPath()
 }
 
-type WithSpanLineno struct {
+type SpanLineno struct {
 	lineno string
 }
 
-func (s WithSpanLineno) Apply(options *opentracing.StartSpanOptions) {}
+func (s SpanLineno) Apply(options *opentracing.StartSpanOptions) {}
+
+func WithSpanLineno(lineno string) SpanLineno {
+	return SpanLineno{
+		lineno: lineno,
+	}
+}
 
 // WithSuppress suppresses the span (effectively disables it)
 type WithSuppress struct{}
