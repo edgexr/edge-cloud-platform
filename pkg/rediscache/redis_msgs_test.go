@@ -52,7 +52,8 @@ func TestRedisMessages(t *testing.T) {
 	tm := testMessage{
 		Key: "12345",
 	}
-	handler := Subscribe(ctx, client, &tm)
+	handler, err := Subscribe(ctx, client, &tm)
+	require.Nil(t, err)
 	require.NotNil(t, handler)
 
 	numMsgs := 3

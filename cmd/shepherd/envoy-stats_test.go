@@ -60,7 +60,7 @@ cluster.udp_backend8765.upstream_cx_none_healthy: 16`
 
 func setupLog() context.Context {
 	log.InitTracer(nil)
-	ctx := log.StartTestSpan(context.Background())
+	ctx := log.StartTestSpan(context.Background(), log.WithSpanLineno(log.GetLineno(1)))
 	return ctx
 }
 func startServer() *httptest.Server {

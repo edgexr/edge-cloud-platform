@@ -77,7 +77,7 @@ func TestCloudletPrometheusFuncs(t *testing.T) {
 	targetFileWorkers.WaitIdle()
 	// verify they all are here
 	content, err := ioutil.ReadFile(*promTargetsFile)
-	fmt.Print(content)
+	fmt.Print(string(content))
 	assert.Nil(t, err)
 	targets := TestJsonTargets{}
 	err = json.Unmarshal(content, &targets)
