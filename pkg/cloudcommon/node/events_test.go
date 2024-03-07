@@ -827,8 +827,14 @@ func TestEvents(t *testing.T) {
 	//
 
 	require.Equal(t, 2, len(kmsgs))
-	require.Equal(t, expKmsg1, kmsgs[0])
-	require.Equal(t, expKmsg2, kmsgs[1])
+	// async producer may produce messages in either order
+	if kmsgs[0].Name == expKmsg1.Name {
+		require.Equal(t, expKmsg1, kmsgs[0])
+		require.Equal(t, expKmsg2, kmsgs[1])
+	} else {
+		require.Equal(t, expKmsg1, kmsgs[1])
+		require.Equal(t, expKmsg2, kmsgs[0])
+	}
 }
 
 func waitEvents(t *testing.T, nm *NodeMgr, num uint64) {

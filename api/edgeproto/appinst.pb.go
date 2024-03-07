@@ -6210,10 +6210,35 @@ func (c *AppInstInfoCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
-func WaitForAppInstInfo(ctx context.Context, key *AppInstKey, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitForAppInstInfo(ctx context.Context, key *AppInstKey, store AppInstStore, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 	var lastMsgCnt int
 	var err error
-	curState := TrackedState_TRACKED_STATE_UNKNOWN
+
+	handleTargetState := func() {
+		if targetState == TrackedState_NOT_PRESENT {
+			send(&Result{Message: TrackedState_CamelName[int32(targetState)]})
+		}
+		if successMsg != "" && send != nil {
+			send(&Result{Message: successMsg})
+		}
+	}
+
+	// State updates come via Redis, since they are bundled with status updates.
+	// However, the Redis channel is set up after the Etcd transaction to commit
+	// the state change (i.e. CREATE_REQUESTED) in order to treat Etcd as the
+	// source of truth for concurrent changes, so there is a small timing window
+	// where the state may be updated by the info (from CRM) before the Redis
+	// subscription is set up. So here our initial state needs to come from Etcd
+	// in case both it and Redis were updated before the crmMsgCh was set up.
+	curState := TrackedState_NOT_PRESENT
+	buf := AppInst{}
+	if store.Get(ctx, key, &buf) {
+		curState = buf.State
+	}
+	if curState == targetState {
+		handleTargetState()
+		return nil
+	}
 
 	var wSpec WaitStateSpec
 	for _, op := range opts {
@@ -6260,12 +6285,7 @@ func WaitForAppInstInfo(ctx context.Context, key *AppInstKey, targetState Tracke
 				err = fmt.Errorf("Encountered failures: %s", errs)
 				return err
 			case targetState:
-				if targetState == TrackedState_NOT_PRESENT {
-					send(&Result{Message: TrackedState_CamelName[int32(targetState)]})
-				}
-				if successMsg != "" && send != nil {
-					send(&Result{Message: successMsg})
-				}
+				handleTargetState()
 				return nil
 			}
 		case <-ctx.Done():

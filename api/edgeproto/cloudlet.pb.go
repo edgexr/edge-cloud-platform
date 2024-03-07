@@ -15967,10 +15967,32 @@ func (c *CloudletInfoCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
-func WaitForCloudletInfo(ctx context.Context, key *CloudletKey, targetState distributed_match_engine.CloudletState, transitionStates map[distributed_match_engine.CloudletState]struct{}, errorState distributed_match_engine.CloudletState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitForCloudletInfo(ctx context.Context, key *CloudletKey, store CloudletInfoStore, targetState distributed_match_engine.CloudletState, transitionStates map[distributed_match_engine.CloudletState]struct{}, errorState distributed_match_engine.CloudletState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 	var lastMsgCnt int
 	var err error
-	curState := distributed_match_engine.CloudletState_CLOUDLET_STATE_UNKNOWN
+
+	handleTargetState := func() {
+		if successMsg != "" && send != nil {
+			send(&Result{Message: successMsg})
+		}
+	}
+
+	// State updates come via Redis, since they are bundled with status updates.
+	// However, the Redis channel is set up after the Etcd transaction to commit
+	// the state change (i.e. CREATE_REQUESTED) in order to treat Etcd as the
+	// source of truth for concurrent changes, so there is a small timing window
+	// where the state may be updated by the info (from CRM) before the Redis
+	// subscription is set up. So here our initial state needs to come from Etcd
+	// in case both it and Redis were updated before the crmMsgCh was set up.
+	curState := distributed_match_engine.CloudletState_CLOUDLET_STATE_NOT_PRESENT
+	buf := CloudletInfo{}
+	if store.Get(ctx, key, &buf) {
+		curState = buf.State
+	}
+	if curState == targetState {
+		handleTargetState()
+		return nil
+	}
 
 	var wSpec WaitStateSpec
 	for _, op := range opts {
@@ -16017,9 +16039,7 @@ func WaitForCloudletInfo(ctx context.Context, key *CloudletKey, targetState dist
 				err = fmt.Errorf("Encountered failures: %s", errs)
 				return err
 			case targetState:
-				if successMsg != "" && send != nil {
-					send(&Result{Message: successMsg})
-				}
+				handleTargetState()
 				return nil
 			}
 		case <-ctx.Done():

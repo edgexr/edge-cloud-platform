@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -95,6 +96,8 @@ type streamSend struct {
 	crmPubSub *redis.PubSub
 	crmMsgCh  <-chan *redis.Message
 	invalid   bool
+	id        string
+	modRev    int64
 }
 
 type StreamObjApi struct {
@@ -308,6 +311,10 @@ func WithNoResetStream() StreamOp {
 	return func(op *StreamOptions) { op.NoResetStream = true }
 }
 
+func getRedisTxBackoff(ii int) time.Duration {
+	return time.Millisecond * time.Duration((ii+1)*rand.Intn(10))
+}
+
 // newStream buffers messages until the first Etcd transaction
 // is done and we can actually start the stream.
 func (s *StreamObjApi) newStream(ctx context.Context, cctx *CallContext, streamKey string, inCb GenericCb, opts ...StreamOp) (*CbWrapper, GenericCb) {
@@ -357,7 +364,7 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 		initStream := true
 		// check any modRev on the existing stream to
 		// figure out if stream should be cleared or not
-		streamMsgs, err := redisClient.XRangeN(ctx, streamKey,
+		streamMsgs, err := tx.XRangeN(ctx, streamKey,
 			rediscache.RedisSmallestId, rediscache.RedisGreatestId, 1).Result()
 		if err != nil {
 			return err
@@ -400,7 +407,8 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 	}
 
 	// Retry if the key has been changed.
-	for i := 0; i < rediscache.RedisTxMaxRetries; i++ {
+	i := 0
+	for i = 0; i < rediscache.RedisTxMaxRetries; i++ {
 		err := redisClient.Watch(ctx, txf, streamKey)
 		if err == nil {
 			// Success.
@@ -412,6 +420,7 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 		}
 		if err == redis.TxFailedErr {
 			// Optimistic lock lost. Retry.
+			time.Sleep(getRedisTxBackoff(i))
 			continue
 		}
 		// Return any other error.
@@ -422,8 +431,13 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 	// messages, it does not prevent a streamObj started
 	// earlier which was valid at the time from writing even
 	// though it may not be invalid.
-	if streamCb.invalid {
-		log.SpanLog(ctx, log.DebugLevelApi, "stream modRev conflict", "key", streamKey, "modRev", modRev, "streamModRev", streamModRev)
+	if i == rediscache.RedisTxMaxRetries {
+		log.SpanLog(ctx, log.DebugLevelApi, "start stream too many xact retries", "key", streamKey, "modRev", modRev)
+		streamCb.invalid = true
+	} else if streamCb.invalid {
+		log.SpanLog(ctx, log.DebugLevelApi, "start stream modRev conflict", "key", streamKey, "modRev", modRev, "streamModRev", streamModRev)
+	} else {
+		log.SpanLog(ctx, log.DebugLevelApi, "start stream valid", "key", streamKey, "modRev", modRev, "streamModRev", streamModRev)
 	}
 
 	// Send any messages that have been buffered
@@ -460,15 +474,20 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 	streamSendObj.crmMsgCh = ch
 	streamSendObj.cb = streamCb.GenericCb
 	streamSendObj.invalid = streamCb.invalid
+	streamSendObj.id = id
+	streamSendObj.modRev = modRev
 
 	return &streamSendObj, nil
 }
 
 func (s *StreamObjApi) stopStream(ctx context.Context, cctx *CallContext, streamKey string, streamSendObj *streamSend, objErr error, cleanupStream CleanupStreamAction) error {
-	log.SpanLog(ctx, log.DebugLevelApi, "stop stream", "key", streamKey, "cctx", cctx, "err", objErr)
 	if streamSendObj == nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "stop stream no streamSendObj", "key", streamKey, "cctx", cctx, "err", objErr, "cleanup", cleanupStream)
 		return nil
 	}
+	modRev := streamSendObj.modRev
+	id := streamSendObj.id
+	log.SpanLog(ctx, log.DebugLevelApi, "stop stream", "key", streamKey, "cctx", cctx, "modRev", modRev, "id", id, "err", objErr, "invalid", streamSendObj.invalid, "cleanup", cleanupStream)
 
 	// If this is an undo, then caller has already performed the same operation,
 	// so skip performing any cleanup
@@ -508,16 +527,20 @@ func (s *StreamObjApi) stopStream(ctx context.Context, cctx *CallContext, stream
 	// need a transaction for cleanup check.
 	if cleanupStream {
 		// delete stream only if no other process has taken over the stream
+		deleteOk := false
+		streamID := ""
+		streamModRev := int64(-1)
 		txf := func(tx *redis.Tx) error {
-			streamMsgs, err := redisClient.XRangeN(ctx, streamKey,
+			streamMsgs, err := tx.XRangeN(ctx, streamKey,
 				rediscache.RedisSmallestId, rediscache.RedisGreatestId, 1).Result()
 			if err != nil {
 				return err
 			}
-			deleteOk := false
+			deleteOk = false
 			if len(streamMsgs) > 0 {
-				id := getStreamID(streamMsgs[0].Values)
-				if id == log.SpanTraceID(ctx) {
+				streamID = getStreamID(streamMsgs[0].Values)
+				streamModRev = getStreamModRev(streamMsgs[0].Values)
+				if id == streamID && modRev == streamModRev {
 					deleteOk = true
 				}
 			}
@@ -533,16 +556,22 @@ func (s *StreamObjApi) stopStream(ctx context.Context, cctx *CallContext, stream
 			return err
 		}
 		var err error
-		for i := 0; i < rediscache.RedisTxMaxRetries; i++ {
+		i := 0
+		for i = 0; i < rediscache.RedisTxMaxRetries; i++ {
 			err = redisClient.Watch(ctx, txf, streamKey)
 			if err == redis.TxFailedErr {
 				// retry
+				time.Sleep(getRedisTxBackoff(i))
 				continue
 			}
 			break
 		}
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelApi, "Failed to cleanup redis stream", "key", streamKey, "err", err)
+		if i == rediscache.RedisTxMaxRetries {
+			log.SpanLog(ctx, log.DebugLevelApi, "cleanup redis stream too many xact retries", "key", streamKey, "modRev", modRev, "err", err)
+		} else if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to cleanup redis stream", "key", streamKey, "modRev", modRev, "streamModRev", streamModRev, "id", id, "streamID", streamID, "err", err)
+		} else if deleteOk {
+			log.SpanLog(ctx, log.DebugLevelApi, "cleaned up redis stream", "key", streamKey, "modRev", modRev, "streamModRev", streamModRev, "id", id, "streamID", streamID)
 		}
 	}
 	return nil
