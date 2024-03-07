@@ -4,8 +4,8 @@ VERSION ?= $(shell echo $$USER | tr -cd 'a-zA-Z' )-$(shell date +'%Y-%m-%d' )
 REGISTRY ?= ghcr.io/edgexr
 PUSH ?= --push
 
-# TOP refers to github.com/edgexr directory
-TOP = ../../../
+# TOP refers to repository root
+TOP = ../..
 
 build-edge-cloud-infra-base:
 	docker build -t edgexr/edge-cloud-infra-base:$(TAG) -f Dockerfile.edge-cloud-infra-base .
@@ -33,7 +33,6 @@ EDGE_CLOUD_INFRA_BASE ?= $(REGISTRY)/edge-cloud-infra-base@sha256:d251d83ad71e4a
 EDGE_CLOUD_IMAGE ?= $(REGISTRY)/edge-cloud
 
 build-platform-common:
-	rsync --checksum dockerignore.edge-cloud $(TOP)/.dockerignore
 	docker buildx build \
 		--build-arg BUILD_TAG=$(VERSION) \
 		--build-arg NON_INFRA_BASE_IMAGE=$(NON_INFRA_BASE_IMAGE) \
