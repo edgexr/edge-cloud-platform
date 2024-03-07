@@ -28,7 +28,7 @@ gobuild-publish:
 # now to include shell.
 NON_INFRA_BASE_IMAGE ?= gcr.io/distroless/base-debian12:debug
 
-EDGE_CLOUD_INFRA_BASE ?= ghcr.io/edgexr/edge-cloud-infra-base@sha256:d251d83ad71e4ae5b45f0573f57f3e99298d41f978c1ca16430c5ec8dc5be2e1
+EDGE_CLOUD_INFRA_BASE ?= $(REGISTRY)/edge-cloud-infra-base@sha256:d251d83ad71e4ae5b45f0573f57f3e99298d41f978c1ca16430c5ec8dc5be2e1
 
 EDGE_CLOUD_IMAGE ?= $(REGISTRY)/edge-cloud
 
