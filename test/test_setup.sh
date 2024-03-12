@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # This script installs dependencies needed for running unit, integration, and e2e tests.
+# When installing to the default dirs, and when installing tools using apt, run this
+# script via sudo.
 set -e
 
 INSTALL_DIR=/usr/local/bin
@@ -21,7 +23,7 @@ fi
 
 if [[ ! -d ${GO_INSTALL_DIR}/go ]]; then
     echo "Installing go ${GOVERS}"
-    wget -O /tmp/go${GOVERS}.tar.gz "https://dl.google.com/go/go${GOVERS}.linux-amd64.tar.gz" && tar -C ${GO_INSTALL_DIR} -xzf /tmp/go${GOVERS}
+    wget -O /tmp/go${GOVERS}.tar.gz "https://dl.google.com/go/go${GOVERS}.linux-amd64.tar.gz" && tar -C ${GO_INSTALL_DIR} -xzf /tmp/go${GOVERS}.tar.gz
 fi
 
 if ! certstrap --version > /dev/null; then
@@ -31,7 +33,7 @@ fi
 
 if ! etcd --version > /dev/null; then
     echo "Installing Etcd ${ETCD_VER}"
-    wget -O /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz "https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz" && tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp --strip-components=1 && mv /tmp/etcd-${ETCD_VER}-linux-amd64/etcd ${INSTALL_DIR} && mv /tmp/etcd-${ETCD_VER}-linux-amd64/etcdctl ${INSTALL_DIR} && mv /tmp/etcd-${ETCD_VER}-linux-amd64/etcdutl ${INSTALL_DIR}
+    wget -O /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz "https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz" && tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp && mv /tmp/etcd-${ETCD_VER}-linux-amd64/etcd ${INSTALL_DIR} && mv /tmp/etcd-${ETCD_VER}-linux-amd64/etcdctl ${INSTALL_DIR} && mv /tmp/etcd-${ETCD_VER}-linux-amd64/etcdutl ${INSTALL_DIR}
 fi
 
 if ! vault --version > /dev/null; then
@@ -50,6 +52,7 @@ if ! redis-server --version > /dev/null; then
     curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
     echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
     apt-get update && apt-get install -y redis
+    systemctl stop redis-server
 fi
 
 if [[ "$PATH" != *"${GO_INSTALL_DIR}/go"* ]]; then
