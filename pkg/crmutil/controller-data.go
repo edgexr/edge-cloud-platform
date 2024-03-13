@@ -36,7 +36,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 )
 
-//ControllerData contains cache data for controller
+// ControllerData contains cache data for controller
 type ControllerData struct {
 	platform                             platform.Platform
 	cloudletKey                          edgeproto.CloudletKey
@@ -243,48 +243,6 @@ func (cd *ControllerData) flavorChanged(ctx context.Context, old *edgeproto.Flav
 	// } else {
 	// 	// CRM TODO: delete flavor?
 	// }
-}
-
-// GetCloudletTrustPolicy finds the policy from the cache.  If a blank policy name is specified, an empty policy is returned
-func GetCloudletTrustPolicy(ctx context.Context, name string, cloudletOrg string, privPolCache *edgeproto.TrustPolicyCache) (*edgeproto.TrustPolicy, error) {
-	log.SpanLog(ctx, log.DebugLevelInfo, "GetCloudletTrustPolicy")
-	if name != "" {
-		pp := edgeproto.TrustPolicy{}
-		pk := edgeproto.PolicyKey{
-			Name:         name,
-			Organization: cloudletOrg,
-		}
-		if !privPolCache.Get(&pk, &pp) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Cannot find Trust Policy from cache", "pk", pk, "pp", pp)
-			return nil, fmt.Errorf("fail to find Trust Policy from cache: %s", pk)
-		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Found Trust Policy from cache", "pk", pk, "pp", pp)
-			return &pp, nil
-		}
-	} else {
-		log.SpanLog(ctx, log.DebugLevelInfo, "Returning empty trust policy for empty name")
-		emptyPol := &edgeproto.TrustPolicy{}
-		return emptyPol, nil
-	}
-}
-
-func GetNetworksForClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, networkCache *edgeproto.NetworkCache) ([]*edgeproto.Network, error) {
-	log.SpanLog(ctx, log.DebugLevelInfo, "GetNetworksForClusterInst", "clusterInst", clusterInst)
-	networks := []*edgeproto.Network{}
-	for _, netName := range clusterInst.Networks {
-		net := edgeproto.Network{}
-		nk := edgeproto.NetworkKey{
-			Name:        netName,
-			CloudletKey: clusterInst.Key.CloudletKey,
-		}
-		if !networkCache.Get(&nk, &net) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Cannot find network from cache", "nk", nk)
-			return nil, fmt.Errorf("fail to find network from cache: %s", nk)
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "Found network from cache", "nk", nk, "net", net)
-		networks = append(networks, &net)
-	}
-	return networks, nil
 }
 
 func (cd *ControllerData) vmResourceActionBegin() {

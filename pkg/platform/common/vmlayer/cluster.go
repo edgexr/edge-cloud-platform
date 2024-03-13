@@ -24,7 +24,6 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
@@ -42,13 +41,13 @@ const (
 	updateClusterSetupMaxTime      = time.Minute * 15
 )
 
-//ClusterNodeFlavor contains details of flavor for the node
+// ClusterNodeFlavor contains details of flavor for the node
 type ClusterNodeFlavor struct {
 	Type string
 	Name string
 }
 
-//ClusterFlavor contains definitions of cluster flavor
+// ClusterFlavor contains definitions of cluster flavor
 type ClusterFlavor struct {
 	Kind           string
 	Name           string
@@ -689,7 +688,7 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 	}
 }
 
-//IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active.  returns ready,nodecount, error
+// IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active.  returns ready,nodecount, error
 func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.ClusterInst, masterName string, masterIPs ServerIPs, rootLBName string, updateCallback edgeproto.CacheUpdateCallback) (bool, uint32, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "checking if cluster is ready", "masterIPs", masterIPs)
 
@@ -825,7 +824,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 	var newSubnetName SubnetNames
 	var newSecgrpName string
 
-	networks, err := crmutil.GetNetworksForClusterInst(ctx, clusterInst, v.Caches.NetworkCache)
+	networks, err := edgeproto.GetNetworksForClusterInst(ctx, clusterInst, v.Caches.NetworkCache)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -89,8 +89,8 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 	}
 
 	// Add crm local replace variables
-	deploymentVars := crmutil.DeploymentReplaceVars{
-		Deployment: crmutil.CrmReplaceVars{
+	deploymentVars := deployvars.DeploymentReplaceVars{
+		Deployment: deployvars.CrmReplaceVars{
 			ClusterIp:    masterIP,
 			CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
 			ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
@@ -98,7 +98,7 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 			AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 		},
 	}
-	ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+	ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 
 	if DeploymentType == cloudcommon.DeploymentTypeKubernetes {
 		err = k8smgmt.CreateAppInst(ctx, nil, client, names, app, appInst, flavor)
@@ -202,8 +202,8 @@ func (s *Xind) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Cluster
 	}
 
 	// Add crm local replace variables
-	deploymentVars := crmutil.DeploymentReplaceVars{
-		Deployment: crmutil.CrmReplaceVars{
+	deploymentVars := deployvars.DeploymentReplaceVars{
+		Deployment: deployvars.CrmReplaceVars{
 			ClusterIp:    masterIP,
 			CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
 			ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
@@ -211,7 +211,7 @@ func (s *Xind) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Cluster
 			AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 		},
 	}
-	ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+	ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 
 	if DeploymentType == cloudcommon.DeploymentTypeKubernetes {
 		return k8smgmt.UpdateAppInst(ctx, nil, client, names, app, appInst, flavor)

@@ -576,3 +576,45 @@ func (s *TrustPolicyExceptionCache) GetForCloudlet(cloudlet *Cloudlet, cb func(d
 		}
 	}
 }
+
+// GetCloudletTrustPolicy finds the policy from the cache.  If a blank policy name is specified, an empty policy is returned
+func GetCloudletTrustPolicy(ctx context.Context, name string, cloudletOrg string, privPolCache *TrustPolicyCache) (*TrustPolicy, error) {
+	log.SpanLog(ctx, log.DebugLevelInfo, "GetCloudletTrustPolicy")
+	if name != "" {
+		pp := TrustPolicy{}
+		pk := PolicyKey{
+			Name:         name,
+			Organization: cloudletOrg,
+		}
+		if !privPolCache.Get(&pk, &pp) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Cannot find Trust Policy from cache", "pk", pk, "pp", pp)
+			return nil, fmt.Errorf("fail to find Trust Policy from cache: %s", pk)
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Found Trust Policy from cache", "pk", pk, "pp", pp)
+			return &pp, nil
+		}
+	} else {
+		log.SpanLog(ctx, log.DebugLevelInfo, "Returning empty trust policy for empty name")
+		emptyPol := &TrustPolicy{}
+		return emptyPol, nil
+	}
+}
+
+func GetNetworksForClusterInst(ctx context.Context, clusterInst *ClusterInst, networkCache *NetworkCache) ([]*Network, error) {
+	log.SpanLog(ctx, log.DebugLevelInfo, "GetNetworksForClusterInst", "clusterInst", clusterInst)
+	networks := []*Network{}
+	for _, netName := range clusterInst.Networks {
+		net := Network{}
+		nk := NetworkKey{
+			Name:        netName,
+			CloudletKey: clusterInst.Key.CloudletKey,
+		}
+		if !networkCache.Get(&nk, &net) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Cannot find network from cache", "nk", nk)
+			return nil, fmt.Errorf("fail to find network from cache: %s", nk)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "Found network from cache", "nk", nk, "net", net)
+		networks = append(networks, &net)
+	}
+	return networks, nil
+}

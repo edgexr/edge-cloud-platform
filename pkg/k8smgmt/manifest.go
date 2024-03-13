@@ -22,7 +22,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	yaml "github.com/mobiledgex/yaml/v2"
@@ -37,8 +37,8 @@ const MexAppLabel = "mex-app"
 const ConfigLabel = "config"
 
 // TestReplacementVars are used to syntax check app envvars
-var TestReplacementVars = crmutil.DeploymentReplaceVars{
-	Deployment: crmutil.CrmReplaceVars{
+var TestReplacementVars = deployvars.DeploymentReplaceVars{
+	Deployment: deployvars.CrmReplaceVars{
 		ClusterIp:    "99.99.99.99",
 		CloudletName: "dummyCloudlet",
 		ClusterName:  "dummyCluster",
@@ -126,7 +126,7 @@ func addResourceLimits(ctx context.Context, template *v1.PodTemplateSpec, config
 	return nil
 }
 
-func GetAppEnvVars(ctx context.Context, app *edgeproto.App, authApi cloudcommon.RegistryAuthApi, deploymentVars *crmutil.DeploymentReplaceVars) (*[]v1.EnvVar, error) {
+func GetAppEnvVars(ctx context.Context, app *edgeproto.App, authApi cloudcommon.RegistryAuthApi, deploymentVars *deployvars.DeploymentReplaceVars) (*[]v1.EnvVar, error) {
 	var envVars []v1.EnvVar
 	for _, v := range app.Configs {
 		if v.Kind == edgeproto.AppConfigEnvYaml {
@@ -136,7 +136,7 @@ func GetAppEnvVars(ctx context.Context, app *edgeproto.App, authApi cloudcommon.
 				return nil, err
 			}
 			if deploymentVars != nil {
-				cfg, err = crmutil.ReplaceDeploymentVars(cfg, app.TemplateDelimiter, deploymentVars)
+				cfg, err = deployvars.ReplaceDeploymentVars(cfg, app.TemplateDelimiter, deploymentVars)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "failed to replace Crm variables",
 						"EnvVars ", v.Config, "DeploymentVars", deploymentVars, "error", err)
@@ -161,7 +161,7 @@ func MergeEnvVars(ctx context.Context, authApi cloudcommon.RegistryAuthApi, app 
 	var files []string
 	log.SpanLog(ctx, log.DebugLevelInfra, "MergeEnvVars", "kubeManifest", kubeManifest)
 
-	deploymentVars, varsFound := ctx.Value(crmutil.DeploymentReplaceVarsKey).(*crmutil.DeploymentReplaceVars)
+	deploymentVars, varsFound := ctx.Value(deployvars.DeploymentReplaceVarsKey).(*deployvars.DeploymentReplaceVars)
 	log.SpanLog(ctx, log.DebugLevelInfra, "MergeEnvVars", "deploymentVars", deploymentVars, "varsFound", varsFound)
 	envVars, err := GetAppEnvVars(ctx, app, authApi, deploymentVars)
 	if err != nil {
@@ -174,7 +174,7 @@ func MergeEnvVars(ctx context.Context, authApi cloudcommon.RegistryAuthApi, app 
 	}
 	// Fill in the Deployment Vars passed as a variable through the context
 	if varsFound {
-		mf, err = crmutil.ReplaceDeploymentVars(mf, app.TemplateDelimiter, deploymentVars)
+		mf, err = deployvars.ReplaceDeploymentVars(mf, app.TemplateDelimiter, deploymentVars)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to replace Crm variables",
 				"manifest", mf, "DeploymentVars", deploymentVars, "error", err)

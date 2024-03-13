@@ -23,7 +23,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
@@ -41,7 +41,7 @@ var validHelmInstallOpts = map[string]struct{}{
 func getHelmOpts(ctx context.Context, client ssh.Client, appName, delims string, configs []*edgeproto.ConfigFile) (string, error) {
 	var ymls []string
 
-	deploymentVars, varsFound := ctx.Value(crmutil.DeploymentReplaceVarsKey).(*crmutil.DeploymentReplaceVars)
+	deploymentVars, varsFound := ctx.Value(deployvars.DeploymentReplaceVarsKey).(*deployvars.DeploymentReplaceVars)
 	// Walk the Configs in the App and generate the yaml files from the helm customization ones
 	for ii, v := range configs {
 		// skip non helm and empty configs
@@ -53,7 +53,7 @@ func getHelmOpts(ctx context.Context, client ssh.Client, appName, delims string,
 			}
 			// Fill in the Deployment Vars passed as a variable through the context
 			if varsFound {
-				cfg, err = crmutil.ReplaceDeploymentVars(cfg, delims, deploymentVars)
+				cfg, err = deployvars.ReplaceDeploymentVars(cfg, delims, deploymentVars)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "failed to replace Crm variables",
 						"config file", v.Config, "DeploymentVars", deploymentVars, "error", err)

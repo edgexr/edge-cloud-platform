@@ -28,7 +28,6 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/fakecommon"
@@ -228,7 +227,7 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 
 	// verify we can find any provisioned networks
 	if len(clusterInst.Networks) > 0 {
-		networks, err := crmutil.GetNetworksForClusterInst(ctx, clusterInst, s.caches.NetworkCache)
+		networks, err := edgeproto.GetNetworksForClusterInst(ctx, clusterInst, s.caches.NetworkCache)
 		if err != nil {
 			return fmt.Errorf("Error getting cluster networks - %v", err)
 		}

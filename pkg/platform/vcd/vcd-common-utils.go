@@ -18,11 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 )
 
 func (v *VcdPlatform) GetFlavor(ctx context.Context, flavorName string) (*edgeproto.FlavorInfo, error) {
@@ -114,9 +113,9 @@ func (v *VcdPlatform) GetCloudletTrustPolicy(ctx context.Context) (*edgeproto.Tr
 		log.SpanLog(ctx, log.DebugLevelInfra, "vcd:GetCloudletTrustPolicy unable to retrieve cloudlet from cache", "cloudlet", cldlet.Key.Name, "cloudletOrg", key.Organization)
 		return nil, fmt.Errorf("Cloudlet Not Found")
 	}
-	tpol, err := crmutil.GetCloudletTrustPolicy(ctx, cldlet.TrustPolicy, key.Organization, trustcache)
+	tpol, err := edgeproto.GetCloudletTrustPolicy(ctx, cldlet.TrustPolicy, key.Organization, trustcache)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "vcd:GetCloudletTrustPolicy crmutil failed", "cloudlet", cldlet.Key.Name, "cloudletOrg", key.Organization, "error", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "vcd:GetCloudletTrustPolicy failed", "cloudlet", cldlet.Key.Name, "cloudletOrg", key.Organization, "error", err)
 		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "vcd:GetCloudletTrustPolicy fetched", "TrustPolicy", tpol.Key.Name, "cloudlet", cldlet.Key.Name)
