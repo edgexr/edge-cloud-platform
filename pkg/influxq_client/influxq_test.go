@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/controller/influxq_client/influxq_testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/gogo/protobuf/types"

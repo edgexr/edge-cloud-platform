@@ -41,7 +41,7 @@ func StartInfluxd(t *testing.T) *process.Influx {
 	if strings.HasSuffix(dir, "pkg/controller") {
 		p.HttpAddr = "127.0.0.1:8186"
 		p.BindAddr = "127.0.0.1:8187"
-	} else if strings.HasSuffix(dir, "pkg/controller/influxq_client") {
+	} else if strings.HasSuffix(dir, "pkg/influxq_client") {
 		p.HttpAddr = "127.0.0.1:8188"
 		p.BindAddr = "127.0.0.1:8189"
 	} else {
