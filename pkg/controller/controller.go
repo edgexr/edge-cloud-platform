@@ -14,7 +14,7 @@
 
 // Main process
 
-package main
+package controller
 
 import (
 	"context"
@@ -32,9 +32,9 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	influxq "github.com/edgexr/edge-cloud-platform/cmd/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	influxq "github.com/edgexr/edge-cloud-platform/pkg/controller/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
@@ -131,7 +131,7 @@ type UpgradeSupport struct {
 	vaultConfig *vault.Config
 }
 
-func main() {
+func Run() {
 	nodeMgr.InitFlags()
 	redisCfg.InitFlags(rediscache.DefaultCfgRedisHA)
 	flag.Parse()

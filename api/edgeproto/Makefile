@@ -18,7 +18,7 @@ BUILTIN		= Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoog
 NOTIFYDIR	= ../../pkg/notify
 CMDDIR		= ../../pkg/gencmd
 TESTDIR		= ../../test/testutil
-CTRLDIR		= ../../cmd/controller
+CTRLDIR		= ../../pkg/controller
 REDISAPIDIR = ../../pkg/rediscache
 
 PROTOS		= *.proto

@@ -14,7 +14,7 @@
 
 //app config
 
-package main
+package controller
 
 import (
 	"context"

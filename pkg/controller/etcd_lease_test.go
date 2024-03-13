@@ -18,7 +18,7 @@
 // or:
 // go test -run TestEtcdLease -v -tags=slow
 
-package main
+package controller
 
 import (
 	"context"

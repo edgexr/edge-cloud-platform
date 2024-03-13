@@ -14,7 +14,7 @@
 
 // test etcd process
 
-package main
+package controller
 
 import (
 	"context"

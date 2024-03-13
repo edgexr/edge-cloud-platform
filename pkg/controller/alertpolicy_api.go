@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // useralert config
-package main
+package controller
 
 import (
 	"context"

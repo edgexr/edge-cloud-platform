@@ -14,7 +14,7 @@
 
 // Run redis as a child process for testing
 
-package main
+package controller
 
 import (
 	"github.com/edgexr/edge-cloud-platform/pkg/process"

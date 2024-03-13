@@ -18,5 +18,5 @@ import "github.com/edgexr/edge-cloud-platform/pkg/gensupport"
 
 func main() {
 	plugin := ControllerTest{}
-	gensupport.RunMain("main", ".auto_test.go", &plugin, &plugin.support)
+	gensupport.RunMain("controller", ".auto_test.go", &plugin, &plugin.support)
 }
