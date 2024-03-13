@@ -27,7 +27,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/access"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -118,15 +118,15 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	if err != nil {
 		return &orchVals, err
 	}
-	deploymentVars := crmutil.DeploymentReplaceVars{
-		Deployment: crmutil.CrmReplaceVars{
+	deploymentVars := deployvars.DeploymentReplaceVars{
+		Deployment: deployvars.CrmReplaceVars{
 			CloudletName: k8smgmt.NormalizeName(appInst.Key.CloudletKey.Name),
 			CloudletOrg:  k8smgmt.NormalizeName(appInst.Key.CloudletKey.Organization),
 			AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 			DnsZone:      v.VMProperties.CommonPf.GetCloudletDNSZone(),
 		},
 	}
-	ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+	ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 
 	var vms []*VMRequestSpec
 	orchVals.externalServerName = appVmName
@@ -381,8 +381,8 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if masterIpErr != nil {
 			return masterIpErr
 		}
-		deploymentVars := crmutil.DeploymentReplaceVars{
-			Deployment: crmutil.CrmReplaceVars{
+		deploymentVars := deployvars.DeploymentReplaceVars{
+			Deployment: deployvars.CrmReplaceVars{
 				ClusterIp:    masterIPs.IPV4ExternalAddr(),
 				ClusterIPV6:  masterIPs.IPV6ExternalAddr(),
 				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
@@ -392,7 +392,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 				DnsZone:      v.VMProperties.CommonPf.GetCloudletDNSZone(),
 			},
 		}
-		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+		ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
 			updateCallback(edgeproto.UpdateTask, "Creating Kubernetes App")
@@ -667,8 +667,8 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 			return err
 		}
 		// Add crm local replace variables
-		deploymentVars := crmutil.DeploymentReplaceVars{
-			Deployment: crmutil.CrmReplaceVars{
+		deploymentVars := deployvars.DeploymentReplaceVars{
+			Deployment: deployvars.CrmReplaceVars{
 				ClusterIp:    masterIPs.IPV4ExternalAddr(),
 				ClusterIPV6:  masterIPs.IPV6ExternalAddr(),
 				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
@@ -678,7 +678,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 				DnsZone:      v.VMProperties.CommonPf.GetCloudletDNSZone(),
 			},
 		}
-		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+		ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 
 		// Clean up security rules and proxy if app is external
 		wlParams := infracommon.WhiteListParams{
@@ -852,8 +852,8 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 	}
 
 	// Add crm local replace variables
-	deploymentVars := crmutil.DeploymentReplaceVars{
-		Deployment: crmutil.CrmReplaceVars{
+	deploymentVars := deployvars.DeploymentReplaceVars{
+		Deployment: deployvars.CrmReplaceVars{
 			ClusterIp:    masterIPs.IPV4ExternalAddr(),
 			ClusterIPV6:  masterIPs.IPV6ExternalAddr(),
 			ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
@@ -862,7 +862,7 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			DnsZone:      v.VMProperties.CommonPf.GetCloudletDNSZone(),
 		},
 	}
-	ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+	ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 	clientType := cloudcommon.GetAppClientType(app)
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, clientType)
 	if err != nil {

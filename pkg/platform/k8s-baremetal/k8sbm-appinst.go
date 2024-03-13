@@ -25,7 +25,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
@@ -90,8 +90,8 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterMasterNodeIp failed", "kconfName", kconfName, "err", err)
 		}
-		deploymentVars := crmutil.DeploymentReplaceVars{
-			Deployment: crmutil.CrmReplaceVars{
+		deploymentVars := deployvars.DeploymentReplaceVars{
+			Deployment: deployvars.CrmReplaceVars{
 				ClusterIp:    masterNodeIpAddr,
 				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
 				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
@@ -100,7 +100,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 				DnsZone:      k.commonPf.GetCloudletDNSZone(),
 			},
 		}
-		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+		ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
 			updateCallback(edgeproto.UpdateTask, "Creating Kubernetes App")
@@ -194,8 +194,8 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 			return fmt.Errorf("get kube names failed: %s", err)
 		}
 		// Add crm local replace variables
-		deploymentVars := crmutil.DeploymentReplaceVars{
-			Deployment: crmutil.CrmReplaceVars{
+		deploymentVars := deployvars.DeploymentReplaceVars{
+			Deployment: deployvars.CrmReplaceVars{
 				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
 				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
 				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
@@ -203,7 +203,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 				DnsZone:      k.commonPf.GetCloudletDNSZone(),
 			},
 		}
-		ctx = context.WithValue(ctx, crmutil.DeploymentReplaceVarsKey, &deploymentVars)
+		ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 		// Clean up security rules add proxy if app is external
 		secGrp := infracommon.GetServerSecurityGroupName(rootLBName)
 		containerName := k8smgmt.GetKconfName(clusterInst) + "-" + dockermgmt.GetContainerName(appInst)

@@ -23,9 +23,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 )
 
 type AppAccessConfig struct {
@@ -43,7 +42,7 @@ type TLSCert struct {
 }
 
 func GetAppAccessConfig(ctx context.Context, configs []*edgeproto.ConfigFile, delims string) (*AppAccessConfig, error) {
-	deploymentVars, varsFound := ctx.Value(crmutil.DeploymentReplaceVarsKey).(*crmutil.DeploymentReplaceVars)
+	deploymentVars, varsFound := ctx.Value(deployvars.DeploymentReplaceVarsKey).(*deployvars.DeploymentReplaceVars)
 	var aac AppAccessConfig
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "getAppAccessConfig", "deploymentVars", deploymentVars, "varsFound", varsFound)
@@ -59,7 +58,7 @@ func GetAppAccessConfig(ctx context.Context, configs []*edgeproto.ConfigFile, de
 				return nil, err
 			}
 			// Fill in the Deployment Vars passed as a variable through the context
-			cfg, err = crmutil.ReplaceDeploymentVars(cfg, delims, deploymentVars)
+			cfg, err = deployvars.ReplaceDeploymentVars(cfg, delims, deploymentVars)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "getAppAccessConfig failed to replace CRM variables",
 					"config file", v.Config, "DeploymentVars", deploymentVars, "error", err)

@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -31,7 +30,7 @@ func (v *VMPlatform) ConfigureCloudletSecurityRules(ctx context.Context, action 
 	egressRestricted := false
 	var err error
 	if privPolName != "" {
-		privPol, err = crmutil.GetCloudletTrustPolicy(ctx, privPolName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey.Organization, v.Caches.TrustPolicyCache)
+		privPol, err = edgeproto.GetCloudletTrustPolicy(ctx, privPolName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey.Organization, v.Caches.TrustPolicyCache)
 		if err != nil {
 			return err
 		}
