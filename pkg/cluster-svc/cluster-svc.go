@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package clustersvc
 
 import (
 	"bytes"
@@ -998,7 +998,7 @@ func cloudletDeletedCb(ctx context.Context, old *edgeproto.Cloudlet) {
 	}
 }
 
-func main() {
+func Run() {
 	nodeMgr.InitFlags()
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
