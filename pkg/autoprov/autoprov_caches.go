@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package autoprov
 
 import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"

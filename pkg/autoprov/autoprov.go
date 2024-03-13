@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package autoprov
 
 import (
 	"context"
@@ -51,7 +51,7 @@ var retryTracker *RetryTracker
 var settings edgeproto.Settings
 var nodeMgr node.NodeMgr
 
-func main() {
+func Run() {
 	nodeMgr.InitFlags()
 	flag.Parse()
 
