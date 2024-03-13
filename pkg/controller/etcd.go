@@ -14,7 +14,7 @@
 
 // Start etcd
 
-package main
+package controller
 
 import (
 	"context"

@@ -9,4 +9,4 @@
 !edge-proto
 
 # etcd data comes from unit tests
-edge-cloud-platform/cmd/controller/etcdLocal_data
+edge-cloud-platform/pkg/controller/etcdLocal_data

@@ -18,5 +18,5 @@ import "github.com/edgexr/edge-cloud-platform/pkg/gensupport"
 
 func main() {
 	plugin := ControllerGen{}
-	gensupport.RunMain("main", ".auto.go", &plugin, &plugin.support)
+	gensupport.RunMain("controller", ".auto.go", &plugin, &plugin.support)
 }
