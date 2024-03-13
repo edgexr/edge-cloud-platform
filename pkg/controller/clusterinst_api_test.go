@@ -23,8 +23,8 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	influxq "github.com/edgexr/edge-cloud-platform/pkg/controller/influxq_client"
-	"github.com/edgexr/edge-cloud-platform/pkg/controller/influxq_client/influxq_testutil"
+	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

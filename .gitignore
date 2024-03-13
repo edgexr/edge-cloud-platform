@@ -14,8 +14,8 @@ pkg/vault/vault_pki
 pkg/vault/roles.yaml
 pkg/controller/data_test.json
 pkg/controller/influxdb.log
-pkg/controller/influxq_client/.influxdb
-pkg/controller/influxq_client/influxdb.log
+pkg/influxq_client/.influxdb
+pkg/influxq_client/influxdb.log
 pkg/ccrm/ansible.tar.gz
 
 # leftovers after regression tests
