@@ -20,7 +20,7 @@ import (
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
-	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
+	uaemtest "github.com/edgexr/edge-cloud-platform/pkg/uaem-testutil"
 	"golang.org/x/net/context"
 )
 
@@ -28,7 +28,7 @@ func TestLocations(sessionClient dme.SessionClient, locClient dme.LocationClient
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
 
 	fmt.Println(">>>>>>>Finding Right Locations<<<<<<<<<")
-	for _, m := range dmetest.VerifyLocData {
+	for _, m := range uaemtest.VerifyLocData {
 		// Register the client first
 		mstatus, err := sessionClient.RegisterClient(ctx, &m.Reg)
 		if err != nil {

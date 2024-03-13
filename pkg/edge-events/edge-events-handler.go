@@ -21,14 +21,14 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	grpcstats "github.com/edgexr/edge-cloud-platform/pkg/metrics/grpc"
+	uaemcommon "github.com/edgexr/edge-cloud-platform/pkg/uaem-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
 )
 
-// Implements dmecommon.EdgeEventsHandler interface
+// Implements uaemcommon.EdgeEventsHandler interface
 type EdgeEventsHandlerPlugin struct {
 	util.Mutex
 	// hashmap containing Cloudlets and information about each Cloudlet
@@ -51,14 +51,14 @@ type AppInstInfo struct {
 	// carrier associated with appinst
 	carrier string
 	// DmeAppInst struct used to pass into SearchAppInsts function
-	dmeAppInst *dmecommon.DmeAppInst
+	dmeAppInst *uaemcommon.DmeAppInst
 	// hashmap containing Clients on this appinst and information about each Client
 	Clients map[Client]*ClientInfo
 }
 
 // Client uniquely identified by session cookie
 type Client struct {
-	cookieKey dmecommon.CookieKey
+	cookieKey uaemcommon.CookieKey
 }
 
 // Client info contains the client's specific Send function, last location, and carrier
@@ -69,7 +69,7 @@ type ClientInfo struct {
 }
 
 // Add Client connected to specified AppInst to Map
-func (e *EdgeEventsHandlerPlugin) AddClient(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, lastLoc dme.Loc, carrier string, sendFunc func(event *dme.ServerEdgeEvent)) {
+func (e *EdgeEventsHandlerPlugin) AddClient(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey uaemcommon.CookieKey, lastLoc dme.Loc, carrier string, sendFunc func(event *dme.ServerEdgeEvent)) {
 	e.Lock()
 	defer e.Unlock()
 	// Get cloudletinfo for specified cloudlet
@@ -97,7 +97,7 @@ func (e *EdgeEventsHandlerPlugin) AddClient(ctx context.Context, appInstKey edge
 }
 
 // Send new FindCloudletReply with available appinst information to all clients that are closer to this appinst
-func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app *dmecommon.DmeApp, newAppInstKey edgeproto.AppInstKey, newAppInst *dmecommon.DmeAppInst, newAppInstCarrier string) {
+func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app *uaemcommon.DmeApp, newAppInstKey edgeproto.AppInstKey, newAppInst *uaemcommon.DmeAppInst, newAppInstCarrier string) {
 	e.Lock()
 	defer e.Unlock()
 	// Get cloudletinfo for specified cloudlet or create entry if needed
@@ -127,20 +127,20 @@ func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app 
 			if appinstinfo.appKey == app.AppKey {
 				for _, clientinfo := range appinstinfo.Clients {
 					// construct carrierData map with the two appinsts to compare
-					carrierData := map[string]*dmecommon.DmeAppInsts{
-						newAppInstCarrier: &dmecommon.DmeAppInsts{ // newly available appinst
-							Insts: map[edgeproto.AppInstKey]*dmecommon.DmeAppInst{
+					carrierData := map[string]*uaemcommon.DmeAppInsts{
+						newAppInstCarrier: &uaemcommon.DmeAppInsts{ // newly available appinst
+							Insts: map[edgeproto.AppInstKey]*uaemcommon.DmeAppInst{
 								newAppInstKey: newAppInst,
 							},
-						}, appinstinfo.carrier: &dmecommon.DmeAppInsts{ // current appinst
-							Insts: map[edgeproto.AppInstKey]*dmecommon.DmeAppInst{
+						}, appinstinfo.carrier: &uaemcommon.DmeAppInsts{ // current appinst
+							Insts: map[edgeproto.AppInstKey]*uaemcommon.DmeAppInst{
 								appinstinfo.appInstKey: appinstinfo.dmeAppInst,
 							},
 						},
 					}
 					// compare new appinst with current appinst to see which is better
 					// use client's carrier name to perform the search
-					foundList := dmecommon.SearchAppInsts(ctx, clientinfo.carrier, app, &clientinfo.lastLoc, carrierData, 1)
+					foundList := uaemcommon.SearchAppInsts(ctx, clientinfo.carrier, app, &clientinfo.lastLoc, carrierData, 1)
 					if foundList == nil || len(foundList) != 1 {
 						continue
 					}
@@ -150,7 +150,7 @@ func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app 
 						newCloudletEdgeEvent.EventType = dme.ServerEdgeEvent_EVENT_CLOUDLET_UPDATE
 						// construct FindCloudletReply from DmeAppInst struct
 						newCloudlet := new(dme.FindCloudletReply)
-						dmecommon.ConstructFindCloudletReplyFromDmeAppInst(ctx, newAppInst, &clientinfo.lastLoc, newCloudlet, e.EdgeEventsCookieExpiration)
+						uaemcommon.ConstructFindCloudletReplyFromDmeAppInst(ctx, newAppInst, &clientinfo.lastLoc, newCloudlet, e.EdgeEventsCookieExpiration)
 						newCloudletEdgeEvent.NewCloudlet = newCloudlet
 						clientinfo.sendFunc(newCloudletEdgeEvent)
 					}
@@ -161,7 +161,7 @@ func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app 
 }
 
 // Update Client's last location
-func (e *EdgeEventsHandlerPlugin) UpdateClientLastLocation(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, lastLoc dme.Loc) {
+func (e *EdgeEventsHandlerPlugin) UpdateClientLastLocation(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey uaemcommon.CookieKey, lastLoc dme.Loc) {
 	e.Lock()
 	defer e.Unlock()
 	// Update lastLoc field in cliientinfo for specified client
@@ -173,7 +173,7 @@ func (e *EdgeEventsHandlerPlugin) UpdateClientLastLocation(ctx context.Context, 
 	clientinfo.lastLoc = lastLoc
 }
 
-func (e *EdgeEventsHandlerPlugin) UpdateClientCarrier(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, carrier string) {
+func (e *EdgeEventsHandlerPlugin) UpdateClientCarrier(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey uaemcommon.CookieKey, carrier string) {
 	e.Lock()
 	defer e.Unlock()
 	// Update carrier field in cliientinfo for specified client
@@ -186,7 +186,7 @@ func (e *EdgeEventsHandlerPlugin) UpdateClientCarrier(ctx context.Context, appIn
 }
 
 // Remove Client connected to specified AppInst from Map
-func (e *EdgeEventsHandlerPlugin) RemoveClient(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey) {
+func (e *EdgeEventsHandlerPlugin) RemoveClient(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey uaemcommon.CookieKey) {
 	e.Lock()
 	defer e.Unlock()
 	e.removeClientKey(ctx, appInstKey, cookieKey)
@@ -207,7 +207,7 @@ func (e *EdgeEventsHandlerPlugin) RemoveCloudlet(ctx context.Context, cloudletKe
 
 // Handle processing of latency samples and then send back to client
 // For now: Avg, Min, Max, StdDev
-func (e *EdgeEventsHandlerPlugin) ProcessLatencySamples(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey, samples []*dme.Sample) (*dme.Statistics, error) {
+func (e *EdgeEventsHandlerPlugin) ProcessLatencySamples(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey uaemcommon.CookieKey, samples []*dme.Sample) (*dme.Statistics, error) {
 	e.Lock()
 	defer e.Unlock()
 	// Check to see if client is on appinst
@@ -251,7 +251,7 @@ func (e *EdgeEventsHandlerPlugin) SendLatencyRequestEdgeEvent(ctx context.Contex
 }
 
 // Send a AppInstState EdgeEvent with specified Event to all clients connected to specified AppInst (and also have initiated persistent connection)
-func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, appInstKey edgeproto.AppInstKey, appKey *edgeproto.AppKey, eventType dme.ServerEdgeEvent_ServerEventType) {
+func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context, appinstState *uaemcommon.DmeAppInstState, appInstKey edgeproto.AppInstKey, appKey *edgeproto.AppKey, eventType dme.ServerEdgeEvent_ServerEventType) {
 	e.Lock()
 	defer e.Unlock()
 	// Get appinstinfo for specified appinst
@@ -272,7 +272,7 @@ func (e *EdgeEventsHandlerPlugin) SendAppInstStateEdgeEvent(ctx context.Context,
 	go e.sendEdgeEventsToClients(m)
 }
 
-func (e *EdgeEventsHandlerPlugin) SendCloudletStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, cloudletKey edgeproto.CloudletKey) {
+func (e *EdgeEventsHandlerPlugin) SendCloudletStateEdgeEvent(ctx context.Context, appinstState *uaemcommon.DmeAppInstState, cloudletKey edgeproto.CloudletKey) {
 	e.Lock()
 	defer e.Unlock()
 	// Get cloudletinfo for specified cloudlet
@@ -297,7 +297,7 @@ func (e *EdgeEventsHandlerPlugin) SendCloudletStateEdgeEvent(ctx context.Context
 	go e.sendEdgeEventsToClients(m)
 }
 
-func (e *EdgeEventsHandlerPlugin) SendCloudletMaintenanceStateEdgeEvent(ctx context.Context, appinstState *dmecommon.DmeAppInstState, cloudletKey edgeproto.CloudletKey) {
+func (e *EdgeEventsHandlerPlugin) SendCloudletMaintenanceStateEdgeEvent(ctx context.Context, appinstState *uaemcommon.DmeAppInstState, cloudletKey edgeproto.CloudletKey) {
 	e.Lock()
 	defer e.Unlock()
 	// Get cloudlet info for specified cloudlet
@@ -323,7 +323,7 @@ func (e *EdgeEventsHandlerPlugin) SendCloudletMaintenanceStateEdgeEvent(ctx cont
 }
 
 // Send ServerEdgeEvent to specified client via persistent grpc stream
-func (e *EdgeEventsHandlerPlugin) SendEdgeEventToClient(ctx context.Context, serverEdgeEvent *dme.ServerEdgeEvent, appInstKey edgeproto.AppInstKey, cookieKey dmecommon.CookieKey) {
+func (e *EdgeEventsHandlerPlugin) SendEdgeEventToClient(ctx context.Context, serverEdgeEvent *dme.ServerEdgeEvent, appInstKey edgeproto.AppInstKey, cookieKey uaemcommon.CookieKey) {
 	e.Lock()
 	defer e.Unlock()
 	// Check to see if client is on appinst

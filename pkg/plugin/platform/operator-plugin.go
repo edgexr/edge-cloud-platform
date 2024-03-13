@@ -17,10 +17,10 @@ package platform
 import (
 	"context"
 
-	operator "github.com/edgexr/edge-cloud-platform/pkg/dme-platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/dme-platform/defaultoperator"
-	"github.com/edgexr/edge-cloud-platform/pkg/dme-platform/operalpha"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	operator "github.com/edgexr/edge-cloud-platform/pkg/nrem-platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/nrem-platform/defaultoperator"
+	"github.com/edgexr/edge-cloud-platform/pkg/nrem-platform/operalpha"
 )
 
 func GetOperatorApiGw(ctx context.Context, operatorName string) (operator.OperatorApiGw, error) {
