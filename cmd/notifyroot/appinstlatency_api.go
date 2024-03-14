@@ -18,9 +18,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	uaemcommon "github.com/edgexr/edge-cloud-platform/pkg/uaem-common"
 )
 
 type AppInstLatencyApi struct{}
@@ -39,7 +39,7 @@ func (s *AppInstLatencyApi) RequestAppInstLatency(ctx context.Context, in *edgep
 		Node: edgeproto.NodeKey{
 			Type: node.NodeTypeDME,
 		},
-		Cmd:  dmecommon.RequestAppInstLatency,
+		Cmd:  uaemcommon.RequestAppInstLatency,
 		Args: args,
 	}
 

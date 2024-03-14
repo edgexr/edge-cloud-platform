@@ -20,7 +20,7 @@ import (
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
-	dmetest "github.com/edgexr/edge-cloud-platform/pkg/dme-testutil"
+	uaemtest "github.com/edgexr/edge-cloud-platform/pkg/uaem-testutil"
 	"golang.org/x/net/context"
 )
 
@@ -28,7 +28,7 @@ func FindCloudlets(sessionClient dme.SessionClient, appClient dme.MatchEngineApi
 	ctx, _ := context.WithTimeout(context.Background(), time.Second)
 
 	fmt.Println(">>>>>>>Finding Right Cloudlets<<<<<<<<<")
-	for _, m := range dmetest.FindCloudletData {
+	for _, m := range uaemtest.FindCloudletData {
 		mstatus, err := sessionClient.RegisterClient(ctx, &m.Reg)
 		if err != nil {
 			log.Fatalf("could not register: %v", err)

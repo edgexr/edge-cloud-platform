@@ -19,12 +19,12 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	edgeevents "github.com/edgexr/edge-cloud-platform/pkg/edge-events"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	uaemcommon "github.com/edgexr/edge-cloud-platform/pkg/uaem-common"
 )
 
-func GetEdgeEventsHandler(ctx context.Context, edgeEventsCookieExpiration time.Duration) (dmecommon.EdgeEventsHandler, error) {
+func GetEdgeEventsHandler(ctx context.Context, edgeEventsCookieExpiration time.Duration) (uaemcommon.EdgeEventsHandler, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetEdgeEventHandler")
 	edgeEventsHandlerPlugin := new(edgeevents.EdgeEventsHandlerPlugin)
 	edgeEventsHandlerPlugin.EdgeEventsCookieExpiration = edgeEventsCookieExpiration

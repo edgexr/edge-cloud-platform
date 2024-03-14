@@ -23,8 +23,8 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	dmecommon "github.com/edgexr/edge-cloud-platform/pkg/dme-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	uaemcommon "github.com/edgexr/edge-cloud-platform/pkg/uaem-common"
 	"github.com/stretchr/testify/require"
 )
 
@@ -77,25 +77,25 @@ var appinst5 = edgeproto.AppInstKey{
 var appinsts = [6]edgeproto.AppInstKey{appinst0, appinst1, appinst2, appinst3, appinst4, appinst5}
 
 // Intialize bunch of Clients
-var client0 = dmecommon.CookieKey{
+var client0 = uaemcommon.CookieKey{
 	UniqueId: "client0",
 }
-var client1 = dmecommon.CookieKey{
+var client1 = uaemcommon.CookieKey{
 	UniqueId: "client1",
 }
-var client2 = dmecommon.CookieKey{
+var client2 = uaemcommon.CookieKey{
 	UniqueId: "client2",
 }
-var client3 = dmecommon.CookieKey{
+var client3 = uaemcommon.CookieKey{
 	UniqueId: "client3",
 }
-var client4 = dmecommon.CookieKey{
+var client4 = uaemcommon.CookieKey{
 	UniqueId: "client4",
 }
-var client5 = dmecommon.CookieKey{
+var client5 = uaemcommon.CookieKey{
 	UniqueId: "client5",
 }
-var clients = [6]dmecommon.CookieKey{client0, client1, client2, client3, client4, client5}
+var clients = [6]uaemcommon.CookieKey{client0, client1, client2, client3, client4, client5}
 
 var emptyLoc = dme.Loc{}
 
@@ -110,7 +110,7 @@ func TestEdgeEventsHandlerPlugin(t *testing.T) {
 }
 
 func testAddRemoveKeysSerial(t *testing.T, ctx context.Context) {
-	app := &dmecommon.DmeApp{}
+	app := &uaemcommon.DmeApp{}
 	// Intialize EdgeEventsHandlerPlugin
 	e := new(EdgeEventsHandlerPlugin)
 	e.Cloudlets = make(map[edgeproto.CloudletKey]*CloudletInfo)
@@ -188,7 +188,7 @@ func testAddRemoveKeysSerial(t *testing.T, ctx context.Context) {
 }
 
 func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
-	app := &dmecommon.DmeApp{}
+	app := &uaemcommon.DmeApp{}
 	// Intialize EdgeEventsHandlerPlugin
 	e := new(EdgeEventsHandlerPlugin)
 	e.Cloudlets = make(map[edgeproto.CloudletKey]*CloudletInfo)
@@ -207,7 +207,7 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 	done := make(chan string, numClients*numAppInstsPerClient)
 
 	for i, c := range clients {
-		go func(client dmecommon.CookieKey, idx int) {
+		go func(client uaemcommon.CookieKey, idx int) {
 			appinst := appinsts[idx]
 			// sleep
 			time.Sleep(time.Duration(rand.Intn(sleepRange)) * time.Millisecond)
@@ -217,7 +217,7 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 			e.RemoveClient(ctx, appinst, client)
 			done <- fmt.Sprintf("Client %d on Appinst %d", idx, idx)
 		}(c, i)
-		go func(client dmecommon.CookieKey, idx int) {
+		go func(client uaemcommon.CookieKey, idx int) {
 			// next appinst
 			appinstidx := (idx + 1) % 6
 			appinst := appinsts[appinstidx]
@@ -229,7 +229,7 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 			e.RemoveClient(ctx, appinst, client)
 			done <- fmt.Sprintf("Client %d on Appinst %d", idx, appinstidx)
 		}(c, i)
-		go func(client dmecommon.CookieKey, idx int) {
+		go func(client uaemcommon.CookieKey, idx int) {
 			// next appinst
 			appinstidx := (idx + 2) % 6
 			appinst := appinsts[appinstidx]
