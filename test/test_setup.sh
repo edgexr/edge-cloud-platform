@@ -15,6 +15,8 @@ ETCD_VER=v3.5.12
 INFLUXDB_VER="1.7.6"
 REDIS_VER="7.0.7"
 
+export DEBIAN_FRONTEND=noninteractive
+
 RELEASE=`lsb_release -d`
 if [[ "$RELEASE" != *"Ubuntu"* ]]; then
     echo "This script is targeted for Ubuntu-based systems"
@@ -53,6 +55,21 @@ if ! redis-server --version > /dev/null; then
     echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
     apt-get update && apt-get install -y redis
     systemctl stop redis-server
+fi
+
+if ! python3 --version > /dev/null; then
+    echo "Installing python3"
+    apt update && apt install -y python3
+fi
+
+if ! pip3 --version > /dev/null; then
+    echo "Installing python3 pip"
+    apt update && apt install -y python3-pip
+fi
+
+if ! pip list | grep docker > /dev/null; then
+    echo "Installing docker SDK for python"
+    pip install docker
 fi
 
 if [[ "$PATH" != *"${GO_INSTALL_DIR}/go"* ]]; then

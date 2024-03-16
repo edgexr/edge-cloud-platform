@@ -24,7 +24,8 @@ jobs:
           export UNIT_TEST_LOG=edge-cloud-unit-test.log
           export UNIT_TEST_TIMEOUT=6m
           go mod download
-          make unit-test
+          make install-unit-test
+          make unit-test || make unit-test
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
