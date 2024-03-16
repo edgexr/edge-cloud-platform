@@ -10,12 +10,10 @@ jobs:
   test:
     name: Run tests, and build if tagged
     runs-on: [ self-hosted ]
+    permissions: write-all
     defaults:
       run:
         shell: bash
-    env:
-      UNIT_TEST_LOG: edge-cloud-unit-test.log
-      UNIT_TEST_TIMEOUT: 6m
     steps:
       - uses: actions/checkout@v4
       - name: run unit tests
