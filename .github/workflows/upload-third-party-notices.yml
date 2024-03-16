@@ -14,11 +14,12 @@
 
 name: Upload third party notices list to Artifactory
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - THIRD-PARTY-NOTICES
+#  push:
+#    branches:
+#      - master
+#    paths:
+#      - THIRD-PARTY-NOTICES
+  workflow_dispatch:
 
 jobs:
 

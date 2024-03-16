@@ -60,7 +60,7 @@ install:
 	go install $(GO_BUILD_FLAGS) ./...
 
 install-unit-test:
-	go install $(GO_BUILD_FLAGS) ./cmd/crm
+	go install $(GO_BUILD_FLAGS) ./cmd/ccme/crm
 
 install-linux:
 	${LINUX_XCOMPILE_ENV} go install $(GO_BUILD_FLAGS) ./...
@@ -76,7 +76,7 @@ tools:
 external-doc:
 	make -C edgeproto external-doc
 
-CMDS	= ./cmd/autoprov ./cmd/ccrm ./cmd/cluster-svc ./cmd/controller ./cmd/crm ./cmd/dme ./cmd/edgeturn ./cmd/notifyroot ./cmd/shepherd ./pkg/platform/ ./pkg/plugin/edgeevents ./pkg/plugin/platform ./pkg/shepherd_platform
+CMDS	= ./cmd/ede/autoprov ./cmd/ccme/ccrm ./cmd/e2e/cluster-svc ./cmd/e2e/controller ./cmd/ccme/crm ./cmd/uaem/dme ./cmd/edgeturn ./cmd/notifyroot ./cmd/ccme/shepherd ./pkg/platform/ ./pkg/plugin/edgeevents ./pkg/plugin/platform ./pkg/shepherd_platform
 
 third_party:
 	parsedeps --gennotice ${CMDS} > THIRD-PARTY-NOTICES

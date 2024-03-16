@@ -1,0 +1,59 @@
+name: Test and Build
+on:
+  push:
+    branches:
+      - 'main'
+    tags:
+      - '**'
+
+jobs:
+  test:
+    name: Run tests, and build if tagged
+    runs-on: [ self-hosted ]
+    permissions: write-all
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: run unit tests
+        if: ${{ ! startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          export PATH=${PATH}:${HOME}/go/bin:/usr/local/go/bin
+          export UNIT_TEST_LOG=edge-cloud-unit-test.log
+          export UNIT_TEST_TIMEOUT=6m
+          go mod download
+          make install-unit-test
+          make unit-test || make unit-test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: unit-test-log
+          path: edge-cloud-unit-test.log
+          retention-days: 5
+          overwrite: true
+      - name: clean up containers
+        if: success() || failure()
+        run: |
+          export RUNNING=`docker ps -q`
+          [ -n "$RUNNING" ] && docker stop "$RUNNING"
+          docker container prune -f
+      - name: clean up processes
+        if: success() || failure()
+        run: |
+          pkill redis-server || true
+          pkill influxd || true
+          pkill etcd || true
+          pkill vault || true
+      - name: docker login to github packages registry
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: build images
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          export VERSION=${{ github.ref_name }}
+          make -C build/docker build-platform
