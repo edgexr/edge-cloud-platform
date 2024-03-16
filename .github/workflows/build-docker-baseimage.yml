@@ -15,16 +15,16 @@
 name: Edge-Cloud Docker Base Image
 
 on:
-  pull_request:
-    paths:
-      - 'docker/Dockerfile.edge-cloud-base-image'
-      - 'docker/edge-cloud-base-image.root/**'
-  push:
-    branches:
-      - master
-    paths:
-      - 'docker/Dockerfile.edge-cloud-base-image'
-      - 'docker/edge-cloud-base-image.root/**'
+#  pull_request:
+#    paths:
+#      - 'docker/Dockerfile.edge-cloud-base-image'
+#      - 'docker/edge-cloud-base-image.root/**'
+#  push:
+#    branches:
+#      - master
+#    paths:
+#      - 'docker/Dockerfile.edge-cloud-base-image'
+#      - 'docker/edge-cloud-base-image.root/**'
   workflow_dispatch:
 
 env:
