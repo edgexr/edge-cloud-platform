@@ -142,8 +142,7 @@ func handleDockerZipfile(ctx context.Context, authApi cloudcommon.RegistryAuthAp
 		}
 	}
 	dir := util.DockerSanitize(app.Key.Name + app.Key.Organization + app.Key.Version)
-	filename := dir + "/manifest.zip"
-	log.SpanLog(ctx, log.DebugLevelInfra, "docker zip", "filename", filename, "action", action)
+	log.SpanLog(ctx, log.DebugLevelInfra, "handle docker zip file", "dir", dir, "url", app.DeploymentManifest, "action", action)
 	var dockerComposeCommand string
 
 	if action == createZip {
@@ -165,20 +164,23 @@ func handleDockerZipfile(ctx context.Context, authApi cloudcommon.RegistryAuthAp
 				passParams = fmt.Sprintf("--user %s --password %s", auth.Username, auth.Password)
 			case cloudcommon.ApiKeyAuth:
 				passParams = fmt.Sprintf(`--header="X-JFrog-Art-Api: %s"`, auth.ApiKey)
+			case cloudcommon.TokenAuth:
+				passParams = fmt.Sprintf(`--header="Authorization: Bearer %s"`, auth.Token)
 			case cloudcommon.NoAuth:
 			default:
 				log.SpanLog(ctx, log.DebugLevelApi, "warning, cannot get registry credentials from vault - unknown authtype", "authType", auth.AuthType)
 			}
 		}
 		// pull the zipfile
-		out, err := client.Output(fmt.Sprintf("wget %s -T 60 -P %s %s", passParams, dir, app.DeploymentManifest))
+		cmd := fmt.Sprintf("wget %s -T 60 -P %s %s", passParams, dir, app.DeploymentManifest)
+		out, err := client.Output(cmd)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "wget err", "out", "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "wget err", "cmd", cmd, "out", out, "err", err)
 			return fmt.Errorf("wget of app zipfile failed: %s %v", out, err)
 		}
 		s := strings.Split(app.DeploymentManifest, "/")
 		zipfile := s[len(s)-1]
-		cmd := "unzip -o -d " + dir + " " + dir + "/" + zipfile
+		cmd = "unzip -o -d " + dir + " " + dir + "/" + zipfile
 		log.SpanLog(ctx, log.DebugLevelInfra, "running unzip", "cmd", cmd)
 		out, err = client.Output(cmd)
 		if err != nil {
@@ -257,7 +259,7 @@ func handleDockerZipfile(ctx context.Context, authApi cloudcommon.RegistryAuthAp
 
 }
 
-//createDockerComposeFile creates a docker compose file and returns the file name
+// createDockerComposeFile creates a docker compose file and returns the file name
 func createDockerComposeFile(client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
 	filename := getDockerComposeFileName(client, app, appInst)
 	log.DebugLog(log.DebugLevelInfra, "creating docker compose file", "filename", filename)
@@ -437,7 +439,7 @@ func DeleteAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker-compose", "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {
-			return fmt.Errorf("error running docker-compose down, %s, %v", out, err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "error running docker-compose down", "out", out, "err", err)
 		}
 		err = pc.DeleteFile(client, filename, pc.NoSudo)
 		if err != nil {
