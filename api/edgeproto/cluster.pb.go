@@ -259,6 +259,12 @@ func (m *ClusterKeyV1) Matches(o *ClusterKeyV1, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *ClusterKeyV1) Clone() *ClusterKeyV1 {
+	cp := &ClusterKeyV1{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *ClusterKeyV1) CopyInFields(src *ClusterKeyV1) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -344,6 +350,12 @@ func (m *ClusterKey) Matches(o *ClusterKey, fopts ...MatchOpt) bool {
 		}
 	}
 	return true
+}
+
+func (m *ClusterKey) Clone() *ClusterKey {
+	cp := &ClusterKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *ClusterKey) CopyInFields(src *ClusterKey) int {

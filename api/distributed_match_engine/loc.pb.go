@@ -539,6 +539,12 @@ func encodeVarintLoc(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *Timestamp) Clone() *Timestamp {
+	cp := &Timestamp{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *Timestamp) CopyInFields(src *Timestamp) int {
 	changed := 0
 	if m.Seconds != src.Seconds {
@@ -563,6 +569,12 @@ func (m *Timestamp) ValidateEnums() error {
 }
 
 func (s *Timestamp) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *Loc) Clone() *Loc {
+	cp := &Loc{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *Loc) CopyInFields(src *Loc) int {
@@ -647,7 +659,14 @@ func (s *Loc) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *Sample) Clone() *Sample {
+	cp := &Sample{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *Sample) CopyInFields(src *Sample) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Value != src.Value {
 		m.Value = src.Value
@@ -670,9 +689,23 @@ func (m *Sample) CopyInFields(src *Sample) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -715,6 +748,12 @@ func (s *Sample) ClearTagged(tags map[string]struct{}) {
 	if s.Timestamp != nil {
 		s.Timestamp.ClearTagged(tags)
 	}
+}
+
+func (m *Statistics) Clone() *Statistics {
+	cp := &Statistics{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *Statistics) CopyInFields(src *Statistics) int {

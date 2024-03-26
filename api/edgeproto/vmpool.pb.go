@@ -1337,6 +1337,12 @@ func encodeVarintVmpool(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *VMNetInfo) Clone() *VMNetInfo {
+	cp := &VMNetInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *VMNetInfo) CopyInFields(src *VMNetInfo) int {
 	changed := 0
 	if m.ExternalIp != src.ExternalIp {
@@ -1363,7 +1369,14 @@ func (m *VMNetInfo) ValidateEnums() error {
 func (s *VMNetInfo) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *VM) Clone() *VM {
+	cp := &VM{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *VM) CopyInFields(src *VM) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Name != src.Name {
 		m.Name = src.Name
@@ -1418,9 +1431,23 @@ func (m *VM) CopyInFields(src *VM) int {
 			changed++
 		}
 		if src.Flavor.PropMap != nil {
-			m.Flavor.PropMap = make(map[string]string)
-			for k1, _ := range src.Flavor.PropMap {
-				m.Flavor.PropMap[k1] = src.Flavor.PropMap[k1]
+			if updateListAction == "add" {
+				for k1, v := range src.Flavor.PropMap {
+					m.Flavor.PropMap[k1] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k1, _ := range src.Flavor.PropMap {
+					if _, ok := m.Flavor.PropMap[k1]; ok {
+						delete(m.Flavor.PropMap, k1)
+						changed++
+					}
+				}
+			} else {
+				m.Flavor.PropMap = make(map[string]string)
+				for k1, v := range src.Flavor.PropMap {
+					m.Flavor.PropMap[k1] = v
+				}
 				changed++
 			}
 		} else if m.Flavor.PropMap != nil {
@@ -1508,6 +1535,12 @@ func (m *VMPoolKey) Matches(o *VMPoolKey, fopts ...MatchOpt) bool {
 		}
 	}
 	return true
+}
+
+func (m *VMPoolKey) Clone() *VMPoolKey {
+	cp := &VMPoolKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *VMPoolKey) CopyInFields(src *VMPoolKey) int {
@@ -1919,7 +1952,76 @@ func (m *VMPool) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *VMPool) Clone() *VMPool {
+	cp := &VMPool{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *VMPool) AddVms(vals ...VM) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Vms {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Vms = append(m.Vms, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VMPool) RemoveVms(vals ...VM) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Vms); i >= 0; i-- {
+		if _, found := remove[m.Vms[i].String()]; found {
+			m.Vms = append(m.Vms[:i], m.Vms[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *VMPool) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VMPool) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *VMPool) CopyInFields(src *VMPool) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -1938,8 +2040,17 @@ func (m *VMPool) CopyInFields(src *VMPool) int {
 	}
 	if _, set := fmap["3"]; set {
 		if src.Vms != nil {
-			m.Vms = src.Vms
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddVms(src.Vms...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveVms(src.Vms...)
+			} else {
+				m.Vms = make([]VM, 0)
+				for k0, _ := range src.Vms {
+					m.Vms = append(m.Vms, *src.Vms[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.Vms != nil {
 			m.Vms = nil
 			changed++
@@ -1953,8 +2064,15 @@ func (m *VMPool) CopyInFields(src *VMPool) int {
 	}
 	if _, set := fmap["5"]; set {
 		if src.Errors != nil {
-			m.Errors = src.Errors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddErrors(src.Errors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveErrors(src.Errors...)
+			} else {
+				m.Errors = make([]string, 0)
+				m.Errors = append(m.Errors, src.Errors...)
+				changed++
+			}
 		} else if m.Errors != nil {
 			m.Errors = nil
 			changed++
@@ -2659,7 +2777,14 @@ func IgnoreVMPoolFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(VMPool{}, names...)
 }
 
+func (m *VMPoolMember) Clone() *VMPoolMember {
+	cp := &VMPoolMember{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *VMPoolMember) CopyInFields(src *VMPoolMember) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
 		m.Key.Organization = src.Key.Organization
@@ -2722,9 +2847,23 @@ func (m *VMPoolMember) CopyInFields(src *VMPoolMember) int {
 			changed++
 		}
 		if src.Vm.Flavor.PropMap != nil {
-			m.Vm.Flavor.PropMap = make(map[string]string)
-			for k2, _ := range src.Vm.Flavor.PropMap {
-				m.Vm.Flavor.PropMap[k2] = src.Vm.Flavor.PropMap[k2]
+			if updateListAction == "add" {
+				for k2, v := range src.Vm.Flavor.PropMap {
+					m.Vm.Flavor.PropMap[k2] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k2, _ := range src.Vm.Flavor.PropMap {
+					if _, ok := m.Vm.Flavor.PropMap[k2]; ok {
+						delete(m.Vm.Flavor.PropMap, k2)
+						changed++
+					}
+				}
+			} else {
+				m.Vm.Flavor.PropMap = make(map[string]string)
+				for k2, v := range src.Vm.Flavor.PropMap {
+					m.Vm.Flavor.PropMap[k2] = v
+				}
 				changed++
 			}
 		} else if m.Vm.Flavor.PropMap != nil {
@@ -2799,7 +2938,14 @@ func IgnoreVMPoolMemberFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(VMPoolMember{}, names...)
 }
 
+func (m *VMSpec) Clone() *VMSpec {
+	cp := &VMSpec{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *VMSpec) CopyInFields(src *VMSpec) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.InternalName != src.InternalName {
 		m.InternalName = src.InternalName
@@ -2830,9 +2976,23 @@ func (m *VMSpec) CopyInFields(src *VMSpec) int {
 		changed++
 	}
 	if src.Flavor.OptResMap != nil {
-		m.Flavor.OptResMap = make(map[string]string)
-		for k1, _ := range src.Flavor.OptResMap {
-			m.Flavor.OptResMap[k1] = src.Flavor.OptResMap[k1]
+		if updateListAction == "add" {
+			for k1, v := range src.Flavor.OptResMap {
+				m.Flavor.OptResMap[k1] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k1, _ := range src.Flavor.OptResMap {
+				if _, ok := m.Flavor.OptResMap[k1]; ok {
+					delete(m.Flavor.OptResMap, k1)
+					changed++
+				}
+			}
+		} else {
+			m.Flavor.OptResMap = make(map[string]string)
+			for k1, v := range src.Flavor.OptResMap {
+				m.Flavor.OptResMap[k1] = v
+			}
 			changed++
 		}
 	} else if m.Flavor.OptResMap != nil {
@@ -3200,7 +3360,107 @@ func (m *VMPoolInfo) DiffFields(o *VMPoolInfo, fields map[string]struct{}) {
 	}
 }
 
+func (m *VMPoolInfo) Clone() *VMPoolInfo {
+	cp := &VMPoolInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *VMPoolInfo) AddVms(vals ...VM) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Vms {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Vms = append(m.Vms, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VMPoolInfo) RemoveVms(vals ...VM) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Vms); i >= 0; i-- {
+		if _, found := remove[m.Vms[i].String()]; found {
+			m.Vms = append(m.Vms[:i], m.Vms[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *VMPoolInfo) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VMPoolInfo) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *VMPoolInfo) AddStatusMsgs(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Status.Msgs {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Status.Msgs = append(m.Status.Msgs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VMPoolInfo) RemoveStatusMsgs(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Status.Msgs); i >= 0; i-- {
+		if _, found := remove[m.Status.Msgs[i]]; found {
+			m.Status.Msgs = append(m.Status.Msgs[:i], m.Status.Msgs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *VMPoolInfo) CopyInFields(src *VMPoolInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -3225,8 +3485,17 @@ func (m *VMPoolInfo) CopyInFields(src *VMPoolInfo) int {
 	}
 	if _, set := fmap["4"]; set {
 		if src.Vms != nil {
-			m.Vms = src.Vms
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddVms(src.Vms...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveVms(src.Vms...)
+			} else {
+				m.Vms = make([]VM, 0)
+				for k0, _ := range src.Vms {
+					m.Vms = append(m.Vms, *src.Vms[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.Vms != nil {
 			m.Vms = nil
 			changed++
@@ -3240,8 +3509,15 @@ func (m *VMPoolInfo) CopyInFields(src *VMPoolInfo) int {
 	}
 	if _, set := fmap["6"]; set {
 		if src.Errors != nil {
-			m.Errors = src.Errors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddErrors(src.Errors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveErrors(src.Errors...)
+			} else {
+				m.Errors = make([]string, 0)
+				m.Errors = append(m.Errors, src.Errors...)
+				changed++
+			}
 		} else if m.Errors != nil {
 			m.Errors = nil
 			changed++
@@ -3280,8 +3556,15 @@ func (m *VMPoolInfo) CopyInFields(src *VMPoolInfo) int {
 		}
 		if _, set := fmap["7.6"]; set {
 			if src.Status.Msgs != nil {
-				m.Status.Msgs = src.Status.Msgs
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddStatusMsgs(src.Status.Msgs...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveStatusMsgs(src.Status.Msgs...)
+				} else {
+					m.Status.Msgs = make([]string, 0)
+					m.Status.Msgs = append(m.Status.Msgs, src.Status.Msgs...)
+					changed++
+				}
 			} else if m.Status.Msgs != nil {
 				m.Status.Msgs = nil
 				changed++

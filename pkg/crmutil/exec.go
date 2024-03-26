@@ -28,7 +28,9 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/kballard/go-shellquote"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/xtaci/smux"
 )
@@ -403,17 +405,20 @@ type RunExec struct {
 	req     *edgeproto.ExecRequest
 	client  ssh.Client
 	contcmd string
-	sin     io.WriteCloser
 }
 
 func (s *RunExec) proxyRawConn(turnConn net.Conn) error {
+	args, err := shellquote.Split(strings.TrimSpace(s.contcmd))
+	if err != nil {
+		return fmt.Errorf("bad command %s: %s", s.contcmd, err)
+	}
 	prd, pwr := io.Pipe()
 	go io.Copy(pwr, turnConn)
-	err := s.client.Shell(prd, turnConn, turnConn, s.contcmd)
+	err = pc.RunSafeShell(s.client, prd, turnConn, turnConn, args[0], args[1:])
 	if err != nil {
 		log.DebugLog(log.DebugLevelApi,
 			"failed to exec",
-			"cmd", s.contcmd, "err", err)
+			"cmd", s.contcmd, "args", args, "err", err)
 	}
 	return err
 }

@@ -197,7 +197,7 @@ func KubePatchServiceIP(ctx context.Context, client ssh.Client, kubeNames *k8smg
 	log.SpanLog(ctx, log.DebugLevelInfra, "patch service IP", "servicename", servicename, "ipaddr", ipaddr, "ipv6Addr", ipv6Addr, "namespace", namespace)
 
 	// TODO: handle ipv6Addr, requires ipv6 enabled on kubernetes
-	cmd := fmt.Sprintf(`%s kubectl patch svc %s -n %s -p '{"spec":{"externalIPs":["%s"]}}'`, kubeNames.KconfEnv, servicename, namespace, ipaddr)
+	cmd := fmt.Sprintf(`kubectl %s patch svc %s -n %s -p '{"spec":{"externalIPs":["%s"]}}'`, kubeNames.KconfArg, servicename, namespace, ipaddr)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "patch svc failed",

@@ -1141,6 +1141,12 @@ func encodeVarintSample(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *NestedMessage) Clone() *NestedMessage {
+	cp := &NestedMessage{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *NestedMessage) CopyInFields(src *NestedMessage) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -1160,6 +1166,12 @@ func (m *NestedMessage) ValidateEnums() error {
 }
 
 func (s *NestedMessage) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *IncludeMessage) Clone() *IncludeMessage {
+	cp := &IncludeMessage{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *IncludeMessage) CopyInFields(src *IncludeMessage) int {
@@ -1213,6 +1225,12 @@ func (s *IncludeMessage) ClearTagged(tags map[string]struct{}) {
 	if s.NestedMsg != nil {
 		s.NestedMsg.ClearTagged(tags)
 	}
+}
+
+func (m *IncludeFields) Clone() *IncludeFields {
+	cp := &IncludeFields{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *IncludeFields) CopyInFields(src *IncludeFields) int {
@@ -2399,7 +2417,324 @@ func (m *TestGen) DiffFields(o *TestGen, fields map[string]struct{}) {
 	}
 }
 
+func (m *TestGen) Clone() *TestGen {
+	cp := &TestGen{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *TestGen) AddRepeatedInt(vals ...int64) int {
+	changes := 0
+	cur := make(map[int64]struct{})
+	for _, v := range m.RepeatedInt {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.RepeatedInt = append(m.RepeatedInt, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveRepeatedInt(vals ...int64) int {
+	changes := 0
+	remove := make(map[int64]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.RepeatedInt); i >= 0; i-- {
+		if _, found := remove[m.RepeatedInt[i]]; found {
+			m.RepeatedInt = append(m.RepeatedInt[:i], m.RepeatedInt[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *TestGen) AddNames(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Names {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Names = append(m.Names, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveNames(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Names); i >= 0; i-- {
+		if _, found := remove[m.Names[i]]; found {
+			m.Names = append(m.Names[:i], m.Names[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *TestGen) AddRepeatedMsg(vals ...*IncludeMessage) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RepeatedMsg {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.RepeatedMsg = append(m.RepeatedMsg, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveRepeatedMsg(vals ...*IncludeMessage) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.RepeatedMsg); i >= 0; i-- {
+		if _, found := remove[m.RepeatedMsg[i].String()]; found {
+			m.RepeatedMsg = append(m.RepeatedMsg[:i], m.RepeatedMsg[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *TestGen) AddRepeatedMsgNonnull(vals ...IncludeMessage) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RepeatedMsgNonnull {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.RepeatedMsgNonnull = append(m.RepeatedMsgNonnull, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveRepeatedMsgNonnull(vals ...IncludeMessage) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.RepeatedMsgNonnull); i >= 0; i-- {
+		if _, found := remove[m.RepeatedMsgNonnull[i].String()]; found {
+			m.RepeatedMsgNonnull = append(m.RepeatedMsgNonnull[:i], m.RepeatedMsgNonnull[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *TestGen) AddRepeatedFields(vals ...*IncludeFields) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RepeatedFields {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.RepeatedFields = append(m.RepeatedFields, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveRepeatedFields(vals ...*IncludeFields) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.RepeatedFields); i >= 0; i-- {
+		if _, found := remove[m.RepeatedFields[i].String()]; found {
+			m.RepeatedFields = append(m.RepeatedFields[:i], m.RepeatedFields[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *TestGen) AddRepeatedFieldsNonnull(vals ...IncludeFields) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RepeatedFieldsNonnull {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.RepeatedFieldsNonnull = append(m.RepeatedFieldsNonnull, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveRepeatedFieldsNonnull(vals ...IncludeFields) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.RepeatedFieldsNonnull); i >= 0; i-- {
+		if _, found := remove[m.RepeatedFieldsNonnull[i].String()]; found {
+			m.RepeatedFieldsNonnull = append(m.RepeatedFieldsNonnull[:i], m.RepeatedFieldsNonnull[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *TestGen) AddRepeatedInnerMsg(vals ...*TestGen_InnerMessage) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RepeatedInnerMsg {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.RepeatedInnerMsg = append(m.RepeatedInnerMsg, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveRepeatedInnerMsg(vals ...*TestGen_InnerMessage) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.RepeatedInnerMsg); i >= 0; i-- {
+		if _, found := remove[m.RepeatedInnerMsg[i].String()]; found {
+			m.RepeatedInnerMsg = append(m.RepeatedInnerMsg[:i], m.RepeatedInnerMsg[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *TestGen) AddRepeatedInnerMsgNonnull(vals ...TestGen_InnerMessage) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RepeatedInnerMsgNonnull {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.RepeatedInnerMsgNonnull = append(m.RepeatedInnerMsgNonnull, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveRepeatedInnerMsgNonnull(vals ...TestGen_InnerMessage) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.RepeatedInnerMsgNonnull); i >= 0; i-- {
+		if _, found := remove[m.RepeatedInnerMsgNonnull[i].String()]; found {
+			m.RepeatedInnerMsgNonnull = append(m.RepeatedInnerMsgNonnull[:i], m.RepeatedInnerMsgNonnull[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *TestGen) AddRepeatedLoc(vals ...*distributed_match_engine.Loc) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RepeatedLoc {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.RepeatedLoc = append(m.RepeatedLoc, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveRepeatedLoc(vals ...*distributed_match_engine.Loc) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.RepeatedLoc); i >= 0; i-- {
+		if _, found := remove[m.RepeatedLoc[i].String()]; found {
+			m.RepeatedLoc = append(m.RepeatedLoc[:i], m.RepeatedLoc[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *TestGen) AddRepeatedLocNonnull(vals ...distributed_match_engine.Loc) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RepeatedLocNonnull {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.RepeatedLocNonnull = append(m.RepeatedLocNonnull, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TestGen) RemoveRepeatedLocNonnull(vals ...distributed_match_engine.Loc) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.RepeatedLocNonnull); i >= 0; i-- {
+		if _, found := remove[m.RepeatedLocNonnull[i].String()]; found {
+			m.RepeatedLocNonnull = append(m.RepeatedLocNonnull[:i], m.RepeatedLocNonnull[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *TestGen) CopyInFields(src *TestGen) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -2768,8 +3103,15 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["26"]; set {
 		if src.RepeatedInt != nil {
-			m.RepeatedInt = src.RepeatedInt
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRepeatedInt(src.RepeatedInt...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRepeatedInt(src.RepeatedInt...)
+			} else {
+				m.RepeatedInt = make([]int64, 0)
+				m.RepeatedInt = append(m.RepeatedInt, src.RepeatedInt...)
+				changed++
+			}
 		} else if m.RepeatedInt != nil {
 			m.RepeatedInt = nil
 			changed++
@@ -2783,8 +3125,15 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["28"]; set {
 		if src.Names != nil {
-			m.Names = src.Names
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddNames(src.Names...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveNames(src.Names...)
+			} else {
+				m.Names = make([]string, 0)
+				m.Names = append(m.Names, src.Names...)
+				changed++
+			}
 		} else if m.Names != nil {
 			m.Names = nil
 			changed++
@@ -2792,8 +3141,17 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["29"]; set {
 		if src.RepeatedMsg != nil {
-			m.RepeatedMsg = src.RepeatedMsg
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRepeatedMsg(src.RepeatedMsg...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRepeatedMsg(src.RepeatedMsg...)
+			} else {
+				m.RepeatedMsg = make([]*IncludeMessage, 0)
+				for k0, _ := range src.RepeatedMsg {
+					m.RepeatedMsg = append(m.RepeatedMsg, src.RepeatedMsg[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.RepeatedMsg != nil {
 			m.RepeatedMsg = nil
 			changed++
@@ -2801,8 +3159,17 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["30"]; set {
 		if src.RepeatedMsgNonnull != nil {
-			m.RepeatedMsgNonnull = src.RepeatedMsgNonnull
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRepeatedMsgNonnull(src.RepeatedMsgNonnull...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRepeatedMsgNonnull(src.RepeatedMsgNonnull...)
+			} else {
+				m.RepeatedMsgNonnull = make([]IncludeMessage, 0)
+				for k0, _ := range src.RepeatedMsgNonnull {
+					m.RepeatedMsgNonnull = append(m.RepeatedMsgNonnull, *src.RepeatedMsgNonnull[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.RepeatedMsgNonnull != nil {
 			m.RepeatedMsgNonnull = nil
 			changed++
@@ -2810,8 +3177,17 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["31"]; set {
 		if src.RepeatedFields != nil {
-			m.RepeatedFields = src.RepeatedFields
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRepeatedFields(src.RepeatedFields...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRepeatedFields(src.RepeatedFields...)
+			} else {
+				m.RepeatedFields = make([]*IncludeFields, 0)
+				for k0, _ := range src.RepeatedFields {
+					m.RepeatedFields = append(m.RepeatedFields, src.RepeatedFields[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.RepeatedFields != nil {
 			m.RepeatedFields = nil
 			changed++
@@ -2819,8 +3195,17 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["32"]; set {
 		if src.RepeatedFieldsNonnull != nil {
-			m.RepeatedFieldsNonnull = src.RepeatedFieldsNonnull
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRepeatedFieldsNonnull(src.RepeatedFieldsNonnull...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRepeatedFieldsNonnull(src.RepeatedFieldsNonnull...)
+			} else {
+				m.RepeatedFieldsNonnull = make([]IncludeFields, 0)
+				for k0, _ := range src.RepeatedFieldsNonnull {
+					m.RepeatedFieldsNonnull = append(m.RepeatedFieldsNonnull, *src.RepeatedFieldsNonnull[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.RepeatedFieldsNonnull != nil {
 			m.RepeatedFieldsNonnull = nil
 			changed++
@@ -2828,8 +3213,17 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["33"]; set {
 		if src.RepeatedInnerMsg != nil {
-			m.RepeatedInnerMsg = src.RepeatedInnerMsg
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRepeatedInnerMsg(src.RepeatedInnerMsg...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRepeatedInnerMsg(src.RepeatedInnerMsg...)
+			} else {
+				m.RepeatedInnerMsg = make([]*TestGen_InnerMessage, 0)
+				for k0, _ := range src.RepeatedInnerMsg {
+					m.RepeatedInnerMsg = append(m.RepeatedInnerMsg, src.RepeatedInnerMsg[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.RepeatedInnerMsg != nil {
 			m.RepeatedInnerMsg = nil
 			changed++
@@ -2837,8 +3231,17 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["34"]; set {
 		if src.RepeatedInnerMsgNonnull != nil {
-			m.RepeatedInnerMsgNonnull = src.RepeatedInnerMsgNonnull
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRepeatedInnerMsgNonnull(src.RepeatedInnerMsgNonnull...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRepeatedInnerMsgNonnull(src.RepeatedInnerMsgNonnull...)
+			} else {
+				m.RepeatedInnerMsgNonnull = make([]TestGen_InnerMessage, 0)
+				for k0, _ := range src.RepeatedInnerMsgNonnull {
+					m.RepeatedInnerMsgNonnull = append(m.RepeatedInnerMsgNonnull, *src.RepeatedInnerMsgNonnull[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.RepeatedInnerMsgNonnull != nil {
 			m.RepeatedInnerMsgNonnull = nil
 			changed++
@@ -2846,8 +3249,17 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["35"]; set {
 		if src.RepeatedLoc != nil {
-			m.RepeatedLoc = src.RepeatedLoc
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRepeatedLoc(src.RepeatedLoc...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRepeatedLoc(src.RepeatedLoc...)
+			} else {
+				m.RepeatedLoc = make([]*distributed_match_engine.Loc, 0)
+				for k0, _ := range src.RepeatedLoc {
+					m.RepeatedLoc = append(m.RepeatedLoc, src.RepeatedLoc[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.RepeatedLoc != nil {
 			m.RepeatedLoc = nil
 			changed++
@@ -2855,8 +3267,17 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["36"]; set {
 		if src.RepeatedLocNonnull != nil {
-			m.RepeatedLocNonnull = src.RepeatedLocNonnull
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRepeatedLocNonnull(src.RepeatedLocNonnull...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRepeatedLocNonnull(src.RepeatedLocNonnull...)
+			} else {
+				m.RepeatedLocNonnull = make([]distributed_match_engine.Loc, 0)
+				for k0, _ := range src.RepeatedLocNonnull {
+					m.RepeatedLocNonnull = append(m.RepeatedLocNonnull, *src.RepeatedLocNonnull[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.RepeatedLocNonnull != nil {
 			m.RepeatedLocNonnull = nil
 			changed++
@@ -2864,9 +3285,23 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["37"]; set {
 		if src.IntMap != nil {
-			m.IntMap = make(map[int32]int32)
-			for k0, _ := range src.IntMap {
-				m.IntMap[k0] = src.IntMap[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.IntMap {
+					m.IntMap[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.IntMap {
+					if _, ok := m.IntMap[k0]; ok {
+						delete(m.IntMap, k0)
+						changed++
+					}
+				}
+			} else {
+				m.IntMap = make(map[int32]int32)
+				for k0, v := range src.IntMap {
+					m.IntMap[k0] = v
+				}
 				changed++
 			}
 		} else if m.IntMap != nil {
@@ -2876,15 +3311,25 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	}
 	if _, set := fmap["38"]; set {
 		if src.MsgMap != nil {
-			m.MsgMap = make(map[int32]*NestedMessage)
-			for k0, _ := range src.MsgMap {
-				m.MsgMap[k0] = &NestedMessage{}
-				if _, set := fmap["38.1"]; set {
-					if m.MsgMap[k0].Name != src.MsgMap[k0].Name {
-						m.MsgMap[k0].Name = src.MsgMap[k0].Name
+			if updateListAction == "add" {
+				for k0, v := range src.MsgMap {
+					v = v.Clone()
+					m.MsgMap[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.MsgMap {
+					if _, ok := m.MsgMap[k0]; ok {
+						delete(m.MsgMap, k0)
 						changed++
 					}
 				}
+			} else {
+				m.MsgMap = make(map[int32]*NestedMessage)
+				for k0, v := range src.MsgMap {
+					m.MsgMap[k0] = v.Clone()
+				}
+				changed++
 			}
 		} else if m.MsgMap != nil {
 			m.MsgMap = nil
@@ -3165,6 +3610,12 @@ func IgnoreTestGenFields(taglist string) cmp.Option {
 		names = append(names, "Unused")
 	}
 	return cmpopts.IgnoreFields(TestGen{}, names...)
+}
+
+func (m *TestGen_InnerMessage) Clone() *TestGen_InnerMessage {
+	cp := &TestGen_InnerMessage{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *TestGen_InnerMessage) CopyInFields(src *TestGen_InnerMessage) int {

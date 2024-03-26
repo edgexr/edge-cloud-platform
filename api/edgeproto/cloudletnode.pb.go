@@ -628,6 +628,12 @@ func (m *CloudletNodeKey) Matches(o *CloudletNodeKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *CloudletNodeKey) Clone() *CloudletNodeKey {
+	cp := &CloudletNodeKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletNodeKey) CopyInFields(src *CloudletNodeKey) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -968,7 +974,14 @@ func (m *CloudletNode) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *CloudletNode) Clone() *CloudletNode {
+	cp := &CloudletNode{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletNode) CopyInFields(src *CloudletNode) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -1031,9 +1044,23 @@ func (m *CloudletNode) CopyInFields(src *CloudletNode) int {
 	}
 	if _, set := fmap["8"]; set {
 		if src.OwnerTags != nil {
-			m.OwnerTags = make(map[string]string)
-			for k0, _ := range src.OwnerTags {
-				m.OwnerTags[k0] = src.OwnerTags[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.OwnerTags {
+					m.OwnerTags[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.OwnerTags {
+					if _, ok := m.OwnerTags[k0]; ok {
+						delete(m.OwnerTags, k0)
+						changed++
+					}
+				}
+			} else {
+				m.OwnerTags = make(map[string]string)
+				for k0, v := range src.OwnerTags {
+					m.OwnerTags[k0] = v
+				}
 				changed++
 			}
 		} else if m.OwnerTags != nil {
@@ -1043,9 +1070,23 @@ func (m *CloudletNode) CopyInFields(src *CloudletNode) int {
 	}
 	if _, set := fmap["9"]; set {
 		if src.Attributes != nil {
-			m.Attributes = make(map[string]string)
-			for k0, _ := range src.Attributes {
-				m.Attributes[k0] = src.Attributes[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.Attributes {
+					m.Attributes[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.Attributes {
+					if _, ok := m.Attributes[k0]; ok {
+						delete(m.Attributes, k0)
+						changed++
+					}
+				}
+			} else {
+				m.Attributes = make(map[string]string)
+				for k0, v := range src.Attributes {
+					m.Attributes[k0] = v
+				}
 				changed++
 			}
 		} else if m.Attributes != nil {

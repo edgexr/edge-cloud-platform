@@ -73,10 +73,10 @@ path "auth/approle/login" {
 path "secret/data/registry/*" {
   capabilities = [ "read" ]
 }
-path "secret/data/$REGION/cloudlet/*" {
+path "secret/data/$REGION/*" {
   capabilities = [ "create", "update", "delete", "read" ]
 }
-path "secret/metadata/$REGION/cloudlet/*" {
+path "secret/metadata/$REGION/*" {
   capabilities = [ "delete" ]
 }
 path "secret/data/cloudlet/*" {

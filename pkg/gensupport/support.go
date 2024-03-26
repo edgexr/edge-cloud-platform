@@ -41,6 +41,10 @@ import (
 
 const AutoGenComment = "// Auto-generated code: DO NOT EDIT"
 
+const (
+	UpdateListActionField = "UpdateListAction"
+)
+
 // PluginSupport provides support data and functions for the
 // generator.Plugin struct that will generate the code.
 // The generator.Plugin that will use it should include an

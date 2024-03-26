@@ -529,7 +529,14 @@ func encodeVarintSession(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *RegisterClientRequest) Clone() *RegisterClientRequest {
+	cp := &RegisterClientRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *RegisterClientRequest) CopyInFields(src *RegisterClientRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -564,9 +571,23 @@ func (m *RegisterClientRequest) CopyInFields(src *RegisterClientRequest) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -603,7 +624,14 @@ func (m *RegisterClientRequest) ValidateEnums() error {
 func (s *RegisterClientRequest) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *RegisterClientReply) Clone() *RegisterClientReply {
+	cp := &RegisterClientReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *RegisterClientReply) CopyInFields(src *RegisterClientReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -630,9 +658,23 @@ func (m *RegisterClientReply) CopyInFields(src *RegisterClientReply) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {

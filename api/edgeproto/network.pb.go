@@ -756,6 +756,12 @@ func encodeVarintNetwork(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *Route) Clone() *Route {
+	cp := &Route{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *Route) CopyInFields(src *Route) int {
 	changed := 0
 	if m.DestinationCidr != src.DestinationCidr {
@@ -800,6 +806,12 @@ func (m *NetworkKey) Matches(o *NetworkKey, fopts ...MatchOpt) bool {
 		}
 	}
 	return true
+}
+
+func (m *NetworkKey) Clone() *NetworkKey {
+	cp := &NetworkKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *NetworkKey) CopyInFields(src *NetworkKey) int {
@@ -1044,7 +1056,45 @@ func (m *Network) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *Network) Clone() *Network {
+	cp := &Network{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *Network) AddRoutes(vals ...Route) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Routes {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Routes = append(m.Routes, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Network) RemoveRoutes(vals ...Route) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Routes); i >= 0; i-- {
+		if _, found := remove[m.Routes[i].String()]; found {
+			m.Routes = append(m.Routes[:i], m.Routes[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *Network) CopyInFields(src *Network) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -1077,8 +1127,17 @@ func (m *Network) CopyInFields(src *Network) int {
 	}
 	if _, set := fmap["3"]; set {
 		if src.Routes != nil {
-			m.Routes = src.Routes
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddRoutes(src.Routes...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveRoutes(src.Routes...)
+			} else {
+				m.Routes = make([]Route, 0)
+				for k0, _ := range src.Routes {
+					m.Routes = append(m.Routes, *src.Routes[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.Routes != nil {
 			m.Routes = nil
 			changed++

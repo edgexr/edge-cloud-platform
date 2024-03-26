@@ -737,7 +737,14 @@ func encodeVarintAppClientPlatos(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *PlatformFindCloudletRequest) Clone() *PlatformFindCloudletRequest {
+	cp := &PlatformFindCloudletRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *PlatformFindCloudletRequest) CopyInFields(src *PlatformFindCloudletRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -756,9 +763,23 @@ func (m *PlatformFindCloudletRequest) CopyInFields(src *PlatformFindCloudletRequ
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -791,7 +812,14 @@ func (m *PlatformFindCloudletRequest) ValidateEnums() error {
 func (s *PlatformFindCloudletRequest) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *FqdnListRequest) Clone() *FqdnListRequest {
+	cp := &FqdnListRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *FqdnListRequest) CopyInFields(src *FqdnListRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -802,9 +830,23 @@ func (m *FqdnListRequest) CopyInFields(src *FqdnListRequest) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -835,7 +877,45 @@ func (m *FqdnListRequest) ValidateEnums() error {
 func (s *FqdnListRequest) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *AppFqdn) Clone() *AppFqdn {
+	cp := &AppFqdn{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AppFqdn) AddFqdns(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Fqdns {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Fqdns = append(m.Fqdns, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppFqdn) RemoveFqdns(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Fqdns); i >= 0; i-- {
+		if _, found := remove[m.Fqdns[i]]; found {
+			m.Fqdns = append(m.Fqdns[:i], m.Fqdns[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AppFqdn) CopyInFields(src *AppFqdn) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.AppName != src.AppName {
 		m.AppName = src.AppName
@@ -850,8 +930,15 @@ func (m *AppFqdn) CopyInFields(src *AppFqdn) int {
 		changed++
 	}
 	if src.Fqdns != nil {
-		m.Fqdns = src.Fqdns
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddFqdns(src.Fqdns...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveFqdns(src.Fqdns...)
+		} else {
+			m.Fqdns = make([]string, 0)
+			m.Fqdns = append(m.Fqdns, src.Fqdns...)
+			changed++
+		}
 	} else if m.Fqdns != nil {
 		m.Fqdns = nil
 		changed++
@@ -886,15 +973,62 @@ func (m *AppFqdn) ValidateEnums() error {
 func (s *AppFqdn) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *FqdnListReply) Clone() *FqdnListReply {
+	cp := &FqdnListReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *FqdnListReply) AddAppFqdns(vals ...*AppFqdn) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.AppFqdns {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.AppFqdns = append(m.AppFqdns, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *FqdnListReply) RemoveAppFqdns(vals ...*AppFqdn) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.AppFqdns); i >= 0; i-- {
+		if _, found := remove[m.AppFqdns[i].String()]; found {
+			m.AppFqdns = append(m.AppFqdns[:i], m.AppFqdns[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *FqdnListReply) CopyInFields(src *FqdnListReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
 		changed++
 	}
 	if src.AppFqdns != nil {
-		m.AppFqdns = src.AppFqdns
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddAppFqdns(src.AppFqdns...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveAppFqdns(src.AppFqdns...)
+		} else {
+			m.AppFqdns = make([]*AppFqdn, 0)
+			for k0, _ := range src.AppFqdns {
+				m.AppFqdns = append(m.AppFqdns, src.AppFqdns[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.AppFqdns != nil {
 		m.AppFqdns = nil
 		changed++
@@ -904,9 +1038,23 @@ func (m *FqdnListReply) CopyInFields(src *FqdnListReply) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {

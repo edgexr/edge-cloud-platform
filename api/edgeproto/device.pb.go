@@ -752,6 +752,12 @@ func encodeVarintDevice(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *DeviceReport) Clone() *DeviceReport {
+	cp := &DeviceReport{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *DeviceReport) CopyInFields(src *DeviceReport) int {
 	changed := 0
 	if m.Key.UniqueIdType != src.Key.UniqueIdType {
@@ -1038,6 +1044,12 @@ func (m *DeviceKey) Matches(o *DeviceKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *DeviceKey) Clone() *DeviceKey {
+	cp := &DeviceKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *DeviceKey) CopyInFields(src *DeviceKey) int {
 	changed := 0
 	if m.UniqueIdType != src.UniqueIdType {
@@ -1231,6 +1243,12 @@ func (m *Device) DiffFields(o *Device, fields map[string]struct{}) {
 	if m.NotifyId != o.NotifyId {
 		fields[DeviceFieldNotifyId] = struct{}{}
 	}
+}
+
+func (m *Device) Clone() *Device {
+	cp := &Device{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *Device) CopyInFields(src *Device) int {
@@ -1999,6 +2017,43 @@ func IgnoreDeviceFields(taglist string) cmp.Option {
 		names = append(names, "NotifyId")
 	}
 	return cmpopts.IgnoreFields(Device{}, names...)
+}
+
+func (m *DeviceData) Clone() *DeviceData {
+	cp := &DeviceData{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *DeviceData) AddDevices(vals ...Device) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Devices {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Devices = append(m.Devices, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *DeviceData) RemoveDevices(vals ...Device) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Devices); i >= 0; i-- {
+		if _, found := remove[m.Devices[i].GetKey().GetKeyString()]; found {
+			m.Devices = append(m.Devices[:i], m.Devices[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *DeviceData) DeepCopyIn(src *DeviceData) {

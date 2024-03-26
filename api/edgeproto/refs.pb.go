@@ -918,7 +918,14 @@ func encodeVarintRefs(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *VMResource) Clone() *VMResource {
+	cp := &VMResource{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *VMResource) CopyInFields(src *VMResource) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.ClusterKey.Name != src.Key.ClusterKey.Name {
 		m.Key.ClusterKey.Name = src.Key.ClusterKey.Name
@@ -961,9 +968,23 @@ func (m *VMResource) CopyInFields(src *VMResource) int {
 			changed++
 		}
 		if src.VmFlavor.PropMap != nil {
-			m.VmFlavor.PropMap = make(map[string]string)
-			for k1, _ := range src.VmFlavor.PropMap {
-				m.VmFlavor.PropMap[k1] = src.VmFlavor.PropMap[k1]
+			if updateListAction == "add" {
+				for k1, v := range src.VmFlavor.PropMap {
+					m.VmFlavor.PropMap[k1] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k1, _ := range src.VmFlavor.PropMap {
+					if _, ok := m.VmFlavor.PropMap[k1]; ok {
+						delete(m.VmFlavor.PropMap, k1)
+						changed++
+					}
+				}
+			} else {
+				m.VmFlavor.PropMap = make(map[string]string)
+				for k1, v := range src.VmFlavor.PropMap {
+					m.VmFlavor.PropMap[k1] = v
+				}
 				changed++
 			}
 		} else if m.VmFlavor.PropMap != nil {
@@ -1194,7 +1215,107 @@ func (m *CloudletRefs) Matches(o *CloudletRefs, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *CloudletRefs) Clone() *CloudletRefs {
+	cp := &CloudletRefs{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletRefs) AddClusterInsts(vals ...ClusterKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ClusterInsts {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.ClusterInsts = append(m.ClusterInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletRefs) RemoveClusterInsts(vals ...ClusterKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.ClusterInsts); i >= 0; i-- {
+		if _, found := remove[m.ClusterInsts[i].GetKeyString()]; found {
+			m.ClusterInsts = append(m.ClusterInsts[:i], m.ClusterInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletRefs) AddVmAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.VmAppInsts {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.VmAppInsts = append(m.VmAppInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletRefs) RemoveVmAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.VmAppInsts); i >= 0; i-- {
+		if _, found := remove[m.VmAppInsts[i].GetKeyString()]; found {
+			m.VmAppInsts = append(m.VmAppInsts[:i], m.VmAppInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletRefs) AddK8SAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.K8SAppInsts {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.K8SAppInsts = append(m.K8SAppInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletRefs) RemoveK8SAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.K8SAppInsts); i >= 0; i-- {
+		if _, found := remove[m.K8SAppInsts[i].GetKeyString()]; found {
+			m.K8SAppInsts = append(m.K8SAppInsts[:i], m.K8SAppInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *CloudletRefs) CopyInFields(src *CloudletRefs) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
 		m.Key.Organization = src.Key.Organization
@@ -1209,9 +1330,23 @@ func (m *CloudletRefs) CopyInFields(src *CloudletRefs) int {
 		changed++
 	}
 	if src.RootLbPorts != nil {
-		m.RootLbPorts = make(map[int32]int32)
-		for k0, _ := range src.RootLbPorts {
-			m.RootLbPorts[k0] = src.RootLbPorts[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.RootLbPorts {
+				m.RootLbPorts[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.RootLbPorts {
+				if _, ok := m.RootLbPorts[k0]; ok {
+					delete(m.RootLbPorts, k0)
+					changed++
+				}
+			}
+		} else {
+			m.RootLbPorts = make(map[int32]int32)
+			for k0, v := range src.RootLbPorts {
+				m.RootLbPorts[k0] = v
+			}
 			changed++
 		}
 	} else if m.RootLbPorts != nil {
@@ -1227,9 +1362,23 @@ func (m *CloudletRefs) CopyInFields(src *CloudletRefs) int {
 		changed++
 	}
 	if src.OptResUsedMap != nil {
-		m.OptResUsedMap = make(map[string]uint32)
-		for k0, _ := range src.OptResUsedMap {
-			m.OptResUsedMap[k0] = src.OptResUsedMap[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.OptResUsedMap {
+				m.OptResUsedMap[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.OptResUsedMap {
+				if _, ok := m.OptResUsedMap[k0]; ok {
+					delete(m.OptResUsedMap, k0)
+					changed++
+				}
+			}
+		} else {
+			m.OptResUsedMap = make(map[string]uint32)
+			for k0, v := range src.OptResUsedMap {
+				m.OptResUsedMap[k0] = v
+			}
 			changed++
 		}
 	} else if m.OptResUsedMap != nil {
@@ -1241,22 +1390,49 @@ func (m *CloudletRefs) CopyInFields(src *CloudletRefs) int {
 		changed++
 	}
 	if src.ClusterInsts != nil {
-		m.ClusterInsts = src.ClusterInsts
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddClusterInsts(src.ClusterInsts...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveClusterInsts(src.ClusterInsts...)
+		} else {
+			m.ClusterInsts = make([]ClusterKey, 0)
+			for k0, _ := range src.ClusterInsts {
+				m.ClusterInsts = append(m.ClusterInsts, *src.ClusterInsts[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.ClusterInsts != nil {
 		m.ClusterInsts = nil
 		changed++
 	}
 	if src.VmAppInsts != nil {
-		m.VmAppInsts = src.VmAppInsts
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddVmAppInsts(src.VmAppInsts...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveVmAppInsts(src.VmAppInsts...)
+		} else {
+			m.VmAppInsts = make([]AppInstRefKey, 0)
+			for k0, _ := range src.VmAppInsts {
+				m.VmAppInsts = append(m.VmAppInsts, *src.VmAppInsts[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.VmAppInsts != nil {
 		m.VmAppInsts = nil
 		changed++
 	}
 	if src.K8SAppInsts != nil {
-		m.K8SAppInsts = src.K8SAppInsts
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddK8SAppInsts(src.K8SAppInsts...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveK8SAppInsts(src.K8SAppInsts...)
+		} else {
+			m.K8SAppInsts = make([]AppInstRefKey, 0)
+			for k0, _ := range src.K8SAppInsts {
+				m.K8SAppInsts = append(m.K8SAppInsts, *src.K8SAppInsts[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.K8SAppInsts != nil {
 		m.K8SAppInsts = nil
 		changed++
@@ -1987,7 +2163,45 @@ func (m *ClusterRefs) Matches(o *ClusterRefs, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *ClusterRefs) Clone() *ClusterRefs {
+	cp := &ClusterRefs{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *ClusterRefs) AddApps(vals ...AppInstRefKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Apps {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Apps = append(m.Apps, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterRefs) RemoveApps(vals ...AppInstRefKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Apps); i >= 0; i-- {
+		if _, found := remove[m.Apps[i].GetKeyString()]; found {
+			m.Apps = append(m.Apps[:i], m.Apps[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *ClusterRefs) CopyInFields(src *ClusterRefs) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.ClusterKey.Name != src.Key.ClusterKey.Name {
 		m.Key.ClusterKey.Name = src.Key.ClusterKey.Name
@@ -2010,8 +2224,17 @@ func (m *ClusterRefs) CopyInFields(src *ClusterRefs) int {
 		changed++
 	}
 	if src.Apps != nil {
-		m.Apps = src.Apps
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddApps(src.Apps...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveApps(src.Apps...)
+		} else {
+			m.Apps = make([]AppInstRefKey, 0)
+			for k0, _ := range src.Apps {
+				m.Apps = append(m.Apps, *src.Apps[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Apps != nil {
 		m.Apps = nil
 		changed++
@@ -2694,7 +2917,14 @@ func (m *AppInstRefs) Matches(o *AppInstRefs, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *AppInstRefs) Clone() *AppInstRefs {
+	cp := &AppInstRefs{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AppInstRefs) CopyInFields(src *AppInstRefs) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
 		m.Key.Organization = src.Key.Organization
@@ -2709,9 +2939,23 @@ func (m *AppInstRefs) CopyInFields(src *AppInstRefs) int {
 		changed++
 	}
 	if src.Insts != nil {
-		m.Insts = make(map[string]uint32)
-		for k0, _ := range src.Insts {
-			m.Insts[k0] = src.Insts[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Insts {
+				m.Insts[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Insts {
+				if _, ok := m.Insts[k0]; ok {
+					delete(m.Insts, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Insts = make(map[string]uint32)
+			for k0, v := range src.Insts {
+				m.Insts[k0] = v
+			}
 			changed++
 		}
 	} else if m.Insts != nil {
@@ -2719,9 +2963,23 @@ func (m *AppInstRefs) CopyInFields(src *AppInstRefs) int {
 		changed++
 	}
 	if src.DeleteRequestedInsts != nil {
-		m.DeleteRequestedInsts = make(map[string]uint32)
-		for k0, _ := range src.DeleteRequestedInsts {
-			m.DeleteRequestedInsts[k0] = src.DeleteRequestedInsts[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.DeleteRequestedInsts {
+				m.DeleteRequestedInsts[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.DeleteRequestedInsts {
+				if _, ok := m.DeleteRequestedInsts[k0]; ok {
+					delete(m.DeleteRequestedInsts, k0)
+					changed++
+				}
+			}
+		} else {
+			m.DeleteRequestedInsts = make(map[string]uint32)
+			for k0, v := range src.DeleteRequestedInsts {
+				m.DeleteRequestedInsts[k0] = v
+			}
 			changed++
 		}
 	} else if m.DeleteRequestedInsts != nil {

@@ -2115,7 +2115,14 @@ func encodeVarintAppClient(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *FindCloudletRequest) Clone() *FindCloudletRequest {
+	cp := &FindCloudletRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *FindCloudletRequest) CopyInFields(src *FindCloudletRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -2182,9 +2189,23 @@ func (m *FindCloudletRequest) CopyInFields(src *FindCloudletRequest) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -2231,7 +2252,45 @@ func (s *FindCloudletRequest) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *FindCloudletReply) Clone() *FindCloudletReply {
+	cp := &FindCloudletReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *FindCloudletReply) AddPorts(vals ...*AppPort) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Ports {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Ports = append(m.Ports, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *FindCloudletReply) RemovePorts(vals ...*AppPort) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Ports); i >= 0; i-- {
+		if _, found := remove[m.Ports[i].String()]; found {
+			m.Ports = append(m.Ports[:i], m.Ports[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *FindCloudletReply) CopyInFields(src *FindCloudletReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -2246,8 +2305,17 @@ func (m *FindCloudletReply) CopyInFields(src *FindCloudletReply) int {
 		changed++
 	}
 	if src.Ports != nil {
-		m.Ports = src.Ports
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddPorts(src.Ports...)
+		} else if updateListAction == "remove" {
+			changed += m.RemovePorts(src.Ports...)
+		} else {
+			m.Ports = make([]*AppPort, 0)
+			for k0, _ := range src.Ports {
+				m.Ports = append(m.Ports, src.Ports[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Ports != nil {
 		m.Ports = nil
 		changed++
@@ -2317,9 +2385,23 @@ func (m *FindCloudletReply) CopyInFields(src *FindCloudletReply) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -2395,7 +2477,14 @@ func (s *FindCloudletReply) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *AppInstListRequest) Clone() *AppInstListRequest {
+	cp := &AppInstListRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AppInstListRequest) CopyInFields(src *AppInstListRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -2466,9 +2555,23 @@ func (m *AppInstListRequest) CopyInFields(src *AppInstListRequest) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -2516,7 +2619,45 @@ func (s *AppInstListRequest) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *Appinstance) Clone() *Appinstance {
+	cp := &Appinstance{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *Appinstance) AddPorts(vals ...*AppPort) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Ports {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Ports = append(m.Ports, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Appinstance) RemovePorts(vals ...*AppPort) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Ports); i >= 0; i-- {
+		if _, found := remove[m.Ports[i].String()]; found {
+			m.Ports = append(m.Ports[:i], m.Ports[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *Appinstance) CopyInFields(src *Appinstance) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.AppName != src.AppName {
 		m.AppName = src.AppName
@@ -2531,8 +2672,17 @@ func (m *Appinstance) CopyInFields(src *Appinstance) int {
 		changed++
 	}
 	if src.Ports != nil {
-		m.Ports = src.Ports
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddPorts(src.Ports...)
+		} else if updateListAction == "remove" {
+			changed += m.RemovePorts(src.Ports...)
+		} else {
+			m.Ports = make([]*AppPort, 0)
+			for k0, _ := range src.Ports {
+				m.Ports = append(m.Ports, src.Ports[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Ports != nil {
 		m.Ports = nil
 		changed++
@@ -2584,7 +2734,45 @@ func (s *Appinstance) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *CloudletLocation) Clone() *CloudletLocation {
+	cp := &CloudletLocation{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletLocation) AddAppinstances(vals ...*Appinstance) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Appinstances {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Appinstances = append(m.Appinstances, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletLocation) RemoveAppinstances(vals ...*Appinstance) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Appinstances); i >= 0; i-- {
+		if _, found := remove[m.Appinstances[i].String()]; found {
+			m.Appinstances = append(m.Appinstances[:i], m.Appinstances[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *CloudletLocation) CopyInFields(src *CloudletLocation) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.CarrierName != src.CarrierName {
 		m.CarrierName = src.CarrierName
@@ -2651,8 +2839,17 @@ func (m *CloudletLocation) CopyInFields(src *CloudletLocation) int {
 		changed++
 	}
 	if src.Appinstances != nil {
-		m.Appinstances = src.Appinstances
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddAppinstances(src.Appinstances...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveAppinstances(src.Appinstances...)
+		} else {
+			m.Appinstances = make([]*Appinstance, 0)
+			for k0, _ := range src.Appinstances {
+				m.Appinstances = append(m.Appinstances, src.Appinstances[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Appinstances != nil {
 		m.Appinstances = nil
 		changed++
@@ -2709,7 +2906,45 @@ func (s *CloudletLocation) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *AppInstListReply) Clone() *AppInstListReply {
+	cp := &AppInstListReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AppInstListReply) AddCloudlets(vals ...*CloudletLocation) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Cloudlets {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Cloudlets = append(m.Cloudlets, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInstListReply) RemoveCloudlets(vals ...*CloudletLocation) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Cloudlets); i >= 0; i-- {
+		if _, found := remove[m.Cloudlets[i].String()]; found {
+			m.Cloudlets = append(m.Cloudlets[:i], m.Cloudlets[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AppInstListReply) CopyInFields(src *AppInstListReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -2720,16 +2955,39 @@ func (m *AppInstListReply) CopyInFields(src *AppInstListReply) int {
 		changed++
 	}
 	if src.Cloudlets != nil {
-		m.Cloudlets = src.Cloudlets
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddCloudlets(src.Cloudlets...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveCloudlets(src.Cloudlets...)
+		} else {
+			m.Cloudlets = make([]*CloudletLocation, 0)
+			for k0, _ := range src.Cloudlets {
+				m.Cloudlets = append(m.Cloudlets, src.Cloudlets[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Cloudlets != nil {
 		m.Cloudlets = nil
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -2783,7 +3041,14 @@ func (s *AppInstListReply) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *AppOfficialFqdnRequest) Clone() *AppOfficialFqdnRequest {
+	cp := &AppOfficialFqdnRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AppOfficialFqdnRequest) CopyInFields(src *AppOfficialFqdnRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -2846,9 +3111,23 @@ func (m *AppOfficialFqdnRequest) CopyInFields(src *AppOfficialFqdnRequest) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -2894,7 +3173,45 @@ func (s *AppOfficialFqdnRequest) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *AppOfficialFqdnReply) Clone() *AppOfficialFqdnReply {
+	cp := &AppOfficialFqdnReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AppOfficialFqdnReply) AddPorts(vals ...*AppPort) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Ports {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Ports = append(m.Ports, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppOfficialFqdnReply) RemovePorts(vals ...*AppPort) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Ports); i >= 0; i-- {
+		if _, found := remove[m.Ports[i].String()]; found {
+			m.Ports = append(m.Ports[:i], m.Ports[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AppOfficialFqdnReply) CopyInFields(src *AppOfficialFqdnReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -2913,16 +3230,39 @@ func (m *AppOfficialFqdnReply) CopyInFields(src *AppOfficialFqdnReply) int {
 		changed++
 	}
 	if src.Ports != nil {
-		m.Ports = src.Ports
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddPorts(src.Ports...)
+		} else if updateListAction == "remove" {
+			changed += m.RemovePorts(src.Ports...)
+		} else {
+			m.Ports = make([]*AppPort, 0)
+			for k0, _ := range src.Ports {
+				m.Ports = append(m.Ports, src.Ports[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Ports != nil {
 		m.Ports = nil
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -2978,7 +3318,45 @@ func (s *AppOfficialFqdnReply) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *ClientEdgeEvent) Clone() *ClientEdgeEvent {
+	cp := &ClientEdgeEvent{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *ClientEdgeEvent) AddSamples(vals ...*Sample) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Samples {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Samples = append(m.Samples, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClientEdgeEvent) RemoveSamples(vals ...*Sample) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Samples); i >= 0; i-- {
+		if _, found := remove[m.Samples[i].String()]; found {
+			m.Samples = append(m.Samples[:i], m.Samples[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *ClientEdgeEvent) CopyInFields(src *ClientEdgeEvent) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.SessionCookie != src.SessionCookie {
 		m.SessionCookie = src.SessionCookie
@@ -3045,8 +3423,17 @@ func (m *ClientEdgeEvent) CopyInFields(src *ClientEdgeEvent) int {
 		changed++
 	}
 	if src.Samples != nil {
-		m.Samples = src.Samples
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddSamples(src.Samples...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveSamples(src.Samples...)
+		} else {
+			m.Samples = make([]*Sample, 0)
+			for k0, _ := range src.Samples {
+				m.Samples = append(m.Samples, src.Samples[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Samples != nil {
 		m.Samples = nil
 		changed++
@@ -3092,9 +3479,23 @@ func (m *ClientEdgeEvent) CopyInFields(src *ClientEdgeEvent) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -3195,7 +3596,45 @@ func (s *ClientEdgeEvent) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *ServerEdgeEvent) Clone() *ServerEdgeEvent {
+	cp := &ServerEdgeEvent{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *ServerEdgeEvent) AddNewCloudletPorts(vals ...*AppPort) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.NewCloudlet.Ports {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.NewCloudlet.Ports = append(m.NewCloudlet.Ports, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ServerEdgeEvent) RemoveNewCloudletPorts(vals ...*AppPort) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.NewCloudlet.Ports); i >= 0; i-- {
+		if _, found := remove[m.NewCloudlet.Ports[i].String()]; found {
+			m.NewCloudlet.Ports = append(m.NewCloudlet.Ports[:i], m.NewCloudlet.Ports[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *ServerEdgeEvent) CopyInFields(src *ServerEdgeEvent) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.EventType != src.EventType {
 		m.EventType = src.EventType
@@ -3278,8 +3717,17 @@ func (m *ServerEdgeEvent) CopyInFields(src *ServerEdgeEvent) int {
 			changed++
 		}
 		if src.NewCloudlet.Ports != nil {
-			m.NewCloudlet.Ports = src.NewCloudlet.Ports
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddNewCloudletPorts(src.NewCloudlet.Ports...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveNewCloudletPorts(src.NewCloudlet.Ports...)
+			} else {
+				m.NewCloudlet.Ports = make([]*AppPort, 0)
+				for k1, _ := range src.NewCloudlet.Ports {
+					m.NewCloudlet.Ports = append(m.NewCloudlet.Ports, src.NewCloudlet.Ports[k1].Clone())
+				}
+				changed++
+			}
 		} else if m.NewCloudlet.Ports != nil {
 			m.NewCloudlet.Ports = nil
 			changed++
@@ -3349,9 +3797,23 @@ func (m *ServerEdgeEvent) CopyInFields(src *ServerEdgeEvent) int {
 			changed++
 		}
 		if src.NewCloudlet.Tags != nil {
-			m.NewCloudlet.Tags = make(map[string]string)
-			for k1, _ := range src.NewCloudlet.Tags {
-				m.NewCloudlet.Tags[k1] = src.NewCloudlet.Tags[k1]
+			if updateListAction == "add" {
+				for k1, v := range src.NewCloudlet.Tags {
+					m.NewCloudlet.Tags[k1] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k1, _ := range src.NewCloudlet.Tags {
+					if _, ok := m.NewCloudlet.Tags[k1]; ok {
+						delete(m.NewCloudlet.Tags, k1)
+						changed++
+					}
+				}
+			} else {
+				m.NewCloudlet.Tags = make(map[string]string)
+				for k1, v := range src.NewCloudlet.Tags {
+					m.NewCloudlet.Tags[k1] = v
+				}
 				changed++
 			}
 		} else if m.NewCloudlet.Tags != nil {
@@ -3367,9 +3829,23 @@ func (m *ServerEdgeEvent) CopyInFields(src *ServerEdgeEvent) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {

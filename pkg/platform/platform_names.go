@@ -27,6 +27,7 @@ const (
 	PlatformTypeAzure             = "azure"
 	PlatformTypeDind              = "dind" // docker in docker
 	PlatformTypeEdgebox           = "edgebox"
+	PlatformTypeLocalhost         = "localhost"
 	PlatformTypeFake              = "fake"
 	PlatformTypeFakeInfra         = "fakeinfra"
 	PlatformTypeFakeEdgebox       = "fakeedgebox"

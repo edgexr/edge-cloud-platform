@@ -620,6 +620,12 @@ func (m *NodeKey) Matches(o *NodeKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *NodeKey) Clone() *NodeKey {
+	cp := &NodeKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *NodeKey) CopyInFields(src *NodeKey) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -977,7 +983,14 @@ func (m *Node) DiffFields(o *Node, fields map[string]struct{}) {
 	}
 }
 
+func (m *Node) Clone() *Node {
+	cp := &Node{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *Node) CopyInFields(src *Node) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -1070,9 +1083,23 @@ func (m *Node) CopyInFields(src *Node) int {
 	}
 	if _, set := fmap["11"]; set {
 		if src.Properties != nil {
-			m.Properties = make(map[string]string)
-			for k0, _ := range src.Properties {
-				m.Properties[k0] = src.Properties[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.Properties {
+					m.Properties[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.Properties {
+					if _, ok := m.Properties[k0]; ok {
+						delete(m.Properties, k0)
+						changed++
+					}
+				}
+			} else {
+				m.Properties = make(map[string]string)
+				for k0, v := range src.Properties {
+					m.Properties[k0] = v
+				}
 				changed++
 			}
 		} else if m.Properties != nil {
@@ -1801,6 +1828,43 @@ func IgnoreNodeFields(taglist string) cmp.Option {
 		names = append(names, "BuildDate")
 	}
 	return cmpopts.IgnoreFields(Node{}, names...)
+}
+
+func (m *NodeData) Clone() *NodeData {
+	cp := &NodeData{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *NodeData) AddNodes(vals ...Node) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Nodes {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Nodes = append(m.Nodes, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *NodeData) RemoveNodes(vals ...Node) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Nodes); i >= 0; i-- {
+		if _, found := remove[m.Nodes[i].GetKey().GetKeyString()]; found {
+			m.Nodes = append(m.Nodes[:i], m.Nodes[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *NodeData) DeepCopyIn(src *NodeData) {

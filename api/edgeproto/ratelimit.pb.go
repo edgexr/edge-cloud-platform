@@ -1610,6 +1610,12 @@ func (m *FlowSettings) Matches(o *FlowSettings, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *FlowSettings) Clone() *FlowSettings {
+	cp := &FlowSettings{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *FlowSettings) CopyInFields(src *FlowSettings) int {
 	changed := 0
 	if m.FlowAlgorithm != src.FlowAlgorithm {
@@ -1662,6 +1668,12 @@ func (m *FlowRateLimitSettingsKey) Matches(o *FlowRateLimitSettingsKey, fopts ..
 		return false
 	}
 	return true
+}
+
+func (m *FlowRateLimitSettingsKey) Clone() *FlowRateLimitSettingsKey {
+	cp := &FlowRateLimitSettingsKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *FlowRateLimitSettingsKey) CopyInFields(src *FlowRateLimitSettingsKey) int {
@@ -1844,6 +1856,12 @@ func (m *FlowRateLimitSettings) DiffFields(o *FlowRateLimitSettings, fields map[
 		fields[FlowRateLimitSettingsFieldSettingsBurstSize] = struct{}{}
 		fields[FlowRateLimitSettingsFieldSettings] = struct{}{}
 	}
+}
+
+func (m *FlowRateLimitSettings) Clone() *FlowRateLimitSettings {
+	cp := &FlowRateLimitSettings{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *FlowRateLimitSettings) CopyInFields(src *FlowRateLimitSettings) int {
@@ -2553,6 +2571,12 @@ func (m *MaxReqsSettings) Matches(o *MaxReqsSettings, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *MaxReqsSettings) Clone() *MaxReqsSettings {
+	cp := &MaxReqsSettings{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *MaxReqsSettings) CopyInFields(src *MaxReqsSettings) int {
 	changed := 0
 	if m.MaxReqsAlgorithm != src.MaxReqsAlgorithm {
@@ -2605,6 +2629,12 @@ func (m *MaxReqsRateLimitSettingsKey) Matches(o *MaxReqsRateLimitSettingsKey, fo
 		return false
 	}
 	return true
+}
+
+func (m *MaxReqsRateLimitSettingsKey) Clone() *MaxReqsRateLimitSettingsKey {
+	cp := &MaxReqsRateLimitSettingsKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *MaxReqsRateLimitSettingsKey) CopyInFields(src *MaxReqsRateLimitSettingsKey) int {
@@ -2787,6 +2817,12 @@ func (m *MaxReqsRateLimitSettings) DiffFields(o *MaxReqsRateLimitSettings, field
 		fields[MaxReqsRateLimitSettingsFieldSettingsInterval] = struct{}{}
 		fields[MaxReqsRateLimitSettingsFieldSettings] = struct{}{}
 	}
+}
+
+func (m *MaxReqsRateLimitSettings) Clone() *MaxReqsRateLimitSettings {
+	cp := &MaxReqsRateLimitSettings{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *MaxReqsRateLimitSettings) CopyInFields(src *MaxReqsRateLimitSettings) int {
@@ -3496,6 +3532,12 @@ func (m *RateLimitSettingsKey) Matches(o *RateLimitSettingsKey, fopts ...MatchOp
 	return true
 }
 
+func (m *RateLimitSettingsKey) Clone() *RateLimitSettingsKey {
+	cp := &RateLimitSettingsKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *RateLimitSettingsKey) CopyInFields(src *RateLimitSettingsKey) int {
 	changed := 0
 	if m.ApiName != src.ApiName {
@@ -3632,7 +3674,14 @@ func (m *RateLimitSettings) Matches(o *RateLimitSettings, fopts ...MatchOpt) boo
 	return true
 }
 
+func (m *RateLimitSettings) Clone() *RateLimitSettings {
+	cp := &RateLimitSettings{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *RateLimitSettings) CopyInFields(src *RateLimitSettings) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.ApiName != src.Key.ApiName {
 		m.Key.ApiName = src.Key.ApiName
@@ -3647,42 +3696,50 @@ func (m *RateLimitSettings) CopyInFields(src *RateLimitSettings) int {
 		changed++
 	}
 	if src.FlowSettings != nil {
-		m.FlowSettings = make(map[string]*FlowSettings)
-		for k0, _ := range src.FlowSettings {
-			m.FlowSettings[k0] = &FlowSettings{}
-			if m.FlowSettings[k0].FlowAlgorithm != src.FlowSettings[k0].FlowAlgorithm {
-				m.FlowSettings[k0].FlowAlgorithm = src.FlowSettings[k0].FlowAlgorithm
+		if updateListAction == "add" {
+			for k0, v := range src.FlowSettings {
+				v = v.Clone()
+				m.FlowSettings[k0] = v
 				changed++
 			}
-			if m.FlowSettings[k0].ReqsPerSecond != src.FlowSettings[k0].ReqsPerSecond {
-				m.FlowSettings[k0].ReqsPerSecond = src.FlowSettings[k0].ReqsPerSecond
-				changed++
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.FlowSettings {
+				if _, ok := m.FlowSettings[k0]; ok {
+					delete(m.FlowSettings, k0)
+					changed++
+				}
 			}
-			if m.FlowSettings[k0].BurstSize != src.FlowSettings[k0].BurstSize {
-				m.FlowSettings[k0].BurstSize = src.FlowSettings[k0].BurstSize
-				changed++
+		} else {
+			m.FlowSettings = make(map[string]*FlowSettings)
+			for k0, v := range src.FlowSettings {
+				m.FlowSettings[k0] = v.Clone()
 			}
+			changed++
 		}
 	} else if m.FlowSettings != nil {
 		m.FlowSettings = nil
 		changed++
 	}
 	if src.MaxReqsSettings != nil {
-		m.MaxReqsSettings = make(map[string]*MaxReqsSettings)
-		for k0, _ := range src.MaxReqsSettings {
-			m.MaxReqsSettings[k0] = &MaxReqsSettings{}
-			if m.MaxReqsSettings[k0].MaxReqsAlgorithm != src.MaxReqsSettings[k0].MaxReqsAlgorithm {
-				m.MaxReqsSettings[k0].MaxReqsAlgorithm = src.MaxReqsSettings[k0].MaxReqsAlgorithm
+		if updateListAction == "add" {
+			for k0, v := range src.MaxReqsSettings {
+				v = v.Clone()
+				m.MaxReqsSettings[k0] = v
 				changed++
 			}
-			if m.MaxReqsSettings[k0].MaxRequests != src.MaxReqsSettings[k0].MaxRequests {
-				m.MaxReqsSettings[k0].MaxRequests = src.MaxReqsSettings[k0].MaxRequests
-				changed++
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.MaxReqsSettings {
+				if _, ok := m.MaxReqsSettings[k0]; ok {
+					delete(m.MaxReqsSettings, k0)
+					changed++
+				}
 			}
-			if m.MaxReqsSettings[k0].Interval != src.MaxReqsSettings[k0].Interval {
-				m.MaxReqsSettings[k0].Interval = src.MaxReqsSettings[k0].Interval
-				changed++
+		} else {
+			m.MaxReqsSettings = make(map[string]*MaxReqsSettings)
+			for k0, v := range src.MaxReqsSettings {
+				m.MaxReqsSettings[k0] = v.Clone()
 			}
+			changed++
 		}
 	} else if m.MaxReqsSettings != nil {
 		m.MaxReqsSettings = nil
@@ -3914,6 +3971,43 @@ func (m *RateLimitSettings) ValidateEnums() error {
 
 func (s *RateLimitSettings) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
+}
+
+func (m *RateLimitSettingsData) Clone() *RateLimitSettingsData {
+	cp := &RateLimitSettingsData{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *RateLimitSettingsData) AddSettings(vals ...RateLimitSettings) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Settings {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Settings = append(m.Settings, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *RateLimitSettingsData) RemoveSettings(vals ...RateLimitSettings) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Settings); i >= 0; i-- {
+		if _, found := remove[m.Settings[i].GetKey().GetKeyString()]; found {
+			m.Settings = append(m.Settings[:i], m.Settings[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *RateLimitSettingsData) DeepCopyIn(src *RateLimitSettingsData) {

@@ -421,6 +421,12 @@ func (m *ControllerKey) Matches(o *ControllerKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *ControllerKey) Clone() *ControllerKey {
+	cp := &ControllerKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *ControllerKey) CopyInFields(src *ControllerKey) int {
 	changed := 0
 	if m.Addr != src.Addr {
@@ -581,6 +587,12 @@ func (m *Controller) DiffFields(o *Controller, fields map[string]struct{}) {
 	if m.Hostname != o.Hostname {
 		fields[ControllerFieldHostname] = struct{}{}
 	}
+}
+
+func (m *Controller) Clone() *Controller {
+	cp := &Controller{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *Controller) CopyInFields(src *Controller) int {

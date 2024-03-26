@@ -1408,7 +1408,45 @@ func (m *AutoProvPolicy) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *AutoProvPolicy) Clone() *AutoProvPolicy {
+	cp := &AutoProvPolicy{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AutoProvPolicy) AddCloudlets(vals ...*AutoProvCloudlet) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Cloudlets {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Cloudlets = append(m.Cloudlets, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AutoProvPolicy) RemoveCloudlets(vals ...*AutoProvCloudlet) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Cloudlets); i >= 0; i-- {
+		if _, found := remove[m.Cloudlets[i].GetKey().GetKeyString()]; found {
+			m.Cloudlets = append(m.Cloudlets[:i], m.Cloudlets[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AutoProvPolicy) CopyInFields(src *AutoProvPolicy) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -1439,8 +1477,17 @@ func (m *AutoProvPolicy) CopyInFields(src *AutoProvPolicy) int {
 	}
 	if _, set := fmap["5"]; set {
 		if src.Cloudlets != nil {
-			m.Cloudlets = src.Cloudlets
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddCloudlets(src.Cloudlets...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveCloudlets(src.Cloudlets...)
+			} else {
+				m.Cloudlets = make([]*AutoProvCloudlet, 0)
+				for k0, _ := range src.Cloudlets {
+					m.Cloudlets = append(m.Cloudlets, src.Cloudlets[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.Cloudlets != nil {
 			m.Cloudlets = nil
 			changed++
@@ -2241,6 +2288,12 @@ func (s *AutoProvPolicy) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *AutoProvCloudlet) Clone() *AutoProvCloudlet {
+	cp := &AutoProvCloudlet{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AutoProvCloudlet) CopyInFields(src *AutoProvCloudlet) int {
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
@@ -2339,6 +2392,12 @@ func (s *AutoProvCloudlet) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
 }
 
+func (m *AutoProvCount) Clone() *AutoProvCount {
+	cp := &AutoProvCount{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AutoProvCount) CopyInFields(src *AutoProvCount) int {
 	changed := 0
 	if m.AppKey.Organization != src.AppKey.Organization {
@@ -2399,7 +2458,45 @@ func (s *AutoProvCount) ClearTagged(tags map[string]struct{}) {
 	s.CloudletKey.ClearTagged(tags)
 }
 
+func (m *AutoProvCounts) Clone() *AutoProvCounts {
+	cp := &AutoProvCounts{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AutoProvCounts) AddCounts(vals ...*AutoProvCount) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Counts {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Counts = append(m.Counts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AutoProvCounts) RemoveCounts(vals ...*AutoProvCount) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Counts); i >= 0; i-- {
+		if _, found := remove[m.Counts[i].String()]; found {
+			m.Counts = append(m.Counts[:i], m.Counts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AutoProvCounts) CopyInFields(src *AutoProvCounts) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.DmeNodeName != src.DmeNodeName {
 		m.DmeNodeName = src.DmeNodeName
@@ -2414,8 +2511,17 @@ func (m *AutoProvCounts) CopyInFields(src *AutoProvCounts) int {
 		changed++
 	}
 	if src.Counts != nil {
-		m.Counts = src.Counts
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddCounts(src.Counts...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveCounts(src.Counts...)
+		} else {
+			m.Counts = make([]*AutoProvCount, 0)
+			for k0, _ := range src.Counts {
+				m.Counts = append(m.Counts, src.Counts[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Counts != nil {
 		m.Counts = nil
 		changed++
@@ -2458,6 +2564,12 @@ func (s *AutoProvCounts) ClearTagged(tags map[string]struct{}) {
 			s.Counts[ii].ClearTagged(tags)
 		}
 	}
+}
+
+func (m *AutoProvPolicyCloudlet) Clone() *AutoProvPolicyCloudlet {
+	cp := &AutoProvPolicyCloudlet{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *AutoProvPolicyCloudlet) CopyInFields(src *AutoProvPolicyCloudlet) int {
@@ -2677,7 +2789,76 @@ func (m *AutoProvInfo) DiffFields(o *AutoProvInfo, fields map[string]struct{}) {
 	}
 }
 
+func (m *AutoProvInfo) Clone() *AutoProvInfo {
+	cp := &AutoProvInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AutoProvInfo) AddCompleted(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Completed {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Completed = append(m.Completed, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AutoProvInfo) RemoveCompleted(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Completed); i >= 0; i-- {
+		if _, found := remove[m.Completed[i]]; found {
+			m.Completed = append(m.Completed[:i], m.Completed[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AutoProvInfo) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AutoProvInfo) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AutoProvInfo) CopyInFields(src *AutoProvInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -2714,8 +2895,15 @@ func (m *AutoProvInfo) CopyInFields(src *AutoProvInfo) int {
 	}
 	if _, set := fmap["5"]; set {
 		if src.Completed != nil {
-			m.Completed = src.Completed
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddCompleted(src.Completed...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveCompleted(src.Completed...)
+			} else {
+				m.Completed = make([]string, 0)
+				m.Completed = append(m.Completed, src.Completed...)
+				changed++
+			}
 		} else if m.Completed != nil {
 			m.Completed = nil
 			changed++
@@ -2723,8 +2911,15 @@ func (m *AutoProvInfo) CopyInFields(src *AutoProvInfo) int {
 	}
 	if _, set := fmap["6"]; set {
 		if src.Errors != nil {
-			m.Errors = src.Errors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddErrors(src.Errors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveErrors(src.Errors...)
+			} else {
+				m.Errors = make([]string, 0)
+				m.Errors = append(m.Errors, src.Errors...)
+				changed++
+			}
 		} else if m.Errors != nil {
 			m.Errors = nil
 			changed++

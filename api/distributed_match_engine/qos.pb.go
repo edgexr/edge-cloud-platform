@@ -939,7 +939,14 @@ func encodeVarintQos(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *QosPrioritySessionCreateRequest) Clone() *QosPrioritySessionCreateRequest {
+	cp := &QosPrioritySessionCreateRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *QosPrioritySessionCreateRequest) CopyInFields(src *QosPrioritySessionCreateRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -990,9 +997,23 @@ func (m *QosPrioritySessionCreateRequest) CopyInFields(src *QosPrioritySessionCr
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -1042,7 +1063,14 @@ func (m *QosPrioritySessionCreateRequest) ValidateEnums() error {
 func (s *QosPrioritySessionCreateRequest) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *QosPrioritySessionReply) Clone() *QosPrioritySessionReply {
+	cp := &QosPrioritySessionReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *QosPrioritySessionReply) CopyInFields(src *QosPrioritySessionReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -1073,9 +1101,23 @@ func (m *QosPrioritySessionReply) CopyInFields(src *QosPrioritySessionReply) int
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -1114,7 +1156,14 @@ func (m *QosPrioritySessionReply) ValidateEnums() error {
 func (s *QosPrioritySessionReply) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *QosPrioritySessionDeleteRequest) Clone() *QosPrioritySessionDeleteRequest {
+	cp := &QosPrioritySessionDeleteRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *QosPrioritySessionDeleteRequest) CopyInFields(src *QosPrioritySessionDeleteRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -1133,9 +1182,23 @@ func (m *QosPrioritySessionDeleteRequest) CopyInFields(src *QosPrioritySessionDe
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -1171,7 +1234,14 @@ func (m *QosPrioritySessionDeleteRequest) ValidateEnums() error {
 func (s *QosPrioritySessionDeleteRequest) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *QosPrioritySessionDeleteReply) Clone() *QosPrioritySessionDeleteReply {
+	cp := &QosPrioritySessionDeleteReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *QosPrioritySessionDeleteReply) CopyInFields(src *QosPrioritySessionDeleteReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -1182,9 +1252,23 @@ func (m *QosPrioritySessionDeleteReply) CopyInFields(src *QosPrioritySessionDele
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {

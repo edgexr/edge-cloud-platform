@@ -867,6 +867,12 @@ func encodeVarintExec(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *CloudletMgmtNode) Clone() *CloudletMgmtNode {
+	cp := &CloudletMgmtNode{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletMgmtNode) CopyInFields(src *CloudletMgmtNode) int {
 	changed := 0
 	if m.Type != src.Type {
@@ -891,6 +897,12 @@ func (m *CloudletMgmtNode) ValidateEnums() error {
 }
 
 func (s *CloudletMgmtNode) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *RunCmd) Clone() *RunCmd {
+	cp := &RunCmd{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *RunCmd) CopyInFields(src *RunCmd) int {
@@ -945,6 +957,12 @@ func (s *RunCmd) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *RunVMConsole) Clone() *RunVMConsole {
+	cp := &RunVMConsole{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *RunVMConsole) CopyInFields(src *RunVMConsole) int {
 	changed := 0
 	if m.Url != src.Url {
@@ -981,6 +999,12 @@ func IgnoreRunVMConsoleFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(RunVMConsole{}, names...)
 }
 
+func (m *ShowLog) Clone() *ShowLog {
+	cp := &ShowLog{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *ShowLog) CopyInFields(src *ShowLog) int {
 	changed := 0
 	if m.Since != src.Since {
@@ -1015,6 +1039,12 @@ func (m *ShowLog) ValidateEnums() error {
 }
 
 func (s *ShowLog) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *ExecRequest) Clone() *ExecRequest {
+	cp := &ExecRequest{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *ExecRequest) CopyInFields(src *ExecRequest) int {

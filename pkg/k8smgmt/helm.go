@@ -116,7 +116,7 @@ func getHelmInstallOptsString(annotations string) (string, error) {
 // There are two types of charts:
 //   - standard: "stable/prometheus-operator" which come from the default repo
 //   - external: "https://resources.gigaspaces.com/helm-charts:gigaspaces/insightedge"
-//      - repo name is "gigaspaces" and path is "https://resources.gigaspaces.com/helm-charts"
+//   - repo name is "gigaspaces" and path is "https://resources.gigaspaces.com/helm-charts"
 func getHelmRepoAndChart(imagePath string) (string, string, error) {
 	var chart = ""
 	// scheme + host + first part of path gives repo path
@@ -148,7 +148,7 @@ func CreateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 	log.SpanLog(ctx, log.DebugLevelInfra, "create kubernetes helm app", "clusterInst", clusterInst, "kubeNames", names)
 
 	// install helm if it's not installed yet
-	cmd := fmt.Sprintf("%s helm version", names.KconfEnv)
+	cmd := fmt.Sprintf("helm %s version", names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return err
@@ -161,7 +161,7 @@ func CreateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 	}
 	// Need to add helm repository first
 	if helmRepo != "" {
-		cmd = fmt.Sprintf("%s helm repo add %s", names.KconfEnv, helmRepo)
+		cmd = fmt.Sprintf("helm %s repo add %s", names.KconfArg, helmRepo)
 		out, err = client.Output(cmd)
 		if err != nil && strings.Contains(out, "already exists") {
 			err = nil
@@ -171,7 +171,7 @@ func CreateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "added helm repository", "app name", app.Key.Name)
 	}
-	cmd = fmt.Sprintf("%s helm repo update", names.KconfEnv)
+	cmd = fmt.Sprintf("helm %s repo update", names.KconfArg)
 	out, err = client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("updating helm repos, %s, %s, %v", cmd, out, err)
@@ -188,7 +188,7 @@ func CreateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Helm options", "helmOpts", helmOpts, "helmArgs", helmArgs)
-	cmd = fmt.Sprintf("%s helm install %s %s %s %s", names.KconfEnv, names.HelmAppName, chart,
+	cmd = fmt.Sprintf("helm %s install %s %s %s %s", names.KconfArg, names.HelmAppName, chart,
 		helmArgs, helmOpts)
 	out, err = client.Output(cmd)
 	if err != nil {
@@ -218,14 +218,14 @@ func UpdateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 	}
 
 	// Update repos, just in case we need to refresh available versions
-	cmd := fmt.Sprintf("%s helm repo update", names.KconfEnv)
+	cmd := fmt.Sprintf("helm %s repo update", names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("updating helm repos, %s, %s, %v", cmd, out, err)
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Helm options", "helmOpts", helmOpts, "helmArgs", helmArgs)
-	cmd = fmt.Sprintf("%s helm upgrade %s %s %s %s", names.KconfEnv, helmArgs, helmOpts, names.HelmAppName, chart)
+	cmd = fmt.Sprintf("helm %s upgrade %s %s %s %s", names.KconfArg, helmArgs, helmOpts, names.HelmAppName, chart)
 	out, err = client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error updating helm chart, %s, %s, %v", cmd, out, err)
@@ -236,7 +236,7 @@ func UpdateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 
 func DeleteHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "delete kubernetes helm app")
-	cmd := fmt.Sprintf("%s helm delete %s", names.KconfEnv, names.HelmAppName)
+	cmd := fmt.Sprintf("helm %s delete %s", names.KconfArg, names.HelmAppName)
 	out, err := client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "not found") {

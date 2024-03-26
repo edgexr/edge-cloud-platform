@@ -161,7 +161,7 @@ func GetSvcExternalIpOrHost(ctx context.Context, client ssh.Client, kubeNames *k
 	dnsName := ""
 	//wait for Load Balancer to assign external IP address. It takes a variable amount of time.
 	for i := 0; i < 100; i++ {
-		cmd := fmt.Sprintf("%s kubectl get svc -o json", kubeNames.KconfEnv)
+		cmd := fmt.Sprintf("kubectl %s get svc -o json", kubeNames.KconfArg)
 		out, err := client.Output(cmd)
 		if err != nil {
 			return "", "", fmt.Errorf("error getting svc %s, %s, %v", name, out, err)

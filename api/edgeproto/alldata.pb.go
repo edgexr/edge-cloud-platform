@@ -568,6 +568,756 @@ func encodeVarintAlldata(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *AllData) Clone() *AllData {
+	cp := &AllData{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AllData) AddSettingsEdgeEventsMetricsContinuousQueriesCollectionIntervals(vals ...*CollectionInterval) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals = append(m.Settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveSettingsEdgeEventsMetricsContinuousQueriesCollectionIntervals(vals ...*CollectionInterval) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals); i >= 0; i-- {
+		if _, found := remove[m.Settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals[i].String()]; found {
+			m.Settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals = append(m.Settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals[:i], m.Settings.EdgeEventsMetricsContinuousQueriesCollectionIntervals[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddFlavors(vals ...Flavor) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Flavors {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Flavors = append(m.Flavors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveFlavors(vals ...Flavor) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Flavors); i >= 0; i-- {
+		if _, found := remove[m.Flavors[i].GetKey().GetKeyString()]; found {
+			m.Flavors = append(m.Flavors[:i], m.Flavors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddOperatorCodes(vals ...OperatorCode) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.OperatorCodes {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.OperatorCodes = append(m.OperatorCodes, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveOperatorCodes(vals ...OperatorCode) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.OperatorCodes); i >= 0; i-- {
+		if _, found := remove[m.OperatorCodes[i].String()]; found {
+			m.OperatorCodes = append(m.OperatorCodes[:i], m.OperatorCodes[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddResTagTables(vals ...ResTagTable) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResTagTables {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.ResTagTables = append(m.ResTagTables, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveResTagTables(vals ...ResTagTable) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.ResTagTables); i >= 0; i-- {
+		if _, found := remove[m.ResTagTables[i].GetKey().GetKeyString()]; found {
+			m.ResTagTables = append(m.ResTagTables[:i], m.ResTagTables[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddCloudlets(vals ...Cloudlet) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Cloudlets {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Cloudlets = append(m.Cloudlets, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveCloudlets(vals ...Cloudlet) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Cloudlets); i >= 0; i-- {
+		if _, found := remove[m.Cloudlets[i].GetKey().GetKeyString()]; found {
+			m.Cloudlets = append(m.Cloudlets[:i], m.Cloudlets[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddCloudletInfos(vals ...CloudletInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.CloudletInfos {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.CloudletInfos = append(m.CloudletInfos, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveCloudletInfos(vals ...CloudletInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.CloudletInfos); i >= 0; i-- {
+		if _, found := remove[m.CloudletInfos[i].GetKey().GetKeyString()]; found {
+			m.CloudletInfos = append(m.CloudletInfos[:i], m.CloudletInfos[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddCloudletPools(vals ...CloudletPool) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.CloudletPools {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.CloudletPools = append(m.CloudletPools, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveCloudletPools(vals ...CloudletPool) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.CloudletPools); i >= 0; i-- {
+		if _, found := remove[m.CloudletPools[i].GetKey().GetKeyString()]; found {
+			m.CloudletPools = append(m.CloudletPools[:i], m.CloudletPools[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddAutoProvPolicies(vals ...AutoProvPolicy) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.AutoProvPolicies {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.AutoProvPolicies = append(m.AutoProvPolicies, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveAutoProvPolicies(vals ...AutoProvPolicy) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.AutoProvPolicies); i >= 0; i-- {
+		if _, found := remove[m.AutoProvPolicies[i].GetKey().GetKeyString()]; found {
+			m.AutoProvPolicies = append(m.AutoProvPolicies[:i], m.AutoProvPolicies[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddAutoProvPolicyCloudlets(vals ...AutoProvPolicyCloudlet) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.AutoProvPolicyCloudlets {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.AutoProvPolicyCloudlets = append(m.AutoProvPolicyCloudlets, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveAutoProvPolicyCloudlets(vals ...AutoProvPolicyCloudlet) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.AutoProvPolicyCloudlets); i >= 0; i-- {
+		if _, found := remove[m.AutoProvPolicyCloudlets[i].GetKey().GetKeyString()]; found {
+			m.AutoProvPolicyCloudlets = append(m.AutoProvPolicyCloudlets[:i], m.AutoProvPolicyCloudlets[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddAutoScalePolicies(vals ...AutoScalePolicy) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.AutoScalePolicies {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.AutoScalePolicies = append(m.AutoScalePolicies, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveAutoScalePolicies(vals ...AutoScalePolicy) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.AutoScalePolicies); i >= 0; i-- {
+		if _, found := remove[m.AutoScalePolicies[i].GetKey().GetKeyString()]; found {
+			m.AutoScalePolicies = append(m.AutoScalePolicies[:i], m.AutoScalePolicies[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddTrustPolicies(vals ...TrustPolicy) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.TrustPolicies {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.TrustPolicies = append(m.TrustPolicies, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveTrustPolicies(vals ...TrustPolicy) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.TrustPolicies); i >= 0; i-- {
+		if _, found := remove[m.TrustPolicies[i].GetKey().GetKeyString()]; found {
+			m.TrustPolicies = append(m.TrustPolicies[:i], m.TrustPolicies[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddClusterInsts(vals ...ClusterInst) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ClusterInsts {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.ClusterInsts = append(m.ClusterInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveClusterInsts(vals ...ClusterInst) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.ClusterInsts); i >= 0; i-- {
+		if _, found := remove[m.ClusterInsts[i].GetKey().GetKeyString()]; found {
+			m.ClusterInsts = append(m.ClusterInsts[:i], m.ClusterInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddApps(vals ...App) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Apps {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Apps = append(m.Apps, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveApps(vals ...App) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Apps); i >= 0; i-- {
+		if _, found := remove[m.Apps[i].GetKey().GetKeyString()]; found {
+			m.Apps = append(m.Apps[:i], m.Apps[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddAppInstances(vals ...AppInst) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.AppInstances {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.AppInstances = append(m.AppInstances, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveAppInstances(vals ...AppInst) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.AppInstances); i >= 0; i-- {
+		if _, found := remove[m.AppInstances[i].GetKey().GetKeyString()]; found {
+			m.AppInstances = append(m.AppInstances[:i], m.AppInstances[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddAppInstRefs(vals ...AppInstRefs) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.AppInstRefs {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.AppInstRefs = append(m.AppInstRefs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveAppInstRefs(vals ...AppInstRefs) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.AppInstRefs); i >= 0; i-- {
+		if _, found := remove[m.AppInstRefs[i].GetKey().GetKeyString()]; found {
+			m.AppInstRefs = append(m.AppInstRefs[:i], m.AppInstRefs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddVmPools(vals ...VMPool) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.VmPools {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.VmPools = append(m.VmPools, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveVmPools(vals ...VMPool) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.VmPools); i >= 0; i-- {
+		if _, found := remove[m.VmPools[i].GetKey().GetKeyString()]; found {
+			m.VmPools = append(m.VmPools[:i], m.VmPools[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddGpuDrivers(vals ...GPUDriver) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.GpuDrivers {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.GpuDrivers = append(m.GpuDrivers, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveGpuDrivers(vals ...GPUDriver) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.GpuDrivers); i >= 0; i-- {
+		if _, found := remove[m.GpuDrivers[i].GetKey().GetKeyString()]; found {
+			m.GpuDrivers = append(m.GpuDrivers[:i], m.GpuDrivers[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddAlertPolicies(vals ...AlertPolicy) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.AlertPolicies {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.AlertPolicies = append(m.AlertPolicies, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveAlertPolicies(vals ...AlertPolicy) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.AlertPolicies); i >= 0; i-- {
+		if _, found := remove[m.AlertPolicies[i].GetKey().GetKeyString()]; found {
+			m.AlertPolicies = append(m.AlertPolicies[:i], m.AlertPolicies[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddFlowRateLimitSettings(vals ...FlowRateLimitSettings) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.FlowRateLimitSettings {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.FlowRateLimitSettings = append(m.FlowRateLimitSettings, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveFlowRateLimitSettings(vals ...FlowRateLimitSettings) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.FlowRateLimitSettings); i >= 0; i-- {
+		if _, found := remove[m.FlowRateLimitSettings[i].GetKey().GetKeyString()]; found {
+			m.FlowRateLimitSettings = append(m.FlowRateLimitSettings[:i], m.FlowRateLimitSettings[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddMaxReqsRateLimitSettings(vals ...MaxReqsRateLimitSettings) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.MaxReqsRateLimitSettings {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.MaxReqsRateLimitSettings = append(m.MaxReqsRateLimitSettings, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveMaxReqsRateLimitSettings(vals ...MaxReqsRateLimitSettings) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.MaxReqsRateLimitSettings); i >= 0; i-- {
+		if _, found := remove[m.MaxReqsRateLimitSettings[i].GetKey().GetKeyString()]; found {
+			m.MaxReqsRateLimitSettings = append(m.MaxReqsRateLimitSettings[:i], m.MaxReqsRateLimitSettings[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddNetworks(vals ...Network) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Networks {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Networks = append(m.Networks, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveNetworks(vals ...Network) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Networks); i >= 0; i-- {
+		if _, found := remove[m.Networks[i].GetKey().GetKeyString()]; found {
+			m.Networks = append(m.Networks[:i], m.Networks[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddTrustPolicyExceptions(vals ...TrustPolicyException) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.TrustPolicyExceptions {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.TrustPolicyExceptions = append(m.TrustPolicyExceptions, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveTrustPolicyExceptions(vals ...TrustPolicyException) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.TrustPolicyExceptions); i >= 0; i-- {
+		if _, found := remove[m.TrustPolicyExceptions[i].GetKey().GetKeyString()]; found {
+			m.TrustPolicyExceptions = append(m.TrustPolicyExceptions[:i], m.TrustPolicyExceptions[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddClusterRefs(vals ...ClusterRefs) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ClusterRefs {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.ClusterRefs = append(m.ClusterRefs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemoveClusterRefs(vals ...ClusterRefs) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.ClusterRefs); i >= 0; i-- {
+		if _, found := remove[m.ClusterRefs[i].GetKey().GetKeyString()]; found {
+			m.ClusterRefs = append(m.ClusterRefs[:i], m.ClusterRefs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AllData) AddPlatformFeatures(vals ...PlatformFeatures) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.PlatformFeatures {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.PlatformFeatures = append(m.PlatformFeatures, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AllData) RemovePlatformFeatures(vals ...PlatformFeatures) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.PlatformFeatures); i >= 0; i-- {
+		if _, found := remove[m.PlatformFeatures[i].GetKey().GetKeyString()]; found {
+			m.PlatformFeatures = append(m.PlatformFeatures[:i], m.PlatformFeatures[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AllData) DeepCopyIn(src *AllData) {
 	if src.Settings != nil {
 		var tmp_Settings Settings

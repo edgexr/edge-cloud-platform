@@ -821,6 +821,12 @@ func encodeVarintQosPosition(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *QosPosition) Clone() *QosPosition {
+	cp := &QosPosition{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *QosPosition) CopyInFields(src *QosPosition) int {
 	changed := 0
 	if m.Positionid != src.Positionid {
@@ -909,32 +915,191 @@ func (s *QosPosition) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *BandSelection) Clone() *BandSelection {
+	cp := &BandSelection{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *BandSelection) AddRat2G(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Rat2G {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Rat2G = append(m.Rat2G, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *BandSelection) RemoveRat2G(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Rat2G); i >= 0; i-- {
+		if _, found := remove[m.Rat2G[i]]; found {
+			m.Rat2G = append(m.Rat2G[:i], m.Rat2G[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *BandSelection) AddRat3G(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Rat3G {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Rat3G = append(m.Rat3G, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *BandSelection) RemoveRat3G(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Rat3G); i >= 0; i-- {
+		if _, found := remove[m.Rat3G[i]]; found {
+			m.Rat3G = append(m.Rat3G[:i], m.Rat3G[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *BandSelection) AddRat4G(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Rat4G {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Rat4G = append(m.Rat4G, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *BandSelection) RemoveRat4G(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Rat4G); i >= 0; i-- {
+		if _, found := remove[m.Rat4G[i]]; found {
+			m.Rat4G = append(m.Rat4G[:i], m.Rat4G[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *BandSelection) AddRat5G(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Rat5G {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Rat5G = append(m.Rat5G, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *BandSelection) RemoveRat5G(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Rat5G); i >= 0; i-- {
+		if _, found := remove[m.Rat5G[i]]; found {
+			m.Rat5G = append(m.Rat5G[:i], m.Rat5G[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *BandSelection) CopyInFields(src *BandSelection) int {
+	updateListAction := "replace"
 	changed := 0
 	if src.Rat2G != nil {
-		m.Rat2G = src.Rat2G
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddRat2G(src.Rat2G...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveRat2G(src.Rat2G...)
+		} else {
+			m.Rat2G = make([]string, 0)
+			m.Rat2G = append(m.Rat2G, src.Rat2G...)
+			changed++
+		}
 	} else if m.Rat2G != nil {
 		m.Rat2G = nil
 		changed++
 	}
 	if src.Rat3G != nil {
-		m.Rat3G = src.Rat3G
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddRat3G(src.Rat3G...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveRat3G(src.Rat3G...)
+		} else {
+			m.Rat3G = make([]string, 0)
+			m.Rat3G = append(m.Rat3G, src.Rat3G...)
+			changed++
+		}
 	} else if m.Rat3G != nil {
 		m.Rat3G = nil
 		changed++
 	}
 	if src.Rat4G != nil {
-		m.Rat4G = src.Rat4G
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddRat4G(src.Rat4G...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveRat4G(src.Rat4G...)
+		} else {
+			m.Rat4G = make([]string, 0)
+			m.Rat4G = append(m.Rat4G, src.Rat4G...)
+			changed++
+		}
 	} else if m.Rat4G != nil {
 		m.Rat4G = nil
 		changed++
 	}
 	if src.Rat5G != nil {
-		m.Rat5G = src.Rat5G
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddRat5G(src.Rat5G...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveRat5G(src.Rat5G...)
+		} else {
+			m.Rat5G = make([]string, 0)
+			m.Rat5G = append(m.Rat5G, src.Rat5G...)
+			changed++
+		}
 	} else if m.Rat5G != nil {
 		m.Rat5G = nil
 		changed++
@@ -985,7 +1150,169 @@ func (m *BandSelection) ValidateEnums() error {
 func (s *BandSelection) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *QosPositionRequest) Clone() *QosPositionRequest {
+	cp := &QosPositionRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *QosPositionRequest) AddPositions(vals ...*QosPosition) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Positions {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Positions = append(m.Positions, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *QosPositionRequest) RemovePositions(vals ...*QosPosition) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Positions); i >= 0; i-- {
+		if _, found := remove[m.Positions[i].String()]; found {
+			m.Positions = append(m.Positions[:i], m.Positions[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *QosPositionRequest) AddBandSelectionRat2G(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.BandSelection.Rat2G {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.BandSelection.Rat2G = append(m.BandSelection.Rat2G, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *QosPositionRequest) RemoveBandSelectionRat2G(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.BandSelection.Rat2G); i >= 0; i-- {
+		if _, found := remove[m.BandSelection.Rat2G[i]]; found {
+			m.BandSelection.Rat2G = append(m.BandSelection.Rat2G[:i], m.BandSelection.Rat2G[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *QosPositionRequest) AddBandSelectionRat3G(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.BandSelection.Rat3G {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.BandSelection.Rat3G = append(m.BandSelection.Rat3G, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *QosPositionRequest) RemoveBandSelectionRat3G(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.BandSelection.Rat3G); i >= 0; i-- {
+		if _, found := remove[m.BandSelection.Rat3G[i]]; found {
+			m.BandSelection.Rat3G = append(m.BandSelection.Rat3G[:i], m.BandSelection.Rat3G[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *QosPositionRequest) AddBandSelectionRat4G(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.BandSelection.Rat4G {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.BandSelection.Rat4G = append(m.BandSelection.Rat4G, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *QosPositionRequest) RemoveBandSelectionRat4G(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.BandSelection.Rat4G); i >= 0; i-- {
+		if _, found := remove[m.BandSelection.Rat4G[i]]; found {
+			m.BandSelection.Rat4G = append(m.BandSelection.Rat4G[:i], m.BandSelection.Rat4G[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *QosPositionRequest) AddBandSelectionRat5G(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.BandSelection.Rat5G {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.BandSelection.Rat5G = append(m.BandSelection.Rat5G, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *QosPositionRequest) RemoveBandSelectionRat5G(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.BandSelection.Rat5G); i >= 0; i-- {
+		if _, found := remove[m.BandSelection.Rat5G[i]]; found {
+			m.BandSelection.Rat5G = append(m.BandSelection.Rat5G[:i], m.BandSelection.Rat5G[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *QosPositionRequest) CopyInFields(src *QosPositionRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -996,8 +1323,17 @@ func (m *QosPositionRequest) CopyInFields(src *QosPositionRequest) int {
 		changed++
 	}
 	if src.Positions != nil {
-		m.Positions = src.Positions
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddPositions(src.Positions...)
+		} else if updateListAction == "remove" {
+			changed += m.RemovePositions(src.Positions...)
+		} else {
+			m.Positions = make([]*QosPosition, 0)
+			for k0, _ := range src.Positions {
+				m.Positions = append(m.Positions, src.Positions[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Positions != nil {
 		m.Positions = nil
 		changed++
@@ -1011,29 +1347,57 @@ func (m *QosPositionRequest) CopyInFields(src *QosPositionRequest) int {
 			m.BandSelection = &BandSelection{}
 		}
 		if src.BandSelection.Rat2G != nil {
-			m.BandSelection.Rat2G = src.BandSelection.Rat2G
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddBandSelectionRat2G(src.BandSelection.Rat2G...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveBandSelectionRat2G(src.BandSelection.Rat2G...)
+			} else {
+				m.BandSelection.Rat2G = make([]string, 0)
+				m.BandSelection.Rat2G = append(m.BandSelection.Rat2G, src.BandSelection.Rat2G...)
+				changed++
+			}
 		} else if m.BandSelection.Rat2G != nil {
 			m.BandSelection.Rat2G = nil
 			changed++
 		}
 		if src.BandSelection.Rat3G != nil {
-			m.BandSelection.Rat3G = src.BandSelection.Rat3G
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddBandSelectionRat3G(src.BandSelection.Rat3G...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveBandSelectionRat3G(src.BandSelection.Rat3G...)
+			} else {
+				m.BandSelection.Rat3G = make([]string, 0)
+				m.BandSelection.Rat3G = append(m.BandSelection.Rat3G, src.BandSelection.Rat3G...)
+				changed++
+			}
 		} else if m.BandSelection.Rat3G != nil {
 			m.BandSelection.Rat3G = nil
 			changed++
 		}
 		if src.BandSelection.Rat4G != nil {
-			m.BandSelection.Rat4G = src.BandSelection.Rat4G
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddBandSelectionRat4G(src.BandSelection.Rat4G...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveBandSelectionRat4G(src.BandSelection.Rat4G...)
+			} else {
+				m.BandSelection.Rat4G = make([]string, 0)
+				m.BandSelection.Rat4G = append(m.BandSelection.Rat4G, src.BandSelection.Rat4G...)
+				changed++
+			}
 		} else if m.BandSelection.Rat4G != nil {
 			m.BandSelection.Rat4G = nil
 			changed++
 		}
 		if src.BandSelection.Rat5G != nil {
-			m.BandSelection.Rat5G = src.BandSelection.Rat5G
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddBandSelectionRat5G(src.BandSelection.Rat5G...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveBandSelectionRat5G(src.BandSelection.Rat5G...)
+			} else {
+				m.BandSelection.Rat5G = make([]string, 0)
+				m.BandSelection.Rat5G = append(m.BandSelection.Rat5G, src.BandSelection.Rat5G...)
+				changed++
+			}
 		} else if m.BandSelection.Rat5G != nil {
 			m.BandSelection.Rat5G = nil
 			changed++
@@ -1043,9 +1407,23 @@ func (m *QosPositionRequest) CopyInFields(src *QosPositionRequest) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -1110,6 +1488,12 @@ func (s *QosPositionRequest) ClearTagged(tags map[string]struct{}) {
 	if s.BandSelection != nil {
 		s.BandSelection.ClearTagged(tags)
 	}
+}
+
+func (m *QosPositionKpiResult) Clone() *QosPositionKpiResult {
+	cp := &QosPositionKpiResult{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *QosPositionKpiResult) CopyInFields(src *QosPositionKpiResult) int {
@@ -1245,7 +1629,45 @@ func (s *QosPositionKpiResult) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *QosPositionKpiReply) Clone() *QosPositionKpiReply {
+	cp := &QosPositionKpiReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *QosPositionKpiReply) AddPositionResults(vals ...*QosPositionKpiResult) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.PositionResults {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.PositionResults = append(m.PositionResults, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *QosPositionKpiReply) RemovePositionResults(vals ...*QosPositionKpiResult) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.PositionResults); i >= 0; i-- {
+		if _, found := remove[m.PositionResults[i].String()]; found {
+			m.PositionResults = append(m.PositionResults[:i], m.PositionResults[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *QosPositionKpiReply) CopyInFields(src *QosPositionKpiReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -1256,16 +1678,39 @@ func (m *QosPositionKpiReply) CopyInFields(src *QosPositionKpiReply) int {
 		changed++
 	}
 	if src.PositionResults != nil {
-		m.PositionResults = src.PositionResults
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddPositionResults(src.PositionResults...)
+		} else if updateListAction == "remove" {
+			changed += m.RemovePositionResults(src.PositionResults...)
+		} else {
+			m.PositionResults = make([]*QosPositionKpiResult, 0)
+			for k0, _ := range src.PositionResults {
+				m.PositionResults = append(m.PositionResults, src.PositionResults[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.PositionResults != nil {
 		m.PositionResults = nil
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {

@@ -353,7 +353,3 @@ func ValidK8SContainerName(name string) error {
 	}
 	return nil
 }
-
-func RunCommandSanitize(cmd string) (string, error) {
-	return QuoteArgs(cmd)
-}

@@ -649,6 +649,12 @@ func (m *FlavorKey) Matches(o *FlavorKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *FlavorKey) Clone() *FlavorKey {
+	cp := &FlavorKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *FlavorKey) CopyInFields(src *FlavorKey) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -883,7 +889,14 @@ func (m *Flavor) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *Flavor) Clone() *Flavor {
+	cp := &Flavor{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *Flavor) CopyInFields(src *Flavor) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -914,9 +927,23 @@ func (m *Flavor) CopyInFields(src *Flavor) int {
 	}
 	if _, set := fmap["6"]; set {
 		if src.OptResMap != nil {
-			m.OptResMap = make(map[string]string)
-			for k0, _ := range src.OptResMap {
-				m.OptResMap[k0] = src.OptResMap[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.OptResMap {
+					m.OptResMap[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.OptResMap {
+					if _, ok := m.OptResMap[k0]; ok {
+						delete(m.OptResMap, k0)
+						changed++
+					}
+				}
+			} else {
+				m.OptResMap = make(map[string]string)
+				for k0, v := range src.OptResMap {
+					m.OptResMap[k0] = v
+				}
 				changed++
 			}
 		} else if m.OptResMap != nil {

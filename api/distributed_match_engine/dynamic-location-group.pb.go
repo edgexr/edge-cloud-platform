@@ -731,6 +731,12 @@ func encodeVarintDynamicLocationGroup(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *DlgMessage) Clone() *DlgMessage {
+	cp := &DlgMessage{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *DlgMessage) CopyInFields(src *DlgMessage) int {
 	changed := 0
 	if m.Ver != src.Ver {
@@ -780,6 +786,12 @@ func (m *DlgMessage) ValidateEnums() error {
 func (s *DlgMessage) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *DlgReply) Clone() *DlgReply {
+	cp := &DlgReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *DlgReply) CopyInFields(src *DlgReply) int {
 	changed := 0
 	if m.Ver != src.Ver {
@@ -811,7 +823,14 @@ func (m *DlgReply) ValidateEnums() error {
 func (s *DlgReply) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *DynamicLocGroupRequest) Clone() *DynamicLocGroupRequest {
+	cp := &DynamicLocGroupRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *DynamicLocGroupRequest) CopyInFields(src *DynamicLocGroupRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -834,9 +853,23 @@ func (m *DynamicLocGroupRequest) CopyInFields(src *DynamicLocGroupRequest) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -873,7 +906,14 @@ func (m *DynamicLocGroupRequest) ValidateEnums() error {
 func (s *DynamicLocGroupRequest) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *DynamicLocGroupReply) Clone() *DynamicLocGroupReply {
+	cp := &DynamicLocGroupReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *DynamicLocGroupReply) CopyInFields(src *DynamicLocGroupReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -892,9 +932,23 @@ func (m *DynamicLocGroupReply) CopyInFields(src *DynamicLocGroupReply) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {

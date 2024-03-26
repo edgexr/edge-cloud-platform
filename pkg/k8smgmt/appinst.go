@@ -26,8 +26,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	ssh "github.com/edgexr/golang-ssh"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -59,11 +59,11 @@ func LbServicePortToString(p *v1.ServicePort) string {
 	return edgeproto.ProtoPortToString(string(proto), port)
 }
 
-func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfEnv, namespace, selector, waitFor string, startTimer time.Time) (bool, error) {
+func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace, selector, waitFor string, startTimer time.Time) (bool, error) {
 	done := false
 	log.SpanLog(ctx, log.DebugLevelInfra, "check pods status", "namespace", namespace, "selector", selector)
 	// custom columns will show <none> if there is nothing to display
-	cmd := fmt.Sprintf("%s kubectl get pods --no-headers -n %s --selector=%s -o=custom-columns='Name:metadata.name,Status:status.phase,Reason:status.conditions[].reason,Message:status.conditions[].message'", kConfEnv, namespace, selector)
+	cmd := fmt.Sprintf("kubectl %s get pods --no-headers -n %s --selector=%s -o=custom-columns='Name:metadata.name,Status:status.phase,Reason:status.conditions[].reason,Message:status.conditions[].message'", kConfArg, namespace, selector)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error getting pods", "err", err, "out", out)
@@ -114,7 +114,7 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfEnv, namespace
 					// them back as status updates
 					// rather than sending back
 					// full "describe" dump
-					cmd := fmt.Sprintf("%s kubectl describe pod -n %s --selector=%s", kConfEnv, namespace, selector)
+					cmd := fmt.Sprintf("kubectl %s describe pod -n %s --selector=%s", kConfArg, namespace, selector)
 					out, derr := client.Output(cmd)
 					if derr == nil {
 						return done, fmt.Errorf("Run container failed, pod state: %s - %s", podState, out)
@@ -195,7 +195,7 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 				}
 			}
 			selector := fmt.Sprintf("%s=%s", MexAppLabel, name)
-			done, err := CheckPodsStatus(ctx, client, names.KconfEnv, namespace, selector, waitFor, start)
+			done, err := CheckPodsStatus(ctx, client, names.KconfArg, namespace, selector, waitFor, start)
 			if err != nil {
 				return err
 			}
@@ -343,7 +343,7 @@ func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeName
 	return nil
 }
 
-func createOrUpdateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, action string) error {
+func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, action string) error {
 	if action == createManifest && names.MultitenantNamespace != "" {
 		err := CreateMultitenantNamespace(ctx, client, names)
 		if err != nil {
@@ -351,7 +351,7 @@ func createOrUpdateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuth
 		}
 	}
 
-	mf, err := cloudcommon.GetDeploymentManifest(ctx, authApi, app.DeploymentManifest)
+	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, app.DeploymentManifest)
 	if err != nil {
 		return err
 	}
@@ -363,7 +363,7 @@ func createOrUpdateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuth
 		}
 		mf = AddManifest(mf, np)
 	}
-	mf, err = MergeEnvVars(ctx, authApi, app, appInst, mf, names.ImagePullSecrets, names, appInstFlavor)
+	mf, err = MergeEnvVars(ctx, accessApi, app, appInst, mf, names.ImagePullSecrets, names, appInstFlavor)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to merge env vars", "error", err)
 		return fmt.Errorf("error merging environment variables config file: %s", err)
@@ -397,7 +397,7 @@ func createOrUpdateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuth
 	if names.MultitenantNamespace != "" {
 		selector = fmt.Sprintf("-l %s=%s", ConfigLabel, getConfigLabel(names))
 	}
-	cmd := fmt.Sprintf("%s kubectl apply -f %s --prune %s", names.KconfEnv, configDir, selector)
+	cmd := fmt.Sprintf("kubectl %s apply -f %s --prune %s", names.KconfArg, configDir, selector)
 	log.SpanLog(ctx, log.DebugLevelInfra, "running kubectl", "action", action, "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil && strings.Contains(string(out), `pruning nonNamespaced object /v1, Kind=Namespace: namespaces "kube-system" is forbidden: this namespace may not be deleted`) {
@@ -414,12 +414,12 @@ func createOrUpdateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuth
 
 }
 
-func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
-	return createOrUpdateAppInst(ctx, authApi, client, names, app, appInst, appInstFlavor, createManifest)
+func CreateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
+	return createOrUpdateAppInst(ctx, accessApi, client, names, app, appInst, appInstFlavor, createManifest)
 }
 
-func UpdateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
-	err := createOrUpdateAppInst(ctx, authApi, client, names, app, appInst, appInstFlavor, applyManifest)
+func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
+	err := createOrUpdateAppInst(ctx, accessApi, client, names, app, appInst, appInstFlavor, applyManifest)
 	if err != nil {
 		return err
 	}
@@ -429,7 +429,7 @@ func UpdateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 func DeleteAppInst(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	configDir, configName := getConfigDirName(names)
 	file := configDir + "/" + configName
-	cmd := fmt.Sprintf("%s kubectl delete -f %s", names.KconfEnv, file)
+	cmd := fmt.Sprintf("kubectl %s delete -f %s", names.KconfArg, file)
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting app", "name", names.AppName, "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -507,9 +507,9 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, names *KubeNames,
 		// Get list of all running pods.
 		// NOTE: Parsing status from json output doesn't give correct value as observed with kubectl version 1.18
 		//       Hence, look at table output and then get list of running pods and use this to fetch container names
-		cmd := fmt.Sprintf("%s kubectl get pods -n %s --no-headers --sort-by=.metadata.name --selector=%s=%s "+
+		cmd := fmt.Sprintf("kubectl %s get pods -n %s --no-headers --sort-by=.metadata.name --selector=%s=%s "+
 			"| awk '{if ($3 == \"Running\") print $1}'",
-			names.KconfEnv, namespace, MexAppLabel, name)
+			names.KconfArg, namespace, MexAppLabel, name)
 		out, err := client.Output(cmd)
 		if err != nil {
 			return nil, fmt.Errorf("error getting kubernetes pods, %s, %s, %s", cmd, out, err.Error())
@@ -520,8 +520,8 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, names *KubeNames,
 			if podName == "" {
 				continue
 			}
-			cmd = fmt.Sprintf("%s kubectl get pod %s -n %s -o json | jq -r '.spec.containers[] | .name'",
-				names.KconfEnv, podName, namespace)
+			cmd = fmt.Sprintf("kubectl %s get pod %s -n %s -o json | jq -r '.spec.containers[] | .name'",
+				names.KconfArg, podName, namespace)
 			out, err = client.Output(cmd)
 			if err != nil {
 				return nil, fmt.Errorf("error getting kubernetes pod %q containers, %s, %s, %s", podName, cmd, out, err.Error())
@@ -575,21 +575,18 @@ func GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst
 	if err != nil {
 		return "", fmt.Errorf("failed to get kube names, %v", err)
 	}
+	kubecfg := "--kubeconfig=" + names.KconfName
 	if req.Cmd != nil {
 		containerCmd := ""
 		if containerName != "" {
 			containerCmd = fmt.Sprintf("-c %s ", containerName)
 		}
-		userCmd, err := util.RunCommandSanitize(req.Cmd.Command)
-		if err != nil {
-			return "", fmt.Errorf("bad command: %s", err)
-		}
-		cmdStr := fmt.Sprintf("%s kubectl exec -n %s -it %s%s -- %s",
-			names.KconfEnv, namespace, containerCmd, podName, userCmd)
+		cmdStr := fmt.Sprintf("kubectl %s exec -n %s -it %s%s -- %s",
+			kubecfg, namespace, containerCmd, podName, req.Cmd.Command)
 		return cmdStr, nil
 	}
 	if req.Log != nil {
-		cmdStr := fmt.Sprintf("%s kubectl logs -n %s ", names.KconfEnv, namespace)
+		cmdStr := fmt.Sprintf("kubectl %s logs -n %s ", kubecfg, namespace)
 		if req.Log.Since != "" {
 			_, perr := time.ParseDuration(req.Log.Since)
 			if perr == nil {

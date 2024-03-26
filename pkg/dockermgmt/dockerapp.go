@@ -15,6 +15,7 @@
 package dockermgmt
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strconv"
@@ -25,9 +26,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	ssh "github.com/edgexr/golang-ssh"
+	"github.com/kballard/go-shellquote"
 	yaml "github.com/mobiledgex/yaml/v2"
 )
 
@@ -43,7 +46,10 @@ var DockerHostMode DockerNetworkingMode = "hostMode"
 var DockerBridgeMode DockerNetworkingMode = "bridgeMode"
 
 type DockerOptions struct {
-	ForceImagePull bool
+	ForceImagePull  bool
+	ExposePorts     bool
+	NoHostNetwork   bool
+	StopTimeoutSecs int
 }
 
 type DockerReqOp func(do *DockerOptions) error
@@ -51,6 +57,27 @@ type DockerReqOp func(do *DockerOptions) error
 func WithForceImagePull(force bool) DockerReqOp {
 	return func(d *DockerOptions) error {
 		d.ForceImagePull = force
+		return nil
+	}
+}
+
+func WithExposePorts() DockerReqOp {
+	return func(d *DockerOptions) error {
+		d.ExposePorts = true
+		return nil
+	}
+}
+
+func WithNoHostNetwork() DockerReqOp {
+	return func(d *DockerOptions) error {
+		d.NoHostNetwork = true
+		return nil
+	}
+}
+
+func WithStopTimeoutSecs(timeoutSecs int) DockerReqOp {
+	return func(d *DockerOptions) error {
+		d.StopTimeoutSecs = timeoutSecs
 		return nil
 	}
 }
@@ -113,12 +140,16 @@ func GetDockerPortString(ports []dme.AppPort, containerPortType string, proxyMat
 	return cmdArgs
 }
 
-func getDockerComposeFileName(client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) string {
+func getDockerComposeFileName(app *edgeproto.App, appInst *edgeproto.AppInst) string {
 	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
 		return util.DNSSanitize("docker-compose-"+appInst.Key.Name) + ".yml"
 	} else {
 		return util.DNSSanitize("docker-compose-"+app.Key.Name+app.Key.Version) + ".yml"
 	}
+}
+
+func getDockerComposeEnvFileName(appInst *edgeproto.AppInst) string {
+	return util.DNSSanitize("docker-compose-"+appInst.Key.Name) + ".env"
 }
 
 func parseDockerComposeManifest(client ssh.Client, dir string, dm *cloudcommon.DockerManifest) error {
@@ -134,7 +165,7 @@ func parseDockerComposeManifest(client ssh.Client, dir string, dm *cloudcommon.D
 	return nil
 }
 
-func handleDockerZipfile(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst, action string, opts ...DockerReqOp) error {
+func handleDockerZipfile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst, action string, envFileArg string, opts ...DockerReqOp) error {
 	var dockerOpt DockerOptions
 	for _, op := range opts {
 		if err := op(&dockerOpt); err != nil {
@@ -154,7 +185,7 @@ func handleDockerZipfile(ctx context.Context, authApi cloudcommon.RegistryAuthAp
 			return err
 		}
 		passParams := ""
-		auth, err := authApi.GetRegistryAuth(ctx, app.DeploymentManifest)
+		auth, err := accessApi.GetRegistryAuth(ctx, app.DeploymentManifest)
 		if err != nil {
 			return err
 		}
@@ -234,7 +265,7 @@ func handleDockerZipfile(ctx context.Context, authApi cloudcommon.RegistryAuthAp
 			}
 		}
 
-		cmd := fmt.Sprintf("docker-compose -f %s/%s %s", dir, d, dockerComposeCommand)
+		cmd := fmt.Sprintf("docker-compose%s -f %s/%s %s", envFileArg, dir, d, dockerComposeCommand)
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker-compose", "cmd", cmd)
 		out, err := client.Output(cmd)
 
@@ -260,13 +291,13 @@ func handleDockerZipfile(ctx context.Context, authApi cloudcommon.RegistryAuthAp
 }
 
 // createDockerComposeFile creates a docker compose file and returns the file name
-func createDockerComposeFile(client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
-	filename := getDockerComposeFileName(client, app, appInst)
-	log.DebugLog(log.DebugLevelInfra, "creating docker compose file", "filename", filename)
+func createDockerComposeFile(ctx context.Context, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
+	filename := getDockerComposeFileName(app, appInst)
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating docker compose file", "filename", filename)
 
 	err := pc.WriteFile(client, filename, app.DeploymentManifest, "Docker compose file", pc.NoSudo)
 	if err != nil {
-		log.DebugLog(log.DebugLevelInfo, "Error writing docker compose file", "err", err)
+		log.SpanLog(ctx, log.DebugLevelInfo, "Error writing docker compose file", "err", err)
 		return "", err
 	}
 	return filename, nil
@@ -284,28 +315,29 @@ func getLabelsStr(appInst *edgeproto.AppInst) string {
 // Local Docker AppInst create is different due to fact that MacOS doesn't like '--network=host' option.
 // Instead on MacOS docker needs to have port mapping  explicity specified with '-p' option.
 // As a result we have a separate function specifically for a docker app creation on a MacOS laptop
-func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+// TODO: Replace this with CreateAppInst with WithExportPorts() and WithNoHostNetwork() options.
+func CreateAppInstLocal(ctx context.Context, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	image := app.ImagePath
 	name := GetContainerName(appInst)
 	cluster := util.DockerSanitize(appInst.ClusterKey.Organization + "-" + appInst.ClusterKey.Name)
-	base_cmd := "docker run "
+	baseCmd := "docker run "
 	if appInst.OptRes == "gpu" {
-		base_cmd += "--gpus all"
+		baseCmd += "--gpus all"
 	}
 	labelsStr := getLabelsStr(appInst)
 	if app.DeploymentManifest == "" {
-		cmd := fmt.Sprintf("%s -d -l edge-cloud -l cluster=%s %s --restart=unless-stopped --name=%s %s %s %s", base_cmd,
+		cmd := fmt.Sprintf("%s -d -l edge-cloud -l cluster=%s %s --restart=unless-stopped --name=%s %s %s %s", baseCmd,
 			cluster, labelsStr, name,
 			strings.Join(GetDockerPortString(appInst.MappedPorts, UseInternalPortInContainer, "", cloudcommon.IPAddrAllInterfaces, cloudcommon.IPV6AddrAllInterfaces), " "), image, getCommandString(app))
-		log.DebugLog(log.DebugLevelInfra, "running docker run ", "cmd", cmd)
+		log.SpanLog(ctx, log.DebugLevelInfra, "running docker run ", "cmd", cmd)
 
 		out, err := client.Output(cmd)
 		if err != nil {
 			return fmt.Errorf("error running app, %s, %v", out, err)
 		}
-		log.DebugLog(log.DebugLevelInfra, "done docker run ")
+		log.SpanLog(ctx, log.DebugLevelInfra, "done docker run ")
 	} else {
-		filename, err := createDockerComposeFile(client, app, appInst)
+		filename, err := createDockerComposeFile(ctx, client, app, appInst)
 		if err != nil {
 			return err
 		}
@@ -314,7 +346,7 @@ func CreateAppInstLocal(client ssh.Client, app *edgeproto.App, appInst *edgeprot
 		// Once that's merged we can add label here too
 		// cmd := fmt.Sprintf("docker-compose -f %s -l %s=%s up -d", filename, cloudcommon.MexAppInstanceLabel, labelVal)
 		cmd := fmt.Sprintf("docker-compose -f %s up -d", filename)
-		log.DebugLog(log.DebugLevelInfra, "running docker-compose", "cmd", cmd)
+		log.SpanLog(ctx, log.DebugLevelInfra, "running docker-compose", "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {
 			return fmt.Errorf("error running docker compose up, %s, %v", out, err)
@@ -342,7 +374,7 @@ func getCommandString(app *edgeproto.App) string {
 	return strings.Join(safeArgs, " ")
 }
 
-func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst, opts ...DockerReqOp) error {
+func CreateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst, opts ...DockerReqOp) error {
 	var dockerOpt DockerOptions
 	for _, op := range opts {
 		if err := op(&dockerOpt); err != nil {
@@ -351,9 +383,39 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 	}
 	image := app.ImagePath
 	labelsStr := getLabelsStr(appInst)
-	base_cmd := "docker run "
+	baseCmd := "docker run "
 	if appInst.OptRes == "gpu" {
-		base_cmd += "--gpus all"
+		baseCmd += "--gpus all"
+	}
+	if dockerOpt.ExposePorts {
+		baseCmd += " " + strings.Join(GetDockerPortString(appInst.MappedPorts, UseInternalPortInContainer, "", cloudcommon.IPAddrAllInterfaces, cloudcommon.IPV6AddrAllInterfaces), " ")
+	}
+	if !dockerOpt.NoHostNetwork {
+		baseCmd += " --network=host"
+	}
+
+	envFileArg := ""
+	if len(app.EnvVars) > 0 || len(app.SecretEnvVars) > 0 {
+		envFile := getDockerComposeEnvFileName(appInst)
+		secretVars, err := accessApi.GetAppSecretVars(ctx, &app.Key)
+		if err != nil {
+			return err
+		}
+		if len(secretVars) != len(app.SecretEnvVars) {
+			return fmt.Errorf("failed to get the correct number of App secret vars from encrypted storage, expected %d but only got %d", len(app.SecretEnvVars), len(secretVars))
+		}
+		buf := bytes.Buffer{}
+		for k, v := range app.EnvVars {
+			buf.WriteString(fmt.Sprintf("%s=%s\n", k, v))
+		}
+		for k, v := range secretVars {
+			buf.WriteString(fmt.Sprintf("%s=%s\n", k, v))
+		}
+		err = pc.WriteFile(client, envFile, buf.String(), "envFile", pc.NoSudo)
+		if err != nil {
+			return err
+		}
+		envFileArg = " --env-file " + envFile
 	}
 
 	if app.DeploymentManifest == "" {
@@ -365,18 +427,32 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 				return fmt.Errorf("error pulling docker image: %s, %s, %v", image, out, err)
 			}
 		}
-		cmd := fmt.Sprintf("%s -d %s --restart=unless-stopped --network=host --name=%s %s %s", base_cmd, labelsStr, GetContainerName(appInst), image, getCommandString(app))
-		log.SpanLog(ctx, log.DebugLevelInfra, "running docker run ", "cmd", cmd)
-		out, err := client.Output(cmd)
+		cmd := fmt.Sprintf("%s%s -d %s --restart=unless-stopped --name=%s %s", baseCmd, envFileArg, labelsStr, GetContainerName(appInst), image)
+		cmdArgs, err := shellquote.Split(cmd)
+		if err != nil {
+			return err
+		}
+		appCmd := strings.TrimSpace(app.Command)
+		if appCmd != "" {
+			cmdArgs = append(cmdArgs, appCmd)
+		}
+		for _, arg := range app.CommandArgs {
+			arg = strings.TrimSpace(arg)
+			if arg != "" {
+				cmdArgs = append(cmdArgs, arg)
+			}
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "running docker run", "cmd", cmdArgs)
+		out, err := pc.RunSafeOutput(client, cmdArgs[0], cmdArgs[1:])
 		if err != nil {
 			return fmt.Errorf("error running docker run, %s, %v", out, err)
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "done docker run ")
 	} else {
 		if strings.HasSuffix(app.DeploymentManifest, ".zip") {
-			return handleDockerZipfile(ctx, authApi, client, app, appInst, createZip, opts...)
+			return handleDockerZipfile(ctx, accessApi, client, app, appInst, createZip, envFileArg, opts...)
 		}
-		filename, err := createDockerComposeFile(client, app, appInst)
+		filename, err := createDockerComposeFile(ctx, client, app, appInst)
 		if err != nil {
 			return err
 		}
@@ -392,7 +468,7 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 		// There is a feature request in docker for it - https://github.com/docker/compose/issues/6159
 		// Once that's merged we can add label here too
 		// cmd := fmt.Sprintf("docker-compose -f %s -l %s=%s up -d", filename, cloudcommon.MexAppInstanceLabel, labelVal)
-		cmd := fmt.Sprintf("docker-compose -f %s up -d", filename)
+		cmd := fmt.Sprintf("docker-compose%s -f %s up -d", envFileArg, filename)
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker-compose", "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {
@@ -402,11 +478,28 @@ func CreateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 	return nil
 }
 
-func DeleteAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst, opts ...DockerReqOp) error {
+	var dockerOpt DockerOptions
+	for _, op := range opts {
+		if err := op(&dockerOpt); err != nil {
+			return err
+		}
+	}
+
+	if len(app.EnvVars) > 0 || len(app.SecretEnvVars) > 0 {
+		envFile := getDockerComposeEnvFileName(appInst)
+		err := pc.DeleteFile(client, envFile, pc.NoSudo)
+		if err != nil {
+			return err
+		}
+	}
 
 	if app.DeploymentManifest == "" {
 		name := GetContainerName(appInst)
 		cmd := fmt.Sprintf("docker stop %s", name)
+		if dockerOpt.StopTimeoutSecs != 0 {
+			cmd += fmt.Sprintf(" -t %d", dockerOpt.StopTimeoutSecs)
+		}
 
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker stop ", "cmd", cmd)
 		removeContainer := true
@@ -432,9 +525,9 @@ func DeleteAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 		}
 	} else {
 		if strings.HasSuffix(app.DeploymentManifest, ".zip") {
-			return handleDockerZipfile(ctx, authApi, client, app, appInst, deleteZip)
+			return handleDockerZipfile(ctx, accessApi, client, app, appInst, deleteZip, "")
 		}
-		filename := getDockerComposeFileName(client, app, appInst)
+		filename := getDockerComposeFileName(app, appInst)
 		cmd := fmt.Sprintf("docker-compose -f %s down", filename)
 		log.SpanLog(ctx, log.DebugLevelInfra, "running docker-compose", "cmd", cmd)
 		out, err := client.Output(cmd)
@@ -450,14 +543,14 @@ func DeleteAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, cli
 	return nil
 }
 
-func UpdateAppInst(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateAppInst", "appkey", app.Key, "ImagePath", app.ImagePath)
 
-	err := DeleteAppInst(ctx, authApi, client, app, appInst)
+	err := DeleteAppInst(ctx, accessApi, client, app, appInst)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "DeleteAppInst failed, proceeding with create", "appkey", app.Key, "err", err)
 	}
-	return CreateAppInst(ctx, authApi, client, app, appInst, WithForceImagePull(true))
+	return CreateAppInst(ctx, accessApi, client, app, appInst, WithForceImagePull(true))
 }
 
 func appendContainerIdsFromDockerComposeImages(client ssh.Client, dockerComposeFile string, rt *edgeproto.AppInstRuntime) error {
@@ -523,7 +616,7 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, app *edgeproto.Ap
 				}
 			}
 		} else {
-			filename := getDockerComposeFileName(client, app, appInst)
+			filename := getDockerComposeFileName(app, appInst)
 			err := appendContainerIdsFromDockerComposeImages(client, filename, rt)
 			if err != nil {
 				return rt, err
@@ -553,11 +646,7 @@ func GetContainerCommand(clusterInst *edgeproto.ClusterInst, app *edgeproto.App,
 		}
 	}
 	if req.Cmd != nil {
-		userCmd, err := util.RunCommandSanitize(req.Cmd.Command)
-		if err != nil {
-			return "", fmt.Errorf("bad command: %s", err)
-		}
-		cmdStr := fmt.Sprintf("docker exec -it %s %s", req.ContainerId, userCmd)
+		cmdStr := fmt.Sprintf("docker exec -it %s %s", req.ContainerId, req.Cmd.Command)
 		return cmdStr, nil
 	}
 	if req.Log != nil {

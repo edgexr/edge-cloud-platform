@@ -611,6 +611,12 @@ func (m *PolicyKey) Matches(o *PolicyKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *PolicyKey) Clone() *PolicyKey {
+	cp := &PolicyKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *PolicyKey) CopyInFields(src *PolicyKey) int {
 	changed := 0
 	if m.Organization != src.Organization {
@@ -887,6 +893,12 @@ func (m *AutoScalePolicy) ValidateUpdateFields() error {
 		return fmt.Errorf("specified field(s) %s cannot be modified", strings.Join(badFieldStrs, ","))
 	}
 	return nil
+}
+
+func (m *AutoScalePolicy) Clone() *AutoScalePolicy {
+	cp := &AutoScalePolicy{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *AutoScalePolicy) CopyInFields(src *AutoScalePolicy) int {

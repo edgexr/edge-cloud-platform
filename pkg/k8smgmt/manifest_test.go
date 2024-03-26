@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
@@ -64,15 +65,15 @@ func TestEnvVars(t *testing.T) {
 
 	defaultFlavor := testutil.FlavorData()[0]
 
-	authApi := &cloudcommon.DummyRegistryAuthApi{}
+	accessApi := &accessapi.TestHandler{}
 	// Test Deployment manifest with inline EnvVars
 	baseMf, err := cloudcommon.GetAppDeploymentManifest(ctx, nil, app)
 	require.Nil(t, err)
-	envVarsMf, err := MergeEnvVars(ctx, authApi, app, appInst, baseMf, nil, names, &defaultFlavor)
+	envVarsMf, err := MergeEnvVars(ctx, accessApi, app, appInst, baseMf, nil, names, &defaultFlavor)
 	require.Nil(t, err)
 	// make envVars remote
 	app.Configs[0].Config = tsEnvVars.URL
-	remoteEnvVars, err := MergeEnvVars(ctx, authApi, app, appInst, baseMf, nil, names, &defaultFlavor)
+	remoteEnvVars, err := MergeEnvVars(ctx, accessApi, app, appInst, baseMf, nil, names, &defaultFlavor)
 	require.Nil(t, err)
 	require.Equal(t, envVarsMf, remoteEnvVars)
 
@@ -85,7 +86,7 @@ func TestEnvVars(t *testing.T) {
 		MinReplicas: 2,
 	}
 	gpuFlavor := testutil.FlavorData()[4]
-	merged, err := MergeEnvVars(ctx, authApi, app, appInst, baseMf, nil, names, &gpuFlavor)
+	merged, err := MergeEnvVars(ctx, accessApi, app, appInst, baseMf, nil, names, &gpuFlavor)
 	require.Nil(t, err)
 	require.Equal(t, expectedFullManifest, merged)
 }

@@ -16,3 +16,9 @@ package util
 
 // Name to clear map/list for CLI
 const EmptySet = "empty"
+
+const (
+	UpdateListActionAdd     = "add"
+	UpdateListActionRemove  = "remove"
+	UpdateListActionReplace = "replace"
+)

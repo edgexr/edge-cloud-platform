@@ -1499,6 +1499,12 @@ func (m *ClusterInstKeyV1) Matches(o *ClusterInstKeyV1, fopts ...MatchOpt) bool 
 	return true
 }
 
+func (m *ClusterInstKeyV1) Clone() *ClusterInstKeyV1 {
+	cp := &ClusterInstKeyV1{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *ClusterInstKeyV1) CopyInFields(src *ClusterInstKeyV1) int {
 	changed := 0
 	if m.ClusterKey.Name != src.ClusterKey.Name {
@@ -1610,6 +1616,12 @@ func (m *ClusterInstKey) Matches(o *ClusterInstKey, fopts ...MatchOpt) bool {
 		return false
 	}
 	return true
+}
+
+func (m *ClusterInstKey) Clone() *ClusterInstKey {
+	cp := &ClusterInstKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *ClusterInstKey) CopyInFields(src *ClusterInstKey) int {
@@ -2429,7 +2441,107 @@ func (m *ClusterInst) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *ClusterInst) Clone() *ClusterInst {
+	cp := &ClusterInst{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *ClusterInst) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterInst) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *ClusterInst) AddResourcesVms(vals ...VmInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Resources.Vms {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Resources.Vms = append(m.Resources.Vms, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterInst) RemoveResourcesVms(vals ...VmInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Resources.Vms); i >= 0; i-- {
+		if _, found := remove[m.Resources.Vms[i].String()]; found {
+			m.Resources.Vms = append(m.Resources.Vms[:i], m.Resources.Vms[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *ClusterInst) AddNetworks(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Networks {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Networks = append(m.Networks, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterInst) RemoveNetworks(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Networks); i >= 0; i-- {
+		if _, found := remove[m.Networks[i]]; found {
+			m.Networks = append(m.Networks[:i], m.Networks[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -2484,8 +2596,15 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 	}
 	if _, set := fmap["5"]; set {
 		if src.Errors != nil {
-			m.Errors = src.Errors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddErrors(src.Errors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveErrors(src.Errors...)
+			} else {
+				m.Errors = make([]string, 0)
+				m.Errors = append(m.Errors, src.Errors...)
+				changed++
+			}
 		} else if m.Errors != nil {
 			m.Errors = nil
 			changed++
@@ -2608,8 +2727,17 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 	if _, set := fmap["28"]; set {
 		if _, set := fmap["28.1"]; set {
 			if src.Resources.Vms != nil {
-				m.Resources.Vms = src.Resources.Vms
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddResourcesVms(src.Resources.Vms...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveResourcesVms(src.Resources.Vms...)
+				} else {
+					m.Resources.Vms = make([]VmInfo, 0)
+					for k1, _ := range src.Resources.Vms {
+						m.Resources.Vms = append(m.Resources.Vms, *src.Resources.Vms[k1].Clone())
+					}
+					changed++
+				}
 			} else if m.Resources.Vms != nil {
 				m.Resources.Vms = nil
 				changed++
@@ -2666,8 +2794,15 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 	}
 	if _, set := fmap["33"]; set {
 		if src.Networks != nil {
-			m.Networks = src.Networks
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddNetworks(src.Networks...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveNetworks(src.Networks...)
+			} else {
+				m.Networks = make([]string, 0)
+				m.Networks = append(m.Networks, src.Networks...)
+				changed++
+			}
 		} else if m.Networks != nil {
 			m.Networks = nil
 			changed++
@@ -3425,6 +3560,12 @@ func IgnoreClusterInstFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(ClusterInst{}, names...)
 }
 
+func (m *IdleReservableClusterInsts) Clone() *IdleReservableClusterInsts {
+	cp := &IdleReservableClusterInsts{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *IdleReservableClusterInsts) CopyInFields(src *IdleReservableClusterInsts) int {
 	changed := 0
 	if m.IdleTime != src.IdleTime {
@@ -3785,7 +3926,107 @@ func (m *ClusterInstInfo) DiffFields(o *ClusterInstInfo, fields map[string]struc
 	}
 }
 
+func (m *ClusterInstInfo) Clone() *ClusterInstInfo {
+	cp := &ClusterInstInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *ClusterInstInfo) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterInstInfo) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *ClusterInstInfo) AddStatusMsgs(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Status.Msgs {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Status.Msgs = append(m.Status.Msgs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterInstInfo) RemoveStatusMsgs(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Status.Msgs); i >= 0; i-- {
+		if _, found := remove[m.Status.Msgs[i]]; found {
+			m.Status.Msgs = append(m.Status.Msgs[:i], m.Status.Msgs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *ClusterInstInfo) AddResourcesVms(vals ...VmInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Resources.Vms {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Resources.Vms = append(m.Resources.Vms, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterInstInfo) RemoveResourcesVms(vals ...VmInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Resources.Vms); i >= 0; i-- {
+		if _, found := remove[m.Resources.Vms[i].String()]; found {
+			m.Resources.Vms = append(m.Resources.Vms[:i], m.Resources.Vms[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *ClusterInstInfo) CopyInFields(src *ClusterInstInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -3838,8 +4079,15 @@ func (m *ClusterInstInfo) CopyInFields(src *ClusterInstInfo) int {
 	}
 	if _, set := fmap["5"]; set {
 		if src.Errors != nil {
-			m.Errors = src.Errors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddErrors(src.Errors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveErrors(src.Errors...)
+			} else {
+				m.Errors = make([]string, 0)
+				m.Errors = append(m.Errors, src.Errors...)
+				changed++
+			}
 		} else if m.Errors != nil {
 			m.Errors = nil
 			changed++
@@ -3878,8 +4126,15 @@ func (m *ClusterInstInfo) CopyInFields(src *ClusterInstInfo) int {
 		}
 		if _, set := fmap["6.6"]; set {
 			if src.Status.Msgs != nil {
-				m.Status.Msgs = src.Status.Msgs
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddStatusMsgs(src.Status.Msgs...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveStatusMsgs(src.Status.Msgs...)
+				} else {
+					m.Status.Msgs = make([]string, 0)
+					m.Status.Msgs = append(m.Status.Msgs, src.Status.Msgs...)
+					changed++
+				}
 			} else if m.Status.Msgs != nil {
 				m.Status.Msgs = nil
 				changed++
@@ -3889,8 +4144,17 @@ func (m *ClusterInstInfo) CopyInFields(src *ClusterInstInfo) int {
 	if _, set := fmap["7"]; set {
 		if _, set := fmap["7.1"]; set {
 			if src.Resources.Vms != nil {
-				m.Resources.Vms = src.Resources.Vms
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddResourcesVms(src.Resources.Vms...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveResourcesVms(src.Resources.Vms...)
+				} else {
+					m.Resources.Vms = make([]VmInfo, 0)
+					for k1, _ := range src.Resources.Vms {
+						m.Resources.Vms = append(m.Resources.Vms, *src.Resources.Vms[k1].Clone())
+					}
+					changed++
+				}
 			} else if m.Resources.Vms != nil {
 				m.Resources.Vms = nil
 				changed++

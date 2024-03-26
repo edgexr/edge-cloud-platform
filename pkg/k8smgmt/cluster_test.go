@@ -18,10 +18,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1040,3 +1040,47 @@ var getNodesSampleOutput = `
     }
 }
 `
+
+func TestCheckNodesReady(t *testing.T) {
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	client := pc.DummyClient{}
+
+	tests := []struct {
+		out         string
+		expReady    int
+		expNotReady int
+	}{{
+		`NAME                       STATUS   ROLES                  AGE   VERSION
+    k3d-reservable0-server-0   Ready    control-plane,master   43s   v1.27.4+k3s1
+`, 1, 0,
+	}, {
+		`NAME                                STATUS   ROLES   AGE    VERSION
+        aks-agentpool-40426869-vmss000002   Ready    agent   231d   v1.25.11
+        aks-agentpool-40426869-vmss000007   Ready    agent   231d   v1.25.11
+        aks-agentpool-40426869-vmss00000a   Ready    agent   124d   v1.25.11
+        aks-agentpool-40426869-vmss00000b   Ready    agent   34d    v1.25.15
+`, 4, 0,
+	}, {
+		"", 0, 0,
+	}, {
+		`NAME                       STATUS   ROLES                  AGE   VERSION
+`, 0, 0,
+	}, {
+		`NAME                                STATUS   ROLES   AGE    VERSION
+        aks-agentpool-40426869-vmss000002   Ready    agent   231d   v1.25.11
+        aks-agentpool-40426869-vmss000007   Error    agent   231d   v1.25.11
+        aks-agentpool-40426869-vmss00000a   Loading    agent   124d   v1.25.11
+        aks-agentpool-40426869-vmss00000b   Offline    agent   34d    v1.25.15`, 1, 3,
+	}}
+	ci := &edgeproto.ClusterInst{}
+	for _, test := range tests {
+		client.Out = test.out
+		r, nr, err := CheckNodesReady(ctx, &client, ci)
+		require.Nil(t, err, test.out)
+		require.Equal(t, test.expReady, r, test.out)
+		require.Equal(t, test.expNotReady, nr, test.out)
+	}
+}

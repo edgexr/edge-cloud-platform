@@ -616,6 +616,12 @@ func (m *TrustPolicyExceptionKey) Matches(o *TrustPolicyExceptionKey, fopts ...M
 	return true
 }
 
+func (m *TrustPolicyExceptionKey) Clone() *TrustPolicyExceptionKey {
+	cp := &TrustPolicyExceptionKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *TrustPolicyExceptionKey) CopyInFields(src *TrustPolicyExceptionKey) int {
 	changed := 0
 	if m.AppKey.Organization != src.AppKey.Organization {
@@ -896,7 +902,45 @@ func (m *TrustPolicyException) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *TrustPolicyException) Clone() *TrustPolicyException {
+	cp := &TrustPolicyException{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *TrustPolicyException) AddOutboundSecurityRules(vals ...SecurityRule) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.OutboundSecurityRules {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.OutboundSecurityRules = append(m.OutboundSecurityRules, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *TrustPolicyException) RemoveOutboundSecurityRules(vals ...SecurityRule) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.OutboundSecurityRules); i >= 0; i-- {
+		if _, found := remove[m.OutboundSecurityRules[i].String()]; found {
+			m.OutboundSecurityRules = append(m.OutboundSecurityRules[:i], m.OutboundSecurityRules[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *TrustPolicyException) CopyInFields(src *TrustPolicyException) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -949,8 +993,17 @@ func (m *TrustPolicyException) CopyInFields(src *TrustPolicyException) int {
 	}
 	if _, set := fmap["4"]; set {
 		if src.OutboundSecurityRules != nil {
-			m.OutboundSecurityRules = src.OutboundSecurityRules
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddOutboundSecurityRules(src.OutboundSecurityRules...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveOutboundSecurityRules(src.OutboundSecurityRules...)
+			} else {
+				m.OutboundSecurityRules = make([]SecurityRule, 0)
+				for k0, _ := range src.OutboundSecurityRules {
+					m.OutboundSecurityRules = append(m.OutboundSecurityRules, *src.OutboundSecurityRules[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.OutboundSecurityRules != nil {
 			m.OutboundSecurityRules = nil
 			changed++

@@ -21,10 +21,11 @@ import (
 )
 
 func TestDummyServer(t *testing.T) {
-	server, config := DummyServer()
-	defer server.Close()
+	server := NewDummyServer()
+	defer server.TestServer.Close()
 
 	data := make(map[string]interface{})
-	err := GetData(config, "some path", 0, &data)
-	require.Nil(t, err)
+	err := GetData(server.Config, "some path", 0, &data)
+	require.NotNil(t, err)
+	require.True(t, IsErrNoSecretsAtPath(err))
 }

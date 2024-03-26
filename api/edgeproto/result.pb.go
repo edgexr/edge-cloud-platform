@@ -129,6 +129,12 @@ func encodeVarintResult(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *Result) Clone() *Result {
+	cp := &Result{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *Result) CopyInFields(src *Result) int {
 	changed := 0
 	if m.Message != src.Message {
