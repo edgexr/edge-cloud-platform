@@ -78,15 +78,15 @@ def certsDaysLeft(output):
 # exit()
 
 if len(sys.argv) < 4:
-    print("Must specify domain, cloudlet name, and org")
+    print("Must specify console-addr, cloudlet name, and org")
     print("Example:")
-    print("  python3 refresh-k8s-certs.py mydomain.org myCloudlet opOrg")
-domain = sys.argv[1]
+    print("  python3 refresh-k8s-certs.py console.mydomain.org myCloudlet opOrg")
+console_addr = sys.argv[1]
 cloudlet = sys.argv[2]
 org = sys.argv[3]
 region = "EU"  # change this if needed
 
-addr = f"https://console.{org.lower()}.{domain}"
+addr = f"https://{console_addr}"
 
 # Get cloudletinfo
 ret = subprocess.run(
@@ -221,8 +221,13 @@ for cluster in clusterData:
     if not dedicated:
         lbip = rootlbIP
     print(f"Checking cluster {clusterName} {clusterOrg}{dedicatedPrint}")
-    cmd = "sudo kubeadm alpha certs check-expiration"
+    alpha = "alpha"
+    cmd = f"sudo kubeadm {alpha} certs check-expiration"
     out = runCmd(lbip, masterip, cmd, printOutput=False)
+    if "Kubeadm experimental sub-commands" in out:
+        alpha = ""
+        cmd = "sudo kubeadm certs check-expiration"
+        out = runCmd(lbip, masterip, cmd, printOutput=False)
     daysLeft = certsDaysLeft(out)
     print(f"  certs expire in {daysLeft} days")
     if daysLeft < 120:
@@ -236,7 +241,7 @@ for cluster in clusterData:
     timestamp = datetime.datetime.now(datetime.timezone.utc).astimezone().isoformat()
 
     # renew certs
-    cmd = "sudo kubeadm alpha certs renew all"
+    cmd = f"sudo kubeadm {alpha} certs renew all"
     runCmd(lbip, masterip, cmd)
     # move out services config to stop them
     cmd = "sudo mkdir -p /etc/kubernetes/manifests.save"
@@ -277,7 +282,7 @@ for cluster in clusterData:
     subprocess.run(["rm", kubeconfig])
 
     # check again
-    cmd = "sudo kubeadm alpha certs check-expiration"
+    cmd = f"sudo kubeadm {alpha} certs check-expiration"
     out = runCmd(lbip, masterip, cmd)
     daysLeft = certsDaysLeft(out)
     print(f"  updated certs now expire in {daysLeft} days")
