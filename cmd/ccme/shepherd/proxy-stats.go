@@ -87,7 +87,6 @@ type ProxyScrapePoint struct {
 	UdpPorts           []int32
 	LastConnectAttempt time.Time
 	Client             ssh.Client
-	VMClient           bool
 	ProxyContainer     string
 	ListenEndpoint     string
 }
@@ -217,7 +216,6 @@ func initClient(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppI
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "VmApp", appInst.Key, "error", err)
 			return err
 		}
-		scrapePoint.VMClient = true
 	} else {
 		scrapePoint.Client, err = myPlatform.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 		if err != nil {
