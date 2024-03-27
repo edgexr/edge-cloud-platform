@@ -71,7 +71,7 @@ require (
 require (
 	cloud.google.com/go/storage v1.30.1
 	github.com/docker/docker v24.0.7+incompatible
-	github.com/edgexr/golang-ssh v0.0.13-pre
+	github.com/edgexr/golang-ssh v0.0.13
 	github.com/edgexr/jsonparser v0.0.0-20230606233159-ad7db8cef4c2
 	github.com/glendc/go-external-ip v0.1.0
 	github.com/go-redis/redis/v8 v8.11.5
