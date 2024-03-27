@@ -87,6 +87,7 @@ type ProxyScrapePoint struct {
 	UdpPorts           []int32
 	LastConnectAttempt time.Time
 	Client             ssh.Client
+	VMClient           bool
 	ProxyContainer     string
 	ListenEndpoint     string
 }
@@ -111,7 +112,8 @@ func InitProxyScraper(scrapeInterval, pushInterval time.Duration, send func(ctx 
 }
 
 // NOTE: This function is almost identical to ClusterWorker:UpdateIntervals()
-//    Should be consolidated
+//
+// Should be consolidated
 func updateProxyScraperIntervals(ctx context.Context, scrapeInterval, pushInterval time.Duration) {
 	rootLbMetricsLastPushedLock.Lock()
 	defer rootLbMetricsLastPushedLock.Unlock()
@@ -215,6 +217,7 @@ func initClient(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppI
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to acquire platform client", "VmApp", appInst.Key, "error", err)
 			return err
 		}
+		scrapePoint.VMClient = true
 	} else {
 		scrapePoint.Client, err = myPlatform.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 		if err != nil {
@@ -398,7 +401,8 @@ func shouldUpdateFailedClient(scrape *ProxyScrapePoint) bool {
 }
 
 // NOTE: This function is almost identical to ClusterWorker:checkAndSetLastPushMetrics()
-//    Should be consolidated
+//
+// Should be consolidated
 func checkAndSetLastPushLbMetrics(ts time.Time) bool {
 	rootLbMetricsLastPushedLock.Lock()
 	defer rootLbMetricsLastPushedLock.Unlock()

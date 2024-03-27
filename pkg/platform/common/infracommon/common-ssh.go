@@ -101,7 +101,17 @@ func (cp *CommonPlatform) InitCloudletSSHKeys(ctx context.Context, accessApi pla
 	return nil
 }
 
-//GetSSHClientFromIPAddr returns ssh client handle for the given IP.
+func (cp *CommonPlatform) GetCloudletSSHKeyPairs() ([]ssh.KeyPair, error) {
+	cp.SshKey.Mux.Lock()
+	defer cp.SshKey.Mux.Unlock()
+	keyPairs := []ssh.KeyPair{{
+		PublicRawKey:  []byte(cp.SshKey.SignedPublicKey),
+		PrivateRawKey: []byte(cp.SshKey.PrivateKey),
+	}}
+	return keyPairs, nil
+}
+
+// GetSSHClientFromIPAddr returns ssh client handle for the given IP.
 func (cp *CommonPlatform) GetSSHClientFromIPAddr(ctx context.Context, ipaddr string, ops ...pc.SSHClientOp) (ssh.Client, error) {
 	opts := pc.SSHOptions{Timeout: DefaultConnectTimeout, User: SSHUser}
 	opts.Apply(ops)
@@ -115,16 +125,9 @@ func (cp *CommonPlatform) GetSSHClientFromIPAddr(ctx context.Context, ipaddr str
 		return nil, fmt.Errorf("missing cloudlet signed public Key")
 	}
 
-	cp.SshKey.Mux.Lock()
 	auth := ssh.Auth{
-		KeyPairs: []ssh.KeyPair{
-			{
-				PublicRawKey:  []byte(cp.SshKey.SignedPublicKey),
-				PrivateRawKey: []byte(cp.SshKey.PrivateKey),
-			},
-		},
+		KeyPairsCallback: cp.GetCloudletSSHKeyPairs,
 	}
-	cp.SshKey.Mux.Unlock()
 
 	if cp.SshKey.UseMEXPrivateKey {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Using mex private key")
