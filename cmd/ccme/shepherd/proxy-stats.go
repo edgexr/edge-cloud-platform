@@ -111,7 +111,7 @@ func InitProxyScraper(scrapeInterval, pushInterval time.Duration, send func(ctx 
 }
 
 // NOTE: This function is almost identical to ClusterWorker:UpdateIntervals()
-//    Should be consolidated
+// Should be consolidated
 func updateProxyScraperIntervals(ctx context.Context, scrapeInterval, pushInterval time.Duration) {
 	rootLbMetricsLastPushedLock.Lock()
 	defer rootLbMetricsLastPushedLock.Unlock()
@@ -398,7 +398,7 @@ func shouldUpdateFailedClient(scrape *ProxyScrapePoint) bool {
 }
 
 // NOTE: This function is almost identical to ClusterWorker:checkAndSetLastPushMetrics()
-//    Should be consolidated
+// Should be consolidated
 func checkAndSetLastPushLbMetrics(ts time.Time) bool {
 	rootLbMetricsLastPushedLock.Lock()
 	defer rootLbMetricsLastPushedLock.Unlock()
