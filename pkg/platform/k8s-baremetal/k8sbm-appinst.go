@@ -34,7 +34,7 @@ import (
 
 func (k *K8sBareMetalPlatform) GetClusterMasterNodeIp(ctx context.Context, client ssh.Client, kconfName string) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterMasterNodeIp", "kconfName", kconfName)
-	cmd := fmt.Sprintf("KUBECONFIG=%s kubectl get nodes --selector=node-role.kubernetes.io/master -o jsonpath='{$.items[*].status.addresses[?(@.type==\"InternalIP\")].address}'", kconfName)
+	cmd := fmt.Sprintf("kubectl --kubeconfig=%s get nodes --selector=node-role.kubernetes.io/master -o jsonpath='{$.items[*].status.addresses[?(@.type==\"InternalIP\")].address}'", kconfName)
 	ipaddr, err := client.Output(cmd)
 	if err != nil {
 		return "", err

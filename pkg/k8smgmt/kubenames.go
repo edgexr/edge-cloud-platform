@@ -58,6 +58,10 @@ func GetKconfName(clusterInst *edgeproto.ClusterInst) string {
 		clusterInst.Key.CloudletKey.Organization)
 }
 
+func GetKconfArg(clusterInst *edgeproto.ClusterInst) string {
+	return "--kubeconfig=" + GetKconfName(clusterInst)
+}
+
 func GetK8sNodeNameSuffix(clusterInstKey *edgeproto.ClusterInstKey) string {
 	cloudletName := clusterInstKey.CloudletKey.Name
 	clusterName := clusterInstKey.ClusterKey.Name
@@ -144,7 +148,7 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 		baseName := strings.TrimSuffix(kubeNames.KconfName, ".kubeconfig")
 		kubeNames.KconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.MultitenantNamespace)
 	}
-	kubeNames.KconfArg = "--kubeconfig=" + kubeNames.KconfName
+	kubeNames.KconfArg = GetKconfArg(clusterInst)
 	kubeNames.DeploymentType = app.Deployment
 	if app.ImagePath != "" {
 		kubeNames.ImagePaths = append(kubeNames.ImagePaths, app.ImagePath)

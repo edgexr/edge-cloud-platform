@@ -152,7 +152,7 @@ func (k *K8sBareMetalPlatform) GetNodeInfos(ctx context.Context) ([]*edgeproto.N
 	if err != nil {
 		return nil, err
 	}
-	return k8smgmt.GetNodeInfos(ctx, client, "KUBECONFIG="+k.cloudletKubeConfig)
+	return k8smgmt.GetNodeInfos(ctx, client, "--kubeconfig="+k.cloudletKubeConfig)
 }
 
 func (k *K8sBareMetalPlatform) ActiveChanged(ctx context.Context, platformActive bool) error {

@@ -79,10 +79,10 @@ func InstallAndConfigMetalLbIfNotInstalled(ctx context.Context, client ssh.Clien
 
 func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, metalLbNameSpace string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "VerifyMetalLbRunning", "clusterInst", clusterInst, "metalLbNameSpace", metalLbNameSpace)
-	kconfEnv := "KUBECONFIG=" + k8smgmt.GetKconfName(clusterInst)
+	kconfArg := k8smgmt.GetKconfArg(clusterInst)
 	start := time.Now()
 	for {
-		done, err := k8smgmt.CheckPodsStatus(ctx, client, kconfEnv, metalLbNameSpace, "app=metallb", k8smgmt.WaitRunning, start)
+		done, err := k8smgmt.CheckPodsStatus(ctx, client, kconfArg, metalLbNameSpace, "app=metallb", k8smgmt.WaitRunning, start)
 		if err != nil {
 			return fmt.Errorf("MetalLB pod status error - %v", err)
 		}

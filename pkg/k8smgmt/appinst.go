@@ -647,7 +647,7 @@ func CreateMultitenantNamespace(ctx context.Context, client ssh.Client, names *K
 		return fmt.Errorf("Failed to create new kubeconfig: %v", err)
 	}
 	// set the new kubeconfig to use the namespace
-	cmd = fmt.Sprintf("KUBECONFIG=%s kubectl config set-context --current --namespace=%s", names.KconfName, names.MultitenantNamespace)
+	cmd = fmt.Sprintf("kubectl %s config set-context --current --namespace=%s", names.KconfArg, names.MultitenantNamespace)
 	out, err = client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("Error in setting new namespace context: %s - %v", out, err)
