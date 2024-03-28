@@ -474,6 +474,12 @@ func encodeVarintMetric(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *MetricTag) Clone() *MetricTag {
+	cp := &MetricTag{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *MetricTag) CopyInFields(src *MetricTag) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -500,6 +506,12 @@ func (m *MetricTag) ValidateEnums() error {
 func (s *MetricTag) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *MetricVal) Clone() *MetricVal {
+	cp := &MetricVal{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *MetricVal) CopyInFields(src *MetricVal) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -521,7 +533,76 @@ func (m *MetricVal) ValidateEnums() error {
 func (s *MetricVal) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *Metric) Clone() *Metric {
+	cp := &Metric{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *Metric) AddTags(vals ...*MetricTag) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Tags {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Tags = append(m.Tags, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Metric) RemoveTags(vals ...*MetricTag) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Tags); i >= 0; i-- {
+		if _, found := remove[m.Tags[i].String()]; found {
+			m.Tags = append(m.Tags[:i], m.Tags[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *Metric) AddVals(vals ...*MetricVal) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Vals {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Vals = append(m.Vals, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Metric) RemoveVals(vals ...*MetricVal) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Vals); i >= 0; i-- {
+		if _, found := remove[m.Vals[i].String()]; found {
+			m.Vals = append(m.Vals[:i], m.Vals[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *Metric) CopyInFields(src *Metric) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Name != src.Name {
 		m.Name = src.Name
@@ -536,15 +617,33 @@ func (m *Metric) CopyInFields(src *Metric) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = src.Tags
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddTags(src.Tags...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveTags(src.Tags...)
+		} else {
+			m.Tags = make([]*MetricTag, 0)
+			for k0, _ := range src.Tags {
+				m.Tags = append(m.Tags, src.Tags[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Tags != nil {
 		m.Tags = nil
 		changed++
 	}
 	if src.Vals != nil {
-		m.Vals = src.Vals
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddVals(src.Vals...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveVals(src.Vals...)
+		} else {
+			m.Vals = make([]*MetricVal, 0)
+			for k0, _ := range src.Vals {
+				m.Vals = append(m.Vals, src.Vals[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Vals != nil {
 		m.Vals = nil
 		changed++

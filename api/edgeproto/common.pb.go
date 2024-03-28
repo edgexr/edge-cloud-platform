@@ -482,7 +482,45 @@ func encodeVarintCommon(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *StatusInfo) Clone() *StatusInfo {
+	cp := &StatusInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *StatusInfo) AddMsgs(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Msgs {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Msgs = append(m.Msgs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *StatusInfo) RemoveMsgs(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Msgs); i >= 0; i-- {
+		if _, found := remove[m.Msgs[i]]; found {
+			m.Msgs = append(m.Msgs[:i], m.Msgs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *StatusInfo) CopyInFields(src *StatusInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.TaskNumber != src.TaskNumber {
 		m.TaskNumber = src.TaskNumber
@@ -505,8 +543,15 @@ func (m *StatusInfo) CopyInFields(src *StatusInfo) int {
 		changed++
 	}
 	if src.Msgs != nil {
-		m.Msgs = src.Msgs
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddMsgs(src.Msgs...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveMsgs(src.Msgs...)
+		} else {
+			m.Msgs = make([]string, 0)
+			m.Msgs = append(m.Msgs, src.Msgs...)
+			changed++
+		}
 	} else if m.Msgs != nil {
 		m.Msgs = nil
 		changed++

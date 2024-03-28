@@ -196,11 +196,13 @@ type AccessApi interface {
 	GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error)
 	CreateCloudletNode(ctx context.Context, node *edgeproto.CloudletNode) (string, error)
 	DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error
+	GetAppSecretVars(ctx context.Context, appKey *edgeproto.AppKey) (map[string]string, error)
 }
 
 // AccessData types
 const (
 	GetCloudletAccessVars   = "get-cloudlet-access-vars"
+	GetAppSecretVars        = "get-app-secret-vars"
 	GetRegistryAuth         = "get-registry-auth"
 	SignSSHKey              = "sign-ssh-key"
 	GetSSHPublicKey         = "get-ssh-public-key"

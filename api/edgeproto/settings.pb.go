@@ -1434,7 +1434,45 @@ func (m *Settings) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *Settings) Clone() *Settings {
+	cp := &Settings{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *Settings) AddEdgeEventsMetricsContinuousQueriesCollectionIntervals(vals ...*CollectionInterval) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.EdgeEventsMetricsContinuousQueriesCollectionIntervals {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.EdgeEventsMetricsContinuousQueriesCollectionIntervals = append(m.EdgeEventsMetricsContinuousQueriesCollectionIntervals, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Settings) RemoveEdgeEventsMetricsContinuousQueriesCollectionIntervals(vals ...*CollectionInterval) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.EdgeEventsMetricsContinuousQueriesCollectionIntervals); i >= 0; i-- {
+		if _, found := remove[m.EdgeEventsMetricsContinuousQueriesCollectionIntervals[i].String()]; found {
+			m.EdgeEventsMetricsContinuousQueriesCollectionIntervals = append(m.EdgeEventsMetricsContinuousQueriesCollectionIntervals[:i], m.EdgeEventsMetricsContinuousQueriesCollectionIntervals[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *Settings) CopyInFields(src *Settings) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -1601,8 +1639,17 @@ func (m *Settings) CopyInFields(src *Settings) int {
 	}
 	if _, set := fmap["30"]; set {
 		if src.EdgeEventsMetricsContinuousQueriesCollectionIntervals != nil {
-			m.EdgeEventsMetricsContinuousQueriesCollectionIntervals = src.EdgeEventsMetricsContinuousQueriesCollectionIntervals
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddEdgeEventsMetricsContinuousQueriesCollectionIntervals(src.EdgeEventsMetricsContinuousQueriesCollectionIntervals...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveEdgeEventsMetricsContinuousQueriesCollectionIntervals(src.EdgeEventsMetricsContinuousQueriesCollectionIntervals...)
+			} else {
+				m.EdgeEventsMetricsContinuousQueriesCollectionIntervals = make([]*CollectionInterval, 0)
+				for k0, _ := range src.EdgeEventsMetricsContinuousQueriesCollectionIntervals {
+					m.EdgeEventsMetricsContinuousQueriesCollectionIntervals = append(m.EdgeEventsMetricsContinuousQueriesCollectionIntervals, src.EdgeEventsMetricsContinuousQueriesCollectionIntervals[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.EdgeEventsMetricsContinuousQueriesCollectionIntervals != nil {
 			m.EdgeEventsMetricsContinuousQueriesCollectionIntervals = nil
 			changed++
@@ -2343,6 +2390,12 @@ func (s *Settings) ClearTagged(tags map[string]struct{}) {
 			s.EdgeEventsMetricsContinuousQueriesCollectionIntervals[ii].ClearTagged(tags)
 		}
 	}
+}
+
+func (m *CollectionInterval) Clone() *CollectionInterval {
+	cp := &CollectionInterval{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *CollectionInterval) CopyInFields(src *CollectionInterval) int {

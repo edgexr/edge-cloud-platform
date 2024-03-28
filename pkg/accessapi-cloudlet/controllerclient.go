@@ -263,3 +263,21 @@ func (s *ControllerClient) DeleteCloudletNode(ctx context.Context, key *edgeprot
 	_, err = s.client.GetAccessData(ctx, req)
 	return err
 }
+
+func (s *ControllerClient) GetAppSecretVars(ctx context.Context, appKey *edgeproto.AppKey) (map[string]string, error) {
+	data, err := json.Marshal(appKey)
+	if err != nil {
+		return nil, err
+	}
+	req := &edgeproto.AccessDataRequest{
+		Type: platform.GetAppSecretVars,
+		Data: data,
+	}
+	reply, err := s.client.GetAccessData(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	vars := map[string]string{}
+	err = json.Unmarshal(reply.Data, &vars)
+	return vars, err
+}

@@ -84,8 +84,8 @@ func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterIns
 // a running cluster, because the name can get truncated if it is too long
 func GetClusterMasterNameFromNodeList(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterMasterNameFromNodeList")
-	kconfName := k8smgmt.GetKconfName(clusterInst)
-	cmd := fmt.Sprintf("KUBECONFIG=%s kubectl get nodes --no-headers -l node-role.kubernetes.io/master -o custom-columns=Name:.metadata.name", kconfName)
+	kconfArg := k8smgmt.GetKconfArg(clusterInst)
+	cmd := fmt.Sprintf("kubectl %s get nodes --no-headers -l node-role.kubernetes.io/master -o custom-columns=Name:.metadata.name", kconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return "", fmt.Errorf("run kubectl command failed, %q, %s, %s", cmd, out, err)
@@ -178,8 +178,8 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 		// if removing nodes, need to tell kubernetes that nodes are
 		// going away forever so that tolerating pods can be migrated
 		// off immediately.
-		kconfName := k8smgmt.GetKconfName(clusterInst)
-		cmd := fmt.Sprintf("KUBECONFIG=%s kubectl get nodes --no-headers -o custom-columns=Name:.metadata.name", kconfName)
+		kconfArg := k8smgmt.GetKconfArg(clusterInst)
+		cmd := fmt.Sprintf("kubectl %s get nodes --no-headers -o custom-columns=Name:.metadata.name", kconfArg)
 		out, err := client.Output(cmd)
 		if err != nil {
 			return err
@@ -218,7 +218,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 				}
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "delete nodes", "toRemove", toRemove)
-			err = k8smgmt.DeleteNodes(ctx, client, kconfName, toRemove)
+			err = k8smgmt.DeleteNodes(ctx, client, kconfArg, toRemove)
 			if err != nil {
 				return err
 			}

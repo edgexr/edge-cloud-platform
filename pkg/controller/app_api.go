@@ -293,6 +293,11 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	if err := validateAppConfigsForDeployment(ctx, in.Configs, in.Deployment); err != nil {
 		return err
 	}
+	if len(in.EnvVars) > 0 || len(in.SecretEnvVars) > 0 {
+		if in.Deployment != cloudcommon.DeploymentTypeDocker && in.Deployment != cloudcommon.DeploymentTypeKubernetes {
+			return fmt.Errorf("environment variables and secret environment variables are only supported for docker and kubernetes deployments")
+		}
+	}
 	in.FixupSecurityRules(ctx)
 	if err := validateRequiredOutboundConnections(in.RequiredOutboundConnections); err != nil {
 		return err
@@ -522,12 +527,29 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	return nil
 }
 
-func (s *AppApi) CreateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.Result, error) {
+func (s *AppApi) CreateApp(ctx context.Context, in *edgeproto.App) (res *edgeproto.Result, reterr error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "CreateApp", "app", in.Key.String())
 	var err error
 
 	if err = in.Validate(edgeproto.AppAllFieldsMap); err != nil {
 		return &edgeproto.Result{}, err
+	}
+
+	if len(in.SecretEnvVars) > 0 {
+		err = cloudcommon.SaveAppSecretVars(ctx, *region, &in.Key, nodeMgr.VaultConfig, in.SecretEnvVars)
+		if err != nil {
+			return &edgeproto.Result{}, err
+		}
+		in.SecretEnvVars = cloudcommon.RedactSecretVars(in.SecretEnvVars)
+		defer func() {
+			if reterr == nil {
+				return
+			}
+			undoErr := cloudcommon.DeleteAppSecretVars(ctx, *region, &in.Key, nodeMgr.VaultConfig)
+			if undoErr != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "failed to undo save of app secret vars", "app", in.Key, "err", err)
+			}
+		}()
 	}
 
 	start := time.Now()
@@ -577,6 +599,14 @@ func (s *AppApi) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 	fields := edgeproto.MakeFieldMap(in.Fields)
 	if err := in.Validate(fields); err != nil {
 		return &edgeproto.Result{}, err
+	}
+
+	if _, ok := fields[edgeproto.AppFieldSecretEnvVars]; ok {
+		_, err := cloudcommon.UpdateAppSecretVars(ctx, *region, &in.Key, nodeMgr.VaultConfig, in.SecretEnvVars, in.UpdateListAction)
+		if err != nil {
+			return &edgeproto.Result{}, err
+		}
+		in.SecretEnvVars = cloudcommon.RedactSecretVars(in.SecretEnvVars)
 	}
 
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
@@ -791,7 +821,15 @@ func (s *AppApi) DeleteApp(ctx context.Context, in *edgeproto.App) (res *edgepro
 		s.all.appInstRefsApi.deleteRef(stm, &in.Key)
 		return nil
 	})
-	return &edgeproto.Result{}, err
+	if err != nil {
+		return &edgeproto.Result{}, err
+	}
+
+	err = cloudcommon.DeleteAppSecretVars(ctx, *region, &in.Key, nodeMgr.VaultConfig)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to delete secret env vars from Vault", "app", in.Key, "err", err)
+	}
+	return &edgeproto.Result{}, nil
 }
 
 func (s *AppApi) ShowApp(in *edgeproto.App, cb edgeproto.AppApi_ShowAppServer) error {

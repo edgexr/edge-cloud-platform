@@ -157,14 +157,14 @@ func (s *Platform) CreateKINDCluster(ctx context.Context, clusterInst *edgeproto
 	if err != nil {
 		return err
 	}
-	cmd := fmt.Sprintf("kind create cluster --config=%s --kubeconfig=%s --name=%s", configFile, kconf, name)
+	kconfArg := "--kubeconfig=" + kconf
+	cmd := fmt.Sprintf("kind create cluster --config=%s %s --name=%s", configFile, kconfArg, name)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to run cmd %s, %s, %s", cmd, out, err)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "successfully created KIND cluster", "name", name)
-	kconfEnv := "KUBECONFIG=" + kconf
-	cmd = fmt.Sprintf(`%s kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(%s kubectl version | base64 | tr -d '\n')"`, kconfEnv, kconfEnv)
+	cmd = fmt.Sprintf(`kubectl %s apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl %s version | base64 | tr -d '\n')"`, kconfArg, kconfArg)
 	// XXX: in case we decide to use cilium, or in case we need to test
 	// against cilium, this is how to install it:
 	// cmd = fmt.Sprintf(`%s kubectl create -f https://raw.githubusercontent.com/cilium/cilium/v1.9/install/kubernetes/quick-install.yaml`, kconfEnv)

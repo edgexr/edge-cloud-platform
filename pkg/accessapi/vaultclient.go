@@ -198,3 +198,12 @@ func (s *VaultClient) DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto
 	}
 	return s.cloudletNodeHandler.DeleteCloudletNodeReq(ctx, nodeKey)
 }
+
+func (s *VaultClient) GetAppSecretVars(ctx context.Context, appKey *edgeproto.AppKey) (map[string]string, error) {
+	vars, err := cloudcommon.GetAppSecretVars(ctx, s.region, appKey, s.vaultConfig)
+	if vault.IsErrNoSecretsAtPath(err) {
+		vars = make(map[string]string)
+		err = nil
+	}
+	return vars, err
+}

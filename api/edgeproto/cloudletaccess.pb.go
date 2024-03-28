@@ -954,6 +954,12 @@ func encodeVarintCloudletaccess(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *IssueCertRequest) Clone() *IssueCertRequest {
+	cp := &IssueCertRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *IssueCertRequest) CopyInFields(src *IssueCertRequest) int {
 	changed := 0
 	if m.CommonName != src.CommonName {
@@ -978,6 +984,12 @@ func (m *IssueCertRequest) ValidateEnums() error {
 }
 
 func (s *IssueCertRequest) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *IssueCertReply) Clone() *IssueCertReply {
+	cp := &IssueCertReply{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *IssueCertReply) CopyInFields(src *IssueCertReply) int {
@@ -1006,6 +1018,12 @@ func (m *IssueCertReply) ValidateEnums() error {
 func (s *IssueCertReply) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *GetCasRequest) Clone() *GetCasRequest {
+	cp := &GetCasRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *GetCasRequest) CopyInFields(src *GetCasRequest) int {
 	changed := 0
 	if m.Issuer != src.Issuer {
@@ -1027,6 +1045,12 @@ func (m *GetCasRequest) ValidateEnums() error {
 func (s *GetCasRequest) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *GetCasReply) Clone() *GetCasReply {
+	cp := &GetCasReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *GetCasReply) CopyInFields(src *GetCasReply) int {
 	changed := 0
 	if m.CaChainPem != src.CaChainPem {
@@ -1046,6 +1070,12 @@ func (m *GetCasReply) ValidateEnums() error {
 }
 
 func (s *GetCasReply) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *UpgradeAccessKeyClientMsg) Clone() *UpgradeAccessKeyClientMsg {
+	cp := &UpgradeAccessKeyClientMsg{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *UpgradeAccessKeyClientMsg) CopyInFields(src *UpgradeAccessKeyClientMsg) int {
@@ -1079,6 +1109,12 @@ func (m *UpgradeAccessKeyClientMsg) ValidateEnums() error {
 func (s *UpgradeAccessKeyClientMsg) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *UpgradeAccessKeyServerMsg) Clone() *UpgradeAccessKeyServerMsg {
+	cp := &UpgradeAccessKeyServerMsg{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *UpgradeAccessKeyServerMsg) CopyInFields(src *UpgradeAccessKeyServerMsg) int {
 	changed := 0
 	if m.Msg != src.Msg {
@@ -1105,6 +1141,12 @@ func (m *UpgradeAccessKeyServerMsg) ValidateEnums() error {
 func (s *UpgradeAccessKeyServerMsg) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *AccessDataRequest) Clone() *AccessDataRequest {
+	cp := &AccessDataRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AccessDataRequest) CopyInFields(src *AccessDataRequest) int {
 	changed := 0
 	if m.Type != src.Type {
@@ -1129,6 +1171,12 @@ func (m *AccessDataRequest) ValidateEnums() error {
 }
 
 func (s *AccessDataRequest) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *AccessDataReply) Clone() *AccessDataReply {
+	cp := &AccessDataReply{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *AccessDataReply) CopyInFields(src *AccessDataReply) int {

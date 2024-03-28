@@ -967,6 +967,12 @@ func encodeVarintInfraresources(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *ContainerInfo) Clone() *ContainerInfo {
+	cp := &ContainerInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *ContainerInfo) CopyInFields(src *ContainerInfo) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -1008,6 +1014,12 @@ func (m *ContainerInfo) ValidateEnums() error {
 func (s *ContainerInfo) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *IpAddr) Clone() *IpAddr {
+	cp := &IpAddr{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *IpAddr) CopyInFields(src *IpAddr) int {
 	changed := 0
 	if m.ExternalIp != src.ExternalIp {
@@ -1034,7 +1046,76 @@ func (m *IpAddr) ValidateEnums() error {
 func (s *IpAddr) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *VmInfo) Clone() *VmInfo {
+	cp := &VmInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *VmInfo) AddIpaddresses(vals ...IpAddr) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Ipaddresses {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Ipaddresses = append(m.Ipaddresses, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VmInfo) RemoveIpaddresses(vals ...IpAddr) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Ipaddresses); i >= 0; i-- {
+		if _, found := remove[m.Ipaddresses[i].String()]; found {
+			m.Ipaddresses = append(m.Ipaddresses[:i], m.Ipaddresses[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *VmInfo) AddContainers(vals ...*ContainerInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Containers {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Containers = append(m.Containers, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VmInfo) RemoveContainers(vals ...*ContainerInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Containers); i >= 0; i-- {
+		if _, found := remove[m.Containers[i].String()]; found {
+			m.Containers = append(m.Containers[:i], m.Containers[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *VmInfo) CopyInFields(src *VmInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Name != src.Name {
 		m.Name = src.Name
@@ -1053,15 +1134,33 @@ func (m *VmInfo) CopyInFields(src *VmInfo) int {
 		changed++
 	}
 	if src.Ipaddresses != nil {
-		m.Ipaddresses = src.Ipaddresses
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddIpaddresses(src.Ipaddresses...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveIpaddresses(src.Ipaddresses...)
+		} else {
+			m.Ipaddresses = make([]IpAddr, 0)
+			for k0, _ := range src.Ipaddresses {
+				m.Ipaddresses = append(m.Ipaddresses, *src.Ipaddresses[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Ipaddresses != nil {
 		m.Ipaddresses = nil
 		changed++
 	}
 	if src.Containers != nil {
-		m.Containers = src.Containers
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddContainers(src.Containers...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveContainers(src.Containers...)
+		} else {
+			m.Containers = make([]*ContainerInfo, 0)
+			for k0, _ := range src.Containers {
+				m.Containers = append(m.Containers, src.Containers[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Containers != nil {
 		m.Containers = nil
 		changed++
@@ -1122,6 +1221,12 @@ func (s *VmInfo) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *InfraResource) Clone() *InfraResource {
+	cp := &InfraResource{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *InfraResource) CopyInFields(src *InfraResource) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -1173,41 +1278,64 @@ func (m *InfraResource) ValidateEnums() error {
 func (s *InfraResource) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *NodeInfo) Clone() *NodeInfo {
+	cp := &NodeInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *NodeInfo) CopyInFields(src *NodeInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Name != src.Name {
 		m.Name = src.Name
 		changed++
 	}
 	if src.Allocatable != nil {
-		m.Allocatable = make(map[string]*Udec64)
-		for k0, _ := range src.Allocatable {
-			m.Allocatable[k0] = &Udec64{}
-			if m.Allocatable[k0].Whole != src.Allocatable[k0].Whole {
-				m.Allocatable[k0].Whole = src.Allocatable[k0].Whole
+		if updateListAction == "add" {
+			for k0, v := range src.Allocatable {
+				v = v.Clone()
+				m.Allocatable[k0] = v
 				changed++
 			}
-			if m.Allocatable[k0].Nanos != src.Allocatable[k0].Nanos {
-				m.Allocatable[k0].Nanos = src.Allocatable[k0].Nanos
-				changed++
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Allocatable {
+				if _, ok := m.Allocatable[k0]; ok {
+					delete(m.Allocatable, k0)
+					changed++
+				}
 			}
+		} else {
+			m.Allocatable = make(map[string]*Udec64)
+			for k0, v := range src.Allocatable {
+				m.Allocatable[k0] = v.Clone()
+			}
+			changed++
 		}
 	} else if m.Allocatable != nil {
 		m.Allocatable = nil
 		changed++
 	}
 	if src.Capacity != nil {
-		m.Capacity = make(map[string]*Udec64)
-		for k0, _ := range src.Capacity {
-			m.Capacity[k0] = &Udec64{}
-			if m.Capacity[k0].Whole != src.Capacity[k0].Whole {
-				m.Capacity[k0].Whole = src.Capacity[k0].Whole
+		if updateListAction == "add" {
+			for k0, v := range src.Capacity {
+				v = v.Clone()
+				m.Capacity[k0] = v
 				changed++
 			}
-			if m.Capacity[k0].Nanos != src.Capacity[k0].Nanos {
-				m.Capacity[k0].Nanos = src.Capacity[k0].Nanos
-				changed++
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Capacity {
+				if _, ok := m.Capacity[k0]; ok {
+					delete(m.Capacity, k0)
+					changed++
+				}
 			}
+		} else {
+			m.Capacity = make(map[string]*Udec64)
+			for k0, v := range src.Capacity {
+				m.Capacity[k0] = v.Clone()
+			}
+			changed++
 		}
 	} else if m.Capacity != nil {
 		m.Capacity = nil
@@ -1268,6 +1396,12 @@ func (m *AppInstRefKey) Matches(o *AppInstRefKey, fopts ...MatchOpt) bool {
 		}
 	}
 	return true
+}
+
+func (m *AppInstRefKey) Clone() *AppInstRefKey {
+	cp := &AppInstRefKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *AppInstRefKey) CopyInFields(src *AppInstRefKey) int {
@@ -1342,11 +1476,58 @@ func (m *AppInstRefKey) ValidateEnums() error {
 func (s *AppInstRefKey) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *InfraResources) Clone() *InfraResources {
+	cp := &InfraResources{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *InfraResources) AddVms(vals ...VmInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Vms {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Vms = append(m.Vms, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *InfraResources) RemoveVms(vals ...VmInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Vms); i >= 0; i-- {
+		if _, found := remove[m.Vms[i].String()]; found {
+			m.Vms = append(m.Vms[:i], m.Vms[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *InfraResources) CopyInFields(src *InfraResources) int {
+	updateListAction := "replace"
 	changed := 0
 	if src.Vms != nil {
-		m.Vms = src.Vms
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddVms(src.Vms...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveVms(src.Vms...)
+		} else {
+			m.Vms = make([]VmInfo, 0)
+			for k0, _ := range src.Vms {
+				m.Vms = append(m.Vms, *src.Vms[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Vms != nil {
 		m.Vms = nil
 		changed++
@@ -1383,39 +1564,246 @@ func (s *InfraResources) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *InfraResourcesSnapshot) Clone() *InfraResourcesSnapshot {
+	cp := &InfraResourcesSnapshot{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *InfraResourcesSnapshot) AddPlatformVms(vals ...VmInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.PlatformVms {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.PlatformVms = append(m.PlatformVms, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *InfraResourcesSnapshot) RemovePlatformVms(vals ...VmInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.PlatformVms); i >= 0; i-- {
+		if _, found := remove[m.PlatformVms[i].String()]; found {
+			m.PlatformVms = append(m.PlatformVms[:i], m.PlatformVms[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *InfraResourcesSnapshot) AddInfo(vals ...InfraResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Info {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Info = append(m.Info, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *InfraResourcesSnapshot) RemoveInfo(vals ...InfraResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Info); i >= 0; i-- {
+		if _, found := remove[m.Info[i].String()]; found {
+			m.Info = append(m.Info[:i], m.Info[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *InfraResourcesSnapshot) AddClusterInsts(vals ...ClusterKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ClusterInsts {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.ClusterInsts = append(m.ClusterInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *InfraResourcesSnapshot) RemoveClusterInsts(vals ...ClusterKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.ClusterInsts); i >= 0; i-- {
+		if _, found := remove[m.ClusterInsts[i].GetKeyString()]; found {
+			m.ClusterInsts = append(m.ClusterInsts[:i], m.ClusterInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *InfraResourcesSnapshot) AddVmAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.VmAppInsts {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.VmAppInsts = append(m.VmAppInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *InfraResourcesSnapshot) RemoveVmAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.VmAppInsts); i >= 0; i-- {
+		if _, found := remove[m.VmAppInsts[i].GetKeyString()]; found {
+			m.VmAppInsts = append(m.VmAppInsts[:i], m.VmAppInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *InfraResourcesSnapshot) AddK8SAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.K8SAppInsts {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.K8SAppInsts = append(m.K8SAppInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *InfraResourcesSnapshot) RemoveK8SAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.K8SAppInsts); i >= 0; i-- {
+		if _, found := remove[m.K8SAppInsts[i].GetKeyString()]; found {
+			m.K8SAppInsts = append(m.K8SAppInsts[:i], m.K8SAppInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *InfraResourcesSnapshot) CopyInFields(src *InfraResourcesSnapshot) int {
+	updateListAction := "replace"
 	changed := 0
 	if src.PlatformVms != nil {
-		m.PlatformVms = src.PlatformVms
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddPlatformVms(src.PlatformVms...)
+		} else if updateListAction == "remove" {
+			changed += m.RemovePlatformVms(src.PlatformVms...)
+		} else {
+			m.PlatformVms = make([]VmInfo, 0)
+			for k0, _ := range src.PlatformVms {
+				m.PlatformVms = append(m.PlatformVms, *src.PlatformVms[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.PlatformVms != nil {
 		m.PlatformVms = nil
 		changed++
 	}
 	if src.Info != nil {
-		m.Info = src.Info
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddInfo(src.Info...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveInfo(src.Info...)
+		} else {
+			m.Info = make([]InfraResource, 0)
+			for k0, _ := range src.Info {
+				m.Info = append(m.Info, *src.Info[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Info != nil {
 		m.Info = nil
 		changed++
 	}
 	if src.ClusterInsts != nil {
-		m.ClusterInsts = src.ClusterInsts
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddClusterInsts(src.ClusterInsts...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveClusterInsts(src.ClusterInsts...)
+		} else {
+			m.ClusterInsts = make([]ClusterKey, 0)
+			for k0, _ := range src.ClusterInsts {
+				m.ClusterInsts = append(m.ClusterInsts, *src.ClusterInsts[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.ClusterInsts != nil {
 		m.ClusterInsts = nil
 		changed++
 	}
 	if src.VmAppInsts != nil {
-		m.VmAppInsts = src.VmAppInsts
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddVmAppInsts(src.VmAppInsts...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveVmAppInsts(src.VmAppInsts...)
+		} else {
+			m.VmAppInsts = make([]AppInstRefKey, 0)
+			for k0, _ := range src.VmAppInsts {
+				m.VmAppInsts = append(m.VmAppInsts, *src.VmAppInsts[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.VmAppInsts != nil {
 		m.VmAppInsts = nil
 		changed++
 	}
 	if src.K8SAppInsts != nil {
-		m.K8SAppInsts = src.K8SAppInsts
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddK8SAppInsts(src.K8SAppInsts...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveK8SAppInsts(src.K8SAppInsts...)
+		} else {
+			m.K8SAppInsts = make([]AppInstRefKey, 0)
+			for k0, _ := range src.K8SAppInsts {
+				m.K8SAppInsts = append(m.K8SAppInsts, *src.K8SAppInsts[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.K8SAppInsts != nil {
 		m.K8SAppInsts = nil
 		changed++

@@ -649,6 +649,12 @@ func (m *AlertPolicyKey) Matches(o *AlertPolicyKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *AlertPolicyKey) Clone() *AlertPolicyKey {
+	cp := &AlertPolicyKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AlertPolicyKey) CopyInFields(src *AlertPolicyKey) int {
 	changed := 0
 	if m.Organization != src.Organization {
@@ -999,7 +1005,14 @@ func (m *AlertPolicy) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *AlertPolicy) Clone() *AlertPolicy {
+	cp := &AlertPolicy{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AlertPolicy) CopyInFields(src *AlertPolicy) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -1054,9 +1067,23 @@ func (m *AlertPolicy) CopyInFields(src *AlertPolicy) int {
 	}
 	if _, set := fmap["9"]; set {
 		if src.Labels != nil {
-			m.Labels = make(map[string]string)
-			for k0, _ := range src.Labels {
-				m.Labels[k0] = src.Labels[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.Labels {
+					m.Labels[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.Labels {
+					if _, ok := m.Labels[k0]; ok {
+						delete(m.Labels, k0)
+						changed++
+					}
+				}
+			} else {
+				m.Labels = make(map[string]string)
+				for k0, v := range src.Labels {
+					m.Labels[k0] = v
+				}
 				changed++
 			}
 		} else if m.Labels != nil {
@@ -1066,9 +1093,23 @@ func (m *AlertPolicy) CopyInFields(src *AlertPolicy) int {
 	}
 	if _, set := fmap["10"]; set {
 		if src.Annotations != nil {
-			m.Annotations = make(map[string]string)
-			for k0, _ := range src.Annotations {
-				m.Annotations[k0] = src.Annotations[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.Annotations {
+					m.Annotations[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.Annotations {
+					if _, ok := m.Annotations[k0]; ok {
+						delete(m.Annotations, k0)
+						changed++
+					}
+				}
+			} else {
+				m.Annotations = make(map[string]string)
+				for k0, v := range src.Annotations {
+					m.Annotations[k0] = v
+				}
 				changed++
 			}
 		} else if m.Annotations != nil {

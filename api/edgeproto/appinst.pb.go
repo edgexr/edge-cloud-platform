@@ -2695,6 +2695,12 @@ func (m *VirtualClusterInstKeyV1) Matches(o *VirtualClusterInstKeyV1, fopts ...M
 	return true
 }
 
+func (m *VirtualClusterInstKeyV1) Clone() *VirtualClusterInstKeyV1 {
+	cp := &VirtualClusterInstKeyV1{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *VirtualClusterInstKeyV1) CopyInFields(src *VirtualClusterInstKeyV1) int {
 	changed := 0
 	if m.ClusterKey.Name != src.ClusterKey.Name {
@@ -2808,6 +2814,12 @@ func (m *AppInstKeyV1) Matches(o *AppInstKeyV1, fopts ...MatchOpt) bool {
 		}
 	}
 	return true
+}
+
+func (m *AppInstKeyV1) Clone() *AppInstKeyV1 {
+	cp := &AppInstKeyV1{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *AppInstKeyV1) CopyInFields(src *AppInstKeyV1) int {
@@ -2940,6 +2952,12 @@ func (m *AppInstKey) Matches(o *AppInstKey, fopts ...MatchOpt) bool {
 		return false
 	}
 	return true
+}
+
+func (m *AppInstKey) Clone() *AppInstKey {
+	cp := &AppInstKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *AppInstKey) CopyInFields(src *AppInstKey) int {
@@ -3869,7 +3887,138 @@ func (m *AppInst) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *AppInst) Clone() *AppInst {
+	cp := &AppInst{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AppInst) AddMappedPorts(vals ...distributed_match_engine.AppPort) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.MappedPorts {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.MappedPorts = append(m.MappedPorts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInst) RemoveMappedPorts(vals ...distributed_match_engine.AppPort) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.MappedPorts); i >= 0; i-- {
+		if _, found := remove[m.MappedPorts[i].String()]; found {
+			m.MappedPorts = append(m.MappedPorts[:i], m.MappedPorts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInst) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInst) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInst) AddRuntimeInfoContainerIds(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RuntimeInfo.ContainerIds {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.RuntimeInfo.ContainerIds = append(m.RuntimeInfo.ContainerIds, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInst) RemoveRuntimeInfoContainerIds(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.RuntimeInfo.ContainerIds); i >= 0; i-- {
+		if _, found := remove[m.RuntimeInfo.ContainerIds[i]]; found {
+			m.RuntimeInfo.ContainerIds = append(m.RuntimeInfo.ContainerIds[:i], m.RuntimeInfo.ContainerIds[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInst) AddConfigs(vals ...*ConfigFile) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Configs {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Configs = append(m.Configs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInst) RemoveConfigs(vals ...*ConfigFile) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Configs); i >= 0; i-- {
+		if _, found := remove[m.Configs[i].String()]; found {
+			m.Configs = append(m.Configs[:i], m.Configs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AppInst) CopyInFields(src *AppInst) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -3986,8 +4135,17 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 	}
 	if _, set := fmap["9"]; set {
 		if src.MappedPorts != nil {
-			m.MappedPorts = src.MappedPorts
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddMappedPorts(src.MappedPorts...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveMappedPorts(src.MappedPorts...)
+			} else {
+				m.MappedPorts = make([]distributed_match_engine.AppPort, 0)
+				for k0, _ := range src.MappedPorts {
+					m.MappedPorts = append(m.MappedPorts, *src.MappedPorts[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.MappedPorts != nil {
 			m.MappedPorts = nil
 			changed++
@@ -4009,8 +4167,15 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 	}
 	if _, set := fmap["15"]; set {
 		if src.Errors != nil {
-			m.Errors = src.Errors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddErrors(src.Errors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveErrors(src.Errors...)
+			} else {
+				m.Errors = make([]string, 0)
+				m.Errors = append(m.Errors, src.Errors...)
+				changed++
+			}
 		} else if m.Errors != nil {
 			m.Errors = nil
 			changed++
@@ -4025,8 +4190,15 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 	if _, set := fmap["17"]; set {
 		if _, set := fmap["17.1"]; set {
 			if src.RuntimeInfo.ContainerIds != nil {
-				m.RuntimeInfo.ContainerIds = src.RuntimeInfo.ContainerIds
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddRuntimeInfoContainerIds(src.RuntimeInfo.ContainerIds...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveRuntimeInfoContainerIds(src.RuntimeInfo.ContainerIds...)
+				} else {
+					m.RuntimeInfo.ContainerIds = make([]string, 0)
+					m.RuntimeInfo.ContainerIds = append(m.RuntimeInfo.ContainerIds, src.RuntimeInfo.ContainerIds...)
+					changed++
+				}
 			} else if m.RuntimeInfo.ContainerIds != nil {
 				m.RuntimeInfo.ContainerIds = nil
 				changed++
@@ -4073,8 +4245,17 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 	}
 	if _, set := fmap["27"]; set {
 		if src.Configs != nil {
-			m.Configs = src.Configs
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddConfigs(src.Configs...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveConfigs(src.Configs...)
+			} else {
+				m.Configs = make([]*ConfigFile, 0)
+				for k0, _ := range src.Configs {
+					m.Configs = append(m.Configs, src.Configs[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.Configs != nil {
 			m.Configs = nil
 			changed++
@@ -4138,9 +4319,23 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 	}
 	if _, set := fmap["38"]; set {
 		if src.InternalPortToLbIp != nil {
-			m.InternalPortToLbIp = make(map[string]string)
-			for k0, _ := range src.InternalPortToLbIp {
-				m.InternalPortToLbIp[k0] = src.InternalPortToLbIp[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.InternalPortToLbIp {
+					m.InternalPortToLbIp[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.InternalPortToLbIp {
+					if _, ok := m.InternalPortToLbIp[k0]; ok {
+						delete(m.InternalPortToLbIp, k0)
+						changed++
+					}
+				}
+			} else {
+				m.InternalPortToLbIp = make(map[string]string)
+				for k0, v := range src.InternalPortToLbIp {
+					m.InternalPortToLbIp[k0] = v
+				}
 				changed++
 			}
 		} else if m.InternalPortToLbIp != nil {
@@ -5049,11 +5244,56 @@ func IgnoreAppInstFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(AppInst{}, names...)
 }
 
+func (m *AppInstRuntime) Clone() *AppInstRuntime {
+	cp := &AppInstRuntime{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AppInstRuntime) AddContainerIds(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ContainerIds {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.ContainerIds = append(m.ContainerIds, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInstRuntime) RemoveContainerIds(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.ContainerIds); i >= 0; i-- {
+		if _, found := remove[m.ContainerIds[i]]; found {
+			m.ContainerIds = append(m.ContainerIds[:i], m.ContainerIds[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AppInstRuntime) CopyInFields(src *AppInstRuntime) int {
+	updateListAction := "replace"
 	changed := 0
 	if src.ContainerIds != nil {
-		m.ContainerIds = src.ContainerIds
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddContainerIds(src.ContainerIds...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveContainerIds(src.ContainerIds...)
+		} else {
+			m.ContainerIds = make([]string, 0)
+			m.ContainerIds = append(m.ContainerIds, src.ContainerIds...)
+			changed++
+		}
 	} else if m.ContainerIds != nil {
 		m.ContainerIds = nil
 		changed++
@@ -5420,7 +5660,138 @@ func (m *AppInstInfo) DiffFields(o *AppInstInfo, fields map[string]struct{}) {
 	}
 }
 
+func (m *AppInstInfo) Clone() *AppInstInfo {
+	cp := &AppInstInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *AppInstInfo) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInstInfo) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInstInfo) AddRuntimeInfoContainerIds(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.RuntimeInfo.ContainerIds {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.RuntimeInfo.ContainerIds = append(m.RuntimeInfo.ContainerIds, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInstInfo) RemoveRuntimeInfoContainerIds(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.RuntimeInfo.ContainerIds); i >= 0; i-- {
+		if _, found := remove[m.RuntimeInfo.ContainerIds[i]]; found {
+			m.RuntimeInfo.ContainerIds = append(m.RuntimeInfo.ContainerIds[:i], m.RuntimeInfo.ContainerIds[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInstInfo) AddStatusMsgs(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Status.Msgs {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Status.Msgs = append(m.Status.Msgs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInstInfo) RemoveStatusMsgs(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Status.Msgs); i >= 0; i-- {
+		if _, found := remove[m.Status.Msgs[i]]; found {
+			m.Status.Msgs = append(m.Status.Msgs[:i], m.Status.Msgs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInstInfo) AddFedPorts(vals ...distributed_match_engine.AppPort) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.FedPorts {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.FedPorts = append(m.FedPorts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInstInfo) RemoveFedPorts(vals ...distributed_match_engine.AppPort) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.FedPorts); i >= 0; i-- {
+		if _, found := remove[m.FedPorts[i].String()]; found {
+			m.FedPorts = append(m.FedPorts[:i], m.FedPorts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *AppInstInfo) CopyInFields(src *AppInstInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -5471,8 +5842,15 @@ func (m *AppInstInfo) CopyInFields(src *AppInstInfo) int {
 	}
 	if _, set := fmap["5"]; set {
 		if src.Errors != nil {
-			m.Errors = src.Errors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddErrors(src.Errors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveErrors(src.Errors...)
+			} else {
+				m.Errors = make([]string, 0)
+				m.Errors = append(m.Errors, src.Errors...)
+				changed++
+			}
 		} else if m.Errors != nil {
 			m.Errors = nil
 			changed++
@@ -5481,8 +5859,15 @@ func (m *AppInstInfo) CopyInFields(src *AppInstInfo) int {
 	if _, set := fmap["6"]; set {
 		if _, set := fmap["6.1"]; set {
 			if src.RuntimeInfo.ContainerIds != nil {
-				m.RuntimeInfo.ContainerIds = src.RuntimeInfo.ContainerIds
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddRuntimeInfoContainerIds(src.RuntimeInfo.ContainerIds...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveRuntimeInfoContainerIds(src.RuntimeInfo.ContainerIds...)
+				} else {
+					m.RuntimeInfo.ContainerIds = make([]string, 0)
+					m.RuntimeInfo.ContainerIds = append(m.RuntimeInfo.ContainerIds, src.RuntimeInfo.ContainerIds...)
+					changed++
+				}
 			} else if m.RuntimeInfo.ContainerIds != nil {
 				m.RuntimeInfo.ContainerIds = nil
 				changed++
@@ -5522,8 +5907,15 @@ func (m *AppInstInfo) CopyInFields(src *AppInstInfo) int {
 		}
 		if _, set := fmap["7.6"]; set {
 			if src.Status.Msgs != nil {
-				m.Status.Msgs = src.Status.Msgs
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddStatusMsgs(src.Status.Msgs...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveStatusMsgs(src.Status.Msgs...)
+				} else {
+					m.Status.Msgs = make([]string, 0)
+					m.Status.Msgs = append(m.Status.Msgs, src.Status.Msgs...)
+					changed++
+				}
 			} else if m.Status.Msgs != nil {
 				m.Status.Msgs = nil
 				changed++
@@ -5558,8 +5950,17 @@ func (m *AppInstInfo) CopyInFields(src *AppInstInfo) int {
 	}
 	if _, set := fmap["11"]; set {
 		if src.FedPorts != nil {
-			m.FedPorts = src.FedPorts
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddFedPorts(src.FedPorts...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveFedPorts(src.FedPorts...)
+			} else {
+				m.FedPorts = make([]distributed_match_engine.AppPort, 0)
+				for k0, _ := range src.FedPorts {
+					m.FedPorts = append(m.FedPorts, *src.FedPorts[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.FedPorts != nil {
 			m.FedPorts = nil
 			changed++
@@ -6379,6 +6780,12 @@ func IgnoreAppInstInfoFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(AppInstInfo{}, names...)
 }
 
+func (m *AppInstMetrics) Clone() *AppInstMetrics {
+	cp := &AppInstMetrics{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AppInstMetrics) CopyInFields(src *AppInstMetrics) int {
 	changed := 0
 	if m.Something != src.Something {
@@ -6398,6 +6805,12 @@ func (m *AppInstMetrics) ValidateEnums() error {
 }
 
 func (s *AppInstMetrics) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *AppInstLookup) Clone() *AppInstLookup {
+	cp := &AppInstLookup{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *AppInstLookup) CopyInFields(src *AppInstLookup) int {
@@ -6521,6 +6934,12 @@ func (m *AppInstLookup) ValidateEnums() error {
 func (s *AppInstLookup) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
 	s.PolicyKey.ClearTagged(tags)
+}
+
+func (m *AppInstLookup2) Clone() *AppInstLookup2 {
+	cp := &AppInstLookup2{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *AppInstLookup2) CopyInFields(src *AppInstLookup2) int {
@@ -6650,6 +7069,12 @@ func (s *AppInstLookup2) ClearTagged(tags map[string]struct{}) {
 	s.CloudletKey.ClearTagged(tags)
 }
 
+func (m *AppInstLatency) Clone() *AppInstLatency {
+	cp := &AppInstLatency{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AppInstLatency) CopyInFields(src *AppInstLatency) int {
 	changed := 0
 	if m.Key.Name != src.Key.Name {
@@ -6731,6 +7156,12 @@ func (m *FedAppInstKey) Matches(o *FedAppInstKey, fopts ...MatchOpt) bool {
 		}
 	}
 	return true
+}
+
+func (m *FedAppInstKey) Clone() *FedAppInstKey {
+	cp := &FedAppInstKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *FedAppInstKey) CopyInFields(src *FedAppInstKey) int {
@@ -6821,6 +7252,12 @@ func (m *FedAppInst) Matches(o *FedAppInst, fopts ...MatchOpt) bool {
 		return false
 	}
 	return true
+}
+
+func (m *FedAppInst) Clone() *FedAppInst {
+	cp := &FedAppInst{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *FedAppInst) CopyInFields(src *FedAppInst) int {
@@ -7467,7 +7904,45 @@ func (s *FedAppInst) ClearTagged(tags map[string]struct{}) {
 	s.AppInstKey.ClearTagged(tags)
 }
 
+func (m *FedAppInstEvent) Clone() *FedAppInstEvent {
+	cp := &FedAppInstEvent{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *FedAppInstEvent) AddPorts(vals ...distributed_match_engine.AppPort) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Ports {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Ports = append(m.Ports, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *FedAppInstEvent) RemovePorts(vals ...distributed_match_engine.AppPort) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Ports); i >= 0; i-- {
+		if _, found := remove[m.Ports[i].String()]; found {
+			m.Ports = append(m.Ports[:i], m.Ports[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *FedAppInstEvent) CopyInFields(src *FedAppInstEvent) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.FederationName != src.Key.FederationName {
 		m.Key.FederationName = src.Key.FederationName
@@ -7486,8 +7961,17 @@ func (m *FedAppInstEvent) CopyInFields(src *FedAppInstEvent) int {
 		changed++
 	}
 	if src.Ports != nil {
-		m.Ports = src.Ports
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddPorts(src.Ports...)
+		} else if updateListAction == "remove" {
+			changed += m.RemovePorts(src.Ports...)
+		} else {
+			m.Ports = make([]distributed_match_engine.AppPort, 0)
+			for k0, _ := range src.Ports {
+				m.Ports = append(m.Ports, *src.Ports[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Ports != nil {
 		m.Ports = nil
 		changed++

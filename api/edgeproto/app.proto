@@ -250,6 +250,12 @@ message App {
   int64 qos_session_duration = 44 [(gogoproto.casttype) = "Duration"];
   // A globally unique id for the App to be used with federation
   string global_id = 45 [(protogen.backend) = true];
+  // Environment variables
+  map<string, string> env_vars = 47;
+  // Environment variables with sensitive information, stored in encrypted storage
+  map<string, string> secret_env_vars = 48;
+  // For updating list and map fields, set to 'add', 'remove', or 'replace' to define how to resolve specified entries against existing entries
+  string update_list_action = 49;
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
@@ -335,6 +341,7 @@ service AppApi {
     };
     option (protogen.mc2_api) = "ResourceApps,ActionManage,Key.Organization";
     option (protogen.mc2_custom_authz) = true;
+    option (protogen.method_noconfig) = "UpdateListAction";
   }
   // Delete Application. Deletes a definition of an application. Instances of the application must be deleted first.
   rpc DeleteApp(App) returns (Result) {
@@ -344,6 +351,7 @@ service AppApi {
     };
     option (protogen.mc2_api) = "ResourceApps,ActionManage,Key.Organization";
     option (protogen.mc2_custom_authz) = true;
+    option (protogen.method_noconfig) = "UpdateListAction";
   }
   // Update Application. Updates the definition of an application.
   rpc UpdateApp(App) returns (Result) {
@@ -362,6 +370,7 @@ service AppApi {
     };
     option (protogen.mc2_api) = "ResourceApps,ActionView,Key.Organization";
     option (protogen.mc2_custom_authz) = true;
+    option (protogen.method_noconfig) = "UpdateListAction";
   }
   // Add an AutoProvPolicy to the application definition
   rpc AddAppAutoProvPolicy(AppAutoProvPolicy) returns (Result) {

@@ -204,6 +204,12 @@ func (m *CloudletKey) Matches(o *CloudletKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *CloudletKey) Clone() *CloudletKey {
+	cp := &CloudletKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletKey) CopyInFields(src *CloudletKey) int {
 	changed := 0
 	if m.Organization != src.Organization {

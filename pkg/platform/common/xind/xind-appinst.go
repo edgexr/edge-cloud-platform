@@ -42,7 +42,7 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 	// Support for local docker appInst
 	if DeploymentType == cloudcommon.DeploymentTypeDocker {
 		log.SpanLog(ctx, log.DebugLevelInfra, "run docker create app")
-		err = dockermgmt.CreateAppInstLocal(client, app, appInst)
+		err = dockermgmt.CreateAppInstLocal(ctx, client, app, appInst)
 		if err != nil {
 			return fmt.Errorf("CreateAppInst error for docker %v", err)
 		}
@@ -277,7 +277,7 @@ func (s *Xind) patchServiceIp(ctx context.Context, clusterInst *edgeproto.Cluste
 		if namespace == "" {
 			namespace = k8smgmt.DefaultNamespace
 		}
-		cmd := fmt.Sprintf(`%s kubectl patch svc %s -n %s -p '{"spec":{"externalIPs":["%s"]}}'`, names.KconfEnv, serviceName, namespace, ipaddr)
+		cmd := fmt.Sprintf(`kubectl %s patch svc %s -n %s -p '{"spec":{"externalIPs":["%s"]}}'`, names.KconfArg, serviceName, namespace, ipaddr)
 		out, err := client.Output(cmd)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "patch svc failed",

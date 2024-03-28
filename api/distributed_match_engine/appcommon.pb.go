@@ -659,6 +659,12 @@ func encodeVarintAppcommon(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *AppPort) Clone() *AppPort {
+	cp := &AppPort{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AppPort) CopyInFields(src *AppPort) int {
 	changed := 0
 	if m.Proto != src.Proto {
@@ -718,6 +724,12 @@ func (m *AppPort) ValidateEnums() error {
 func (s *AppPort) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *DeviceInfoStatic) Clone() *DeviceInfoStatic {
+	cp := &DeviceInfoStatic{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *DeviceInfoStatic) CopyInFields(src *DeviceInfoStatic) int {
 	changed := 0
 	if m.DeviceOs != src.DeviceOs {
@@ -742,6 +754,12 @@ func (m *DeviceInfoStatic) ValidateEnums() error {
 }
 
 func (s *DeviceInfoStatic) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *DeviceInfoDynamic) Clone() *DeviceInfoDynamic {
+	cp := &DeviceInfoDynamic{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *DeviceInfoDynamic) CopyInFields(src *DeviceInfoDynamic) int {

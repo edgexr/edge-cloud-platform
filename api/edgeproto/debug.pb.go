@@ -688,6 +688,12 @@ func encodeVarintDebug(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *DebugRequest) Clone() *DebugRequest {
+	cp := &DebugRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *DebugRequest) CopyInFields(src *DebugRequest) int {
 	changed := 0
 	if m.Node.Name != src.Node.Name {
@@ -779,6 +785,12 @@ func IgnoreDebugRequestFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(DebugRequest{}, names...)
 }
 
+func (m *DebugReply) Clone() *DebugReply {
+	cp := &DebugReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *DebugReply) CopyInFields(src *DebugReply) int {
 	changed := 0
 	if m.Node.Name != src.Node.Name {
@@ -848,6 +860,43 @@ func IgnoreDebugReplyFields(taglist string) cmp.Option {
 		names = append(names, "Node.Name")
 	}
 	return cmpopts.IgnoreFields(DebugReply{}, names...)
+}
+
+func (m *DebugData) Clone() *DebugData {
+	cp := &DebugData{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *DebugData) AddRequests(vals ...DebugRequest) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Requests {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Requests = append(m.Requests, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *DebugData) RemoveRequests(vals ...DebugRequest) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Requests); i >= 0; i-- {
+		if _, found := remove[m.Requests[i].String()]; found {
+			m.Requests = append(m.Requests[:i], m.Requests[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *DebugData) DeepCopyIn(src *DebugData) {

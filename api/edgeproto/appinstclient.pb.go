@@ -538,6 +538,12 @@ func (m *AppInstClientKey) Matches(o *AppInstClientKey, fopts ...MatchOpt) bool 
 	return true
 }
 
+func (m *AppInstClientKey) Clone() *AppInstClientKey {
+	cp := &AppInstClientKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *AppInstClientKey) CopyInFields(src *AppInstClientKey) int {
 	changed := 0
 	if m.AppInstKey.Name != src.AppInstKey.Name {
@@ -1458,6 +1464,12 @@ func (m *AppInstClient) DiffFields(o *AppInstClient, fields map[string]struct{})
 	if m.NotifyId != o.NotifyId {
 		fields[AppInstClientFieldNotifyId] = struct{}{}
 	}
+}
+
+func (m *AppInstClient) Clone() *AppInstClient {
+	cp := &AppInstClient{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *AppInstClient) CopyInFields(src *AppInstClient) int {

@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -69,7 +69,7 @@ func WaitClusterReady(ctx context.Context, client ssh.Client, clusterInst *edgep
 		if time.Since(startTime) > timeout {
 			break
 		}
-		cmd := fmt.Sprintf("%s kubectl get nodes --no-headers", names.KconfEnv)
+		cmd := fmt.Sprintf("kubectl %s get nodes --no-headers", names.KconfArg)
 		out, err := client.Output(cmd)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "wait cluster ready", "cmd", cmd, "out", out, "err", err)

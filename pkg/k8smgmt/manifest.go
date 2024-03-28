@@ -22,9 +22,10 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
+	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	yaml "github.com/mobiledgex/yaml/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -48,11 +49,37 @@ var TestReplacementVars = deployvars.DeploymentReplaceVars{
 	},
 }
 
-func addEnvVars(ctx context.Context, template *v1.PodTemplateSpec, envVars []v1.EnvVar) {
+func addEnvVars(ctx context.Context, template *v1.PodTemplateSpec, envVars []v1.EnvVar, appEnvVars *v1.ConfigMap, appSecretVars *v1.Secret) {
 	// walk the containers and append environment variables to each
 	for j, _ := range template.Spec.Containers {
 		template.Spec.Containers[j].Env = append(template.Spec.Containers[j].Env, envVars...)
+		if appEnvVars != nil {
+			addEnvFromConfigMap(&template.Spec.Containers[j], appEnvVars)
+		}
+		if appSecretVars != nil {
+			addEnvFromSecret(&template.Spec.Containers[j], appSecretVars)
+		}
 	}
+}
+
+func addEnvFromConfigMap(container *v1.Container, configMap *v1.ConfigMap) {
+	container.EnvFrom = append(container.EnvFrom, v1.EnvFromSource{
+		ConfigMapRef: &v1.ConfigMapEnvSource{
+			LocalObjectReference: v1.LocalObjectReference{
+				Name: configMap.ObjectMeta.Name,
+			},
+		},
+	})
+}
+
+func addEnvFromSecret(container *v1.Container, secret *v1.Secret) {
+	container.EnvFrom = append(container.EnvFrom, v1.EnvFromSource{
+		SecretRef: &v1.SecretEnvSource{
+			LocalObjectReference: v1.LocalObjectReference{
+				Name: secret.ObjectMeta.Name,
+			},
+		},
+	})
 }
 
 func addImagePullSecret(ctx context.Context, template *v1.PodTemplateSpec, secretNames []string) {
@@ -157,18 +184,18 @@ func GetAppEnvVars(ctx context.Context, app *edgeproto.App, authApi cloudcommon.
 }
 
 // Merge in all the environment variables into
-func MergeEnvVars(ctx context.Context, authApi cloudcommon.RegistryAuthApi, app *edgeproto.App, appInst *edgeproto.AppInst, kubeManifest string, imagePullSecrets []string, names *KubeNames, appInstFlavor *edgeproto.Flavor) (string, error) {
+func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgeproto.App, appInst *edgeproto.AppInst, kubeManifest string, imagePullSecrets []string, names *KubeNames, appInstFlavor *edgeproto.Flavor) (string, error) {
 	var files []string
 	log.SpanLog(ctx, log.DebugLevelInfra, "MergeEnvVars", "kubeManifest", kubeManifest)
 
 	deploymentVars, varsFound := ctx.Value(deployvars.DeploymentReplaceVarsKey).(*deployvars.DeploymentReplaceVars)
 	log.SpanLog(ctx, log.DebugLevelInfra, "MergeEnvVars", "deploymentVars", deploymentVars, "varsFound", varsFound)
-	envVars, err := GetAppEnvVars(ctx, app, authApi, deploymentVars)
+	envVars, err := GetAppEnvVars(ctx, app, accessApi, deploymentVars)
 	if err != nil {
 		return "", err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Merging environment variables", "envVars", envVars)
-	mf, err := cloudcommon.GetDeploymentManifest(ctx, authApi, kubeManifest)
+	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, kubeManifest)
 	if err != nil {
 		return mf, err
 	}
@@ -188,6 +215,44 @@ func MergeEnvVars(ctx context.Context, authApi cloudcommon.RegistryAuthApi, app 
 	objs, _, err := cloudcommon.DecodeK8SYaml(mf)
 	if err != nil {
 		return kubeManifest, fmt.Errorf("invalid kubernetes deployment yaml, %s", err.Error())
+	}
+
+	var appEnvVars *v1.ConfigMap
+	if len(app.EnvVars) > 0 {
+		appEnvVarsFrom := names.AppName + names.AppVersion
+		appEnvVars = &v1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "ConfigMap",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: appEnvVarsFrom,
+			},
+			Data: app.EnvVars,
+		}
+		objs = append(objs, appEnvVars)
+	}
+	var appSecretVars *v1.Secret
+	if len(app.SecretEnvVars) > 0 {
+		secretVars, err := accessApi.GetAppSecretVars(ctx, &app.Key)
+		if err != nil {
+			return kubeManifest, err
+		}
+		if len(secretVars) != len(app.SecretEnvVars) {
+			return kubeManifest, fmt.Errorf("failed to get the correct number of App secret vars from encrypted storage, expected %d but only got %d", len(app.SecretEnvVars), len(secretVars))
+		}
+		secretVarsFrom := names.AppName + names.AppVersion
+		appSecretVars = &v1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: secretVarsFrom,
+			},
+			StringData: secretVars,
+		}
+		objs = append(objs, appSecretVars)
 	}
 
 	//walk the objects
@@ -229,7 +294,7 @@ func MergeEnvVars(ctx context.Context, authApi cloudcommon.RegistryAuthApi, app 
 		if template == nil {
 			continue
 		}
-		addEnvVars(ctx, template, *envVars)
+		addEnvVars(ctx, template, *envVars, appEnvVars, appSecretVars)
 		addMexLabel(&template.ObjectMeta, name)
 		// Add labels for all the appKey data
 		addAppInstLabels(&template.ObjectMeta, appInst)

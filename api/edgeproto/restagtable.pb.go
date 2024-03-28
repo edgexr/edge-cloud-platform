@@ -752,6 +752,12 @@ func (m *ResTagTableKey) Matches(o *ResTagTableKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *ResTagTableKey) Clone() *ResTagTableKey {
+	cp := &ResTagTableKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *ResTagTableKey) CopyInFields(src *ResTagTableKey) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -975,7 +981,14 @@ func (m *ResTagTable) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *ResTagTable) Clone() *ResTagTable {
+	cp := &ResTagTable{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *ResTagTable) CopyInFields(src *ResTagTable) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -994,9 +1007,23 @@ func (m *ResTagTable) CopyInFields(src *ResTagTable) int {
 	}
 	if _, set := fmap["3"]; set {
 		if src.Tags != nil {
-			m.Tags = make(map[string]string)
-			for k0, _ := range src.Tags {
-				m.Tags[k0] = src.Tags[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.Tags {
+					m.Tags[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.Tags {
+					if _, ok := m.Tags[k0]; ok {
+						delete(m.Tags, k0)
+						changed++
+					}
+				}
+			} else {
+				m.Tags = make(map[string]string)
+				for k0, v := range src.Tags {
+					m.Tags[k0] = v
+				}
 				changed++
 			}
 		} else if m.Tags != nil {

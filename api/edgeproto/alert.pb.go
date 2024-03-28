@@ -425,12 +425,33 @@ func (m *Alert) Matches(o *Alert, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *Alert) Clone() *Alert {
+	cp := &Alert{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *Alert) CopyInFields(src *Alert) int {
+	updateListAction := "replace"
 	changed := 0
 	if src.Labels != nil {
-		m.Labels = make(map[string]string)
-		for k0, _ := range src.Labels {
-			m.Labels[k0] = src.Labels[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Labels {
+				m.Labels[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Labels {
+				if _, ok := m.Labels[k0]; ok {
+					delete(m.Labels, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Labels = make(map[string]string)
+			for k0, v := range src.Labels {
+				m.Labels[k0] = v
+			}
 			changed++
 		}
 	} else if m.Labels != nil {
@@ -438,9 +459,23 @@ func (m *Alert) CopyInFields(src *Alert) int {
 		changed++
 	}
 	if src.Annotations != nil {
-		m.Annotations = make(map[string]string)
-		for k0, _ := range src.Annotations {
-			m.Annotations[k0] = src.Annotations[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Annotations {
+				m.Annotations[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Annotations {
+				if _, ok := m.Annotations[k0]; ok {
+					delete(m.Annotations, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Annotations = make(map[string]string)
+			for k0, v := range src.Annotations {
+				m.Annotations[k0] = v
+			}
 			changed++
 		}
 	} else if m.Annotations != nil {

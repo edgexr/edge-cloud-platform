@@ -369,6 +369,12 @@ func (m *OperatorCode) Matches(o *OperatorCode, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *OperatorCode) Clone() *OperatorCode {
+	cp := &OperatorCode{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *OperatorCode) CopyInFields(src *OperatorCode) int {
 	changed := 0
 	if m.Code != src.Code {

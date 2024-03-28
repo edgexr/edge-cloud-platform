@@ -15,15 +15,20 @@
 package pc
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
+	"os"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 // Sudo is a toggle for executing as superuser
@@ -122,6 +127,22 @@ func WriteFile(client ssh.Client, file string, contents string, kind string, sud
 	return nil
 }
 
+func ReadFile(ctx context.Context, client ssh.Client, filename string, sudo Sudo) (string, error) {
+	su := ""
+	if sudo {
+		su = "sudo "
+	}
+	cmd := fmt.Sprintf("%scat %s", su, filename)
+	out, err := client.Output(cmd)
+	if err != nil && strings.Contains(out, "No such file or directory") {
+		return "", os.ErrNotExist
+	}
+	if err != nil {
+		return "", fmt.Errorf("failed to read file %s, %s", filename, err)
+	}
+	return out, nil
+}
+
 func CreateDir(ctx context.Context, client ssh.Client, dir string, ow OverwriteDir, sudo Sudo) error {
 	mkdirCmd := fmt.Sprintf("mkdir %s", dir)
 	if sudo {
@@ -198,6 +219,85 @@ func Run(client ssh.Client, cmd string) error {
 		return fmt.Errorf("command \"%s\" failed, %v", cmd, err)
 	}
 	return nil
+}
+
+const runSafeScript = `import subprocess
+import base64
+import sys
+
+args = [
+%s]
+p = subprocess.run(["%s"] + args)
+sys.exit(p.returncode)
+`
+
+func writeSafeScript(client ssh.Client, cmd string, args []string) (string, error) {
+	buf := bytes.Buffer{}
+	for _, arg := range args {
+		if strings.IndexByte(arg, '"') == -1 {
+			// no quotes, safe to add as quoted string
+			buf.WriteString("\"" + arg + "\",\n")
+			continue
+		}
+		// Has quote(s). To be super safe, base64 encode.
+		encArg := base64.StdEncoding.EncodeToString([]byte(arg))
+		buf.WriteString("base64.b64decode(\"")
+		buf.WriteString(encArg)
+		buf.WriteString("\"), # ")
+		buf.WriteString(arg)
+		buf.WriteString("\n")
+	}
+	// Write python script to run command and args. Running from
+	// python instead of shell avoids shell interpretation of
+	// environment variables and special characters like semicolon,
+	// pipe, and redirects that may be have been supplied by the user
+	// in their args.
+	id := gonanoid.MustGenerate(cloudcommon.IdAlphabet, 6)
+	cmdFile := cmd + "-cmd-" + id
+	cmdFileContents := fmt.Sprintf(runSafeScript, buf.String(), cmd)
+	err := WriteFile(client, cmdFile, cmdFileContents, "python script", NoSudo)
+	if err != nil {
+		return "", err
+	}
+	return cmdFile, nil
+}
+
+// RunSafeShell behaves like client.Shell(), but assumes that args
+// may come from user-input, and may intentionally be trying to
+// compromise the security of the system. The ssh remote command
+// always runs in the context of a shell, and therefore user
+// args may try to take advantage of shell interpolation of
+// injected commands, pipes, redirects, and evaluation of ssh shell
+// environment variables. To avoid this, RunSafeShell writes the
+// args to a file, and runs the cmd binary without shell
+// interpretation of the arguments. It is assumed that cmd is
+// not from user-supplied input, and is well-formed and trusted.
+func RunSafeShell(client ssh.Client, sin io.Reader, sout, serr io.Writer, cmd string, args []string) error {
+	if len(args) == 0 {
+		// cmd is considered safe, so just run it directly
+		return client.Shell(sin, sout, serr, cmd)
+	}
+	cmdFile, err := writeSafeScript(client, cmd, args)
+	if err != nil {
+		return err
+	}
+	//defer DeleteFile(client, cmdFile, NoSudo)
+	return client.Shell(sin, sout, serr, "python3 "+cmdFile)
+}
+
+// RunSafeOutput behaves like client.Output(), but assumes args may
+// come from user-input and may be malicious. See RunSafeShell().
+func RunSafeOutput(client ssh.Client, cmd string, args []string) (string, error) {
+	if len(args) == 0 {
+		// cmd is considered safe, so just run it directly
+		return client.Output(cmd)
+	}
+	cmdFile, err := writeSafeScript(client, cmd, args)
+	if err != nil {
+		return "", err
+	}
+	//defer DeleteFile(client, cmdFile, NoSudo)
+	return client.Output("python3 " + cmdFile)
 }
 
 type SSHClientOp func(sshp *SSHOptions)

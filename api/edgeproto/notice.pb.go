@@ -397,7 +397,45 @@ func encodeVarintNotice(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *Notice) Clone() *Notice {
+	cp := &Notice{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *Notice) AddWantObjs(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.WantObjs {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.WantObjs = append(m.WantObjs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Notice) RemoveWantObjs(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.WantObjs); i >= 0; i-- {
+		if _, found := remove[m.WantObjs[i]]; found {
+			m.WantObjs = append(m.WantObjs[:i], m.WantObjs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *Notice) CopyInFields(src *Notice) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Action != src.Action {
 		m.Action = src.Action
@@ -416,8 +454,15 @@ func (m *Notice) CopyInFields(src *Notice) int {
 		changed++
 	}
 	if src.WantObjs != nil {
-		m.WantObjs = src.WantObjs
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddWantObjs(src.WantObjs...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveWantObjs(src.WantObjs...)
+		} else {
+			m.WantObjs = make([]string, 0)
+			m.WantObjs = append(m.WantObjs, src.WantObjs...)
+			changed++
+		}
 	} else if m.WantObjs != nil {
 		m.WantObjs = nil
 		changed++
@@ -435,9 +480,23 @@ func (m *Notice) CopyInFields(src *Notice) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {

@@ -872,7 +872,14 @@ func encodeVarintLocverify(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *VerifyLocationRequest) Clone() *VerifyLocationRequest {
+	cp := &VerifyLocationRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *VerifyLocationRequest) CopyInFields(src *VerifyLocationRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -943,9 +950,23 @@ func (m *VerifyLocationRequest) CopyInFields(src *VerifyLocationRequest) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -993,7 +1014,14 @@ func (s *VerifyLocationRequest) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *VerifyLocationReply) Clone() *VerifyLocationReply {
+	cp := &VerifyLocationReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *VerifyLocationReply) CopyInFields(src *VerifyLocationReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -1012,9 +1040,23 @@ func (m *VerifyLocationReply) CopyInFields(src *VerifyLocationReply) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -1053,7 +1095,14 @@ func (m *VerifyLocationReply) ValidateEnums() error {
 func (s *VerifyLocationReply) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *GetLocationRequest) Clone() *GetLocationRequest {
+	cp := &GetLocationRequest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *GetLocationRequest) CopyInFields(src *GetLocationRequest) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -1068,9 +1117,23 @@ func (m *GetLocationRequest) CopyInFields(src *GetLocationRequest) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {
@@ -1102,7 +1165,14 @@ func (m *GetLocationRequest) ValidateEnums() error {
 func (s *GetLocationRequest) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *GetLocationReply) Clone() *GetLocationReply {
+	cp := &GetLocationReply{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *GetLocationReply) CopyInFields(src *GetLocationReply) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Ver != src.Ver {
 		m.Ver = src.Ver
@@ -1173,9 +1243,23 @@ func (m *GetLocationReply) CopyInFields(src *GetLocationReply) int {
 		changed++
 	}
 	if src.Tags != nil {
-		m.Tags = make(map[string]string)
-		for k0, _ := range src.Tags {
-			m.Tags[k0] = src.Tags[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Tags {
+				if _, ok := m.Tags[k0]; ok {
+					delete(m.Tags, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Tags = make(map[string]string)
+			for k0, v := range src.Tags {
+				m.Tags[k0] = v
+			}
 			changed++
 		}
 	} else if m.Tags != nil {

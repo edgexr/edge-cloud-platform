@@ -173,6 +173,17 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 		if err != nil {
 			return nil, err
 		}
+	case platform.GetAppSecretVars:
+		appKey := edgeproto.AppKey{}
+		err := json.Unmarshal(req.Data, &appKey)
+		if err != nil {
+			return nil, err
+		}
+		vars, err := s.vaultClient.GetAppSecretVars(ctx, &appKey)
+		if err != nil {
+			return nil, err
+		}
+		out, merr = json.Marshal(vars)
 	default:
 		return nil, fmt.Errorf("Unexpected request data type %s", req.Type)
 	}

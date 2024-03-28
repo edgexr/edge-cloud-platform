@@ -18,10 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -346,6 +347,111 @@ func TestAppApi(t *testing.T) {
 	require.Nil(t, err, "Deleted app with alert policy")
 	_, err = apis.alertPolicyApi.DeleteAlertPolicy(ctx, &userAlert)
 	require.Nil(t, err, "Delete alert policy")
+
+	// test env vars
+	// create App with env vars
+	envVarApp := testutil.AppData()[1]
+	envVarApp.Key.Name = "envVarApp"
+	envVarApp.EnvVars = map[string]string{
+		"env1": "val1",
+		"env2": "val2",
+	}
+	envVarApp.SecretEnvVars = map[string]string{
+		"senv1": "secret1",
+		"senv2": "secret2",
+	}
+	_, err = apis.appApi.CreateApp(ctx, envVarApp.Clone())
+	require.Nil(t, err)
+	found = apis.appApi.Get(envVarApp.GetKey(), &storedApp)
+	require.True(t, found)
+	require.Equal(t, envVarApp.EnvVars, storedApp.EnvVars)
+	require.Equal(t, cloudcommon.RedactSecretVars(envVarApp.SecretEnvVars), storedApp.SecretEnvVars)
+	secrets, err := cloudcommon.GetAppSecretVars(ctx, *region, &envVarApp.Key, nodeMgr.VaultConfig)
+	require.Nil(t, err)
+	require.Equal(t, envVarApp.SecretEnvVars, secrets)
+
+	clone := func(app edgeproto.App) *edgeproto.App {
+		// clone skips fields, which we need for update
+		copy := app.Clone()
+		copy.Fields = app.Fields
+		return copy
+	}
+
+	// append more env vars
+	moreVars := map[string]string{
+		"env3": "val3",
+		"env4": "var4",
+	}
+	moreSecretVars := map[string]string{
+		"senv3": "secret3",
+		"senv4": "secret4",
+	}
+	envVarUpdate := envVarApp
+	envVarUpdate.Fields = []string{
+		edgeproto.AppFieldEnvVars,
+		edgeproto.AppFieldSecretEnvVars,
+		edgeproto.AppFieldUpdateListAction,
+	}
+	envVarUpdate.UpdateListAction = util.UpdateListActionAdd
+	envVarUpdate.EnvVars = moreVars
+	envVarUpdate.SecretEnvVars = moreSecretVars
+	_, err = apis.appApi.UpdateApp(ctx, clone(envVarUpdate))
+	require.Nil(t, err)
+	combinedVars := util.AddMaps(envVarApp.EnvVars, moreVars)
+	combinedSecrets := util.AddMaps(envVarApp.SecretEnvVars, moreSecretVars)
+	require.Equal(t, 4, len(combinedVars))
+	require.Equal(t, 4, len(combinedSecrets))
+	found = apis.appApi.Get(envVarApp.GetKey(), &storedApp)
+	require.True(t, found)
+	require.Equal(t, combinedVars, storedApp.EnvVars)
+	require.Equal(t, cloudcommon.RedactSecretVars(combinedSecrets), storedApp.SecretEnvVars)
+	secrets, err = cloudcommon.GetAppSecretVars(ctx, *region, &envVarApp.Key, nodeMgr.VaultConfig)
+	require.Nil(t, err)
+	require.Equal(t, combinedSecrets, secrets)
+
+	// now replace, should only be left with env3 and env4
+	envVarUpdate.UpdateListAction = util.UpdateListActionReplace
+	_, err = apis.appApi.UpdateApp(ctx, clone(envVarUpdate))
+	require.Nil(t, err)
+	found = apis.appApi.Get(envVarApp.GetKey(), &storedApp)
+	require.True(t, found)
+	require.Equal(t, moreVars, storedApp.EnvVars)
+	require.Equal(t, cloudcommon.RedactSecretVars(moreSecretVars), storedApp.SecretEnvVars)
+	secrets, err = cloudcommon.GetAppSecretVars(ctx, *region, &envVarApp.Key, nodeMgr.VaultConfig)
+	require.Nil(t, err)
+	require.Equal(t, moreSecretVars, secrets)
+
+	// now delete
+	deleteVars := map[string]string{
+		"env3": "",
+	}
+	remainingVars := map[string]string{
+		"env4": "var4",
+	}
+	deleteSecretVars := map[string]string{
+		"senv3": "",
+	}
+	remainingSecretVars := map[string]string{
+		"senv4": "secret4",
+	}
+	envVarUpdate.UpdateListAction = util.UpdateListActionRemove
+	envVarUpdate.EnvVars = deleteVars
+	envVarUpdate.SecretEnvVars = deleteSecretVars
+	_, err = apis.appApi.UpdateApp(ctx, clone(envVarUpdate))
+	require.Nil(t, err)
+	found = apis.appApi.Get(envVarApp.GetKey(), &storedApp)
+	require.True(t, found)
+	require.Equal(t, remainingVars, storedApp.EnvVars)
+	require.Equal(t, cloudcommon.RedactSecretVars(remainingSecretVars), storedApp.SecretEnvVars)
+	secrets, err = cloudcommon.GetAppSecretVars(ctx, *region, &envVarApp.Key, nodeMgr.VaultConfig)
+	require.Nil(t, err)
+	require.Equal(t, remainingSecretVars, secrets)
+	// clean up
+	_, err = apis.appApi.DeleteApp(ctx, &envVarApp)
+	require.Nil(t, err)
+	secrets, err = cloudcommon.GetAppSecretVars(ctx, *region, &envVarApp.Key, nodeMgr.VaultConfig)
+	require.Nil(t, err)
+	require.Equal(t, 0, len(secrets))
 
 	reservedPortsApp := edgeproto.App{
 		Key: edgeproto.AppKey{

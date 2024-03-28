@@ -6700,6 +6700,12 @@ func encodeVarintCloudlet(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *OperationTimeLimits) Clone() *OperationTimeLimits {
+	cp := &OperationTimeLimits{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *OperationTimeLimits) CopyInFields(src *OperationTimeLimits) int {
 	changed := 0
 	if m.CreateClusterInstTimeout != src.CreateClusterInstTimeout {
@@ -6849,7 +6855,14 @@ func (m *CloudletInternal) DiffFields(o *CloudletInternal, fields map[string]str
 	}
 }
 
+func (m *CloudletInternal) Clone() *CloudletInternal {
+	cp := &CloudletInternal{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletInternal) CopyInFields(src *CloudletInternal) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -6874,9 +6887,23 @@ func (m *CloudletInternal) CopyInFields(src *CloudletInternal) int {
 	}
 	if _, set := fmap["3"]; set {
 		if src.Props != nil {
-			m.Props = make(map[string]string)
-			for k0, _ := range src.Props {
-				m.Props[k0] = src.Props[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.Props {
+					m.Props[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.Props {
+					if _, ok := m.Props[k0]; ok {
+						delete(m.Props, k0)
+						changed++
+					}
+				}
+			} else {
+				m.Props = make(map[string]string)
+				for k0, v := range src.Props {
+					m.Props[k0] = v
+				}
 				changed++
 			}
 		} else if m.Props != nil {
@@ -7523,7 +7550,14 @@ func (s *CloudletInternal) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
 }
 
+func (m *PlatformConfig) Clone() *PlatformConfig {
+	cp := &PlatformConfig{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *PlatformConfig) CopyInFields(src *PlatformConfig) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.ContainerRegistryPath != src.ContainerRegistryPath {
 		m.ContainerRegistryPath = src.ContainerRegistryPath
@@ -7542,9 +7576,23 @@ func (m *PlatformConfig) CopyInFields(src *PlatformConfig) int {
 		changed++
 	}
 	if src.EnvVar != nil {
-		m.EnvVar = make(map[string]string)
-		for k0, _ := range src.EnvVar {
-			m.EnvVar[k0] = src.EnvVar[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.EnvVar {
+				m.EnvVar[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.EnvVar {
+				if _, ok := m.EnvVar[k0]; ok {
+					delete(m.EnvVar, k0)
+					changed++
+				}
+			}
+		} else {
+			m.EnvVar = make(map[string]string)
+			for k0, v := range src.EnvVar {
+				m.EnvVar[k0] = v
+			}
 			changed++
 		}
 	} else if m.EnvVar != nil {
@@ -7715,6 +7763,12 @@ func IgnorePlatformConfigFields(taglist string) cmp.Option {
 		names = append(names, "SecondaryCrmAccessPrivateKey")
 	}
 	return cmpopts.IgnoreFields(PlatformConfig{}, names...)
+}
+
+func (m *FederationConfig) Clone() *FederationConfig {
+	cp := &FederationConfig{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *FederationConfig) CopyInFields(src *FederationConfig) int {
@@ -7931,7 +7985,45 @@ func (m *PlatformFeatures) Matches(o *PlatformFeatures, fopts ...MatchOpt) bool 
 	return true
 }
 
+func (m *PlatformFeatures) Clone() *PlatformFeatures {
+	cp := &PlatformFeatures{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *PlatformFeatures) AddResourceQuotaProperties(vals ...InfraResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResourceQuotaProperties {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.ResourceQuotaProperties = append(m.ResourceQuotaProperties, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *PlatformFeatures) RemoveResourceQuotaProperties(vals ...InfraResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.ResourceQuotaProperties); i >= 0; i-- {
+		if _, found := remove[m.ResourceQuotaProperties[i].String()]; found {
+			m.ResourceQuotaProperties = append(m.ResourceQuotaProperties[:i], m.ResourceQuotaProperties[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *PlatformFeatures) CopyInFields(src *PlatformFeatures) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.PlatformType != src.PlatformType {
 		m.PlatformType = src.PlatformType
@@ -8018,82 +8110,67 @@ func (m *PlatformFeatures) CopyInFields(src *PlatformFeatures) int {
 		changed++
 	}
 	if src.AccessVars != nil {
-		m.AccessVars = make(map[string]*PropertyInfo)
-		for k0, _ := range src.AccessVars {
-			m.AccessVars[k0] = &PropertyInfo{}
-			if m.AccessVars[k0].Name != src.AccessVars[k0].Name {
-				m.AccessVars[k0].Name = src.AccessVars[k0].Name
+		if updateListAction == "add" {
+			for k0, v := range src.AccessVars {
+				v = v.Clone()
+				m.AccessVars[k0] = v
 				changed++
 			}
-			if m.AccessVars[k0].Description != src.AccessVars[k0].Description {
-				m.AccessVars[k0].Description = src.AccessVars[k0].Description
-				changed++
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.AccessVars {
+				if _, ok := m.AccessVars[k0]; ok {
+					delete(m.AccessVars, k0)
+					changed++
+				}
 			}
-			if m.AccessVars[k0].Value != src.AccessVars[k0].Value {
-				m.AccessVars[k0].Value = src.AccessVars[k0].Value
-				changed++
+		} else {
+			m.AccessVars = make(map[string]*PropertyInfo)
+			for k0, v := range src.AccessVars {
+				m.AccessVars[k0] = v.Clone()
 			}
-			if m.AccessVars[k0].Secret != src.AccessVars[k0].Secret {
-				m.AccessVars[k0].Secret = src.AccessVars[k0].Secret
-				changed++
-			}
-			if m.AccessVars[k0].Mandatory != src.AccessVars[k0].Mandatory {
-				m.AccessVars[k0].Mandatory = src.AccessVars[k0].Mandatory
-				changed++
-			}
-			if m.AccessVars[k0].Internal != src.AccessVars[k0].Internal {
-				m.AccessVars[k0].Internal = src.AccessVars[k0].Internal
-				changed++
-			}
-			if m.AccessVars[k0].TotpSecret != src.AccessVars[k0].TotpSecret {
-				m.AccessVars[k0].TotpSecret = src.AccessVars[k0].TotpSecret
-				changed++
-			}
+			changed++
 		}
 	} else if m.AccessVars != nil {
 		m.AccessVars = nil
 		changed++
 	}
 	if src.Properties != nil {
-		m.Properties = make(map[string]*PropertyInfo)
-		for k0, _ := range src.Properties {
-			m.Properties[k0] = &PropertyInfo{}
-			if m.Properties[k0].Name != src.Properties[k0].Name {
-				m.Properties[k0].Name = src.Properties[k0].Name
+		if updateListAction == "add" {
+			for k0, v := range src.Properties {
+				v = v.Clone()
+				m.Properties[k0] = v
 				changed++
 			}
-			if m.Properties[k0].Description != src.Properties[k0].Description {
-				m.Properties[k0].Description = src.Properties[k0].Description
-				changed++
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Properties {
+				if _, ok := m.Properties[k0]; ok {
+					delete(m.Properties, k0)
+					changed++
+				}
 			}
-			if m.Properties[k0].Value != src.Properties[k0].Value {
-				m.Properties[k0].Value = src.Properties[k0].Value
-				changed++
+		} else {
+			m.Properties = make(map[string]*PropertyInfo)
+			for k0, v := range src.Properties {
+				m.Properties[k0] = v.Clone()
 			}
-			if m.Properties[k0].Secret != src.Properties[k0].Secret {
-				m.Properties[k0].Secret = src.Properties[k0].Secret
-				changed++
-			}
-			if m.Properties[k0].Mandatory != src.Properties[k0].Mandatory {
-				m.Properties[k0].Mandatory = src.Properties[k0].Mandatory
-				changed++
-			}
-			if m.Properties[k0].Internal != src.Properties[k0].Internal {
-				m.Properties[k0].Internal = src.Properties[k0].Internal
-				changed++
-			}
-			if m.Properties[k0].TotpSecret != src.Properties[k0].TotpSecret {
-				m.Properties[k0].TotpSecret = src.Properties[k0].TotpSecret
-				changed++
-			}
+			changed++
 		}
 	} else if m.Properties != nil {
 		m.Properties = nil
 		changed++
 	}
 	if src.ResourceQuotaProperties != nil {
-		m.ResourceQuotaProperties = src.ResourceQuotaProperties
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddResourceQuotaProperties(src.ResourceQuotaProperties...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveResourceQuotaProperties(src.ResourceQuotaProperties...)
+		} else {
+			m.ResourceQuotaProperties = make([]InfraResource, 0)
+			for k0, _ := range src.ResourceQuotaProperties {
+				m.ResourceQuotaProperties = append(m.ResourceQuotaProperties, *src.ResourceQuotaProperties[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.ResourceQuotaProperties != nil {
 		m.ResourceQuotaProperties = nil
 		changed++
@@ -8819,7 +8896,14 @@ func (s *PlatformFeatures) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *CloudletResMap) Clone() *CloudletResMap {
+	cp := &CloudletResMap{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletResMap) CopyInFields(src *CloudletResMap) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
 		m.Key.Organization = src.Key.Organization
@@ -8834,9 +8918,23 @@ func (m *CloudletResMap) CopyInFields(src *CloudletResMap) int {
 		changed++
 	}
 	if src.Mapping != nil {
-		m.Mapping = make(map[string]string)
-		for k0, _ := range src.Mapping {
-			m.Mapping[k0] = src.Mapping[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Mapping {
+				m.Mapping[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Mapping {
+				if _, ok := m.Mapping[k0]; ok {
+					delete(m.Mapping, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Mapping = make(map[string]string)
+			for k0, v := range src.Mapping {
+				m.Mapping[k0] = v
+			}
 			changed++
 		}
 	} else if m.Mapping != nil {
@@ -8890,6 +8988,12 @@ func (s *CloudletResMap) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
 }
 
+func (m *InfraConfig) Clone() *InfraConfig {
+	cp := &InfraConfig{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *InfraConfig) CopyInFields(src *InfraConfig) int {
 	changed := 0
 	if m.ExternalNetworkName != src.ExternalNetworkName {
@@ -8914,6 +9018,12 @@ func (m *InfraConfig) ValidateEnums() error {
 }
 
 func (s *InfraConfig) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *ResourceQuota) Clone() *ResourceQuota {
+	cp := &ResourceQuota{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *ResourceQuota) CopyInFields(src *ResourceQuota) int {
@@ -8967,6 +9077,12 @@ func (m *GPUDriverKey) Matches(o *GPUDriverKey, fopts ...MatchOpt) bool {
 		}
 	}
 	return true
+}
+
+func (m *GPUDriverKey) Clone() *GPUDriverKey {
+	cp := &GPUDriverKey{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *GPUDriverKey) CopyInFields(src *GPUDriverKey) int {
@@ -9041,6 +9157,12 @@ func (m *GPUDriverKey) ValidateEnums() error {
 func (s *GPUDriverKey) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *GPUDriverBuild) Clone() *GPUDriverBuild {
+	cp := &GPUDriverBuild{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *GPUDriverBuild) CopyInFields(src *GPUDriverBuild) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -9098,6 +9220,12 @@ func (m *GPUDriverBuild) ValidateEnums() error {
 }
 
 func (s *GPUDriverBuild) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *GPUDriverBuildMember) Clone() *GPUDriverBuildMember {
+	cp := &GPUDriverBuildMember{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *GPUDriverBuildMember) CopyInFields(src *GPUDriverBuildMember) int {
@@ -9189,6 +9317,12 @@ func (m *GPUDriverBuildMember) ValidateEnums() error {
 func (s *GPUDriverBuildMember) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
 	s.Build.ClearTagged(tags)
+}
+
+func (m *GPUDriverBuildURL) Clone() *GPUDriverBuildURL {
+	cp := &GPUDriverBuildURL{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *GPUDriverBuildURL) CopyInFields(src *GPUDriverBuildURL) int {
@@ -9512,7 +9646,45 @@ func (m *GPUDriver) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *GPUDriver) Clone() *GPUDriver {
+	cp := &GPUDriver{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *GPUDriver) AddBuilds(vals ...GPUDriverBuild) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Builds {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Builds = append(m.Builds, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *GPUDriver) RemoveBuilds(vals ...GPUDriverBuild) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Builds); i >= 0; i-- {
+		if _, found := remove[m.Builds[i].String()]; found {
+			m.Builds = append(m.Builds[:i], m.Builds[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *GPUDriver) CopyInFields(src *GPUDriver) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -9531,8 +9703,17 @@ func (m *GPUDriver) CopyInFields(src *GPUDriver) int {
 	}
 	if _, set := fmap["3"]; set {
 		if src.Builds != nil {
-			m.Builds = src.Builds
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddBuilds(src.Builds...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveBuilds(src.Builds...)
+			} else {
+				m.Builds = make([]GPUDriverBuild, 0)
+				for k0, _ := range src.Builds {
+					m.Builds = append(m.Builds, *src.Builds[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.Builds != nil {
 			m.Builds = nil
 			changed++
@@ -9552,9 +9733,23 @@ func (m *GPUDriver) CopyInFields(src *GPUDriver) int {
 	}
 	if _, set := fmap["6"]; set {
 		if src.Properties != nil {
-			m.Properties = make(map[string]string)
-			for k0, _ := range src.Properties {
-				m.Properties[k0] = src.Properties[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.Properties {
+					m.Properties[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.Properties {
+					if _, ok := m.Properties[k0]; ok {
+						delete(m.Properties, k0)
+						changed++
+					}
+				}
+			} else {
+				m.Properties = make(map[string]string)
+				for k0, v := range src.Properties {
+					m.Properties[k0] = v
+				}
 				changed++
 			}
 		} else if m.Properties != nil {
@@ -10259,7 +10454,14 @@ func (s *GPUDriver) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *GPUConfig) Clone() *GPUConfig {
+	cp := &GPUConfig{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *GPUConfig) CopyInFields(src *GPUConfig) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Driver.Name != src.Driver.Name {
 		m.Driver.Name = src.Driver.Name
@@ -10270,9 +10472,23 @@ func (m *GPUConfig) CopyInFields(src *GPUConfig) int {
 		changed++
 	}
 	if src.Properties != nil {
-		m.Properties = make(map[string]string)
-		for k0, _ := range src.Properties {
-			m.Properties[k0] = src.Properties[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.Properties {
+				m.Properties[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Properties {
+				if _, ok := m.Properties[k0]; ok {
+					delete(m.Properties, k0)
+					changed++
+				}
+			}
+		} else {
+			m.Properties = make(map[string]string)
+			for k0, v := range src.Properties {
+				m.Properties[k0] = v
+			}
 			changed++
 		}
 	} else if m.Properties != nil {
@@ -11845,7 +12061,138 @@ func (m *Cloudlet) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *Cloudlet) Clone() *Cloudlet {
+	cp := &Cloudlet{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *Cloudlet) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Cloudlet) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *Cloudlet) AddResourceQuotas(vals ...ResourceQuota) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResourceQuotas {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.ResourceQuotas = append(m.ResourceQuotas, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Cloudlet) RemoveResourceQuotas(vals ...ResourceQuota) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.ResourceQuotas); i >= 0; i-- {
+		if _, found := remove[m.ResourceQuotas[i].String()]; found {
+			m.ResourceQuotas = append(m.ResourceQuotas[:i], m.ResourceQuotas[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *Cloudlet) AddAllianceOrgs(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.AllianceOrgs {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.AllianceOrgs = append(m.AllianceOrgs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Cloudlet) RemoveAllianceOrgs(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.AllianceOrgs); i >= 0; i-- {
+		if _, found := remove[m.AllianceOrgs[i]]; found {
+			m.AllianceOrgs = append(m.AllianceOrgs[:i], m.AllianceOrgs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *Cloudlet) AddInfraFlavors(vals ...*FlavorInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.InfraFlavors {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.InfraFlavors = append(m.InfraFlavors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *Cloudlet) RemoveInfraFlavors(vals ...*FlavorInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.InfraFlavors); i >= 0; i-- {
+		if _, found := remove[m.InfraFlavors[i].String()]; found {
+			m.InfraFlavors = append(m.InfraFlavors[:i], m.InfraFlavors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -11992,8 +12339,15 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 	}
 	if _, set := fmap["10"]; set {
 		if src.Errors != nil {
-			m.Errors = src.Errors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddErrors(src.Errors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveErrors(src.Errors...)
+			} else {
+				m.Errors = make([]string, 0)
+				m.Errors = append(m.Errors, src.Errors...)
+				changed++
+			}
 		} else if m.Errors != nil {
 			m.Errors = nil
 			changed++
@@ -12045,9 +12399,23 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 	}
 	if _, set := fmap["19"]; set {
 		if src.EnvVar != nil {
-			m.EnvVar = make(map[string]string)
-			for k0, _ := range src.EnvVar {
-				m.EnvVar[k0] = src.EnvVar[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.EnvVar {
+					m.EnvVar[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.EnvVar {
+					if _, ok := m.EnvVar[k0]; ok {
+						delete(m.EnvVar, k0)
+						changed++
+					}
+				}
+			} else {
+				m.EnvVar = make(map[string]string)
+				for k0, v := range src.EnvVar {
+					m.EnvVar[k0] = v
+				}
 				changed++
 			}
 		} else if m.EnvVar != nil {
@@ -12088,9 +12456,23 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 		}
 		if _, set := fmap["21.6"]; set {
 			if src.Config.EnvVar != nil {
-				m.Config.EnvVar = make(map[string]string)
-				for k1, _ := range src.Config.EnvVar {
-					m.Config.EnvVar[k1] = src.Config.EnvVar[k1]
+				if updateListAction == "add" {
+					for k1, v := range src.Config.EnvVar {
+						m.Config.EnvVar[k1] = v
+						changed++
+					}
+				} else if updateListAction == "remove" {
+					for k1, _ := range src.Config.EnvVar {
+						if _, ok := m.Config.EnvVar[k1]; ok {
+							delete(m.Config.EnvVar, k1)
+							changed++
+						}
+					}
+				} else {
+					m.Config.EnvVar = make(map[string]string)
+					for k1, v := range src.Config.EnvVar {
+						m.Config.EnvVar[k1] = v
+					}
 					changed++
 				}
 			} else if m.Config.EnvVar != nil {
@@ -12215,21 +12597,25 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 	}
 	if _, set := fmap["22"]; set {
 		if src.ResTagMap != nil {
-			m.ResTagMap = make(map[string]*ResTagTableKey)
-			for k0, _ := range src.ResTagMap {
-				m.ResTagMap[k0] = &ResTagTableKey{}
-				if _, set := fmap["22.1"]; set {
-					if m.ResTagMap[k0].Name != src.ResTagMap[k0].Name {
-						m.ResTagMap[k0].Name = src.ResTagMap[k0].Name
+			if updateListAction == "add" {
+				for k0, v := range src.ResTagMap {
+					v = v.Clone()
+					m.ResTagMap[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.ResTagMap {
+					if _, ok := m.ResTagMap[k0]; ok {
+						delete(m.ResTagMap, k0)
 						changed++
 					}
 				}
-				if _, set := fmap["22.2"]; set {
-					if m.ResTagMap[k0].Organization != src.ResTagMap[k0].Organization {
-						m.ResTagMap[k0].Organization = src.ResTagMap[k0].Organization
-						changed++
-					}
+			} else {
+				m.ResTagMap = make(map[string]*ResTagTableKey)
+				for k0, v := range src.ResTagMap {
+					m.ResTagMap[k0] = v.Clone()
 				}
+				changed++
 			}
 		} else if m.ResTagMap != nil {
 			m.ResTagMap = nil
@@ -12238,9 +12624,23 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 	}
 	if _, set := fmap["23"]; set {
 		if src.AccessVars != nil {
-			m.AccessVars = make(map[string]string)
-			for k0, _ := range src.AccessVars {
-				m.AccessVars[k0] = src.AccessVars[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.AccessVars {
+					m.AccessVars[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.AccessVars {
+					if _, ok := m.AccessVars[k0]; ok {
+						delete(m.AccessVars, k0)
+						changed++
+					}
+				}
+			} else {
+				m.AccessVars = make(map[string]string)
+				for k0, v := range src.AccessVars {
+					m.AccessVars[k0] = v
+				}
 				changed++
 			}
 		} else if m.AccessVars != nil {
@@ -12282,9 +12682,23 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 	}
 	if _, set := fmap["29"]; set {
 		if src.ChefClientKey != nil {
-			m.ChefClientKey = make(map[string]string)
-			for k0, _ := range src.ChefClientKey {
-				m.ChefClientKey[k0] = src.ChefClientKey[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.ChefClientKey {
+					m.ChefClientKey[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.ChefClientKey {
+					if _, ok := m.ChefClientKey[k0]; ok {
+						delete(m.ChefClientKey, k0)
+						changed++
+					}
+				}
+			} else {
+				m.ChefClientKey = make(map[string]string)
+				for k0, v := range src.ChefClientKey {
+					m.ChefClientKey[k0] = v
+				}
 				changed++
 			}
 		} else if m.ChefClientKey != nil {
@@ -12364,8 +12778,17 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 	}
 	if _, set := fmap["39"]; set {
 		if src.ResourceQuotas != nil {
-			m.ResourceQuotas = src.ResourceQuotas
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddResourceQuotas(src.ResourceQuotas...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveResourceQuotas(src.ResourceQuotas...)
+			} else {
+				m.ResourceQuotas = make([]ResourceQuota, 0)
+				for k0, _ := range src.ResourceQuotas {
+					m.ResourceQuotas = append(m.ResourceQuotas, *src.ResourceQuotas[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.ResourceQuotas != nil {
 			m.ResourceQuotas = nil
 			changed++
@@ -12418,9 +12841,23 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 		}
 		if _, set := fmap["45.2"]; set {
 			if src.GpuConfig.Properties != nil {
-				m.GpuConfig.Properties = make(map[string]string)
-				for k1, _ := range src.GpuConfig.Properties {
-					m.GpuConfig.Properties[k1] = src.GpuConfig.Properties[k1]
+				if updateListAction == "add" {
+					for k1, v := range src.GpuConfig.Properties {
+						m.GpuConfig.Properties[k1] = v
+						changed++
+					}
+				} else if updateListAction == "remove" {
+					for k1, _ := range src.GpuConfig.Properties {
+						if _, ok := m.GpuConfig.Properties[k1]; ok {
+							delete(m.GpuConfig.Properties, k1)
+							changed++
+						}
+					}
+				} else {
+					m.GpuConfig.Properties = make(map[string]string)
+					for k1, v := range src.GpuConfig.Properties {
+						m.GpuConfig.Properties[k1] = v
+					}
 					changed++
 				}
 			} else if m.GpuConfig.Properties != nil {
@@ -12449,8 +12886,15 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 	}
 	if _, set := fmap["47"]; set {
 		if src.AllianceOrgs != nil {
-			m.AllianceOrgs = src.AllianceOrgs
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddAllianceOrgs(src.AllianceOrgs...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveAllianceOrgs(src.AllianceOrgs...)
+			} else {
+				m.AllianceOrgs = make([]string, 0)
+				m.AllianceOrgs = append(m.AllianceOrgs, src.AllianceOrgs...)
+				changed++
+			}
 		} else if m.AllianceOrgs != nil {
 			m.AllianceOrgs = nil
 			changed++
@@ -12538,8 +12982,17 @@ func (m *Cloudlet) CopyInFields(src *Cloudlet) int {
 	}
 	if _, set := fmap["58"]; set {
 		if src.InfraFlavors != nil {
-			m.InfraFlavors = src.InfraFlavors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddInfraFlavors(src.InfraFlavors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveInfraFlavors(src.InfraFlavors...)
+			} else {
+				m.InfraFlavors = make([]*FlavorInfo, 0)
+				for k0, _ := range src.InfraFlavors {
+					m.InfraFlavors = append(m.InfraFlavors, src.InfraFlavors[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.InfraFlavors != nil {
 			m.InfraFlavors = nil
 			changed++
@@ -13445,6 +13898,12 @@ func IgnoreCloudletFields(taglist string) cmp.Option {
 	return cmpopts.IgnoreFields(Cloudlet{}, names...)
 }
 
+func (m *FlavorMatch) Clone() *FlavorMatch {
+	cp := &FlavorMatch{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *FlavorMatch) CopyInFields(src *FlavorMatch) int {
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
@@ -13508,6 +13967,12 @@ func (s *FlavorMatch) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
 }
 
+func (m *CloudletManifest) Clone() *CloudletManifest {
+	cp := &CloudletManifest{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletManifest) CopyInFields(src *CloudletManifest) int {
 	changed := 0
 	if m.Manifest != src.Manifest {
@@ -13527,6 +13992,12 @@ func (m *CloudletManifest) ValidateEnums() error {
 }
 
 func (s *CloudletManifest) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *PropertyInfo) Clone() *PropertyInfo {
+	cp := &PropertyInfo{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *PropertyInfo) CopyInFields(src *PropertyInfo) int {
@@ -13580,44 +14051,39 @@ func (m *PropertyInfo) ValidateEnums() error {
 func (s *PropertyInfo) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *CloudletProps) Clone() *CloudletProps {
+	cp := &CloudletProps{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletProps) CopyInFields(src *CloudletProps) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.PlatformType != src.PlatformType {
 		m.PlatformType = src.PlatformType
 		changed++
 	}
 	if src.Properties != nil {
-		m.Properties = make(map[string]*PropertyInfo)
-		for k0, _ := range src.Properties {
-			m.Properties[k0] = &PropertyInfo{}
-			if m.Properties[k0].Name != src.Properties[k0].Name {
-				m.Properties[k0].Name = src.Properties[k0].Name
+		if updateListAction == "add" {
+			for k0, v := range src.Properties {
+				v = v.Clone()
+				m.Properties[k0] = v
 				changed++
 			}
-			if m.Properties[k0].Description != src.Properties[k0].Description {
-				m.Properties[k0].Description = src.Properties[k0].Description
-				changed++
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.Properties {
+				if _, ok := m.Properties[k0]; ok {
+					delete(m.Properties, k0)
+					changed++
+				}
 			}
-			if m.Properties[k0].Value != src.Properties[k0].Value {
-				m.Properties[k0].Value = src.Properties[k0].Value
-				changed++
+		} else {
+			m.Properties = make(map[string]*PropertyInfo)
+			for k0, v := range src.Properties {
+				m.Properties[k0] = v.Clone()
 			}
-			if m.Properties[k0].Secret != src.Properties[k0].Secret {
-				m.Properties[k0].Secret = src.Properties[k0].Secret
-				changed++
-			}
-			if m.Properties[k0].Mandatory != src.Properties[k0].Mandatory {
-				m.Properties[k0].Mandatory = src.Properties[k0].Mandatory
-				changed++
-			}
-			if m.Properties[k0].Internal != src.Properties[k0].Internal {
-				m.Properties[k0].Internal = src.Properties[k0].Internal
-				changed++
-			}
-			if m.Properties[k0].TotpSecret != src.Properties[k0].TotpSecret {
-				m.Properties[k0].TotpSecret = src.Properties[k0].TotpSecret
-				changed++
-			}
+			changed++
 		}
 	} else if m.Properties != nil {
 		m.Properties = nil
@@ -13653,15 +14119,62 @@ func (m *CloudletProps) ValidateEnums() error {
 func (s *CloudletProps) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *CloudletResourceQuotaProps) Clone() *CloudletResourceQuotaProps {
+	cp := &CloudletResourceQuotaProps{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletResourceQuotaProps) AddProperties(vals ...InfraResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Properties {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Properties = append(m.Properties, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletResourceQuotaProps) RemoveProperties(vals ...InfraResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Properties); i >= 0; i-- {
+		if _, found := remove[m.Properties[i].String()]; found {
+			m.Properties = append(m.Properties[:i], m.Properties[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *CloudletResourceQuotaProps) CopyInFields(src *CloudletResourceQuotaProps) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.PlatformType != src.PlatformType {
 		m.PlatformType = src.PlatformType
 		changed++
 	}
 	if src.Properties != nil {
-		m.Properties = src.Properties
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddProperties(src.Properties...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveProperties(src.Properties...)
+		} else {
+			m.Properties = make([]InfraResource, 0)
+			for k0, _ := range src.Properties {
+				m.Properties = append(m.Properties, *src.Properties[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Properties != nil {
 		m.Properties = nil
 		changed++
@@ -13704,7 +14217,45 @@ func (s *CloudletResourceQuotaProps) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *CloudletResourceUsage) Clone() *CloudletResourceUsage {
+	cp := &CloudletResourceUsage{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletResourceUsage) AddInfo(vals ...InfraResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Info {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Info = append(m.Info, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletResourceUsage) RemoveInfo(vals ...InfraResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Info); i >= 0; i-- {
+		if _, found := remove[m.Info[i].String()]; found {
+			m.Info = append(m.Info[:i], m.Info[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *CloudletResourceUsage) CopyInFields(src *CloudletResourceUsage) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
 		m.Key.Organization = src.Key.Organization
@@ -13723,8 +14274,17 @@ func (m *CloudletResourceUsage) CopyInFields(src *CloudletResourceUsage) int {
 		changed++
 	}
 	if src.Info != nil {
-		m.Info = src.Info
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddInfo(src.Info...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveInfo(src.Info...)
+		} else {
+			m.Info = make([]InfraResource, 0)
+			for k0, _ := range src.Info {
+				m.Info = append(m.Info, *src.Info[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.Info != nil {
 		m.Info = nil
 		changed++
@@ -13787,6 +14347,12 @@ func (s *CloudletResourceUsage) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *CloudletAllianceOrg) Clone() *CloudletAllianceOrg {
+	cp := &CloudletAllianceOrg{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletAllianceOrg) CopyInFields(src *CloudletAllianceOrg) int {
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
@@ -13845,7 +14411,14 @@ func (s *CloudletAllianceOrg) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
 }
 
+func (m *FlavorInfo) Clone() *FlavorInfo {
+	cp := &FlavorInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *FlavorInfo) CopyInFields(src *FlavorInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Name != src.Name {
 		m.Name = src.Name
@@ -13864,9 +14437,23 @@ func (m *FlavorInfo) CopyInFields(src *FlavorInfo) int {
 		changed++
 	}
 	if src.PropMap != nil {
-		m.PropMap = make(map[string]string)
-		for k0, _ := range src.PropMap {
-			m.PropMap[k0] = src.PropMap[k0]
+		if updateListAction == "add" {
+			for k0, v := range src.PropMap {
+				m.PropMap[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.PropMap {
+				if _, ok := m.PropMap[k0]; ok {
+					delete(m.PropMap, k0)
+					changed++
+				}
+			}
+		} else {
+			m.PropMap = make(map[string]string)
+			for k0, v := range src.PropMap {
+				m.PropMap[k0] = v
+			}
 			changed++
 		}
 	} else if m.PropMap != nil {
@@ -13899,6 +14486,12 @@ func (m *FlavorInfo) ValidateEnums() error {
 func (s *FlavorInfo) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *OSAZone) Clone() *OSAZone {
+	cp := &OSAZone{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *OSAZone) CopyInFields(src *OSAZone) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -13923,6 +14516,12 @@ func (m *OSAZone) ValidateEnums() error {
 }
 
 func (s *OSAZone) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *OSImage) Clone() *OSImage {
+	cp := &OSImage{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *OSImage) CopyInFields(src *OSImage) int {
@@ -13961,7 +14560,76 @@ func (m *OSImage) ValidateEnums() error {
 func (s *OSImage) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *CloudletOnboardingInfo) Clone() *CloudletOnboardingInfo {
+	cp := &CloudletOnboardingInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletOnboardingInfo) AddStatusMsgs(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Status.Msgs {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Status.Msgs = append(m.Status.Msgs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletOnboardingInfo) RemoveStatusMsgs(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Status.Msgs); i >= 0; i-- {
+		if _, found := remove[m.Status.Msgs[i]]; found {
+			m.Status.Msgs = append(m.Status.Msgs[:i], m.Status.Msgs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletOnboardingInfo) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletOnboardingInfo) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *CloudletOnboardingInfo) CopyInFields(src *CloudletOnboardingInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
 		m.Key.Organization = src.Key.Organization
@@ -14000,15 +14668,29 @@ func (m *CloudletOnboardingInfo) CopyInFields(src *CloudletOnboardingInfo) int {
 		changed++
 	}
 	if src.Status.Msgs != nil {
-		m.Status.Msgs = src.Status.Msgs
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddStatusMsgs(src.Status.Msgs...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveStatusMsgs(src.Status.Msgs...)
+		} else {
+			m.Status.Msgs = make([]string, 0)
+			m.Status.Msgs = append(m.Status.Msgs, src.Status.Msgs...)
+			changed++
+		}
 	} else if m.Status.Msgs != nil {
 		m.Status.Msgs = nil
 		changed++
 	}
 	if src.Errors != nil {
-		m.Errors = src.Errors
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddErrors(src.Errors...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveErrors(src.Errors...)
+		} else {
+			m.Errors = make([]string, 0)
+			m.Errors = append(m.Errors, src.Errors...)
+			changed++
+		}
 	} else if m.Errors != nil {
 		m.Errors = nil
 		changed++
@@ -15021,7 +15703,355 @@ func (m *CloudletInfo) DiffFields(o *CloudletInfo, fields map[string]struct{}) {
 	}
 }
 
+func (m *CloudletInfo) Clone() *CloudletInfo {
+	cp := &CloudletInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletInfo) AddErrors(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Errors {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Errors = append(m.Errors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveErrors(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Errors); i >= 0; i-- {
+		if _, found := remove[m.Errors[i]]; found {
+			m.Errors = append(m.Errors[:i], m.Errors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddFlavors(vals ...*FlavorInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Flavors {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Flavors = append(m.Flavors, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveFlavors(vals ...*FlavorInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Flavors); i >= 0; i-- {
+		if _, found := remove[m.Flavors[i].String()]; found {
+			m.Flavors = append(m.Flavors[:i], m.Flavors[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddStatusMsgs(vals ...string) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Status.Msgs {
+		cur[v] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v]; found {
+			continue // duplicate
+		}
+		m.Status.Msgs = append(m.Status.Msgs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveStatusMsgs(vals ...string) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v] = struct{}{}
+	}
+	for i := len(m.Status.Msgs); i >= 0; i-- {
+		if _, found := remove[m.Status.Msgs[i]]; found {
+			m.Status.Msgs = append(m.Status.Msgs[:i], m.Status.Msgs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddAvailabilityZones(vals ...*OSAZone) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.AvailabilityZones {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.AvailabilityZones = append(m.AvailabilityZones, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveAvailabilityZones(vals ...*OSAZone) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.AvailabilityZones); i >= 0; i-- {
+		if _, found := remove[m.AvailabilityZones[i].String()]; found {
+			m.AvailabilityZones = append(m.AvailabilityZones[:i], m.AvailabilityZones[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddOsImages(vals ...*OSImage) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.OsImages {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.OsImages = append(m.OsImages, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveOsImages(vals ...*OSImage) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.OsImages); i >= 0; i-- {
+		if _, found := remove[m.OsImages[i].String()]; found {
+			m.OsImages = append(m.OsImages[:i], m.OsImages[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddResourcesSnapshotPlatformVms(vals ...VmInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResourcesSnapshot.PlatformVms {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.ResourcesSnapshot.PlatformVms = append(m.ResourcesSnapshot.PlatformVms, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveResourcesSnapshotPlatformVms(vals ...VmInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.ResourcesSnapshot.PlatformVms); i >= 0; i-- {
+		if _, found := remove[m.ResourcesSnapshot.PlatformVms[i].String()]; found {
+			m.ResourcesSnapshot.PlatformVms = append(m.ResourcesSnapshot.PlatformVms[:i], m.ResourcesSnapshot.PlatformVms[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddResourcesSnapshotInfo(vals ...InfraResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResourcesSnapshot.Info {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.ResourcesSnapshot.Info = append(m.ResourcesSnapshot.Info, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveResourcesSnapshotInfo(vals ...InfraResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.ResourcesSnapshot.Info); i >= 0; i-- {
+		if _, found := remove[m.ResourcesSnapshot.Info[i].String()]; found {
+			m.ResourcesSnapshot.Info = append(m.ResourcesSnapshot.Info[:i], m.ResourcesSnapshot.Info[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddResourcesSnapshotClusterInsts(vals ...ClusterKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResourcesSnapshot.ClusterInsts {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.ResourcesSnapshot.ClusterInsts = append(m.ResourcesSnapshot.ClusterInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveResourcesSnapshotClusterInsts(vals ...ClusterKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.ResourcesSnapshot.ClusterInsts); i >= 0; i-- {
+		if _, found := remove[m.ResourcesSnapshot.ClusterInsts[i].GetKeyString()]; found {
+			m.ResourcesSnapshot.ClusterInsts = append(m.ResourcesSnapshot.ClusterInsts[:i], m.ResourcesSnapshot.ClusterInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddResourcesSnapshotVmAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResourcesSnapshot.VmAppInsts {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.ResourcesSnapshot.VmAppInsts = append(m.ResourcesSnapshot.VmAppInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveResourcesSnapshotVmAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.ResourcesSnapshot.VmAppInsts); i >= 0; i-- {
+		if _, found := remove[m.ResourcesSnapshot.VmAppInsts[i].GetKeyString()]; found {
+			m.ResourcesSnapshot.VmAppInsts = append(m.ResourcesSnapshot.VmAppInsts[:i], m.ResourcesSnapshot.VmAppInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddResourcesSnapshotK8SAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResourcesSnapshot.K8SAppInsts {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.ResourcesSnapshot.K8SAppInsts = append(m.ResourcesSnapshot.K8SAppInsts, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveResourcesSnapshotK8SAppInsts(vals ...AppInstRefKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.ResourcesSnapshot.K8SAppInsts); i >= 0; i-- {
+		if _, found := remove[m.ResourcesSnapshot.K8SAppInsts[i].GetKeyString()]; found {
+			m.ResourcesSnapshot.K8SAppInsts = append(m.ResourcesSnapshot.K8SAppInsts[:i], m.ResourcesSnapshot.K8SAppInsts[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletInfo) AddNodeInfos(vals ...*NodeInfo) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.NodeInfos {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.NodeInfos = append(m.NodeInfos, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletInfo) RemoveNodeInfos(vals ...*NodeInfo) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.NodeInfos); i >= 0; i-- {
+		if _, found := remove[m.NodeInfos[i].String()]; found {
+			m.NodeInfos = append(m.NodeInfos[:i], m.NodeInfos[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -15082,8 +16112,15 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 	}
 	if _, set := fmap["9"]; set {
 		if src.Errors != nil {
-			m.Errors = src.Errors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddErrors(src.Errors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveErrors(src.Errors...)
+			} else {
+				m.Errors = make([]string, 0)
+				m.Errors = append(m.Errors, src.Errors...)
+				changed++
+			}
 		} else if m.Errors != nil {
 			m.Errors = nil
 			changed++
@@ -15091,8 +16128,17 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 	}
 	if _, set := fmap["10"]; set {
 		if src.Flavors != nil {
-			m.Flavors = src.Flavors
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddFlavors(src.Flavors...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveFlavors(src.Flavors...)
+			} else {
+				m.Flavors = make([]*FlavorInfo, 0)
+				for k0, _ := range src.Flavors {
+					m.Flavors = append(m.Flavors, src.Flavors[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.Flavors != nil {
 			m.Flavors = nil
 			changed++
@@ -15131,8 +16177,15 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 		}
 		if _, set := fmap["11.6"]; set {
 			if src.Status.Msgs != nil {
-				m.Status.Msgs = src.Status.Msgs
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddStatusMsgs(src.Status.Msgs...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveStatusMsgs(src.Status.Msgs...)
+				} else {
+					m.Status.Msgs = make([]string, 0)
+					m.Status.Msgs = append(m.Status.Msgs, src.Status.Msgs...)
+					changed++
+				}
 			} else if m.Status.Msgs != nil {
 				m.Status.Msgs = nil
 				changed++
@@ -15147,8 +16200,17 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 	}
 	if _, set := fmap["13"]; set {
 		if src.AvailabilityZones != nil {
-			m.AvailabilityZones = src.AvailabilityZones
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddAvailabilityZones(src.AvailabilityZones...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveAvailabilityZones(src.AvailabilityZones...)
+			} else {
+				m.AvailabilityZones = make([]*OSAZone, 0)
+				for k0, _ := range src.AvailabilityZones {
+					m.AvailabilityZones = append(m.AvailabilityZones, src.AvailabilityZones[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.AvailabilityZones != nil {
 			m.AvailabilityZones = nil
 			changed++
@@ -15156,8 +16218,17 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 	}
 	if _, set := fmap["14"]; set {
 		if src.OsImages != nil {
-			m.OsImages = src.OsImages
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddOsImages(src.OsImages...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveOsImages(src.OsImages...)
+			} else {
+				m.OsImages = make([]*OSImage, 0)
+				for k0, _ := range src.OsImages {
+					m.OsImages = append(m.OsImages, src.OsImages[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.OsImages != nil {
 			m.OsImages = nil
 			changed++
@@ -15178,8 +16249,17 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 	if _, set := fmap["17"]; set {
 		if _, set := fmap["17.1"]; set {
 			if src.ResourcesSnapshot.PlatformVms != nil {
-				m.ResourcesSnapshot.PlatformVms = src.ResourcesSnapshot.PlatformVms
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddResourcesSnapshotPlatformVms(src.ResourcesSnapshot.PlatformVms...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveResourcesSnapshotPlatformVms(src.ResourcesSnapshot.PlatformVms...)
+				} else {
+					m.ResourcesSnapshot.PlatformVms = make([]VmInfo, 0)
+					for k1, _ := range src.ResourcesSnapshot.PlatformVms {
+						m.ResourcesSnapshot.PlatformVms = append(m.ResourcesSnapshot.PlatformVms, *src.ResourcesSnapshot.PlatformVms[k1].Clone())
+					}
+					changed++
+				}
 			} else if m.ResourcesSnapshot.PlatformVms != nil {
 				m.ResourcesSnapshot.PlatformVms = nil
 				changed++
@@ -15187,8 +16267,17 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 		}
 		if _, set := fmap["17.2"]; set {
 			if src.ResourcesSnapshot.Info != nil {
-				m.ResourcesSnapshot.Info = src.ResourcesSnapshot.Info
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddResourcesSnapshotInfo(src.ResourcesSnapshot.Info...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveResourcesSnapshotInfo(src.ResourcesSnapshot.Info...)
+				} else {
+					m.ResourcesSnapshot.Info = make([]InfraResource, 0)
+					for k1, _ := range src.ResourcesSnapshot.Info {
+						m.ResourcesSnapshot.Info = append(m.ResourcesSnapshot.Info, *src.ResourcesSnapshot.Info[k1].Clone())
+					}
+					changed++
+				}
 			} else if m.ResourcesSnapshot.Info != nil {
 				m.ResourcesSnapshot.Info = nil
 				changed++
@@ -15196,8 +16285,17 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 		}
 		if _, set := fmap["17.3"]; set {
 			if src.ResourcesSnapshot.ClusterInsts != nil {
-				m.ResourcesSnapshot.ClusterInsts = src.ResourcesSnapshot.ClusterInsts
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddResourcesSnapshotClusterInsts(src.ResourcesSnapshot.ClusterInsts...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveResourcesSnapshotClusterInsts(src.ResourcesSnapshot.ClusterInsts...)
+				} else {
+					m.ResourcesSnapshot.ClusterInsts = make([]ClusterKey, 0)
+					for k1, _ := range src.ResourcesSnapshot.ClusterInsts {
+						m.ResourcesSnapshot.ClusterInsts = append(m.ResourcesSnapshot.ClusterInsts, *src.ResourcesSnapshot.ClusterInsts[k1].Clone())
+					}
+					changed++
+				}
 			} else if m.ResourcesSnapshot.ClusterInsts != nil {
 				m.ResourcesSnapshot.ClusterInsts = nil
 				changed++
@@ -15205,8 +16303,17 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 		}
 		if _, set := fmap["17.4"]; set {
 			if src.ResourcesSnapshot.VmAppInsts != nil {
-				m.ResourcesSnapshot.VmAppInsts = src.ResourcesSnapshot.VmAppInsts
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddResourcesSnapshotVmAppInsts(src.ResourcesSnapshot.VmAppInsts...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveResourcesSnapshotVmAppInsts(src.ResourcesSnapshot.VmAppInsts...)
+				} else {
+					m.ResourcesSnapshot.VmAppInsts = make([]AppInstRefKey, 0)
+					for k1, _ := range src.ResourcesSnapshot.VmAppInsts {
+						m.ResourcesSnapshot.VmAppInsts = append(m.ResourcesSnapshot.VmAppInsts, *src.ResourcesSnapshot.VmAppInsts[k1].Clone())
+					}
+					changed++
+				}
 			} else if m.ResourcesSnapshot.VmAppInsts != nil {
 				m.ResourcesSnapshot.VmAppInsts = nil
 				changed++
@@ -15214,8 +16321,17 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 		}
 		if _, set := fmap["17.5"]; set {
 			if src.ResourcesSnapshot.K8SAppInsts != nil {
-				m.ResourcesSnapshot.K8SAppInsts = src.ResourcesSnapshot.K8SAppInsts
-				changed++
+				if updateListAction == "add" {
+					changed += m.AddResourcesSnapshotK8SAppInsts(src.ResourcesSnapshot.K8SAppInsts...)
+				} else if updateListAction == "remove" {
+					changed += m.RemoveResourcesSnapshotK8SAppInsts(src.ResourcesSnapshot.K8SAppInsts...)
+				} else {
+					m.ResourcesSnapshot.K8SAppInsts = make([]AppInstRefKey, 0)
+					for k1, _ := range src.ResourcesSnapshot.K8SAppInsts {
+						m.ResourcesSnapshot.K8SAppInsts = append(m.ResourcesSnapshot.K8SAppInsts, *src.ResourcesSnapshot.K8SAppInsts[k1].Clone())
+					}
+					changed++
+				}
 			} else if m.ResourcesSnapshot.K8SAppInsts != nil {
 				m.ResourcesSnapshot.K8SAppInsts = nil
 				changed++
@@ -15236,9 +16352,23 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 	}
 	if _, set := fmap["20"]; set {
 		if src.Properties != nil {
-			m.Properties = make(map[string]string)
-			for k0, _ := range src.Properties {
-				m.Properties[k0] = src.Properties[k0]
+			if updateListAction == "add" {
+				for k0, v := range src.Properties {
+					m.Properties[k0] = v
+					changed++
+				}
+			} else if updateListAction == "remove" {
+				for k0, _ := range src.Properties {
+					if _, ok := m.Properties[k0]; ok {
+						delete(m.Properties, k0)
+						changed++
+					}
+				}
+			} else {
+				m.Properties = make(map[string]string)
+				for k0, v := range src.Properties {
+					m.Properties[k0] = v
+				}
 				changed++
 			}
 		} else if m.Properties != nil {
@@ -15248,8 +16378,17 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 	}
 	if _, set := fmap["21"]; set {
 		if src.NodeInfos != nil {
-			m.NodeInfos = src.NodeInfos
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddNodeInfos(src.NodeInfos...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveNodeInfos(src.NodeInfos...)
+			} else {
+				m.NodeInfos = make([]*NodeInfo, 0)
+				for k0, _ := range src.NodeInfos {
+					m.NodeInfos = append(m.NodeInfos, src.NodeInfos[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.NodeInfos != nil {
 			m.NodeInfos = nil
 			changed++
@@ -16192,6 +17331,12 @@ func IgnoreCloudletInfoFields(taglist string) cmp.Option {
 		names = append(names, "CompatibilityVersion")
 	}
 	return cmpopts.IgnoreFields(CloudletInfo{}, names...)
+}
+
+func (m *CloudletMetrics) Clone() *CloudletMetrics {
+	cp := &CloudletMetrics{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *CloudletMetrics) CopyInFields(src *CloudletMetrics) int {

@@ -759,6 +759,12 @@ func (m *CloudletPoolKey) Matches(o *CloudletPoolKey, fopts ...MatchOpt) bool {
 	return true
 }
 
+func (m *CloudletPoolKey) Clone() *CloudletPoolKey {
+	cp := &CloudletPoolKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *CloudletPoolKey) CopyInFields(src *CloudletPoolKey) int {
 	changed := 0
 	if m.Organization != src.Organization {
@@ -1022,7 +1028,45 @@ func (m *CloudletPool) ValidateUpdateFields() error {
 	return nil
 }
 
+func (m *CloudletPool) Clone() *CloudletPool {
+	cp := &CloudletPool{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletPool) AddCloudlets(vals ...CloudletKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Cloudlets {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Cloudlets = append(m.Cloudlets, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletPool) RemoveCloudlets(vals ...CloudletKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Cloudlets); i >= 0; i-- {
+		if _, found := remove[m.Cloudlets[i].GetKeyString()]; found {
+			m.Cloudlets = append(m.Cloudlets[:i], m.Cloudlets[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *CloudletPool) CopyInFields(src *CloudletPool) int {
+	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
 	if _, set := fmap["2"]; set {
@@ -1041,8 +1085,17 @@ func (m *CloudletPool) CopyInFields(src *CloudletPool) int {
 	}
 	if _, set := fmap["3"]; set {
 		if src.Cloudlets != nil {
-			m.Cloudlets = src.Cloudlets
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddCloudlets(src.Cloudlets...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveCloudlets(src.Cloudlets...)
+			} else {
+				m.Cloudlets = make([]CloudletKey, 0)
+				for k0, _ := range src.Cloudlets {
+					m.Cloudlets = append(m.Cloudlets, *src.Cloudlets[k0].Clone())
+				}
+				changed++
+			}
 		} else if m.Cloudlets != nil {
 			m.Cloudlets = nil
 			changed++
@@ -1860,6 +1913,12 @@ func IgnoreCloudletPoolFields(taglist string) cmp.Option {
 		names = append(names, "UpdatedAt")
 	}
 	return cmpopts.IgnoreFields(CloudletPool{}, names...)
+}
+
+func (m *CloudletPoolMember) Clone() *CloudletPoolMember {
+	cp := &CloudletPoolMember{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *CloudletPoolMember) CopyInFields(src *CloudletPoolMember) int {

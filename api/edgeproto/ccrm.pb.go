@@ -852,6 +852,12 @@ func encodeVarintCcrm(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *StreamStatus) Clone() *StreamStatus {
+	cp := &StreamStatus{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *StreamStatus) CopyInFields(src *StreamStatus) int {
 	changed := 0
 	if m.CacheUpdateType != src.CacheUpdateType {
@@ -882,40 +888,35 @@ func (m *StreamStatus) ValidateEnums() error {
 func (s *StreamStatus) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *InfraResourceMap) Clone() *InfraResourceMap {
+	cp := &InfraResourceMap{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *InfraResourceMap) CopyInFields(src *InfraResourceMap) int {
+	updateListAction := "replace"
 	changed := 0
 	if src.InfraResources != nil {
-		m.InfraResources = make(map[string]*InfraResource)
-		for k0, _ := range src.InfraResources {
-			m.InfraResources[k0] = &InfraResource{}
-			if m.InfraResources[k0].Name != src.InfraResources[k0].Name {
-				m.InfraResources[k0].Name = src.InfraResources[k0].Name
+		if updateListAction == "add" {
+			for k0, v := range src.InfraResources {
+				v = v.Clone()
+				m.InfraResources[k0] = v
 				changed++
 			}
-			if m.InfraResources[k0].Value != src.InfraResources[k0].Value {
-				m.InfraResources[k0].Value = src.InfraResources[k0].Value
-				changed++
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.InfraResources {
+				if _, ok := m.InfraResources[k0]; ok {
+					delete(m.InfraResources, k0)
+					changed++
+				}
 			}
-			if m.InfraResources[k0].InfraMaxValue != src.InfraResources[k0].InfraMaxValue {
-				m.InfraResources[k0].InfraMaxValue = src.InfraResources[k0].InfraMaxValue
-				changed++
+		} else {
+			m.InfraResources = make(map[string]*InfraResource)
+			for k0, v := range src.InfraResources {
+				m.InfraResources[k0] = v.Clone()
 			}
-			if m.InfraResources[k0].QuotaMaxValue != src.InfraResources[k0].QuotaMaxValue {
-				m.InfraResources[k0].QuotaMaxValue = src.InfraResources[k0].QuotaMaxValue
-				changed++
-			}
-			if m.InfraResources[k0].Description != src.InfraResources[k0].Description {
-				m.InfraResources[k0].Description = src.InfraResources[k0].Description
-				changed++
-			}
-			if m.InfraResources[k0].Units != src.InfraResources[k0].Units {
-				m.InfraResources[k0].Units = src.InfraResources[k0].Units
-				changed++
-			}
-			if m.InfraResources[k0].AlertThreshold != src.InfraResources[k0].AlertThreshold {
-				m.InfraResources[k0].AlertThreshold = src.InfraResources[k0].AlertThreshold
-				changed++
-			}
+			changed++
 		}
 	} else if m.InfraResources != nil {
 		m.InfraResources = nil
@@ -945,7 +946,45 @@ func (m *InfraResourceMap) ValidateEnums() error {
 func (s *InfraResourceMap) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *ClusterResourcesReq) Clone() *ClusterResourcesReq {
+	cp := &ClusterResourcesReq{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *ClusterResourcesReq) AddVmResources(vals ...VMResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.VmResources {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.VmResources = append(m.VmResources, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterResourcesReq) RemoveVmResources(vals ...VMResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.VmResources); i >= 0; i-- {
+		if _, found := remove[m.VmResources[i].GetKey().GetKeyString()]; found {
+			m.VmResources = append(m.VmResources[:i], m.VmResources[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *ClusterResourcesReq) CopyInFields(src *ClusterResourcesReq) int {
+	updateListAction := "replace"
 	changed := 0
 	if src.CloudletKey != nil {
 		if m.CloudletKey == nil {
@@ -968,44 +1007,41 @@ func (m *ClusterResourcesReq) CopyInFields(src *ClusterResourcesReq) int {
 		changed++
 	}
 	if src.VmResources != nil {
-		m.VmResources = src.VmResources
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddVmResources(src.VmResources...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveVmResources(src.VmResources...)
+		} else {
+			m.VmResources = make([]VMResource, 0)
+			for k0, _ := range src.VmResources {
+				m.VmResources = append(m.VmResources, *src.VmResources[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.VmResources != nil {
 		m.VmResources = nil
 		changed++
 	}
 	if src.InfraResources != nil {
-		m.InfraResources = make(map[string]*InfraResource)
-		for k0, _ := range src.InfraResources {
-			m.InfraResources[k0] = &InfraResource{}
-			if m.InfraResources[k0].Name != src.InfraResources[k0].Name {
-				m.InfraResources[k0].Name = src.InfraResources[k0].Name
+		if updateListAction == "add" {
+			for k0, v := range src.InfraResources {
+				v = v.Clone()
+				m.InfraResources[k0] = v
 				changed++
 			}
-			if m.InfraResources[k0].Value != src.InfraResources[k0].Value {
-				m.InfraResources[k0].Value = src.InfraResources[k0].Value
-				changed++
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.InfraResources {
+				if _, ok := m.InfraResources[k0]; ok {
+					delete(m.InfraResources, k0)
+					changed++
+				}
 			}
-			if m.InfraResources[k0].InfraMaxValue != src.InfraResources[k0].InfraMaxValue {
-				m.InfraResources[k0].InfraMaxValue = src.InfraResources[k0].InfraMaxValue
-				changed++
+		} else {
+			m.InfraResources = make(map[string]*InfraResource)
+			for k0, v := range src.InfraResources {
+				m.InfraResources[k0] = v.Clone()
 			}
-			if m.InfraResources[k0].QuotaMaxValue != src.InfraResources[k0].QuotaMaxValue {
-				m.InfraResources[k0].QuotaMaxValue = src.InfraResources[k0].QuotaMaxValue
-				changed++
-			}
-			if m.InfraResources[k0].Description != src.InfraResources[k0].Description {
-				m.InfraResources[k0].Description = src.InfraResources[k0].Description
-				changed++
-			}
-			if m.InfraResources[k0].Units != src.InfraResources[k0].Units {
-				m.InfraResources[k0].Units = src.InfraResources[k0].Units
-				changed++
-			}
-			if m.InfraResources[k0].AlertThreshold != src.InfraResources[k0].AlertThreshold {
-				m.InfraResources[k0].AlertThreshold = src.InfraResources[k0].AlertThreshold
-				changed++
-			}
+			changed++
 		}
 	} else if m.InfraResources != nil {
 		m.InfraResources = nil
@@ -1068,7 +1104,107 @@ func (s *ClusterResourcesReq) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *ClusterResourceMetricReq) Clone() *ClusterResourceMetricReq {
+	cp := &ClusterResourceMetricReq{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *ClusterResourceMetricReq) AddResMetricTags(vals ...*MetricTag) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResMetric.Tags {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.ResMetric.Tags = append(m.ResMetric.Tags, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterResourceMetricReq) RemoveResMetricTags(vals ...*MetricTag) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.ResMetric.Tags); i >= 0; i-- {
+		if _, found := remove[m.ResMetric.Tags[i].String()]; found {
+			m.ResMetric.Tags = append(m.ResMetric.Tags[:i], m.ResMetric.Tags[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *ClusterResourceMetricReq) AddResMetricVals(vals ...*MetricVal) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.ResMetric.Vals {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.ResMetric.Vals = append(m.ResMetric.Vals, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterResourceMetricReq) RemoveResMetricVals(vals ...*MetricVal) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.ResMetric.Vals); i >= 0; i-- {
+		if _, found := remove[m.ResMetric.Vals[i].String()]; found {
+			m.ResMetric.Vals = append(m.ResMetric.Vals[:i], m.ResMetric.Vals[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *ClusterResourceMetricReq) AddVmResources(vals ...VMResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.VmResources {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.VmResources = append(m.VmResources, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterResourceMetricReq) RemoveVmResources(vals ...VMResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.VmResources); i >= 0; i-- {
+		if _, found := remove[m.VmResources[i].GetKey().GetKeyString()]; found {
+			m.VmResources = append(m.VmResources[:i], m.VmResources[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *ClusterResourceMetricReq) CopyInFields(src *ClusterResourceMetricReq) int {
+	updateListAction := "replace"
 	changed := 0
 	if src.CloudletKey != nil {
 		if m.CloudletKey == nil {
@@ -1107,15 +1243,33 @@ func (m *ClusterResourceMetricReq) CopyInFields(src *ClusterResourceMetricReq) i
 			changed++
 		}
 		if src.ResMetric.Tags != nil {
-			m.ResMetric.Tags = src.ResMetric.Tags
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddResMetricTags(src.ResMetric.Tags...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveResMetricTags(src.ResMetric.Tags...)
+			} else {
+				m.ResMetric.Tags = make([]*MetricTag, 0)
+				for k1, _ := range src.ResMetric.Tags {
+					m.ResMetric.Tags = append(m.ResMetric.Tags, src.ResMetric.Tags[k1].Clone())
+				}
+				changed++
+			}
 		} else if m.ResMetric.Tags != nil {
 			m.ResMetric.Tags = nil
 			changed++
 		}
 		if src.ResMetric.Vals != nil {
-			m.ResMetric.Vals = src.ResMetric.Vals
-			changed++
+			if updateListAction == "add" {
+				changed += m.AddResMetricVals(src.ResMetric.Vals...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveResMetricVals(src.ResMetric.Vals...)
+			} else {
+				m.ResMetric.Vals = make([]*MetricVal, 0)
+				for k1, _ := range src.ResMetric.Vals {
+					m.ResMetric.Vals = append(m.ResMetric.Vals, src.ResMetric.Vals[k1].Clone())
+				}
+				changed++
+			}
 		} else if m.ResMetric.Vals != nil {
 			m.ResMetric.Vals = nil
 			changed++
@@ -1125,8 +1279,17 @@ func (m *ClusterResourceMetricReq) CopyInFields(src *ClusterResourceMetricReq) i
 		changed++
 	}
 	if src.VmResources != nil {
-		m.VmResources = src.VmResources
-		changed++
+		if updateListAction == "add" {
+			changed += m.AddVmResources(src.VmResources...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveVmResources(src.VmResources...)
+		} else {
+			m.VmResources = make([]VMResource, 0)
+			for k0, _ := range src.VmResources {
+				m.VmResources = append(m.VmResources, *src.VmResources[k0].Clone())
+			}
+			changed++
+		}
 	} else if m.VmResources != nil {
 		m.VmResources = nil
 		changed++
@@ -1191,6 +1354,12 @@ func (s *ClusterResourceMetricReq) ClearTagged(tags map[string]struct{}) {
 			s.VmResources[ii].ClearTagged(tags)
 		}
 	}
+}
+
+func (m *NameSanitizeReq) Clone() *NameSanitizeReq {
+	cp := &NameSanitizeReq{}
+	cp.DeepCopyIn(m)
+	return cp
 }
 
 func (m *NameSanitizeReq) CopyInFields(src *NameSanitizeReq) int {

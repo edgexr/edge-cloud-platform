@@ -295,6 +295,12 @@ func encodeVarintOrg(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *Organization) Clone() *Organization {
+	cp := &Organization{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *Organization) CopyInFields(src *Organization) int {
 	changed := 0
 	if m.Name != src.Name {
@@ -314,6 +320,43 @@ func (m *Organization) ValidateEnums() error {
 }
 
 func (s *Organization) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *OrganizationData) Clone() *OrganizationData {
+	cp := &OrganizationData{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *OrganizationData) AddOrgs(vals ...Organization) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Orgs {
+		cur[v.String()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.String()]; found {
+			continue // duplicate
+		}
+		m.Orgs = append(m.Orgs, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *OrganizationData) RemoveOrgs(vals ...Organization) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.String()] = struct{}{}
+	}
+	for i := len(m.Orgs); i >= 0; i-- {
+		if _, found := remove[m.Orgs[i].String()]; found {
+			m.Orgs = append(m.Orgs[:i], m.Orgs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *OrganizationData) DeepCopyIn(src *OrganizationData) {

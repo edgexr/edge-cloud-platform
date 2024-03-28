@@ -135,6 +135,12 @@ func encodeVarintDecimal(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *Udec64) Clone() *Udec64 {
+	cp := &Udec64{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
 func (m *Udec64) CopyInFields(src *Udec64) int {
 	changed := 0
 	if m.Whole != src.Whole {

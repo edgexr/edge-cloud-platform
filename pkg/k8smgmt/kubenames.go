@@ -41,7 +41,7 @@ type KubeNames struct {
 	ServiceNames               []string
 	DeveloperDefinedNamespaces []string // namespaces included by developer in manifest
 	KconfName                  string
-	KconfEnv                   string
+	KconfArg                   string
 	DeploymentType             string
 	ImagePullSecrets           []string
 	ImagePaths                 []string
@@ -56,6 +56,10 @@ func GetKconfName(clusterInst *edgeproto.ClusterInst) string {
 	return fmt.Sprintf("%s.%s.kubeconfig",
 		clusterInst.Key.ClusterKey.Name,
 		clusterInst.Key.CloudletKey.Organization)
+}
+
+func GetKconfArg(clusterInst *edgeproto.ClusterInst) string {
+	return "--kubeconfig=" + GetKconfName(clusterInst)
 }
 
 func GetK8sNodeNameSuffix(clusterInstKey *edgeproto.ClusterInstKey) string {
@@ -144,7 +148,7 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 		baseName := strings.TrimSuffix(kubeNames.KconfName, ".kubeconfig")
 		kubeNames.KconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.MultitenantNamespace)
 	}
-	kubeNames.KconfEnv = "KUBECONFIG=" + kubeNames.KconfName
+	kubeNames.KconfArg = GetKconfArg(clusterInst)
 	kubeNames.DeploymentType = app.Deployment
 	if app.ImagePath != "" {
 		kubeNames.ImagePaths = append(kubeNames.ImagePaths, app.ImagePath)

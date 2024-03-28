@@ -54,8 +54,8 @@ func (v *VMPlatform) getGCSStorageClient(ctx context.Context, gpuDriver *edgepro
 }
 
 // Fetches driver package:
-//        * From local cache, if package is not corrupted/outdated
-//        * else, fetch from cloud
+//   - From local cache, if package is not corrupted/outdated
+//   - else, fetch from cloud
 func (v *VMPlatform) getGPUDriverPackagePath(ctx context.Context, storageClient *gcs.GCSClient, build *edgeproto.GPUDriverBuild) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "getGPUDriverPackagePath", "build", build)
 	// Ensure local cache directory exists
@@ -115,8 +115,8 @@ func (v *VMPlatform) downloadGPUDriverLicenseConfig(ctx context.Context, storage
 }
 
 // Fetches driver license config:
-//        * From local cache
-//        * In not in local cache, then fetch from cloud
+//   - From local cache
+//   - In not in local cache, then fetch from cloud
 func (v *VMPlatform) getGPUDriverLicenseConfigPath(ctx context.Context, storageClient *gcs.GCSClient, cloudlet *edgeproto.Cloudlet, driver *edgeproto.GPUDriver) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "getGPUDriverLicenseConfigPath", "cloudlet key", cloudlet.Key, "driver", driver)
 	// Look in local cache first
@@ -393,7 +393,7 @@ func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Cli
 	}
 	start := time.Now()
 	for {
-		done, err := k8smgmt.CheckPodsStatus(ctx, rootLBClient, kubeNames.KconfEnv, GPUOperatorNamespace, GPUOperatorSelector, waitFor, start)
+		done, err := k8smgmt.CheckPodsStatus(ctx, rootLBClient, kubeNames.KconfArg, GPUOperatorNamespace, GPUOperatorSelector, waitFor, start)
 		if err != nil {
 			return err
 		}

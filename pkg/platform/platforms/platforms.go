@@ -28,6 +28,7 @@ import (
 	k8sop "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-operator"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kindinfra"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/localhost"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/mock"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vcd"
@@ -57,6 +58,7 @@ var builders = []platform.PlatformBuilder{
 	k8sop.NewPlatform,
 	kindinfra.NewPlatform,
 	mock.NewPlatform,
+	localhost.NewPlatform,
 }
 
 type PlatformsData struct {

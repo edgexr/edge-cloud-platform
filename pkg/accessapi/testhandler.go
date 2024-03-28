@@ -114,3 +114,7 @@ func (s *TestHandler) CreateCloudletNode(ctx context.Context, node *edgeproto.Cl
 func (s *TestHandler) DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error {
 	return nil
 }
+
+func (s *TestHandler) GetAppSecretVars(ctx context.Context, appKey *edgeproto.AppKey) (map[string]string, error) {
+	return map[string]string{}, nil
+}

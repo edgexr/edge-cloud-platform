@@ -19,11 +19,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -35,9 +36,9 @@ const NoScheduleMasterTaintAdd NoScheduleMasterTaintAction = "master-noschedule-
 const NoScheduleMasterTaintRemove NoScheduleMasterTaintAction = "master-noschedule-taint-remove"
 const NoScheduleMasterTaintNone NoScheduleMasterTaintAction = "master-noschedule-taint-none"
 
-func DeleteNodes(ctx context.Context, client ssh.Client, kconfName string, nodes []string) error {
+func DeleteNodes(ctx context.Context, client ssh.Client, kconfArg string, nodes []string) error {
 	for _, node := range nodes {
-		cmd := fmt.Sprintf("KUBECONFIG=%s kubectl delete node %s", kconfName, node)
+		cmd := fmt.Sprintf("kubectl %s delete node %s", kconfArg, node)
 		log.SpanLog(ctx, log.DebugLevelInfra, "k8smgmt delete node", "node", node, "cmd", cmd)
 		out, err := client.Output(cmd)
 		if err != nil {
@@ -107,11 +108,11 @@ func ClearCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto
 	}
 	// For a single-tenant cluster, all config will be in one dir
 	configDir, _ := getConfigDirName(names)
-	if err := ClearClusterConfig(ctx, client, configDir, "", names.KconfEnv); err != nil {
+	if err := ClearClusterConfig(ctx, client, configDir, "", names.KconfArg); err != nil {
 		return err
 	}
 	// For a multi-tenant cluster, each namespace will have a config dir
-	cmd := fmt.Sprintf("%s kubectl get ns -o name", names.KconfEnv)
+	cmd := fmt.Sprintf("kubectl %s get ns -o name", names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error getting namespaces, %s: %s, %s", cmd, out, err)
@@ -126,11 +127,11 @@ func ClearCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto
 		nsNames := *names
 		nsNames.MultitenantNamespace = str
 		configDir, _ := getConfigDirName(&nsNames)
-		err = ClearClusterConfig(ctx, client, configDir, str, names.KconfEnv)
+		err = ClearClusterConfig(ctx, client, configDir, str, names.KconfArg)
 		if err != nil {
 			return err
 		}
-		cmd = fmt.Sprintf("%s kubectl delete ns %s", names.KconfEnv, str)
+		cmd = fmt.Sprintf("kubectl %s delete ns %s", names.KconfArg, str)
 		log.SpanLog(ctx, log.DebugLevelInfra, "deleting extra namespace", "cmd", cmd)
 		out, err = client.Output(cmd)
 		if err != nil {
@@ -139,7 +140,7 @@ func ClearCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto
 	}
 
 	// delete all helm installs (and leftover junk)
-	cmd = fmt.Sprintf("%s helm ls -q", names.KconfEnv)
+	cmd = fmt.Sprintf("helm %s ls -q", names.KconfArg)
 	out, err = client.Output(cmd)
 	if err != nil {
 		if strings.Contains(out, "could not find tiller") {
@@ -155,7 +156,7 @@ func ClearCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto
 		if name == "" {
 			continue
 		}
-		cmd = fmt.Sprintf("%s helm delete %s", names.KconfEnv, name)
+		cmd = fmt.Sprintf("helm %s delete %s", names.KconfArg, name)
 		log.SpanLog(ctx, log.DebugLevelInfra, "deleting helm install", "cmd", cmd)
 		out, err = client.Output(cmd)
 		if err != nil && !strings.Contains(out, "not found") {
@@ -166,7 +167,7 @@ func ClearCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto
 	// If helm prometheus-operator 7.1.1 was installed, pr-kubelet services will
 	// be leftover. Need to delete manually.
 	if len(helmServs) > 0 {
-		cmd = fmt.Sprintf("%s kubectl delete --ignore-not-found --namespace=kube-system service %s", names.KconfEnv, strings.Join(helmServs, " "))
+		cmd = fmt.Sprintf("kubectl %s delete --ignore-not-found --namespace=kube-system service %s", names.KconfArg, strings.Join(helmServs, " "))
 		log.SpanLog(ctx, log.DebugLevelInfra, "deleting helm services", "cmd", cmd)
 		out, err = client.Output(cmd)
 		if err != nil {
@@ -175,7 +176,7 @@ func ClearCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto
 	}
 	// If helm prometheus-operator was installed, CRDs will be leftover.
 	// Need to delete manually.
-	cmd = fmt.Sprintf("%s kubectl delete --ignore-not-found customresourcedefinitions prometheuses.monitoring.coreos.com servicemonitors.monitoring.coreos.com podmonitors.monitoring.coreos.com alertmanagers.monitoring.coreos.com alertmanagerconfigs.monitoring.coreos.com prometheusrules.monitoring.coreos.com probes.monitoring.coreos.com thanosrulers.monitoring.coreos.com", names.KconfEnv)
+	cmd = fmt.Sprintf("kubectl %s delete --ignore-not-found customresourcedefinitions prometheuses.monitoring.coreos.com servicemonitors.monitoring.coreos.com podmonitors.monitoring.coreos.com alertmanagers.monitoring.coreos.com alertmanagerconfigs.monitoring.coreos.com prometheusrules.monitoring.coreos.com probes.monitoring.coreos.com thanosrulers.monitoring.coreos.com", names.KconfArg)
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting prometheus CRDs", "cmd", cmd)
 	out, err = client.Output(cmd)
 	if err != nil {
@@ -184,7 +185,7 @@ func ClearCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto
 	return nil
 }
 
-func ClearClusterConfig(ctx context.Context, client ssh.Client, configDir, namespace, kconfEnv string) error {
+func ClearClusterConfig(ctx context.Context, client ssh.Client, configDir, namespace, kconfArg string) error {
 	// if config dir doesn't exist, then there's no config
 	cmd := fmt.Sprintf("stat %s", configDir)
 	out, err := client.Output(cmd)
@@ -200,7 +201,7 @@ func ClearClusterConfig(ctx context.Context, client ssh.Client, configDir, names
 		nsArg = "-n " + namespace
 	}
 	// delete all AppInsts configs in cluster
-	cmd = fmt.Sprintf("%s kubectl delete %s -f %s", kconfEnv, nsArg, configDir)
+	cmd = fmt.Sprintf("kubectl %s delete %s -f %s", kconfArg, nsArg, configDir)
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting cluster app", "cmd", cmd)
 	out, err = client.Output(cmd)
 	// bash returns "does not exist", zsh returns "no matches found"
@@ -236,8 +237,8 @@ type Nodes struct {
 	Items      []v1.Node `json:"items"`
 }
 
-func GetNodeInfos(ctx context.Context, client ssh.Client, kconfEnv string) ([]*edgeproto.NodeInfo, error) {
-	cmd := fmt.Sprintf("%s kubectl get nodes --output=json", kconfEnv)
+func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*edgeproto.NodeInfo, error) {
+	cmd := fmt.Sprintf("kubectl %s get nodes --output=json", kconfArg)
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetNodeInfo", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -305,4 +306,51 @@ func convertNodeResource(res v1.ResourceName, quantity resource.Quantity) (strin
 		dec.Whole /= scale
 	}
 	return name, dec, nil
+}
+
+// CheckNodesReady returns the number of ready and not ready nodes.
+func CheckNodesReady(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst) (int, int, error) {
+	kconf := GetKconfName(clusterInst)
+	cmd := fmt.Sprintf("kubectl --kubeconfig=%s get nodes", kconf)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return 0, 0, err
+	}
+	statusIdx := 1
+	readyCount := 0
+	notReadyCount := 0
+	lines := strings.Split(out, "\n")
+	for _, line := range lines {
+		parts := strings.Fields(line)
+		if len(parts) <= statusIdx {
+			log.SpanLog(ctx, log.DebugLevelInfra, "check nodes ready ignoring invalid line, expected more parts", "parts", parts, "statusIdx", statusIdx)
+			continue
+		}
+		if parts[statusIdx] == "STATUS" {
+			continue // header
+		}
+		if parts[statusIdx] == "Ready" {
+			readyCount++
+		} else {
+			notReadyCount++
+		}
+	}
+	return readyCount, notReadyCount, nil
+}
+
+func WaitNodesReady(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, wantReadyNodesCount int, delay time.Duration, retries int) error {
+	for ii := 0; ii < retries; ii++ {
+		ready, notReady, err := CheckNodesReady(ctx, client, clusterInst)
+		if err == nil && ready >= wantReadyNodesCount {
+			return nil
+		}
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "wait nodes ready check got error, will retry", "cluster", clusterInst.Key, "err", err)
+		} else {
+			log.SpanLog(ctx, log.DebugLevelInfra, "wait nodes ready not ready yet", "cluster", clusterInst.Key, "ready", ready, "not ready", notReady, "want ready", wantReadyNodesCount)
+		}
+		time.Sleep(delay)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "wait nodes ready timed out", "cluster", clusterInst.Key)
+	return fmt.Errorf("timed out waiting for %s nodes to be ready", clusterInst.Key.GetKeyString())
 }

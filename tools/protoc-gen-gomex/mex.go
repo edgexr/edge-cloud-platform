@@ -881,6 +881,108 @@ func (m *mex) generateAllStringFieldsMap(afg AllFieldsGen, names, nums []string,
 	}
 }
 
+func (m *mex) generateListAddRemoves(parents []string, top, desc *generator.Descriptor, visited []*generator.Descriptor) {
+	if gensupport.WasVisited(desc, visited) {
+		return
+	}
+	msgtyp := m.gen.TypeName(top)
+	for ii, field := range desc.DescriptorProto.Field {
+		if ii == 0 && *field.Name == "fields" {
+			continue
+		}
+		name := generator.CamelCase(*field.Name)
+		if *field.Label != descriptor.FieldDescriptorProto_LABEL_REPEATED {
+			if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+				subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
+				m.generateListAddRemoves(append(parents, name), top, subDesc, append(visited, desc))
+			}
+			continue
+		}
+		mapType := m.support.GetMapType(m.gen, field)
+		if mapType != nil {
+			continue
+		}
+		hierName := strings.Join(append(parents, name), ".")
+		hierFuncName := strings.Join(append(parents, name), "")
+		ref := ""
+		if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE && gogoproto.IsNullable(field) {
+			ref = "*"
+		}
+		typ := ""
+		keyValFunc := ".String()"
+		keyType := "string"
+
+		if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+			subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
+			subMsg := subDesc.DescriptorProto
+			typ = m.support.FQTypeName(m.gen, subDesc)
+			if GetObjKey(subMsg) || gensupport.GetObjAndKey(subMsg) {
+				keyValFunc = ".GetKeyString()"
+			} else if gensupport.GetMessageKey(subMsg) != nil || gensupport.GetStringKeyField(subMsg) != "" {
+				keyValFunc = ".GetKey().GetKeyString()"
+			}
+		} else {
+			typ = m.support.GoType(m.gen, field)
+			keyType = typ
+			keyValFunc = ""
+		}
+
+		m.P("func (m *", msgtyp, ") Add", hierFuncName, "(vals... ", ref, typ, ") int {")
+		m.P("changes := 0")
+		m.P("cur := make(map[", keyType, "]struct{})")
+		m.P("for _, v := range m.", hierName, "{")
+		m.P("  cur[v", keyValFunc, "] = struct{}{}")
+		m.P("}")
+		m.P("for _, v := range vals {")
+		m.P("  if _, found := cur[v", keyValFunc, "]; found {")
+		m.P("    continue // duplicate")
+		m.P("  }")
+		m.P("  m.", hierName, "= append(m.", hierName, ", v)")
+		m.P("  changes++")
+		m.P("}")
+		m.P("return changes")
+		m.P("}")
+		m.P()
+
+		m.P("func (m *", msgtyp, ") Remove", hierFuncName, "(vals... ", ref, typ, ") int {")
+		m.P("changes := 0")
+		m.P("remove := make(map[", keyType, "]struct{})")
+		m.P("for _, v := range vals {")
+		m.P("  remove[v", keyValFunc, "] = struct{}{}")
+		m.P("}")
+		m.P("for i := len(m.", hierName, "); i >= 0; i-- {")
+		m.P("  if _, found := remove[m.", hierName, "[i]", keyValFunc, "]; found {")
+		m.P("    m.", hierName, " = append(m.", hierName, "[:i], m.", hierName, "[i+1:]...)")
+		m.P("    changes++")
+		m.P("  }")
+		m.P("}")
+		m.P("return changes")
+		m.P("}")
+		m.P()
+	}
+}
+
+func (m *mex) needsUpdateListActionVar(desc *generator.Descriptor, visited []*generator.Descriptor) bool {
+	if gensupport.WasVisited(desc, visited) {
+		return false
+	}
+	for ii, field := range desc.DescriptorProto.Field {
+		if ii == 0 && *field.Name == "fields" {
+			continue
+		}
+		if *field.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED {
+			return true
+		}
+		if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+			subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
+			if m.needsUpdateListActionVar(subDesc, append(visited, desc)) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (m *mex) generateCopyIn(parents, nums []string, desc *generator.Descriptor, visited []*generator.Descriptor, hasGrpcFields bool) {
 	if gensupport.WasVisited(desc, visited) {
 		return
@@ -893,17 +995,23 @@ func (m *mex) generateCopyIn(parents, nums []string, desc *generator.Descriptor,
 			// no support for copy OneOf fields
 			continue
 		}
+		if *field.Name == gensupport.UpdateListActionField {
+			continue
+		}
 
 		name := generator.CamelCase(*field.Name)
 		hierName := strings.Join(append(parents, name), ".")
+		hierFuncName := strings.Join(append(parents, name), "")
 		num := fmt.Sprintf("%d", *field.Number)
 		idx := ""
 		nullableMessage := false
+		ref := ""
 		if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE && gogoproto.IsNullable(field) {
 			nullableMessage = true
+			ref = "*"
 		}
 		mapType := m.support.GetMapType(m.gen, field)
-		skipMap := false
+		skipMessage := false
 
 		if hasGrpcFields {
 			numStr := strings.Join(append(nums, num), ".")
@@ -913,71 +1021,107 @@ func (m *mex) generateCopyIn(parents, nums []string, desc *generator.Descriptor,
 			m.P("if src.", hierName, " != nil {")
 		}
 		if *field.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED {
+			depth := fmt.Sprintf("%d", len(parents))
+			idx = "[k" + depth + "]"
+			m.P("if updateListAction == \"", util.UpdateListActionAdd, "\" {")
+			// add
+			if mapType == nil {
+				// punt to user to add to list, in case they want to avoid duplicates
+				m.P("changed += m.Add", hierFuncName, "(src.", hierName, "...)")
+			} else {
+				m.P("for k", depth, ", v := range src.", hierName, " {")
+				if mapType.ValIsMessage {
+					m.P("v = v.Clone()")
+				}
+				m.P("m.", hierName, idx, " = v")
+				m.P("changed++")
+				m.P("}")
+			}
+			m.P("} else if updateListAction == \"", util.UpdateListActionRemove, "\" {")
+			// remove
+			if mapType == nil {
+				// punt to user to remove from list
+				m.P("changed += m.Remove", hierFuncName, "(src.", hierName, "...)")
+			} else {
+				m.P("for k", depth, ", _ := range src.", hierName, " {")
+				m.P("if _, ok := m.", hierName, idx, "; ok {")
+				m.P("delete(m.", hierName, ", k", depth, ")")
+				m.P("changed++")
+				m.P("}")
+				m.P("}")
+			}
+			m.P("} else {")
+			// replace
 			m.printCopyInMakeArray(hierName, desc, field)
-			if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
-				depth := fmt.Sprintf("%d", len(parents))
-				if mapType == nil {
-					skipMap = true
+			if mapType == nil {
+				if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+					subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
+					typ := m.support.FQTypeName(m.gen, subDesc)
+					deref := "*"
+					if nullableMessage {
+						deref = ""
+					}
+					m.P("m.", hierName, " = make([]", ref, typ, ", 0)")
+					m.P("for k", depth, ", _ := range src.", hierName, " {")
+					m.P("m.", hierName, " = append(m.", hierName, ", ", deref, "src.", hierName, idx, ".Clone())")
+					m.P("}")
+				} else {
+					m.P("m.", hierName, " = make([]", ref, m.support.GoType(m.gen, field), ", 0)")
+					m.P("m.", hierName, " = append(m.", hierName, ", src.", hierName, "...)")
+				}
+			} else {
+				m.P("for k", depth, ", v := range src.", hierName, " {")
+				if mapType.ValIsMessage {
+					m.P("m.", hierName, idx, " = v.Clone()")
+				} else {
+					m.P("m.", hierName, idx, " = v")
+				}
+				m.P("}")
+			}
+			m.P("changed++")
+			m.P("}")
+		} else {
+			switch *field.Type {
+			case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
+				if skipMessage {
+					break
+				}
+				subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
+				if mapType != nil {
+					if mapType.ValIsMessage {
+						m.P("m.", hierName, idx, " = &", mapType.ValType, "{}")
+					}
+					subDesc = gensupport.GetDesc(m.gen, mapType.ValField.GetTypeName())
+				} else if gogoproto.IsNullable(field) {
+					typ := m.support.FQTypeName(m.gen, subDesc)
+					m.P("if m.", hierName, idx, " == nil {")
+					m.P("m.", hierName, idx, " = &", typ, "{}")
+					m.P("}")
+				}
+				subHasGrpcFields := hasGrpcFields
+				if GetCopyInAllFields(subDesc.DescriptorProto) {
+					// copy in all subdata, do so by ignoring fields checks
+					subHasGrpcFields = false
+				}
+				m.generateCopyIn(append(parents, name+idx), append(nums, num), subDesc, append(visited, desc), subHasGrpcFields)
+			case descriptor.FieldDescriptorProto_TYPE_GROUP:
+				// deprecated in proto3
+			case descriptor.FieldDescriptorProto_TYPE_BYTES:
+				m.printCopyInMakeArray(hierName, desc, field)
+				m.P("if src.", hierName, " != nil {")
+				m.P("m.", hierName, " = src.", hierName)
+				m.P("changed++")
+				m.P("}")
+			default:
+				if *field.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED {
 					m.P("m.", hierName, " = src.", hierName)
 					m.P("changed++")
 				} else {
-					m.P("for k", depth, ", _ := range src.", hierName, " {")
-					idx = "[k" + depth + "]"
-					if !mapType.ValIsMessage {
-						skipMap = true
-						m.P("m.", hierName, idx, " = src.", hierName, idx)
-					}
-				}
-			}
-		}
-		switch *field.Type {
-		case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
-			if skipMap {
-				break
-			}
-			subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
-			if mapType != nil {
-				if mapType.ValIsMessage {
-					m.P("m.", hierName, idx, " = &", mapType.ValType, "{}")
-				}
-				subDesc = gensupport.GetDesc(m.gen, mapType.ValField.GetTypeName())
-			} else if gogoproto.IsNullable(field) {
-				typ := m.support.FQTypeName(m.gen, subDesc)
-				m.P("if m.", hierName, idx, " == nil {")
-				m.P("m.", hierName, idx, " = &", typ, "{}")
-				m.P("}")
-			}
-			subHasGrpcFields := hasGrpcFields
-			if GetCopyInAllFields(subDesc.DescriptorProto) {
-				// copy in all subdata, do so by ignoring fields checks
-				subHasGrpcFields = false
-			}
-			m.generateCopyIn(append(parents, name+idx), append(nums, num), subDesc, append(visited, desc), subHasGrpcFields)
-		case descriptor.FieldDescriptorProto_TYPE_GROUP:
-			// deprecated in proto3
-		case descriptor.FieldDescriptorProto_TYPE_BYTES:
-			m.printCopyInMakeArray(hierName, desc, field)
-			m.P("if src.", hierName, " != nil {")
-			m.P("m.", hierName, " = src.", hierName)
-			m.P("changed++")
-			m.P("}")
-		default:
-			if *field.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED {
-				m.P("m.", hierName, " = src.", hierName)
-				m.P("changed++")
-			} else {
-				m.P("if m.", hierName, " != src.", hierName, "{")
-				m.P("m.", hierName, " = src.", hierName)
-				m.P("changed++")
-				m.P("}")
-			}
-		}
-		if *field.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED && *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
-			if mapType != nil {
-				if !mapType.ValIsMessage {
+					m.P("if m.", hierName, " != src.", hierName, "{")
+					m.P("m.", hierName, " = src.", hierName)
 					m.P("changed++")
+					m.P("}")
 				}
-				m.P("}")
 			}
 		}
 		if nullableMessage || *field.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED {
@@ -2283,8 +2427,24 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 	}
 
 	msgtyp := m.gen.TypeName(desc)
+	m.P("func (m *", msgtyp, ") Clone() *", msgtyp, " {")
+	m.P("cp := &", msgtyp, "{}")
+	m.P("cp.DeepCopyIn(m)")
+	m.P("return cp")
+	m.P("}")
+	m.P()
+
+	m.generateListAddRemoves(make([]string, 0), desc, desc, make([]*generator.Descriptor, 0))
+
 	if GetGenerateCopyInFields(message) {
 		m.P("func (m *", msgtyp, ") CopyInFields(src *", msgtyp, ") int {")
+		if m.needsUpdateListActionVar(desc, make([]*generator.Descriptor, 0)) {
+			if gensupport.FindField(message, gensupport.UpdateListActionField) != nil {
+				m.P("updateListAction := src.", gensupport.UpdateListActionField)
+			} else {
+				m.P("updateListAction := \"", util.UpdateListActionReplace, "\"")
+			}
+		}
 		m.P("changed := 0")
 		if gensupport.HasGrpcFields(message) {
 			m.P("fmap := MakeFieldMap(src.Fields)")

@@ -21,10 +21,10 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -184,6 +184,7 @@ func TestAppInstDownAlert(t *testing.T) {
 type testServices struct {
 	DummyRedisSrv *rediscache.DummyRedis
 	RedisLocalSrv *process.RedisCache
+	DummyVault    *vault.DummyServer
 }
 
 type TestOptions struct {
@@ -209,8 +210,8 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	testMode = &tMode
 	dockerRegistry := "docker.example.ut"
 	registryFQDN = &dockerRegistry
-	nodeMgr.VaultAddr = vault.UnitTestIgnoreVaultAddr
-	vaultConfig, _ = vault.BestConfig(vault.UnitTestIgnoreVaultAddr)
+	svcs.DummyVault = vault.NewDummyServer()
+	vaultConfig = svcs.DummyVault.Config
 	nodeMgr.VaultConfig = vaultConfig
 	services.regAuthMgr = cloudcommon.NewRegistryAuthMgr(vaultConfig, "example.ut")
 	services.events = influxq.NewInfluxQ("events", "user", "pass")
@@ -260,6 +261,10 @@ func testfinish(s *testServices) {
 	if s.RedisLocalSrv != nil {
 		s.RedisLocalSrv.StopLocal()
 		s.RedisLocalSrv = nil
+	}
+	if s.DummyVault != nil {
+		s.DummyVault.TestServer.Close()
+		s.DummyVault = nil
 	}
 	services = Services{}
 }
