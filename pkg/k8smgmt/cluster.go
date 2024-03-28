@@ -237,8 +237,8 @@ type Nodes struct {
 	Items      []v1.Node `json:"items"`
 }
 
-func GetNodeInfos(ctx context.Context, client ssh.Client, kconfEnv string) ([]*edgeproto.NodeInfo, error) {
-	cmd := fmt.Sprintf("%s kubectl get nodes --output=json", kconfEnv)
+func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*edgeproto.NodeInfo, error) {
+	cmd := fmt.Sprintf("kubectl %s get nodes --output=json", kconfArg)
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetNodeInfo", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {

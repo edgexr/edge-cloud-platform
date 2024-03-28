@@ -100,7 +100,7 @@ func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, clusterInst *e
 		time.Sleep(1 * time.Second)
 	}
 
-	cmd := fmt.Sprintf("%s kubectl -n %s wait --for condition=ready pod --selector=component=controller --timeout=60s", kconfEnv, metalLbNameSpace)
+	cmd := fmt.Sprintf("kubectl %s -n %s wait --for condition=ready pod --selector=component=controller --timeout=60s", kconfArg, metalLbNameSpace)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.InfoLog("error getting controller pod", "err", err, "out", out)
