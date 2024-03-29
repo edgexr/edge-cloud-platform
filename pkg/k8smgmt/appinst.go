@@ -440,19 +440,19 @@ func DeleteAppInst(ctx context.Context, client ssh.Client, names *KubeNames, app
 		}
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleted deployment", "name", names.AppName)
-	// remove manifest file since directory contains all AppInst manifests for
-	// the ClusterInst.
-	log.SpanLog(ctx, log.DebugLevelInfra, "remove app manifest", "name", names.AppName, "file", file)
-	out, err = client.Output("rm " + file)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "error deleting manifest", "file", file, "out", string(out), "err", err)
-	}
 	//Note wait for deletion of appinst can be done here in a generic place, but wait for creation is split
 	// out in each platform specific task so that we can optimize the time taken for create by allowing the
 	// wait to be run in parallel with other tasks
 	err = WaitForAppInst(ctx, client, names, app, WaitDeleted)
 	if err != nil {
 		return err
+	}
+	// remove manifest file since directory contains all AppInst manifests for
+	// the ClusterInst.
+	log.SpanLog(ctx, log.DebugLevelInfra, "remove app manifest", "name", names.AppName, "file", file)
+	err = pc.DeleteFile(client, file, pc.NoSudo)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "error deleting manifest", "file", file, "err", err)
 	}
 	if names.MultitenantNamespace != "" {
 		// clean up namespace
