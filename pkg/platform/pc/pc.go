@@ -281,7 +281,7 @@ func RunSafeShell(client ssh.Client, sin io.Reader, sout, serr io.Writer, cmd st
 	if err != nil {
 		return err
 	}
-	//defer DeleteFile(client, cmdFile, NoSudo)
+	defer DeleteFile(client, cmdFile, NoSudo)
 	return client.Shell(sin, sout, serr, "python3 "+cmdFile)
 }
 

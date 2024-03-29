@@ -73,7 +73,6 @@ func appID(app *AppSpec) string {
 // preserve the LBs current notion of reality, we detect the
 // presence of a port range, and if found exhaustive enumerate
 // each port in range with a suitable KubePort object.
-//
 func setKubePorts(ports []util.PortSpec) []kubePort {
 	kports := []kubePort{}
 	var kp kubePort
@@ -188,20 +187,13 @@ func (g *kubeBasicGen) kubeApp() {
 			}
 			return !quoted && rn == ' '
 		})
-		for ii, cmd := range cs {
-			cmd = strings.TrimSpace(cmd)
-			cmd, err := strconv.Unquote(cmd)
-			if err == nil {
-				cs[ii] = cmd
-			}
-			cmd = strings.TrimSpace(cs[ii])
-			cs[ii] = strconv.Quote(cmd)
+		for ii, _ := range cs {
+			cs[ii] = strings.TrimSpace(cs[ii])
 		}
 	}
 	if len(g.app.Args) > 0 {
 		for ii, arg := range g.app.Args {
-			arg = strings.TrimSpace(arg)
-			g.app.Args[ii] = strconv.Quote(arg)
+			g.app.Args[ii] = strings.TrimSpace(arg)
 		}
 	}
 

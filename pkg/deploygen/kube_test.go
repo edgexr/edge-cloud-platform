@@ -110,8 +110,8 @@ spec:
         - containerPort: 8001
           protocol: UDP
         command:
-        - "bash"
+        - bash
         args:
-        - "-c"
-        - "echo foobar"
+        - -c
+        - echo foobar
 `
