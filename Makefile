@@ -76,10 +76,13 @@ tools:
 external-doc:
 	make -C edgeproto external-doc
 
-CMDS	= ./cmd/ede/autoprov ./cmd/ccme/ccrm ./cmd/e2e/cluster-svc ./cmd/e2e/controller ./cmd/ccme/crm ./cmd/uaem/dme ./cmd/edgeturn ./cmd/notifyroot ./cmd/ccme/shepherd ./pkg/platform/ ./pkg/plugin/edgeevents ./pkg/plugin/platform ./pkg/shepherd_platform
+CMDS	= ./cmd/ede/autoprov ./cmd/ccme/ccrm ./cmd/ede/cluster-svc ./cmd/ede/controller ./cmd/ccme/crm ./cmd/uaem/dme ./cmd/edgeturn ./cmd/notifyroot ./cmd/ccme/shepherd ./pkg/platform/ ./pkg/plugin/edgeevents ./pkg/plugin/platform ./pkg/shepherd_platform
+
+dump-licenses:
+	deplicenses ${CMDS} > licenses.tab
 
 third_party:
-	parsedeps --gennotice ${CMDS} > THIRD-PARTY-NOTICES
+	deplicenses --gennotice ${CMDS} > THIRD-PARTY-NOTICES
 
 # adds license header to all files, see https://github.com/google/addlicense
 addlicense:
