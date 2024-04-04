@@ -1,4 +1,4 @@
-The Edge-Cloud Platform uses third-party libraries or other resources
+This software uses third-party libraries or other resources
 that may be distributed under licenses different than the one
 from this software. These licenses are listed below.
 
@@ -6689,7 +6689,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/errwrap
-A copy of the source code can be found at github.com/hashicorp/errwrap/releases/tag/v1.1.0
+A copy of the source code can be found at https://github.com/hashicorp/errwrap
 
 ---------------------------------------------------
 
@@ -7051,7 +7051,7 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/go-cleanhttp
-A copy of the source code can be found at github.com/hashicorp/go-cleanhttp/releases/tag/v0.5.2
+A copy of the source code can be found at https://github.com/hashicorp/go-cleanhttp
 
 ---------------------------------------------------
 
@@ -7422,7 +7422,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/go-multierror
-A copy of the source code can be found at github.com/hashicorp/go-multierror/releases/tag/v1.1.1
+A copy of the source code can be found at https://github.com/hashicorp/go-multierror
 
 ---------------------------------------------------
 
@@ -7783,7 +7783,7 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/go-retryablehttp
-A copy of the source code can be found at github.com/hashicorp/go-retryablehttp/releases/tag/v0.7.5
+A copy of the source code can be found at https://github.com/hashicorp/go-retryablehttp
 
 ---------------------------------------------------
 
@@ -8156,7 +8156,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/go-rootcerts
-A copy of the source code can be found at github.com/hashicorp/go-rootcerts/releases/tag/v1.0.2
+A copy of the source code can be found at https://github.com/hashicorp/go-rootcerts
 
 ---------------------------------------------------
 
@@ -8527,7 +8527,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/go-secure-stdlib/parseutil
-A copy of the source code can be found at github.com/hashicorp/go-secure-stdlib/parseutil/releases/tag/v0.1.8
+A copy of the source code can be found at https://github.com/hashicorp/go-secure-stdlib/tree/main/parseutil
 
 ---------------------------------------------------
 
@@ -8900,7 +8900,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/go-secure-stdlib/strutil
-A copy of the source code can be found at github.com/hashicorp/go-secure-stdlib/strutil/releases/tag/v0.1.2
+A copy of the source code can be found at https://github.com/hashicorp/go-secure-stdlib/tree/main/strutil
 
 ---------------------------------------------------
 
@@ -9271,7 +9271,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/go-sockaddr
-A copy of the source code can be found at github.com/hashicorp/go-sockaddr/releases/tag/v1.0.6
+A copy of the source code can be found at https://github.com/hashicorp/go-sockaddr
 
 ---------------------------------------------------
 
@@ -9654,7 +9654,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/go-uuid
-A copy of the source code can be found at github.com/hashicorp/go-uuid/releases/tag/v1.0.3
+A copy of the source code can be found at https://github.com/hashicorp/go-uuid
 
 ---------------------------------------------------
 
@@ -10027,7 +10027,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/go-version
-A copy of the source code can be found at github.com/hashicorp/go-version/releases/tag/v1.6.0
+A copy of the source code can be found at https://github.com/hashicorp/go-version
 
 ---------------------------------------------------
 
@@ -10389,7 +10389,7 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/hcl
-A copy of the source code can be found at github.com/hashicorp/hcl/releases/tag/v1.0.1-vault-5
+A copy of the source code can be found at https://github.com/hashicorp/hcl
 
 ---------------------------------------------------
 
@@ -10751,7 +10751,7 @@ Exhibit B - “Incompatible With Secondary Licenses” Notice
 
 ---------------------------------------------------
 License notice for github.com/hashicorp/vault/api
-A copy of the source code can be found at github.com/hashicorp/vault/releases/tag/v1.11.0
+A copy of the source code can be found at https://github.com/hashicorp/vault/tree/main/api
 
 ---------------------------------------------------
 
