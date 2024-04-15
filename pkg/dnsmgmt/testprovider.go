@@ -17,7 +17,7 @@ package dnsmgmt
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/dnsapi"
+	dnsapi "github.com/edgexr/dnsproviders/api"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 

@@ -111,6 +111,7 @@ require (
 	github.com/eapache/go-resiliency v1.6.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
+	github.com/edgexr/dnsproviders v0.0.1 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect

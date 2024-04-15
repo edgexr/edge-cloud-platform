@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"time"
 
+	dnsapi "github.com/edgexr/dnsproviders/api"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/dnsapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
