@@ -21,9 +21,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/cloudflaremgmt"
-	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/dnsapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt/googleclouddns"
+	"github.com/edgexr/dnsproviders"
+	dnsapi "github.com/edgexr/dnsproviders/api"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
@@ -40,17 +39,11 @@ type DNSMgr struct {
 	mux                 sync.Mutex
 }
 
-var providerFuncs = map[string]dnsapi.GetProviderFunc{
-	cloudflaremgmt.ProviderName: cloudflaremgmt.GetProvider,
-	googleclouddns.ProviderName: googleclouddns.GetProvider,
-}
-
-func GetProviderNames() []string {
-	names := []string{}
-	for name := range providerFuncs {
-		names = append(names, name)
+func GetProviderNames() []dnsapi.ProviderType {
+	return []dnsapi.ProviderType{
+		dnsapi.CloudflareProvider,
+		dnsapi.GoogleCloudDNSProvider,
 	}
-	return names
 }
 
 // NewDNSMgr creates a new DNS manager that will look for DNS API
@@ -128,20 +121,22 @@ func (s *DNSMgr) getProvider(ctx context.Context, fqdn string) (dnsapi.Provider,
 	if err != nil {
 		return nil, "", err
 	}
-	providerType, ok := data[vaultProviderTypeKey]
+	providerTypeStr, ok := data[vaultProviderTypeKey]
 	if !ok {
 		return nil, "", fmt.Errorf("vault data for zone %s missing %q key, allowed value is one of %v", zone, vaultProviderTypeKey, GetProviderNames())
 	}
-	getProviderFunc, ok := providerFuncs[providerType]
-	if !ok {
-		return nil, "", fmt.Errorf("unknown dns provider type %q for zone %s, allowed values are %v", providerType, zone, GetProviderNames())
-	}
-	provider, err = getProviderFunc(ctx, zone, data)
+	providerType := dnsapi.ProviderType(providerTypeStr)
+
+	provider, err = dnsproviders.GetProvider(ctx, providerType, zone, data, s)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("failed to get DNS provider type %s, %s", providerType, err)
 	}
 	s.putCachedProvider(zone, provider)
 	return provider, zone, nil
+}
+
+func (s *DNSMgr) InfoContext(ctx context.Context, msg string, keysAndValues ...interface{}) {
+	log.SpanLog(ctx, log.DebugLevelInfra, msg, keysAndValues...)
 }
 
 func getAllowedZone(ctx context.Context, name string, zones []string) (string, error) {
