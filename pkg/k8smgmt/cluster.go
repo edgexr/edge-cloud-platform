@@ -86,7 +86,7 @@ func CleanupClusterConfig(ctx context.Context, client ssh.Client, clusterInst *e
 	if err != nil {
 		return err
 	}
-	configDir, _ := getConfigDirName(names)
+	configDir := getConfigDirName(names)
 	log.SpanLog(ctx, log.DebugLevelInfra, "CleanupClusterConfig remove dir", "configDir", configDir)
 	err = pc.DeleteDir(ctx, client, configDir, pc.NoSudo)
 	if err != nil {
@@ -107,7 +107,7 @@ func ClearCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto
 		return err
 	}
 	// For a single-tenant cluster, all config will be in one dir
-	configDir, _ := getConfigDirName(names)
+	configDir := getConfigDirName(names)
 	if err := ClearClusterConfig(ctx, client, configDir, "", names.KconfArg); err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func ClearCluster(ctx context.Context, client ssh.Client, clusterInst *edgeproto
 		log.SpanLog(ctx, log.DebugLevelInfra, "cleaning config for namespace", "namespace", str)
 		nsNames := *names
 		nsNames.MultitenantNamespace = str
-		configDir, _ := getConfigDirName(&nsNames)
+		configDir := getConfigDirName(&nsNames)
 		err = ClearClusterConfig(ctx, client, configDir, str, names.KconfArg)
 		if err != nil {
 			return err

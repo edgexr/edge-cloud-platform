@@ -307,12 +307,21 @@ func PopulateAppInstLoadBalancerIps(ctx context.Context, client ssh.Client, name
 	}
 }
 
-func getConfigDirName(names *KubeNames) (string, string) {
+func getConfigDirName(names *KubeNames) string {
 	dir := names.ClusterName
 	if names.MultitenantNamespace != "" {
 		dir += "." + names.MultitenantNamespace
 	}
-	return dir, names.AppName + names.AppOrg + names.AppVersion + ".yaml"
+	return dir
+}
+
+func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst) string {
+	if appInst.CompatibilityVersion < cloudcommon.AppInstCompatibilityUniqueNameKeyConfig {
+		// backwards compatibility, may clobber other instances
+		// using the same app definition in multi-tenant clusters.
+		return names.AppName + names.AppOrg + names.AppVersion + ".yaml"
+	}
+	return names.AppInstName + names.AppInstOrg + ".yaml"
 }
 
 // CreateAllNamespaces creates all the namespaces the app will use. It does not create a manifest for
@@ -368,7 +377,8 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to merge env vars", "error", err)
 		return fmt.Errorf("error merging environment variables config file: %s", err)
 	}
-	configDir, configName := getConfigDirName(names)
+	configDir := getConfigDirName(names)
+	configName := getConfigFileName(names, appInst)
 	err = pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
 	if err != nil {
 		return err
@@ -427,7 +437,8 @@ func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 }
 
 func DeleteAppInst(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
-	configDir, configName := getConfigDirName(names)
+	configDir := getConfigDirName(names)
+	configName := getConfigFileName(names, appInst)
 	file := configDir + "/" + configName
 	cmd := fmt.Sprintf("kubectl %s delete -f %s", names.KconfArg, file)
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting app", "name", names.AppName, "cmd", cmd)

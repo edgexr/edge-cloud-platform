@@ -31,10 +31,11 @@ func GetCRMCompatibilityVersion() uint32 {
 // compatibility even after upgrading the AppInst object, these
 // dynamically generated names must be generated the same way as before.
 const (
-	AppInstCompatibilityInitial       uint32 = 0
-	AppInstCompatibilityUniqueNameKey uint32 = 1
+	AppInstCompatibilityInitial             uint32 = 0
+	AppInstCompatibilityUniqueNameKey       uint32 = 1
+	AppInstCompatibilityUniqueNameKeyConfig uint32 = 2
 )
 
 func GetAppInstCompatibilityVersion() uint32 {
-	return AppInstCompatibilityUniqueNameKey
+	return AppInstCompatibilityUniqueNameKeyConfig
 }

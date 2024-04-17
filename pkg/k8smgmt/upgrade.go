@@ -106,7 +106,8 @@ func upgradeVersionSingleClusterConfigDir(ctx context.Context, caches *platform.
 
 		// make new config dir if necessary (may already have been created
 		// if multiple AppInsts in ClusterInst)
-		configDir, configName := getConfigDirName(names)
+		configDir := getConfigDirName(names)
+		configName := getConfigFileName(names, appInst)
 		err = pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "upgrade version single cluster config dir, create dir failed", "AppInst", appInst.Key, "err", err)
