@@ -162,6 +162,9 @@ func (a *AllData) Sort() {
 			return a.PlatformFeatures[i].ResourceQuotaProperties[ii].Name < a.PlatformFeatures[i].ResourceQuotaProperties[jj].Name
 		})
 	}
+	sort.Slice(a.PlatformFeatures, func(i, j int) bool {
+		return a.PlatformFeatures[i].PlatformType < a.PlatformFeatures[j].PlatformType
+	})
 }
 
 func (a *NodeData) Sort() {
