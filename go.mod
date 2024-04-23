@@ -7,11 +7,10 @@ require (
 	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
 	github.com/Bose/minisentinel v0.0.0-20200130220412-917c5a9223bb
 	github.com/Shopify/sarama v1.38.1
-	github.com/agnivade/levenshtein v1.0.1
 	github.com/alicebob/miniredis/v2 v2.31.1
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/cespare/xxhash/v2 v2.2.0
-	github.com/cloudflare/cloudflare-go v0.13.4
+	github.com/cloudflare/cloudflare-go v0.13.4 // indirect
 	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
 	github.com/creack/pty v1.1.11
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
@@ -57,7 +56,7 @@ require (
 	golang.org/x/net v0.22.0
 	golang.org/x/oauth2 v0.14.0
 	golang.org/x/time v0.5.0
-	golang.org/x/tools v0.10.0
+	golang.org/x/tools v0.10.0 // indirect
 	google.golang.org/api v0.149.0
 	google.golang.org/grpc v1.61.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -71,6 +70,7 @@ require (
 require (
 	cloud.google.com/go/storage v1.30.1
 	github.com/docker/docker v24.0.7+incompatible
+	github.com/edgexr/dnsproviders v0.0.1
 	github.com/edgexr/golang-ssh v0.0.13
 	github.com/edgexr/jsonparser v0.0.0-20230606233159-ad7db8cef4c2
 	github.com/glendc/go-external-ip v0.1.0
@@ -111,7 +111,6 @@ require (
 	github.com/eapache/go-resiliency v1.6.0 // indirect
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
-	github.com/edgexr/dnsproviders v0.0.1 // indirect
 	github.com/fatih/color v1.14.1 // indirect
 	github.com/frankban/quicktest v1.13.0 // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect

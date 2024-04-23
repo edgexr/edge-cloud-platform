@@ -196,6 +196,13 @@ func TestAppInstApi(t *testing.T) {
 	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsWithAppInstsData())
 	testutil.InternalAppInstRefsTest(t, "show", apis.appInstRefsApi, testutil.GetAppInstRefsData())
 
+	// ensure two appinsts of same app cannot deploy to same cluster
+	dup := testutil.AppInstData()[0]
+	dup.Key.Name = "dup"
+	err := apis.appInstApi.CreateAppInst(&dup, testutil.NewCudStreamoutAppInst(ctx))
+	require.NotNil(t, err, "create duplicate instance of app in cluster")
+	require.Contains(t, err.Error(), "cannot deploy another instance of App")
+
 	// Test for being created and being deleted errors.
 	testBeingErrors(t, ctx, responder, apis)
 
@@ -204,7 +211,7 @@ func TestAppInstApi(t *testing.T) {
 	// Set responder to fail delete.
 	responder.SetSimulateAppDeleteFailure(true)
 	obj := testutil.AppInstData()[0]
-	err := apis.appInstApi.DeleteAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
+	err = apis.appInstApi.DeleteAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err, "Delete AppInst responder failure")
 	responder.SetSimulateAppDeleteFailure(false)
 	checkAppInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_READY)

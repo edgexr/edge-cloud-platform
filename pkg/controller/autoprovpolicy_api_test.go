@@ -189,6 +189,8 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 	app.Key.Version = "1.0.0"
 	app.ImageType = edgeproto.ImageType_IMAGE_TYPE_DOCKER
 	app.DefaultFlavor = flavor.Key
+	app2 := app
+	app2.Key.Name = "manual"
 
 	numCloudlets1 := 6
 	pt1 := newAutoProvPolicyTest("policy1", app.Key.Organization, numCloudlets1, &flavor, apis)
@@ -216,6 +218,8 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 	pt2.create(t, ctx)
 	pt3.create(t, ctx)
 	_, err = apis.appApi.CreateApp(ctx, &app)
+	require.Nil(t, err)
+	_, err = apis.appApi.CreateApp(ctx, &app2)
 	require.Nil(t, err)
 
 	updateCloudlets := func(pt *autoProvPolicyTest, list []*edgeproto.AutoProvCloudlet) {
@@ -337,15 +341,16 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 		pt3.expectAppInsts(t, ctx, &app, len(pt3.cloudlets))
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Delete, "")
 		pt3.expectAppInsts(t, ctx, &app, 0)
-		// Manual create should not limit them (double cloudlets list so
-		// creates two per cloudlet)
-		pt3cloudletsSave := pt3.cloudlets
-		pt3.cloudlets = append(pt3.cloudlets, pt3.cloudlets...)
+		// Manual create should not limit them
+		// create two per cloudlet
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Create, "")
+		pt3.goDoAppInsts(t, ctx, &app2, cloudcommon.Create, "")
 		pt3.expectAppInsts(t, ctx, &app, len(pt3.cloudlets))
+		pt3.expectAppInsts(t, ctx, &app2, len(pt3.cloudlets))
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Delete, "")
+		pt3.goDoAppInsts(t, ctx, &app2, cloudcommon.Delete, "")
 		pt3.expectAppInsts(t, ctx, &app, 0)
-		pt3.cloudlets = pt3cloudletsSave
+		pt3.expectAppInsts(t, ctx, &app2, 0)
 
 		// restore cloudlets to policies
 		updateCloudlets(pt1, pt1cloudletsSave)
@@ -482,7 +487,7 @@ func (s *autoProvPolicyTest) goDoAppInsts(t *testing.T, ctx context.Context, app
 			defer span.Finish()
 
 			inst := edgeproto.AppInst{}
-			inst.Key.Name = "inst" + strconv.Itoa(ii)
+			inst.Key.Name = app.Key.Name + "inst" + strconv.Itoa(ii)
 			inst.Key.Organization = app.Key.Organization
 			inst.Key.CloudletKey = s.cloudlets[ii].Key
 			inst.AppKey = app.Key

@@ -358,20 +358,30 @@ const (
 	MultiTenantAutoCluster
 )
 
-func (s *AppInstApi) checkPortOverlapDedicatedLB(appPorts []dme.AppPort, clusterInstKey *edgeproto.ClusterInstKey) error {
-	lookupKey := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			CloudletKey: clusterInstKey.CloudletKey,
-		},
-		ClusterKey: clusterInstKey.ClusterKey,
+func (s *AppInstApi) checkPortOverlapDedicatedLB(stm concurrency.STM, appPorts []dme.AppPort, appInstKey *edgeproto.AppInstKey, clusterInstKey *edgeproto.ClusterInstKey) error {
+	clustRefs := edgeproto.ClusterRefs{}
+	if !s.all.clusterRefsApi.store.STMGet(stm, clusterInstKey, &clustRefs) {
+		return nil
 	}
-	err := s.cache.Show(&lookupKey, func(obj *edgeproto.AppInst) error {
-		if obj.State == edgeproto.TrackedState_DELETE_ERROR || edgeproto.IsTransientState(obj.State) {
-			// ignore apps that are in failed, or transient state
-			return nil
+	for ii := range clustRefs.Apps {
+		aiKey := edgeproto.AppInstKey{}
+		aiKey.FromAppInstRefKey(&clustRefs.Apps[ii], &appInstKey.CloudletKey)
+		if aiKey == *appInstKey {
+			// it's me, happens on delete recovery, ignore
+			continue
+		}
+		obj := edgeproto.AppInst{}
+		if !s.all.appInstApi.store.STMGet(stm, &aiKey, &obj) {
+			continue
+		}
+		if obj.State == edgeproto.TrackedState_DELETE_ERROR || edgeproto.IsDeleteState(obj.State) {
+			// ignore apps that are being deleted, as several
+			// apps may be being created concurrently and their
+			// ports may conflict.
+			continue
 		}
 		if obj.DedicatedIp {
-			return nil
+			continue
 		}
 		for ii := range appPorts {
 			for jj := range obj.MappedPorts {
@@ -379,13 +389,12 @@ func (s *AppInstApi) checkPortOverlapDedicatedLB(appPorts []dme.AppPort, cluster
 					if appPorts[ii].EndPort != appPorts[ii].InternalPort && appPorts[ii].EndPort != 0 {
 						return fmt.Errorf("port range %d-%d overlaps with ports in use on the cluster", appPorts[ii].InternalPort, appPorts[ii].EndPort)
 					}
-					return fmt.Errorf("port %d is already in use on the cluster", appPorts[ii].InternalPort)
+					return fmt.Errorf("port %d is already in use on the cluster by AppInst %s", appPorts[ii].InternalPort, obj.Key.Name)
 				}
 			}
 		}
-		return nil
-	})
-	return err
+	}
+	return nil
 }
 
 func removeAppInstFromRefs(appInstKey *edgeproto.AppInstKey, appInstRefs *[]edgeproto.AppInstRefKey) bool {
@@ -869,7 +878,25 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if err := s.setDnsLabel(stm, in); err != nil {
 			return err
 		}
-
+		if !clusterInst.MultiTenant {
+			clustRefs := edgeproto.ClusterRefs{}
+			if s.all.clusterRefsApi.store.STMGet(stm, in.ClusterInstKey(), &clustRefs) {
+				for ii := range clustRefs.Apps {
+					aiKey := edgeproto.AppInstKey{}
+					aiKey.FromAppInstRefKey(&clustRefs.Apps[ii], &in.Key.CloudletKey)
+					if aiKey == in.Key {
+						// it's me, happens on delete recovery, ignore
+						continue
+					}
+					ai := edgeproto.AppInst{}
+					if s.all.appInstApi.store.STMGet(stm, &aiKey, &ai) {
+						if ai.AppKey == in.AppKey {
+							return fmt.Errorf("cannot deploy another instance of App %s to the target cluster", ai.AppKey.GetKeyString())
+						}
+					}
+				}
+			}
+		}
 		// Set new state to show autocluster clusterinst progress as part of
 		// appinst progress
 		in.State = edgeproto.TrackedState_CREATING_DEPENDENCIES
@@ -1157,7 +1184,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				}
 			} else {
 				// we need to prevent overlapping ports on the dedicated rootLB
-				if err = s.checkPortOverlapDedicatedLB(ports, &clusterInstKey); !cctx.Undo && err != nil {
+				if err = s.checkPortOverlapDedicatedLB(stm, ports, &in.Key, &clusterInstKey); !cctx.Undo && err != nil {
 					return err
 				}
 				// dedicated access in which IP is that of the LB
