@@ -98,6 +98,9 @@ if [[ ${run_update} == true ]]; then
     echo "Running update"
     if [[ -z "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
         ANSIBLE_PLAYBOOK_BIN=/usr/local/bin/ansible-playbook
+        if [[ ! -f "${ANSIBLE_PLAYBOOK_BIN}" ]]; then
+            ANSIBLE_PLAYBOOK_BIN=/usr/bin/ansible-playbook
+        fi
     fi
     if ${ANSIBLE_PLAYBOOK_BIN} -e @ansible/vars.yml ./ansible/playbook.yml -v; then
         touch ansible_run_ok
