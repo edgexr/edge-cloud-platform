@@ -343,8 +343,6 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 		pt3.expectAppInsts(t, ctx, &app, 0)
 		// Manual create should not limit them
 		// create two per cloudlet
-		//pt3cloudletsSave := pt3.cloudlets
-		//pt3.cloudlets = append(pt3.cloudlets, pt3.cloudlets...)
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Create, "")
 		pt3.goDoAppInsts(t, ctx, &app2, cloudcommon.Create, "")
 		pt3.expectAppInsts(t, ctx, &app, len(pt3.cloudlets))
@@ -353,7 +351,6 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 		pt3.goDoAppInsts(t, ctx, &app2, cloudcommon.Delete, "")
 		pt3.expectAppInsts(t, ctx, &app, 0)
 		pt3.expectAppInsts(t, ctx, &app2, 0)
-		//pt3.cloudlets = pt3cloudletsSave
 
 		// restore cloudlets to policies
 		updateCloudlets(pt1, pt1cloudletsSave)
