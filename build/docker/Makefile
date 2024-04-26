@@ -3,7 +3,7 @@ TAG ?= $(shell git describe --tags)
 VERSION ?= $(shell echo $$USER | tr -cd 'a-zA-Z' )-$(shell date +'%Y-%m-%d' )
 REGISTRY ?= ghcr.io/edgexr
 PUSH ?= --push
-KUBECTL_WRAPPER_REL_PATH ?= https://github.com/edgexr/kubectl/archive/refs/tags
+KUBECTL_WRAPPER_ARCHIVES ?= https://github.com/edgexr/kubectl/archive/refs/tags
 KUBECTL_WRAPPER_VERSION ?= 0.0.1
 
 # TOP refers to repository root
@@ -40,7 +40,7 @@ build-platform-common:
 		--build-arg NON_INFRA_BASE_IMAGE=$(NON_INFRA_BASE_IMAGE) \
 		--build-arg EDGE_CLOUD_INFRA_BASE=$(EDGE_CLOUD_INFRA_BASE) \
 		--build-arg REGISTRY=$(REGISTRY) \
-		--build-arg KUBECTL_WRAPPER_REL_PATH=$(KUBECTL_WRAPPER_REL_PATH) \
+		--build-arg KUBECTL_WRAPPER_ARCHIVES=$(KUBECTL_WRAPPER_ARCHIVES) \
 		--build-arg KUBECTL_WRAPPER_VERSION=$(KUBECTL_WRAPPER_VERSION) \
 		-t $(EDGE_CLOUD_IMAGE):$(VERSION) -f Dockerfile.edge-cloud-platform $(TOP)
 
