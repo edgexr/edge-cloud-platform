@@ -21,10 +21,14 @@ ENV PATH="/go/bin:${PATH}"
 ENV GO111MODULE=on
 ENV DOCKER_BUILD=yes
 
+# Can be overridden with an argument
+ARG KUBECTL_WRAPPER_REL_PATH=https://github.com/edgexr/kubectl/archive/refs/tags
+ARG KUBECTL_WRAPPER_VERSION=0.0.1
+
 WORKDIR /kubectl
-RUN wget https://github.com/edgexr/kubectl/archive/refs/tags/v0.0.1.tar.gz && \
-	tar xvpf v0.0.1.tar.gz && \
-	cd kubectl-0.0.1 && make install
+RUN wget ${KUBECTL_WRAPPER_REL_PATH}/v${KUBECTL_WRAPPER_VERSION}.tar.gz && \
+	tar xvpf v${KUBECTL_WRAPPER_VERSION}.tar.gz && \
+	cd kubectl-${KUBECTL_WRAPPER_VERSION} && make install
 
 WORKDIR /edge-cloud-platform
 # Do dependencies first so they can be cached
