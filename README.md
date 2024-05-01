@@ -63,7 +63,7 @@ make
 
 # Testing
 
-There are an extensive set of unit tests. Some unit tests depend on local installations of supporting open source projects and databases. You will need to install [docker](https://www.docker.com/), [certstrap](https://github.com/square/certstrap), [Etcd](https://etcd.io/), [Redis](https://redis.io/), [Vault](https://www.vaultproject.io/), and [Influxdb](https://www.influxdata.com/) version 1.7.6. See the [test setup script](test/test_setup.sh).
+There are an extensive set of unit tests. Some unit tests depend on local installations of supporting open source projects and databases. You will need to install [docker](https://www.docker.com/), [certstrap](https://github.com/square/certstrap), [Etcd](https://etcd.io/), [Redis](https://redis.io/), [Vault](https://www.vaultproject.io/), and [Influxdb](https://www.influxdata.com/). See the [test setup script](test/test_setup.sh).
 
 ``` shell
 make unit-test
