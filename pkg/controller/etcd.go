@@ -23,14 +23,14 @@ import (
 	"strings"
 	"time"
 
-	"go.etcd.io/etcd/client/v3"
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
-	"go.etcd.io/etcd/api/v3/mvccpb"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/opentracing/opentracing-go"
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type EtcdClient struct {
@@ -342,10 +342,19 @@ func (e *EtcdClient) Sync(ctx context.Context, key string, cb objstore.SyncCb) e
 }
 
 func (e *EtcdClient) ApplySTM(ctx context.Context, apply func(concurrency.STM) error) (int64, error) {
-	resp, err := concurrency.NewSTM(e.client, func(stm concurrency.STM) error {
-		stm.Put(getSpanKey(), log.SpanToString(ctx))
-		return apply(stm)
-	})
+	var resp *clientv3.TxnResponse
+	var err error
+	for ii := 0; ii < 5; ii++ {
+		resp, err = concurrency.NewSTM(e.client, func(stm concurrency.STM) error {
+			stm.Put(getSpanKey(), log.SpanToString(ctx))
+			return apply(stm)
+		})
+		if err == nil || !strings.Contains(err.Error(), "mvcc: required revision is a future revision") {
+			break
+		}
+		log.SpanLog(ctx, log.DebugLevelEtcd, "apply stm failed, will retry", "try", ii, "err", err)
+		time.Sleep(150 * time.Millisecond)
+	}
 	if err != nil {
 		return 0, err
 	}
