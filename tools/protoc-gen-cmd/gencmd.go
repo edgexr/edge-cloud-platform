@@ -189,7 +189,6 @@ func (g *GenCmd) generateServiceVars(file *descriptor.FileDescriptorProto, servi
 	}
 	writeService := false
 	if len(service.Method) > 0 {
-		//g.support.RegisterUsedPkg(*file.Package, file)
 		for _, method := range service.Method {
 			in := g.GetDesc(method.GetInputType())
 			if in == nil || gensupport.ClientStreaming(method) || hasOneof(in) {
