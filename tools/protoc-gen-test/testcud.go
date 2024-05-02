@@ -54,7 +54,6 @@ func (t *TestCud) Name() string {
 
 func (t *TestCud) Init(g *generator.Generator) {
 	t.Generator = g
-	t.support.Init(g.Request)
 	t.cudTmpl = template.Must(template.New("cud").Parse(tmpl))
 	t.methodTmpl = template.Must(template.New("method").Parse(methodTmpl))
 	t.clientTmpl = template.Must(template.New("client").Parse(clientTmpl))
@@ -506,11 +505,9 @@ func Find{{.Name}}Data(key *{{.KeyName}}, testData []{{.Pkg}}.{{.Name}}) (*{{.Pk
 `
 
 func (t *TestCud) GenerateImports(file *generator.FileDescriptor) {
+	t.support.PrintUsedImports(t.Generator)
 	if t.importGrpc {
 		t.PrintImport("", "google.golang.org/grpc")
-	}
-	if t.importProtoPkg {
-		t.PrintImport("", generator.GoImportPath(t.support.PackageImportPath))
 	}
 	if t.importIO {
 		t.PrintImport("", "io")
@@ -638,7 +635,7 @@ func (t *TestCud) generateCudTest(desc *generator.Descriptor) {
 		keystr = "key not found"
 	}
 	args := tmplArgs{
-		Pkg:                  t.support.GetPackageName(desc),
+		Pkg:                  t.support.GetPackageName(t.Generator, desc),
 		Name:                 *message.Name,
 		KeyName:              keystr,
 		ShowOnly:             GetGenerateShowTest(message),
@@ -708,7 +705,7 @@ func (t *TestCud) generateRunApi(file *descriptor.FileDescriptorProto, service *
 func (t *TestCud) generateRunGroupApi(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto, group *gensupport.MethodGroup) {
 	apiName := group.ApiName()
 	inType := group.InType
-	inPkg := t.support.GetPackage(group.In)
+	inPkg := t.support.GetPackage(t.Generator, group.In)
 	dataIn := "data *[]" + inPkg + inType
 	if group.SingularData {
 		dataIn = "obj *" + inPkg + inType
@@ -817,7 +814,7 @@ func (t *TestCud) runApiOutput(apiName string, info *gensupport.MethodInfo, grou
 }
 
 func (t *TestCud) getOutputType(info *gensupport.MethodInfo, group *gensupport.MethodGroup) string {
-	outPkg := t.support.GetPackage(info.Out)
+	outPkg := t.support.GetPackage(t.Generator, info.Out)
 	outType := outPkg + info.OutType
 	if group.SingularData {
 		outType = "*" + outType
@@ -898,7 +895,7 @@ func (t *TestCud) getMethodArgs(service string, method *descriptor.MethodDescrip
 	in := gensupport.GetDesc(t.Generator, method.GetInputType())
 	out := gensupport.GetDesc(t.Generator, method.GetOutputType())
 	args := methodArgs{
-		Pkg:       t.support.GetPackageName(in),
+		Pkg:       t.support.GetPackageName(t.Generator, in),
 		Service:   service,
 		Method:    *method.Name,
 		InName:    *in.DescriptorProto.Name,
@@ -1175,7 +1172,7 @@ type e2eFieldInfo struct {
 
 func (t *TestCud) genE2edata(desc *generator.Descriptor) {
 	message := desc.DescriptorProto
-	pkg := t.support.GetPackage(desc)
+	pkg := t.support.GetPackage(t.Generator, desc)
 	t.importProtoPkg = true
 
 	// Get groups per field. For output data struct, use first

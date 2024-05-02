@@ -7,7 +7,7 @@ import (
 	"context"
 	fmt "fmt"
 	_ "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/edgectl/wrapper"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

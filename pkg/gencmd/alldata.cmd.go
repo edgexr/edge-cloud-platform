@@ -11,7 +11,7 @@ import (
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
-	google_protobuf "github.com/gogo/protobuf/types"
+	types "github.com/gogo/protobuf/types"
 	math "math"
 	"strings"
 )
@@ -233,7 +233,7 @@ func AllDataHideTags(in *edgeproto.AllData) {
 	for i0 := 0; i0 < len(in.VmPools); i0++ {
 		for i1 := 0; i1 < len(in.VmPools[i0].Vms); i1++ {
 			if _, found := tags["timestamp"]; found {
-				in.VmPools[i0].Vms[i1].UpdatedAt = google_protobuf.Timestamp{}
+				in.VmPools[i0].Vms[i1].UpdatedAt = types.Timestamp{}
 			}
 		}
 		if _, found := tags["nocmp"]; found {

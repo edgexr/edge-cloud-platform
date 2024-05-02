@@ -13,7 +13,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
-	google_protobuf "github.com/gogo/protobuf/types"
+	types "github.com/gogo/protobuf/types"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc/status"
 	"io"
@@ -36,7 +36,7 @@ func VMHideTags(in *edgeproto.VM) {
 		tags[tag] = struct{}{}
 	}
 	if _, found := tags["timestamp"]; found {
-		in.UpdatedAt = google_protobuf.Timestamp{}
+		in.UpdatedAt = types.Timestamp{}
 	}
 }
 
@@ -50,7 +50,7 @@ func VMPoolHideTags(in *edgeproto.VMPool) {
 	}
 	for i0 := 0; i0 < len(in.Vms); i0++ {
 		if _, found := tags["timestamp"]; found {
-			in.Vms[i0].UpdatedAt = google_protobuf.Timestamp{}
+			in.Vms[i0].UpdatedAt = types.Timestamp{}
 		}
 	}
 	if _, found := tags["nocmp"]; found {
@@ -67,7 +67,7 @@ func VMPoolMemberHideTags(in *edgeproto.VMPoolMember) {
 		tags[tag] = struct{}{}
 	}
 	if _, found := tags["timestamp"]; found {
-		in.Vm.UpdatedAt = google_protobuf.Timestamp{}
+		in.Vm.UpdatedAt = types.Timestamp{}
 	}
 }
 
@@ -84,7 +84,7 @@ func VMPoolInfoHideTags(in *edgeproto.VMPoolInfo) {
 	}
 	for i0 := 0; i0 < len(in.Vms); i0++ {
 		if _, found := tags["timestamp"]; found {
-			in.Vms[i0].UpdatedAt = google_protobuf.Timestamp{}
+			in.Vms[i0].UpdatedAt = types.Timestamp{}
 		}
 	}
 	if _, found := tags["nocmp"]; found {

@@ -18,11 +18,11 @@ syntax = "proto3";
 package edgeproto;
 
 import "google/api/annotations.proto";
-import "github.com/edgexr/edge-cloud-platform/tools/protogen/protogen.proto";
+import "tools/protogen/protogen.proto";
 import "result.proto";
 import "cloudletkey.proto";
 import "gogoproto/gogo.proto";
-import "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine/loc.proto";
+import "api/distributed_match_engine/loc.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;

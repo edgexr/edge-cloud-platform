@@ -5,7 +5,7 @@ package testutil
 
 import (
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"

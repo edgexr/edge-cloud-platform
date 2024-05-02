@@ -6,7 +6,7 @@ package testutil
 import (
 	"context"
 	fmt "fmt"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	"github.com/edgexr/edge-cloud-platform/pkg/edgectl/wrapper"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"

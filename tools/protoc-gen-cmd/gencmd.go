@@ -187,16 +187,20 @@ func (g *GenCmd) generateServiceVars(file *descriptor.FileDescriptorProto, servi
 	if gensupport.GetRedisApi(service) {
 		return
 	}
+	writeService := false
 	if len(service.Method) > 0 {
-		g.P("var ", service.Name, "Cmd ", file.Package, ".", *service.Name, "Client")
-		g.support.RegisterUsedPkg(*file.Package, file)
+		//g.support.RegisterUsedPkg(*file.Package, file)
 		for _, method := range service.Method {
 			in := g.GetDesc(method.GetInputType())
 			if in == nil || gensupport.ClientStreaming(method) || hasOneof(in) {
 				continue
 			}
 			g.inMessages[g.flatTypeName(*method.InputType)] = in
+			writeService = true
 		}
+	}
+	if writeService {
+		g.P("var ", service.Name, "Cmd ", file.Package, ".", *service.Name, "Client")
 	}
 }
 

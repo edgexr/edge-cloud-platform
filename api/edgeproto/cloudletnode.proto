@@ -16,7 +16,7 @@ syntax = "proto3";
 package edgeproto;
 
 import "google/api/annotations.proto";
-import "github.com/edgexr/edge-cloud-platform/tools/protogen/protogen.proto";
+import "tools/protogen/protogen.proto";
 import "cloudletkey.proto";
 import "result.proto";
 import "gogoproto/gogo.proto";
