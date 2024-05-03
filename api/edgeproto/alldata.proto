@@ -15,7 +15,7 @@
 syntax = "proto3";
 package edgeproto;
 
-import "github.com/edgexr/edge-cloud-platform/tools/protogen/protogen.proto";
+import "tools/protogen/protogen.proto";
 import "settings.proto";
 import "flavor.proto";
 import "operatorcode.proto";

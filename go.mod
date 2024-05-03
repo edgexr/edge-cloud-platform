@@ -71,6 +71,7 @@ require (
 	cloud.google.com/go/storage v1.30.1
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/edgexr/dnsproviders v0.0.1
+	github.com/edgexr/edge-proto v1.2.5-0.20220713205721-e2bf489db2b5
 	github.com/edgexr/golang-ssh v0.0.13
 	github.com/edgexr/jsonparser v0.0.0-20230606233159-ad7db8cef4c2
 	github.com/glendc/go-external-ip v0.1.0

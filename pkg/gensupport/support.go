@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
-	"os"
-	"path"
 	"reflect"
 	"sort"
 	"strconv"
@@ -50,9 +48,6 @@ const (
 // The generator.Plugin that will use it should include an
 // instance of it and pass it to the RunMain function.
 type PluginSupport struct {
-	// PackageImportPort is the import path of the proto file being
-	// generated
-	PackageImportPath string
 	// ProtoFiles are all of the proto files that support or possibly
 	// are dependencies of the proto file being generated
 	ProtoFiles []*descriptor.FileDescriptorProto
@@ -64,27 +59,26 @@ type PluginSupport struct {
 	MessageTypesGen map[string]struct{}
 	// Map of all packages used from calls to FQTypeName
 	// Can be used to generate imports.
-	UsedPkgs map[string]*descriptor.FileDescriptorProto
+	UsedPkgs map[string]*UsedPkg
 	// Current package, used for plugins adding code to .pb.go.
 	// For plugins that are generating files to separate directory
 	// and package, this is not needed.
 	PbGoPackage string
 	// Lookup by file and location of comments
 	Comments map[string]map[string]*descriptor.SourceCodeInfo_Location
+	// When generating files from protos that reference the
+	// originally generated objects in the .pb.go files, this is
+	// the import path.
+	SrcImport string
+}
+
+type UsedPkg struct {
+	Pkg        string
+	ImportPath string
+	File       *generator.FileDescriptor
 }
 
 func (s *PluginSupport) Init(req *plugin.CodeGeneratorRequest) {
-	// PackageImportPath is the path used in the import statement for
-	// structs generated from the proto files.
-	// This scheme requires that protoc is called in the Makefile from the
-	// same directory where the .proto files exist.
-	s.PackageImportPath, _ = os.Getwd()
-	// import path is under src
-	index := strings.Index(s.PackageImportPath, "/src/")
-	if index != -1 {
-		s.PackageImportPath = s.PackageImportPath[index+5:]
-	}
-
 	s.ProtoFiles = make([]*descriptor.FileDescriptorProto, 0)
 	s.ProtoFilesGen = make(map[string]struct{})
 	s.MessageTypesGen = make(map[string]struct{})
@@ -122,7 +116,7 @@ func (s *PluginSupport) Init(req *plugin.CodeGeneratorRequest) {
 // InitFile should be called by the plugin whenever a new file is being
 // generated.
 func (s *PluginSupport) InitFile() {
-	s.UsedPkgs = make(map[string]*descriptor.FileDescriptorProto)
+	s.UsedPkgs = make(map[string]*UsedPkg)
 }
 
 func (s *PluginSupport) GenFile(filename string) bool {
@@ -171,12 +165,6 @@ func (s *PluginSupport) GetGeneratorFiles(g *generator.Generator) []*generator.F
 	return files
 }
 
-// RegisterUsedPkg adds the package to the list
-func (s *PluginSupport) RegisterUsedPkg(pkg string, file *descriptor.FileDescriptorProto) {
-	pkg = strings.Replace(pkg, ".", "_", -1)
-	s.UsedPkgs[pkg] = file
-}
-
 // SetPbGoPackage should be called when using support to help generate .pb.go,
 // with the current package, to prevent generating an import for the
 // current package.
@@ -184,20 +172,34 @@ func (s *PluginSupport) SetPbGoPackage(pkgName string) {
 	s.PbGoPackage = pkgName
 }
 
-func (s *PluginSupport) GetPackageName(obj generator.Object) string {
-	pkg := *obj.File().Package
+func (s *PluginSupport) getPackageName(g *generator.Generator, obj generator.Object) (string, string) {
+	importPath := obj.GoImportPath()
+	if importPath == "." && s.SrcImport != "" {
+		// importing source objects from .pb.go
+		importPath = generator.GoImportPath(s.SrcImport)
+	}
+	pkg := string(g.GoPackageName(importPath))
 	if pkg == s.PbGoPackage {
 		pkg = ""
 	}
-	return strings.Replace(pkg, ".", "_", -1)
+	return strings.Replace(pkg, ".", "_", -1), string(importPath)
 }
 
-func (s *PluginSupport) GetPackage(obj generator.Object, ops ...Op) string {
+func (s *PluginSupport) GetPackageName(g *generator.Generator, obj generator.Object) string {
+	pkg, _ := s.getPackageName(g, obj)
+	return pkg
+}
+
+func (s *PluginSupport) GetPackage(g *generator.Generator, obj generator.Object, ops ...Op) string {
 	opts := getOptions(ops)
-	pkg := s.GetPackageName(obj)
+	pkg, importPath := s.getPackageName(g, obj)
 	if pkg != "" {
 		if !opts.noImport {
-			s.UsedPkgs[pkg] = obj.File().FileDescriptorProto
+			s.UsedPkgs[pkg] = &UsedPkg{
+				Pkg:        pkg,
+				ImportPath: importPath,
+				File:       obj.File(),
+			}
 		}
 		pkg += "."
 	}
@@ -208,13 +210,22 @@ func (s *PluginSupport) GetPackage(obj generator.Object, ops ...Op) string {
 // and parents for nested definitions) for the given generator.Object.
 // This also adds the package to a list of used packages for PrintUsedImports().
 func (s *PluginSupport) FQTypeName(g *generator.Generator, obj generator.Object, ops ...Op) string {
-	pkg := s.GetPackage(obj, ops...)
+	pkg := s.GetPackage(g, obj, ops...)
 	return pkg + generator.CamelCaseSlice(obj.TypeName())
 }
 
 // PrintUsedImports will print imports based on calls to FQTypeName() and
 // RegisterUsedPkg().
 func (s *PluginSupport) PrintUsedImports(g *generator.Generator) {
+	s.PrintUsedImportsPlugin(g, map[string]struct{}{})
+}
+
+// PrintUsedImportsPlugin is like PrintUsedImports, but it avoids a
+// bug in the generator code that doesn't register printed imports
+// for dependent files (i.e. doesn't use generator.PrintImport() when
+// printing the import). This only happens where we're being used as a
+// plugin alongside the go code generator (i.e. as part of .pb.go).
+func (s *PluginSupport) PrintUsedImportsPlugin(g *generator.Generator, handledFiles map[string]struct{}) {
 	// sort used packages so file doesn't change if recompiling
 	pkgsSorted := make([]string, len(s.UsedPkgs))
 	ii := 0
@@ -227,15 +238,14 @@ func (s *PluginSupport) PrintUsedImports(g *generator.Generator) {
 		if pkg == s.PbGoPackage {
 			continue
 		}
-		file := s.UsedPkgs[pkg]
-		ipath := path.Dir(*file.Name)
-		if ipath == "." {
-			ipath = s.PackageImportPath
-		} else if builtinPath, found := g.ImportMap[*file.Name]; found {
-			// this handles google/protobuf builtin paths for
-			// Timestamp, Empty, etc.
-			ipath = builtinPath
+		used := s.UsedPkgs[pkg]
+		fileName := *used.File.Name
+		if _, ok := handledFiles[fileName]; ok {
+			// handled already by generator when we are used as a plugin
+			continue
 		}
+		pkg := used.Pkg
+		ipath := used.ImportPath
 		g.PrintImport(generator.GoPackageName(pkg), generator.GoImportPath(ipath))
 	}
 }
@@ -532,7 +542,7 @@ func (s *PluginSupport) GetMessageKeyType(g *generator.Generator, desc *generato
 		}
 		return s.GoType(g, field), nil
 	} else if typ := GetCustomKeyType(message); typ != "" {
-		pkg := s.GetPackage(desc)
+		pkg := s.GetPackage(g, desc)
 		return pkg + typ, nil
 	} else if GetObjAndKey(message) {
 		return s.FQTypeName(g, desc), nil
@@ -631,13 +641,15 @@ func RunMain(pkg, fileSuffix string, p generator.Plugin, support *PluginSupport)
 
 	args := strings.Split(req.GetParameter(), ",")
 	for _, arg := range args {
-		kv := strings.Split(arg, "=")
+		kv := strings.SplitN(arg, "=", 2)
 		if len(kv) == 2 {
 			switch kv[0] {
 			case "suffix":
 				fileSuffix = kv[1]
 			case "pkg":
 				pkg = kv[1]
+			case "srcimport":
+				support.SrcImport = kv[1]
 			}
 		}
 	}
@@ -647,7 +659,9 @@ func RunMain(pkg, fileSuffix string, p generator.Plugin, support *PluginSupport)
 		if protofile.Options == nil {
 			protofile.Options = &descriptor.FileOptions{}
 		}
-		protofile.Options.GoPackage = &pkg
+		if protofile.Options.GoPackage == nil {
+			protofile.Options.GoPackage = &pkg
+		}
 	}
 
 	resp := command.GeneratePlugin(req, p, fileSuffix)

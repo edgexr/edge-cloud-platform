@@ -144,6 +144,10 @@ func (m *mex) Generate(file *generator.FileDescriptor) {
 
 func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 	hasGenerateCud := false
+	fileDeps := make(map[string]struct{})
+	for _, dep := range file.Dependency {
+		fileDeps[dep] = struct{}{}
+	}
 	for _, desc := range file.Messages() {
 		msg := desc.DescriptorProto
 		if GetGenerateCud(msg) {
@@ -187,7 +191,7 @@ func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 		m.gen.PrintImport("", "github.com/google/go-cmp/cmp")
 		m.gen.PrintImport("", "github.com/google/go-cmp/cmp/cmpopts")
 	}
-	m.support.PrintUsedImports(m.gen)
+	m.support.PrintUsedImportsPlugin(m.gen, fileDeps)
 }
 
 func (m *mex) generateEnum(file *generator.FileDescriptor, desc *generator.EnumDescriptor) {
@@ -2906,7 +2910,7 @@ func (m *mex) generateClearTagged(desc *generator.Descriptor) {
 	msgName := strings.Join(desc.TypeName(), "_")
 	m.P("func (s *", msgName, ") ClearTagged(tags map[string]struct{}) {")
 	visited := make([]*generator.Descriptor, 0)
-	srcPkg := m.support.GetPackageName(desc)
+	srcPkg := m.support.GetPackageName(m.gen, desc)
 	m.generateClearTaggedFields(srcPkg, make([]string, 0), desc, visited)
 	m.P("}")
 	m.P()
@@ -2928,7 +2932,7 @@ func (m *mex) generateClearTaggedFields(srcPkg string, parents []string, desc *g
 		tag := GetHideTag(field)
 		if tag == "" && *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE && mapType == nil {
 			subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
-			if srcPkg == m.support.GetPackageName(subDesc) {
+			if srcPkg == m.support.GetPackageName(m.gen, subDesc) {
 				// sub message should have ClearTags() defined
 				nilCheck := false
 				if repeated || gogoproto.IsNullable(field) {

@@ -19,14 +19,14 @@ package edgeproto;
 
 import "google/api/annotations.proto";
 import "result.proto";
-import "github.com/edgexr/edge-cloud-platform/tools/protogen/protogen.proto";
+import "tools/protogen/protogen.proto";
 import "gogoproto/gogo.proto";
 import "autoscalepolicy.proto";
 import "cloudletkey.proto";
 import "app.proto";
 import "clusterinst.proto";
-import "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine/loc.proto";
-import "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine/appcommon.proto";
+import "api/distributed_match_engine/loc.proto";
+import "api/distributed_match_engine/appcommon.proto";
 import "google/protobuf/timestamp.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;

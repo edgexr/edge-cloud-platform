@@ -201,7 +201,6 @@ var CloudletAccessApiCmds = []*cobra.Command{
 	GetAccessDataCmd.GenCmd(),
 }
 
-var CloudletAccessKeyApiCmd edgeproto.CloudletAccessKeyApiClient
 var IssueCertRequestRequiredArgs = []string{}
 var IssueCertRequestOptionalArgs = []string{
 	"commonname",

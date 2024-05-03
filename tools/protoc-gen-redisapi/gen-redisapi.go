@@ -34,7 +34,6 @@ func (s *RedisAPIGen) Name() string {
 
 func (s *RedisAPIGen) Init(g *generator.Generator) {
 	s.Generator = g
-	s.support.Init(g.Request)
 	s.apiTmpl = template.Must(template.New("api").Parse(apiTemplate))
 }
 

@@ -5,7 +5,6 @@ package gencmd
 
 import (
 	fmt "fmt"
-	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
@@ -18,7 +17,6 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
-var NotifyApiCmd edgeproto.NotifyApiClient
 var NoticeRequiredArgs = []string{}
 var NoticeOptionalArgs = []string{
 	"action",

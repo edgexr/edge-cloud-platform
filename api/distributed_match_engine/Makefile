@@ -3,14 +3,14 @@
 PROTODEPS	:= $(shell go list -f '{{ .Dir }}' -m \
 	github.com/grpc-ecosystem/grpc-gateway \
 	github.com/gogo/googleapis \
-	github.com/edgexr/edge-cloud-platform)
+	github.com/edgexr/edge-proto)
 GW		:= $(word 1,$(PROTODEPS))
 APIS		:= $(word 2,$(PROTODEPS))
-PROJECT		:= $(word 3,$(PROTODEPS))
-EDGEPROTOGENDIR	= $(PROJECT)/tools/edgeprotogen
+EDGEPROTO	:= $(word 3,$(PROTODEPS))
+EDGEPROTOGENDIR	= $(EDGEPROTO)/edgeprotogen
 INCLUDE		= -I. -I${GW} -I${APIS} -I${GOPATH} -I${EDGEPROTOGENDIR}
 BUILTIN		= Mgoogle/protobuf/timestamp.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/empty.proto=github.com/gogo/protobuf/types,Mgoogle/api/annotations.proto=github.com/gogo/googleapis/google/api,Mgoogle/protobuf/field_mask.proto=github.com/gogo/protobuf/types,Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor
-DMEDIR		= ${GOPATH}/src/github.com/edgexr/edge-proto/dme
+DMEDIR		= ${EDGEPROTO}/dme
 PROTOS		:= app-client.proto appcommon.proto dynamic-location-group.proto loc.proto locverify.proto qos-position.proto qos.proto session.proto app-client-platos.proto
 
 build: $(PROTOS)
@@ -27,4 +27,5 @@ external-swagger: $(PROTOS)
 	protoc ${INCLUDE} --swagger_out=logtostderr=true,allow_merge=true,config_file=swagger_config.yaml,merge_file_name=app-client:./external-doc *.proto
 
 $(PROTOS):
-	ln -sf ${DMEDIR}/$@ $@
+	rm -f $@
+	cp ${DMEDIR}/$@ $@
