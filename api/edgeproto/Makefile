@@ -2,21 +2,24 @@
 
 REPO	:= github.com/edgexr/edge-cloud-platform
 
+# This makefile may be included in other Makefiles, to ensure
+# the correct deps are used, we need to use the correct directory
+# for the next go list call.
+REPODIR		?= $(shell go list -f '{{ .Dir }}' -m ${REPO})
+
 GOPATH		= ../../../../..
-PROTODEPS	:= $(shell go list -f '{{ .Dir }}' -m \
+PROTODEPS	:= $(shell cd ${REPODIR} && go list -f '{{ .Dir }}' -m \
 	github.com/grpc-ecosystem/grpc-gateway \
 	github.com/gogo/googleapis \
 	github.com/gogo/protobuf \
-	github.com/edgexr/edge-proto \
-	${REPO})
+	github.com/edgexr/edge-proto)
 GW		:= $(word 1,$(PROTODEPS))
 APIS		:= $(word 2,$(PROTODEPS))
 GOGO		:= $(word 3,$(PROTODEPS))
 EDGEPROTO	:= $(word 4,$(PROTODEPS))
-PROJECT		:= $(word 5,$(PROTODEPS))
 EDGEPROTOGENDIR	:= $(EDGEPROTO)/edgeprotogen
-PROTOGENDIR	:= $(PROJECT)/tools/protogen
-INCLUDE		:= -I. -I${GW} -I${APIS} -I${GOGO} -I${GOPATH} -I${EDGEPROTOGENDIR} -I${PROTOGENDIR} -I${PROJECT}
+PROTOGENDIR	:= $(REPODIR)/tools/protogen
+INCLUDE		:= -I. -I${GW} -I${APIS} -I${GOGO} -I${GOPATH} -I${EDGEPROTOGENDIR} -I${PROTOGENDIR} -I${REPODIR}
 
 # The M option specifies the package name for DME protos because they
 # live in a different repo and don't have a go_package option
