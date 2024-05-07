@@ -20,10 +20,7 @@ check-go-vers:
 gen-test-certs:
 	(cd pkg/tls; ./gen-test-certs.sh)
 
-gen-vers:
-	(cd pkg/version; ./version.sh)
-
-generate: check-go-vers gen-vers gen-ansible
+generate: check-go-vers gen-ansible
 	go install $(GO_BUILD_FLAGS) \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger \
@@ -46,7 +43,7 @@ generate: check-go-vers gen-vers gen-ansible
 gen-ansible:
 	make -C pkg/ccrm
 
-gobuild: check-go-vers gen-vers gen-ansible
+gobuild: check-go-vers gen-ansible
 	go build $(GO_BUILD_FLAGS) ./...
 	go vet ./...
 
