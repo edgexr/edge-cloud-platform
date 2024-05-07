@@ -26,9 +26,9 @@ import "restagtable.proto";
 import "common.proto";
 import "infraresources.proto";
 import "org.proto";
-import "api/distributed_match_engine/loc.proto";
+import "dme/loc.proto";
 import "gogoproto/gogo.proto";
-import "api/distributed_match_engine/appcommon.proto";
+import "dme/appcommon.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;

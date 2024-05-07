@@ -18,7 +18,7 @@ syntax = "proto3";
 package testgen;
 
 import "gogoproto/gogo.proto";
-import "api/distributed_match_engine/loc.proto";
+import "dme/loc.proto";
 import "tools/protogen/protogen.proto";
 
 enum OuterEnum {

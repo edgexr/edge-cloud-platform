@@ -26,8 +26,8 @@ import "common.proto";
 import "cloudletkey.proto";
 import "autoscalepolicy.proto";
 import "cluster.proto";
-import "api/distributed_match_engine/loc.proto";
-import "api/distributed_match_engine/appcommon.proto";
+import "dme/loc.proto";
+import "dme/appcommon.proto";
 import "gogoproto/gogo.proto";
 import "edgeprotogen.proto";
 

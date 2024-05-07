@@ -19,7 +19,7 @@ package edgeproto;
 
 import "google/api/annotations.proto";
 import "tools/protogen/protogen.proto";
-import "api/distributed_match_engine/loc.proto";
+import "dme/loc.proto";
 import "gogoproto/gogo.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;

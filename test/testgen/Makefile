@@ -9,18 +9,18 @@ PROTODEPS	:= $(shell go list -f '{{ .Dir }}' -m \
 	${REPO})
 GOGO		:= $(word 1,$(PROTODEPS))
 EDGEPROTO	:= $(word 2,$(PROTODEPS))
-PROJECT		:= $(word 3,$(PROTODEPS))
+REPODIR		:= $(word 3,$(PROTODEPS))
 PROTOC		= $(shell which protoc)
 GOMEX		= $(shell which protoc-gen-gomex)
 TESTGEN		= $(shell which protoc-gen-test)
 GATEWAYGEN	= $(shell which protoc-gen-grpc-gateway)
 CMDGEN		= $(shell which protoc-gen-cmd)
-EDGEPROTOGENDIR	= $(PROJECT)/tools/edgeprotogen
-PROTOGENDIR	= $(PROJECT)/tools/protogen
-INCLUDE		= -I. -I${GOGO} -I${GOPATH} -I${EDGEPROTOGENDIR} -I${PROTOGENDIR} -I${PROJECT}
+EDGEPROTOGENDIR	= $(EDGEPROTO)/edgeprotogen
+PROTOGENDIR	= $(REPODIR)/tools/protogen
+INCLUDE		= -I. -I${GOGO} -I${GOPATH} -I${EDGEPROTOGENDIR} -I${PROTOGENDIR} -I${REPODIR} -I${EDGEPROTO}
 
 DMEPROTOS	:= $(shell cd ${EDGEPROTO}/dme && ls *.proto)
-DMEREFS		:= $(patsubst %,Mapi/distributed_match_engine/%=$(REPO)/api/distributed_match_engine,${DMEPROTOS})
+DMEREFS		:= $(patsubst %,Mdme/%=$(REPO)/api/distributed_match_engine,${DMEPROTOS})
 # convert to comma separated list
 null	:=
 space	:= $(null) #

@@ -19,13 +19,13 @@ GOGO		:= $(word 3,$(PROTODEPS))
 EDGEPROTO	:= $(word 4,$(PROTODEPS))
 EDGEPROTOGENDIR	:= $(EDGEPROTO)/edgeprotogen
 PROTOGENDIR	:= $(REPODIR)/tools/protogen
-INCLUDE		:= -I. -I${GW} -I${APIS} -I${GOGO} -I${GOPATH} -I${EDGEPROTOGENDIR} -I${PROTOGENDIR} -I${REPODIR}
+INCLUDE		:= -I. -I${GW} -I${APIS} -I${GOGO} -I${GOPATH} -I${EDGEPROTOGENDIR} -I${REPODIR} -I${EDGEPROTO}
 
 # The M option specifies the package name for DME protos because they
 # live in a different repo and don't have a go_package option
 # tailored to this repo.
 DMEPROTOS	:= $(shell cd ${EDGEPROTO}/dme && ls *.proto)
-DMEREFS		:= $(patsubst %,Mapi/distributed_match_engine/%=$(REPO)/api/distributed_match_engine,${DMEPROTOS})
+DMEREFS		:= $(patsubst %,Mdme/%=$(REPO)/api/distributed_match_engine,${DMEPROTOS})
 # convert to comma separated list
 null	:=
 space	:= $(null) #
