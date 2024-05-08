@@ -25,6 +25,7 @@ generate: check-go-vers gen-ansible
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger \
 		github.com/gogo/protobuf/protoc-gen-gogofast
+	go mod download
 	make -C tools/protogen
 	make -C tools/edgeprotogen
 	go install $(GO_BUILD_FLAGS) \
