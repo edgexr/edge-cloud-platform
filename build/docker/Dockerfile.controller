@@ -8,7 +8,6 @@ FROM $EDGE_CLOUD_INFRA_BASE
 
 COPY --from=allinone /usr/local/bin/kubectl /usr/bin/kubectl
 COPY --from=allinone /usr/local/bin/controller /usr/bin/controller
-COPY --from=allinone /version.yaml /version.yaml
 
 ENTRYPOINT []
 CMD [ "/usr/bin/controller" ]
