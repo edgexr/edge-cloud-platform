@@ -50,22 +50,20 @@ ADD ./build/docker/mex-docker.env /root/mex-docker.env
 ADD ./build/docker/edge-cloud-entrypoint.sh /usr/local/bin
 ADD ./build/docker/atomic-certs-update.sh /usr/local/bin
 RUN chmod +x /usr/local/bin/edge-cloud-entrypoint.sh \
-	     /usr/local/bin/atomic-certs-update.sh
+	/usr/local/bin/atomic-certs-update.sh
 
 COPY --from=build /go/bin/controller \
-		  /go/bin/ccrm \
-		  /go/bin/crm \
-		  /go/bin/dme \
-		  /go/bin/cluster-svc \
-		  /go/bin/edgectl \
-		  /go/bin/edgeturn \
-		  /go/bin/shepherd \
-		  /go/bin/resource-tracker \
-		  /go/bin/autoprov \
-		  /go/bin/notifyroot \
-		  /go/bin/kubectl \
-		  /usr/local/bin/
-
-COPY --from=build /edge-cloud-platform/pkg/version/version.yaml /version.yaml
+	/go/bin/ccrm \
+	/go/bin/crm \
+	/go/bin/dme \
+	/go/bin/cluster-svc \
+	/go/bin/edgectl \
+	/go/bin/edgeturn \
+	/go/bin/shepherd \
+	/go/bin/resource-tracker \
+	/go/bin/autoprov \
+	/go/bin/notifyroot \
+	/go/bin/kubectl \
+	/usr/local/bin/
 
 CMD [ "edge-cloud-entrypoint.sh" ]
