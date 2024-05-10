@@ -50,6 +50,7 @@ type CCRM struct {
 	redisClient      *redis.Client
 	echoServ         *echo.Echo
 	ctrlConn         *grpc.ClientConn
+	registryAuth     *cloudcommon.RegistryAuth
 }
 
 type Flags struct {
@@ -177,7 +178,7 @@ func (s *CCRM) Start() error {
 	// initialize and start the notify client
 	s.caches.InitNotify(notifyClient, &s.nodeMgr)
 
-	s.handler.Init(ctx, s.nodeType, &s.nodeMgr, &s.caches, s.redisClient, s.ctrlConn, &s.flags)
+	s.handler.Init(ctx, s.nodeType, &s.nodeMgr, &s.caches, s.redisClient, s.ctrlConn, &s.flags, s.registryAuth)
 
 	echoServ := s.initAnsibleServer(ctx)
 
@@ -230,14 +231,19 @@ func (s *CCRM) validateRegistries(ctx context.Context) error {
 		} else if len(out) != 1 {
 			return fmt.Errorf("Invalid registry path")
 		}
-		platform_registry_path := s.flags.CloudletRegistryPath + ":" + strings.TrimSpace(s.flags.VersionTag)
+		platformRegistryPath := s.flags.CloudletRegistryPath + ":" + strings.TrimSpace(s.flags.VersionTag)
 		authApi := &cloudcommon.VaultRegistryAuthApi{
 			RegAuthMgr: cloudcommon.NewRegistryAuthMgr(s.nodeMgr.VaultConfig, s.nodeMgr.ValidDomains),
 		}
-		err = cloudcommon.ValidateDockerRegistryPath(ctx, platform_registry_path, authApi)
+		err = cloudcommon.ValidateDockerRegistryPath(ctx, platformRegistryPath, authApi)
 		if err != nil {
 			return err
 		}
+		auth, err := authApi.GetRegistryAuth(ctx, platformRegistryPath)
+		if err != nil {
+			return err
+		}
+		s.registryAuth = auth
 	}
 	return nil
 }

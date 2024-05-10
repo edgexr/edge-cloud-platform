@@ -34,6 +34,13 @@
     path: /etc/mex-release
   register: mex_release
 
+- name: Docker login to private registry
+  community.docker.docker_login:
+    registry_url: "{{ docker_registry }}"
+    username: "{{ docker_username }}"
+    password: "{{ docker_password }}"
+  when: docker_password is defined and docker_password | length > 0
+
 - name: Deploy crm docker
   community.docker.docker_container: "{{ lookup('template', 'crm_docker.yml.j2') | from_yaml }}"
   register: deploy_crm

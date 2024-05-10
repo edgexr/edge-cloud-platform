@@ -54,6 +54,9 @@ crmserver:
     BAR_ONLY: no-bar
     FOO: foo
     JAEGER_ENDPOINT: http://jaeger.test.domain:1425
+docker_password: testpass
+docker_registry: ghcr.io
+docker_username: testuser
 edgeCloudImage: ghcr.io/company/crm-image
 edgeCloudVersion: 1234-99-XX
 mobiledgeXPackageVersion: 5.0.0

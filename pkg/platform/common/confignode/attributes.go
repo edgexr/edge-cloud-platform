@@ -107,7 +107,7 @@ func GetDockerArgs(cmdArgs []string) map[string]interface{} {
 	return args
 }
 
-func GetCloudletAttributes(ctx context.Context, cl *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) (map[string]interface{}, error) {
+func GetCloudletAttributes(ctx context.Context, cl *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, registryAuth *cloudcommon.RegistryAuth) (map[string]interface{}, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletAttributes", "region", pfConfig.Region, "cloudletKey", cl.Key)
 
 	// Make copy because this function modifies cloudlet
@@ -131,6 +131,12 @@ func GetCloudletAttributes(ctx context.Context, cl *edgeproto.Cloudlet, pfConfig
 	attributes["notifyAddrs"] = pfConfig.NotifyCtrlAddrs
 
 	attributes["mobiledgeXPackageVersion"] = version.MobiledgeXPackageVersion
+
+	if registryAuth != nil && registryAuth.AuthType == cloudcommon.BasicAuth {
+		attributes["docker_registry"] = registryAuth.Hostname
+		attributes["docker_username"] = registryAuth.Username
+		attributes["docker_password"] = registryAuth.Password
+	}
 
 	if pfConfig.ThanosRecvAddr != "" {
 		attributes["thanosRecvAddr"] = pfConfig.ThanosRecvAddr

@@ -20,6 +20,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/go-redis/redis/v8"
@@ -41,6 +42,7 @@ type CCRMHandler struct {
 	CancelHandlers      func()
 	nodeAttributesCache NodeAttributesCache
 	vaultClient         *accessapi.VaultClient
+	registryAuth        *cloudcommon.RegistryAuth
 }
 
 type NodeAttributesCache struct {
@@ -55,12 +57,13 @@ type NodeAttributesData struct {
 
 type MessageHandler func(ctx context.Context, redisMsg *redis.Message) error
 
-func (s *CCRMHandler) Init(ctx context.Context, nodeType string, nodeMgr *node.NodeMgr, caches *CCRMCaches, redisClient *redis.Client, ctrlConn *grpc.ClientConn, flags *Flags) {
+func (s *CCRMHandler) Init(ctx context.Context, nodeType string, nodeMgr *node.NodeMgr, caches *CCRMCaches, redisClient *redis.Client, ctrlConn *grpc.ClientConn, flags *Flags, registryAuth *cloudcommon.RegistryAuth) {
 	s.caches = caches
 	s.nodeMgr = nodeMgr
 	s.redisClient = redisClient
 	s.ctrlConn = ctrlConn
 	s.flags = flags
+	s.registryAuth = registryAuth
 	s.nodeAttributesCache.Init()
 
 	// notify handlers
