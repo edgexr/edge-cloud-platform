@@ -301,7 +301,7 @@ func (s *CCRMHandler) getCloudletPlatformAttributes(ctx context.Context, in *edg
 		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "getPlatformConfig", "pfConfig", *pfConfig)
-	return confignode.GetCloudletAttributes(ctx, in, pfConfig)
+	return confignode.GetCloudletAttributes(ctx, in, pfConfig, s.registryAuth)
 }
 
 func (s *CCRMHandler) updateNodeAttributes(ctx context.Context, baseAttributes map[string]interface{}, node *edgeproto.CloudletNode) {

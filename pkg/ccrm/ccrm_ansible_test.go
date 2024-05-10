@@ -55,6 +55,13 @@ var testFlags = Flags{
 	DebugLevels:                   "api,infra,notify",
 }
 
+var testAuth = &cloudcommon.RegistryAuth{
+	AuthType: cloudcommon.BasicAuth,
+	Hostname: "ghcr.io",
+	Username: "testuser",
+	Password: "testpass",
+}
+
 func getTestCloudlet() edgeproto.Cloudlet {
 	return edgeproto.Cloudlet{
 		Key: edgeproto.CloudletKey{
@@ -117,7 +124,7 @@ func TestNodeAttributesYaml(t *testing.T) {
 	caches := CCRMCaches{}
 	caches.Init(ctx, "ccrm", &nodeMgr, nil)
 	handler := CCRMHandler{}
-	handler.Init(ctx, "ccrm", &nodeMgr, &caches, nil, nil, &testFlags)
+	handler.Init(ctx, "ccrm", &nodeMgr, &caches, nil, nil, &testFlags, testAuth)
 
 	cloudlet := getTestCloudlet()
 	baseAttributes, err := handler.getCloudletPlatformAttributes(ctx, &cloudlet)
@@ -157,7 +164,7 @@ func TestAnsibleServer(t *testing.T) {
 
 	ccrmType := "ccrm"
 	ccrm.caches.Init(ctx, ccrmType, &ccrm.nodeMgr, nil)
-	ccrm.handler.Init(ctx, ccrmType, &ccrm.nodeMgr, &ccrm.caches, nil, nil, &ccrm.flags)
+	ccrm.handler.Init(ctx, ccrmType, &ccrm.nodeMgr, &ccrm.caches, nil, nil, &ccrm.flags, nil)
 	ccrm.echoServ = ccrm.initAnsibleServer(ctx)
 
 	// test cloudlet
