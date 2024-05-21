@@ -192,7 +192,6 @@ type AccessApi interface {
 	DeleteDNSRecord(ctx context.Context, fqdn string) error
 	GetSessionTokens(ctx context.Context, secretName string) (string, error)
 	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
-	GetGCSCreds(ctx context.Context) ([]byte, error)
 	GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error)
 	CreateCloudletNode(ctx context.Context, node *edgeproto.CloudletNode) (string, error)
 	DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error
@@ -214,7 +213,6 @@ const (
 	GetSessionTokens        = "get-session-tokens"
 	GetPublicCert           = "get-public-cert"
 	GetKafkaCreds           = "get-kafka-creds"
-	GetGCSCreds             = "get-gcs-creds"
 	GetFederationAPIKey     = "get-federation-apikey"
 	CreateCloudletNode      = "create-cloudlet-node"
 	DeleteCloudletNode      = "delete-cloudlet-node"

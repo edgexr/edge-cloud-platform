@@ -641,10 +641,9 @@ var xxx_messageInfo_GPUDriverKey proto.InternalMessageInfo
 type GPUDriverBuild struct {
 	// Unique identifier key
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// Path where the driver package is located, if it is authenticated path,
-	// then credentials must be passed as part of URL (one-time download path)
+	// Path where the driver package is located, must be either a public path or the URL to the driver uploaded to the internal VM registry.
 	DriverPath string `protobuf:"bytes,2,opt,name=driver_path,json=driverPath,proto3" json:"driver_path,omitempty"`
-	// Optional credentials (username:password) to access driver path
+	// (deprecated) Optional credentials (username:password) to access driver path
 	DriverPathCreds string `protobuf:"bytes,3,opt,name=driver_path_creds,json=driverPathCreds,proto3" json:"driver_path_creds,omitempty"`
 	// Operator System supported by GPU driver build
 	OperatingSystem OSType `protobuf:"varint,4,opt,name=operating_system,json=operatingSystem,proto3,enum=edgeproto.OSType" json:"operating_system,omitempty"`
@@ -780,7 +779,7 @@ type GPUDriver struct {
 	Key GPUDriverKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key"`
 	// List of GPU driver build
 	Builds []GPUDriverBuild `protobuf:"bytes,3,rep,name=builds,proto3" json:"builds"`
-	// License config to setup license (will be stored in secure storage)
+	// URL License config file to setup license
 	LicenseConfig string `protobuf:"bytes,4,opt,name=license_config,json=licenseConfig,proto3" json:"license_config,omitempty"`
 	// License config md5sum, to ensure integrity of license config
 	LicenseConfigMd5Sum string `protobuf:"bytes,5,opt,name=license_config_md5sum,json=licenseConfigMd5sum,proto3" json:"license_config_md5sum,omitempty"`
@@ -793,7 +792,7 @@ type GPUDriver struct {
 	IgnoreState bool `protobuf:"varint,8,opt,name=ignore_state,json=ignoreState,proto3" json:"ignore_state,omitempty"`
 	// Preparing to be deleted
 	DeletePrepare bool `protobuf:"varint,9,opt,name=delete_prepare,json=deletePrepare,proto3" json:"delete_prepare,omitempty"`
-	// GPU driver storage bucket name
+	// (deprecated) GPU driver storage bucket name
 	StorageBucketName string `protobuf:"bytes,10,opt,name=storage_bucket_name,json=storageBucketName,proto3" json:"storage_bucket_name,omitempty"`
 	// GPU driver license config storage path
 	LicenseConfigStoragePath string `protobuf:"bytes,11,opt,name=license_config_storage_path,json=licenseConfigStoragePath,proto3" json:"license_config_storage_path,omitempty"`
@@ -837,7 +836,7 @@ type GPUConfig struct {
 	Driver GPUDriverKey `protobuf:"bytes,1,opt,name=driver,proto3" json:"driver"`
 	// Properties to identify specifics of GPU
 	Properties map[string]string `protobuf:"bytes,2,rep,name=properties,proto3" json:"properties,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// Cloudlet specific license config to setup license (will be stored in secure storage)
+	// Cloudlet specific license config to setup license
 	LicenseConfig string `protobuf:"bytes,3,opt,name=license_config,json=licenseConfig,proto3" json:"license_config,omitempty"`
 	// Cloudlet specific license config md5sum, to ensure integrity of license config
 	LicenseConfigMd5Sum string `protobuf:"bytes,4,opt,name=license_config_md5sum,json=licenseConfigMd5sum,proto3" json:"license_config_md5sum,omitempty"`
@@ -2268,9 +2267,9 @@ type GPUDriverApiClient interface {
 	AddGPUDriverBuild(ctx context.Context, in *GPUDriverBuildMember, opts ...grpc.CallOption) (GPUDriverApi_AddGPUDriverBuildClient, error)
 	// Remove GPU Driver Build. Removes build from GPU driver.
 	RemoveGPUDriverBuild(ctx context.Context, in *GPUDriverBuildMember, opts ...grpc.CallOption) (GPUDriverApi_RemoveGPUDriverBuildClient, error)
-	// Get GPU Driver Build URL. Returns a time-limited signed URL to download GPU driver.
+	// (Deprecated) Get GPU Driver Build URL. Returns a time-limited signed URL to download GPU driver.
 	GetGPUDriverBuildURL(ctx context.Context, in *GPUDriverBuildMember, opts ...grpc.CallOption) (*GPUDriverBuildURL, error)
-	// Get GPU Driver License Config. Returns the license config specific to GPU driver
+	// (Deprecated) Get GPU Driver License Config. Returns the license config specific to GPU driver
 	GetGPUDriverLicenseConfig(ctx context.Context, in *GPUDriverKey, opts ...grpc.CallOption) (*Result, error)
 }
 
@@ -2509,9 +2508,9 @@ type GPUDriverApiServer interface {
 	AddGPUDriverBuild(*GPUDriverBuildMember, GPUDriverApi_AddGPUDriverBuildServer) error
 	// Remove GPU Driver Build. Removes build from GPU driver.
 	RemoveGPUDriverBuild(*GPUDriverBuildMember, GPUDriverApi_RemoveGPUDriverBuildServer) error
-	// Get GPU Driver Build URL. Returns a time-limited signed URL to download GPU driver.
+	// (Deprecated) Get GPU Driver Build URL. Returns a time-limited signed URL to download GPU driver.
 	GetGPUDriverBuildURL(context.Context, *GPUDriverBuildMember) (*GPUDriverBuildURL, error)
-	// Get GPU Driver License Config. Returns the license config specific to GPU driver
+	// (Deprecated) Get GPU Driver License Config. Returns the license config specific to GPU driver
 	GetGPUDriverLicenseConfig(context.Context, *GPUDriverKey) (*Result, error)
 }
 

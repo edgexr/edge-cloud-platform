@@ -206,17 +206,6 @@ func (s *ControllerClient) GetKafkaCreds(ctx context.Context) (*node.KafkaCreds,
 	return &creds, err
 }
 
-func (s *ControllerClient) GetGCSCreds(ctx context.Context) ([]byte, error) {
-	req := &edgeproto.AccessDataRequest{
-		Type: platform.GetGCSCreds,
-	}
-	reply, err := s.client.GetAccessData(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return reply.Data, err
-}
-
 func (s *ControllerClient) GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error) {
 	data, err := json.Marshal(fedKey)
 	if err != nil {

@@ -296,10 +296,9 @@ message GPUDriverKey {
 message GPUDriverBuild {
   // Unique identifier key
   string name = 1;
-  // Path where the driver package is located, if it is authenticated path,
-  // then credentials must be passed as part of URL (one-time download path)
+  // Path where the driver package is located, must be either a public path or the URL to the driver uploaded to the internal artifact registry.
   string driver_path = 2;
-  // Optional credentials (username:password) to access driver path
+  // (deprecated) Optional credentials (username:password) to access driver path
   string driver_path_creds = 3;
   // Operator System supported by GPU driver build
   OSType operating_system = 4;
@@ -339,7 +338,7 @@ message GPUDriver {
   GPUDriverKey key = 2 [(gogoproto.nullable) = false];
   // List of GPU driver build
   repeated GPUDriverBuild builds = 3 [(gogoproto.nullable) = false];
-  // License config to setup license (will be stored in secure storage)
+  // URL to license config file to setup license
   string license_config = 4;
   // License config md5sum, to ensure integrity of license config
   string license_config_md5sum = 5;
@@ -352,7 +351,7 @@ message GPUDriver {
   bool ignore_state = 8;
   // Preparing to be deleted
   bool delete_prepare = 9 [(protogen.backend) = true]; 
-  // GPU driver storage bucket name
+  // (deprecated) GPU driver storage bucket name
   string storage_bucket_name = 10 [(protogen.backend) = true];
   // GPU driver license config storage path
   string license_config_storage_path = 11 [(protogen.backend) = true];
@@ -437,7 +436,7 @@ service GPUDriverApi {
     option (protogen.method_also_required) = "Build.Name";
     option (protogen.method_noconfig) = "Build.DriverPath,Build.OperatingSystem,Build.KernelVersion,Build.HypervisorInfo";
   }
-  // Get GPU Driver Build URL. Returns a time-limited signed URL to download GPU driver.
+  // (Deprecated) Get GPU Driver Build URL. Returns a time-limited signed URL to download GPU driver.
   rpc GetGPUDriverBuildURL(GPUDriverBuildMember) returns (GPUDriverBuildURL) {
     option (google.api.http) = {
       post: "/get/gpudriverbuildurl"
@@ -448,7 +447,7 @@ service GPUDriverApi {
     option (protogen.method_noconfig) = "Build.DriverPath,Build.OperatingSystem,Build.KernelVersion,Build.HypervisorInfo,Build.DriverPathCreds,Build.Md5Sum";
     option (protogen.mc2_custom_authz) = true;
   }
-  // Get GPU Driver License Config. Returns the license config specific to GPU driver
+  // (Deprecated) Get GPU Driver License Config. Returns the license config specific to GPU driver
   rpc GetGPUDriverLicenseConfig(GPUDriverKey) returns (Result) {
     option (google.api.http) = {
       post: "/get/gpudriverlicenseconfig"
@@ -463,7 +462,7 @@ message GPUConfig {
   GPUDriverKey driver = 1 [(gogoproto.nullable) = false, (protogen.refers_to) = "GPUDriver"];
   // Properties to identify specifics of GPU
   map<string, string> properties = 2;
-  // Cloudlet specific license config to setup license (will be stored in secure storage)
+  // Cloudlet specific license config to setup license
   string license_config = 3;
   // Cloudlet specific license config md5sum, to ensure integrity of license config
   string license_config_md5sum = 4;

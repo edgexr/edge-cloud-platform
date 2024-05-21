@@ -99,10 +99,6 @@ func (s *TestHandler) GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, erro
 	return &node.KafkaCreds{}, nil
 }
 
-func (s *TestHandler) GetGCSCreds(ctx context.Context) ([]byte, error) {
-	return []byte{}, nil
-}
-
 func (s *TestHandler) GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error) {
 	return &federationmgmt.ApiKey{}, nil
 }
