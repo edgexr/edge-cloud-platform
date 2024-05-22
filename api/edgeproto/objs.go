@@ -368,10 +368,7 @@ func (g *GPUDriverBuild) Validate() error {
 		return fmt.Errorf("Invalid driver path(%q): %v", g.DriverPath, err)
 	}
 	if g.DriverPathCreds != "" {
-		out := strings.Split(g.DriverPathCreds, ":")
-		if len(out) != 2 {
-			return fmt.Errorf("Invalid GPU driver build path credentials, should be in format 'username:password'")
-		}
+		return fmt.Errorf("Driver path creds are no longer supported, for private storage upload to the artifact registry")
 	}
 	if g.OperatingSystem == OSType_LINUX && g.KernelVersion == "" {
 		return fmt.Errorf("Kernel version is required for Linux build")

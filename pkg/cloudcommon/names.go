@@ -216,6 +216,7 @@ var CustomMetric = "custom-metric"
 // Common API paths
 var VmRegPath = "/storage/v1/artifacts"
 var VmRegPullPath = "/storage/v1/pull"
+var VmRegHeaderMD5 = "X-Checksum-Md5"
 
 // Map used to identify which metrics should go to persistent_metrics db. Value represents the measurement creation status
 var EdgeEventsMetrics = map[string]struct{}{
@@ -429,14 +430,6 @@ func GetCloudletResourceUsageMeasurement(pfType string) string {
 	return fmt.Sprintf("%s-resource-usage", pfType)
 }
 
-// GCS Storage Bucket Name: used to store GPU driver packages
-func GetGPUDriverBucketName(deploymentName, deploymentTag string) string {
-	if deploymentTag == "" {
-		deploymentTag = "local"
-	}
-	return fmt.Sprintf("%s-%s-gpu-drivers", deploymentName, deploymentTag)
-}
-
 func GetGPUDriverStoragePath(key *edgeproto.GPUDriverKey, region string) (string, error) {
 	orgName := key.Organization
 	if key.Organization == "" {
@@ -471,7 +464,7 @@ func GetGPUDriverLicenseCloudletStoragePath(key *edgeproto.GPUDriverKey, region 
 	if err != nil {
 		return "", err
 	}
-	// If GPU driver org is empty i.e. it is owned by MobiledgeX org, then add cloudletOrg to storage path
+	// If GPU driver org is empty i.e. it is owned by edge cloud org, then add cloudletOrg to storage path
 	cloudletOrg := ""
 	if key.Organization == "" {
 		cloudletOrg = cloudletKey.Organization
@@ -495,14 +488,6 @@ func GetGPUDriverBuildStoragePath(key *edgeproto.GPUDriverKey, region, buildName
 		return "", err
 	}
 	return driverStoragePath + "/" + sPath.String(), nil
-}
-
-func GetGPUDriverURL(bucketName, buildStoragePath string) string {
-	return fmt.Sprintf("https://storage.cloud.google.com/%s/%s", bucketName, buildStoragePath)
-}
-
-func GetGPUDriverLicenseURL(bucketName, licenseConfigStoragePath string) string {
-	return fmt.Sprintf("https://storage.cloud.google.com/%s/%s", bucketName, licenseConfigStoragePath)
 }
 
 func IsPlatformNode(nodeTypeStr string) bool {

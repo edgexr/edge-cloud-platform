@@ -128,12 +128,6 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 			return nil, err
 		}
 		out, merr = json.Marshal(creds)
-	case platform.GetGCSCreds:
-		creds, err := s.vaultClient.GetGCSCreds(ctx)
-		if err != nil {
-			return nil, err
-		}
-		out = creds
 	case platform.GetFederationAPIKey:
 		fedKey := federationmgmt.FedKey{}
 		err := json.Unmarshal(req.Data, &fedKey)
