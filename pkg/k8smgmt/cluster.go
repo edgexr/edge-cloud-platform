@@ -54,10 +54,10 @@ func SetMasterNoscheduleTaint(ctx context.Context, client ssh.Client, masterName
 	var cmd string
 	if action == NoScheduleMasterTaintAdd {
 		log.SpanLog(ctx, log.DebugLevelInfra, "adding taint to master", "masterName", masterName)
-		cmd = fmt.Sprintf("kubectl taint nodes %s node-role.kubernetes.io/master=:NoSchedule --kubeconfig=%s", masterName, kubeconfig)
+		cmd = fmt.Sprintf("kubectl taint nodes %s node-role.kubernetes.io/control-plane=:NoSchedule --kubeconfig=%s", masterName, kubeconfig)
 		out, err := client.Output(cmd)
 		if err != nil {
-			if strings.Contains(out, "already has node-role.kubernetes.io/master") {
+			if strings.Contains(out, "already has node-role.kubernetes.io/control-plane") {
 				log.SpanLog(ctx, log.DebugLevelInfra, "master taint already present")
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "error adding master taint", "out", out, "err", err)
@@ -67,7 +67,7 @@ func SetMasterNoscheduleTaint(ctx context.Context, client ssh.Client, masterName
 		}
 	} else if action == NoScheduleMasterTaintRemove {
 		log.SpanLog(ctx, log.DebugLevelInfra, "removing taint from master", "masterName", masterName)
-		cmd = fmt.Sprintf("kubectl taint nodes %s node-role.kubernetes.io/master:NoSchedule-  --kubeconfig=%s", masterName, kubeconfig)
+		cmd = fmt.Sprintf("kubectl taint nodes %s node-role.kubernetes.io/control-plane:NoSchedule-  --kubeconfig=%s", masterName, kubeconfig)
 		out, err := client.Output(cmd)
 		if err != nil {
 			if strings.Contains(out, "not found") {
