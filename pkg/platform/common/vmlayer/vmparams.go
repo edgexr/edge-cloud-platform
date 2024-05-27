@@ -587,6 +587,9 @@ type VMOrchestrationParams struct {
 	AuthPublicKey           string
 	DeploymentManifest      string
 	Command                 string
+	// TODO - Volumes should be just a reference here and
+	// and the volume definition should be in VMGroupOrchestrationParams
+	// similar how ports and handled.
 	Volumes                 []VolumeOrchestrationParams
 	Ports                   []PortResourceReference      // depending on the orchestrator, IPs may be assigned to ports or
 	FixedIPs                []FixedIPOrchestrationParams // to VMs directly
