@@ -53,6 +53,12 @@ func TestNetplanFile(t *testing.T) {
 			return string(out), err
 		} else if strings.HasPrefix(cmd, "sudo netplan apply") {
 			return "", nil
+		} else if strings.HasPrefix(cmd, "sudo cat") {
+			// pc.ReadFile
+			cmd = strings.TrimPrefix(cmd, "sudo ")
+			cmd = strings.ReplaceAll(cmd, "/etc/netplan/", "")
+			out, err := exec.Command("/bin/bash", "-c", cmd).CombinedOutput()
+			return string(out), err
 		}
 		return "", fmt.Errorf("unsupported command %s", cmd)
 	}
