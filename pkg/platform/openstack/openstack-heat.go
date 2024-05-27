@@ -162,9 +162,6 @@ resources:
     {{- end}}
 
     {{- range .VMs}}
-    {{- if .ExistingData }}
-{{ .ExistingData }}
-    {{- else }}
     {{- range .Volumes}}
     {{.Name}}:
         type: OS::Cinder::Volume
@@ -178,6 +175,9 @@ resources:
             availability_zone: {{.AvailabilityZone}}
             {{- end}}
     {{- end}}
+	{{- if .ExistingData }}
+{{ .ExistingData }}
+    {{- else }}
         
     {{.Name}}:
         type: OS::Nova::Server

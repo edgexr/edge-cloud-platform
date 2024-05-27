@@ -1,17 +1,3 @@
-# Copyright 2024 EdgeXR, Inc
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 
 heat_template_version: 2016-10-14
 description: Create a group of VMs
@@ -330,6 +316,11 @@ resources:
             image: mobiledgex-v9.9.9
             name: master-xyz-volume
             size: 100
+    master-xyz-shared-volume:
+        type: OS::Cinder::Volume
+        properties:
+            name: master-xyz-shared-volume
+            size: 100
         
     master-xyz:
         type: OS::Nova::Server
@@ -343,6 +334,10 @@ resources:
             block_device_mapping:
                 - device_name: vda
                   volume_id: { get_resource: master-xyz-volume }
+                  delete_on_termination: "false"
+            block_device_mapping:
+                - device_name: vdb
+                  volume_id: { get_resource: master-xyz-shared-volume }
                   delete_on_termination: "false" 
             flavor: m1.medium
             config_drive: true
@@ -473,6 +468,28 @@ resources:
                  - echo EDGECLOUD doing ip addr show
                  - ip addr show
                  - /root/configure-node.sh >> /root/configure-node.log 2>&1
+                 - chown nobody:nogroup /share
+                 - chmod 777 /share 
+                 - systemctl enable nfs-kernel-server
+                 - systemctl start nfs-kernel-server
+                 - echo "/share *(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
+                 - exportfs -a
+                 - echo "showing exported filesystems"
+                 - exportfs
+                disk_setup:
+                  /dev/vdb:
+                    table_type: 'gpt'
+                    overwrite: true
+                    layout: true
+                fs_setup:
+                 - label: share_fs
+                   filesystem: 'ext4'
+                   device: /dev/vdb
+                   partition: auto
+                   overwrite: true
+                   layout: true
+                mounts:
+                 - [ "/dev/vdb", "/share" ]
             metadata:
                 skipk8s: no
                 role: k8s-master
