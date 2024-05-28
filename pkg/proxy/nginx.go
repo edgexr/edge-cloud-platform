@@ -192,13 +192,13 @@ func CreateNginxProxy(ctx context.Context, client ssh.Client, name, envoyImage, 
 		cmdArgs = append(cmdArgs, "-v", pwd+"/cert.pem:/etc/ssl/certs/server.crt")
 		cmdArgs = append(cmdArgs, "-v", pwd+"/key.pem:/etc/ssl/certs/server.key")
 	}
-	cmdArgs = append(cmdArgs, []string{
-		"-v", dir + ":/var/www/.cache",
+	cmdArgs = append(cmdArgs,
+		"-v", dir+":/var/www/.cache",
 		"-v", "/etc/ssl/certs:/etc/ssl/certs",
-		"-v", errlogFile + ":/var/log/nginx/error.log",
-		"-v", accesslogFile + ":/var/log/nginx/access.log",
-		"-v", nconfName + ":/etc/nginx/nginx.conf",
-		"docker.mobiledgex.net/mobiledgex/mobiledgex_public/nginx-with-curl"}...)
+		"-v", errlogFile+":/var/log/nginx/error.log",
+		"-v", accesslogFile+":/var/log/nginx/access.log",
+		"-v", nconfName+":/etc/nginx/nginx.conf",
+		nginxImage)
 	cmd := "docker " + strings.Join(cmdArgs, " ")
 	log.SpanLog(ctx, log.DebugLevelInfra, "nginx docker command", "containerName", containerName,
 		"cmd", cmd)

@@ -560,8 +560,7 @@ func (v *VMPlatform) initRootLB(ctx context.Context, platformConfig *platform.Pl
 	return nil
 }
 
-//	for now there is only only HA Conditional compat version for all providers. This could be
-//
+// for now there is only only HA Conditional compat version for all providers. This could be
 // changed if needed, but if a  provider specific version is defined it should be appended to
 // the VMPlatform version in place of v.Type in case the VMPlatform init sequence changes
 func (v *VMPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {

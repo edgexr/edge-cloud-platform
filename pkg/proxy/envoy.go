@@ -118,7 +118,6 @@ func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name, envoyImage s
 	if opts.DockerUser != "" {
 		cmdArgs = append(cmdArgs, []string{"-u", fmt.Sprintf("%s:%s", opts.DockerUser, opts.DockerUser)}...)
 	}
-	//cmdArgs = append(cmdArgs, "ghcr.io/edgexr/envoy-with-curl@"+cloudcommon.EnvoyImageDigest)
 	cmdArgs = append(cmdArgs, envoyImage)
 	cmdArgs = append(cmdArgs, []string{"envoy", "-c", "/etc/envoy/envoy.yaml", "--use-dynamic-base-id"}...)
 

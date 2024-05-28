@@ -58,10 +58,6 @@ const MINIMUM_VCPUS uint64 = 2
 var ImageFormatQcow2 = "qcow2"
 var ImageFormatVmdk = "vmdk"
 
-//var MEXInfraVersion = "5.0.0"
-//var ImageNamePrefix = "edgecloud-v"
-//var DefaultOSImageName = ImageNamePrefix + MEXInfraVersion
-
 // NoSubnetDNS means that DNS servers are not specified when creating the subnet
 var NoSubnetDNS = "NONE"
 
@@ -94,7 +90,7 @@ var VMProviderProps = map[string]*edgeproto.PropertyInfo{
 	// note OS_IMAGE refers to Operating System
 	"MEX_OS_IMAGE": {
 		Name:        "Cloudlet Image Name",
-		Description: "Name of the VM base image in platform-specific VM storage to be used for bringing up Cloudlet VMs, i.e. \"edgecloud-v5.0.0\"",
+		Description: "Name of the VM base image in cloudlet-specific VM storage to be used for bringing up Cloudlet VMs, i.e. \"edgecloud-v5.0.0\"",
 		Value:       "",
 	},
 	"MEX_SECURITY_GROUP": {
@@ -224,26 +220,9 @@ func GetVaultCloudletCommonPath(filePath string) string {
 	return fmt.Sprintf("/secret/data/cloudlet/openstack/%s", filePath)
 }
 
-/*
-	func GetCloudletVMImageName(imgVersion string) string {
-		if imgVersion == "" {
-			imgVersion = MEXInfraVersion
-		}
-		return ImageNamePrefix + imgVersion
-	}
-*/
 func GetCertFilePath(key *edgeproto.CloudletKey) string {
 	return fmt.Sprintf("/tmp/%s.%s.cert", key.Name, key.Organization)
 }
-
-/*
-func GetCloudletVMImagePath(imgPath, imgVersion string, imgSuffix string) string {
-	if !strings.HasSuffix(imgPath, "/") {
-		imgPath = imgPath + "/"
-	}
-	return imgPath + GetCloudletVMImageName(imgVersion) + imgSuffix
-}
-*/
 
 // GetCloudletSecurityGroupName overrides cloudlet wide security group if set in
 // envvars, but normally is derived from the cloudlet name.  It is not exported
