@@ -57,6 +57,8 @@ var containerVersion = flag.String("containerVersion", "", "edge-cloud container
 var vmImageVersion = flag.String("vmImageVersion", "", "CRM VM baseimage version")
 var packageVersion = flag.String("packageVersion", "", "CRM VM baseimage debian package version")
 var cloudletVMImagePath = flag.String("cloudletVMImagePath", "", "Image path where CRM VM baseimages are present")
+var envoyWithCurlImage = flag.String("envoyWithCurlImage", "", "docker image for envoy with curl to use on LB as reverse proxy")
+var nginxWithCurlImage = flag.String("nginxWithCurlImage", "", "docker image for nginx with curl to use on LB as reverse proxy")
 var commercialCerts = flag.Bool("commercialCerts", false, "Get TLS certs from LetsEncrypt. If false CRM will generate its own self-signed certs")
 var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
 
@@ -286,7 +288,8 @@ func Start(builders map[string]pf.PlatformBuilder) error {
 			Region:              *region,
 			TestMode:            *testMode,
 			CloudletVMImagePath: *cloudletVMImagePath,
-			VMImageVersion:      *vmImageVersion,
+			EnvoyWithCurlImage:  *envoyWithCurlImage,
+			NginxWithCurlImage:  *nginxWithCurlImage,
 			PackageVersion:      *packageVersion,
 			EnvVars:             cloudlet.EnvVar,
 			NodeMgr:             &nodeMgr,
@@ -423,7 +426,7 @@ func Stop() {
 	controllerData = nil
 }
 
-//initPlatformCommon does common init functions whether active or standby
+// initPlatformCommon does common init functions whether active or standby
 func initPlatformCommon(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, physicalName string, platformConfig *pf.PlatformConfig, caches *pf.Caches, accessClient edgeproto.CloudletAccessApiClient, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	loc := util.DNSSanitize(cloudletInfo.Key.Name) //XXX  key.name => loc
 	oper := util.DNSSanitize(cloudletInfo.Key.Organization)
@@ -459,7 +462,7 @@ func waitControllerSync(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloud
 	controllerData.UpdateCloudletInfo(ctx, &myCloudletInfo)
 }
 
-//initPlatformHAConditionalCommon does init functions for first startup, or a switchover which requires full initialization
+// initPlatformHAConditionalCommon does init functions for first startup, or a switchover which requires full initialization
 func initPlatformHAConditional(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, physicalName string, features *edgeproto.PlatformFeatures, platformConfig *pf.PlatformConfig, caches *pf.Caches, accessClient edgeproto.CloudletAccessApiClient, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfo, "initPlatformHAConditional")
 

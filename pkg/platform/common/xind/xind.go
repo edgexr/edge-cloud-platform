@@ -32,11 +32,13 @@ type Xind struct {
 	remotePassword string
 	clusterManager ClusterManager
 	PlatformType   string
+	platformConfig *platform.PlatformConfig
 }
 
 func (s *Xind) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, clusterManager ClusterManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	s.Caches = caches
 	s.clusterManager = clusterManager
+	s.platformConfig = platformConfig
 	return nil
 }
 func (s *Xind) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {

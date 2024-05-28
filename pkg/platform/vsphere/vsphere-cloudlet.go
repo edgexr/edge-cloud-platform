@@ -17,7 +17,6 @@ package vsphere
 import (
 	"context"
 	"fmt"
-	"path"
 	"sync"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -26,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 var clusterLock sync.Mutex
@@ -37,7 +37,7 @@ func (v *VSpherePlatform) GetCloudletImageSuffix(ctx context.Context) string {
 	return ".qcow2"
 }
 
-//CreateImageFromUrl downloads image from URL and then imports to the datastore
+// CreateImageFromUrl downloads image from URL and then imports to the datastore
 func (v *VSpherePlatform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string, diskSize uint64) error {
 
 	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageName, imageUrl, md5Sum)
@@ -93,11 +93,9 @@ func (v *VSpherePlatform) GetApiEndpointAddr(ctx context.Context) (string, error
 // import tool will prompt for datastore and portgroup.
 func (v *VSpherePlatform) GetCloudletManifest(ctx context.Context, name string, cloudletImagePath string, vmgp *vmlayer.VMGroupOrchestrationParams) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletManifest", "name", name, "vmgp", vmgp)
-	// get the base directory
-	basePath := path.Dir(cloudletImagePath)
 
 	var manifest infracommon.CloudletManifest
-	ovfLocation := basePath + "/vsphere-ovf-" + vmlayer.MEXInfraVersion
+	ovfLocation := util.SetExtension(cloudletImagePath, "ovf")
 	err := v.populateOrchestrationParams(ctx, vmgp, vmlayer.ActionCreate)
 	if err != nil {
 		return "", fmt.Errorf("unable to populate orchestration params: %v", err)

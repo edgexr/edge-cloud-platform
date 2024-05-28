@@ -19,7 +19,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -29,6 +28,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 type SessionInfo struct {
@@ -65,11 +65,11 @@ func GetFileName(fileUrlPath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSuffix(fileName, filepath.Ext(fileName)), nil
+	return util.RemoveExtension(fileName), nil
 }
 
 func GetDockerBaseImageVersion() (string, error) {
-	dat, err := ioutil.ReadFile("/version.txt")
+	dat, err := os.ReadFile("/version.txt")
 	if err != nil {
 		return "", err
 	}

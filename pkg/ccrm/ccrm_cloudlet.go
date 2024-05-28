@@ -184,6 +184,8 @@ func (s *CCRMHandler) getPlatformConfig(ctx context.Context, cloudlet *edgeproto
 	pfConfig.UseVaultPki = s.nodeMgr.InternalPki.UseVaultPki
 	pfConfig.ContainerRegistryPath = s.flags.CloudletRegistryPath
 	pfConfig.CloudletVmImagePath = s.flags.CloudletVMImagePath
+	pfConfig.EnvoyWithCurlImage = s.flags.EnvoyWithCurlImage
+	pfConfig.NginxWithCurlImage = s.flags.NginxWithCurlImage
 	pfConfig.TestMode = s.flags.TestMode
 	pfConfig.EnvVar = make(map[string]string)
 	for k, v := range cloudlet.EnvVar {

@@ -439,7 +439,7 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 	}
 	v.VMProperties.PlatformExternalNetwork = cloudlet.InfraConfig.ExternalNetworkName
 
-	v.proxyCerts = certs.NewProxyCerts(ctx, platformConfig.CloudletKey, v, platformConfig.AccessApi, platformConfig.NodeMgr, haMgr, v.GetFeatures(), platformConfig.CommerialCerts)
+	v.proxyCerts = certs.NewProxyCerts(ctx, platformConfig.CloudletKey, v, platformConfig.AccessApi, platformConfig.NodeMgr, haMgr, v.GetFeatures(), platformConfig.CommerialCerts, platformConfig.EnvoyWithCurlImage)
 	v.proxyCerts.Start(ctx)
 
 	if err = v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStartCrmCommon, updateCallback); err != nil {
@@ -498,7 +498,7 @@ func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *plat
 }
 
 func (v *VMPlatform) initRootLB(ctx context.Context, platformConfig *platform.PlatformConfig, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
-	err := v.CreateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, v.VMProperties.CommonPf.PlatformConfig.VMImageVersion, action, updateCallback)
+	err := v.CreateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, action, updateCallback)
 	if err != nil {
 		return fmt.Errorf("Error creating rootLB: %v", err)
 	}
@@ -560,7 +560,8 @@ func (v *VMPlatform) initRootLB(ctx context.Context, platformConfig *platform.Pl
 	return nil
 }
 
-//  for now there is only only HA Conditional compat version for all providers. This could be
+//	for now there is only only HA Conditional compat version for all providers. This could be
+//
 // changed if needed, but if a  provider specific version is defined it should be appended to
 // the VMPlatform version in place of v.Type in case the VMPlatform init sequence changes
 func (v *VMPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {

@@ -59,6 +59,8 @@ type Flags struct {
 	DnsZone                       string
 	CloudletRegistryPath          string
 	CloudletVMImagePath           string
+	EnvoyWithCurlImage            string
+	NginxWithCurlImage            string
 	VersionTag                    string
 	CommercialCerts               bool
 	ControllerAPIAddr             string
@@ -116,6 +118,8 @@ func (s *Flags) Init() {
 	flag.StringVar(&s.DnsZone, "dnsZone", "", "comma separated list of allowed dns zones for DNS update requests")
 	flag.StringVar(&s.CloudletRegistryPath, "cloudletRegistryPath", "", "edge-cloud image registry path for deploying cloudlet services")
 	flag.StringVar(&s.CloudletVMImagePath, "cloudletVMImagePath", "", "VM image for deploying cloudlet services")
+	flag.StringVar(&s.EnvoyWithCurlImage, "envoyWithCurlImage", "", "docker image for envoy with curl to use on LB as reverse proxy")
+	flag.StringVar(&s.NginxWithCurlImage, "nginxWithCurlImage", "", "docker image for nginx with curl to use on LB as reverse proxy")
 	flag.StringVar(&s.VersionTag, "versionTag", "", "edge-cloud image tag indicating controller version")
 	flag.BoolVar(&s.CommercialCerts, "commercialCerts", false, "Have CRM grab certs from LetsEncrypt. If false then CRM will generate its onwn self-signed cert")
 	flag.StringVar(&s.ControllerAPIAddr, "controllerApiAddr", "127.0.0.1:55001", "Controller's API listener address")

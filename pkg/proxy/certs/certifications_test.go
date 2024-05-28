@@ -75,7 +75,8 @@ func TestProxyCerts(t *testing.T) {
 	AtomicCertsUpdater = "certifications_test.go"
 
 	// create new ProxyCerts
-	proxyCerts := NewProxyCerts(ctx, &cloudletKey, &rootLBAPI, &publicCertAPI, &nodeMgr, haMgr, &features, true)
+	envoyImage := "ghcr.io/edgexr/envoy-with-curl@some-tag"
+	proxyCerts := NewProxyCerts(ctx, &cloudletKey, &rootLBAPI, &publicCertAPI, &nodeMgr, haMgr, &features, true, envoyImage)
 
 	testClient := &pc.TestClient{}
 

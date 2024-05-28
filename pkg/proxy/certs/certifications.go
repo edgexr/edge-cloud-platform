@@ -99,9 +99,10 @@ type ProxyCerts struct {
 	commercialCerts       bool
 	sudoType              pc.Sudo
 	done                  bool
+	envoyImage            string
 }
 
-func NewProxyCerts(ctx context.Context, key *edgeproto.CloudletKey, rootLBAPI RootLBAPI, publicCertAPI cloudcommon.GetPublicCertApi, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, platformFeatures *edgeproto.PlatformFeatures, commercialCerts bool) *ProxyCerts {
+func NewProxyCerts(ctx context.Context, key *edgeproto.CloudletKey, rootLBAPI RootLBAPI, publicCertAPI cloudcommon.GetPublicCertApi, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, platformFeatures *edgeproto.PlatformFeatures, commercialCerts bool, envoyImage string) *ProxyCerts {
 	sudoType := pc.SudoOn
 	log.SpanLog(ctx, log.DebugLevelInfo, "ProxyCerts start")
 	if platformFeatures.IsFake || platformFeatures.IsEdgebox || platformFeatures.CloudletServicesLocal {
@@ -127,6 +128,7 @@ func NewProxyCerts(ctx context.Context, key *edgeproto.CloudletKey, rootLBAPI Ro
 		getRootLBCertsTrigger: make(chan bool),
 		certs:                 make(map[string]access.TLSCert),
 		sudoType:              sudoType,
+		envoyImage:            envoyImage,
 	}
 }
 
@@ -340,7 +342,15 @@ func (s *ProxyCerts) writeCertToRootLb(ctx context.Context, tls *access.TLSCert,
 		if s.sudoType == pc.SudoOn {
 			sudoString = "sudo "
 		}
-		err = pc.Run(client, fmt.Sprintf("%sbash %s -d %s -c %s -k %s -e %s", sudoString, AtomicCertsUpdater, certsDir, filepath.Base(certFile), filepath.Base(keyFile), cloudcommon.EnvoyImageDigest))
+		tag := ""
+		atSign := strings.LastIndexByte(s.envoyImage, '@')
+		if atSign > -1 {
+			tag = s.envoyImage[atSign+1:]
+		}
+		if tag == "" {
+			return fmt.Errorf("could not get tag from envoy image %q", s.envoyImage)
+		}
+		err = pc.Run(client, fmt.Sprintf("%sbash %s -d %s -c %s -k %s -e %s", sudoString, AtomicCertsUpdater, certsDir, filepath.Base(certFile), filepath.Base(keyFile), tag))
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "unable to write tls cert file to rootlb", "err", err)
 			return fmt.Errorf("failed to atomically update tls certs: %v", err)

@@ -299,7 +299,7 @@ func seedDockerSecrets(ctx context.Context, client ssh.Client, clusterInst *edge
 	start := time.Now()
 	for _, imagePath := range names.ImagePaths {
 		for {
-			err := infracommon.SeedDockerSecret(ctx, client, clusterInst, imagePath, accessApi)
+			err := dockermgmt.SeedDockerSecret(ctx, client, imagePath, accessApi)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "seeding docker secret failed", "err", err)
 				elapsed := time.Since(start)

@@ -2444,6 +2444,8 @@ var PlatformConfigOptionalArgs = []string{
 	"secondarycrmaccessprivatekey",
 	"thanosrecvaddr",
 	"ansiblepublicaddr",
+	"envoywithcurlimage",
+	"nginxwithcurlimage",
 }
 var PlatformConfigAliasArgs = []string{}
 var PlatformConfigComments = map[string]string{
@@ -2471,6 +2473,8 @@ var PlatformConfigComments = map[string]string{
 	"secondarycrmaccessprivatekey": "secondary crm access private key",
 	"thanosrecvaddr":               "Thanos Receive remote write address",
 	"ansiblepublicaddr":            "Ansible public address for CRM to connect to CCRM",
+	"envoywithcurlimage":           "docker image path for envoy with curl",
+	"nginxwithcurlimage":           "docker image path for nginx with curl",
 }
 var PlatformConfigSpecialArgs = map[string]string{
 	"envvar": "StringToString",
@@ -2631,7 +2635,7 @@ var GPUDriverBuildOptionalArgs = []string{
 var GPUDriverBuildAliasArgs = []string{}
 var GPUDriverBuildComments = map[string]string{
 	"name":            "Unique identifier key",
-	"driverpath":      "Path where the driver package is located, must be either a public path or the URL to the driver uploaded to the internal VM registry.",
+	"driverpath":      "Path where the driver package is located, must be either a public path or the URL to the driver uploaded to the internal artifact registry.",
 	"driverpathcreds": "(deprecated) Optional credentials (username:password) to access driver path",
 	"operatingsystem": "Operator System supported by GPU driver build, one of Linux, Windows, Others",
 	"kernelversion":   "Kernel Version supported by GPU driver build",
@@ -2663,7 +2667,7 @@ var GPUDriverBuildMemberComments = map[string]string{
 	"gpudrivername":         "Name of the driver",
 	"gpudriverorg":          "Organization to which the driver belongs to",
 	"build.name":            "Unique identifier key",
-	"build.driverpath":      "Path where the driver package is located, must be either a public path or the URL to the driver uploaded to the internal VM registry.",
+	"build.driverpath":      "Path where the driver package is located, must be either a public path or the URL to the driver uploaded to the internal artifact registry.",
 	"build.driverpathcreds": "(deprecated) Optional credentials (username:password) to access driver path",
 	"build.operatingsystem": "Operator System supported by GPU driver build, one of Linux, Windows, Others",
 	"build.kernelversion":   "Kernel Version supported by GPU driver build",
@@ -2712,14 +2716,14 @@ var GPUDriverComments = map[string]string{
 	"gpudriverorg":             "Organization to which the driver belongs to",
 	"builds:empty":             "List of GPU driver build, specify builds:empty=true to clear",
 	"builds:#.name":            "Unique identifier key",
-	"builds:#.driverpath":      "Path where the driver package is located, must be either a public path or the URL to the driver uploaded to the internal VM registry.",
+	"builds:#.driverpath":      "Path where the driver package is located, must be either a public path or the URL to the driver uploaded to the internal artifact registry.",
 	"builds:#.driverpathcreds": "(deprecated) Optional credentials (username:password) to access driver path",
 	"builds:#.operatingsystem": "Operator System supported by GPU driver build, one of Linux, Windows, Others",
 	"builds:#.kernelversion":   "Kernel Version supported by GPU driver build",
 	"builds:#.hypervisorinfo":  "Info on hypervisor supported by vGPU driver",
 	"builds:#.md5sum":          "Driver package md5sum to ensure package is not corrupted",
 	"builds:#.storagepath":     "GPU driver build storage path",
-	"licenseconfig":            "URL License config file to setup license",
+	"licenseconfig":            "URL to license config file to setup license",
 	"licenseconfigmd5sum":      "License config md5sum, to ensure integrity of license config",
 	"properties":               "Additional properties associated with GPU driver build For example: license server information, driver release date, etc, specify properties:empty=true to clear",
 	"state":                    "State to figure out if any action on the GPU driver is in-progress",
@@ -2874,6 +2878,8 @@ var CloudletComments = map[string]string{
 	"config.secondarycrmaccessprivatekey":    "secondary crm access private key",
 	"config.thanosrecvaddr":                  "Thanos Receive remote write address",
 	"config.ansiblepublicaddr":               "Ansible public address for CRM to connect to CCRM",
+	"config.envoywithcurlimage":              "docker image path for envoy with curl",
+	"config.nginxwithcurlimage":              "docker image path for nginx with curl",
 	"accessvars":                             "Secrets required to access cloudlet, will be saved in encrypted storage, specify accessvars:empty=true to clear",
 	"vmimageversion":                         "EdgeCloud baseimage version where CRM services reside",
 	"deployment":                             "Deployment type to bring up CRM services (docker, kubernetes)",

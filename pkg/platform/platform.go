@@ -41,7 +41,8 @@ type PlatformConfig struct {
 	Region              string
 	TestMode            bool
 	CloudletVMImagePath string
-	VMImageVersion      string
+	EnvoyWithCurlImage  string
+	NginxWithCurlImage  string
 	PackageVersion      string
 	EnvVars             map[string]string
 	NodeMgr             *node.NodeMgr

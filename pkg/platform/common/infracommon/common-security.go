@@ -94,7 +94,7 @@ func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, c
 			}*/
 			proxyConfig.SkipHCPorts = app.SkipHcPorts
 			containerName := ops.ProxyNamePrefix + dockermgmt.GetContainerName(appInst)
-			proxyerr := proxy.CreateNginxProxy(ctx, client, containerName, proxyConfig, appInst, proxyops...)
+			proxyerr := proxy.CreateNginxProxy(ctx, client, containerName, c.PlatformConfig.EnvoyWithCurlImage, c.PlatformConfig.NginxWithCurlImage, proxyConfig, appInst, c.PlatformConfig.AccessApi, proxyops...)
 			if proxyerr == nil {
 				proxychan <- ""
 			} else {

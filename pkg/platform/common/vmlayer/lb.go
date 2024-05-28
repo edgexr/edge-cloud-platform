@@ -412,7 +412,6 @@ func (v *VMPlatform) GetVMSpecForSharedRootLBPorts(ctx context.Context, rootLbNa
 func (v *VMPlatform) CreateRootLB(
 	ctx context.Context, rootLBName string,
 	cloudletKey *edgeproto.CloudletKey,
-	imgPath, imgVersion string,
 	action ActionType,
 	updateCallback edgeproto.CacheUpdateCallback,
 ) error {
