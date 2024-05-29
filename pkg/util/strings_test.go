@@ -17,6 +17,7 @@ package util
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -180,5 +181,60 @@ func TestStringSliceEqual(t *testing.T) {
 	for _, test := range tests {
 		val := StringSliceEqual(test.a, test.b)
 		require.Equal(t, test.exp, val)
+	}
+}
+
+func TestRemoveExtension(t *testing.T) {
+	type testDat struct {
+		in  string
+		out string
+	}
+	tests := []testDat{
+		{"", ""},
+		{"in", "in"},
+		{"path/to/file", "path/to/file"},
+		{"path/to./file", "path/to./file"},
+		{"in.ext", "in"},
+		{"path/to/file.ext", "path/to/file"},
+		{".", "."},
+		{"..", ".."},
+		{"foo.", "foo"},
+		{"foo..", "foo"},
+		{"some/dir/", "some/dir/"},
+		{"image.foo.ext", "image.foo"},
+	}
+	for _, test := range tests {
+		out := RemoveExtension(test.in)
+		assert.Equal(t, test.out, out, "remove extension for %q, expected %q, but was %q", test.in, test.out, out)
+	}
+}
+
+func TestSetExtension(t *testing.T) {
+	type testDat struct {
+		in  string
+		out string
+	}
+	ext := "ext"
+	tests := []testDat{
+		{"", ""},
+		{"in", "in.ext"},
+		{"path/to/file", "path/to/file.ext"},
+		{"path/to./file", "path/to./file.ext"},
+		{"in.foo", "in.ext"},
+		{"path/to/file.foo", "path/to/file.ext"},
+		{".", "."},
+		{"..", ".."},
+		{"file.", "file.ext"},
+		{"some/dir/", "some/dir/"},
+		{"image.foo.ext", "image.foo.ext"},
+		{"dir/path/.", "dir/path/."},
+		{"dir/path/..", "dir/path/.."},
+		{"dir/path/...", "dir/path/..."},
+		{"/", "/"},
+		{"//", "//"},
+	}
+	for _, test := range tests {
+		out := SetExtension(test.in, ext)
+		assert.Equal(t, test.out, out, "set extension for %q", test.in)
 	}
 }

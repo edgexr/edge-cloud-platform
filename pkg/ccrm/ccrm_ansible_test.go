@@ -45,6 +45,8 @@ var testFlags = Flags{
 	DnsZone:                       "test.domain",
 	CloudletRegistryPath:          "ghcr.io/company/crm-image",
 	CloudletVMImagePath:           "https://console.test.domain/storage/v1/artifacts/edgecloudorg",
+	EnvoyWithCurlImage:            "docker.test.domain/edgecloudorg/envoyWithCurl:v1.0.0",
+	NginxWithCurlImage:            "docker.test.domain/edgecloudorg/nginxWithCurl:v1.0.0",
 	VersionTag:                    "1234-99-XX",
 	ControllerNotifyAddr:          "controller.default:4444",
 	ControllerPublicNotifyAddr:    "tr.ctrl.test.domain",

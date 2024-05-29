@@ -71,8 +71,11 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 		}
 		err = proxy.CreateNginxProxy(ctx, client,
 			proxyName,
+			s.platformConfig.EnvoyWithCurlImage,
+			s.platformConfig.NginxWithCurlImage,
 			proxyConfig,
 			appInst,
+			s.platformConfig.AccessApi,
 			proxy.WithDockerNetwork(network),
 			proxy.WithDockerPublishPorts())
 		if err != nil {

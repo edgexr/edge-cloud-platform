@@ -35,6 +35,8 @@ type Crm struct {
 	ContainerVersion    string
 	VMImageVersion      string
 	CloudletVMImagePath string
+	EnvoyWithCurlImage  string
+	NginxWithCurlImage  string
 	Region              string
 	CommercialCerts     bool
 	AppDNSRoot          string
@@ -89,6 +91,14 @@ func (p *Crm) GetArgs(opts ...StartOp) []string {
 	if p.CloudletVMImagePath != "" {
 		args = append(args, "--cloudletVMImagePath")
 		args = append(args, p.CloudletVMImagePath)
+	}
+	if p.EnvoyWithCurlImage != "" {
+		args = append(args, "--envoyWithCurlImage")
+		args = append(args, p.EnvoyWithCurlImage)
+	}
+	if p.NginxWithCurlImage != "" {
+		args = append(args, "--nginxWithCurlImage")
+		args = append(args, p.NginxWithCurlImage)
 	}
 	if p.VMImageVersion != "" {
 		args = append(args, "--vmImageVersion")

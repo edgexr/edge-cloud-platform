@@ -108,7 +108,7 @@ type ProxyConfig struct {
 	SkipHCPorts string
 }
 
-func CreateNginxProxy(ctx context.Context, client ssh.Client, name string, config *ProxyConfig, appInst *edgeproto.AppInst, ops ...Op) error {
+func CreateNginxProxy(ctx context.Context, client ssh.Client, name, envoyImage, nginxImage string, config *ProxyConfig, appInst *edgeproto.AppInst, authAPI cloudcommon.RegistryAuthApi, ops ...Op) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateNginxProxy", "name", name, "config", config)
 	containerName := getNginxContainerName(name)
@@ -116,7 +116,7 @@ func CreateNginxProxy(ctx context.Context, client ssh.Client, name string, confi
 	// check to see whether nginx or envoy is needed (or both)
 	envoyNeeded, nginxNeeded := CheckProtocols(name, appInst.MappedPorts)
 	if envoyNeeded {
-		err := CreateEnvoyProxy(ctx, client, name, config, appInst, ops...)
+		err := CreateEnvoyProxy(ctx, client, name, envoyImage, config, appInst, authAPI, ops...)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "CreateEnvoyProxy failed ", "err", err)
 			return fmt.Errorf("Create Envoy Proxy failed, %v", err)
@@ -128,6 +128,15 @@ func CreateNginxProxy(ctx context.Context, client ssh.Client, name string, confi
 	log.SpanLog(ctx, log.DebugLevelInfra, "create nginx", "name", name, "config", config, "ports", appInst.MappedPorts)
 	opts := Options{}
 	opts.Apply(ops)
+
+	// if nginx image is not present, ensure pull credentials are present if needed
+	present, err := dockermgmt.DockerImagePresent(ctx, client, nginxImage)
+	if err != nil || !present {
+		err = dockermgmt.SeedDockerSecret(ctx, client, nginxImage, authAPI)
+		if err != nil {
+			return err
+		}
+	}
 
 	out, err := client.Output("pwd")
 	if err != nil {
@@ -183,13 +192,13 @@ func CreateNginxProxy(ctx context.Context, client ssh.Client, name string, confi
 		cmdArgs = append(cmdArgs, "-v", pwd+"/cert.pem:/etc/ssl/certs/server.crt")
 		cmdArgs = append(cmdArgs, "-v", pwd+"/key.pem:/etc/ssl/certs/server.key")
 	}
-	cmdArgs = append(cmdArgs, []string{
-		"-v", dir + ":/var/www/.cache",
+	cmdArgs = append(cmdArgs,
+		"-v", dir+":/var/www/.cache",
 		"-v", "/etc/ssl/certs:/etc/ssl/certs",
-		"-v", errlogFile + ":/var/log/nginx/error.log",
-		"-v", accesslogFile + ":/var/log/nginx/access.log",
-		"-v", nconfName + ":/etc/nginx/nginx.conf",
-		"docker.mobiledgex.net/mobiledgex/mobiledgex_public/nginx-with-curl"}...)
+		"-v", errlogFile+":/var/log/nginx/error.log",
+		"-v", accesslogFile+":/var/log/nginx/access.log",
+		"-v", nconfName+":/etc/nginx/nginx.conf",
+		nginxImage)
 	cmd := "docker " + strings.Join(cmdArgs, " ")
 	log.SpanLog(ctx, log.DebugLevelInfra, "nginx docker command", "containerName", containerName,
 		"cmd", cmd)

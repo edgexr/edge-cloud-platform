@@ -17,6 +17,7 @@ package vmlayer
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -25,6 +26,7 @@ import (
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 )
 
@@ -92,23 +94,18 @@ func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []NodeInfo {
 // 2) Use image specified on startup based on cloudlet config
 func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
 	imgFromProps := v.VMProperties.GetCloudletOSImage()
-	if imgFromProps != DefaultOSImageName {
+	if imgFromProps != "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "using image from MEX_OS_IMAGE property", "imgFromProps", imgFromProps)
 		return imgFromProps, nil
 	}
 
-	// imageBasePath is the path minus the file
-	imageBasePath := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
-	if imageBasePath == "" {
+	vmBaseImage := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
+	if vmBaseImage == "" {
 		return "", fmt.Errorf("Get cloudlet image failed, cloudletVMImagePath not set")
 	}
-	imageVersion := v.VMProperties.CommonPf.PlatformConfig.VMImageVersion
-	if imageVersion == "" {
-		imageVersion = MEXInfraVersion
-	}
-	imageName := GetCloudletVMImageName(imageVersion)
-	cloudletImagePath := GetCloudletVMImagePath(imageBasePath, imageVersion, v.VMProvider.GetCloudletImageSuffix(ctx))
-	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "cloudletImagePath", cloudletImagePath, "imageName", imageName, "imageVersion", imageVersion)
+	imageNameWithoutExt := util.RemoveExtension(filepath.Base(vmBaseImage))
+	cloudletImagePath := util.SetExtension(vmBaseImage, v.VMProvider.GetCloudletImageSuffix(ctx))
+	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "cloudletImagePath", cloudletImagePath, "imageNameWithoutExt", imageNameWithoutExt)
 	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, cloudletImagePath)
 	if err != nil {
 		return "", fmt.Errorf("unable to get URL info for cloudlet image: %s - %v", v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, err)
@@ -119,15 +116,16 @@ func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback e
 	imageInfo.OsType = edgeproto.VmAppOsType_VM_APP_OS_LINUX
 	imageInfo.ImagePath = cloudletImagePath
 	imageInfo.ImageType = edgeproto.ImageType_IMAGE_TYPE_QCOW
-	imageInfo.LocalImageName = imageName
+	imageInfo.LocalImageName = imageNameWithoutExt
 	imageInfo.ImageCategory = infracommon.ImageCategoryPlatform
-	return imageName, v.VMProvider.AddImageIfNotPresent(ctx, &imageInfo, updateCallback)
+	return imageNameWithoutExt, v.VMProvider.AddImageIfNotPresent(ctx, &imageInfo, updateCallback)
 }
 
 // setupPlatformVM:
-//   * Downloads Cloudlet VM base image (if not-present)
-//   * Brings up Platform VM (using vm provider stack)
-//   * Sets up Security Group for access to Cloudlet
+//   - Downloads Cloudlet VM base image (if not-present)
+//   - Brings up Platform VM (using vm provider stack)
+//   - Sets up Security Group for access to Cloudlet
+//
 // Returns ssh client
 func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.AccessApi, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetupPlatformVM", "cloudlet", cloudlet)
@@ -722,7 +720,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 	if err != nil {
 		return nil, err
 	}
-	imgPath := GetCloudletVMImagePath(pfConfig.CloudletVmImagePath, cloudlet.VmImageVersion, v.VMProvider.GetCloudletImageSuffix(ctx))
+	imgPath := util.SetExtension(pfConfig.CloudletVmImagePath, v.VMProvider.GetCloudletImageSuffix(ctx))
 	manifest, err := v.VMProvider.GetCloudletManifest(ctx, platformVmName, imgPath, gp)
 	if err != nil {
 		return nil, err

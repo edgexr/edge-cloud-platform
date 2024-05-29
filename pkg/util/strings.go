@@ -17,6 +17,7 @@ package util
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -257,4 +258,71 @@ func GetHeadersString(header http.Header) string {
 	}
 	out, _ := json.Marshal(hout)
 	return string(out)
+}
+
+// RemoveExtension removes extension and all trailing dots after a filename.
+// Nothing will be trimmed if no filename is detected.
+// This behavior is different from strings.TrimSuffix(path, filepath.Ext(path)),
+// which will trim any extension and trailing dot regardless of the filename,
+// i.e. ".." will become ".".
+func RemoveExtension(path string) string {
+	hasDot := false
+	for i := len(path) - 1; i >= 0 && !os.IsPathSeparator(path[i]); i-- {
+		if path[i] == '.' {
+			hasDot = true
+			continue
+		}
+		if !hasDot {
+			// extension
+			continue
+		}
+		// hit filename
+		return path[:i+1]
+	}
+	return path
+}
+
+// SetExtension adds an extension to path if the basename of path has a filename.
+// It will replace any existing extension.
+func SetExtension(path, extension string) string {
+	if len(path) == 0 || len(extension) == 0 {
+		return path
+	}
+	// ensure extension starts with a '.'
+	if extension[0] != '.' {
+		extension = "." + extension
+	}
+	lastDot := -1
+	extLen := 0
+	fileNameLen := 0
+	// traverse basename to find extension and filename
+	for i := len(path) - 1; i >= 0 && !os.IsPathSeparator(path[i]); i-- {
+		if path[i] == '.' {
+			if lastDot == -1 {
+				lastDot = i
+			}
+		} else {
+			if lastDot == -1 {
+				// extension
+				extLen++
+			} else {
+				// filename
+				fileNameLen++
+			}
+		}
+	}
+	if lastDot == -1 {
+		// basename has no dot
+		if extLen > 0 {
+			// extension is really filename
+			return path + extension
+		}
+		// empty string for base name (path ends in /)
+		return path
+	}
+	if fileNameLen == 0 && extLen == 0 {
+		// basename is ., .., ..., do not add extension
+		return path
+	}
+	return path[:lastDot] + extension
 }

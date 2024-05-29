@@ -87,86 +87,51 @@ func GetCrmProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig
 		return nil, opts, fmt.Errorf("unable to marshal cloudlet key")
 	}
 
-	envVars := make(map[string]string)
-	notifyCtrlAddrs := ""
-	tlsCertFile := ""
-	tlsKeyFile := ""
-	tlsCAFile := ""
-	vaultAddr := ""
-	testMode := false
-	span := ""
-	cloudletVMImagePath := ""
-	region := ""
-	commercialCerts := false
-	useVaultPki := false
-	appDNSRoot := ""
-	ansiblePublicAddr := ""
-	deploymentTag := ""
-	accessApiAddr := ""
-	cacheDir := ""
-	if pfConfig != nil {
-		for k, v := range pfConfig.EnvVar {
-			envVars[k] = v
-		}
-		notifyCtrlAddrs = pfConfig.NotifyCtrlAddrs
-		tlsCertFile = pfConfig.TlsCertFile
-		tlsKeyFile = pfConfig.TlsKeyFile
-		tlsCAFile = pfConfig.TlsCaFile
-		testMode = pfConfig.TestMode
-		span = pfConfig.Span
-		cloudletVMImagePath = pfConfig.CloudletVmImagePath
-		region = pfConfig.Region
-		commercialCerts = pfConfig.CommercialCerts
-		useVaultPki = pfConfig.UseVaultPki
-		appDNSRoot = pfConfig.AppDnsRoot
-		ansiblePublicAddr = pfConfig.AnsiblePublicAddr
-		deploymentTag = pfConfig.DeploymentTag
-		accessApiAddr = pfConfig.AccessApiAddr
-		cacheDir = pfConfig.CacheDir
-	}
-	for envKey, envVal := range cloudlet.EnvVar {
-		envVars[envKey] = envVal
-	}
-
 	opts = append(opts, WithDebug("api,infra,notify,info"))
 
 	notifyAddr := cloudlet.NotifySrvAddr
 	if HARole == HARoleSecondary {
 		notifyAddr = cloudlet.SecondaryNotifySrvAddr
 	}
-	return &Crm{
-		NotifyAddrs:   notifyCtrlAddrs,
+	crm := &Crm{
 		NotifySrvAddr: notifyAddr,
 		CloudletKey:   string(cloudletKeyStr),
 		Platform:      cloudlet.PlatformType,
 		Common: Common{
 			Hostname: cloudlet.Key.Name,
-			EnvVars:  envVars,
+			EnvVars:  make(map[string]string),
 		},
-		NodeCommon: NodeCommon{
-			TLS: TLSCerts{
-				ServerCert: tlsCertFile,
-				ServerKey:  tlsKeyFile,
-				CACert:     tlsCAFile,
-			},
-			VaultAddr:     vaultAddr,
-			UseVaultPki:   useVaultPki,
-			DeploymentTag: deploymentTag,
-			AccessApiAddr: accessApiAddr,
-		},
-		PhysicalName:        cloudlet.PhysicalName,
-		TestMode:            testMode,
-		Span:                span,
-		ContainerVersion:    cloudlet.ContainerVersion,
-		VMImageVersion:      cloudlet.VmImageVersion,
-		CloudletVMImagePath: cloudletVMImagePath,
-		Region:              region,
-		CommercialCerts:     commercialCerts,
-		AppDNSRoot:          appDNSRoot,
-		AnsiblePublicAddr:   ansiblePublicAddr,
-		CacheDir:            cacheDir,
-		HARole:              HARole,
-	}, opts, nil
+		PhysicalName:     cloudlet.PhysicalName,
+		ContainerVersion: cloudlet.ContainerVersion,
+		VMImageVersion:   cloudlet.VmImageVersion,
+		HARole:           HARole,
+	}
+	if pfConfig != nil {
+		for k, v := range pfConfig.EnvVar {
+			crm.Common.EnvVars[k] = v
+		}
+		crm.NotifyAddrs = pfConfig.NotifyCtrlAddrs
+		crm.NodeCommon.TLS.ServerCert = pfConfig.TlsCertFile
+		crm.NodeCommon.TLS.ServerKey = pfConfig.TlsKeyFile
+		crm.NodeCommon.TLS.CACert = pfConfig.TlsCaFile
+		crm.TestMode = pfConfig.TestMode
+		crm.Span = pfConfig.Span
+		crm.CloudletVMImagePath = pfConfig.CloudletVmImagePath
+		crm.EnvoyWithCurlImage = pfConfig.EnvoyWithCurlImage
+		crm.NginxWithCurlImage = pfConfig.NginxWithCurlImage
+		crm.Region = pfConfig.Region
+		crm.CommercialCerts = pfConfig.CommercialCerts
+		crm.UseVaultPki = pfConfig.UseVaultPki
+		crm.AppDNSRoot = pfConfig.AppDnsRoot
+		crm.AnsiblePublicAddr = pfConfig.AnsiblePublicAddr
+		crm.DeploymentTag = pfConfig.DeploymentTag
+		crm.AccessApiAddr = pfConfig.AccessApiAddr
+		crm.CacheDir = pfConfig.CacheDir
+	}
+	for envKey, envVal := range cloudlet.EnvVar {
+		crm.Common.EnvVars[envKey] = envVal
+	}
+	return crm, opts, nil
 }
 
 type trackedProcessKey struct {

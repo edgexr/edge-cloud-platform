@@ -777,3 +777,71 @@ func ArgsMatchRunning(ctx context.Context, runningData types.ContainerJSON, runA
 	}
 	return true
 }
+
+func DockerImagePresent(ctx context.Context, client ssh.Client, image string) (bool, error) {
+	out, err := client.Output("docker image inspect " + image)
+	if err == nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "docker image is present", "image", image)
+		return true, nil
+	}
+	if strings.Contains(err.Error(), "No such image") {
+		log.SpanLog(ctx, log.DebugLevelInfra, "docker image is not present", "image", image)
+		return false, nil
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "check docker image present failed", "image", image, "out", out, "err", err)
+	return false, fmt.Errorf("failed to check if image %s present, %s, %s", image, out, err)
+}
+
+func SeedDockerSecret(ctx context.Context, client ssh.Client, imagePath string, authAPI cloudcommon.RegistryAuthApi) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "seed docker secret", "imagepath", imagePath)
+
+	if !strings.Contains(imagePath, "/") {
+		// docker-compose or zip type apps may have public images with no path which cannot be
+		// parsed as a url.  Allow these to proceed without a secret.  They won't have dockerhub as
+		// the host because the path is embedded within the compose or zipfile
+		log.SpanLog(ctx, log.DebugLevelInfra, "no secret seeded for app without hostname")
+		return nil
+	}
+	urlObj, err := util.ImagePathParse(imagePath)
+	if err != nil {
+		return fmt.Errorf("Cannot parse image path: %s - %v", imagePath, err)
+	}
+	if urlObj.Host == cloudcommon.DockerHub {
+		log.SpanLog(ctx, log.DebugLevelInfra, "no secret needed for public image")
+		return nil
+	}
+	auth, err := authAPI.GetRegistryAuth(ctx, imagePath)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry", "image", imagePath, "err", err)
+		return nil
+	}
+	if auth.AuthType == cloudcommon.NoAuth {
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, no registry credentials in vault, assume public registry", "image", imagePath)
+		return nil
+	}
+	if auth.AuthType != cloudcommon.BasicAuth {
+		return fmt.Errorf("auth type for %s is not basic auth type", auth.Hostname)
+	}
+	// XXX: not sure writing password to file buys us anything if the
+	// echo command is recorded in some history.
+	cmd := fmt.Sprintf("echo %s > .docker-pass", auth.Password)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("can't store docker password, %s, %v", out, err)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "stored docker password")
+	defer func() {
+		cmd := fmt.Sprintf("rm .docker-pass")
+		out, err = client.Output(cmd)
+	}()
+
+	// quote username to deal with harbor api users which
+	// have a '$' in the name.
+	cmd = fmt.Sprintf("cat .docker-pass | docker login -u '%s' --password-stdin %s ", auth.Username, auth.Hostname)
+	out, err = client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("can't docker login on rootlb to %s, %s, %v", auth.Hostname, out, err)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "docker login ok")
+	return nil
+}

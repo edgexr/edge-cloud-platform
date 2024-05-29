@@ -44,10 +44,19 @@ func init() {
 	sdsYamlT = template.Must(template.New("yaml").Parse(sdsYaml))
 }
 
-func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name string, config *ProxyConfig, appInst *edgeproto.AppInst, ops ...Op) error {
+func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name, envoyImage string, config *ProxyConfig, appInst *edgeproto.AppInst, authAPI cloudcommon.RegistryAuthApi, ops ...Op) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "create envoy", "name", name, "config", config, "appInst", appInst)
 	opts := Options{}
 	opts.Apply(ops)
+
+	// if envoy image is not present, ensure pull credentials are present if needed
+	present, err := dockermgmt.DockerImagePresent(ctx, client, envoyImage)
+	if err != nil || !present {
+		err = dockermgmt.SeedDockerSecret(ctx, client, envoyImage, authAPI)
+		if err != nil {
+			return err
+		}
+	}
 
 	out, err := client.Output("pwd")
 	if err != nil {
@@ -109,7 +118,7 @@ func CreateEnvoyProxy(ctx context.Context, client ssh.Client, name string, confi
 	if opts.DockerUser != "" {
 		cmdArgs = append(cmdArgs, []string{"-u", fmt.Sprintf("%s:%s", opts.DockerUser, opts.DockerUser)}...)
 	}
-	cmdArgs = append(cmdArgs, "ghcr.io/edgexr/envoy-with-curl@"+cloudcommon.EnvoyImageDigest)
+	cmdArgs = append(cmdArgs, envoyImage)
 	cmdArgs = append(cmdArgs, []string{"envoy", "-c", "/etc/envoy/envoy.yaml", "--use-dynamic-base-id"}...)
 
 	data, err := client.Output("docker inspect envoy" + name)

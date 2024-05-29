@@ -38,6 +38,10 @@ crmserver:
   - NewYorkSite
   - --cloudletVMImagePath
   - https://console.test.domain/storage/v1/artifacts/edgecloudorg
+  - --envoyWithCurlImage
+  - docker.test.domain/edgecloudorg/envoyWithCurl:v1.0.0
+  - --nginxWithCurlImage
+  - docker.test.domain/edgecloudorg/nginxWithCurl:v1.0.0
   - --region
   - test-region
   - --appDNSRoot
