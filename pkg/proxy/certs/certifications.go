@@ -343,9 +343,11 @@ func (s *ProxyCerts) writeCertToRootLb(ctx context.Context, tls *access.TLSCert,
 			sudoString = "sudo "
 		}
 		tag := ""
-		atSign := strings.LastIndexByte(s.envoyImage, '@')
-		if atSign > -1 {
+		if atSign := strings.LastIndexByte(s.envoyImage, '@'); atSign > 0 {
+			// sha256 tag uses '@'
 			tag = s.envoyImage[atSign+1:]
+		} else if colon := strings.LastIndexByte(s.envoyImage, ':'); colon > 0 {
+			tag = s.envoyImage[colon+1:]
 		}
 		if tag == "" {
 			return fmt.Errorf("could not get tag from envoy image %q", s.envoyImage)
