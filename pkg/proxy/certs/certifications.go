@@ -254,6 +254,11 @@ func (s *ProxyCerts) refreshCerts(ctx context.Context) error {
 		// apply new cert
 		for _, lbname := range lbNames {
 			lbClient := lbClients[lbname]
+			if lbClient.Client == nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "refreshCerts skipping unexpected nil client", "lbname", lbname, "fqdn", lbClient.FQDN)
+				errs = append(errs, "no ssh client for "+lbname)
+				continue
+			}
 			err = s.writeCertToRootLb(ctx, &cert, lbClient.Client, lbname)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "failed to write cert to lb", "wildcardName", wildcardName, "lbname", lbname, "err", err)
