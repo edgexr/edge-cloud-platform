@@ -148,7 +148,7 @@ func GenerateNetworkFileDetailsForIP(ctx context.Context, portName string, ifNam
 
 func getNetplanInfo(ctx context.Context, client ssh.Client, fileName string) (*NetplanInfo, string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetNetplanInfo", "fileName", fileName)
-	out, err := client.Output("cat " + fileName)
+	out, err := pc.ReadFile(ctx, client, fileName, pc.SudoOn)
 	if err != nil {
 		if strings.Contains(out, "No such file") {
 			return nil, "", fmt.Errorf("%s - %s", NetplanFileNotFound, fileName)
