@@ -839,6 +839,12 @@ func SeedDockerSecret(ctx context.Context, client ssh.Client, imagePath string, 
 	// have a '$' in the name.
 	cmd = fmt.Sprintf("cat .docker-pass | docker login -u '%s' --password-stdin %s ", auth.Username, auth.Hostname)
 	out, err = client.Output(cmd)
+	if err != nil && strings.Contains(err.Error(), "Client.Timeout exceeded") {
+		// docker login to harbor on a newly created LB VM seems to fail
+		// with a timeout sometimes. retry to avoid spurious errors.
+		log.SpanLog(ctx, log.DebugLevelInfra, "docker login failed due to timeout, retrying", "err", err)
+		out, err = client.Output(cmd)
+	}
 	if err != nil {
 		return fmt.Errorf("can't docker login on rootlb to %s, %s, %v", auth.Hostname, out, err)
 	}
