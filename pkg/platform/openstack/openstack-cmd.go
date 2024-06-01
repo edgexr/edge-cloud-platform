@@ -42,10 +42,15 @@ func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name stri
 	newSh := infracommon.Sh(s.openRCVars)
 
 	out, err := newSh.Command(name, a).CombinedOutput()
+	if strings.HasPrefix(string(out), "Failed to discover available identity versions when contacting") {
+		log.SpanLog(ctx, log.DebugLevelInfra, "detected openstack cli failure message, will rerun command", "name", name, "parms", parmstr, "out", string(out))
+		out, err = newSh.Command(name, a).CombinedOutput()
+	}
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Openstack command returned error", "parms", parmstr, "err", err, "out", string(out), "elapsed time", time.Since(start))
 		return out, err
 	}
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start))
 	return out, nil
 
@@ -89,7 +94,7 @@ func (s *OpenstackPlatform) ListPorts(ctx context.Context) ([]OSPort, error) {
 	return ports, nil
 }
 
-//ListPortsServerNetwork returns ports for a particular server on a given network
+// ListPortsServerNetwork returns ports for a particular server on a given network
 func (s *OpenstackPlatform) ListPortsServerNetwork(ctx context.Context, server, network string) ([]OSPort, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "port", "list", "--server", server, "--network", network, "-f", "json")
 	if err != nil {
@@ -106,7 +111,7 @@ func (s *OpenstackPlatform) ListPortsServerNetwork(ctx context.Context, server, 
 	return ports, nil
 }
 
-//ListPortsServerNetwork returns ports for a particular server on any network
+// ListPortsServerNetwork returns ports for a particular server on any network
 func (s *OpenstackPlatform) ListPortsServer(ctx context.Context, server string) ([]OSPort, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "port", "list", "--server", server, "-f", "json")
 	if err != nil {
@@ -123,7 +128,7 @@ func (s *OpenstackPlatform) ListPortsServer(ctx context.Context, server string) 
 	return ports, nil
 }
 
-//ListImages lists avilable images in glance
+// ListImages lists avilable images in glance
 func (s *OpenstackPlatform) ListImages(ctx context.Context) ([]OSImage, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "list", "-f", "json")
 	if err != nil {
@@ -140,7 +145,7 @@ func (s *OpenstackPlatform) ListImages(ctx context.Context) ([]OSImage, error) {
 	return images, nil
 }
 
-//GetImageDetail show of a given image from Glance
+// GetImageDetail show of a given image from Glance
 func (s *OpenstackPlatform) GetImageDetail(ctx context.Context, name string) (*OSImageDetail, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "show", name, "-f", "json",
 		"-c", "id",
@@ -180,8 +185,7 @@ func (s *OpenstackPlatform) ListImagesDetail(ctx context.Context) ([]OSImageDeta
 	return img_details, err
 }
 
-//
-//ListNetworks lists networks known to the platform. Some created by the operator, some by users.
+// ListNetworks lists networks known to the platform. Some created by the operator, some by users.
 func (s *OpenstackPlatform) ListNetworks(ctx context.Context) ([]OSNetwork, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "network", "list", "-f", "json")
 	if err != nil {
@@ -213,7 +217,7 @@ func (o *OpenstackPlatform) GetNetworkList(ctx context.Context) ([]string, error
 	return networks, nil
 }
 
-//ShowFlavor returns the details of a given flavor.
+// ShowFlavor returns the details of a given flavor.
 func (s *OpenstackPlatform) ShowFlavor(ctx context.Context, flavor string) (details OSFlavorDetail, err error) {
 
 	var flav OSFlavorDetail
@@ -230,7 +234,7 @@ func (s *OpenstackPlatform) ShowFlavor(ctx context.Context, flavor string) (deta
 	return flav, nil
 }
 
-//ListFlavors lists flavors known to the platform.   The ones matching the flavorMatchPattern are returned
+// ListFlavors lists flavors known to the platform.   The ones matching the flavorMatchPattern are returned
 func (s *OpenstackPlatform) ListFlavors(ctx context.Context) ([]OSFlavorDetail, error) {
 	flavorMatchPattern := s.VMProperties.GetCloudletFlavorMatchPattern()
 	r, err := regexp.Compile(flavorMatchPattern)
@@ -293,7 +297,7 @@ func (s *OpenstackPlatform) ListFloatingIPs(ctx context.Context, network string)
 	return fips, nil
 }
 
-//CreateServer instantiates a new server instance, which is a KVM instance based on a qcow2 image from glance
+// CreateServer instantiates a new server instance, which is a KVM instance based on a qcow2 image from glance
 func (s *OpenstackPlatform) CreateServer(ctx context.Context, opts *OSServerOpt) error {
 	args := []string{
 		"server", "create",
@@ -435,8 +439,9 @@ func (s *OpenstackPlatform) DetachPortFromServer(ctx context.Context, serverName
 	return nil
 }
 
-//DeleteServer destroys a KVM instance
-//  sometimes it is not possible to destroy. Like most things in Openstack, try again.
+// DeleteServer destroys a KVM instance
+//
+//	sometimes it is not possible to destroy. Like most things in Openstack, try again.
 func (s *OpenstackPlatform) DeleteServer(ctx context.Context, id string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting server", "id", id)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "delete", id)
@@ -466,8 +471,9 @@ func (s *OpenstackPlatform) CreateNetwork(ctx context.Context, name, netType, av
 	return nil
 }
 
-//DeleteNetwork destroys a named network
-//  Sometimes it will fail. Openstack will refuse if there are resources attached.
+// DeleteNetwork destroys a named network
+//
+//	Sometimes it will fail. Openstack will refuse if there are resources attached.
 func (s *OpenstackPlatform) DeleteNetwork(ctx context.Context, name string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting network", "network", name)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "network", "delete", name)
@@ -478,7 +484,7 @@ func (s *OpenstackPlatform) DeleteNetwork(ctx context.Context, name string) erro
 	return nil
 }
 
-//CreateSubnet creates a subnet within a network. A subnet is assigned ranges. Optionally DHCP can be enabled.
+// CreateSubnet creates a subnet within a network. A subnet is assigned ranges. Optionally DHCP can be enabled.
 func (s *OpenstackPlatform) CreateSubnet(ctx context.Context, netRange, networkName, gatewayAddr, subnetName string, dhcpEnable bool) error {
 	var dhcpFlag string
 	if dhcpEnable {
@@ -519,7 +525,7 @@ func (s *OpenstackPlatform) CreateSubnet(ctx context.Context, netRange, networkN
 	return nil
 }
 
-//DeleteSubnet deletes the subnet. If this fails, remove any attached resources, like router, and try again.
+// DeleteSubnet deletes the subnet. If this fails, remove any attached resources, like router, and try again.
 func (s *OpenstackPlatform) DeleteSubnet(ctx context.Context, subnetName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting subnet", "name", subnetName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "subnet", "delete", subnetName)
@@ -530,7 +536,7 @@ func (s *OpenstackPlatform) DeleteSubnet(ctx context.Context, subnetName string)
 	return nil
 }
 
-//CreateRouter creates new router. A router can be attached to network and subnets.
+// CreateRouter creates new router. A router can be attached to network and subnets.
 func (s *OpenstackPlatform) CreateRouter(ctx context.Context, routerName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating router", "name", routerName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "create", routerName)
@@ -541,7 +547,7 @@ func (s *OpenstackPlatform) CreateRouter(ctx context.Context, routerName string)
 	return nil
 }
 
-//DeleteRouter removes the named router. The router needs to not be in use at the time of deletion.
+// DeleteRouter removes the named router. The router needs to not be in use at the time of deletion.
 func (s *OpenstackPlatform) DeleteRouter(ctx context.Context, routerName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting router", "name", routerName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "delete", routerName)
@@ -552,7 +558,7 @@ func (s *OpenstackPlatform) DeleteRouter(ctx context.Context, routerName string)
 	return nil
 }
 
-//SetRouter assigns the router to a particular network. The network needs to be attached to
+// SetRouter assigns the router to a particular network. The network needs to be attached to
 // a real external network. This is intended only for routing to external network for now. No internal routers.
 // Sometimes, oftentimes, it will fail if the network is not external.
 func (s *OpenstackPlatform) SetRouter(ctx context.Context, routerName, networkName string) error {
@@ -565,7 +571,7 @@ func (s *OpenstackPlatform) SetRouter(ctx context.Context, routerName, networkNa
 	return nil
 }
 
-//AddRouterSubnet will connect subnet to another network, possibly external, via a router
+// AddRouterSubnet will connect subnet to another network, possibly external, via a router
 func (s *OpenstackPlatform) AddRouterSubnet(ctx context.Context, routerName, subnetName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "adding router to subnet", "router", routerName, "network", subnetName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "add", "subnet", routerName, subnetName)
@@ -576,8 +582,9 @@ func (s *OpenstackPlatform) AddRouterSubnet(ctx context.Context, routerName, sub
 	return nil
 }
 
-//RemoveRouterSubnet is useful to remove the router from the subnet before deletion. Otherwise subnet cannot
-//  be deleted.
+// RemoveRouterSubnet is useful to remove the router from the subnet before deletion. Otherwise subnet cannot
+//
+//	be deleted.
 func (s *OpenstackPlatform) RemoveRouterSubnet(ctx context.Context, routerName, subnetName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "removing subnet from router", "router", routerName, "subnet", subnetName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "remove", "subnet", routerName, subnetName)
@@ -588,7 +595,7 @@ func (s *OpenstackPlatform) RemoveRouterSubnet(ctx context.Context, routerName, 
 	return nil
 }
 
-//ListSubnets returns a list of subnets available
+// ListSubnets returns a list of subnets available
 func (s *OpenstackPlatform) ListSubnets(ctx context.Context, netName string) ([]OSSubnet, error) {
 	var err error
 	var out []byte
@@ -611,7 +618,7 @@ func (s *OpenstackPlatform) ListSubnets(ctx context.Context, netName string) ([]
 	return subnets, nil
 }
 
-//ListProjects returns a list of projects we can see
+// ListProjects returns a list of projects we can see
 func (s *OpenstackPlatform) ListProjects(ctx context.Context) ([]OSProject, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "project", "list", "-f", "json")
 	if err != nil {
@@ -628,7 +635,7 @@ func (s *OpenstackPlatform) ListProjects(ctx context.Context) ([]OSProject, erro
 	return projects, nil
 }
 
-//ListRouters returns a list of routers available
+// ListRouters returns a list of routers available
 func (s *OpenstackPlatform) ListRouters(ctx context.Context) ([]OSRouter, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "list", "-f", "json")
 	if err != nil {
@@ -645,7 +652,7 @@ func (s *OpenstackPlatform) ListRouters(ctx context.Context) ([]OSRouter, error)
 	return routers, nil
 }
 
-//GetRouterDetail returns details per router
+// GetRouterDetail returns details per router
 func (s *OpenstackPlatform) GetOpenStackRouterDetail(ctx context.Context, routerName string) (*OSRouterDetail, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "router", "show", "-f", "json", routerName)
 	if err != nil {
@@ -662,7 +669,7 @@ func (s *OpenstackPlatform) GetOpenStackRouterDetail(ctx context.Context, router
 	return routerDetail, nil
 }
 
-//CreateServerImage snapshots running service into a qcow2 image
+// CreateServerImage snapshots running service into a qcow2 image
 func (s *OpenstackPlatform) CreateServerImage(ctx context.Context, serverName, imageName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating image snapshot from server", "server", serverName, "image", imageName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "image", "create", serverName, "--name", imageName)
@@ -673,7 +680,7 @@ func (s *OpenstackPlatform) CreateServerImage(ctx context.Context, serverName, i
 	return nil
 }
 
-//CreateImage puts images into glance
+// CreateImage puts images into glance
 func (s *OpenstackPlatform) CreateImage(ctx context.Context, imageName, fileName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating image in glance", "image", imageName, "fileName", fileName)
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "image", "create",
@@ -688,7 +695,7 @@ func (s *OpenstackPlatform) CreateImage(ctx context.Context, imageName, fileName
 	return nil
 }
 
-//CreateImageFromUrl downloads image from URL and then puts into glance
+// CreateImageFromUrl downloads image from URL and then puts into glance
 func (s *OpenstackPlatform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string) error {
 	filePath, err := vmlayer.DownloadVMImage(ctx, s.VMProperties.CommonPf.PlatformConfig.AccessApi, imageName, imageUrl, md5Sum)
 	if err != nil {
@@ -707,7 +714,7 @@ func (s *OpenstackPlatform) CreateImageFromUrl(ctx context.Context, imageName, i
 	return err
 }
 
-//SaveImage takes the image name available in glance, as a result of for example the above create image.
+// SaveImage takes the image name available in glance, as a result of for example the above create image.
 // It will then save that into a local file. The image transfer happens from glance into your own laptop
 // or whatever.
 // This can take a while, transferring all the data.
@@ -721,7 +728,7 @@ func (s *OpenstackPlatform) SaveImage(ctx context.Context, saveName, imageName s
 	return nil
 }
 
-//DeleteImage deletes the named image from glance. Sometimes backing store is still busy and
+// DeleteImage deletes the named image from glance. Sometimes backing store is still busy and
 // will refuse to honor the request. Like most things in Openstack, wait for a while and try
 // again.
 func (s *OpenstackPlatform) DeleteImage(ctx context.Context, folder, imageName string) error {
@@ -739,9 +746,10 @@ func (s *OpenstackPlatform) DeleteImage(ctx context.Context, folder, imageName s
 	return nil
 }
 
-//GetSubnetDetail returns details for the subnet. This is useful when getting router/gateway
-//  IP for a given subnet.  The gateway info is used for creating a server.
-//  Also useful in general, like other `detail` functions, to get the ID map for the name of subnet.
+// GetSubnetDetail returns details for the subnet. This is useful when getting router/gateway
+//
+//	IP for a given subnet.  The gateway info is used for creating a server.
+//	Also useful in general, like other `detail` functions, to get the ID map for the name of subnet.
 func (s *OpenstackPlatform) GetSubnetDetail(ctx context.Context, subnetName string) (*OSSubnetDetail, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "subnet", "show", "-f", "json", subnetName)
 	if err != nil {
@@ -816,7 +824,7 @@ func (o *OpenstackPlatform) GetVMSubnetDetail(ctx context.Context, ossd *OSSubne
 	return sd, nil
 }
 
-//GetNetworkDetail returns details about a network.  It is used, for example, by GetExternalGateway.
+// GetNetworkDetail returns details about a network.  It is used, for example, by GetExternalGateway.
 func (s *OpenstackPlatform) GetOSNetworkDetail(ctx context.Context, networkName string) (*OSNetworkDetail, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "network", "show", "-f", "json", networkName)
 	if err != nil {
@@ -832,7 +840,7 @@ func (s *OpenstackPlatform) GetOSNetworkDetail(ctx context.Context, networkName 
 	return networkDetail, nil
 }
 
-//SetServerProperty sets properties for the server
+// SetServerProperty sets properties for the server
 func (s *OpenstackPlatform) SetServerProperty(ctx context.Context, name, property string) error {
 	if name == "" {
 		return fmt.Errorf("empty name")
@@ -1061,7 +1069,9 @@ func (s *OpenstackPlatform) OSGetConsoleUrl(ctx context.Context, serverName stri
 // There are resources that are metered for instance-id, which are resources of their own
 // The examples are instance_network_interface and instance_disk
 // Openstack example call:
-//   <openstack metric resource search --type instance_network_interface instance_id=dc32daa6-0d0a-4512-a9fa-2b989e913014>
+//
+//	<openstack metric resource search --type instance_network_interface instance_id=dc32daa6-0d0a-4512-a9fa-2b989e913014>
+//
 // We only use the the first found result
 func (s *OpenstackPlatform) OSFindResourceByInstId(ctx context.Context, resourceType, instId, name string) (*OSMetricResource, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "find resource for instance Id", "id", instId,
@@ -1092,7 +1102,9 @@ func (s *OpenstackPlatform) OSFindResourceByInstId(ctx context.Context, resource
 
 // Get openstack metrics from ceilometer tsdb
 // Example openstack call:
-//   <openstack metric measures show --resource-id a9bf10cf-a709-5a47-8b69-da920b8f65cd network.incoming.bytes>
+//
+//	<openstack metric measures show --resource-id a9bf10cf-a709-5a47-8b69-da920b8f65cd network.incoming.bytes>
+//
 // This will return a range of measurements from the startTime
 func (s *OpenstackPlatform) OSGetMetricsRangeForId(ctx context.Context, resId string, metric string, startTime time.Time) ([]OSMetricMeasurement, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get measure for Id", "id", resId, "metric", metric)
@@ -1127,9 +1139,9 @@ func (o *OpenstackPlatform) GetCloudletImageSuffix(ctx context.Context) string {
 // condition is now checked in PerformOrchestrationForVMApp), or if there are 2 cloudlets using the same openstack
 // tenant (still possible in labs and PoC deployments)
 // Cleanup logic is as follows:
-// - The first "active" image found is retained
-// - All images not in "active" state are removed. This could result in no images at all being left but at least
-//   this is a recoverable situation
+//   - The first "active" image found is retained
+//   - All images not in "active" state are removed. This could result in no images at all being left but at least
+//     this is a recoverable situation
 func (o *OpenstackPlatform) RemoveDuplicateImages(ctx context.Context, imageName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveDuplicateImages", "imageName", imageName)
 
