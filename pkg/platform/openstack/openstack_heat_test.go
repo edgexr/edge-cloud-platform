@@ -17,7 +17,7 @@ package openstack
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -55,6 +55,7 @@ var vms = []*vmlayer.VMRequestSpec{
 		ExternalVolumeSize:      100,
 		ConnectToExternalNet:    true,
 		ConnectToSubnets:        subnetNames,
+		SharedVolumeSize:        100,
 	},
 	{
 		Name:                    "node1-xyz",
@@ -111,9 +112,9 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 
 	generatedFile := vmgp.GroupName + "-heat.yaml"
 	expectedResultsFile := vmgp.GroupName + "-heat-expected.yaml"
-	genDat, err := ioutil.ReadFile(generatedFile)
+	genDat, err := os.ReadFile(generatedFile)
 	require.Nil(t, err)
-	expDat, err := ioutil.ReadFile(expectedResultsFile)
+	expDat, err := os.ReadFile(expectedResultsFile)
 	require.Nil(t, err)
 	genObj := &OSHeatStackTemplate{}
 	err = yaml.Unmarshal(genDat, &genObj)
@@ -127,7 +128,7 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 		require.True(t, false, "should be equal")
 	}
 
-	stackTemplateData, err := ioutil.ReadFile(generatedFile)
+	stackTemplateData, err := os.ReadFile(generatedFile)
 	require.Nil(t, err)
 
 	stackTemplate := &OSHeatStackTemplate{}

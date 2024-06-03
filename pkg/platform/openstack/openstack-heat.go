@@ -162,9 +162,6 @@ resources:
     {{- end}}
 
     {{- range .VMs}}
-    {{- if .ExistingData }}
-{{ .ExistingData }}
-    {{- else }}
     {{- range .Volumes}}
     {{.Name}}:
         type: OS::Cinder::Volume
@@ -178,6 +175,9 @@ resources:
             availability_zone: {{.AvailabilityZone}}
             {{- end}}
     {{- end}}
+	{{- if .ExistingData }}
+{{ .ExistingData }}
+    {{- else }}
         
     {{.Name}}:
         type: OS::Nova::Server
@@ -602,7 +602,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 		}
 	}
 
-	// Get chef keys for existing VMs
+	// Get existing VMs definition
 	existingVMs := make(map[string]string)
 	if action == heatUpdate {
 		stackTemplate, err := o.getHeatStackTemplateDetail(ctx, VMGroupOrchestrationParams.GroupName)
