@@ -32,12 +32,19 @@ type OpenstackPlatform struct {
 	openRCVars   map[string]string
 	VMProperties *vmlayer.VMProperties
 	caches       *platform.Caches
+	apiStats     APIStats
 }
 
 func NewPlatform() platform.Platform {
 	return &vmlayer.VMPlatform{
 		VMProvider: &OpenstackPlatform{},
 	}
+}
+
+type APIStats struct {
+	Successful    uint64
+	DiscoveryErrs uint64
+	OtherErrs     uint64
 }
 
 func (o *OpenstackPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
