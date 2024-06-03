@@ -21,6 +21,7 @@ import (
 	"net/netip"
 	"regexp"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -43,15 +44,21 @@ func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name stri
 
 	out, err := newSh.Command(name, a).CombinedOutput()
 	if strings.HasPrefix(string(out), "Failed to discover available identity versions when contacting") {
-		log.SpanLog(ctx, log.DebugLevelInfra, "detected openstack cli failure message, will rerun command", "name", name, "parms", parmstr, "out", string(out))
+		atomic.AddUint64(&s.apiStats.DiscoveryErrs, 1)
+		log.SpanLog(ctx, log.DebugLevelInfra, "detected openstack cli failure message, will rerun command", "name", name, "parms", parmstr, "out", string(out), "stats", s.apiStats)
+		// add some delay to avoid back-to-back calls, although this is likely
+		// unnecessary because openstack API calls are slow (2-10sec).
+		time.Sleep(200 * time.Millisecond)
 		out, err = newSh.Command(name, a).CombinedOutput()
 	}
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Openstack command returned error", "parms", parmstr, "err", err, "out", string(out), "elapsed time", time.Since(start))
+		atomic.AddUint64(&s.apiStats.OtherErrs, 1)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Openstack command returned error", "parms", parmstr, "err", err, "out", string(out), "elapsed time", time.Since(start), "stats", s.apiStats)
 		return out, err
 	}
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start))
+	atomic.AddUint64(&s.apiStats.Successful, 1)
+	log.SpanLog(ctx, log.DebugLevelInfra, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start), "stats", s.apiStats)
 	return out, nil
 
 }
