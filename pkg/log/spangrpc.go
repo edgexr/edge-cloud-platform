@@ -16,8 +16,11 @@ package log
 
 import (
 	"context"
+	"net/http"
 
+	"github.com/labstack/echo/v4"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -49,4 +52,47 @@ func NewSpanFromGrpc(ctx context.Context, lvl uint64, spanName string) opentraci
 		}
 	}
 	return NewSpanFromString(lvl, val, spanName)
+}
+
+// StartSpanHTTP is a server middleware that starts a span for the incoming request
+// and adds it to the http.Request's context.
+// If the sender sent a parent span, it creates a child span to continue the trace.
+func StartSpanHTTP(r *http.Request) *http.Request {
+	linenoOpt := WithSpanLineno(GetLineno(2))
+	carrier := opentracing.HTTPHeadersCarrier(r.Header)
+	spanCtx, err := tracer.Extract(opentracing.HTTPHeaders, carrier)
+	var span opentracing.Span
+	if err == nil {
+		opts := []opentracing.StartSpanOption{
+			ext.RPCServerOption(spanCtx),
+			linenoOpt,
+		}
+		span = StartSpan(DebugLevelApi, r.RequestURI, opts...)
+	} else {
+		span = StartSpan(DebugLevelApi, r.RequestURI)
+	}
+	return r.WithContext(ContextWithSpan(r.Context(), span))
+}
+
+// HTTPTraceHandler is an http server middleware to ensure a span trace is present.
+func HTTPTraceHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = StartSpanHTTP(r)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// InjectTraceHTTP is used by a client to inject the current span into the request.
+func InjectTraceHTTP(ctx context.Context, r *http.Request) error {
+	carrier := opentracing.HTTPHeadersCarrier(r.Header)
+	return tracer.Inject(SpanFromContext(ctx).Context(), opentracing.HTTPHeaders, carrier)
+}
+
+// EchoTraceHandler is an echo server middleware to ensure a span trace is present.
+func EchoTraceHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		r := StartSpanHTTP(c.Request())
+		c.SetRequest(r)
+		return next(c)
+	}
 }

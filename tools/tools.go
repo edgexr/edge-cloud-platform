@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build tools
 // +build tools
 
 package tools
 
 import (
+	_ "github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen"
 	_ "github.com/gogo/protobuf/protoc-gen-gogofast"
 	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway"
 	_ "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger"

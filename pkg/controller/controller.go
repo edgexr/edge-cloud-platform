@@ -68,7 +68,7 @@ var notifyAddr = flag.String("notifyAddr", "127.0.0.1:50001", "Notify listener a
 var notifyRootAddrs = flag.String("notifyRootAddrs", "", "Comma separated list of notifyroots")
 var notifyParentAddrs = flag.String("notifyParentAddrs", "", "Comma separated list of notify parents")
 var accessApiAddr = flag.String("accessApiAddr", "127.0.0.1:41001", "listener address for external services with access key")
-
+var nbiAddr = flag.String("nbiAddr", "127.0.0.1:3901", "HTTP listener address for CAMARA NBI API")
 var edgeTurnAddr = flag.String("edgeTurnAddr", "127.0.0.1:6080", "Address to EdgeTurn Server")
 var edgeTurnProxyAddr = flag.String("edgeTurnProxyAddr", "127.0.0.1:8443", "Address to EdgeTurn Server")
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))

@@ -1,0 +1,6 @@
+package: nbi
+generate:
+  echo-server: true
+  models: true
+  strict-server: true
+output: nbi-generated.go
