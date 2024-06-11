@@ -3,7 +3,6 @@ module github.com/edgexr/edge-cloud-platform
 go 1.21
 
 require (
-	cloud.google.com/go v0.111.0 // indirect
 	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
 	github.com/Bose/minisentinel v0.0.0-20200130220412-917c5a9223bb
 	github.com/Shopify/sarama v1.38.1
@@ -54,10 +53,10 @@ require (
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.21.0
 	golang.org/x/net v0.22.0
-	golang.org/x/oauth2 v0.14.0
+	golang.org/x/oauth2 v0.14.0 // indirect
 	golang.org/x/time v0.5.0
 	golang.org/x/tools v0.10.0 // indirect
-	google.golang.org/api v0.149.0
+	google.golang.org/api v0.149.0 // indirect
 	google.golang.org/grpc v1.61.0
 	gopkg.in/yaml.v2 v2.4.0
 	//	k8s.io/api v0.0.0-20180516102522-184e700b32b7
@@ -68,7 +67,6 @@ require (
 )
 
 require (
-	cloud.google.com/go/storage v1.30.1
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/edgexr/dnsproviders v0.0.1
 	github.com/edgexr/edge-proto v1.2.5-0.20220713205721-e2bf489db2b5
@@ -92,7 +90,6 @@ require (
 require (
 	cloud.google.com/go/compute v1.23.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	cloud.google.com/go/iam v1.1.5 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
@@ -117,7 +114,6 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.1 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
-	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-openapi/analysis v0.21.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -189,12 +185,10 @@ require (
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel v1.21.0 // indirect
-	go.opentelemetry.io/otel/metric v1.21.0 // indirect
 	go.opentelemetry.io/otel/trace v1.21.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/mod v0.11.0 // indirect
-	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
@@ -212,4 +206,4 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-replace github.com/mitchellh/mapstructure => github.com/mobiledgex/mapstructure v1.2.4-0.20200429201435-a2efef9031f5
+replace github.com/mitchellh/mapstructure => github.com/edgexr/mapstructure v1.2.4-0.20240611220228-60f908cbe9ad
