@@ -62,7 +62,7 @@ func SetMasterNoscheduleTaint(ctx context.Context, client ssh.Client, masterName
 		return fmt.Errorf("Unable to get k8s version, %v", err)
 	}
 	// For old clusters NoSchedule taint is different
-	if out == "Server Version: v1.18.20" {
+	if strings.Contains(out, "v1.18") {
 		taintAnnotation = NoScheduleMasterTaintAnnotaionOld
 	}
 	if action == NoScheduleMasterTaintAdd {
