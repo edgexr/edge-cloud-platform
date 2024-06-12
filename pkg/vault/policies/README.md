@@ -19,7 +19,7 @@ This allows devs to log in using their Github personal access tokens and access 
 
 ```
 vault auth enable github
-vault write auth/github/config organization=edgexr ttl=15m max_ttl=15m
+vault write auth/github/config organization=edgecloudorg ttl=15m max_ttl=15m
 
 vault policy write github-dev github-dev.hcl
 vault write auth/github/map/teams/edge-cloud-development-team value=github-dev
