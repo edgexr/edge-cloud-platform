@@ -64,7 +64,7 @@ def migrate(from_client, to_client, mount_point, path=''):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Migrate vault data")
     parser.add_argument('from_vault',
-                        help="vault to migrate data from (eg: https://vault-test.mobiledgex.net:8200)")
+                        help="vault to migrate data from (eg: https://vault-test.cloud.edgexr.org:8200)")
     parser.add_argument('to_vault',
                         help="vault to migrate data to")
     parser.add_argument('--from-token',

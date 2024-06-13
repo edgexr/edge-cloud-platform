@@ -10,7 +10,7 @@ This allows devs to log in using their Github personal access tokens and access 
        * You only need "read:org" permissions for the personal access token to use it for Vault auth.
    * Login using the token:
    * ```
-       export VAULT_ADDR=https://vault.mobiledgex.net
+       export VAULT_ADDR=https://vault.cloud.edgexr.org
        vault login -method=github token="MY_TOKEN"
        vault kv list secret/ansible/stage
      ```
@@ -19,7 +19,7 @@ This allows devs to log in using their Github personal access tokens and access 
 
 ```
 vault auth enable github
-vault write auth/github/config organization=mobiledgex ttl=15m max_ttl=15m
+vault write auth/github/config organization=edgecloudorg ttl=15m max_ttl=15m
 
 vault policy write github-dev github-dev.hcl
 vault write auth/github/map/teams/edge-cloud-development-team value=github-dev
