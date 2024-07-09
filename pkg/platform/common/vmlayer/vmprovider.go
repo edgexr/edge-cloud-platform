@@ -579,6 +579,11 @@ func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platf
 		log.SpanLog(ctx, log.DebugLevelInfra, "clusterInstNot found", "AppInst", appInst.Key)
 		return
 	}
+	// Only update shared access appInsts
+	if cinst.IpAccess != edgeproto.IpAccess_IP_ACCESS_SHARED {
+		log.SpanLog(ctx, log.DebugLevelInfra, "appinst uses dedicated ip access", "AppInst", appInst.Key)
+		return
+	}
 	appInstFlavor := edgeproto.Flavor{}
 	if !caches.FlavorCache.Get(&appInst.Flavor, &appInstFlavor) {
 		log.SpanLog(ctx, log.DebugLevelInfra, "flavor not found", "AppInst", appInst.Key)
