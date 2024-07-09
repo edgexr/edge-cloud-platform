@@ -307,7 +307,7 @@ func PopulateAppInstLoadBalancerIps(ctx context.Context, client ssh.Client, name
 	}
 }
 
-func getConfigDirName(names *KubeNames) string {
+func GetConfigDirName(names *KubeNames) string {
 	dir := names.ClusterName
 	if names.MultitenantNamespace != "" {
 		dir += "." + names.MultitenantNamespace
@@ -315,7 +315,7 @@ func getConfigDirName(names *KubeNames) string {
 	return dir
 }
 
-func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst) string {
+func GetConfigFileName(names *KubeNames, appInst *edgeproto.AppInst) string {
 	if appInst.CompatibilityVersion < cloudcommon.AppInstCompatibilityUniqueNameKeyConfig {
 		// backwards compatibility, may clobber other instances
 		// using the same app definition in multi-tenant clusters.
@@ -377,8 +377,8 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to merge env vars", "error", err)
 		return fmt.Errorf("error merging environment variables config file: %s", err)
 	}
-	configDir := getConfigDirName(names)
-	configName := getConfigFileName(names, appInst)
+	configDir := GetConfigDirName(names)
+	configName := GetConfigFileName(names, appInst)
 	err = pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
 	if err != nil {
 		return err
@@ -437,8 +437,8 @@ func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 }
 
 func DeleteAppInst(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
-	configDir := getConfigDirName(names)
-	configName := getConfigFileName(names, appInst)
+	configDir := GetConfigDirName(names)
+	configName := GetConfigFileName(names, appInst)
 	file := configDir + "/" + configName
 	cmd := fmt.Sprintf("kubectl %s delete -f %s", names.KconfArg, file)
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting app", "name", names.AppName, "cmd", cmd)

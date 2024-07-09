@@ -72,7 +72,12 @@ func (s *Xind) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet,
 }
 
 func (s *Xind) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncControllerData", "state", cloudletState)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CheckRebuildRootLb", "state", cloudletState)
+	return nil
+}
+
+func (s *Xind) CheckRebuildRootLb(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "CheckRebuildRootLb")
 	return nil
 }
 

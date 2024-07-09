@@ -86,6 +86,14 @@ type Caches struct {
 // Used by federation to redirect FRM to finish CreateAppInst via the controller
 var ErrContinueViaController = errors.New("continue operation via controller")
 
+type InitHAConditionalActionType string
+
+const (
+	ActionNone InitHAConditionalActionType = "none"
+	ActionCreate InitHAConditionalActionType = "create"
+	ActionUpdate InitHAConditionalActionType = "update"
+)
+
 // Platform abstracts the underlying cloudlet platform.
 type Platform interface {
 	// GetVersionProperties returns properties related to the platform version
@@ -98,7 +106,7 @@ type Platform interface {
 	InitCommon(ctx context.Context, platformConfig *PlatformConfig, caches *Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error
 	// InitHAConditional is only needed for platforms which support H/A. It is called in the following cases: 1) when platform initially starts in a non-switchover case
 	// 2) in a switchover case if the previouly-active unit is running a different version as specified by GetInitHAConditionalCompatibilityVersion
-	InitHAConditional(ctx context.Context, platformConfig *PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error
+	InitHAConditional(ctx context.Context, platformConfig *PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) (InitHAConditionalActionType, error)
 	// GetInitializationCompatibilityVersion returns a version as a string. When doing switchovers, if the new version matches the previous version, then InitHAConditional
 	// is not called again. If there is a mismatch, then InitHAConditional will be called again.
 	GetInitHAConditionalCompatibilityVersion(ctx context.Context) string
@@ -147,6 +155,8 @@ type Platform interface {
 	DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *Caches, accessApi AccessApi, updateCallback edgeproto.CacheUpdateCallback) error
 	// Performs Upgrades for things like k8s config
 	PerformUpgrades(ctx context.Context, caches *Caches, cloudletState dme.CloudletState) error
+	// Check if rootLb needs any updates to match cluster and appInst states
+	CheckRebuildRootLb(ctx context.Context, caches *Caches, updateCallback edgeproto.CacheUpdateCallback) error
 	// Get Cloudlet Manifest Config
 	GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi AccessApi, flavor *edgeproto.Flavor, caches *Caches) (*edgeproto.CloudletManifest, error)
 	// Verify VM

@@ -55,7 +55,7 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 	return s.Platform.InitCommon(ctx, platformConfig, caches, haMgr, updateCallback)
 }
 
-func (s *Platform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) (platform.InitHAConditionalActionType, error) {
 	return s.Platform.InitHAConditional(ctx, platformConfig, updateCallback)
 }
 

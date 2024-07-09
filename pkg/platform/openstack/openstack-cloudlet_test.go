@@ -109,7 +109,7 @@ func TestOpenstackLive(t *testing.T) {
 	err := plat.InitCommon(ctx, pfConfig, caches, haMgr, cb)
 	require.Nil(t, err)
 
-	err = plat.InitHAConditional(ctx, pfConfig, cb)
+	_, err = plat.InitHAConditional(ctx, pfConfig, cb)
 	require.Nil(t, err)
 
 	if false {
