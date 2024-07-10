@@ -144,8 +144,8 @@ func (k *K8sBareMetalPlatform) InitCommon(ctx context.Context, platformConfig *p
 	return nil
 }
 
-func (k *K8sBareMetalPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) (platform.InitHAConditionalActionType, error) {
-	return platform.ActionNone,nil
+func (k *K8sBareMetalPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
 }
 
 func (k *K8sBareMetalPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
@@ -232,11 +232,6 @@ func (k *K8sBareMetalPlatform) runDebug(ctx context.Context, req *edgeproto.Debu
 
 func (k *K8sBareMetalPlatform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PerformUpgrades", "state", cloudletState)
-	return nil
-}
-
-func (k *K8sBareMetalPlatform) CheckRebuildRootLb(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "CheckRebuildRootLb")
 	return nil
 }
 

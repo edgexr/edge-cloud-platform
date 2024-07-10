@@ -307,7 +307,7 @@ func PopulateAppInstLoadBalancerIps(ctx context.Context, client ssh.Client, name
 	}
 }
 
-func GetConfigDirName(names *KubeNames) string {
+func getConfigDirName(names *KubeNames) string {
 	dir := names.ClusterName
 	if names.MultitenantNamespace != "" {
 		dir += "." + names.MultitenantNamespace
@@ -315,7 +315,7 @@ func GetConfigDirName(names *KubeNames) string {
 	return dir
 }
 
-func GetConfigFileName(names *KubeNames, appInst *edgeproto.AppInst) string {
+func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst) string {
 	if appInst.CompatibilityVersion < cloudcommon.AppInstCompatibilityUniqueNameKeyConfig {
 		// backwards compatibility, may clobber other instances
 		// using the same app definition in multi-tenant clusters.
@@ -352,14 +352,7 @@ func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeName
 	return nil
 }
 
-func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, action string) error {
-	if action == createManifest && names.MultitenantNamespace != "" {
-		err := CreateMultitenantNamespace(ctx, client, names)
-		if err != nil {
-			return err
-		}
-	}
-
+func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
 	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, app.DeploymentManifest)
 	if err != nil {
 		return err
@@ -377,8 +370,8 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to merge env vars", "error", err)
 		return fmt.Errorf("error merging environment variables config file: %s", err)
 	}
-	configDir := GetConfigDirName(names)
-	configName := GetConfigFileName(names, appInst)
+	configDir := getConfigDirName(names)
+	configName := getConfigFileName(names, appInst)
 	err = pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
 	if err != nil {
 		return err
@@ -389,6 +382,23 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, action string) error {
+	if action == createManifest && names.MultitenantNamespace != "" {
+		err := CreateMultitenantNamespace(ctx, client, names)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst, appInstFlavor); err != nil {
+		return err
+	}
+	configDir := getConfigDirName(names)
+
 	// Kubernetes provides 3 styles of object management.
 	// We use the Declarative Object configuration style, to be able to
 	// update and prune.
@@ -437,8 +447,8 @@ func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 }
 
 func DeleteAppInst(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
-	configDir := GetConfigDirName(names)
-	configName := GetConfigFileName(names, appInst)
+	configDir := getConfigDirName(names)
+	configName := getConfigFileName(names, appInst)
 	file := configDir + "/" + configName
 	cmd := fmt.Sprintf("kubectl %s delete -f %s", names.KconfArg, file)
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting app", "name", names.AppName, "cmd", cmd)

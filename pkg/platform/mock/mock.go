@@ -73,8 +73,8 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 	return nil
 }
 
-func (s *Platform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) (platform.InitHAConditionalActionType, error) {
-	return platform.ActionNone,nil
+func (s *Platform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
 }
 
 func (s *Platform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
@@ -215,10 +215,6 @@ func (s *Platform) SetPowerState(ctx context.Context, app *edgeproto.App, appIns
 }
 
 func (s *Platform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
-	return nil
-}
-
-func (s *Platform) CheckRebuildRootLb(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
 

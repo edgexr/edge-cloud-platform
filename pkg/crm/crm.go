@@ -466,7 +466,7 @@ func waitControllerSync(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloud
 func initPlatformHAConditional(ctx context.Context, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, physicalName string, features *edgeproto.PlatformFeatures, platformConfig *pf.PlatformConfig, caches *pf.Caches, accessClient edgeproto.CloudletAccessApiClient, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfo, "initPlatformHAConditional")
 
-	action, err := platform.InitHAConditional(ctx, platformConfig, updateCallback)
+	err := platform.InitHAConditional(ctx, platformConfig, updateCallback)
 	if err != nil {
 		log.FatalLog("Platform InitHAConditional fail", "err", err)
 	}
@@ -504,10 +504,6 @@ func initPlatformHAConditional(ctx context.Context, cloudlet *edgeproto.Cloudlet
 		err = platform.PerformUpgrades(ctx, caches, myCloudletInfo.State)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Platform upgrades failed", "err", err)
-		}
-		// If we created a new rootLb - check that the cloudlet state is in sync
-		if action == pf.ActionCreate {
-			platform.CheckRebuildRootLb(ctx, caches, updateCallback)
 		}
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "initPlatformHAConditional done", "cloudlet state", myCloudletInfo.State, "myCloudletInfo", myCloudletInfo, "err", err)

@@ -73,8 +73,8 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 	return m.Provider.Login(ctx)
 }
 
-func (m *ManagedK8sPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) (platform.InitHAConditionalActionType, error) {
-	return platform.ActionNone,nil
+func (m *ManagedK8sPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
 }
 
 func (m *ManagedK8sPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {

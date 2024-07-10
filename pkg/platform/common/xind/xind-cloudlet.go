@@ -76,11 +76,6 @@ func (s *Xind) PerformUpgrades(ctx context.Context, caches *platform.Caches, clo
 	return nil
 }
 
-func (s *Xind) CheckRebuildRootLb(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "CheckRebuildRootLb")
-	return nil
-}
-
 func (s *Xind) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, flavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
 	return &edgeproto.CloudletManifest{Manifest: "xind manifest"}, nil

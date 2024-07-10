@@ -449,16 +449,15 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 
 }
 
-func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) (platform.InitHAConditionalActionType, error) {
+func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitHAConditional")
-	rootLbAction := platform.ActionNone
 	if err := v.VMProvider.InitProvider(ctx, v.Caches, ProviderInitPlatformStartCrmConditional, updateCallback); err != nil {
-		return rootLbAction, err
+		return err
 	}
 	var result OperationInitResult
 	ctx, result, err := v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
-		return rootLbAction, err
+		return err
 	}
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
@@ -470,14 +469,13 @@ func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *plat
 			// this as a fatal error or it can cause the CRM to never initialize
 			log.SpanLog(ctx, log.DebugLevelInfra, "Warning: error in ConfigureCloudletSecurityRules", "err", err)
 		} else {
-			return rootLbAction, err
+			return err
 		}
 	}
 
 	_, err = v.VMProvider.GetServerDetail(ctx, v.VMProperties.SharedRootLBName)
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "rootlb already exists, updating ports")
-		rootLbAction = platform.ActionUpdate
 		// avoid downtime during crm upgrades by running rootLB update in the background. Most of the time nothing will change.
 		go func() {
 			cspan, cctx := log.ChildSpan(ctx, log.DebugLevelInfra, "update rootLB")
@@ -489,14 +487,14 @@ func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *plat
 			}
 		}()
 	} else {
-		rootLbAction = platform.ActionCreate
 		err := v.initRootLB(ctx, platformConfig, ActionCreate, updateCallback)
 		if err != nil {
-			return platform.ActionNone, err
+			return err
 		}
+		v.checkRebuildRootLb(ctx, v.Caches, updateCallback)
 	}
 	v.proxyCerts.TriggerRootLBCertsRefresh()
-	return rootLbAction, nil
+	return nil
 }
 
 func (v *VMPlatform) initRootLB(ctx context.Context, platformConfig *platform.PlatformConfig, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -602,35 +600,16 @@ func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platf
 	}
 
 	// Update appinst manifests on the rootLb
-	mf, err := cloudcommon.GetDeploymentManifest(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.DeploymentManifest)
+	err = k8smgmt.WriteDeploymentManifestToFile(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, &app, appInst, &appInstFlavor)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get the deployment manifest", "AppInst", appInst.Key, "err", err)
-		return
-	}
-	mf, err = k8smgmt.MergeEnvVars(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, &app, appInst, mf, names.ImagePullSecrets, names, &appInstFlavor)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to merge env vars", "AppInst", appInst.Key, "err", err)
-		return
-	}
-	configDir := k8smgmt.GetConfigDirName(names)
-	configName := k8smgmt.GetConfigFileName(names, appInst)
-	err = pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to create a directory", "AppInst", appInst.Key, "err", err)
-		return
-	}
-	file := configDir + "/" + configName
-	log.SpanLog(ctx, log.DebugLevelInfra, "writing config file", "file", file, "kubeManifest", mf)
-	err = pc.WriteFile(client, file, mf, "K8s Deployment", pc.NoSudo)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to write manifest", "AppInst", appInst.Key, "err", err)
-		return
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to write deployment manifest to rootLb", "AppInst", appInst.Key, "err", err)
 	}
 }
 
-// CheckRebuildRootLb gets called when we created rootLb and we need to check if there are any clusters
-// that need to be re-connected to this rootLb
-func (v *VMPlatform) CheckRebuildRootLb(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+// CheckRebuildRootLb gets called when we created rootLb and we need to check
+// if there are any clusters that need to be re-connected to this rootLb
+// Also check if any appInst states need syncing
+func (v *VMPlatform) checkRebuildRootLb(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CheckRebuildRootLb")
 
 	// Update clusters
