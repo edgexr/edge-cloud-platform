@@ -370,6 +370,7 @@ func (v *VMPlatform) setupDnsForAppInst(ctx context.Context, clusterInst *edgepr
 			if err != nil {
 				return err
 			}
+		} else {
 			patchIPV4 = sips.IPV4ExternalAddr()
 			patchIPV6 = sips.IPV6ExternalAddr()
 		}
