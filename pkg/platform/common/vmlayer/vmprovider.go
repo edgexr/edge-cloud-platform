@@ -604,6 +604,12 @@ func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platf
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to write deployment manifest to rootLb", "AppInst", appInst.Key, "err", err)
 	}
+
+	// Create proxy container for app
+	err = v.setupDnsForAppInst(ctx, &cinst, &app, appInst, client, app.Deployment)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to set up proxy and update dns names", "AppInst", appInst.Key, "err", err)
+	}
 }
 
 // CheckRebuildRootLb gets called when we created rootLb and we need to check
