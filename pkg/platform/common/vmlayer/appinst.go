@@ -355,7 +355,21 @@ func (v *VMPlatform) setupDnsForAppInst(ctx context.Context, clusterInst *edgepr
 	case cloudcommon.DeploymentTypeKubernetes:
 		patchIPV4 := ""
 		patchIPV6 := ""
-		if v.VMProperties.GetUsesMetalLb() {
+		useMetalLb := v.VMProperties.GetUsesMetalLb()
+		if useMetalLb {
+			// generally MetalLB should already be installed, but if the cluster is pre-existing it is
+			// possible that the install was not yet done
+			lbIpRange, err := v.VMProperties.GetMetalLBAddresses(ctx, sips)
+			if err != nil {
+				return err
+			}
+			if err := infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, clusterInst, lbIpRange); err != nil {
+				return err
+			}
+			err = k8smgmt.PopulateAppInstLoadBalancerIps(ctx, client, names, appInst)
+			if err != nil {
+				return err
+			}
 			patchIPV4 = sips.IPV4ExternalAddr()
 			patchIPV6 = sips.IPV6ExternalAddr()
 		}
@@ -496,22 +510,6 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 				appWaitChan <- ""
 			}
 		}()
-		useMetalLb := v.VMProperties.GetUsesMetalLb()
-		if useMetalLb {
-			// generally MetalLB should already be installed, but if the cluster is pre-existing it is
-			// possible that the install was not yet done
-			lbIpRange, err := v.VMProperties.GetMetalLBAddresses(ctx, masterIPs)
-			if err != nil {
-				return err
-			}
-			if err := infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, clusterInst, lbIpRange); err != nil {
-				return err
-			}
-			err = k8smgmt.PopulateAppInstLoadBalancerIps(ctx, client, names, appInst)
-			if err != nil {
-				return err
-			}
-		}
 		updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
 		err = v.setupDnsForAppInst(ctx, clusterInst, app, appInst, client, app.Deployment)
 
