@@ -352,14 +352,7 @@ func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeName
 	return nil
 }
 
-func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, action string) error {
-	if action == createManifest && names.MultitenantNamespace != "" {
-		err := CreateMultitenantNamespace(ctx, client, names)
-		if err != nil {
-			return err
-		}
-	}
-
+func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
 	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, app.DeploymentManifest)
 	if err != nil {
 		return err
@@ -389,6 +382,23 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, action string) error {
+	if action == createManifest && names.MultitenantNamespace != "" {
+		err := CreateMultitenantNamespace(ctx, client, names)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst, appInstFlavor); err != nil {
+		return err
+	}
+	configDir := getConfigDirName(names)
+
 	// Kubernetes provides 3 styles of object management.
 	// We use the Declarative Object configuration style, to be able to
 	// update and prune.

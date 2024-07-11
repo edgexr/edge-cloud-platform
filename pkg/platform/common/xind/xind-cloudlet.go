@@ -72,7 +72,7 @@ func (s *Xind) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet,
 }
 
 func (s *Xind) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SyncControllerData", "state", cloudletState)
+	log.SpanLog(ctx, log.DebugLevelInfra, "PerformUpgrades", "state", cloudletState)
 	return nil
 }
 

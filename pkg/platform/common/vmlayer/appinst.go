@@ -316,6 +316,99 @@ func seedDockerSecrets(ctx context.Context, client ssh.Client, clusterInst *edge
 	return nil
 }
 
+func (v *VMPlatform) setupDnsForAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, client ssh.Client, deployment string) error {
+	var proxyOps []proxy.Op
+	var getDnsAction func(svc v1.Service) (*infracommon.DnsSvcAction, error)
+
+	rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
+	rootLBIPs, err := v.GetExternalIPFromServerName(ctx, rootLBName, WithCachedIP(true))
+	if err != nil {
+		return err
+	}
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return err
+	}
+	sips, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
+	if err != nil {
+		return err
+	}
+	ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
+	wlParams := infracommon.WhiteListParams{
+		SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),
+		ServerName:  rootLBName,
+		Label:       infracommon.GetAppWhitelistRulesLabel(app),
+		AllowedCIDR: infracommon.GetAllowedClientCIDR(),
+		Ports:       appInst.MappedPorts,
+		DestIP:      infracommon.DestIPUnspecified,
+	}
+	proxyConfig := NewProxyConfig(ListenAllIPs, sips, appInst.EnableIpv6)
+
+	// setup common proxy options
+	loopbackIp := infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)
+	proxyOps = append(proxyOps, proxy.WithDockerNetwork("host"))
+	proxyOps = append(proxyOps, proxy.WithMetricEndpoint(loopbackIp))
+
+	switch deployment {
+	case cloudcommon.DeploymentTypeHelm:
+		fallthrough
+	case cloudcommon.DeploymentTypeKubernetes:
+		patchIPV4 := ""
+		patchIPV6 := ""
+		useMetalLb := v.VMProperties.GetUsesMetalLb()
+		if useMetalLb {
+			// generally MetalLB should already be installed, but if the cluster is pre-existing it is
+			// possible that the install was not yet done
+			lbIpRange, err := v.VMProperties.GetMetalLBAddresses(ctx, sips)
+			if err != nil {
+				return err
+			}
+			if err := infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, clusterInst, lbIpRange); err != nil {
+				return err
+			}
+			err = k8smgmt.PopulateAppInstLoadBalancerIps(ctx, client, names, appInst)
+			if err != nil {
+				return err
+			}
+		} else {
+			patchIPV4 = sips.IPV4ExternalAddr()
+			patchIPV6 = sips.IPV6ExternalAddr()
+		}
+		features := v.GetFeatures()
+		getDnsAction = func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
+			action := infracommon.DnsSvcAction{}
+			action.PatchKube = !v.VMProperties.GetUsesMetalLb()
+			action.PatchIP = patchIPV4
+			action.PatchIPV6 = patchIPV6
+			action.ExternalIP = rootLBIPs.IPV4ExternalAddr()
+			action.ExternalIPV6 = rootLBIPs.IPV6ExternalAddr()
+			// Should only add DNS for external ports
+			// and if ips are per service.
+			action.AddDNS = !app.InternalPorts && features.IpAllocatedPerService
+			return &action, nil
+		}
+		// If this is an internal ports, all we need is patch of kube service
+		if app.InternalPorts {
+			return v.VMProperties.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)
+		}
+
+	case cloudcommon.DeploymentTypeDocker:
+		getDnsAction = func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
+			action := infracommon.DnsSvcAction{}
+			action.PatchKube = false
+			action.ExternalIP = rootLBIPs.IPV4ExternalAddr()
+			action.ExternalIPV6 = rootLBIPs.IPV6ExternalAddr()
+			return &action, nil
+		}
+	case cloudcommon.DeploymentTypeVM:
+		// TODO - we only support shared load balancer updates for now
+		fallthrough
+	default:
+		return fmt.Errorf("unsupported deployment type %s", deployment)
+	}
+	return v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, proxyConfig, ops, proxyOps...)
+}
+
 func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 
 	var err error
@@ -353,7 +446,6 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 	case cloudcommon.DeploymentTypeKubernetes:
 		fallthrough
 	case cloudcommon.DeploymentTypeHelm:
-		rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
 		appWaitChan := make(chan string)
 
 		client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
@@ -419,62 +511,8 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 				appWaitChan <- ""
 			}
 		}()
-		useMetalLb := v.VMProperties.GetUsesMetalLb()
-		patchIPV4 := ""
-		patchIPV6 := ""
-		if useMetalLb {
-			// generally MetalLB should already be installed, but if the cluster is pre-existing it is
-			// possible that the install was not yet done
-			lbIpRange, err := v.VMProperties.GetMetalLBAddresses(ctx, masterIPs)
-			if err != nil {
-				return err
-			}
-			if err := infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, clusterInst, lbIpRange); err != nil {
-				return err
-			}
-			err = k8smgmt.PopulateAppInstLoadBalancerIps(ctx, client, names, appInst)
-			if err != nil {
-				return err
-			}
-		} else {
-			patchIPV4 = masterIPs.IPV4ExternalAddr()
-			patchIPV6 = masterIPs.IPV6ExternalAddr()
-		}
-		features := v.GetFeatures()
-		// set up DNS
-		rootLBIPs, err := v.GetExternalIPFromServerName(ctx, rootLBName, WithCachedIP(true))
-		if err == nil {
-			getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
-				action := infracommon.DnsSvcAction{}
-				action.PatchKube = !useMetalLb
-				action.PatchIP = patchIPV4
-				action.PatchIPV6 = patchIPV6
-				action.ExternalIP = rootLBIPs.IPV4ExternalAddr()
-				action.ExternalIPV6 = rootLBIPs.IPV6ExternalAddr()
-				// Should only add DNS for external ports
-				// and if ips are per service.
-				action.AddDNS = !app.InternalPorts && features.IpAllocatedPerService
-				return &action, nil
-			}
-			// If this is an internal ports, all we need is patch of kube service
-			if app.InternalPorts {
-				err = v.VMProperties.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)
-			} else {
-				updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
-				ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
-				wlParams := infracommon.WhiteListParams{
-					SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),
-					ServerName:  rootLBName,
-					Label:       infracommon.GetAppWhitelistRulesLabel(app),
-					AllowedCIDR: infracommon.GetAllowedClientCIDR(),
-					Ports:       appInst.MappedPorts,
-					DestIP:      infracommon.DestIPUnspecified,
-				}
-				proxyConfig := NewProxyConfig(ListenAllIPs, masterIPs, appInst.EnableIpv6)
-
-				err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, proxyConfig, ops, proxy.WithDockerNetwork("host"), proxy.WithMetricEndpoint(infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)))
-			}
-		}
+		updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules and DNS")
+		err = v.setupDnsForAppInst(ctx, clusterInst, app, appInst, client, app.Deployment)
 
 		appWaitErr := <-appWaitChan
 		if appWaitErr != "" {
@@ -503,21 +541,12 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 }
 
 func (v *VMPlatform) setupDockerAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
-	rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
 	rootLBClient, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return err
 	}
 	clientType := cloudcommon.GetAppClientType(app)
 	appClient, err := v.GetClusterPlatformClient(ctx, clusterInst, clientType)
-	if err != nil {
-		return err
-	}
-	sips, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), GetClusterMasterName(ctx, clusterInst))
-	if err != nil {
-		return err
-	}
-	rootLBIPs, err := v.GetExternalIPFromServerName(ctx, rootLBName, WithCachedIP(true))
 	if err != nil {
 		return err
 	}
@@ -559,30 +588,9 @@ func (v *VMPlatform) setupDockerAppInst(ctx context.Context, clusterInst *edgepr
 			return err
 		}
 	}
-	getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
-		action := infracommon.DnsSvcAction{}
-		action.PatchKube = false
-		action.ExternalIP = rootLBIPs.IPV4ExternalAddr()
-		action.ExternalIPV6 = rootLBIPs.IPV6ExternalAddr()
-		return &action, nil
-	}
-	proxyConfig := NewProxyConfig(ListenAllIPs, sips, appInst.EnableIpv6)
 
 	updateCallback(edgeproto.UpdateTask, "Configuring Firewall Rules and DNS")
-	var proxyOps []proxy.Op
-	loopbackIp := infracommon.GetUniqueLoopbackIp(ctx, appInst.MappedPorts)
-	proxyOps = append(proxyOps, proxy.WithDockerNetwork("host"))
-	proxyOps = append(proxyOps, proxy.WithMetricEndpoint(loopbackIp))
-	ops := infracommon.ProxyDnsSecOpts{AddProxy: true, AddDnsAndPatchKubeSvc: true, AddSecurityRules: true}
-	wlParams := infracommon.WhiteListParams{
-		SecGrpName:  infracommon.GetServerSecurityGroupName(rootLBName),
-		ServerName:  rootLBName,
-		Label:       infracommon.GetAppWhitelistRulesLabel(app),
-		AllowedCIDR: infracommon.GetAllowedClientCIDR(),
-		Ports:       appInst.MappedPorts,
-		DestIP:      infracommon.DestIPUnspecified,
-	}
-	err = v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, rootLBClient, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, proxyConfig, ops, proxyOps...)
+	err = v.setupDnsForAppInst(ctx, clusterInst, app, appInst, rootLBClient, app.Deployment)
 	if err != nil {
 		return fmt.Errorf("AddProxySecurityRulesAndPatchDNS error: %v", err)
 	}

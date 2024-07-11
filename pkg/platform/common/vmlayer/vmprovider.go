@@ -451,7 +451,6 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 
 func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitHAConditional")
-
 	if err := v.VMProvider.InitProvider(ctx, v.Caches, ProviderInitPlatformStartCrmConditional, updateCallback); err != nil {
 		return err
 	}
@@ -492,6 +491,7 @@ func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *plat
 		if err != nil {
 			return err
 		}
+		v.checkRebuildRootLb(ctx, v.Caches, updateCallback)
 	}
 	v.proxyCerts.TriggerRootLBCertsRefresh()
 	return nil
@@ -557,6 +557,107 @@ func (v *VMPlatform) initRootLB(ctx context.Context, platformConfig *platform.Pl
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "ok, SetupRootLB")
+	return nil
+}
+
+// updateAppInstConfigForLb
+func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platform.Caches, appInst *edgeproto.AppInst) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "Update rootLb for appInst", "AppInst", appInst.Key)
+	app := edgeproto.App{}
+	if !caches.AppCache.Get(&appInst.AppKey, &app) {
+		log.SpanLog(ctx, log.DebugLevelInfra, "upgrade version single cluster config dir, App not found", "AppInst", appInst.Key)
+		return
+	}
+	if app.Deployment != cloudcommon.DeploymentTypeKubernetes {
+		log.SpanLog(ctx, log.DebugLevelInfra, "not a k8s appinst")
+		return
+	}
+	cinst := edgeproto.ClusterInst{}
+	if !caches.ClusterInstCache.Get(appInst.ClusterInstKey(), &cinst) {
+		log.SpanLog(ctx, log.DebugLevelInfra, "clusterInstNot found", "AppInst", appInst.Key)
+		return
+	}
+	// Only update shared access appInsts
+	if cinst.IpAccess != edgeproto.IpAccess_IP_ACCESS_SHARED {
+		log.SpanLog(ctx, log.DebugLevelInfra, "appinst uses dedicated ip access", "AppInst", appInst.Key)
+		return
+	}
+	appInstFlavor := edgeproto.Flavor{}
+	if !caches.FlavorCache.Get(&appInst.Flavor, &appInstFlavor) {
+		log.SpanLog(ctx, log.DebugLevelInfra, "flavor not found", "AppInst", appInst.Key)
+		return
+	}
+
+	names, err := k8smgmt.GetKubeNames(&cinst, &app, appInst)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "update appinst data for lb, names failed", "AppInst", appInst.Key, "err", err)
+		return
+	}
+	client, err := v.GetClusterPlatformClient(ctx, &cinst, cloudcommon.ClientTypeRootLB)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "update appinst data for lb, get client failed", "AppInst", appInst.Key, "err", err)
+		return
+	}
+
+	// Update appinst manifests on the rootLb
+	err = k8smgmt.WriteDeploymentManifestToFile(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, &app, appInst, &appInstFlavor)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to write deployment manifest to rootLb", "AppInst", appInst.Key, "err", err)
+	}
+
+	// Create proxy container for app
+	err = v.setupDnsForAppInst(ctx, &cinst, &app, appInst, client, app.Deployment)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to set up proxy and update dns names", "AppInst", appInst.Key, "err", err)
+	}
+}
+
+// CheckRebuildRootLb gets called when we created rootLb and we need to check
+// if there are any clusters that need to be re-connected to this rootLb
+// Also check if any appInst states need syncing
+func (v *VMPlatform) checkRebuildRootLb(ctx context.Context, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "CheckRebuildRootLb")
+
+	// Update clusters
+	clusters := make([]*edgeproto.ClusterInst, 0)
+	caches.ClusterInstCache.Mux.Lock()
+	for _, data := range caches.ClusterInstCache.Objs {
+		if data.Obj.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
+			inst := edgeproto.ClusterInst{}
+			inst.DeepCopyIn(data.Obj)
+			clusters = append(clusters, &inst)
+		}
+	}
+	caches.ClusterInstCache.Mux.Unlock()
+
+	// No shared access clusters, just return
+	if len(clusters) == 0 {
+		log.SpanLog(ctx, log.DebugLevelInfra, "No clusters to update")
+		return nil
+	}
+	for _, cluster := range clusters {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Update rootLb for cluster", "cluster", cluster)
+		// Add cluster config to the rootLb as well as patch rootLB VM with k8s network for this cluster
+		if err := v.UpdateClusterInst(ctx, cluster, updateCallback); err != nil {
+			// The whole process is best effort, so try to update config for every cluster that we can
+			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to update cluster", "cluster", cluster, "err", err)
+		}
+	}
+
+	// Update AppInsts
+	appInsts := make([]*edgeproto.AppInst, 0)
+	caches.AppInstCache.Mux.Lock()
+	for _, data := range caches.AppInstCache.Objs {
+		inst := edgeproto.AppInst{}
+		inst.DeepCopyIn(data.Obj)
+		appInsts = append(appInsts, &inst)
+	}
+	caches.AppInstCache.Mux.Unlock()
+
+	for _, appInst := range appInsts {
+		v.updateAppInstConfigForLb(ctx, caches, appInst)
+	}
+
 	return nil
 }
 
