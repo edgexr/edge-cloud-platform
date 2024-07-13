@@ -568,10 +568,6 @@ func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platf
 		log.SpanLog(ctx, log.DebugLevelInfra, "upgrade version single cluster config dir, App not found", "AppInst", appInst.Key)
 		return
 	}
-	if app.Deployment != cloudcommon.DeploymentTypeKubernetes {
-		log.SpanLog(ctx, log.DebugLevelInfra, "not a k8s appinst")
-		return
-	}
 	cinst := edgeproto.ClusterInst{}
 	if !caches.ClusterInstCache.Get(appInst.ClusterInstKey(), &cinst) {
 		log.SpanLog(ctx, log.DebugLevelInfra, "clusterInstNot found", "AppInst", appInst.Key)
@@ -582,12 +578,12 @@ func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platf
 		log.SpanLog(ctx, log.DebugLevelInfra, "appinst uses dedicated ip access", "AppInst", appInst.Key)
 		return
 	}
+
 	appInstFlavor := edgeproto.Flavor{}
 	if !caches.FlavorCache.Get(&appInst.Flavor, &appInstFlavor) {
 		log.SpanLog(ctx, log.DebugLevelInfra, "flavor not found", "AppInst", appInst.Key)
 		return
 	}
-
 	names, err := k8smgmt.GetKubeNames(&cinst, &app, appInst)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "update appinst data for lb, names failed", "AppInst", appInst.Key, "err", err)
@@ -598,11 +594,13 @@ func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platf
 		log.SpanLog(ctx, log.DebugLevelInfra, "update appinst data for lb, get client failed", "AppInst", appInst.Key, "err", err)
 		return
 	}
-
-	// Update appinst manifests on the rootLb
-	err = k8smgmt.WriteDeploymentManifestToFile(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, &app, appInst, &appInstFlavor)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to write deployment manifest to rootLb", "AppInst", appInst.Key, "err", err)
+	if app.Deployment == cloudcommon.DeploymentTypeKubernetes ||
+		app.Deployment == cloudcommon.DeploymentTypeHelm {
+		// Update appinst manifests on the rootLb
+		err = k8smgmt.WriteDeploymentManifestToFile(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, &app, appInst, &appInstFlavor)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to write deployment manifest to rootLb", "AppInst", appInst.Key, "err", err)
+		}
 	}
 
 	// Create proxy container for app
