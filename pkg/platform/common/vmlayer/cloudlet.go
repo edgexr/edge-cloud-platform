@@ -187,16 +187,6 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 		log.SpanLog(ctx, log.DebugLevelInfra, "error while creating platform VM", "vms request spec", vms)
 		return err
 	}
-
-	// Copy client keys from vms so that it can be used to generate
-	// cloudlet manifest
-	for _, vm := range vms {
-		if vm.ConfigureNodeVars == nil {
-			continue
-		}
-		cloudlet.ChefClientKey[vm.Name] = vm.ConfigureNodeVars.Password
-	}
-
 	updateCallback(edgeproto.UpdateTask, "Successfully Deployed Platform VM")
 
 	return nil
@@ -270,27 +260,9 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
 
-	nodes := v.GetPlatformNodes(cloudlet)
-
 	// once we get this far we should ensure delete succeeds on a failure
 	cloudletResourcesCreated = true
-
-	cloudlet.ChefClientKey = make(map[string]string)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
-		for _, node := range nodes {
-			cloudletNode := edgeproto.CloudletNode{}
-			cloudletNode.Key.Name = node.NodeName
-			cloudletNode.NodeType = node.NodeType.String()
-			cloudletNode.NodeRole = node.NodeRole.String()
-			cloudletNode.OwnerTags = cloudlet.Key.GetTags()
-			password, err := accessApi.CreateCloudletNode(ctx, &cloudletNode)
-			if err != nil {
-				return cloudletResourcesCreated, err
-			}
-			// Store client key in cloudlet obj
-			cloudlet.ChefClientKey[node.NodeName] = password
-		}
-		// Return, as end-user will setup the platform VM
 		return cloudletResourcesCreated, nil
 	}
 
@@ -320,7 +292,7 @@ func (v *VMPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 }
 
 func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {
-	log.DebugLog(log.DebugLevelInfra, "update VMPlatform TrustPolicy", "policy", TrustPolicy)
+	log.SpanLog(ctx, log.DebugLevelInfra, "update VMPlatform TrustPolicy", "policy", TrustPolicy)
 	egressRestricted := TrustPolicy.Key.Name != ""
 	var result OperationInitResult
 	ctx, result, err := v.VMProvider.InitOperationContext(ctx, OperationInitStart)
@@ -338,7 +310,7 @@ func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgepro
 }
 
 func (v *VMPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, clusterInstKey *edgeproto.ClusterInstKey) error {
-	log.DebugLog(log.DebugLevelInfra, "update VMPlatform TrustPolicyException", "policy", TrustPolicyException)
+	log.SpanLog(ctx, log.DebugLevelInfra, "update VMPlatform TrustPolicyException", "policy", TrustPolicyException)
 
 	rootlbClients, err := v.GetRootLBClientForClusterInstKey(ctx, clusterInstKey)
 	if err != nil {
@@ -349,7 +321,7 @@ func (v *VMPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicy
 }
 
 func (v *VMPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey, clusterInstKey *edgeproto.ClusterInstKey) error {
-	log.DebugLog(log.DebugLevelInfra, "Delete VMPlatform TrustPolicyException", "policyKey", TrustPolicyExceptionKey)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Delete VMPlatform TrustPolicyException", "policyKey", TrustPolicyExceptionKey)
 
 	rootlbClients, err := v.GetRootLBClientForClusterInstKey(ctx, clusterInstKey)
 	if err != nil {
@@ -600,15 +572,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 	if len(nodes) == 0 {
 		return nil, fmt.Errorf("no platform nodes")
 	}
-	for _, node := range nodes {
-		// TODO: is this needed?
-		if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
-			cloudlet.ChefClientKey[node.NodeName] = ""
-		}
-		if _, ok := cloudlet.ChefClientKey[node.NodeName]; !ok {
-			return nil, fmt.Errorf("missing node secret for %s", node.NodeName)
-		}
-	}
+
 	var vms []*VMRequestSpec
 	subnetName := v.GetPlatformSubnetName(&cloudlet.Key)
 	netTypes := []NetworkType{NetworkTypeExternalAdditionalPlatform}
@@ -658,11 +622,6 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 
 func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, pfFlavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
-
-	if cloudlet.ChefClientKey == nil {
-		return nil, fmt.Errorf("unable to find chef client key")
-	}
-
 	v.VMProperties.Domain = VMDomainPlatform
 	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
 	err := v.InitProps(ctx, pc)

@@ -739,10 +739,6 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			cloudlet.State = edgeproto.TrackedState_READY
 			saveCloudlet = true
 		}
-		if in.ChefClientKey != nil {
-			cloudlet.ChefClientKey = in.ChefClientKey
-			saveCloudlet = true
-		}
 		if in.DeploymentLocal || features.CloudletServicesLocal {
 			// Store controller address if crmserver is started locally
 			cloudlet.HostController = *externalApiAddr
@@ -1647,7 +1643,6 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 func (s *CloudletApi) ShowCloudlet(in *edgeproto.Cloudlet, cb edgeproto.CloudletApi_ShowCloudletServer) error {
 	err := s.cache.Show(in, func(obj *edgeproto.Cloudlet) error {
 		copy := *obj
-		copy.ChefClientKey = make(map[string]string)
 		err := cb.Send(&copy)
 		return err
 	})

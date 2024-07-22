@@ -2886,7 +2886,6 @@ var CloudletComments = map[string]string{
 	"infraapiaccess":                         "Infra Access Type is the type of access available to Infra API Endpoint, one of DirectAccess, RestrictedAccess",
 	"infraconfig.externalnetworkname":        "Infra specific external network name",
 	"infraconfig.flavorname":                 "Infra specific flavor name",
-	"chefclientkey":                          "Chef client key, specify chefclientkey:empty=true to clear",
 	"maintenancestate":                       "State for maintenance, one of NormalOperation, MaintenanceStart, MaintenanceStartNoFailover",
 	"overridepolicycontainerversion":         "Override container version from policy file",
 	"vmpool":                                 "VM Pool",
@@ -2936,7 +2935,6 @@ var CloudletComments = map[string]string{
 var CloudletSpecialArgs = map[string]string{
 	"accessvars":             "StringToString",
 	"allianceorgs":           "StringArray",
-	"chefclientkey":          "StringToString",
 	"config.envvar":          "StringToString",
 	"envvar":                 "StringToString",
 	"errors":                 "StringArray",
