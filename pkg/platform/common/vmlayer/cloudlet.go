@@ -99,12 +99,12 @@ func (v *VMPlatform) GetCloudletImageName(ctx context.Context) (string, string, 
 		return imgFromProps, "", nil
 	}
 
-	vmBaseImage := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
-	if vmBaseImage == "" {
+	imagePath := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
+	if imagePath == "" {
 		return "", "", fmt.Errorf("Get cloudlet image failed, cloudletVMImagePath not set")
 	}
-	imageNameWithoutExt := util.RemoveExtension(filepath.Base(vmBaseImage))
-	return imageNameWithoutExt, vmBaseImage, nil
+	imageNameWithoutExt := util.RemoveExtension(filepath.Base(imagePath))
+	return imageNameWithoutExt, imagePath, nil
 }
 
 // GetCloudletImageToUse decides what image to use based on
@@ -112,16 +112,16 @@ func (v *VMPlatform) GetCloudletImageName(ctx context.Context) (string, string, 
 // 2) Use image specified on startup based on cloudlet config
 // 3) Add image to cloudlet image storage if not
 func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
-	imageNameWithoutExt, vmBaseImage, err := v.GetCloudletImageName(ctx)
+	imageNameWithoutExt, imagePath, err := v.GetCloudletImageName(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	// means we use image from props
-	if vmBaseImage == "" {
+	// if no image path, nothing to download, so just return the image name
+	if imagePath == "" {
 		return imageNameWithoutExt, nil
 	}
-	cloudletImagePath := util.SetExtension(vmBaseImage, v.VMProvider.GetCloudletImageSuffix(ctx))
+	cloudletImagePath := util.SetExtension(imagePath, v.VMProvider.GetCloudletImageSuffix(ctx))
 	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "cloudletImagePath", cloudletImagePath, "imageNameWithoutExt", imageNameWithoutExt)
 	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, cloudletImagePath)
 	if err != nil {
