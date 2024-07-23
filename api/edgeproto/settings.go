@@ -110,8 +110,6 @@ func (s *Settings) Validate(fields map[string]struct{}) error {
 			// no validation
 		case SettingsFieldMaxTrackedDmeClients:
 			v.CheckGT(f, s.MaxTrackedDmeClients, int32(0))
-		case SettingsFieldChefClientInterval:
-			v.CheckGT(f, s.ChefClientInterval, dur0)
 		case SettingsFieldCloudletMaintenanceTimeout:
 			v.CheckGT(f, s.CloudletMaintenanceTimeout, dur0)
 		case SettingsFieldInfluxDbMetricsRetention:
@@ -198,7 +196,6 @@ func GetDefaultSettings() *Settings {
 	s.UpdateCloudletTimeout = Duration(20 * time.Minute)
 	s.MasterNodeFlavor = ""
 	s.MaxTrackedDmeClients = 100
-	s.ChefClientInterval = Duration(10 * time.Minute)
 	s.CloudletMaintenanceTimeout = Duration(5 * time.Minute)
 	s.UpdateVmPoolTimeout = Duration(20 * time.Minute)
 	s.UpdateTrustPolicyTimeout = Duration(10 * time.Minute)
