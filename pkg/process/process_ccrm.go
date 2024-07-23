@@ -35,7 +35,6 @@ type CCRM struct {
 	ControllerNotifyAddr          string
 	ControllerPublicAccessApiAddr string
 	ControllerPublicNotifyAddr    string
-	ChefServerPath                string
 	ThanosRecvAddr                string
 	AnsibleListenAddr             string
 	AnsiblePublicAddr             string
