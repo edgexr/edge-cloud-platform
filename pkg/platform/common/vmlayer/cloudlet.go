@@ -92,19 +92,19 @@ func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []NodeInfo {
 // GetCloudletImageName decides what image to use based on
 // 1) if MEX_OS_IMAGE is specified in properties and not default, use that
 // 2) Use image specified on startup based on cloudlet config
-func (v *VMPlatform) GetCloudletImageName(ctx context.Context) (string, error) {
+func (v *VMPlatform) GetCloudletImageName(ctx context.Context) (string, string, error) {
 	imgFromProps := v.VMProperties.GetCloudletOSImage()
 	if imgFromProps != "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "using image from MEX_OS_IMAGE property", "imgFromProps", imgFromProps)
-		return imgFromProps, nil
+		return imgFromProps, "", nil
 	}
 
 	vmBaseImage := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
 	if vmBaseImage == "" {
-		return "", fmt.Errorf("Get cloudlet image failed, cloudletVMImagePath not set")
+		return "", "", fmt.Errorf("Get cloudlet image failed, cloudletVMImagePath not set")
 	}
 	imageNameWithoutExt := util.RemoveExtension(filepath.Base(vmBaseImage))
-	return imageNameWithoutExt, nil
+	return imageNameWithoutExt, vmBaseImage, nil
 }
 
 // GetCloudletImageToUse decides what image to use based on
@@ -112,17 +112,15 @@ func (v *VMPlatform) GetCloudletImageName(ctx context.Context) (string, error) {
 // 2) Use image specified on startup based on cloudlet config
 // 3) Add image to cloudlet image storage if not
 func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
-	imgFromProps := v.VMProperties.GetCloudletOSImage()
-	if imgFromProps != "" {
-		log.SpanLog(ctx, log.DebugLevelInfra, "using image from MEX_OS_IMAGE property", "imgFromProps", imgFromProps)
-		return imgFromProps, nil
+	imageNameWithoutExt, vmBaseImage, err := v.GetCloudletImageName(ctx)
+	if err != nil {
+		return "", err
 	}
 
-	vmBaseImage := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
+	// means we use image from props
 	if vmBaseImage == "" {
-		return "", fmt.Errorf("Get cloudlet image failed, cloudletVMImagePath not set")
+		return imageNameWithoutExt, nil
 	}
-	imageNameWithoutExt := util.RemoveExtension(filepath.Base(vmBaseImage))
 	cloudletImagePath := util.SetExtension(vmBaseImage, v.VMProvider.GetCloudletImageSuffix(ctx))
 	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "cloudletImagePath", cloudletImagePath, "imageNameWithoutExt", imageNameWithoutExt)
 	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, cloudletImagePath)
@@ -579,7 +577,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 	}
 
 	platformVmName := v.GetPlatformVMName(&cloudlet.Key)
-	pfImageName, _ := v.GetCloudletImageName(ctx)
+	pfImageName, _, _ := v.GetCloudletImageName(ctx)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
 		pfImageName, err = v.GetCloudletImageToUse(ctx, updateCallback)
 		if err != nil {
