@@ -89,9 +89,28 @@ func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []NodeInfo {
 	return nodes
 }
 
+// GetCloudletImageName decides what image to use based on
+// 1) if MEX_OS_IMAGE is specified in properties and not default, use that
+// 2) Use image specified on startup based on cloudlet config
+func (v *VMPlatform) GetCloudletImageName(ctx context.Context) (string, error) {
+	imgFromProps := v.VMProperties.GetCloudletOSImage()
+	if imgFromProps != "" {
+		log.SpanLog(ctx, log.DebugLevelInfra, "using image from MEX_OS_IMAGE property", "imgFromProps", imgFromProps)
+		return imgFromProps, nil
+	}
+
+	vmBaseImage := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
+	if vmBaseImage == "" {
+		return "", fmt.Errorf("Get cloudlet image failed, cloudletVMImagePath not set")
+	}
+	imageNameWithoutExt := util.RemoveExtension(filepath.Base(vmBaseImage))
+	return imageNameWithoutExt, nil
+}
+
 // GetCloudletImageToUse decides what image to use based on
 // 1) if MEX_OS_IMAGE is specified in properties and not default, use that
 // 2) Use image specified on startup based on cloudlet config
+// 3) Add image to cloudlet image storage if not
 func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
 	imgFromProps := v.VMProperties.GetCloudletOSImage()
 	if imgFromProps != "" {
@@ -560,7 +579,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 	}
 
 	platformVmName := v.GetPlatformVMName(&cloudlet.Key)
-	pfImageName := v.VMProperties.GetCloudletOSImage()
+	pfImageName, _ := v.GetCloudletImageName(ctx)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
 		pfImageName, err = v.GetCloudletImageToUse(ctx, updateCallback)
 		if err != nil {
@@ -679,6 +698,14 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 	if err != nil {
 		return nil, err
 	}
+
+	// set auth for the config-node script
+	for _, vm := range gp.VMs {
+		if err = infracommon.CreateCloudletNode(ctx, vm.CloudConfigParams.ConfigureNodeVars, accessApi); err != nil {
+			return nil, err
+		}
+	}
+
 	imgPath := util.SetExtension(pfConfig.CloudletVmImagePath, v.VMProvider.GetCloudletImageSuffix(ctx))
 	manifest, err := v.VMProvider.GetCloudletManifest(ctx, platformVmName, imgPath, gp)
 	if err != nil {

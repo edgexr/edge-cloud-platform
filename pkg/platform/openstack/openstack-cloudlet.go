@@ -57,7 +57,7 @@ func (o *OpenstackPlatform) GetCloudletManifest(ctx context.Context, name string
 	}
 
 	if len(vmgp.VMs) == 0 {
-		return "", fmt.Errorf("No VMs in orchestation spec")
+		return "", fmt.Errorf("No VMs in orchestration spec")
 	}
 
 	// generate the heat template
@@ -68,7 +68,7 @@ func (o *OpenstackPlatform) GetCloudletManifest(ctx context.Context, name string
 	templateText := buf.String()
 
 	// download instructions and link
-	manifest.AddItem("Download the MobiledgeX bootstrap VM image (please use your console credentials) from the link", infracommon.ManifestTypeURL, infracommon.ManifestSubTypeNone, cloudletImagePath)
+	manifest.AddItem("Download the EdgeXR bootstrap VM image (please use your console credentials) from the link", infracommon.ManifestTypeURL, infracommon.ManifestSubTypeNone, cloudletImagePath)
 
 	// image create
 	title := "Execute the following command to upload the image to your glance store"
