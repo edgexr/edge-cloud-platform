@@ -63,8 +63,6 @@ message Settings {
   reserved 15;
   // Max DME clients to be tracked at the same time.
   int32 max_tracked_dme_clients = 16;
-  // Default chef client interval (duration)
-  int32 chef_client_interval = 17 [(gogoproto.casttype) = "Duration"];
   // Default influxDB metrics retention policy (duration)
   int64 influx_db_metrics_retention = 18 [(gogoproto.casttype) = "Duration"];
   // Default Cloudlet Maintenance timeout (used twice for AutoProv and Cloudlet)

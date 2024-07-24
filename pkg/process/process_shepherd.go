@@ -31,7 +31,6 @@ type Shepherd struct {
 	Span           string
 	Region         string
 	AppDNSRoot     string
-	ChefServerPath string
 	ThanosRecvAddr string
 }
 
@@ -75,10 +74,6 @@ func (p *Shepherd) GetArgs(opts ...StartOp) []string {
 	if p.AppDNSRoot != "" {
 		args = append(args, "--appDNSRoot")
 		args = append(args, p.AppDNSRoot)
-	}
-	if p.ChefServerPath != "" {
-		args = append(args, "--chefServerPath")
-		args = append(args, p.ChefServerPath)
 	}
 	if p.ThanosRecvAddr != "" {
 		args = append(args, "--thanosRecvAddr")

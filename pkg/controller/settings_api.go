@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
@@ -51,10 +51,6 @@ func (s *SettingsApi) initDefaults(ctx context.Context) error {
 		modified := false
 		if !s.store.STMGet(stm, &edgeproto.SettingsKeySingular, cur) {
 			cur = def
-			modified = true
-		}
-		if cur.ChefClientInterval == 0 {
-			cur.ChefClientInterval = def.ChefClientInterval
 			modified = true
 		}
 		if cur.CloudletMaintenanceTimeout == 0 {

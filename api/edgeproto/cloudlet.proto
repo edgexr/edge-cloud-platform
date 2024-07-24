@@ -102,10 +102,6 @@ message PlatformConfig {
   bool use_vault_pki = 14;
   // App domain name root
   string app_dns_root = 16;
-  // Path to Chef Server
-  string chef_server_path = 17;
-  // Chef client interval
-  int32 chef_client_interval = 18 [(gogoproto.casttype) = "Duration"];
   // Deployment Tag
   string deployment_tag = 19;
   // crm access private key
@@ -530,8 +526,6 @@ message Cloudlet {
   InfraApiAccess infra_api_access = 27;
   // Infra specific config
   InfraConfig infra_config = 28 [(gogoproto.nullable) = false];
-  // Chef client key
-  map<string, string> chef_client_key = 29 [(protogen.backend) = true];
   // State for maintenance
   distributed_match_engine.MaintenanceState maintenance_state = 30;
   // Override container version from policy file
@@ -601,7 +595,7 @@ message Cloudlet {
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_recv_hook) = true;
-  option (protogen.noconfig) = "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Config,ChefClientKey,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,SecondaryCrmAccessPublicKey,SecondaryCrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,GpuConfig.LicenseConfigMd5Sum,DnsLabel,RootLbFqdn,FederationConfig,LicenseConfigStoragePath";
+  option (protogen.noconfig) = "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Config,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,SecondaryCrmAccessPublicKey,SecondaryCrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,GpuConfig.LicenseConfigMd5Sum,DnsLabel,RootLbFqdn,FederationConfig,LicenseConfigStoragePath";
   option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,federatedorg=Key.FederatedOrganization";
   option (protogen.not_required) = "Key.FederatedOrganization";
   option (protogen.mc2_target_cloudlet) = "Key";

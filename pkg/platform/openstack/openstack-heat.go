@@ -403,51 +403,6 @@ func IsUserDataSame(ctx context.Context, userdata1, userdata2 string) bool {
 	return true
 }
 
-func GetChefKeysFromOSResource(ctx context.Context, stackTemplate *OSHeatStackTemplate) (map[string]string, error) {
-	chefClientKeys := make(map[string]string)
-	for _, resource := range stackTemplate.Resources {
-		if resource.Type != "OS::Nova::Server" {
-			continue
-		}
-		userData, ok := resource.Properties["user_data"]
-		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfra, "missing user data", "resource", resource)
-			continue
-		}
-		userDataStr, ok := userData.(string)
-		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfra, "invalid user data", "resource", resource)
-			continue
-		}
-		out := strings.Replace(userDataStr, `\n`, "\n", -1)
-
-		uObj := make(map[string]interface{})
-		err := yaml.Unmarshal([]byte(out), &uObj)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal userdata %v, %v", userData, err)
-		}
-		cObj, ok := uObj["chef"]
-		if !ok {
-			log.SpanLog(ctx, log.DebugLevelInfra, "skip, missing chef", "userdata", userData)
-			continue
-		}
-		if chefObj, ok := cObj.(map[string]interface{}); ok {
-			nodeName, ok := chefObj["node_name"].(string)
-			if !ok {
-				return nil, fmt.Errorf("invalid chef node name: %v", chefObj["node_name"])
-			}
-			cert, ok := chefObj["validation_cert"].(string)
-			if !ok {
-				return nil, fmt.Errorf("invalid chef validation cert: %v", chefObj["validation_cert"])
-			}
-			chefClientKeys[nodeName] = strings.TrimSpace(cert)
-		} else {
-			return nil, fmt.Errorf("invalid chef config: %v", cObj)
-		}
-	}
-	return chefClientKeys, nil
-}
-
 // populateParams fills in some details which cannot be done outside of heat
 func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, action string) (*ReservedResources, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateParams", "VMGroupOrchestrationParams", VMGroupOrchestrationParams.GroupName, "action", action)

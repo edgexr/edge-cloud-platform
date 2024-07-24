@@ -68,7 +68,6 @@ var parentSpan = flag.String("span", "", "Use parent span for logging")
 var region = flag.String("region", "local", "Region name")
 var promTargetsFile = flag.String("targetsFile", "/var/tmp/prom_targets.json", "Prometheus targets file")
 var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
-var chefServerPath = flag.String("chefServerPath", "", "Chef server path")
 var promScrapeInterval = flag.Duration("promScrapeInterval", defaultScrapeInterval, "Prometheus Scraping Interval")
 var haRole = flag.String("HARole", string(process.HARolePrimary), "HARole") // for info purposes and to distinguish nodes when running debug commands
 var thanosRecvAddr = flag.String("thanosRecvAddr", "", "Address of thanos receive API endpoint including port")

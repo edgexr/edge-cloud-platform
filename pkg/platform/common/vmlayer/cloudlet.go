@@ -89,22 +89,39 @@ func (v *VMPlatform) GetPlatformNodes(cloudlet *edgeproto.Cloudlet) []NodeInfo {
 	return nodes
 }
 
-// GetCloudletImageToUse decides what image to use based on
+// GetCloudletImageName decides what image to use based on
 // 1) if MEX_OS_IMAGE is specified in properties and not default, use that
 // 2) Use image specified on startup based on cloudlet config
-func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
+func (v *VMPlatform) GetCloudletImageName(ctx context.Context) (string, string, error) {
 	imgFromProps := v.VMProperties.GetCloudletOSImage()
 	if imgFromProps != "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "using image from MEX_OS_IMAGE property", "imgFromProps", imgFromProps)
-		return imgFromProps, nil
+		return imgFromProps, "", nil
 	}
 
-	vmBaseImage := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
-	if vmBaseImage == "" {
-		return "", fmt.Errorf("Get cloudlet image failed, cloudletVMImagePath not set")
+	imagePath := v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath
+	if imagePath == "" {
+		return "", "", fmt.Errorf("Get cloudlet image failed, cloudletVMImagePath not set")
 	}
-	imageNameWithoutExt := util.RemoveExtension(filepath.Base(vmBaseImage))
-	cloudletImagePath := util.SetExtension(vmBaseImage, v.VMProvider.GetCloudletImageSuffix(ctx))
+	imageNameWithoutExt := util.RemoveExtension(filepath.Base(imagePath))
+	return imageNameWithoutExt, imagePath, nil
+}
+
+// GetCloudletImageToUse decides what image to use based on
+// 1) if MEX_OS_IMAGE is specified in properties and not default, use that
+// 2) Use image specified on startup based on cloudlet config
+// 3) Add image to cloudlet image storage if not
+func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) (string, error) {
+	imageNameWithoutExt, imagePath, err := v.GetCloudletImageName(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	// if no image path, nothing to download, so just return the image name
+	if imagePath == "" {
+		return imageNameWithoutExt, nil
+	}
+	cloudletImagePath := util.SetExtension(imagePath, v.VMProvider.GetCloudletImageSuffix(ctx))
 	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "cloudletImagePath", cloudletImagePath, "imageNameWithoutExt", imageNameWithoutExt)
 	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, cloudletImagePath)
 	if err != nil {
@@ -187,16 +204,6 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 		log.SpanLog(ctx, log.DebugLevelInfra, "error while creating platform VM", "vms request spec", vms)
 		return err
 	}
-
-	// Copy client keys from vms so that it can be used to generate
-	// cloudlet manifest
-	for _, vm := range vms {
-		if vm.ConfigureNodeVars == nil {
-			continue
-		}
-		cloudlet.ChefClientKey[vm.Name] = vm.ConfigureNodeVars.Password
-	}
-
 	updateCallback(edgeproto.UpdateTask, "Successfully Deployed Platform VM")
 
 	return nil
@@ -270,27 +277,9 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
 
-	nodes := v.GetPlatformNodes(cloudlet)
-
 	// once we get this far we should ensure delete succeeds on a failure
 	cloudletResourcesCreated = true
-
-	cloudlet.ChefClientKey = make(map[string]string)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
-		for _, node := range nodes {
-			cloudletNode := edgeproto.CloudletNode{}
-			cloudletNode.Key.Name = node.NodeName
-			cloudletNode.NodeType = node.NodeType.String()
-			cloudletNode.NodeRole = node.NodeRole.String()
-			cloudletNode.OwnerTags = cloudlet.Key.GetTags()
-			password, err := accessApi.CreateCloudletNode(ctx, &cloudletNode)
-			if err != nil {
-				return cloudletResourcesCreated, err
-			}
-			// Store client key in cloudlet obj
-			cloudlet.ChefClientKey[node.NodeName] = password
-		}
-		// Return, as end-user will setup the platform VM
 		return cloudletResourcesCreated, nil
 	}
 
@@ -320,7 +309,7 @@ func (v *VMPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 }
 
 func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {
-	log.DebugLog(log.DebugLevelInfra, "update VMPlatform TrustPolicy", "policy", TrustPolicy)
+	log.SpanLog(ctx, log.DebugLevelInfra, "update VMPlatform TrustPolicy", "policy", TrustPolicy)
 	egressRestricted := TrustPolicy.Key.Name != ""
 	var result OperationInitResult
 	ctx, result, err := v.VMProvider.InitOperationContext(ctx, OperationInitStart)
@@ -338,7 +327,7 @@ func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgepro
 }
 
 func (v *VMPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, clusterInstKey *edgeproto.ClusterInstKey) error {
-	log.DebugLog(log.DebugLevelInfra, "update VMPlatform TrustPolicyException", "policy", TrustPolicyException)
+	log.SpanLog(ctx, log.DebugLevelInfra, "update VMPlatform TrustPolicyException", "policy", TrustPolicyException)
 
 	rootlbClients, err := v.GetRootLBClientForClusterInstKey(ctx, clusterInstKey)
 	if err != nil {
@@ -349,7 +338,7 @@ func (v *VMPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicy
 }
 
 func (v *VMPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey, clusterInstKey *edgeproto.ClusterInstKey) error {
-	log.DebugLog(log.DebugLevelInfra, "Delete VMPlatform TrustPolicyException", "policyKey", TrustPolicyExceptionKey)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Delete VMPlatform TrustPolicyException", "policyKey", TrustPolicyExceptionKey)
 
 	rootlbClients, err := v.GetRootLBClientForClusterInstKey(ctx, clusterInstKey)
 	if err != nil {
@@ -588,7 +577,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 	}
 
 	platformVmName := v.GetPlatformVMName(&cloudlet.Key)
-	pfImageName := v.VMProperties.GetCloudletOSImage()
+	pfImageName, _, _ := v.GetCloudletImageName(ctx)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
 		pfImageName, err = v.GetCloudletImageToUse(ctx, updateCallback)
 		if err != nil {
@@ -600,15 +589,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 	if len(nodes) == 0 {
 		return nil, fmt.Errorf("no platform nodes")
 	}
-	for _, node := range nodes {
-		// TODO: is this needed?
-		if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
-			cloudlet.ChefClientKey[node.NodeName] = ""
-		}
-		if _, ok := cloudlet.ChefClientKey[node.NodeName]; !ok {
-			return nil, fmt.Errorf("missing node secret for %s", node.NodeName)
-		}
-	}
+
 	var vms []*VMRequestSpec
 	subnetName := v.GetPlatformSubnetName(&cloudlet.Key)
 	netTypes := []NetworkType{NetworkTypeExternalAdditionalPlatform}
@@ -658,11 +639,6 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 
 func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, pfFlavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
-
-	if cloudlet.ChefClientKey == nil {
-		return nil, fmt.Errorf("unable to find chef client key")
-	}
-
 	v.VMProperties.Domain = VMDomainPlatform
 	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
 	err := v.InitProps(ctx, pc)
@@ -720,6 +696,14 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 	if err != nil {
 		return nil, err
 	}
+
+	// set auth for the config-node script
+	for _, vm := range gp.VMs {
+		if err = infracommon.CreateCloudletNode(ctx, vm.CloudConfigParams.ConfigureNodeVars, accessApi); err != nil {
+			return nil, err
+		}
+	}
+
 	imgPath := util.SetExtension(pfConfig.CloudletVmImagePath, v.VMProvider.GetCloudletImageSuffix(ctx))
 	manifest, err := v.VMProvider.GetCloudletManifest(ctx, platformVmName, imgPath, gp)
 	if err != nil {

@@ -21,7 +21,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	baselog "log"
 	"net"
 	"net/http"
@@ -525,7 +525,7 @@ func startServices() error {
 	//to get rid of some of these logs, but as of now this a the way around it.   We could miss other logs here but
 	// the excessive error logs are drowning out everthing else.
 	var nullLogger baselog.Logger
-	nullLogger.SetOutput(ioutil.Discard)
+	nullLogger.SetOutput(io.Discard)
 
 	httpServer := &http.Server{
 		Addr:      *httpAddr,

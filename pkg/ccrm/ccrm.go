@@ -67,7 +67,6 @@ type Flags struct {
 	ControllerNotifyAddr          string
 	ControllerPublicNotifyAddr    string
 	ControllerPublicAccessApiAddr string
-	ChefServerPath                string // deprecated
 	AnsibleListenAddr             string
 	AnsiblePublicAddr             string
 	ThanosRecvAddr                string
@@ -126,7 +125,6 @@ func (s *Flags) Init() {
 	flag.StringVar(&s.ControllerNotifyAddr, "controllerNotifyAddr", "127.0.0.1:50001", "Controller's Notify listener address")
 	flag.StringVar(&s.ControllerPublicNotifyAddr, "controllerPublicNotifyAddr", "127.0.0.1:50001", "Controller's Public facing notify address passed to CRM")
 	flag.StringVar(&s.ControllerPublicAccessApiAddr, "controllerPublicAccessApiAddr", "127.0.0.1:41001", "Controller's Public facing access api address passed to CRM")
-	flag.StringVar(&s.ChefServerPath, "chefServerPath", "", "(deprecated) Path to chef server organization")
 	flag.StringVar(&s.ThanosRecvAddr, "thanosRecvAddr", "", "Address of thanos receive API endpoint including port")
 	flag.StringVar(&s.AnsibleListenAddr, "ansibleListenAddr", "127.0.0.1:48880", "Address and port to serve ansible files from")
 	flag.StringVar(&s.AnsiblePublicAddr, "ansiblePublicAddr", "http://127.0.0.1:48880", "Scheme, address, and port to pass to the CRM to reach the ansible server externally")

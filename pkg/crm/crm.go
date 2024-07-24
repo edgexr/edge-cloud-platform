@@ -62,9 +62,6 @@ var nginxWithCurlImage = flag.String("nginxWithCurlImage", "", "docker image for
 var commercialCerts = flag.Bool("commercialCerts", false, "Get TLS certs from LetsEncrypt. If false CRM will generate its own self-signed certs")
 var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
 
-// chefServerPath is deprecated, and can only be removed once all
-// CRM VMs have been migrated from Chef to Ansible.
-var chefServerPath = flag.String("chefServerPath", "", "Chef server path")
 var ansiblePublicAddr = flag.String("ansiblePublicAddr", "", "ansible webserver address")
 var upgrade = flag.Bool("upgrade", false, "Flag to initiate upgrade run as part of crm bringup")
 var cacheDir = flag.String("cacheDir", "/tmp/", "Cache used by CRM to store frequently accessed data")

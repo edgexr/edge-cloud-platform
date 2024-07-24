@@ -395,7 +395,6 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 	useVaultPki := false
 	appDNSRoot := ""
 	deploymentTag := ""
-	chefServerPath := ""
 	accessApiAddr := ""
 	thanosRecvAddr := ""
 	if pfConfig != nil {
@@ -412,7 +411,6 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		useVaultPki = pfConfig.UseVaultPki
 		appDNSRoot = pfConfig.AppDnsRoot
 		deploymentTag = pfConfig.DeploymentTag
-		chefServerPath = pfConfig.ChefServerPath
 		accessApiAddr = pfConfig.AccessApiAddr
 		thanosRecvAddr = pfConfig.ThanosRecvAddr
 	}
@@ -446,7 +444,6 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		Span:           span,
 		Region:         region,
 		AppDNSRoot:     appDNSRoot,
-		ChefServerPath: chefServerPath,
 		ThanosRecvAddr: thanosRecvAddr,
 	}, opts, nil
 }
