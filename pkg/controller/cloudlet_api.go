@@ -625,7 +625,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			return err
 		}
 		in.RootLbFqdn = getCloudletRootLBFQDN(in)
-		in.StartupRootLbFqdn = in.RootLbFqdn
+		in.StaticRootLbFqdn = in.RootLbFqdn
 		if features.IsSingleKubernetesCluster {
 			// create ClusterInst representation of Cloudlet
 			err := s.all.clusterInstApi.createCloudletSingularCluster(stm, in, in.SingleKubernetesClusterOwner)

@@ -134,8 +134,8 @@ message ClusterInst {
   string dns_label = 35 [(protogen.backend) = true];
   // FQDN is a globally unique DNS id for the ClusterInst
   string fqdn = 36 [(protogen.backend) = true];
-  // Startup FQDN is an immutable globally unique name.
-  string startup_fqdn = 38 [(protogen.backend) = true];
+  // Static startup FQDN is an immutable globally unique name, set at startup and cannot be modified.
+  string static_fqdn = 38 [(protogen.backend) = true];
   // Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting
   bool enable_ipv6 = 37;
   option (protogen.generate_matches) = true;
@@ -147,7 +147,7 @@ message ClusterInst {
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_filter_cloudlet_key) = true;
-  option (protogen.noconfig) = "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,DeletePrepare,DnsLabel,Fqdn,StartupFqdn";
+  option (protogen.noconfig) = "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,DeletePrepare,DnsLabel,Fqdn,StaticFqdn";
   option (protogen.not_required) = "Key.CloudletKey.FederatedOrganization";
   option (protogen.alias) = "cluster=Key.ClusterKey.Name,cloudlet=Key.CloudletKey.Name,cloudletorg=Key.CloudletKey.Organization,federatedorg=Key.CloudletKey.FederatedOrganization,clusterorg=Key.ClusterKey.Organization,flavor=Flavor.Name";
   option (protogen.mc2_target_cloudlet) = "Key.CloudletKey";

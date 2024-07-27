@@ -178,7 +178,7 @@ func (s *Resources) AddClusterResources(clusterInst *edgeproto.ClusterInst) {
 	}
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		s.clusterVMs[clusterInst.Key] = append(s.clusterVMs[clusterInst.Key], edgeproto.VmInfo{
-			Name:        clusterInst.StartupFqdn,
+			Name:        clusterInst.StaticFqdn,
 			Type:        cloudcommon.NodeTypeDedicatedRootLB.String(),
 			InfraFlavor: s.lbFlavorName,
 			Status:      "ACTIVE",

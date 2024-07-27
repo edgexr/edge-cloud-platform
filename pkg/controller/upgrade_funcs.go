@@ -539,8 +539,8 @@ func CloudletAccessVars(ctx context.Context, objStore objstore.KVStore, allApis 
 	return nil
 }
 
-func AddStartupFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
-	// 1. Update cloudlets - set StartupRootLbFqdn
+func AddStaticFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
+	// 1. Update cloudlets - set StaticRootLbFqdn
 	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
 	if err != nil {
 		return err
@@ -557,8 +557,8 @@ func AddStartupFqdn(ctx context.Context, objStore objstore.KVStore, allApis *All
 				return err2
 			}
 			// sanity check
-			if cloudlet.StartupRootLbFqdn == "" {
-				cloudlet.StartupRootLbFqdn = cloudlet.RootLbFqdn
+			if cloudlet.StaticRootLbFqdn == "" {
+				cloudlet.StaticRootLbFqdn = cloudlet.RootLbFqdn
 				allApis.cloudletApi.store.STMPut(stm, &cloudlet)
 			}
 			return nil
@@ -582,8 +582,8 @@ func AddStartupFqdn(ctx context.Context, objStore objstore.KVStore, allApis *All
 			if err2 := unmarshalUpgradeObj(ctx, clusterInstStr, &cluster); err2 != nil {
 				return err2
 			}
-			if cluster.StartupFqdn == "" {
-				cluster.StartupFqdn = cluster.Fqdn
+			if cluster.StaticFqdn == "" {
+				cluster.StaticFqdn = cluster.Fqdn
 				allApis.clusterInstApi.store.STMPut(stm, &cluster)
 			}
 			return nil
@@ -607,8 +607,8 @@ func AddStartupFqdn(ctx context.Context, objStore objstore.KVStore, allApis *All
 			if err2 := unmarshalUpgradeObj(ctx, appInstString, &appInst); err2 != nil {
 				return err2
 			}
-			if appInst.StartupUri != "" {
-				appInst.StartupUri = appInst.Uri
+			if appInst.StaticUri == "" {
+				appInst.StaticUri = appInst.Uri
 				allApis.appInstApi.store.STMPut(stm, &appInst)
 			}
 			return nil

@@ -223,7 +223,7 @@ func (v *VMPlatform) GetClusterPlatformClientInternal(ctx context.Context, clust
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterPlatformClientInternal", "clientType", clientType, "IpAccess", clusterInst.IpAccess)
 	rootLBName := v.VMProperties.SharedRootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		rootLBName = clusterInst.StartupFqdn
+		rootLBName = clusterInst.StaticFqdn
 	}
 	client, err := v.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName}, ops...)
 	if err != nil {
@@ -307,7 +307,7 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
 				Type: cloudcommon.NodeTypeDedicatedRootLB.String(),
-				Name: clusterInst.StartupFqdn,
+				Name: clusterInst.StaticFqdn,
 			})
 		}
 	}

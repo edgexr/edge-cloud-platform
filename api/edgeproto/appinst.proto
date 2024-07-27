@@ -134,8 +134,8 @@ message AppInst {
   distributed_match_engine.Loc cloudlet_loc = 3 [(gogoproto.nullable) = false];
   // Base FQDN (not really URI) for the App. See Service FQDN for endpoint access.
   string uri = 4 [(protogen.backend) = true];
-  // Startup FQDN that was used when appinst was created
-  string startup_uri = 49 [(protogen.backend) = true];
+  // Static startup FQDN that was used when appinst was created
+  string static_uri = 49 [(protogen.backend) = true];
   // Liveness of instance (see Liveness)
   Liveness liveness = 6 [(protogen.backend) = true];
   // For instances accessible via a shared load balancer, defines the external
@@ -214,7 +214,7 @@ message AppInst {
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_filter_cloudlet_key) = true;
-  option (protogen.noconfig) = "CloudletLoc,Uri,StartupUri,MappedPorts,Liveness,CreatedAt,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,InternalPortToLbIp,UniqueId,DnsLabel,FedKey,AppKey.Organization,CompatibilityVersion,VirtualClusterKey";
+  option (protogen.noconfig) = "CloudletLoc,Uri,StaticUri,MappedPorts,Liveness,CreatedAt,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,InternalPortToLbIp,UniqueId,DnsLabel,FedKey,AppKey.Organization,CompatibilityVersion,VirtualClusterKey";
   option (protogen.alias) = "appinstname=Key.Name,appinstorg=Key.Organization,appname=AppKey.Name,appvers=AppKey.Version,cloudlet=Key.CloudletKey.Name,cloudletorg=Key.CloudletKey.Organization,federatedorg=Key.CloudletKey.FederatedOrganization,cluster=ClusterKey.Name,clusterorg=ClusterKey.Organization,flavor=Flavor.Name";
   option (protogen.mc2_target_cloudlet) = "Key.CloudletKey";
   option (protogen.uses_org) = "key=Organization,key=CloudletKey.Organization";
