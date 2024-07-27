@@ -578,6 +578,8 @@ message Cloudlet {
   string dns_label = 54 [(protogen.backend) = true];
   // Root LB FQDN which is globally unique
   string root_lb_fqdn = 55 [(protogen.backend) = true];
+  // Root LB FQDN which was set at startup
+  string startup_root_lb_fqdn = 61 [(protogen.backend) = true];
   // Federation config for a federated cloudlet
   FederationConfig federation_config = 56 [(gogoproto.nullable) = false, (protogen.backend) = true];
   // GPU driver license config storage path
@@ -595,7 +597,7 @@ message Cloudlet {
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_recv_hook) = true;
-  option (protogen.noconfig) = "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Config,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,SecondaryCrmAccessPublicKey,SecondaryCrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,GpuConfig.LicenseConfigMd5Sum,DnsLabel,RootLbFqdn,FederationConfig,LicenseConfigStoragePath";
+  option (protogen.noconfig) = "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Config,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,SecondaryCrmAccessPublicKey,SecondaryCrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,GpuConfig.LicenseConfigMd5Sum,DnsLabel,RootLbFqdn,StartupRootLbFqdn,FederationConfig,LicenseConfigStoragePath";
   option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,federatedorg=Key.FederatedOrganization";
   option (protogen.not_required) = "Key.FederatedOrganization";
   option (protogen.mc2_target_cloudlet) = "Key";

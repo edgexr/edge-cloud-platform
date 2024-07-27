@@ -229,11 +229,12 @@ func TestOpenstackLive(t *testing.T) {
 				},
 				CloudletKey: cloudlet.Key,
 			},
-			Deployment: cloudcommon.DeploymentTypeDocker,
-			NodeFlavor: flavor,
-			IpAccess:   edgeproto.IpAccess_IP_ACCESS_DEDICATED,
-			Fqdn:       "dockerclustDLB", // becomes rootLB name
-			EnableIpv6: false,
+			Deployment:  cloudcommon.DeploymentTypeDocker,
+			NodeFlavor:  flavor,
+			IpAccess:    edgeproto.IpAccess_IP_ACCESS_DEDICATED,
+			Fqdn:        "dockerclustDLB",
+			StartupFqdn: "dockerclustDLB", // becomes rootLB name
+			EnableIpv6:  false,
 		}
 		err = plat.CreateClusterInst(ctx, dockerClusterInstD, cb, 6*time.Minute)
 		//err = plat.DeleteClusterInst(ctx, dockerClusterInstD, cb)

@@ -538,3 +538,84 @@ func CloudletAccessVars(ctx context.Context, objStore objstore.KVStore, allApis 
 	}
 	return nil
 }
+
+func AddStartupFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
+	// 1. Update cloudlets - set StartupRootLbFqdn
+	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
+	if err != nil {
+		return err
+	}
+	for cloudletKey := range cloudletKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			cloudletStr := stm.Get(cloudletKey)
+			if cloudletStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			cloudlet := edgeproto.Cloudlet{}
+			if err2 := unmarshalUpgradeObj(ctx, cloudletStr, &cloudlet); err2 != nil {
+				return err2
+			}
+			// sanity check
+			if cloudlet.StartupRootLbFqdn == "" {
+				cloudlet.StartupRootLbFqdn = cloudlet.RootLbFqdn
+				allApis.cloudletApi.store.STMPut(stm, &cloudlet)
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	// 2. Update clusters
+	clusterKeys, err := getDbObjectKeys(objStore, "ClusterInst")
+	if err != nil {
+		return err
+	}
+	for clusterKey := range clusterKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			clusterInstStr := stm.Get(clusterKey)
+			if clusterInstStr == "" {
+				return nil
+			}
+			cluster := edgeproto.ClusterInst{}
+			if err2 := unmarshalUpgradeObj(ctx, clusterInstStr, &cluster); err2 != nil {
+				return err2
+			}
+			if cluster.StartupFqdn == "" {
+				cluster.StartupFqdn = cluster.Fqdn
+				allApis.clusterInstApi.store.STMPut(stm, &cluster)
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	// 3. Update AppInsts
+	appInstKeys, err := getDbObjectKeys(objStore, "AppInst")
+	if err != nil {
+		return err
+	}
+	for appInstKey := range appInstKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			appInstString := stm.Get(appInstKey)
+			if appInstString == "" {
+				return nil
+			}
+			appInst := edgeproto.AppInst{}
+			if err2 := unmarshalUpgradeObj(ctx, appInstString, &appInst); err2 != nil {
+				return err2
+			}
+			if appInst.StartupUri != "" {
+				appInst.StartupUri = appInst.Uri
+				allApis.appInstApi.store.STMPut(stm, &appInst)
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

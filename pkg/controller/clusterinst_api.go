@@ -1091,6 +1091,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 			return err
 		}
 		in.Fqdn = getClusterInstFQDN(in, &cloudlet)
+		in.StartupFqdn = in.Fqdn
 
 		in.CreatedAt = dme.TimeToTimestamp(time.Now())
 
@@ -2054,6 +2055,7 @@ func (s *ClusterInstApi) createCloudletSingularCluster(stm concurrency.STM, clou
 		return err
 	}
 	clusterInst.Fqdn = getClusterInstFQDN(&clusterInst, cloudlet)
+	clusterInst.StartupFqdn = clusterInst.Fqdn
 	s.store.STMPut(stm, &clusterInst)
 	s.dnsLabelStore.STMPut(stm, &clusterInst.Key.CloudletKey, clusterInst.DnsLabel)
 	return nil
