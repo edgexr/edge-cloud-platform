@@ -578,7 +578,7 @@ message Cloudlet {
   string dns_label = 54 [(protogen.backend) = true];
   // Root LB FQDN which is globally unique
   string root_lb_fqdn = 55 [(protogen.backend) = true];
-  // Root LB FQDN which was set at startup and cannot be changed
+  // Static Root LB FQDN gets set when the object is created and cannot be changed
   string static_root_lb_fqdn = 61 [(protogen.backend) = true];
   // Federation config for a federated cloudlet
   FederationConfig federation_config = 56 [(gogoproto.nullable) = false, (protogen.backend) = true];
