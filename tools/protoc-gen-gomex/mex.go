@@ -246,10 +246,17 @@ func (m *mex) generateEnum(file *generator.FileDescriptor, desc *generator.EnumD
 		m.getAllKeyMessages()
 		salt := GetVersionHashSalt(en)
 		hashStr := fmt.Sprintf("%x", getKeyVersionHash(m.keyMessages, salt))
+		lastIndex := 0
+		for i, _ := range en.Value {
+			if i > lastIndex {
+				lastIndex = i
+			}
+		}
+		latestVer := en.Value[lastIndex]
 		// Generate a hash of all the key messages.
-		m.generateVersionString(hashStr)
+		m.generateVersionString(hashStr, latestVer)
 		// Generate version check code for version message
-		validateVersionHash(en, hashStr, file)
+		validateVersionHash(en, hashStr, latestVer, file)
 	}
 }
 
@@ -2342,18 +2349,21 @@ In order to ensure a smooth upgrade for the production environment please make s
 enum VersionHash {
 	...
 	{{.CurHash}} = {{.CurHashEnumVal}};
-	{{.NewHash}} = {{.NewHashEnumVal}} [(protogen.upgrade_func) = "sample_upgrade_function"]; <<<===== Add this line
+	{{.NewHash}} = {{.NewHashEnumVal}} [(protogen.upgrade_func) = "functionName"]; <<<===== Add this line
 	...
 }
 
-Implementation of "sample_upgrade_function" should be added tp edge-cloud/upgrade/upgrade-types.go
+IMPORTANT: The new enum int32 value ({{.NewHashEnumVal}}) MUST be a monotonically
+increasing value, and must be larger than any of the existing enum int32 values.
 
-NOTE: If no upgrade function is needed don't need to add "[(protogen.upgrade_func) = "sample_upgrade_function];" to
+Implementation of "functionName" should be added to pkg/controller/upgrade_funcs.go
+
+NOTE: If no upgrade function is needed don't need to add "[(protogen.upgrade_func) = "functionName"];" to
 the VersionHash enum.
 
-A unit test data for the automatic unit test of the upgrade function should be added to testutil/upgrade_test_data.go
-   - PreUpgradeData - what key/value objects are trying to be upgraded
-   - PostUpgradeData - what the resulting object store should look like
+Unit test data for the automatic unit test of the upgrade function should be added to pkg/controller/upgrade_testfiles/
+   - <functioName>_pre.etcd - what key/value objects are trying to be upgraded
+   - <functioName>_post.etcd - what the resulting object store should look like
 ====================
 `
 
@@ -2689,29 +2699,27 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 	}
 }
 
-func (m *mex) generateVersionString(hashStr string) {
+func (m *mex) generateVersionString(hashStr string, latestVer *descriptor.EnumValueDescriptorProto) {
 	m.P("// Keys being hashed:")
 	for _, v := range m.keyMessages {
 		m.P("// ", v.Name)
 	}
 	m.P("var versionHashString = \"", hashStr, "\"")
+	m.P("var versionHashNum = int32(", latestVer.Number, ")")
 	m.P("")
 	m.P("func GetDataModelVersion() string {")
 	m.P("return versionHashString")
 	m.P("}")
+	m.P("")
+	m.P("func GetDataModelVersionNum() int32 {")
+	m.P("return versionHashNum")
+	m.P("}")
 }
 
-func validateVersionHash(en *descriptor.EnumDescriptorProto, hashStr string, file *generator.FileDescriptor) {
+func validateVersionHash(en *descriptor.EnumDescriptorProto, hashStr string, latestVer *descriptor.EnumValueDescriptorProto, file *generator.FileDescriptor) {
 	// We need to check the hash and verify that we have the correct one
 	// If we don't have a correct one fail suggesting an upgrade function
 	// Check the last one(it's the latest) and if it doesn't match fail
-	lastIndex := 0
-	for i, _ := range en.Value {
-		if i > lastIndex {
-			lastIndex = i
-		}
-	}
-	latestVer := en.Value[lastIndex]
 	// Check the substring of the value
 	if !strings.Contains(*latestVer.Name, hashStr) {
 		var upgradeTemplate *template.Template

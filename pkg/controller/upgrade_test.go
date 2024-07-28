@@ -319,12 +319,13 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	}
 
 	ctx := log.StartTestSpan(context.Background())
-	for ii, fn := range VersionHash_UpgradeFuncs {
+	for _, upgradeFunc := range VersionHash_UpgradeFuncs {
+		fn := upgradeFunc.Func
 		if fn == nil {
 			continue
 		}
 		objStore.Start()
-		funcName := VersionHash_UpgradeFuncNames[ii]
+		funcName := upgradeFunc.FuncName
 		err := buildDbFromTestData(&objStore, funcName)
 		require.Nil(t, err, "Unable to build db from testData")
 		vaultPreData, vaultDataLoaded, err := loadVaultTestData(ctx, vaultConfig, funcName)

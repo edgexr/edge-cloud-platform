@@ -268,7 +268,12 @@ var VersionHashCommonPrefix = "Hash"
 // VMPoolKey
 // VirtualClusterInstKeyV1
 var versionHashString = "c2d882033b0c14f28cece41cf4010060"
+var versionHashNum = int32(52)
 
 func GetDataModelVersion() string {
 	return versionHashString
+}
+
+func GetDataModelVersionNum() int32 {
+	return versionHashNum
 }

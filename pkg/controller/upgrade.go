@@ -17,11 +17,9 @@ package controller
 import (
 	fmt "fmt"
 
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/opentracing/opentracing-go"
-	"go.etcd.io/etcd/client/v3/concurrency"
 	context "golang.org/x/net/context"
 )
 
@@ -44,23 +42,19 @@ func RunSingleUpgrade(ctx context.Context, objStore objstore.KVStore, allApis *A
 
 // This function walks all upgrade functions from the fromVersion to current
 // and upgrades the KVStore using those functions one-by-one
-func UpgradeToLatest(fromVersion string, objStore objstore.KVStore, allApis *AllApis, upgradeSupport *UpgradeSupport) error {
-	var fn VersionUpgradeFunc
-	verID, ok := edgeproto.VersionHash_value["HASH_"+fromVersion]
-	if !ok {
-		return fmt.Errorf("fromVersion %s doesn't exist\n", fromVersion)
-	}
+func UpgradeToLatest(fromVersion *VersionV2, objStore objstore.KVStore, allApis *AllApis, upgradeSupport *UpgradeSupport) error {
+	verID := fromVersion.Number
 	span := log.StartSpan(log.DebugLevelInfo, "upgrade")
-	span.SetTag("fromVersion", fromVersion)
+	span.SetTag("fromVersion", fromVersion.Hash)
 	span.SetTag("verID", verID)
 	defer span.Finish()
 	ctx := opentracing.ContextWithSpan(context.Background(), span)
-	nextVer := verID + 1
-	for {
-		if fn, ok = VersionHash_UpgradeFuncs[nextVer]; !ok {
-			break
+	for _, upgradeFunc := range VersionHash_UpgradeFuncs {
+		if upgradeFunc.Number <= fromVersion.Number {
+			continue
 		}
-		name := VersionHash_UpgradeFuncNames[nextVer]
+		name := upgradeFunc.FuncName
+		fn := upgradeFunc.Func
 
 		uspan := log.StartSpan(log.DebugLevelInfo, name, opentracing.ChildOf(span.Context()))
 		uctx := log.ContextWithSpan(context.Background(), uspan)
@@ -74,22 +68,15 @@ func UpgradeToLatest(fromVersion string, objStore objstore.KVStore, allApis *All
 			log.SpanLog(uctx, log.DebugLevelUpgrade, "Upgrade complete", "upgradeFunc", name)
 		}
 		// Write out the new version
-		_, err := objStore.ApplySTM(uctx, func(stm concurrency.STM) error {
-			// Start from the whole region
-			key := objstore.DbKeyPrefixString("Version")
-			versionStr, ok := edgeproto.VersionHash_name[nextVer]
-			if !ok {
-				return fmt.Errorf("No hash string for version")
-			}
-			versionStr = versionStr[5:]
-			stm.Put(string(key), versionStr)
-			return nil
-		})
+		v2 := VersionV2{
+			Hash:   upgradeFunc.Hash,
+			Number: upgradeFunc.Number,
+		}
+		err := writeVersionV2(uctx, objStore, &v2)
 		uspan.Finish()
 		if err != nil {
 			return fmt.Errorf("Failed to update version for the db: %v\n", err)
 		}
-		nextVer++
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "Upgrade done")
 	return nil

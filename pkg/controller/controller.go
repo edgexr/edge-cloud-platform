@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -49,6 +50,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	yaml "github.com/mobiledgex/yaml/v2"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"google.golang.org/grpc"
 )
 
@@ -623,31 +625,87 @@ func stopServices() {
 	services = Services{}
 }
 
+// VersionV2 stores both the version hash and the version num.
+// Previously we stored just the version hash. However, if the
+// hash was not found in our list of hashes, then we did not
+// know whether the hash was older or newer than our list of
+// upgrade functions. It could be older due to a restore of an
+// old database, or an upgrade to a much newer software version that
+// no longer tracked very old hashes. It could be newer if the
+// software was rolled back. If it is older, we need to write
+// out our current version so future software updates can run
+// their upgrade functions. However, if it is newer, we must
+// not write out the version, or it will cause the upgrade
+// functions to run again. Because of this latter issue we were
+// forced to make the upgrade functions idempotent, which is
+// possible for most cases, but does not allow an upgrade which
+// adds a new boolean field, since we cannot tell if the false
+// value is because it was never upgraded, or it was just upgraded
+// and left as false.
+// So now we also store the version number, which is a monotonically
+// increasing number. This lets us determine without a doubt whether
+// our current hash is older or newer than the one stored in etcd.
+type VersionV2 struct {
+	Hash   string
+	Number int32
+}
+
+const VersionV2Key = "VersionV2"
+
 // Helper function to verify the compatibility of etcd version and
 // current data model version
-func checkVersion(ctx context.Context, objStore objstore.KVStore) (string, error) {
-	key := objstore.DbKeyPrefixString("Version")
+func checkVersion(ctx context.Context, objStore objstore.KVStore) (*VersionV2, error) {
+	v2 := VersionV2{}
+	key := objstore.DbKeyPrefixString(VersionV2Key)
 	val, _, _, err := objStore.Get(key)
-	if err != nil {
-		if !strings.Contains(err.Error(), objstore.NotFoundError(key).Error()) {
-			return "", err
-		}
-	}
-	verHash := string(val)
-	// If this is the first upgrade, just write the latest hash into etcd
-	if verHash == "" {
-		log.InfoLog("Could not find a previous version", "curr hash", edgeproto.GetDataModelVersion())
-		key := objstore.DbKeyPrefixString("Version")
-		_, err = objStore.Put(ctx, key, edgeproto.GetDataModelVersion())
+	if err == nil {
+		err = json.Unmarshal(val, &v2)
 		if err != nil {
-			return "", err
+			return nil, fmt.Errorf("failed to unmarshal database version data, %s, %s", err, string(val))
 		}
-		return edgeproto.GetDataModelVersion(), nil
+	} else if strings.Contains(err.Error(), objstore.NotFoundError(key).Error()) {
+		// try the older string-only version
+		key := objstore.DbKeyPrefixString("Version")
+		val, _, _, err := objStore.Get(key)
+		if err == nil {
+			v2.Hash = string(val)
+			// determine number from hash value
+			if num, ok := edgeproto.VersionHash_value["HASH_"+v2.Hash]; ok {
+				v2.Number = num
+			}
+			log.InfoLog("check version using old version value", "hash", v2.Hash, "derived-number", v2.Number)
+		} else if strings.Contains(err.Error(), objstore.NotFoundError(key).Error()) {
+			// If this is the first upgrade, just write the latest hash into etcd
+			v2.Hash = edgeproto.GetDataModelVersion()
+			v2.Number = edgeproto.GetDataModelVersionNum()
+			log.InfoLog("Could not find a previous version", "curr version", v2)
+		} else {
+			return nil, err
+		}
+		// write out version 2
+		if err := writeVersionV2(ctx, objStore, &v2); err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, err
 	}
-	if edgeproto.GetDataModelVersion() != verHash {
-		return verHash, ErrCtrlUpgradeRequired
+	if v2.Number < int32(edgeproto.GetDataModelVersionNum()) {
+		return &v2, ErrCtrlUpgradeRequired
 	}
-	return verHash, nil
+	return &v2, nil
+}
+
+func writeVersionV2(ctx context.Context, objStore objstore.KVStore, v2 *VersionV2) error {
+	key := objstore.DbKeyPrefixString(VersionV2Key)
+	_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+		val, err := json.Marshal(v2)
+		if err != nil {
+			return fmt.Errorf("failed to marshal new version, %s, %v", err, v2)
+		}
+		stm.Put(key, string(val))
+		return nil
+	})
+	return err
 }
 
 type AllApis struct {

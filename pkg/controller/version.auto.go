@@ -16,23 +16,21 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-var VersionHash_UpgradeFuncs = map[int32]VersionUpgradeFunc{
-	0:  nil,
-	47: nil,
-	48: AppInstKeyName,
-	49: nil,
-	50: PlatformType,
-	51: CloudletAccessVars,
-	52: nil,
+type VersionHash_UpgradeFunc struct {
+	Hash     string
+	Number   int32
+	Func     VersionUpgradeFunc
+	FuncName string
 }
-var VersionHash_UpgradeFuncNames = map[int32]string{
-	0:  "",
-	47: "",
-	48: "AppInstKeyName",
-	49: "",
-	50: "PlatformType",
-	51: "CloudletAccessVars",
-	52: "",
+
+var VersionHash_UpgradeFuncs = []VersionHash_UpgradeFunc{
+	{"d41d8cd98f00b204e9800998ecf8427e", 0, nil, ""},
+	{"611b28894b117c2aaa22c12adcd81f74", 47, nil, ""},
+	{"37dea30756fed2b0c0ecbc3e7b084855", 48, AppInstKeyName, "AppInstKeyName"},
+	{"1304c4ec69343ced28fd3ebc85f4a3a9", 49, nil, ""},
+	{"601fa4f6a8109f39e46adf1ea3b89197", 50, PlatformType, "PlatformType"},
+	{"a61a29cd41f6b7459b05b6f7be6be4ce", 51, CloudletAccessVars, "CloudletAccessVars"},
+	{"c2d882033b0c14f28cece41cf4010060", 52, nil, ""},
 }
 
 // Auto-generated code: DO NOT EDIT

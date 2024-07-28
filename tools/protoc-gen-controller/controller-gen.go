@@ -15,7 +15,8 @@
 package main
 
 import (
-	"strconv"
+	"sort"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/gensupport"
 	"github.com/edgexr/edge-cloud-platform/tools/protogen"
@@ -62,27 +63,36 @@ func (s *ControllerGen) generateEnum(file *generator.FileDescriptor, desc *gener
 	en := desc.EnumDescriptorProto
 	if GetVersionHashOpt(en) {
 		s.generateUpgradeFuncs(en)
-		s.generateUpgradeFuncNames(en)
 	}
 }
 
 func (s *ControllerGen) generateUpgradeFuncs(enum *descriptor.EnumDescriptorProto) {
-	s.P("var ", enum.Name, "_UpgradeFuncs = map[int32]VersionUpgradeFunc{")
-	for _, e := range enum.Value {
-		if GetUpgradeFunc(e) != "" {
-			s.P(e.Number, ": ", GetUpgradeFunc(e), ",")
+	s.P()
+	s.P("type ", enum.Name, "_UpgradeFunc struct {")
+	s.P("Hash string")
+	s.P("Number int32")
+	s.P("Func VersionUpgradeFunc")
+	s.P("FuncName string")
+	s.P("}")
+	s.P()
+	s.P("var ", enum.Name, "_UpgradeFuncs = []", enum.Name, "_UpgradeFunc{")
+	// the way we give instructions to add new upgrade functions,
+	// these enums should always be in increasing order, but just in case
+	// someone adds a new func somewhere else, sort it.
+	enums := enum.Value
+	sort.Slice(enums, func(i, j int) bool {
+		return *enums[i].Number < *enums[j].Number
+	})
+	for _, e := range enums {
+		name := strings.TrimPrefix(*e.Name, "HASH_")
+		if funcName := GetUpgradeFunc(e); funcName != "" {
+			s.P("{ \"", name, "\", ", e.Number, ", ", funcName, ", \"", funcName, "\"},")
 		} else {
-			s.P(e.Number, ": nil,")
+			s.P("{ \"", name, "\", ", e.Number, ", nil, \"\"},")
 		}
 	}
 	s.P("}")
-}
-func (s *ControllerGen) generateUpgradeFuncNames(enum *descriptor.EnumDescriptorProto) {
-	s.P("var ", enum.Name, "_UpgradeFuncNames = map[int32]string{")
-	for _, e := range enum.Value {
-		s.P(e.Number, ": ", strconv.Quote(GetUpgradeFunc(e)), ",")
-	}
-	s.P("}")
+	s.P()
 }
 
 func GetVersionHashOpt(enum *descriptor.EnumDescriptorProto) bool {
