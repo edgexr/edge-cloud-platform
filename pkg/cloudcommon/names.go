@@ -262,6 +262,9 @@ var MexNodePrefix = "mex-k8s-node-"
 // GCP limits to 40, Azure has issues above 54.  For consistency go with the lower limit
 const MaxClusterNameLength = 40
 
+// UnknownOwner for ObjID
+const UnknownOwner = "unknown"
+
 // Common cert name. Cannot use common name as filename since envoy doesn't know if the app is dedicated or not
 const CertName = "envoyTlsCerts"
 

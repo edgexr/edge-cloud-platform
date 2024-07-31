@@ -16,6 +16,7 @@ package controller
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -225,6 +226,7 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
+	os.Setenv("E2ETEST_SKIPREGISTRY", "true")
 	if options.LocalRedis {
 		// Since it is a single node, config file is not required
 		procOpts := []process.StartOp{process.WithNoConfig(), process.WithCleanStartup()}
