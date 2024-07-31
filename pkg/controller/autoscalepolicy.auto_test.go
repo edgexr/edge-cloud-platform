@@ -151,7 +151,7 @@ func deleteAutoScalePolicyChecks(t *testing.T, ctx context.Context, all *AllApis
 	testObj, supportData := dataGen.GetAutoScalePolicyTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -163,7 +163,7 @@ func deleteAutoScalePolicyChecks(t *testing.T, ctx context.Context, all *AllApis
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetAutoScalePolicyTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetAutoScalePolicyTestObj()
 	_, err = api.DeleteAutoScalePolicy(ctx, testObj)
@@ -174,7 +174,7 @@ func deleteAutoScalePolicyChecks(t *testing.T, ctx context.Context, all *AllApis
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetAutoScalePolicyTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, ClusterInst refers to AutoScalePolicy.
@@ -182,7 +182,7 @@ func deleteAutoScalePolicyChecks(t *testing.T, ctx context.Context, all *AllApis
 		refBy, supportData := dataGen.GetClusterInstAutoScalePolicyRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.clusterInstApi.store.Put(ctx, refBy, all.clusterInstApi.sync.syncWait)
+			all.clusterInstApi.store.Put(ctx, refBy, all.clusterInstApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetAutoScalePolicyTestObj()
 		_, err = api.DeleteAutoScalePolicy(ctx, testObj)
@@ -191,7 +191,7 @@ func deleteAutoScalePolicyChecks(t *testing.T, ctx context.Context, all *AllApis
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove ClusterInst obj
-		_, err = all.clusterInstApi.store.Delete(ctx, refBy, all.clusterInstApi.sync.syncWait)
+		_, err = all.clusterInstApi.store.Delete(ctx, refBy, all.clusterInstApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from ClusterInst must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)

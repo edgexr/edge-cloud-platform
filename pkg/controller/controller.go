@@ -40,6 +40,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
@@ -104,8 +105,8 @@ var redisClient *redis.Client
 
 type Services struct {
 	etcdLocal                  *process.Etcd
-	objStore                   *EtcdClient
-	sync                       *Sync
+	objStore                   *regiondata.EtcdClient
+	sync                       *regiondata.Sync
 	influxQ                    *influxq.InfluxQ
 	events                     *influxq.InfluxQ
 	edgeEventsInfluxQ          *influxq.InfluxQ
@@ -195,14 +196,14 @@ func startServices() error {
 		if *initLocalEtcd {
 			opts = append(opts, process.WithCleanStartup())
 		}
-		etcdLocal, err := StartLocalEtcdServer(opts...)
+		etcdLocal, err := regiondata.StartLocalEtcdServer(opts...)
 		if err != nil {
 			return fmt.Errorf("starting local etcd server failed: %v", err)
 		}
 		services.etcdLocal = etcdLocal
 		etcdUrls = &etcdLocal.ClientAddrs
 	}
-	objStore, err := GetEtcdClientBasic(*etcdUrls)
+	objStore, err := regiondata.GetEtcdClientBasic(*etcdUrls)
 	if err != nil {
 		return fmt.Errorf("Failed to initialize Object Store, %v", err)
 	}
@@ -221,7 +222,7 @@ func startServices() error {
 		return err
 	}
 
-	sync := InitSync(objStore)
+	sync := regiondata.InitSync(objStore)
 	allApis := NewAllApis(sync)
 	services.allApis = allApis
 
@@ -692,7 +693,7 @@ type AllApis struct {
 	syncLeaseData               *SyncLeaseData
 }
 
-func NewAllApis(sync *Sync) *AllApis {
+func NewAllApis(sync *regiondata.Sync) *AllApis {
 	all := &AllApis{}
 	all.appApi = NewAppApi(sync, all)
 	all.operatorCodeApi = NewOperatorCodeApi(sync, all)

@@ -22,22 +22,23 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type FlavorApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.FlavorStore
 	cache edgeproto.FlavorCache
 }
 
-func NewFlavorApi(sync *Sync, all *AllApis) *FlavorApi {
+func NewFlavorApi(sync *regiondata.Sync, all *AllApis) *FlavorApi {
 	flavorApi := FlavorApi{}
 	flavorApi.all = all
 	flavorApi.sync = sync
-	flavorApi.store = edgeproto.NewFlavorStore(sync.store)
+	flavorApi.store = edgeproto.NewFlavorStore(sync.GetKVStore())
 	edgeproto.InitFlavorCache(&flavorApi.cache)
 	sync.RegisterCache(&flavorApi.cache)
 	return &flavorApi
@@ -71,7 +72,7 @@ func (s *FlavorApi) CreateFlavor(ctx context.Context, in *edgeproto.Flavor) (*ed
 func (s *FlavorApi) UpdateFlavor(ctx context.Context, in *edgeproto.Flavor) (*edgeproto.Result, error) {
 	// Unsupported for now
 	return &edgeproto.Result{}, errors.New("Update Flavor not supported")
-	//return s.store.Update(in, s.sync.syncWait)
+	//return s.store.Update(in, s.sync.SyncWait)
 }
 
 func (s *FlavorApi) DeleteFlavor(ctx context.Context, in *edgeproto.Flavor) (res *edgeproto.Result, reterr error) {
@@ -133,7 +134,7 @@ func (s *FlavorApi) DeleteFlavor(ctx context.Context, in *edgeproto.Flavor) (res
 		return &edgeproto.Result{}, fmt.Errorf("Flavor in use by Cloudlet %s", k.GetKeyString())
 	}
 
-	res, err = s.store.Delete(ctx, in, s.sync.syncWait)
+	res, err = s.store.Delete(ctx, in, s.sync.SyncWait)
 	// clean up auto-apps using flavor
 	s.all.appApi.AutoDeleteApps(ctx, &in.Key)
 	return res, err

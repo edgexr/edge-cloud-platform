@@ -19,25 +19,26 @@ import (
 	"context"
 	"fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 // Should only be one of these instantiated in main
 type AlertPolicyApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.AlertPolicyStore
 	cache edgeproto.AlertPolicyCache
 }
 
-func NewAlertPolicyApi(sync *Sync, all *AllApis) *AlertPolicyApi {
+func NewAlertPolicyApi(sync *regiondata.Sync, all *AllApis) *AlertPolicyApi {
 	alertPolicyApi := AlertPolicyApi{}
 	alertPolicyApi.all = all
 	alertPolicyApi.sync = sync
-	alertPolicyApi.store = edgeproto.NewAlertPolicyStore(sync.store)
+	alertPolicyApi.store = edgeproto.NewAlertPolicyStore(sync.GetKVStore())
 	edgeproto.InitAlertPolicyCache(&alertPolicyApi.cache)
 	sync.RegisterCache(&alertPolicyApi.cache)
 	return &alertPolicyApi
@@ -113,7 +114,7 @@ func (a *AlertPolicyApi) DeleteAlertPolicy(ctx context.Context, in *edgeproto.Al
 	if appKey := a.all.appApi.UsesAlertPolicy(&in.Key); appKey != nil {
 		return &edgeproto.Result{}, fmt.Errorf("Alert is in use by App %s", appKey.GetKeyString())
 	}
-	return a.store.Delete(ctx, in, a.sync.syncWait)
+	return a.store.Delete(ctx, in, a.sync.SyncWait)
 }
 
 func (a *AlertPolicyApi) ShowAlertPolicy(in *edgeproto.AlertPolicy, cb edgeproto.AlertPolicyApi_ShowAlertPolicyServer) error {

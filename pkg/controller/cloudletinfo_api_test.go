@@ -22,6 +22,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -34,11 +35,11 @@ func TestCloudletInfo(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 	defer dummy.Stop()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
@@ -77,7 +78,7 @@ func evictCloudletInfo(ctx context.Context, apis *AllApis, data []edgeproto.Clou
 	}
 }
 
-func testCloudletInfoRevs(t *testing.T, ctx context.Context, dummy *dummyEtcd, apis *AllApis, data []edgeproto.CloudletInfo) {
+func testCloudletInfoRevs(t *testing.T, ctx context.Context, dummy *regiondata.InMemoryStore, apis *AllApis, data []edgeproto.CloudletInfo) {
 	testData := &data[0]
 	apis.cloudletInfoApi.Update(ctx, testData, 0)
 	keyStr := objstore.DbKeyString("CloudletInfo", testData.GetKey())

@@ -23,12 +23,13 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
-	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -42,10 +43,10 @@ func TestClusterInstApi(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
@@ -928,10 +929,10 @@ func TestDefaultMTCluster(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()

@@ -227,7 +227,7 @@ func deleteAlertPolicyChecks(t *testing.T, ctx context.Context, all *AllApis, da
 	testObj, supportData := dataGen.GetAlertPolicyTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -239,7 +239,7 @@ func deleteAlertPolicyChecks(t *testing.T, ctx context.Context, all *AllApis, da
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetAlertPolicyTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetAlertPolicyTestObj()
 	_, err = api.DeleteAlertPolicy(ctx, testObj)
@@ -250,7 +250,7 @@ func deleteAlertPolicyChecks(t *testing.T, ctx context.Context, all *AllApis, da
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetAlertPolicyTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, App refers to AlertPolicy.
@@ -258,7 +258,7 @@ func deleteAlertPolicyChecks(t *testing.T, ctx context.Context, all *AllApis, da
 		refBy, supportData := dataGen.GetAppAlertPoliciesRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.appApi.store.Put(ctx, refBy, all.appApi.sync.syncWait)
+			all.appApi.store.Put(ctx, refBy, all.appApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetAlertPolicyTestObj()
 		_, err = api.DeleteAlertPolicy(ctx, testObj)
@@ -267,7 +267,7 @@ func deleteAlertPolicyChecks(t *testing.T, ctx context.Context, all *AllApis, da
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove App obj
-		_, err = all.appApi.store.Delete(ctx, refBy, all.appApi.sync.syncWait)
+		_, err = all.appApi.store.Delete(ctx, refBy, all.appApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from App must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)

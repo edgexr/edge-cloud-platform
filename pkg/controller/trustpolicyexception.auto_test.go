@@ -72,7 +72,7 @@ func CreateTrustPolicyExceptionAddRefsChecks(t *testing.T, ctx context.Context, 
 		ref := supportData.getOneApp()
 		require.NotNil(t, ref, "support data must include one referenced App")
 		ref.DeletePrepare = true
-		_, err = all.appApi.store.Put(ctx, ref, all.appApi.sync.syncWait)
+		_, err = all.appApi.store.Put(ctx, ref, all.appApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateTrustPolicyExceptionTestObj()
@@ -81,7 +81,7 @@ func CreateTrustPolicyExceptionAddRefsChecks(t *testing.T, ctx context.Context, 
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced App
 		ref.DeletePrepare = false
-		_, err = all.appApi.store.Put(ctx, ref, all.appApi.sync.syncWait)
+		_, err = all.appApi.store.Put(ctx, ref, all.appApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -89,7 +89,7 @@ func CreateTrustPolicyExceptionAddRefsChecks(t *testing.T, ctx context.Context, 
 		ref := supportData.getOneCloudletPool()
 		require.NotNil(t, ref, "support data must include one referenced CloudletPool")
 		ref.DeletePrepare = true
-		_, err = all.cloudletPoolApi.store.Put(ctx, ref, all.cloudletPoolApi.sync.syncWait)
+		_, err = all.cloudletPoolApi.store.Put(ctx, ref, all.cloudletPoolApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateTrustPolicyExceptionTestObj()
@@ -98,7 +98,7 @@ func CreateTrustPolicyExceptionAddRefsChecks(t *testing.T, ctx context.Context, 
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced CloudletPool
 		ref.DeletePrepare = false
-		_, err = all.cloudletPoolApi.store.Put(ctx, ref, all.cloudletPoolApi.sync.syncWait)
+		_, err = all.cloudletPoolApi.store.Put(ctx, ref, all.cloudletPoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 

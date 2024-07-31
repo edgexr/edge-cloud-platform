@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build slow
 // +build slow
+
 // To run this unit test, run:
 // go test -tags=slow
 // or:
 // go test -run TestEtcdLease -v -tags=slow
 
-package controller
+package regiondata
 
 import (
 	"context"

@@ -35,6 +35,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
@@ -148,11 +149,11 @@ func TestCloudletApi(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 	defer dummy.Stop()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
@@ -978,10 +979,10 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
@@ -1097,8 +1098,8 @@ func testCloudletDnsLabel(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	require.NotEqual(t, dnsLabel0, dnsLabel1)
 	// check that ids are present in database
-	require.True(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.store, dnsLabel0))
-	require.True(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.store, dnsLabel1))
+	require.True(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.GetKVStore(), dnsLabel0))
+	require.True(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.GetKVStore(), dnsLabel1))
 
 	// clean up
 	err = apis.cloudletApi.DeleteCloudlet(&cl0, testutil.NewCudStreamoutCloudlet(ctx))
@@ -1106,8 +1107,8 @@ func testCloudletDnsLabel(t *testing.T, ctx context.Context, apis *AllApis) {
 	err = apis.cloudletApi.DeleteCloudlet(&cl1, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
 	// check that ids are removed from database
-	require.False(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.store, dnsLabel0))
-	require.False(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.store, dnsLabel1))
+	require.False(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.GetKVStore(), dnsLabel0))
+	require.False(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.GetKVStore(), dnsLabel1))
 }
 
 func testHasCloudletDnsLabel(kvstore objstore.KVStore, id string) bool {

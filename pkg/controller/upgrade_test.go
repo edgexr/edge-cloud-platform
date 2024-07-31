@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/google/go-cmp/cmp"
@@ -276,7 +277,7 @@ func getTestFileName(funcName, suffix string) string {
 // Verify that the resulting content in etcd matches expected
 func TestAllUpgradeFuncs(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelUpgrade | log.DebugLevelApi)
-	objStore := dummyEtcd{}
+	objStore := regiondata.InMemoryStore{}
 	objstore.InitRegion(1)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
@@ -297,7 +298,7 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	// because the appinst_api_test sets it to something else.
 	*appDNSRoot = "appdnsroot.net"
 
-	sync := InitSync(&objStore)
+	sync := regiondata.InitSync(&objStore)
 	apis := NewAllApis(sync)
 
 	// Start in-memory Vault for upgrade funcs that upgrade Vault data

@@ -19,14 +19,15 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 )
 
 type OrganizationApi struct {
 	all  *AllApis
-	sync *Sync
+	sync *regiondata.Sync
 }
 
-func NewOrganizationApi(sync *Sync, all *AllApis) *OrganizationApi {
+func NewOrganizationApi(sync *regiondata.Sync, all *AllApis) *OrganizationApi {
 	organizationApi := OrganizationApi{}
 	organizationApi.all = all
 	organizationApi.sync = sync
@@ -34,7 +35,7 @@ func NewOrganizationApi(sync *Sync, all *AllApis) *OrganizationApi {
 }
 
 func (s *OrganizationApi) OrganizationInUse(ctx context.Context, in *edgeproto.Organization) (*edgeproto.Result, error) {
-	usedBy := s.sync.usesOrg(in.Name)
+	usedBy := s.sync.UsesOrg(in.Name)
 	res := &edgeproto.Result{}
 	if len(usedBy) > 0 {
 		res.Message = "in use by some " + strings.Join(usedBy, ", ")

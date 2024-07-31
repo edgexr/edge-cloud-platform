@@ -23,12 +23,13 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type AlertApi struct {
 	all         *AllApis
-	sync        *Sync
+	sync        *regiondata.Sync
 	store       edgeproto.AlertStore
 	cache       edgeproto.AlertCache
 	sourceCache edgeproto.AlertCache // source of truth from crm/etc
@@ -36,11 +37,11 @@ type AlertApi struct {
 
 var ControllerCreatedAlerts = "ControllerCreatedAlerts"
 
-func NewAlertApi(sync *Sync, all *AllApis) *AlertApi {
+func NewAlertApi(sync *regiondata.Sync, all *AllApis) *AlertApi {
 	alertApi := AlertApi{}
 	alertApi.all = all
 	alertApi.sync = sync
-	alertApi.store = edgeproto.NewAlertStore(sync.store)
+	alertApi.store = edgeproto.NewAlertStore(sync.GetKVStore())
 	edgeproto.InitAlertCache(&alertApi.cache)
 	edgeproto.InitAlertCache(&alertApi.sourceCache)
 	alertApi.sourceCache.SetUpdatedCb(alertApi.StoreUpdate)
@@ -153,7 +154,7 @@ func (s *AlertApi) Delete(ctx context.Context, in *edgeproto.Alert, rev int64) {
 	_, ok := ctx.Value(ControllerCreatedAlerts).(*string)
 	if ok {
 		s.sourceCache.Delete(ctx, in, rev)
-		s.store.Delete(ctx, in, s.sync.syncWait)
+		s.store.Delete(ctx, in, s.sync.SyncWait)
 		// Reset HealthCheck state back to OK
 		name, ok := in.Labels["alertname"]
 		if ok && name == cloudcommon.AlertAppInstDown {
@@ -230,7 +231,7 @@ func (s *AlertApi) CleanupCloudletAlerts(ctx context.Context, key *edgeproto.Clo
 	s.cache.Mux.Unlock()
 	for _, val := range matches {
 		s.sourceCache.Delete(ctx, val, 0)
-		s.store.Delete(ctx, val, s.sync.syncWait)
+		s.store.Delete(ctx, val, s.sync.SyncWait)
 	}
 }
 
@@ -256,7 +257,7 @@ func (s *AlertApi) CleanupAppInstAlerts(ctx context.Context, key *edgeproto.AppI
 	s.cache.Mux.Unlock()
 	for _, val := range matches {
 		s.sourceCache.Delete(ctx, val, 0)
-		s.store.Delete(ctx, val, s.sync.syncWait)
+		s.store.Delete(ctx, val, s.sync.SyncWait)
 	}
 }
 
@@ -286,7 +287,7 @@ func (s *AlertApi) CleanupClusterInstAlerts(ctx context.Context, key *edgeproto.
 	s.cache.Mux.Unlock()
 	for _, val := range matches {
 		s.sourceCache.Delete(ctx, val, 0)
-		s.store.Delete(ctx, val, s.sync.syncWait)
+		s.store.Delete(ctx, val, s.sync.SyncWait)
 	}
 }
 

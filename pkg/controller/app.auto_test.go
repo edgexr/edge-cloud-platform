@@ -155,7 +155,7 @@ func deleteAppChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Ap
 	testObj, supportData := dataGen.GetAppTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -177,7 +177,7 @@ func deleteAppChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Ap
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetAppTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetAppTestObj()
 	_, err = api.DeleteApp(ctx, testObj)
@@ -188,7 +188,7 @@ func deleteAppChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Ap
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetAppTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, TrustPolicyException refers to App.
@@ -196,7 +196,7 @@ func deleteAppChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Ap
 		refBy, supportData := dataGen.GetTrustPolicyExceptionKeyAppKeyRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.trustPolicyExceptionApi.store.Put(ctx, refBy, all.trustPolicyExceptionApi.sync.syncWait)
+			all.trustPolicyExceptionApi.store.Put(ctx, refBy, all.trustPolicyExceptionApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetAppTestObj()
 		_, err = api.DeleteApp(ctx, testObj)
@@ -205,7 +205,7 @@ func deleteAppChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Ap
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove TrustPolicyException obj
-		_, err = all.trustPolicyExceptionApi.store.Delete(ctx, refBy, all.trustPolicyExceptionApi.sync.syncWait)
+		_, err = all.trustPolicyExceptionApi.store.Delete(ctx, refBy, all.trustPolicyExceptionApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from TrustPolicyException must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -215,7 +215,7 @@ func deleteAppChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Ap
 		// Inject the refs object to trigger an "in use" error.
 		refBy, supportData := dataGen.GetAppAppInstInstsRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
-		_, err = all.appInstRefsApi.store.Put(ctx, refBy, all.appInstRefsApi.sync.syncWait)
+		_, err = all.appInstRefsApi.store.Put(ctx, refBy, all.appInstRefsApi.sync.SyncWait)
 		require.Nil(t, err)
 		testObj, _ = dataGen.GetAppTestObj()
 		_, err = api.DeleteApp(ctx, testObj)
@@ -224,7 +224,7 @@ func deleteAppChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Ap
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove AppInstRefs obj
-		_, err = all.appInstRefsApi.store.Delete(ctx, refBy, all.appInstRefsApi.sync.syncWait)
+		_, err = all.appInstRefsApi.store.Delete(ctx, refBy, all.appInstRefsApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from AppInstRefs must succeed")
 		supportData.delete(t, ctx, all)
 	}
@@ -245,7 +245,7 @@ func CreateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		ref := supportData.getOneFlavor()
 		require.NotNil(t, ref, "support data must include one referenced Flavor")
 		ref.DeletePrepare = true
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateAppTestObj()
@@ -254,7 +254,7 @@ func CreateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Flavor
 		ref.DeletePrepare = false
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -262,7 +262,7 @@ func CreateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		ref := supportData.getOneAutoProvPolicy()
 		require.NotNil(t, ref, "support data must include one referenced AutoProvPolicy")
 		ref.DeletePrepare = true
-		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.syncWait)
+		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateAppTestObj()
@@ -271,7 +271,7 @@ func CreateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced AutoProvPolicy
 		ref.DeletePrepare = false
-		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.syncWait)
+		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -279,7 +279,7 @@ func CreateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		ref := supportData.getOneAlertPolicy()
 		require.NotNil(t, ref, "support data must include one referenced AlertPolicy")
 		ref.DeletePrepare = true
-		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.syncWait)
+		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateAppTestObj()
@@ -288,7 +288,7 @@ func CreateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced AlertPolicy
 		ref.DeletePrepare = false
-		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.syncWait)
+		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -334,7 +334,7 @@ func UpdateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		ref := supportData.getOneFlavor()
 		require.NotNil(t, ref, "support data must include one referenced Flavor")
 		ref.DeletePrepare = true
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetUpdateAppTestObj()
@@ -343,7 +343,7 @@ func UpdateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Flavor
 		ref.DeletePrepare = false
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -351,7 +351,7 @@ func UpdateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		ref := supportData.getOneAutoProvPolicy()
 		require.NotNil(t, ref, "support data must include one referenced AutoProvPolicy")
 		ref.DeletePrepare = true
-		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.syncWait)
+		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetUpdateAppTestObj()
@@ -360,7 +360,7 @@ func UpdateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced AutoProvPolicy
 		ref.DeletePrepare = false
-		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.syncWait)
+		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -368,7 +368,7 @@ func UpdateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		ref := supportData.getOneAlertPolicy()
 		require.NotNil(t, ref, "support data must include one referenced AlertPolicy")
 		ref.DeletePrepare = true
-		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.syncWait)
+		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetUpdateAppTestObj()
@@ -377,7 +377,7 @@ func UpdateAppAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dat
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced AlertPolicy
 		ref.DeletePrepare = false
-		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.syncWait)
+		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -419,7 +419,7 @@ func AddAppAutoProvPolicyAddRefsChecks(t *testing.T, ctx context.Context, all *A
 		ref := supportData.getOneAutoProvPolicy()
 		require.NotNil(t, ref, "support data must include one referenced AutoProvPolicy")
 		ref.DeletePrepare = true
-		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.syncWait)
+		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetAddAppAutoProvPolicyTestObj()
@@ -428,7 +428,7 @@ func AddAppAutoProvPolicyAddRefsChecks(t *testing.T, ctx context.Context, all *A
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced AutoProvPolicy
 		ref.DeletePrepare = false
-		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.syncWait)
+		_, err = all.autoProvPolicyApi.store.Put(ctx, ref, all.autoProvPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -462,7 +462,7 @@ func AddAppAlertPolicyAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		ref := supportData.getOneAlertPolicy()
 		require.NotNil(t, ref, "support data must include one referenced AlertPolicy")
 		ref.DeletePrepare = true
-		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.syncWait)
+		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetAddAppAlertPolicyTestObj()
@@ -471,7 +471,7 @@ func AddAppAlertPolicyAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced AlertPolicy
 		ref.DeletePrepare = false
-		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.syncWait)
+		_, err = all.alertPolicyApi.store.Put(ctx, ref, all.alertPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 

@@ -34,6 +34,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/edgexr/edge-cloud-platform/test/testutil/testservices"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,7 @@ func testC(t *testing.T) {
 	useCluster := false
 	useTwoClusters := false
 	if useCluster || useTwoClusters {
-		etcds, etcdAddrs, err := StartLocalEtcdCluster("local", 3, 3100, process.WithCleanStartup())
+		etcds, etcdAddrs, err := regiondata.StartLocalEtcdCluster("local", 3, 3100, process.WithCleanStartup())
 		require.Nil(t, err)
 		*etcdUrls = etcdAddrs
 		defer func() {
@@ -76,7 +77,7 @@ func testC(t *testing.T) {
 			}
 		}()
 	} else if useTwoClusters {
-		cluster2, _, err := StartLocalEtcdCluster("local2", 3, 3300, process.WithCleanStartup())
+		cluster2, _, err := regiondata.StartLocalEtcdCluster("local2", 3, 3300, process.WithCleanStartup())
 		require.Nil(t, err)
 		defer func() {
 			for _, e := range cluster2 {
@@ -309,7 +310,7 @@ func testKeepAliveRecovery(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	log.SpanLog(ctx, log.DebugLevelInfo, "revoke lease")
 	// revoke lease to simulate timed out keepalives
-	err := apis.syncLeaseData.sync.store.Revoke(ctx, apis.syncLeaseData.leaseID)
+	err := apis.syncLeaseData.sync.GetKVStore().Revoke(ctx, apis.syncLeaseData.leaseID)
 	require.Nil(t, err)
 	// wait for lease timeout (so etcd KeepAlive function returns)
 	time.Sleep(time.Duration(leaseTimeoutSec) * time.Second)
@@ -355,17 +356,17 @@ func TestControllerRace(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	etcdLocal, err := StartLocalEtcdServer(process.WithCleanStartup())
+	etcdLocal, err := regiondata.StartLocalEtcdServer(process.WithCleanStartup())
 	require.Nil(t, err)
 	defer etcdLocal.StopLocal()
 
 	// ctrl1
-	objStore1, err := GetEtcdClientBasic(etcdLocal.ClientAddrs)
+	objStore1, err := regiondata.GetEtcdClientBasic(etcdLocal.ClientAddrs)
 	require.Nil(t, err)
-	defer objStore1.client.Close()
+	defer objStore1.Close()
 	err = objStore1.CheckConnected(50, 20*time.Millisecond)
 	require.Nil(t, err)
-	sync1 := InitSync(objStore1)
+	sync1 := regiondata.InitSync(objStore1)
 	apis1 := NewAllApis(sync1)
 	sync1.Start()
 	defer sync1.Done()
@@ -379,12 +380,12 @@ func TestControllerRace(t *testing.T) {
 	reduceInfoTimeouts(t, ctx, apis1)
 
 	// ctrl2
-	objStore2, err := GetEtcdClientBasic(etcdLocal.ClientAddrs)
+	objStore2, err := regiondata.GetEtcdClientBasic(etcdLocal.ClientAddrs)
 	require.Nil(t, err)
-	defer objStore2.client.Close()
+	defer objStore2.Close()
 	err = objStore2.CheckConnected(50, 20*time.Millisecond)
 	require.Nil(t, err)
-	sync2 := InitSync(objStore2)
+	sync2 := regiondata.InitSync(objStore2)
 	apis2 := NewAllApis(sync2)
 	sync2.Start()
 	defer sync2.Done()

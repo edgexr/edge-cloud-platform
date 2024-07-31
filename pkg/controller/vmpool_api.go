@@ -20,21 +20,22 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type VMPoolApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.VMPoolStore
 	cache edgeproto.VMPoolCache
 }
 
-func NewVMPoolApi(sync *Sync, all *AllApis) *VMPoolApi {
+func NewVMPoolApi(sync *regiondata.Sync, all *AllApis) *VMPoolApi {
 	vmPoolApi := VMPoolApi{}
 	vmPoolApi.all = all
 	vmPoolApi.sync = sync
-	vmPoolApi.store = edgeproto.NewVMPoolStore(sync.store)
+	vmPoolApi.store = edgeproto.NewVMPoolStore(sync.GetKVStore())
 	edgeproto.InitVMPoolCache(&vmPoolApi.cache)
 	sync.RegisterCache(&vmPoolApi.cache)
 	return &vmPoolApi

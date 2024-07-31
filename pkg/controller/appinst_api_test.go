@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
@@ -110,11 +111,11 @@ func TestAppInstApi(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 	defer dummy.Stop()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
@@ -451,10 +452,10 @@ func TestAutoClusterInst(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
@@ -1049,15 +1050,15 @@ func testAppInstId(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	// func to check if ids are present in database
 	hasIds := func(hasId0, hasId1 bool) {
-		found0 := testHasAppInstId(apis.appInstApi.sync.store, expId0)
+		found0 := testHasAppInstId(apis.appInstApi.sync.GetKVStore(), expId0)
 		require.Equal(t, hasId0, found0, "has id %s", expId0)
-		found1 := testHasAppInstId(apis.appInstApi.sync.store, expId1)
+		found1 := testHasAppInstId(apis.appInstApi.sync.GetKVStore(), expId1)
 		require.Equal(t, hasId1, found1, "has id %s", expId1)
 	}
 	hasDnsLabels := func(hasIds bool, ids ...string) {
 		for _, id := range ids {
 			// note that all objects are on the same cloudlet
-			found := testHasAppInstDnsLabel(apis.appInstApi.sync.store, &appInst0.Key.CloudletKey, id)
+			found := testHasAppInstDnsLabel(apis.appInstApi.sync.GetKVStore(), &appInst0.Key.CloudletKey, id)
 			require.Equal(t, hasIds, found, "has id %s", id)
 		}
 	}

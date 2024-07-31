@@ -26,13 +26,14 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type GPUDriverApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.GPUDriverStore
 	cache edgeproto.GPUDriverCache
 }
@@ -43,11 +44,11 @@ const (
 	AllCloudlets              = ""
 )
 
-func NewGPUDriverApi(sync *Sync, all *AllApis) *GPUDriverApi {
+func NewGPUDriverApi(sync *regiondata.Sync, all *AllApis) *GPUDriverApi {
 	gpuDriverApi := GPUDriverApi{}
 	gpuDriverApi.all = all
 	gpuDriverApi.sync = sync
-	gpuDriverApi.store = edgeproto.NewGPUDriverStore(sync.store)
+	gpuDriverApi.store = edgeproto.NewGPUDriverStore(sync.GetKVStore())
 	edgeproto.InitGPUDriverCache(&gpuDriverApi.cache)
 	sync.RegisterCache(&gpuDriverApi.cache)
 	return &gpuDriverApi
@@ -273,7 +274,7 @@ func (s *GPUDriverApi) CreateGPUDriver(in *edgeproto.GPUDriver, cb edgeproto.GPU
 	}
 
 	in.State = ""
-	_, err = s.store.Put(ctx, in, s.sync.syncWait)
+	_, err = s.store.Put(ctx, in, s.sync.SyncWait)
 	if err != nil {
 		return err
 	}

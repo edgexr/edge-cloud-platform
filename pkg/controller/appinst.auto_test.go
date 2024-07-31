@@ -74,7 +74,7 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		ref := supportData.getOneCloudlet()
 		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
 		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateAppInstTestObj()
@@ -83,7 +83,7 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Cloudlet
 		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -91,7 +91,7 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		ref := supportData.getOneApp()
 		require.NotNil(t, ref, "support data must include one referenced App")
 		ref.DeletePrepare = true
-		_, err = all.appApi.store.Put(ctx, ref, all.appApi.sync.syncWait)
+		_, err = all.appApi.store.Put(ctx, ref, all.appApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateAppInstTestObj()
@@ -100,7 +100,7 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced App
 		ref.DeletePrepare = false
-		_, err = all.appApi.store.Put(ctx, ref, all.appApi.sync.syncWait)
+		_, err = all.appApi.store.Put(ctx, ref, all.appApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -108,7 +108,7 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		ref := supportData.getOneClusterInst()
 		require.NotNil(t, ref, "support data must include one referenced ClusterInst")
 		ref.DeletePrepare = true
-		_, err = all.clusterInstApi.store.Put(ctx, ref, all.clusterInstApi.sync.syncWait)
+		_, err = all.clusterInstApi.store.Put(ctx, ref, all.clusterInstApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateAppInstTestObj()
@@ -117,7 +117,7 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced ClusterInst
 		ref.DeletePrepare = false
-		_, err = all.clusterInstApi.store.Put(ctx, ref, all.clusterInstApi.sync.syncWait)
+		_, err = all.clusterInstApi.store.Put(ctx, ref, all.clusterInstApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -125,7 +125,7 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		ref := supportData.getOneFlavor()
 		require.NotNil(t, ref, "support data must include one referenced Flavor")
 		ref.DeletePrepare = true
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateAppInstTestObj()
@@ -134,7 +134,7 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Flavor
 		ref.DeletePrepare = false
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 

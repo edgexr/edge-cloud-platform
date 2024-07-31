@@ -26,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
 	"google.golang.org/grpc"
@@ -33,18 +34,18 @@ import (
 
 type ControllerApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.ControllerStore
 	cache edgeproto.ControllerCache
 }
 
 var controllerAliveLease int64
 
-func NewControllerApi(sync *Sync, all *AllApis) *ControllerApi {
+func NewControllerApi(sync *regiondata.Sync, all *AllApis) *ControllerApi {
 	controllerApi := ControllerApi{}
 	controllerApi.all = all
 	controllerApi.sync = sync
-	controllerApi.store = edgeproto.NewControllerStore(sync.store)
+	controllerApi.store = edgeproto.NewControllerStore(sync.GetKVStore())
 	edgeproto.InitControllerCache(&controllerApi.cache)
 	sync.RegisterCache(&controllerApi.cache)
 	return &controllerApi
@@ -64,7 +65,7 @@ func (s *ControllerApi) registerController(ctx context.Context, lease int64) err
 	ctrl.BuildHead = buildInfo.BuildHead
 	ctrl.BuildAuthor = buildInfo.BuildAuthor
 	ctrl.Hostname = cloudcommon.Hostname()
-	_, err := s.store.Put(ctx, &ctrl, s.sync.syncWait, objstore.WithLease(lease))
+	_, err := s.store.Put(ctx, &ctrl, s.sync.SyncWait, objstore.WithLease(lease))
 	return err
 }
 

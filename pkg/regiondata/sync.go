@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controller
+package regiondata
 
 import (
 	"context"
@@ -37,16 +37,7 @@ type Sync struct {
 	syncCancel context.CancelFunc
 	batch      []syncBatchData
 	notifyOrd  *edgeproto.NotifyOrder
-	caches     map[string]ObjCache
-}
-
-type ObjCache interface {
-	SyncUpdate(ctx context.Context, key, val []byte, rev, modRev int64)
-	SyncDelete(ctx context.Context, key []byte, rev, modRev int64)
-	SyncListStart(ctx context.Context)
-	SyncListEnd(ctx context.Context)
-	GetTypeString() string
-	UsesOrg(org string) bool
+	caches     map[string]edgeproto.ObjCache
 }
 
 func InitSync(store objstore.KVStore) *Sync {
@@ -54,14 +45,18 @@ func InitSync(store objstore.KVStore) *Sync {
 	sync.store = store
 	sync.initWait = true
 	sync.mux.InitCond(&sync.cond)
-	sync.caches = make(map[string]ObjCache)
+	sync.caches = make(map[string]edgeproto.ObjCache)
 	sync.rev = 1
 	sync.notifyOrd = edgeproto.NewNotifyOrder()
 	return &sync
 }
 
-func (s *Sync) RegisterCache(cache ObjCache) {
+func (s *Sync) RegisterCache(cache edgeproto.ObjCache) {
 	s.caches[cache.GetTypeString()] = cache
+}
+
+func (s *Sync) GetKVStore() objstore.KVStore {
+	return s.store
 }
 
 // Watch on all key changes in a single thread.
@@ -105,7 +100,10 @@ func (s *Sync) Done() {
 	}
 }
 
-func (s *Sync) GetCache(ctx context.Context, key []byte) (ObjCache, bool) {
+func (s *Sync) GetCache(ctx context.Context, key []byte) (edgeproto.ObjCache, bool) {
+	if string(key) == getSpanKey() {
+		return nil, false
+	}
 	_, typ, _, err := objstore.DbKeyPrefixParse(string(key))
 	if err != nil {
 		log.WarnLog("Failed to parse db key", "key", key, "err", err)
@@ -168,8 +166,8 @@ func (s *Sync) syncCb(ctx context.Context, data *objstore.SyncCbData) {
 	s.cond.Broadcast()
 }
 
-// syncWait is used by API calls to wait until data has been updated in cache
-func (s *Sync) syncWait(rev int64) {
+// SyncWait is used by API calls to wait until data has been updated in cache
+func (s *Sync) SyncWait(rev int64) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	log.DebugLog(log.DebugLevelApi, "syncWait", "cur-rev", s.rev, "wait-rev", rev)
@@ -181,7 +179,7 @@ func (s *Sync) syncWait(rev int64) {
 func (s *Sync) ApplySTMWait(ctx context.Context, apply func(concurrency.STM) error) error {
 	rev, err := s.store.ApplySTM(ctx, apply)
 	if err == nil {
-		s.syncWait(rev)
+		s.SyncWait(rev)
 	}
 	return err
 }
@@ -189,12 +187,12 @@ func (s *Sync) ApplySTMWait(ctx context.Context, apply func(concurrency.STM) err
 func (s *Sync) ApplySTMWaitRev(ctx context.Context, apply func(concurrency.STM) error) (int64, error) {
 	rev, err := s.store.ApplySTM(ctx, apply)
 	if err == nil {
-		s.syncWait(rev)
+		s.SyncWait(rev)
 	}
 	return rev, err
 }
 
-func (s *Sync) usesOrg(org string) []string {
+func (s *Sync) UsesOrg(org string) []string {
 	usedBy := []string{}
 	for _, cache := range s.caches {
 		if cache.UsesOrg(org) {
@@ -206,11 +204,11 @@ func (s *Sync) usesOrg(org string) []string {
 }
 
 type syncBatchData struct {
-	cache ObjCache
+	cache edgeproto.ObjCache
 	data  objstore.SyncCbData
 }
 
-func (s *Sync) insertBatchData(cache ObjCache, data *objstore.SyncCbData) {
+func (s *Sync) insertBatchData(cache edgeproto.ObjCache, data *objstore.SyncCbData) {
 	dat := syncBatchData{
 		cache: cache,
 		data:  *data,

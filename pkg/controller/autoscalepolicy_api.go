@@ -18,23 +18,24 @@ import (
 	"context"
 	"fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type AutoScalePolicyApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.AutoScalePolicyStore
 	cache edgeproto.AutoScalePolicyCache
 }
 
-func NewAutoScalePolicyApi(sync *Sync, all *AllApis) *AutoScalePolicyApi {
+func NewAutoScalePolicyApi(sync *regiondata.Sync, all *AllApis) *AutoScalePolicyApi {
 	autoScalePolicyApi := AutoScalePolicyApi{}
 	autoScalePolicyApi.all = all
 	autoScalePolicyApi.sync = sync
-	autoScalePolicyApi.store = edgeproto.NewAutoScalePolicyStore(sync.store)
+	autoScalePolicyApi.store = edgeproto.NewAutoScalePolicyStore(sync.GetKVStore())
 	edgeproto.InitAutoScalePolicyCache(&autoScalePolicyApi.cache)
 	sync.RegisterCache(&autoScalePolicyApi.cache)
 	return &autoScalePolicyApi
@@ -44,7 +45,7 @@ func (s *AutoScalePolicyApi) CreateAutoScalePolicy(ctx context.Context, in *edge
 	if err := in.Validate(nil); err != nil {
 		return &edgeproto.Result{}, err
 	}
-	return s.store.Create(ctx, in, s.sync.syncWait)
+	return s.store.Create(ctx, in, s.sync.SyncWait)
 }
 
 func (s *AutoScalePolicyApi) UpdateAutoScalePolicy(ctx context.Context, in *edgeproto.AutoScalePolicy) (*edgeproto.Result, error) {
@@ -106,7 +107,7 @@ func (s *AutoScalePolicyApi) DeleteAutoScalePolicy(ctx context.Context, in *edge
 	if ciKey := s.all.clusterInstApi.UsesAutoScalePolicy(&in.Key); ciKey != nil {
 		return &edgeproto.Result{}, fmt.Errorf("Policy in use by ClusterInst %s", ciKey.GetKeyString())
 	}
-	return s.store.Delete(ctx, in, s.sync.syncWait)
+	return s.store.Delete(ctx, in, s.sync.SyncWait)
 }
 
 func (s *AutoScalePolicyApi) ShowAutoScalePolicy(in *edgeproto.AutoScalePolicy, cb edgeproto.AutoScalePolicyApi_ShowAutoScalePolicyServer) error {

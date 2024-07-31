@@ -27,6 +27,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
@@ -42,11 +43,11 @@ func TestAutoProvPolicyApi(t *testing.T) {
 	testSvcs := testinit(ctx, t, WithLocalRedis())
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 	defer dummy.Stop()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()

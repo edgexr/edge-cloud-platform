@@ -152,7 +152,7 @@ func deleteNetworkChecks(t *testing.T, ctx context.Context, all *AllApis, dataGe
 	testObj, supportData := dataGen.GetNetworkTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -164,7 +164,7 @@ func deleteNetworkChecks(t *testing.T, ctx context.Context, all *AllApis, dataGe
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetNetworkTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetNetworkTestObj()
 	err = api.DeleteNetwork(testObj, testutil.NewCudStreamoutNetwork(ctx))
@@ -175,7 +175,7 @@ func deleteNetworkChecks(t *testing.T, ctx context.Context, all *AllApis, dataGe
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetNetworkTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, ClusterInst refers to Network.
@@ -183,7 +183,7 @@ func deleteNetworkChecks(t *testing.T, ctx context.Context, all *AllApis, dataGe
 		refBy, supportData := dataGen.GetClusterInstNetworksRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.clusterInstApi.store.Put(ctx, refBy, all.clusterInstApi.sync.syncWait)
+			all.clusterInstApi.store.Put(ctx, refBy, all.clusterInstApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetNetworkTestObj()
 		err = api.DeleteNetwork(testObj, testutil.NewCudStreamoutNetwork(ctx))
@@ -192,7 +192,7 @@ func deleteNetworkChecks(t *testing.T, ctx context.Context, all *AllApis, dataGe
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove ClusterInst obj
-		_, err = all.clusterInstApi.store.Delete(ctx, refBy, all.clusterInstApi.sync.syncWait)
+		_, err = all.clusterInstApi.store.Delete(ctx, refBy, all.clusterInstApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from ClusterInst must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -214,7 +214,7 @@ func CreateNetworkAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		ref := supportData.getOneCloudlet()
 		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
 		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateNetworkTestObj()
@@ -223,7 +223,7 @@ func CreateNetworkAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Cloudlet
 		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 

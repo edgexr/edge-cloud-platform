@@ -19,23 +19,24 @@ import (
 	"fmt"
 	"strings"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type TrustPolicyExceptionApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.TrustPolicyExceptionStore
 	cache edgeproto.TrustPolicyExceptionCache
 }
 
-func NewTrustPolicyExceptionApi(sync *Sync, all *AllApis) *TrustPolicyExceptionApi {
+func NewTrustPolicyExceptionApi(sync *regiondata.Sync, all *AllApis) *TrustPolicyExceptionApi {
 	trustPolicyExceptionApi := TrustPolicyExceptionApi{}
 	trustPolicyExceptionApi.all = all
 	trustPolicyExceptionApi.sync = sync
-	trustPolicyExceptionApi.store = edgeproto.NewTrustPolicyExceptionStore(sync.store)
+	trustPolicyExceptionApi.store = edgeproto.NewTrustPolicyExceptionStore(sync.GetKVStore())
 	edgeproto.InitTrustPolicyExceptionCache(&trustPolicyExceptionApi.cache)
 	sync.RegisterCache(&trustPolicyExceptionApi.cache)
 	return &trustPolicyExceptionApi
@@ -154,7 +155,7 @@ func (s *TrustPolicyExceptionApi) DeleteTrustPolicyException(ctx context.Context
 	if !s.cache.HasKey(&in.Key) {
 		return nil, in.Key.NotFoundError()
 	}
-	_, err := s.store.Delete(ctx, in, s.sync.syncWait)
+	_, err := s.store.Delete(ctx, in, s.sync.SyncWait)
 	return &edgeproto.Result{}, err
 }
 

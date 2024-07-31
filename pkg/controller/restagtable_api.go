@@ -22,24 +22,25 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type ResTagTableApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.ResTagTableStore
 	cache edgeproto.ResTagTableCache
 }
 
 var verbose bool = false
 
-func NewResTagTableApi(sync *Sync, all *AllApis) *ResTagTableApi {
+func NewResTagTableApi(sync *regiondata.Sync, all *AllApis) *ResTagTableApi {
 	resTagTableApi := ResTagTableApi{}
 	resTagTableApi.all = all
 	resTagTableApi.sync = sync
-	resTagTableApi.store = edgeproto.NewResTagTableStore(sync.store)
+	resTagTableApi.store = edgeproto.NewResTagTableStore(sync.GetKVStore())
 	edgeproto.InitResTagTableCache(&resTagTableApi.cache)
 	sync.RegisterCache(&resTagTableApi.cache)
 	return &resTagTableApi
@@ -117,7 +118,7 @@ func (s *ResTagTableApi) DeleteResTagTable(ctx context.Context, in *edgeproto.Re
 	if k := s.all.cloudletApi.UsesResTagTable(&in.Key); k != nil {
 		return &edgeproto.Result{}, fmt.Errorf("ResTagTable in use by Cloudlet %s", k.GetKeyString())
 	}
-	return s.store.Delete(ctx, in, s.sync.syncWait)
+	return s.store.Delete(ctx, in, s.sync.SyncWait)
 }
 
 func (s *ResTagTableApi) GetResTagTable(ctx context.Context, in *edgeproto.ResTagTableKey) (*edgeproto.ResTagTable, error) {
@@ -197,7 +198,6 @@ func (s *ResTagTableApi) RemoveResTag(ctx context.Context, in *edgeproto.ResTagT
 }
 
 // Routines supporting the mapping used in GetVMSpec
-//
 func (s *ResTagTableApi) GetCloudletResourceMap(ctx context.Context, stm concurrency.STM, key *edgeproto.ResTagTableKey) (*edgeproto.ResTagTable, error) {
 
 	tbl := edgeproto.ResTagTable{}

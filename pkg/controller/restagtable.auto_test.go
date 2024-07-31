@@ -151,7 +151,7 @@ func deleteResTagTableChecks(t *testing.T, ctx context.Context, all *AllApis, da
 	testObj, supportData := dataGen.GetResTagTableTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -163,7 +163,7 @@ func deleteResTagTableChecks(t *testing.T, ctx context.Context, all *AllApis, da
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetResTagTableTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetResTagTableTestObj()
 	_, err = api.DeleteResTagTable(ctx, testObj)
@@ -174,7 +174,7 @@ func deleteResTagTableChecks(t *testing.T, ctx context.Context, all *AllApis, da
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetResTagTableTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, Cloudlet refers to ResTagTable.
@@ -182,7 +182,7 @@ func deleteResTagTableChecks(t *testing.T, ctx context.Context, all *AllApis, da
 		refBy, supportData := dataGen.GetCloudletResTagMapRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.cloudletApi.store.Put(ctx, refBy, all.cloudletApi.sync.syncWait)
+			all.cloudletApi.store.Put(ctx, refBy, all.cloudletApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetResTagTableTestObj()
 		_, err = api.DeleteResTagTable(ctx, testObj)
@@ -191,7 +191,7 @@ func deleteResTagTableChecks(t *testing.T, ctx context.Context, all *AllApis, da
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove Cloudlet obj
-		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from Cloudlet must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
