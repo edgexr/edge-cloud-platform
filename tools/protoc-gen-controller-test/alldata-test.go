@@ -43,12 +43,12 @@ func (s *testSupportData) put(t *testing.T, ctx context.Context, all *AllApis) {
 {{- range .Fields}}
 {{- if .Repeated}}
 	for _, obj := range s.{{.Name}} {
-		_, err := all.{{.ApiObj}}.store.Put(ctx, &obj, all.{{.ApiObj}}.sync.syncWait)
+		_, err := all.{{.ApiObj}}.store.Put(ctx, &obj, all.{{.ApiObj}}.sync.SyncWait)
 		require.Nil(t, err)
 	}
 {{- else}}
 	if s.{{.Name}} != nil {
-		_, err := all.{{.ApiObj}}.store.Put(ctx, s.{{.Name}}, all.{{.ApiObj}}.sync.syncWait)
+		_, err := all.{{.ApiObj}}.store.Put(ctx, s.{{.Name}}, all.{{.ApiObj}}.sync.SyncWait)
 		require.Nil(t, err)
 	}
 {{- end}}
@@ -59,12 +59,12 @@ func (s *testSupportData) delete(t *testing.T, ctx context.Context, all *AllApis
 {{- range .FieldsReverse}}
 {{- if .Repeated}}
 	for _, obj := range s.{{.Name}} {
-		_, err := all.{{.ApiObj}}.store.Delete(ctx, &obj, all.{{.ApiObj}}.sync.syncWait)
+		_, err := all.{{.ApiObj}}.store.Delete(ctx, &obj, all.{{.ApiObj}}.sync.SyncWait)
 		require.Nil(t, err)
 	}
 {{- else}}
 	if s.{{.Name}} != nil {
-		_, err := all.{{.ApiObj}}.store.Delete(ctx, s.{{.Name}}, all.{{.ApiObj}}.sync.syncWait)
+		_, err := all.{{.ApiObj}}.store.Delete(ctx, s.{{.Name}}, all.{{.ApiObj}}.sync.SyncWait)
 		require.Nil(t, err)
 	}
 {{- end}}

@@ -31,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/gogo/protobuf/types"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -40,7 +41,7 @@ import (
 
 type AppInstApi struct {
 	all                     *AllApis
-	sync                    *Sync
+	sync                    *regiondata.Sync
 	store                   edgeproto.AppInstStore
 	cache                   edgeproto.AppInstCache
 	idStore                 edgeproto.AppInstIdStore
@@ -64,13 +65,13 @@ var DeleteAppInstTransitions = map[edgeproto.TrackedState]struct{}{
 	edgeproto.TrackedState_DELETING: struct{}{},
 }
 
-func NewAppInstApi(sync *Sync, all *AllApis) *AppInstApi {
+func NewAppInstApi(sync *regiondata.Sync, all *AllApis) *AppInstApi {
 	appInstApi := AppInstApi{}
 	appInstApi.all = all
 	appInstApi.sync = sync
-	appInstApi.store = edgeproto.NewAppInstStore(sync.store)
-	appInstApi.idStore.Init(sync.store)
-	appInstApi.fedStore = edgeproto.NewFedAppInstStore(sync.store)
+	appInstApi.store = edgeproto.NewAppInstStore(sync.GetKVStore())
+	appInstApi.idStore.Init(sync.GetKVStore())
+	appInstApi.fedStore = edgeproto.NewFedAppInstStore(sync.GetKVStore())
 	appInstApi.dnsLabelStore = &all.cloudletApi.objectDnsLabelStore
 	appInstApi.fedAppInstEventSendMany = notify.NewFedAppInstEventSendMany()
 	edgeproto.InitAppInstCache(&appInstApi.cache)
@@ -1357,7 +1358,7 @@ func (s *AppInstApi) updateCloudletResourcesMetric(ctx context.Context, in *edge
 }
 
 func (s *AppInstApi) updateAppInstStore(ctx context.Context, in *edgeproto.AppInst) error {
-	_, err := s.store.Update(ctx, in, s.sync.syncWait)
+	_, err := s.store.Update(ctx, in, s.sync.SyncWait)
 	return err
 }
 

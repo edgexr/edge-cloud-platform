@@ -18,23 +18,24 @@ import (
 	"errors"
 	"fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type NetworkApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.NetworkStore
 	cache edgeproto.NetworkCache
 }
 
-func NewNetworkApi(sync *Sync, all *AllApis) *NetworkApi {
+func NewNetworkApi(sync *regiondata.Sync, all *AllApis) *NetworkApi {
 	networkApi := NetworkApi{}
 	networkApi.all = all
 	networkApi.sync = sync
-	networkApi.store = edgeproto.NewNetworkStore(sync.store)
+	networkApi.store = edgeproto.NewNetworkStore(sync.GetKVStore())
 	edgeproto.InitNetworkCache(&networkApi.cache)
 	sync.RegisterCache(&networkApi.cache)
 	return &networkApi
@@ -132,7 +133,7 @@ func (s *NetworkApi) DeleteNetwork(in *edgeproto.Network, cb edgeproto.NetworkAp
 	if k := s.all.clusterInstApi.UsesNetwork(&in.Key); k != nil {
 		return fmt.Errorf("Network in use by ClusterInst %s", k.GetKeyString())
 	}
-	_, err = s.store.Delete(ctx, in, s.sync.syncWait)
+	_, err = s.store.Delete(ctx, in, s.sync.SyncWait)
 	return err
 }
 

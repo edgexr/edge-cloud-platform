@@ -153,7 +153,7 @@ func deletePlatformFeaturesChecks(t *testing.T, ctx context.Context, all *AllApi
 	testObj, supportData := dataGen.GetPlatformFeaturesTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -165,7 +165,7 @@ func deletePlatformFeaturesChecks(t *testing.T, ctx context.Context, all *AllApi
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetPlatformFeaturesTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetPlatformFeaturesTestObj()
 	_, err = api.DeletePlatformFeatures(ctx, testObj)
@@ -176,7 +176,7 @@ func deletePlatformFeaturesChecks(t *testing.T, ctx context.Context, all *AllApi
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetPlatformFeaturesTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, Cloudlet refers to PlatformFeatures.
@@ -184,7 +184,7 @@ func deletePlatformFeaturesChecks(t *testing.T, ctx context.Context, all *AllApi
 		refBy, supportData := dataGen.GetCloudletPlatformTypeRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.cloudletApi.store.Put(ctx, refBy, all.cloudletApi.sync.syncWait)
+			all.cloudletApi.store.Put(ctx, refBy, all.cloudletApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetPlatformFeaturesTestObj()
 		_, err = api.DeletePlatformFeatures(ctx, testObj)
@@ -193,7 +193,7 @@ func deletePlatformFeaturesChecks(t *testing.T, ctx context.Context, all *AllApi
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove Cloudlet obj
-		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from Cloudlet must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -331,7 +331,7 @@ func deleteGPUDriverChecks(t *testing.T, ctx context.Context, all *AllApis, data
 	testObj, supportData := dataGen.GetGPUDriverTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -343,7 +343,7 @@ func deleteGPUDriverChecks(t *testing.T, ctx context.Context, all *AllApis, data
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetGPUDriverTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetGPUDriverTestObj()
 	err = api.DeleteGPUDriver(testObj, testutil.NewCudStreamoutGPUDriver(ctx))
@@ -354,7 +354,7 @@ func deleteGPUDriverChecks(t *testing.T, ctx context.Context, all *AllApis, data
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetGPUDriverTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, Cloudlet refers to GPUDriver.
@@ -362,7 +362,7 @@ func deleteGPUDriverChecks(t *testing.T, ctx context.Context, all *AllApis, data
 		refBy, supportData := dataGen.GetCloudletGpuConfigDriverRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.cloudletApi.store.Put(ctx, refBy, all.cloudletApi.sync.syncWait)
+			all.cloudletApi.store.Put(ctx, refBy, all.cloudletApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetGPUDriverTestObj()
 		err = api.DeleteGPUDriver(testObj, testutil.NewCudStreamoutGPUDriver(ctx))
@@ -371,7 +371,7 @@ func deleteGPUDriverChecks(t *testing.T, ctx context.Context, all *AllApis, data
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove Cloudlet obj
-		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from Cloudlet must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -515,7 +515,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 	testObj, supportData := dataGen.GetCloudletTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -539,7 +539,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetCloudletTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetCloudletTestObj()
 	err = api.DeleteCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
@@ -550,7 +550,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetCloudletTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, AutoProvPolicy refers to Cloudlet.
@@ -558,7 +558,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		refBy, supportData := dataGen.GetAutoProvPolicyCloudletsRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.autoProvPolicyApi.store.Put(ctx, refBy, all.autoProvPolicyApi.sync.syncWait)
+			all.autoProvPolicyApi.store.Put(ctx, refBy, all.autoProvPolicyApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetCloudletTestObj()
 		err = api.DeleteCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
@@ -567,7 +567,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove AutoProvPolicy obj
-		_, err = all.autoProvPolicyApi.store.Delete(ctx, refBy, all.autoProvPolicyApi.sync.syncWait)
+		_, err = all.autoProvPolicyApi.store.Delete(ctx, refBy, all.autoProvPolicyApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from AutoProvPolicy must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -578,7 +578,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		refBy, supportData := dataGen.GetCloudletPoolCloudletsRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.cloudletPoolApi.store.Put(ctx, refBy, all.cloudletPoolApi.sync.syncWait)
+			all.cloudletPoolApi.store.Put(ctx, refBy, all.cloudletPoolApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetCloudletTestObj()
 		err = api.DeleteCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
@@ -587,7 +587,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove CloudletPool obj
-		_, err = all.cloudletPoolApi.store.Delete(ctx, refBy, all.cloudletPoolApi.sync.syncWait)
+		_, err = all.cloudletPoolApi.store.Delete(ctx, refBy, all.cloudletPoolApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from CloudletPool must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -598,7 +598,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		refBy, supportData := dataGen.GetNetworkKeyCloudletKeyRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.networkApi.store.Put(ctx, refBy, all.networkApi.sync.syncWait)
+			all.networkApi.store.Put(ctx, refBy, all.networkApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetCloudletTestObj()
 		err = api.DeleteCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
@@ -607,7 +607,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove Network obj
-		_, err = all.networkApi.store.Delete(ctx, refBy, all.networkApi.sync.syncWait)
+		_, err = all.networkApi.store.Delete(ctx, refBy, all.networkApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from Network must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -617,7 +617,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		// Inject the refs object to trigger an "in use" error.
 		refBy, supportData := dataGen.GetCloudletClusterInstClusterInstsRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
-		_, err = all.cloudletRefsApi.store.Put(ctx, refBy, all.cloudletRefsApi.sync.syncWait)
+		_, err = all.cloudletRefsApi.store.Put(ctx, refBy, all.cloudletRefsApi.sync.SyncWait)
 		require.Nil(t, err)
 		testObj, _ = dataGen.GetCloudletTestObj()
 		err = api.DeleteCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
@@ -626,7 +626,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove CloudletRefs obj
-		_, err = all.cloudletRefsApi.store.Delete(ctx, refBy, all.cloudletRefsApi.sync.syncWait)
+		_, err = all.cloudletRefsApi.store.Delete(ctx, refBy, all.cloudletRefsApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from CloudletRefs must succeed")
 		supportData.delete(t, ctx, all)
 	}
@@ -635,7 +635,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		// Inject the refs object to trigger an "in use" error.
 		refBy, supportData := dataGen.GetCloudletAppInstVmAppInstsRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
-		_, err = all.cloudletRefsApi.store.Put(ctx, refBy, all.cloudletRefsApi.sync.syncWait)
+		_, err = all.cloudletRefsApi.store.Put(ctx, refBy, all.cloudletRefsApi.sync.SyncWait)
 		require.Nil(t, err)
 		testObj, _ = dataGen.GetCloudletTestObj()
 		err = api.DeleteCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
@@ -644,7 +644,7 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove CloudletRefs obj
-		_, err = all.cloudletRefsApi.store.Delete(ctx, refBy, all.cloudletRefsApi.sync.syncWait)
+		_, err = all.cloudletRefsApi.store.Delete(ctx, refBy, all.cloudletRefsApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from CloudletRefs must succeed")
 		supportData.delete(t, ctx, all)
 	}
@@ -665,7 +665,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		ref := supportData.getOnePlatformFeatures()
 		require.NotNil(t, ref, "support data must include one referenced PlatformFeatures")
 		ref.DeletePrepare = true
-		_, err = all.platformFeaturesApi.store.Put(ctx, ref, all.platformFeaturesApi.sync.syncWait)
+		_, err = all.platformFeaturesApi.store.Put(ctx, ref, all.platformFeaturesApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateCloudletTestObj()
@@ -674,7 +674,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced PlatformFeatures
 		ref.DeletePrepare = false
-		_, err = all.platformFeaturesApi.store.Put(ctx, ref, all.platformFeaturesApi.sync.syncWait)
+		_, err = all.platformFeaturesApi.store.Put(ctx, ref, all.platformFeaturesApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -682,7 +682,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		ref := supportData.getOneFlavor()
 		require.NotNil(t, ref, "support data must include one referenced Flavor")
 		ref.DeletePrepare = true
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateCloudletTestObj()
@@ -691,7 +691,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Flavor
 		ref.DeletePrepare = false
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -699,7 +699,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		ref := supportData.getOneVMPool()
 		require.NotNil(t, ref, "support data must include one referenced VMPool")
 		ref.DeletePrepare = true
-		_, err = all.vmPoolApi.store.Put(ctx, ref, all.vmPoolApi.sync.syncWait)
+		_, err = all.vmPoolApi.store.Put(ctx, ref, all.vmPoolApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateCloudletTestObj()
@@ -708,7 +708,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced VMPool
 		ref.DeletePrepare = false
-		_, err = all.vmPoolApi.store.Put(ctx, ref, all.vmPoolApi.sync.syncWait)
+		_, err = all.vmPoolApi.store.Put(ctx, ref, all.vmPoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -716,7 +716,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		ref := supportData.getOneTrustPolicy()
 		require.NotNil(t, ref, "support data must include one referenced TrustPolicy")
 		ref.DeletePrepare = true
-		_, err = all.trustPolicyApi.store.Put(ctx, ref, all.trustPolicyApi.sync.syncWait)
+		_, err = all.trustPolicyApi.store.Put(ctx, ref, all.trustPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateCloudletTestObj()
@@ -725,7 +725,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced TrustPolicy
 		ref.DeletePrepare = false
-		_, err = all.trustPolicyApi.store.Put(ctx, ref, all.trustPolicyApi.sync.syncWait)
+		_, err = all.trustPolicyApi.store.Put(ctx, ref, all.trustPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -733,7 +733,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		ref := supportData.getOneGPUDriver()
 		require.NotNil(t, ref, "support data must include one referenced GPUDriver")
 		ref.DeletePrepare = true
-		_, err = all.gpuDriverApi.store.Put(ctx, ref, all.gpuDriverApi.sync.syncWait)
+		_, err = all.gpuDriverApi.store.Put(ctx, ref, all.gpuDriverApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateCloudletTestObj()
@@ -742,7 +742,7 @@ func CreateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced GPUDriver
 		ref.DeletePrepare = false
-		_, err = all.gpuDriverApi.store.Put(ctx, ref, all.gpuDriverApi.sync.syncWait)
+		_, err = all.gpuDriverApi.store.Put(ctx, ref, all.gpuDriverApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -796,7 +796,7 @@ func UpdateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		ref := supportData.getOneTrustPolicy()
 		require.NotNil(t, ref, "support data must include one referenced TrustPolicy")
 		ref.DeletePrepare = true
-		_, err = all.trustPolicyApi.store.Put(ctx, ref, all.trustPolicyApi.sync.syncWait)
+		_, err = all.trustPolicyApi.store.Put(ctx, ref, all.trustPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetUpdateCloudletTestObj()
@@ -805,7 +805,7 @@ func UpdateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced TrustPolicy
 		ref.DeletePrepare = false
-		_, err = all.trustPolicyApi.store.Put(ctx, ref, all.trustPolicyApi.sync.syncWait)
+		_, err = all.trustPolicyApi.store.Put(ctx, ref, all.trustPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -813,7 +813,7 @@ func UpdateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		ref := supportData.getOneGPUDriver()
 		require.NotNil(t, ref, "support data must include one referenced GPUDriver")
 		ref.DeletePrepare = true
-		_, err = all.gpuDriverApi.store.Put(ctx, ref, all.gpuDriverApi.sync.syncWait)
+		_, err = all.gpuDriverApi.store.Put(ctx, ref, all.gpuDriverApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetUpdateCloudletTestObj()
@@ -822,7 +822,7 @@ func UpdateCloudletAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced GPUDriver
 		ref.DeletePrepare = false
-		_, err = all.gpuDriverApi.store.Put(ctx, ref, all.gpuDriverApi.sync.syncWait)
+		_, err = all.gpuDriverApi.store.Put(ctx, ref, all.gpuDriverApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -860,7 +860,7 @@ func AddCloudletResMappingAddRefsChecks(t *testing.T, ctx context.Context, all *
 		ref := supportData.getOneResTagTable()
 		require.NotNil(t, ref, "support data must include one referenced ResTagTable")
 		ref.DeletePrepare = true
-		_, err = all.resTagTableApi.store.Put(ctx, ref, all.resTagTableApi.sync.syncWait)
+		_, err = all.resTagTableApi.store.Put(ctx, ref, all.resTagTableApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetAddCloudletResMappingTestObj()
@@ -869,7 +869,7 @@ func AddCloudletResMappingAddRefsChecks(t *testing.T, ctx context.Context, all *
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced ResTagTable
 		ref.DeletePrepare = false
-		_, err = all.resTagTableApi.store.Put(ctx, ref, all.resTagTableApi.sync.syncWait)
+		_, err = all.resTagTableApi.store.Put(ctx, ref, all.resTagTableApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 

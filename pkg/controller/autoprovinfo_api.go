@@ -22,20 +22,21 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 )
 
 type AutoProvInfoApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.AutoProvInfoStore
 	cache edgeproto.AutoProvInfoCache
 }
 
-func NewAutoProvInfoApi(sync *Sync, all *AllApis) *AutoProvInfoApi {
+func NewAutoProvInfoApi(sync *regiondata.Sync, all *AllApis) *AutoProvInfoApi {
 	autoProvInfoApi := AutoProvInfoApi{}
 	autoProvInfoApi.all = all
 	autoProvInfoApi.sync = sync
-	autoProvInfoApi.store = edgeproto.NewAutoProvInfoStore(sync.store)
+	autoProvInfoApi.store = edgeproto.NewAutoProvInfoStore(sync.GetKVStore())
 	edgeproto.InitAutoProvInfoCache(&autoProvInfoApi.cache)
 	sync.RegisterCache(&autoProvInfoApi.cache)
 	return &autoProvInfoApi

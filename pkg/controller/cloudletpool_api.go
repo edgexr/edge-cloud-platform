@@ -20,25 +20,26 @@ import (
 	"strings"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type CloudletPoolApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.CloudletPoolStore
 	cache *edgeproto.CloudletPoolCache
 }
 
-func NewCloudletPoolApi(sync *Sync, all *AllApis) *CloudletPoolApi {
+func NewCloudletPoolApi(sync *regiondata.Sync, all *AllApis) *CloudletPoolApi {
 	cloudletPoolApi := CloudletPoolApi{}
 	cloudletPoolApi.all = all
 	cloudletPoolApi.sync = sync
-	cloudletPoolApi.store = edgeproto.NewCloudletPoolStore(sync.store)
+	cloudletPoolApi.store = edgeproto.NewCloudletPoolStore(sync.GetKVStore())
 	cloudletPoolApi.cache = nodeMgr.CloudletPoolLookup.GetCloudletPoolCache(node.NoRegion)
 	sync.RegisterCache(cloudletPoolApi.cache)
 	return &cloudletPoolApi

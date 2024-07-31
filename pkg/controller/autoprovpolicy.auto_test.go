@@ -153,7 +153,7 @@ func deleteAutoProvPolicyChecks(t *testing.T, ctx context.Context, all *AllApis,
 	testObj, supportData := dataGen.GetAutoProvPolicyTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -165,7 +165,7 @@ func deleteAutoProvPolicyChecks(t *testing.T, ctx context.Context, all *AllApis,
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetAutoProvPolicyTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetAutoProvPolicyTestObj()
 	_, err = api.DeleteAutoProvPolicy(ctx, testObj)
@@ -176,7 +176,7 @@ func deleteAutoProvPolicyChecks(t *testing.T, ctx context.Context, all *AllApis,
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetAutoProvPolicyTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, App refers to AutoProvPolicy.
@@ -184,7 +184,7 @@ func deleteAutoProvPolicyChecks(t *testing.T, ctx context.Context, all *AllApis,
 		refBy, supportData := dataGen.GetAppAutoProvPoliciesRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.appApi.store.Put(ctx, refBy, all.appApi.sync.syncWait)
+			all.appApi.store.Put(ctx, refBy, all.appApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetAutoProvPolicyTestObj()
 		_, err = api.DeleteAutoProvPolicy(ctx, testObj)
@@ -193,7 +193,7 @@ func deleteAutoProvPolicyChecks(t *testing.T, ctx context.Context, all *AllApis,
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove App obj
-		_, err = all.appApi.store.Delete(ctx, refBy, all.appApi.sync.syncWait)
+		_, err = all.appApi.store.Delete(ctx, refBy, all.appApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from App must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -215,7 +215,7 @@ func CreateAutoProvPolicyAddRefsChecks(t *testing.T, ctx context.Context, all *A
 		ref := supportData.getOneCloudlet()
 		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
 		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateAutoProvPolicyTestObj()
@@ -224,7 +224,7 @@ func CreateAutoProvPolicyAddRefsChecks(t *testing.T, ctx context.Context, all *A
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Cloudlet
 		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -262,7 +262,7 @@ func UpdateAutoProvPolicyAddRefsChecks(t *testing.T, ctx context.Context, all *A
 		ref := supportData.getOneCloudlet()
 		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
 		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetUpdateAutoProvPolicyTestObj()
@@ -271,7 +271,7 @@ func UpdateAutoProvPolicyAddRefsChecks(t *testing.T, ctx context.Context, all *A
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Cloudlet
 		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -305,7 +305,7 @@ func AddAutoProvPolicyCloudletAddRefsChecks(t *testing.T, ctx context.Context, a
 		ref := supportData.getOneCloudlet()
 		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
 		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetAddAutoProvPolicyCloudletTestObj()
@@ -314,7 +314,7 @@ func AddAutoProvPolicyCloudletAddRefsChecks(t *testing.T, ctx context.Context, a
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Cloudlet
 		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 

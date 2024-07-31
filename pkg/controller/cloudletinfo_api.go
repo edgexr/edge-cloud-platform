@@ -26,23 +26,24 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type CloudletInfoApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.CloudletInfoStore
 	cache edgeproto.CloudletInfoCache
 }
 
 var cleanupCloudletInfoTimeout = 5 * time.Minute
 
-func NewCloudletInfoApi(sync *Sync, all *AllApis) *CloudletInfoApi {
+func NewCloudletInfoApi(sync *regiondata.Sync, all *AllApis) *CloudletInfoApi {
 	cloudletInfoApi := CloudletInfoApi{}
 	cloudletInfoApi.all = all
 	cloudletInfoApi.sync = sync
-	cloudletInfoApi.store = edgeproto.NewCloudletInfoStore(sync.store)
+	cloudletInfoApi.store = edgeproto.NewCloudletInfoStore(sync.GetKVStore())
 	edgeproto.InitCloudletInfoCache(&cloudletInfoApi.cache)
 	sync.RegisterCache(&cloudletInfoApi.cache)
 	return &cloudletInfoApi
@@ -52,11 +53,11 @@ func NewCloudletInfoApi(sync *Sync, all *AllApis) *CloudletInfoApi {
 // and CRM suddenly go away, etcd will remove the stale CloudletInfo data.
 
 func (s *CloudletInfoApi) InjectCloudletInfo(ctx context.Context, in *edgeproto.CloudletInfo) (*edgeproto.Result, error) {
-	return s.store.Put(ctx, in, s.sync.syncWait)
+	return s.store.Put(ctx, in, s.sync.SyncWait)
 }
 
 func (s *CloudletInfoApi) EvictCloudletInfo(ctx context.Context, in *edgeproto.CloudletInfo) (*edgeproto.Result, error) {
-	return s.store.Delete(ctx, in, s.sync.syncWait)
+	return s.store.Delete(ctx, in, s.sync.SyncWait)
 }
 
 func (s *CloudletInfoApi) ShowCloudletInfo(in *edgeproto.CloudletInfo, cb edgeproto.CloudletInfoApi_ShowCloudletInfoServer) error {

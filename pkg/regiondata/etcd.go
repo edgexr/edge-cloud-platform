@@ -14,7 +14,7 @@
 
 // Start etcd
 
-package controller
+package regiondata
 
 import (
 	"context"
@@ -322,7 +322,6 @@ func (e *EtcdClient) Sync(ctx context.Context, key string, cb objstore.SyncCb) e
 				} else {
 					data.MoreEvents = true
 				}
-				log.SpanLog(spctx, log.DebugLevelEtcd, "watch data", "key", string(data.Key), "val", string(data.Value), "more-events", data.MoreEvents)
 				cb(spctx, &data)
 			}
 			span.Finish()

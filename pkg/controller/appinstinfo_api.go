@@ -18,14 +18,15 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 )
 
 type AppInstInfoApi struct {
 	all  *AllApis
-	sync *Sync
+	sync *regiondata.Sync
 }
 
-func NewAppInstInfoApi(sync *Sync, all *AllApis) *AppInstInfoApi {
+func NewAppInstInfoApi(sync *regiondata.Sync, all *AllApis) *AppInstInfoApi {
 	appInstInfoApi := AppInstInfoApi{}
 	appInstInfoApi.all = all
 	appInstInfoApi.sync = sync

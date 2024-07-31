@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
@@ -41,7 +42,7 @@ import (
 
 type CloudletApi struct {
 	all                   *AllApis
-	sync                  *Sync
+	sync                  *regiondata.Sync
 	store                 edgeproto.CloudletStore
 	cache                 *edgeproto.CloudletCache
 	accessKeyServer       *node.AccessKeyServer
@@ -100,11 +101,11 @@ func ignoreCRMState(cctx *CallContext) bool {
 	return false
 }
 
-func NewCloudletApi(sync *Sync, all *AllApis) *CloudletApi {
+func NewCloudletApi(sync *regiondata.Sync, all *AllApis) *CloudletApi {
 	cloudletApi := CloudletApi{}
 	cloudletApi.all = all
 	cloudletApi.sync = sync
-	cloudletApi.store = edgeproto.NewCloudletStore(sync.store)
+	cloudletApi.store = edgeproto.NewCloudletStore(sync.GetKVStore())
 	cloudletApi.cache = nodeMgr.CloudletLookup.GetCloudletCache(node.NoRegion)
 	sync.RegisterCache(cloudletApi.cache)
 	cloudletApi.accessKeyServer = node.NewAccessKeyServer(cloudletApi.cache, nodeMgr.VaultAddr)

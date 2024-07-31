@@ -29,6 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,17 +38,17 @@ import (
 // Should only be one of these instantiated in main
 type AppApi struct {
 	all           *AllApis
-	sync          *Sync
+	sync          *regiondata.Sync
 	store         edgeproto.AppStore
 	cache         edgeproto.AppCache
 	globalIdStore edgeproto.AppGlobalIdStore
 }
 
-func NewAppApi(sync *Sync, all *AllApis) *AppApi {
+func NewAppApi(sync *regiondata.Sync, all *AllApis) *AppApi {
 	appApi := AppApi{}
 	appApi.all = all
 	appApi.sync = sync
-	appApi.store = edgeproto.NewAppStore(sync.store)
+	appApi.store = edgeproto.NewAppStore(sync.GetKVStore())
 	edgeproto.InitAppCache(&appApi.cache)
 	sync.RegisterCache(&appApi.cache)
 	return &appApi

@@ -170,7 +170,7 @@ func delete{{.Type}}Checks(t *testing.T, ctx context.Context, all *AllApis, data
 	testObj, supportData := dataGen.Get{{.Type}}TestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -197,7 +197,7 @@ func delete{{.Type}}Checks(t *testing.T, ctx context.Context, all *AllApis, data
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.Get{{.Type}}TestObj()
 	testObj.{{.DeletePrepareField}} = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 {{- template "runDelete" .}}
 	require.NotNil(t, err, "delete must fail if already being deleted")
@@ -207,7 +207,7 @@ func delete{{.Type}}Checks(t *testing.T, ctx context.Context, all *AllApis, data
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.Get{{.Type}}TestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 {{range .RefBys}}
 	{
 	// Negative test, {{.Type}} refers to {{$.Type}}.
@@ -215,7 +215,7 @@ func delete{{.Type}}Checks(t *testing.T, ctx context.Context, all *AllApis, data
 	refBy, supportData := dataGen.Get{{.ObjField}}Ref(testObj.GetKey())
 	supportData.put(t, ctx, all)
 	deleteStore.putDeletePrepareCb = func() {
-		all.{{.ApiObj}}.store.Put(ctx, refBy, all.{{.ApiObj}}.sync.syncWait)
+		all.{{.ApiObj}}.store.Put(ctx, refBy, all.{{.ApiObj}}.sync.SyncWait)
 	}
 {{- template "runDelete" $}}
 	require.NotNil(t, err, "must fail delete with ref from {{.Type}}")
@@ -223,7 +223,7 @@ func delete{{.Type}}Checks(t *testing.T, ctx context.Context, all *AllApis, data
 	// check that delete prepare was reset
 	deleteStore.requireUndoDeletePrepare(ctx, testObj)
 	// remove {{.Type}} obj
-	_, err = all.{{.ApiObj}}.store.Delete(ctx, refBy, all.{{.ApiObj}}.sync.syncWait)
+	_, err = all.{{.ApiObj}}.store.Delete(ctx, refBy, all.{{.ApiObj}}.sync.SyncWait)
 	require.Nil(t, err, "cleanup ref from {{.Type}} must succeed")
 	deleteStore.putDeletePrepareCb = nil
 	supportData.delete(t, ctx, all)
@@ -236,7 +236,7 @@ func delete{{.Type}}Checks(t *testing.T, ctx context.Context, all *AllApis, data
 	// Inject the refs object to trigger an "in use" error.
 	refBy, supportData := dataGen.Get{{.RefName}}Ref(testObj.GetKey())
 	supportData.put(t, ctx, all)
-	_, err = all.{{.ApiObj}}.store.Put(ctx, refBy, all.{{.ApiObj}}.sync.syncWait)
+	_, err = all.{{.ApiObj}}.store.Put(ctx, refBy, all.{{.ApiObj}}.sync.SyncWait)
 	require.Nil(t, err)
 {{- template "runDelete" $}}
 	require.NotNil(t, err, "delete with ref from {{.Type}} must fail")
@@ -244,7 +244,7 @@ func delete{{.Type}}Checks(t *testing.T, ctx context.Context, all *AllApis, data
 	// check that delete prepare was reset
 	deleteStore.requireUndoDeletePrepare(ctx, testObj)
 	// remove {{.Type}} obj
-	_, err = all.{{.ApiObj}}.store.Delete(ctx, refBy, all.{{.ApiObj}}.sync.syncWait)
+	_, err = all.{{.ApiObj}}.store.Delete(ctx, refBy, all.{{.ApiObj}}.sync.SyncWait)
 	require.Nil(t, err, "cleanup ref from {{.Type}} must succeed")
 	supportData.delete(t, ctx, all)
 	}

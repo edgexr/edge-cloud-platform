@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/go-redis/redis/v8"
 	grpc "google.golang.org/grpc"
 )
@@ -119,7 +120,7 @@ type CbWrapper struct {
 	streamBuf    []edgeproto.Result
 }
 
-func NewStreamObjApi(sync *Sync, all *AllApis) *StreamObjApi {
+func NewStreamObjApi(sync *regiondata.Sync, all *AllApis) *StreamObjApi {
 	streamObjApi := StreamObjApi{}
 	streamObjApi.all = all
 	return &streamObjApi

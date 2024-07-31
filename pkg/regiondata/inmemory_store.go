@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controller
+package regiondata
 
 import (
 	"context"
@@ -23,45 +23,45 @@ import (
 	"strings"
 	"time"
 
-	v3 "go.etcd.io/etcd/client/v3"
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	v3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type watcher struct {
 	cb objstore.SyncCb
 }
 
-type dummyData struct {
+type inMemData struct {
 	val    string
 	vers   int64
 	modRev int64
 }
 
-type dummyEtcd struct {
-	db       map[string]*dummyData
-	watchers map[string]*watcher
+type InMemoryStore struct {
+	db       map[string]*inMemData
+	watchers map[string][]*watcher
 	rev      int64
 	syncCb   objstore.SyncCb
 	mux      util.Mutex
 }
 
-func (e *dummyEtcd) Start() error {
-	e.db = make(map[string]*dummyData)
-	e.watchers = make(map[string]*watcher)
+func (e *InMemoryStore) Start() error {
+	e.db = make(map[string]*inMemData)
+	e.watchers = make(map[string][]*watcher)
 	e.rev = 1
 	return nil
 }
 
-func (e *dummyEtcd) Stop() {
+func (e *InMemoryStore) Stop() {
 	e.mux.Lock()
 	defer e.mux.Unlock()
 	e.db = nil
 }
 
-func (e *dummyEtcd) Create(ctx context.Context, key, val string) (int64, error) {
+func (e *InMemoryStore) Create(ctx context.Context, key, val string) (int64, error) {
 	e.mux.Lock()
 	defer e.mux.Unlock()
 	if e.db == nil {
@@ -72,7 +72,7 @@ func (e *dummyEtcd) Create(ctx context.Context, key, val string) (int64, error) 
 		return 0, objstore.ExistsError(key)
 	}
 	e.rev++
-	e.db[key] = &dummyData{
+	e.db[key] = &inMemData{
 		val:    val,
 		vers:   1,
 		modRev: e.rev,
@@ -82,7 +82,7 @@ func (e *dummyEtcd) Create(ctx context.Context, key, val string) (int64, error) 
 	return e.rev, nil
 }
 
-func (e *dummyEtcd) Update(ctx context.Context, key, val string, version int64) (int64, error) {
+func (e *InMemoryStore) Update(ctx context.Context, key, val string, version int64) (int64, error) {
 	e.mux.Lock()
 	defer e.mux.Unlock()
 	if e.db == nil {
@@ -105,7 +105,7 @@ func (e *dummyEtcd) Update(ctx context.Context, key, val string, version int64) 
 	return e.rev, nil
 }
 
-func (e *dummyEtcd) Put(ctx context.Context, key, val string, ops ...objstore.KVOp) (int64, error) {
+func (e *InMemoryStore) Put(ctx context.Context, key, val string, ops ...objstore.KVOp) (int64, error) {
 	e.mux.Lock()
 	defer e.mux.Unlock()
 	if e.db == nil {
@@ -113,7 +113,7 @@ func (e *dummyEtcd) Put(ctx context.Context, key, val string, ops ...objstore.KV
 	}
 	data, ok := e.db[key]
 	if !ok {
-		data = &dummyData{}
+		data = &inMemData{}
 		e.db[key] = data
 	}
 	e.rev++
@@ -125,7 +125,7 @@ func (e *dummyEtcd) Put(ctx context.Context, key, val string, ops ...objstore.KV
 	return e.rev, nil
 }
 
-func (e *dummyEtcd) Delete(ctx context.Context, key string) (int64, error) {
+func (e *InMemoryStore) Delete(ctx context.Context, key string) (int64, error) {
 	e.mux.Lock()
 	defer e.mux.Unlock()
 	if e.db == nil {
@@ -138,7 +138,7 @@ func (e *dummyEtcd) Delete(ctx context.Context, key string) (int64, error) {
 	return e.rev, nil
 }
 
-func (e *dummyEtcd) Get(key string, opts ...objstore.KVOp) ([]byte, int64, int64, error) {
+func (e *InMemoryStore) Get(key string, opts ...objstore.KVOp) ([]byte, int64, int64, error) {
 	e.mux.Lock()
 	defer e.mux.Unlock()
 	if e.db == nil {
@@ -152,8 +152,8 @@ func (e *dummyEtcd) Get(key string, opts ...objstore.KVOp) ([]byte, int64, int64
 	return ([]byte)(data.val), data.vers, data.modRev, nil
 }
 
-func (e *dummyEtcd) List(key string, cb objstore.ListCb) error {
-	kvs := make(map[string]*dummyData)
+func (e *InMemoryStore) List(key string, cb objstore.ListCb) error {
+	kvs := make(map[string]*inMemData)
 	e.mux.Lock()
 	if e.db == nil {
 		e.mux.Unlock()
@@ -179,18 +179,18 @@ func (e *dummyEtcd) List(key string, cb objstore.ListCb) error {
 	return nil
 }
 
-func (e *dummyEtcd) Rev(key string) int64 {
+func (e *InMemoryStore) Rev(key string) int64 {
 	e.mux.Lock()
 	defer e.mux.Unlock()
 	return e.db[key].modRev
 }
 
-func (e *dummyEtcd) Sync(ctx context.Context, prefix string, cb objstore.SyncCb) error {
+func (e *InMemoryStore) Sync(ctx context.Context, prefix string, cb objstore.SyncCb) error {
 	e.mux.Lock()
 	watch := watcher{
 		cb: cb,
 	}
-	e.watchers[prefix] = &watch
+	e.watchers[prefix] = append(e.watchers[prefix], &watch)
 
 	// initial callback of data
 	data := objstore.SyncCbData{}
@@ -218,42 +218,57 @@ func (e *dummyEtcd) Sync(ctx context.Context, prefix string, cb objstore.SyncCb)
 	<-ctx.Done()
 	e.mux.Lock()
 
-	delete(e.watchers, prefix)
+	prefixWatchers, ok := e.watchers[prefix]
+	if ok {
+		for ii, watcher := range prefixWatchers {
+			if watcher == &watch {
+				prefixWatchers = append(prefixWatchers[:ii], prefixWatchers[ii+1:]...)
+				break
+			}
+		}
+		if len(prefixWatchers) == 0 {
+			delete(e.watchers, prefix)
+		} else {
+			e.watchers[prefix] = prefixWatchers
+		}
+	}
 	e.mux.Unlock()
 	return nil
 }
 
-func (e *dummyEtcd) triggerWatcher(ctx context.Context, action objstore.SyncCbAction, key, val string, rev int64) {
-	for prefix, watch := range e.watchers {
+func (e *InMemoryStore) triggerWatcher(ctx context.Context, action objstore.SyncCbAction, key, val string, rev int64) {
+	for prefix, prefixWatchers := range e.watchers {
 		if strings.HasPrefix(key, prefix) {
-			data := objstore.SyncCbData{
-				Action: action,
-				Key:    []byte(key),
-				Value:  []byte(val),
-				Rev:    rev,
-				ModRev: rev,
+			for _, watch := range prefixWatchers {
+				data := objstore.SyncCbData{
+					Action: action,
+					Key:    []byte(key),
+					Value:  []byte(val),
+					Rev:    rev,
+					ModRev: rev,
+				}
+				log.DebugLog(log.DebugLevelEtcd, "watch data", "key", key, "val", val, "rev", rev)
+				watch.cb(ctx, &data)
 			}
-			log.DebugLog(log.DebugLevelEtcd, "watch data", "key", key, "val", val, "rev", rev)
-			watch.cb(ctx, &data)
 		}
 	}
 }
 
-func (e *dummyEtcd) Grant(ctx context.Context, ttl int64) (int64, error) {
+func (e *InMemoryStore) Grant(ctx context.Context, ttl int64) (int64, error) {
 	return 0, errors.New("dummy etcd grant unsupported")
 }
 
-func (e *dummyEtcd) Revoke(ctx context.Context, lease int64) error {
+func (e *InMemoryStore) Revoke(ctx context.Context, lease int64) error {
 	return errors.New("dummy etcd revoke unsupported")
 }
 
-func (e *dummyEtcd) KeepAlive(ctx context.Context, leaseID int64) error {
+func (e *InMemoryStore) KeepAlive(ctx context.Context, leaseID int64) error {
 	return errors.New("dummy etcd keepalive unsupported")
 }
 
 // Based on clientv3/concurrency/stm.go
-func (e *dummyEtcd) ApplySTM(ctx context.Context, apply func(concurrency.STM) error) (int64, error) {
-	stm := dummySTM{client: e}
+func (e *InMemoryStore) ApplySTM(ctx context.Context, apply func(concurrency.STM) error) (int64, error) {
+	stm := inMemorySTM{client: e}
 	var err error
 	var rev int64 = 0
 	ii := 0
@@ -278,7 +293,7 @@ func (e *dummyEtcd) ApplySTM(ctx context.Context, apply func(concurrency.STM) er
 	return rev, err
 }
 
-func (e *dummyEtcd) commit(ctx context.Context, stm *dummySTM) (int64, error) {
+func (e *InMemoryStore) commit(ctx context.Context, stm *inMemorySTM) (int64, error) {
 	// This implements etcd's SerializableSnapshot isolation model,
 	// which checks for both read and write conflicts.
 	e.mux.Lock()
@@ -333,7 +348,7 @@ func (e *dummyEtcd) commit(ctx context.Context, stm *dummySTM) (int64, error) {
 		} else {
 			dd, ok := e.db[key]
 			if !ok {
-				dd = &dummyData{}
+				dd = &inMemData{}
 				e.db[key] = dd
 			}
 			dd.val = val
@@ -347,26 +362,25 @@ func (e *dummyEtcd) commit(ctx context.Context, stm *dummySTM) (int64, error) {
 	return e.rev, nil
 }
 
-type dummyReadResp struct {
+type inMemoryReadResp struct {
 	val    string
 	modRev int64
 	rev    int64
 }
 
-type dummySTM struct {
+type inMemorySTM struct {
 	concurrency.STM
-	client       *dummyEtcd
-	rset         map[string]*dummyReadResp
-	wset         map[string]string
-	firstReadRev int64
+	client *InMemoryStore
+	rset   map[string]*inMemoryReadResp
+	wset   map[string]string
 }
 
-func (d *dummySTM) reset() {
-	d.rset = make(map[string]*dummyReadResp)
+func (d *inMemorySTM) reset() {
+	d.rset = make(map[string]*inMemoryReadResp)
 	d.wset = make(map[string]string)
 }
 
-func (d *dummySTM) Get(keys ...string) string {
+func (d *inMemorySTM) Get(keys ...string) string {
 	key := keys[0]
 	if wv, ok := d.wset[key]; ok {
 		return wv
@@ -380,7 +394,7 @@ func (d *dummySTM) Get(keys ...string) string {
 		byt = make([]byte, 0)
 		modRev = 0
 	}
-	resp := dummyReadResp{
+	resp := inMemoryReadResp{
 		val:    string(byt),
 		rev:    rev,
 		modRev: modRev,
@@ -389,14 +403,14 @@ func (d *dummySTM) Get(keys ...string) string {
 	return string(byt)
 }
 
-func (d *dummySTM) Put(key, val string, opts ...v3.OpOption) {
+func (d *inMemorySTM) Put(key, val string, opts ...v3.OpOption) {
 	d.wset[key] = val
 }
 
-func (d *dummySTM) Rev(key string) int64 {
+func (d *inMemorySTM) Rev(key string) int64 {
 	return d.client.Rev(key)
 }
 
-func (d *dummySTM) Del(key string) {
+func (d *inMemorySTM) Del(key string) {
 	d.wset[key] = ""
 }

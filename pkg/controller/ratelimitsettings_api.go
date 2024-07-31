@@ -18,22 +18,23 @@ import (
 	"context"
 	"fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type FlowRateLimitSettingsApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.FlowRateLimitSettingsStore
 	cache edgeproto.FlowRateLimitSettingsCache
 }
 
 type MaxReqsRateLimitSettingsApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.MaxReqsRateLimitSettingsStore
 	cache edgeproto.MaxReqsRateLimitSettingsCache
 }
@@ -43,24 +44,24 @@ type RateLimitSettingsApi struct {
 	*MaxReqsRateLimitSettingsApi
 }
 
-func NewFlowRateLimitSettingsApi(sync *Sync, all *AllApis) *FlowRateLimitSettingsApi {
+func NewFlowRateLimitSettingsApi(sync *regiondata.Sync, all *AllApis) *FlowRateLimitSettingsApi {
 	rateLimitSettingsApi := FlowRateLimitSettingsApi{}
 	rateLimitSettingsApi.all = all
 	rateLimitSettingsApi.sync = sync
 	// Init store and cache for FlowRateLimitSettings
-	rateLimitSettingsApi.store = edgeproto.NewFlowRateLimitSettingsStore(sync.store)
+	rateLimitSettingsApi.store = edgeproto.NewFlowRateLimitSettingsStore(sync.GetKVStore())
 	edgeproto.InitFlowRateLimitSettingsCache(&rateLimitSettingsApi.cache)
 	sync.RegisterCache(&rateLimitSettingsApi.cache)
 	return &rateLimitSettingsApi
 }
 
 // Init store and cache for MaxReqsRateLimitSettings
-func NewMaxReqsRateLimitSettingsApi(sync *Sync, all *AllApis) *MaxReqsRateLimitSettingsApi {
+func NewMaxReqsRateLimitSettingsApi(sync *regiondata.Sync, all *AllApis) *MaxReqsRateLimitSettingsApi {
 	rateLimitSettingsApi := MaxReqsRateLimitSettingsApi{}
 	rateLimitSettingsApi.all = all
 	rateLimitSettingsApi.sync = sync
 
-	rateLimitSettingsApi.store = edgeproto.NewMaxReqsRateLimitSettingsStore(sync.store)
+	rateLimitSettingsApi.store = edgeproto.NewMaxReqsRateLimitSettingsStore(sync.GetKVStore())
 	edgeproto.InitMaxReqsRateLimitSettingsCache(&rateLimitSettingsApi.cache)
 	sync.RegisterCache(&rateLimitSettingsApi.cache)
 	return &rateLimitSettingsApi
@@ -244,7 +245,7 @@ func (r *FlowRateLimitSettingsApi) DeleteFlowRateLimitSettings(ctx context.Conte
 	if !r.cache.Get(&in.Key, buf) {
 		return nil, in.Key.NotFoundError()
 	}
-	return r.store.Delete(ctx, in, r.sync.syncWait)
+	return r.store.Delete(ctx, in, r.sync.SyncWait)
 }
 
 // Show FlowRateLimit settings for an API endpoint type
@@ -348,7 +349,7 @@ func (r *MaxReqsRateLimitSettingsApi) DeleteMaxReqsRateLimitSettings(ctx context
 	if !r.cache.Get(&in.Key, buf) {
 		return nil, in.Key.NotFoundError()
 	}
-	return r.store.Delete(ctx, in, r.sync.syncWait)
+	return r.store.Delete(ctx, in, r.sync.SyncWait)
 }
 
 // Show MaxReqsRateLimit settings for an API endpoint type

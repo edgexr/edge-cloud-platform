@@ -17,23 +17,24 @@ package controller
 import (
 	"fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type TrustPolicyApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.TrustPolicyStore
 	cache edgeproto.TrustPolicyCache
 }
 
-func NewTrustPolicyApi(sync *Sync, all *AllApis) *TrustPolicyApi {
+func NewTrustPolicyApi(sync *regiondata.Sync, all *AllApis) *TrustPolicyApi {
 	trustPolicyApi := TrustPolicyApi{}
 	trustPolicyApi.all = all
 	trustPolicyApi.sync = sync
-	trustPolicyApi.store = edgeproto.NewTrustPolicyStore(sync.store)
+	trustPolicyApi.store = edgeproto.NewTrustPolicyStore(sync.GetKVStore())
 	edgeproto.InitTrustPolicyCache(&trustPolicyApi.cache)
 	sync.RegisterCache(&trustPolicyApi.cache)
 	return &trustPolicyApi
@@ -47,7 +48,7 @@ func (s *TrustPolicyApi) CreateTrustPolicy(in *edgeproto.TrustPolicy, cb edgepro
 	if err := in.Validate(nil); err != nil {
 		return err
 	}
-	_, err := s.store.Create(ctx, in, s.sync.syncWait)
+	_, err := s.store.Create(ctx, in, s.sync.SyncWait)
 	return err
 
 }
@@ -123,7 +124,7 @@ func (s *TrustPolicyApi) DeleteTrustPolicy(in *edgeproto.TrustPolicy, cb edgepro
 	if k := s.all.cloudletApi.UsesTrustPolicy(&in.Key, edgeproto.TrackedState_TRACKED_STATE_UNKNOWN); k != nil {
 		return fmt.Errorf("Policy in use by Cloudlet %s", k.GetKeyString())
 	}
-	_, err = s.store.Delete(ctx, in, s.sync.syncWait)
+	_, err = s.store.Delete(ctx, in, s.sync.SyncWait)
 	return err
 }
 

@@ -33,6 +33,15 @@ const (
 	NoResetStatus bool = false
 )
 
+type ObjCache interface {
+	SyncUpdate(ctx context.Context, key, val []byte, rev, modRev int64)
+	SyncDelete(ctx context.Context, key []byte, rev, modRev int64)
+	SyncListStart(ctx context.Context)
+	SyncListEnd(ctx context.Context)
+	GetTypeString() string
+	UsesOrg(org string) bool
+}
+
 type ClusterInstCacheUpdateParms struct {
 	cache      *ClusterInstInfoCache
 	updateType CacheUpdateType

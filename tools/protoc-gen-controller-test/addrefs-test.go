@@ -63,7 +63,7 @@ func {{.Api}}AddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, data
 	ref := supportData.getOne{{.Type}}()
 	require.NotNil(t, ref, "support data must include one referenced {{.Type}}")
 	ref.{{.DeletePrepareField}} = true
-	_, err = all.{{.ApiObj}}.store.Put(ctx, ref, all.{{.ApiObj}}.sync.syncWait)
+	_, err = all.{{.ApiObj}}.store.Put(ctx, ref, all.{{.ApiObj}}.sync.SyncWait)
 	require.Nil(t, err)
 	// api call must fail with object being deleted
 {{- template "runApi" $}}
@@ -71,7 +71,7 @@ func {{.Api}}AddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, data
 	require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 	// reset delete_prepare on referenced {{.Type}}
 	ref.{{.DeletePrepareField}} = false
-	_, err = all.{{.ApiObj}}.store.Put(ctx, ref, all.{{.ApiObj}}.sync.syncWait)
+	_, err = all.{{.ApiObj}}.store.Put(ctx, ref, all.{{.ApiObj}}.sync.SyncWait)
 	require.Nil(t, err)
 	}
 {{- end}}

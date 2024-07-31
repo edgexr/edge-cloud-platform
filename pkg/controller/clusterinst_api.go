@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/gogo/protobuf/types"
 	"github.com/opentracing/opentracing-go"
@@ -37,7 +38,7 @@ import (
 
 type ClusterInstApi struct {
 	all            *AllApis
-	sync           *Sync
+	sync           *regiondata.Sync
 	store          edgeproto.ClusterInstStore
 	dnsLabelStore  *edgeproto.CloudletObjectDnsLabelStore
 	cache          edgeproto.ClusterInstCache
@@ -65,11 +66,11 @@ const (
 	GenResourceAlerts   = 1
 )
 
-func NewClusterInstApi(sync *Sync, all *AllApis) *ClusterInstApi {
+func NewClusterInstApi(sync *regiondata.Sync, all *AllApis) *ClusterInstApi {
 	clusterInstApi := ClusterInstApi{}
 	clusterInstApi.all = all
 	clusterInstApi.sync = sync
-	clusterInstApi.store = edgeproto.NewClusterInstStore(sync.store)
+	clusterInstApi.store = edgeproto.NewClusterInstStore(sync.GetKVStore())
 	clusterInstApi.dnsLabelStore = &all.cloudletApi.objectDnsLabelStore
 	edgeproto.InitClusterInstCache(&clusterInstApi.cache)
 	sync.RegisterCache(&clusterInstApi.cache)

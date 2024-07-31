@@ -23,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"google.golang.org/grpc"
 )
 
@@ -253,11 +254,11 @@ func (s *AppInstClientApi) Flush(ctx context.Context, notifyId int64) {}
 
 type AppInstClientKeyApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	cache edgeproto.AppInstClientKeyCache
 }
 
-func NewAppInstClientKeyApi(sync *Sync, all *AllApis) *AppInstClientKeyApi {
+func NewAppInstClientKeyApi(sync *regiondata.Sync, all *AllApis) *AppInstClientKeyApi {
 	appInstClientKeyApi := AppInstClientKeyApi{}
 	appInstClientKeyApi.all = all
 	appInstClientKeyApi.sync = sync

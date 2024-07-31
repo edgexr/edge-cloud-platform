@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	client "github.com/influxdata/influxdb/client/v2"

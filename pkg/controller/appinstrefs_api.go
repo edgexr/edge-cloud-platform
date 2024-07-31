@@ -16,21 +16,22 @@ package controller
 
 import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type AppInstRefsApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.AppInstRefsStore
 	cache edgeproto.AppInstRefsCache
 }
 
-func NewAppInstRefsApi(sync *Sync, all *AllApis) *AppInstRefsApi {
+func NewAppInstRefsApi(sync *regiondata.Sync, all *AllApis) *AppInstRefsApi {
 	appInstRefsApi := AppInstRefsApi{}
 	appInstRefsApi.all = all
 	appInstRefsApi.sync = sync
-	appInstRefsApi.store = edgeproto.NewAppInstRefsStore(sync.store)
+	appInstRefsApi.store = edgeproto.NewAppInstRefsStore(sync.GetKVStore())
 	edgeproto.InitAppInstRefsCache(&appInstRefsApi.cache)
 	sync.RegisterCache(&appInstRefsApi.cache)
 	return &appInstRefsApi
