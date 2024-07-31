@@ -98,15 +98,15 @@ func (s *GRPCConnCache) SetConn(key string, conn *grpc.ClientConn) {
 func (s *GRPCConnCache) Run(ctx context.Context) {
 	s.Lock()
 	defer s.Unlock()
-	for region, conn := range s.cache {
-		used := s.used[region]
+	for key, conn := range s.cache {
+		used := s.used[key]
 		if used {
-			s.used[region] = false
+			s.used[key] = false
 		} else {
 			// cleanup
 			conn.Close()
-			delete(s.cache, region)
-			delete(s.used, region)
+			delete(s.cache, key)
+			delete(s.used, key)
 		}
 	}
 }
