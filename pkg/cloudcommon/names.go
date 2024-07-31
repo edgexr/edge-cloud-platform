@@ -99,10 +99,11 @@ func (n NodeType) String() string {
 type NodeRole string
 
 const (
-	NodeRoleBase         NodeRole = "base"
-	NodeRoleDockerCrm    NodeRole = "dockercrm"
-	NodeRoleK8sCrm       NodeRole = "k8scrm"
-	NodeRoleK8sCrmWorker NodeRole = "k8scrmworker"
+	NodeRoleBase             NodeRole = "base"
+	NodeRoleDockerCrm        NodeRole = "dockercrm"        // crm and shepherd on platform VM
+	NodeRoleDockerShepherdLB NodeRole = "dockershepherdlb" // shepherd on root LB
+	NodeRoleK8sCrm           NodeRole = "k8scrm"
+	NodeRoleK8sCrmWorker     NodeRole = "k8scrmworker"
 )
 
 func (s NodeRole) String() string {
