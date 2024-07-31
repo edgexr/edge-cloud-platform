@@ -89,7 +89,8 @@ func TestSSHKeyRefresh(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	SignSSHKeyTimeout = 2 * time.Second
-	RefreshBufferDuration = time.Minute
+	RefreshInlineBufferDuration = time.Second
+	RefreshLazyBufferDuration = time.Minute
 
 	validDur := time.Hour
 	ks := keySigner{}
@@ -118,7 +119,7 @@ func TestSSHKeyRefresh(t *testing.T) {
 	require.NotEqual(t, curCert, string(pair[0].PublicRawKey)) // should get new cert
 	// test go thread refresh
 	curCert = sshKey.signedPublicKey
-	sshKey.expiresAt = time.Now().Add(RefreshBufferDuration / 2)
+	sshKey.expiresAt = time.Now().Add(RefreshLazyBufferDuration / 2)
 	pair, err = sshKey.GetKeyPairs(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 1, len(pair))

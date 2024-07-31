@@ -37,6 +37,8 @@ type SSHKey struct {
 	mux               sync.Mutex
 	expiresAt         time.Time
 	refreshInProgress bool
+	refreshErr        error
+	refreshWait       sync.WaitGroup
 }
 
 // KeySigner is used to sign the user's public key
@@ -46,7 +48,8 @@ type KeySigner interface {
 }
 
 var SignSSHKeyTimeout = 30 * time.Second
-var RefreshBufferDuration = 2 * time.Hour
+var RefreshInlineBufferDuration = time.Minute
+var RefreshLazyBufferDuration = 2 * time.Hour
 
 func NewSSHKey(signer KeySigner) *SSHKey {
 	return &SSHKey{
@@ -64,7 +67,7 @@ func (s *SSHKey) getSignedKey(ctx context.Context) (string, time.Time, error) {
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to sign cloudlet ssh key, %s", err)
 	}
-	// set expiration time
+	// determine expiration time
 	pk, err := xssh.ParsePublicKey([]byte(signedKey))
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to parse signed cloudlet key, %s", err)
@@ -74,22 +77,24 @@ func (s *SSHKey) getSignedKey(ctx context.Context) (string, time.Time, error) {
 	return signedKey, expiresAt, nil
 }
 
-func (s *SSHKey) ensureSignedKeyLocked(ctx context.Context) error {
-	now := time.Now()
-	if s.signedPublicKey == "" || now.After(s.expiresAt) {
-		// no valid signed key, do network call inline under lock
-		// because we need to wait for the call to finish anyway
-		signedKey, expiresAt, err := s.getSignedKey(ctx)
-		if err != nil {
-			return err
+func (s *SSHKey) refreshSignedKey(ctx context.Context) bool {
+	waitForRefresh := false
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	if s.privateKey == "" {
+		if err := s.genKeys(ctx); err != nil {
+			s.refreshErr = err
+			return waitForRefresh
 		}
-		s.signedPublicKey = signedKey
-		s.expiresAt = expiresAt
-	} else if now.After(s.expiresAt.Add(-RefreshBufferDuration)) && !s.refreshInProgress {
-		// current key is still valid but expiring soon, spawn
-		// thread to refresh it
+	}
+	now := time.Now()
+	if now.After(s.expiresAt.Add(-RefreshLazyBufferDuration)) && !s.refreshInProgress {
+		// cert should or needs to be refreshed, spawn a thread to refresh it.
 		s.refreshInProgress = true
+		s.refreshWait.Add(1)
 		go func() {
+			defer s.refreshWait.Done()
 			span := log.StartSpan(log.DebugLevelInfra, "thread sign cloudlet ssh key")
 			defer span.Finish()
 			ctx := log.ContextWithSpan(context.Background(), span)
@@ -97,16 +102,24 @@ func (s *SSHKey) ensureSignedKeyLocked(ctx context.Context) error {
 			signedKey, expiresAt, err := s.getSignedKey(ctx)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "failed to refresh cloudlet ssh key", "err", err)
-				return
 			}
 			s.mux.Lock()
 			defer s.mux.Unlock()
-			s.signedPublicKey = signedKey
-			s.expiresAt = expiresAt
 			s.refreshInProgress = false
+			s.refreshErr = err
+			if err == nil {
+				s.signedPublicKey = signedKey
+				s.expiresAt = expiresAt
+			}
 		}()
 	}
-	return nil
+	if now.After(s.expiresAt.Add(-RefreshInlineBufferDuration)) {
+		// refresh thread was spawned or already in progress,
+		// but the time to expiration is too soon (or already expired),
+		// so we must wait inline until refresh finishes.
+		waitForRefresh = true
+	}
+	return waitForRefresh
 }
 
 func (s *SSHKey) genKeys(ctx context.Context) error {
@@ -121,15 +134,14 @@ func (s *SSHKey) genKeys(ctx context.Context) error {
 }
 
 func (s *SSHKey) GetKeyPairs(ctx context.Context) ([]ssh.KeyPair, error) {
+	waitForRefresh := s.refreshSignedKey(ctx)
+	if waitForRefresh {
+		s.refreshWait.Wait()
+	}
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	if s.privateKey == "" {
-		if err := s.genKeys(ctx); err != nil {
-			return nil, err
-		}
-	}
-	if err := s.ensureSignedKeyLocked(ctx); err != nil {
-		return nil, err
+	if s.refreshErr != nil {
+		return nil, s.refreshErr
 	}
 	keyPairs := []ssh.KeyPair{{
 		PublicRawKey:  []byte(s.signedPublicKey),
