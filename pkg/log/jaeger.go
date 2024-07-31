@@ -182,7 +182,7 @@ func SpanToString(ctx context.Context) string {
 	return string(val)
 }
 
-func NewSpanFromString(lvl uint64, val, spanName string) opentracing.Span {
+func NewSpanFromString(lvl uint64, val, spanName string, opts ...opentracing.StartSpanOption) opentracing.Span {
 	linenoOpt := WithSpanLineno(GetLineno(1))
 	if val != "" {
 		carrier := SpanCarrier{
@@ -192,14 +192,15 @@ func NewSpanFromString(lvl uint64, val, spanName string) opentracing.Span {
 		if err == nil {
 			spanCtx, err := tracer.Extract(opentracing.TextMap, carrier.Data)
 			if err == nil {
-				opts := []opentracing.StartSpanOption{
+				opts = append(opts,
 					ext.RPCServerOption(spanCtx),
 					linenoOpt,
-				}
+				)
 				opts = append(opts, carrier.Config.ToOptions()...)
 				return StartSpan(lvl, spanName, opts...)
 			}
 		}
 	}
-	return StartSpan(lvl, spanName, linenoOpt)
+	opts = append(opts, linenoOpt)
+	return StartSpan(lvl, spanName, opts...)
 }
