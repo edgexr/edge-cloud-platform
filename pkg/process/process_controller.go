@@ -56,6 +56,7 @@ func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
 	args := []string{"--etcdUrls", p.EtcdAddrs, "--notifyAddr", p.NotifyAddr}
 	args = append(args, p.GetNodeMgrArgs()...)
 	args = append(args, p.GetRedisClientArgs()...)
+	args = append(args, "--autoUpgrade")
 	if p.ApiAddr != "" {
 		args = append(args, "--apiAddr")
 		args = append(args, p.ApiAddr)

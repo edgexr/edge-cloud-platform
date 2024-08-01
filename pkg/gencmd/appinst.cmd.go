@@ -891,6 +891,7 @@ var AppInstComments = map[string]string{
 	"cloudletloc.speed":              "Speed (IOS) / velocity (Android) (meters/sec)",
 	"cloudletloc.timestamp":          "Timestamp",
 	"uri":                            "Base FQDN (not really URI) for the App. See Service FQDN for endpoint access.",
+	"staticuri":                      "Static startup FQDN gets set when the object is created and cannot be changed",
 	"liveness":                       "Liveness of instance (see Liveness), one of Unknown, Static, Dynamic, Autoprov",
 	"mappedports:empty":              "For instances accessible via a shared load balancer, defines the external ports on the shared load balancer that map to the internal ports External ports should be appended to the Uri for L4 access., specify mappedports:empty=true to clear",
 	"mappedports:#.proto":            "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp",
