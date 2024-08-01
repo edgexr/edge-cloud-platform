@@ -130,3 +130,12 @@ func (s *PlatformFeaturesApi) Prune(ctx context.Context, keys map[edgeproto.Plat
 func (s *PlatformFeaturesApi) Flush(ctx context.Context, notifyId int64) {
 	// require admin to remove platforms
 }
+
+func (s *PlatformFeaturesApi) FeaturesByPlatform() map[string]edgeproto.PlatformFeatures {
+	ptof := map[string]edgeproto.PlatformFeatures{}
+	s.cache.Show(&edgeproto.PlatformFeatures{}, func(features *edgeproto.PlatformFeatures) error {
+		ptof[features.PlatformType] = *features
+		return nil
+	})
+	return ptof
+}

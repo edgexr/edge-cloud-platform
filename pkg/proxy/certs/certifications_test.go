@@ -81,7 +81,7 @@ func TestProxyCerts(t *testing.T) {
 	testClient := &pc.TestClient{}
 
 	// start refresh with no rootLBs defined, should do nothing
-	err := proxyCerts.refreshCerts(ctx)
+	err := proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 0, len(proxyCerts.certs))
 	require.Equal(t, 0, publicCertAPI.count)
@@ -158,7 +158,7 @@ func TestProxyCerts(t *testing.T) {
 		lbName2: lbClient2,
 		lbName3: lbClient3,
 	}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 0, publicCertAPI.count)
 	require.Equal(t, 0, len(testClient.Cmds))
@@ -166,7 +166,7 @@ func TestProxyCerts(t *testing.T) {
 	// Test refresh for expired certs (cert TTL is 60min)
 	refreshThreshold = 24 * time.Hour
 	publicCertAPI.count = 0
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 2, publicCertAPI.count)
 	require.Equal(t, 2, len(proxyCerts.certs))
@@ -178,7 +178,7 @@ func TestProxyCerts(t *testing.T) {
 		lbName:  lbClient,
 		lbName3: lbClient3,
 	}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 2, publicCertAPI.count)
 	require.Equal(t, 2, len(proxyCerts.certs))
@@ -189,7 +189,7 @@ func TestProxyCerts(t *testing.T) {
 	rootLBAPI.clients = map[string]platform.RootLBClient{
 		lbName: lbClient,
 	}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 1, publicCertAPI.count)
 	require.Equal(t, 1, len(proxyCerts.certs))
@@ -199,7 +199,7 @@ func TestProxyCerts(t *testing.T) {
 	publicCertAPI.count = 0
 	testClient.Cmds = []string{}
 	rootLBAPI.clients = map[string]platform.RootLBClient{}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 0, publicCertAPI.count)
 	require.Equal(t, 0, len(proxyCerts.certs))
@@ -213,7 +213,7 @@ func TestProxyCerts(t *testing.T) {
 		lbName2: lbClient2,
 		lbName3: lbClient3,
 	}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 2, publicCertAPI.count)
 	require.Equal(t, 2, len(proxyCerts.certs))

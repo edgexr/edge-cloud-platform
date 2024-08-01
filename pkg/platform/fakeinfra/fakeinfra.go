@@ -55,16 +55,16 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 	return s.Platform.InitCommon(ctx, platformConfig, caches, haMgr, updateCallback)
 }
 
-func (s *Platform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	return s.Platform.InitHAConditional(ctx, platformConfig, updateCallback)
+func (s *Platform) InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
+	return s.Platform.InitHAConditional(ctx, updateCallback)
 }
 
 func (s *Platform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
 	return "fakeinfra-1.0"
 }
 
-func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
-	cloudletResourcesCreated, err := s.Platform.CreateCloudlet(ctx, cloudlet, pfConfig, flavor, caches, accessApi, updateCallback)
+func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *pf.PlatformInitConfig, flavor *edgeproto.Flavor, caches *pf.Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
+	cloudletResourcesCreated, err := s.Platform.CreateCloudlet(ctx, cloudlet, pfConfig, pfInitConfig, flavor, caches, updateCallback)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -77,8 +77,8 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	return cloudletResourcesCreated, nil
 }
 
-func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
-	err := s.Platform.DeleteCloudlet(ctx, cloudlet, pfConfig, caches, accessApi, updateCallback)
+func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *pf.PlatformInitConfig, caches *pf.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
+	err := s.Platform.DeleteCloudlet(ctx, cloudlet, pfConfig, pfInitConfig, caches, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,8 @@ func ShepherdStartup(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig
 	}
 }
 
-func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
+	updateCallback := updateSender.SendStatusIgnoreErr
 	updateCallback(edgeproto.UpdateTask, "Creating App Inst")
 	if shepherd_common.ShouldRunEnvoy(app, appInst) {
 		name := shepherd_common.GetProxyKey(&appInst.Key)

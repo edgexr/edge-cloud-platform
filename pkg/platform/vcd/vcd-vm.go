@@ -22,7 +22,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -33,13 +32,6 @@ import (
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
-
-var VmNameToHref map[string]string
-var vcdVmHrefMux sync.Mutex
-
-func init() {
-	VmNameToHref = make(map[string]string)
-}
 
 // VM related operations
 
@@ -133,7 +125,7 @@ func (v *VcdPlatform) getIpFromPortParams(ctx context.Context, vmparams *vmlayer
 							log.SpanLog(ctx, log.DebugLevelInfra, "Using legacy net GW as iprange", "ipRange", ipRange)
 						} else if ipRange == "" {
 							var err error
-							ipRange, err = v.GetFreeSharedCommonIpRange(ctx, v.vappNameToInternalSubnet(ctx, vmgp.GroupName), vcdClient, vdc)
+							ipRange, err = v.GetFreeSharedCommonIpRange(ctx, v.vappNameToInternalSubnet(ctx, vmgp.GroupName), vmgp.OwnerID, vcdClient, vdc)
 							if err != nil {
 								return "", err
 							}
@@ -833,7 +825,7 @@ func (v *VcdPlatform) DeleteVM(ctx context.Context, vm *govcd.VM) error {
 }
 
 // Delete All VMs in the resolution of vmGroupName
-func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
+func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName, ownerID string) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs", "vmGroupName", vmGroupName)
 
@@ -852,7 +844,9 @@ func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs deleting", "VApp", vappName)
 		err := v.DeleteVapp(ctx, vapp, vcdClient)
-		return err
+		if err != nil {
+			return err
+		}
 	} else {
 		if strings.Contains(err.Error(), govcd.ErrorEntityNotFound.Error()) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "VApp not found ", "vappName", vappName)
@@ -861,6 +855,7 @@ func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
 			return fmt.Errorf("Unexpected error in FindVApp - %v", err)
 		}
 	}
+	return v.reservedCommonIpRange.ReleaseForOwner(ctx, ownerID)
 }
 
 // always sync.
@@ -1009,6 +1004,7 @@ func (v *VcdPlatform) SetVMProperties(vmProperties *vmlayer.VMProperties) {
 	vmProperties.ValidateExternalIPMapping = true
 	vmProperties.NumCleanupRetries = 3
 	vmProperties.UsesCommonSharedInternalLBNetwork = true
+	v.reservedCommonIpRange = vmProperties.CommonPf.PlatformConfig.SyncFactory.NewSyncReservations("common-ip-range")
 }
 
 // Should always be a vapp/cluster/group name
@@ -1217,41 +1213,41 @@ func (v *VcdPlatform) addNewVMRegenUuid(vapp *govcd.VApp, name string, vappTempl
 
 // GetVmHrefFromCache returns an href if the VM is cached, blank string otherwise
 func (v *VcdPlatform) GetVmHrefFromCache(ctx context.Context, vmName string) string {
-	vcdVmHrefMux.Lock()
-	defer vcdVmHrefMux.Unlock()
-	return VmNameToHref[vmName]
+	v.vcdVmHrefMux.Lock()
+	defer v.vcdVmHrefMux.Unlock()
+	return v.VmNameToHref[vmName]
 }
 
 func (v *VcdPlatform) AddVmHrefToCache(ctx context.Context, vmName, href string) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddVmHrefToCache", "vmName", vmName)
-	vcdVmHrefMux.Lock()
-	defer vcdVmHrefMux.Unlock()
-	VmNameToHref[vmName] = href
+	v.vcdVmHrefMux.Lock()
+	defer v.vcdVmHrefMux.Unlock()
+	v.VmNameToHref[vmName] = href
 }
 
 // DeleteVmHrefFromCache delete the VM->href mapping in the cache if present, does
 // nothing otherwise
 func (v *VcdPlatform) DeleteVmHrefFromCache(ctx context.Context, vmName string) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVmHrefFromCache", "vmName", vmName)
-	vcdVmHrefMux.Lock()
-	defer vcdVmHrefMux.Unlock()
-	delete(VmNameToHref, vmName)
+	v.vcdVmHrefMux.Lock()
+	defer v.vcdVmHrefMux.Unlock()
+	delete(v.VmNameToHref, vmName)
 }
 
 func (v *VcdPlatform) DumpVmHrefCache(ctx context.Context) string {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DumpVmHrefCache")
-	vcdVmHrefMux.Lock()
-	defer vcdVmHrefMux.Unlock()
+	v.vcdVmHrefMux.Lock()
+	defer v.vcdVmHrefMux.Unlock()
 
-	out := fmt.Sprintf("VmNameToHref: %v", VmNameToHref)
+	out := fmt.Sprintf("VmNameToHref: %v", v.VmNameToHref)
 	return out
 }
 
 func (v *VcdPlatform) ClearVmHrefCache(ctx context.Context) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ClearVmHrefCache")
-	vcdVmHrefMux.Lock()
-	defer vcdVmHrefMux.Unlock()
-	VmNameToHref = make(map[string]string)
+	v.vcdVmHrefMux.Lock()
+	defer v.vcdVmHrefMux.Unlock()
+	v.VmNameToHref = make(map[string]string)
 }
 
 // FindVMByHrefCache returns nil if the cache is not enabled or the vm not found

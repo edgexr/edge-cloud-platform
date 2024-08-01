@@ -28,6 +28,7 @@ import (
 	reflect "reflect"
 	"strconv"
 	strings "strings"
+	"sync"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1728,7 +1729,7 @@ var VMPoolAllFields = []string{
 	VMPoolFieldDeletePrepare,
 }
 
-var VMPoolAllFieldsMap = map[string]struct{}{
+var VMPoolAllFieldsMap = NewFieldMap(map[string]struct{}{
 	VMPoolFieldKeyOrganization:       struct{}{},
 	VMPoolFieldKeyName:               struct{}{},
 	VMPoolFieldVmsName:               struct{}{},
@@ -1749,7 +1750,7 @@ var VMPoolAllFieldsMap = map[string]struct{}{
 	VMPoolFieldErrors:                struct{}{},
 	VMPoolFieldCrmOverride:           struct{}{},
 	VMPoolFieldDeletePrepare:         struct{}{},
-}
+})
 
 var VMPoolAllFieldsStringMap = map[string]string{
 	VMPoolFieldKeyOrganization:       "Key Organization",
@@ -1778,131 +1779,137 @@ func (m *VMPool) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, VMPoolFieldKey+".") || s == VMPoolFieldKey
 }
 
-func (m *VMPool) DiffFields(o *VMPool, fields map[string]struct{}) {
+func (m *VMPool) DiffFields(o *VMPool, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {
-		fields[VMPoolFieldKeyOrganization] = struct{}{}
-		fields[VMPoolFieldKey] = struct{}{}
+		fields.Set(VMPoolFieldKeyOrganization)
+		fields.Set(VMPoolFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[VMPoolFieldKeyName] = struct{}{}
-		fields[VMPoolFieldKey] = struct{}{}
+		fields.Set(VMPoolFieldKeyName)
+		fields.Set(VMPoolFieldKey)
 	}
 	if len(m.Vms) != len(o.Vms) {
-		fields[VMPoolFieldVms] = struct{}{}
+		fields.Set(VMPoolFieldVms)
 	} else {
 		for i0 := 0; i0 < len(m.Vms); i0++ {
 			if m.Vms[i0].Name != o.Vms[i0].Name {
-				fields[VMPoolFieldVmsName] = struct{}{}
-				fields[VMPoolFieldVms] = struct{}{}
+				fields.Set(VMPoolFieldVmsName)
+				fields.Set(VMPoolFieldVms)
 			}
 			if m.Vms[i0].NetInfo.ExternalIp != o.Vms[i0].NetInfo.ExternalIp {
-				fields[VMPoolFieldVmsNetInfoExternalIp] = struct{}{}
-				fields[VMPoolFieldVmsNetInfo] = struct{}{}
-				fields[VMPoolFieldVms] = struct{}{}
+				fields.Set(VMPoolFieldVmsNetInfoExternalIp)
+				fields.Set(VMPoolFieldVmsNetInfo)
+				fields.Set(VMPoolFieldVms)
 			}
 			if m.Vms[i0].NetInfo.InternalIp != o.Vms[i0].NetInfo.InternalIp {
-				fields[VMPoolFieldVmsNetInfoInternalIp] = struct{}{}
-				fields[VMPoolFieldVmsNetInfo] = struct{}{}
-				fields[VMPoolFieldVms] = struct{}{}
+				fields.Set(VMPoolFieldVmsNetInfoInternalIp)
+				fields.Set(VMPoolFieldVmsNetInfo)
+				fields.Set(VMPoolFieldVms)
 			}
 			if m.Vms[i0].GroupName != o.Vms[i0].GroupName {
-				fields[VMPoolFieldVmsGroupName] = struct{}{}
-				fields[VMPoolFieldVms] = struct{}{}
+				fields.Set(VMPoolFieldVmsGroupName)
+				fields.Set(VMPoolFieldVms)
 			}
 			if m.Vms[i0].State != o.Vms[i0].State {
-				fields[VMPoolFieldVmsState] = struct{}{}
-				fields[VMPoolFieldVms] = struct{}{}
+				fields.Set(VMPoolFieldVmsState)
+				fields.Set(VMPoolFieldVms)
 			}
 			if m.Vms[i0].UpdatedAt.Seconds != o.Vms[i0].UpdatedAt.Seconds {
-				fields[VMPoolFieldVmsUpdatedAtSeconds] = struct{}{}
-				fields[VMPoolFieldVmsUpdatedAt] = struct{}{}
-				fields[VMPoolFieldVms] = struct{}{}
+				fields.Set(VMPoolFieldVmsUpdatedAtSeconds)
+				fields.Set(VMPoolFieldVmsUpdatedAt)
+				fields.Set(VMPoolFieldVms)
 			}
 			if m.Vms[i0].UpdatedAt.Nanos != o.Vms[i0].UpdatedAt.Nanos {
-				fields[VMPoolFieldVmsUpdatedAtNanos] = struct{}{}
-				fields[VMPoolFieldVmsUpdatedAt] = struct{}{}
-				fields[VMPoolFieldVms] = struct{}{}
+				fields.Set(VMPoolFieldVmsUpdatedAtNanos)
+				fields.Set(VMPoolFieldVmsUpdatedAt)
+				fields.Set(VMPoolFieldVms)
 			}
 			if m.Vms[i0].InternalName != o.Vms[i0].InternalName {
-				fields[VMPoolFieldVmsInternalName] = struct{}{}
-				fields[VMPoolFieldVms] = struct{}{}
+				fields.Set(VMPoolFieldVmsInternalName)
+				fields.Set(VMPoolFieldVms)
 			}
 			if m.Vms[i0].Flavor != nil && o.Vms[i0].Flavor != nil {
 				if m.Vms[i0].Flavor.Name != o.Vms[i0].Flavor.Name {
-					fields[VMPoolFieldVmsFlavorName] = struct{}{}
-					fields[VMPoolFieldVmsFlavor] = struct{}{}
-					fields[VMPoolFieldVms] = struct{}{}
+					fields.Set(VMPoolFieldVmsFlavorName)
+					fields.Set(VMPoolFieldVmsFlavor)
+					fields.Set(VMPoolFieldVms)
 				}
 				if m.Vms[i0].Flavor.Vcpus != o.Vms[i0].Flavor.Vcpus {
-					fields[VMPoolFieldVmsFlavorVcpus] = struct{}{}
-					fields[VMPoolFieldVmsFlavor] = struct{}{}
-					fields[VMPoolFieldVms] = struct{}{}
+					fields.Set(VMPoolFieldVmsFlavorVcpus)
+					fields.Set(VMPoolFieldVmsFlavor)
+					fields.Set(VMPoolFieldVms)
 				}
 				if m.Vms[i0].Flavor.Ram != o.Vms[i0].Flavor.Ram {
-					fields[VMPoolFieldVmsFlavorRam] = struct{}{}
-					fields[VMPoolFieldVmsFlavor] = struct{}{}
-					fields[VMPoolFieldVms] = struct{}{}
+					fields.Set(VMPoolFieldVmsFlavorRam)
+					fields.Set(VMPoolFieldVmsFlavor)
+					fields.Set(VMPoolFieldVms)
 				}
 				if m.Vms[i0].Flavor.Disk != o.Vms[i0].Flavor.Disk {
-					fields[VMPoolFieldVmsFlavorDisk] = struct{}{}
-					fields[VMPoolFieldVmsFlavor] = struct{}{}
-					fields[VMPoolFieldVms] = struct{}{}
+					fields.Set(VMPoolFieldVmsFlavorDisk)
+					fields.Set(VMPoolFieldVmsFlavor)
+					fields.Set(VMPoolFieldVms)
 				}
 				if m.Vms[i0].Flavor.PropMap != nil && o.Vms[i0].Flavor.PropMap != nil {
 					if len(m.Vms[i0].Flavor.PropMap) != len(o.Vms[i0].Flavor.PropMap) {
-						fields[VMPoolFieldVmsFlavorPropMap] = struct{}{}
-						fields[VMPoolFieldVmsFlavor] = struct{}{}
-						fields[VMPoolFieldVms] = struct{}{}
+						fields.Set(VMPoolFieldVmsFlavorPropMap)
+						fields.Set(VMPoolFieldVmsFlavor)
+						fields.Set(VMPoolFieldVms)
 					} else {
 						for k2, _ := range m.Vms[i0].Flavor.PropMap {
 							_, vok2 := o.Vms[i0].Flavor.PropMap[k2]
 							if !vok2 {
-								fields[VMPoolFieldVmsFlavorPropMap] = struct{}{}
-								fields[VMPoolFieldVmsFlavor] = struct{}{}
-								fields[VMPoolFieldVms] = struct{}{}
+								fields.Set(VMPoolFieldVmsFlavorPropMap)
+								fields.Set(VMPoolFieldVmsFlavor)
+								fields.Set(VMPoolFieldVms)
 							} else {
 								if m.Vms[i0].Flavor.PropMap[k2] != o.Vms[i0].Flavor.PropMap[k2] {
-									fields[VMPoolFieldVmsFlavorPropMap] = struct{}{}
-									fields[VMPoolFieldVmsFlavor] = struct{}{}
-									fields[VMPoolFieldVms] = struct{}{}
+									fields.Set(VMPoolFieldVmsFlavorPropMap)
+									fields.Set(VMPoolFieldVmsFlavor)
+									fields.Set(VMPoolFieldVms)
 									break
 								}
 							}
 						}
 					}
 				} else if (m.Vms[i0].Flavor.PropMap != nil && o.Vms[i0].Flavor.PropMap == nil) || (m.Vms[i0].Flavor.PropMap == nil && o.Vms[i0].Flavor.PropMap != nil) {
-					fields[VMPoolFieldVmsFlavorPropMap] = struct{}{}
-					fields[VMPoolFieldVmsFlavor] = struct{}{}
-					fields[VMPoolFieldVms] = struct{}{}
+					fields.Set(VMPoolFieldVmsFlavorPropMap)
+					fields.Set(VMPoolFieldVmsFlavor)
+					fields.Set(VMPoolFieldVms)
 				}
 			} else if (m.Vms[i0].Flavor != nil && o.Vms[i0].Flavor == nil) || (m.Vms[i0].Flavor == nil && o.Vms[i0].Flavor != nil) {
-				fields[VMPoolFieldVmsFlavor] = struct{}{}
-				fields[VMPoolFieldVms] = struct{}{}
+				fields.Set(VMPoolFieldVmsFlavor)
+				fields.Set(VMPoolFieldVms)
 			}
 		}
 	}
 	if m.State != o.State {
-		fields[VMPoolFieldState] = struct{}{}
+		fields.Set(VMPoolFieldState)
 	}
 	if len(m.Errors) != len(o.Errors) {
-		fields[VMPoolFieldErrors] = struct{}{}
+		fields.Set(VMPoolFieldErrors)
 	} else {
 		for i0 := 0; i0 < len(m.Errors); i0++ {
 			if m.Errors[i0] != o.Errors[i0] {
-				fields[VMPoolFieldErrors] = struct{}{}
+				fields.Set(VMPoolFieldErrors)
 				break
 			}
 		}
 	}
 	if m.CrmOverride != o.CrmOverride {
-		fields[VMPoolFieldCrmOverride] = struct{}{}
+		fields.Set(VMPoolFieldCrmOverride)
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[VMPoolFieldDeletePrepare] = struct{}{}
+		fields.Set(VMPoolFieldDeletePrepare)
 	}
 }
 
-var UpdateVMPoolFieldsMap = map[string]struct{}{
+func (m *VMPool) GetDiffFields(o *VMPool) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateVMPoolFieldsMap = NewFieldMap(map[string]struct{}{
 	VMPoolFieldVms:                   struct{}{},
 	VMPoolFieldVmsName:               struct{}{},
 	VMPoolFieldVmsNetInfo:            struct{}{},
@@ -1924,7 +1931,7 @@ var UpdateVMPoolFieldsMap = map[string]struct{}{
 	VMPoolFieldVmsFlavorPropMapValue: struct{}{},
 	VMPoolFieldCrmOverride:           struct{}{},
 	VMPoolFieldDeletePrepare:         struct{}{},
-}
+})
 
 func (m *VMPool) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -1932,11 +1939,11 @@ func (m *VMPool) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateVMPoolFieldsMap[field]; !ok {
+		if !UpdateVMPoolFieldsMap.Has(field) {
 			if _, ok := VMPoolAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -2021,21 +2028,21 @@ func (m *VMPool) CopyInFields(src *VMPool) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.HasOrHasChild("3") {
 		if src.Vms != nil {
 			if updateListAction == "add" {
 				changed += m.AddVms(src.Vms...)
@@ -2053,13 +2060,13 @@ func (m *VMPool) CopyInFields(src *VMPool) int {
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.State != src.State {
 			m.State = src.State
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if src.Errors != nil {
 			if updateListAction == "add" {
 				changed += m.AddErrors(src.Errors...)
@@ -2075,13 +2082,13 @@ func (m *VMPool) CopyInFields(src *VMPool) int {
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.CrmOverride != src.CrmOverride {
 			m.CrmOverride = src.CrmOverride
 			changed++
 		}
 	}
-	if _, set := fmap["8"]; set {
+	if fmap.Has("8") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
@@ -2328,6 +2335,7 @@ type VMPoolCache struct {
 	KeyWatchers   map[VMPoolKey][]*VMPoolKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *VMPoolKey)
 	DeletedKeyCbs []func(ctx context.Context, key *VMPoolKey)
+	Store         VMPoolStore
 }
 
 func NewVMPoolCache() *VMPoolCache {
@@ -2690,6 +2698,18 @@ func (c *VMPoolCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *VMPoolCache) InitCacheWithSync(sync DataSync) {
+	InitVMPoolCache(s)
+	s.InitSync(sync)
+}
+
+func (s *VMPoolCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewVMPoolStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 
@@ -3144,7 +3164,7 @@ var VMPoolInfoAllFields = []string{
 	VMPoolInfoFieldStatusMsgs,
 }
 
-var VMPoolInfoAllFieldsMap = map[string]struct{}{
+var VMPoolInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
 	VMPoolInfoFieldKeyOrganization:       struct{}{},
 	VMPoolInfoFieldKeyName:               struct{}{},
 	VMPoolInfoFieldNotifyId:              struct{}{},
@@ -3170,7 +3190,7 @@ var VMPoolInfoAllFieldsMap = map[string]struct{}{
 	VMPoolInfoFieldStatusStepName:        struct{}{},
 	VMPoolInfoFieldStatusMsgCount:        struct{}{},
 	VMPoolInfoFieldStatusMsgs:            struct{}{},
-}
+})
 
 var VMPoolInfoAllFieldsStringMap = map[string]string{
 	VMPoolInfoFieldKeyOrganization:       "Key Organization",
@@ -3204,157 +3224,163 @@ func (m *VMPoolInfo) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, VMPoolInfoFieldKey+".") || s == VMPoolInfoFieldKey
 }
 
-func (m *VMPoolInfo) DiffFields(o *VMPoolInfo, fields map[string]struct{}) {
+func (m *VMPoolInfo) DiffFields(o *VMPoolInfo, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {
-		fields[VMPoolInfoFieldKeyOrganization] = struct{}{}
-		fields[VMPoolInfoFieldKey] = struct{}{}
+		fields.Set(VMPoolInfoFieldKeyOrganization)
+		fields.Set(VMPoolInfoFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[VMPoolInfoFieldKeyName] = struct{}{}
-		fields[VMPoolInfoFieldKey] = struct{}{}
+		fields.Set(VMPoolInfoFieldKeyName)
+		fields.Set(VMPoolInfoFieldKey)
 	}
 	if m.NotifyId != o.NotifyId {
-		fields[VMPoolInfoFieldNotifyId] = struct{}{}
+		fields.Set(VMPoolInfoFieldNotifyId)
 	}
 	if len(m.Vms) != len(o.Vms) {
-		fields[VMPoolInfoFieldVms] = struct{}{}
+		fields.Set(VMPoolInfoFieldVms)
 	} else {
 		for i0 := 0; i0 < len(m.Vms); i0++ {
 			if m.Vms[i0].Name != o.Vms[i0].Name {
-				fields[VMPoolInfoFieldVmsName] = struct{}{}
-				fields[VMPoolInfoFieldVms] = struct{}{}
+				fields.Set(VMPoolInfoFieldVmsName)
+				fields.Set(VMPoolInfoFieldVms)
 			}
 			if m.Vms[i0].NetInfo.ExternalIp != o.Vms[i0].NetInfo.ExternalIp {
-				fields[VMPoolInfoFieldVmsNetInfoExternalIp] = struct{}{}
-				fields[VMPoolInfoFieldVmsNetInfo] = struct{}{}
-				fields[VMPoolInfoFieldVms] = struct{}{}
+				fields.Set(VMPoolInfoFieldVmsNetInfoExternalIp)
+				fields.Set(VMPoolInfoFieldVmsNetInfo)
+				fields.Set(VMPoolInfoFieldVms)
 			}
 			if m.Vms[i0].NetInfo.InternalIp != o.Vms[i0].NetInfo.InternalIp {
-				fields[VMPoolInfoFieldVmsNetInfoInternalIp] = struct{}{}
-				fields[VMPoolInfoFieldVmsNetInfo] = struct{}{}
-				fields[VMPoolInfoFieldVms] = struct{}{}
+				fields.Set(VMPoolInfoFieldVmsNetInfoInternalIp)
+				fields.Set(VMPoolInfoFieldVmsNetInfo)
+				fields.Set(VMPoolInfoFieldVms)
 			}
 			if m.Vms[i0].GroupName != o.Vms[i0].GroupName {
-				fields[VMPoolInfoFieldVmsGroupName] = struct{}{}
-				fields[VMPoolInfoFieldVms] = struct{}{}
+				fields.Set(VMPoolInfoFieldVmsGroupName)
+				fields.Set(VMPoolInfoFieldVms)
 			}
 			if m.Vms[i0].State != o.Vms[i0].State {
-				fields[VMPoolInfoFieldVmsState] = struct{}{}
-				fields[VMPoolInfoFieldVms] = struct{}{}
+				fields.Set(VMPoolInfoFieldVmsState)
+				fields.Set(VMPoolInfoFieldVms)
 			}
 			if m.Vms[i0].UpdatedAt.Seconds != o.Vms[i0].UpdatedAt.Seconds {
-				fields[VMPoolInfoFieldVmsUpdatedAtSeconds] = struct{}{}
-				fields[VMPoolInfoFieldVmsUpdatedAt] = struct{}{}
-				fields[VMPoolInfoFieldVms] = struct{}{}
+				fields.Set(VMPoolInfoFieldVmsUpdatedAtSeconds)
+				fields.Set(VMPoolInfoFieldVmsUpdatedAt)
+				fields.Set(VMPoolInfoFieldVms)
 			}
 			if m.Vms[i0].UpdatedAt.Nanos != o.Vms[i0].UpdatedAt.Nanos {
-				fields[VMPoolInfoFieldVmsUpdatedAtNanos] = struct{}{}
-				fields[VMPoolInfoFieldVmsUpdatedAt] = struct{}{}
-				fields[VMPoolInfoFieldVms] = struct{}{}
+				fields.Set(VMPoolInfoFieldVmsUpdatedAtNanos)
+				fields.Set(VMPoolInfoFieldVmsUpdatedAt)
+				fields.Set(VMPoolInfoFieldVms)
 			}
 			if m.Vms[i0].InternalName != o.Vms[i0].InternalName {
-				fields[VMPoolInfoFieldVmsInternalName] = struct{}{}
-				fields[VMPoolInfoFieldVms] = struct{}{}
+				fields.Set(VMPoolInfoFieldVmsInternalName)
+				fields.Set(VMPoolInfoFieldVms)
 			}
 			if m.Vms[i0].Flavor != nil && o.Vms[i0].Flavor != nil {
 				if m.Vms[i0].Flavor.Name != o.Vms[i0].Flavor.Name {
-					fields[VMPoolInfoFieldVmsFlavorName] = struct{}{}
-					fields[VMPoolInfoFieldVmsFlavor] = struct{}{}
-					fields[VMPoolInfoFieldVms] = struct{}{}
+					fields.Set(VMPoolInfoFieldVmsFlavorName)
+					fields.Set(VMPoolInfoFieldVmsFlavor)
+					fields.Set(VMPoolInfoFieldVms)
 				}
 				if m.Vms[i0].Flavor.Vcpus != o.Vms[i0].Flavor.Vcpus {
-					fields[VMPoolInfoFieldVmsFlavorVcpus] = struct{}{}
-					fields[VMPoolInfoFieldVmsFlavor] = struct{}{}
-					fields[VMPoolInfoFieldVms] = struct{}{}
+					fields.Set(VMPoolInfoFieldVmsFlavorVcpus)
+					fields.Set(VMPoolInfoFieldVmsFlavor)
+					fields.Set(VMPoolInfoFieldVms)
 				}
 				if m.Vms[i0].Flavor.Ram != o.Vms[i0].Flavor.Ram {
-					fields[VMPoolInfoFieldVmsFlavorRam] = struct{}{}
-					fields[VMPoolInfoFieldVmsFlavor] = struct{}{}
-					fields[VMPoolInfoFieldVms] = struct{}{}
+					fields.Set(VMPoolInfoFieldVmsFlavorRam)
+					fields.Set(VMPoolInfoFieldVmsFlavor)
+					fields.Set(VMPoolInfoFieldVms)
 				}
 				if m.Vms[i0].Flavor.Disk != o.Vms[i0].Flavor.Disk {
-					fields[VMPoolInfoFieldVmsFlavorDisk] = struct{}{}
-					fields[VMPoolInfoFieldVmsFlavor] = struct{}{}
-					fields[VMPoolInfoFieldVms] = struct{}{}
+					fields.Set(VMPoolInfoFieldVmsFlavorDisk)
+					fields.Set(VMPoolInfoFieldVmsFlavor)
+					fields.Set(VMPoolInfoFieldVms)
 				}
 				if m.Vms[i0].Flavor.PropMap != nil && o.Vms[i0].Flavor.PropMap != nil {
 					if len(m.Vms[i0].Flavor.PropMap) != len(o.Vms[i0].Flavor.PropMap) {
-						fields[VMPoolInfoFieldVmsFlavorPropMap] = struct{}{}
-						fields[VMPoolInfoFieldVmsFlavor] = struct{}{}
-						fields[VMPoolInfoFieldVms] = struct{}{}
+						fields.Set(VMPoolInfoFieldVmsFlavorPropMap)
+						fields.Set(VMPoolInfoFieldVmsFlavor)
+						fields.Set(VMPoolInfoFieldVms)
 					} else {
 						for k2, _ := range m.Vms[i0].Flavor.PropMap {
 							_, vok2 := o.Vms[i0].Flavor.PropMap[k2]
 							if !vok2 {
-								fields[VMPoolInfoFieldVmsFlavorPropMap] = struct{}{}
-								fields[VMPoolInfoFieldVmsFlavor] = struct{}{}
-								fields[VMPoolInfoFieldVms] = struct{}{}
+								fields.Set(VMPoolInfoFieldVmsFlavorPropMap)
+								fields.Set(VMPoolInfoFieldVmsFlavor)
+								fields.Set(VMPoolInfoFieldVms)
 							} else {
 								if m.Vms[i0].Flavor.PropMap[k2] != o.Vms[i0].Flavor.PropMap[k2] {
-									fields[VMPoolInfoFieldVmsFlavorPropMap] = struct{}{}
-									fields[VMPoolInfoFieldVmsFlavor] = struct{}{}
-									fields[VMPoolInfoFieldVms] = struct{}{}
+									fields.Set(VMPoolInfoFieldVmsFlavorPropMap)
+									fields.Set(VMPoolInfoFieldVmsFlavor)
+									fields.Set(VMPoolInfoFieldVms)
 									break
 								}
 							}
 						}
 					}
 				} else if (m.Vms[i0].Flavor.PropMap != nil && o.Vms[i0].Flavor.PropMap == nil) || (m.Vms[i0].Flavor.PropMap == nil && o.Vms[i0].Flavor.PropMap != nil) {
-					fields[VMPoolInfoFieldVmsFlavorPropMap] = struct{}{}
-					fields[VMPoolInfoFieldVmsFlavor] = struct{}{}
-					fields[VMPoolInfoFieldVms] = struct{}{}
+					fields.Set(VMPoolInfoFieldVmsFlavorPropMap)
+					fields.Set(VMPoolInfoFieldVmsFlavor)
+					fields.Set(VMPoolInfoFieldVms)
 				}
 			} else if (m.Vms[i0].Flavor != nil && o.Vms[i0].Flavor == nil) || (m.Vms[i0].Flavor == nil && o.Vms[i0].Flavor != nil) {
-				fields[VMPoolInfoFieldVmsFlavor] = struct{}{}
-				fields[VMPoolInfoFieldVms] = struct{}{}
+				fields.Set(VMPoolInfoFieldVmsFlavor)
+				fields.Set(VMPoolInfoFieldVms)
 			}
 		}
 	}
 	if m.State != o.State {
-		fields[VMPoolInfoFieldState] = struct{}{}
+		fields.Set(VMPoolInfoFieldState)
 	}
 	if len(m.Errors) != len(o.Errors) {
-		fields[VMPoolInfoFieldErrors] = struct{}{}
+		fields.Set(VMPoolInfoFieldErrors)
 	} else {
 		for i0 := 0; i0 < len(m.Errors); i0++ {
 			if m.Errors[i0] != o.Errors[i0] {
-				fields[VMPoolInfoFieldErrors] = struct{}{}
+				fields.Set(VMPoolInfoFieldErrors)
 				break
 			}
 		}
 	}
 	if m.Status.TaskNumber != o.Status.TaskNumber {
-		fields[VMPoolInfoFieldStatusTaskNumber] = struct{}{}
-		fields[VMPoolInfoFieldStatus] = struct{}{}
+		fields.Set(VMPoolInfoFieldStatusTaskNumber)
+		fields.Set(VMPoolInfoFieldStatus)
 	}
 	if m.Status.MaxTasks != o.Status.MaxTasks {
-		fields[VMPoolInfoFieldStatusMaxTasks] = struct{}{}
-		fields[VMPoolInfoFieldStatus] = struct{}{}
+		fields.Set(VMPoolInfoFieldStatusMaxTasks)
+		fields.Set(VMPoolInfoFieldStatus)
 	}
 	if m.Status.TaskName != o.Status.TaskName {
-		fields[VMPoolInfoFieldStatusTaskName] = struct{}{}
-		fields[VMPoolInfoFieldStatus] = struct{}{}
+		fields.Set(VMPoolInfoFieldStatusTaskName)
+		fields.Set(VMPoolInfoFieldStatus)
 	}
 	if m.Status.StepName != o.Status.StepName {
-		fields[VMPoolInfoFieldStatusStepName] = struct{}{}
-		fields[VMPoolInfoFieldStatus] = struct{}{}
+		fields.Set(VMPoolInfoFieldStatusStepName)
+		fields.Set(VMPoolInfoFieldStatus)
 	}
 	if m.Status.MsgCount != o.Status.MsgCount {
-		fields[VMPoolInfoFieldStatusMsgCount] = struct{}{}
-		fields[VMPoolInfoFieldStatus] = struct{}{}
+		fields.Set(VMPoolInfoFieldStatusMsgCount)
+		fields.Set(VMPoolInfoFieldStatus)
 	}
 	if len(m.Status.Msgs) != len(o.Status.Msgs) {
-		fields[VMPoolInfoFieldStatusMsgs] = struct{}{}
-		fields[VMPoolInfoFieldStatus] = struct{}{}
+		fields.Set(VMPoolInfoFieldStatusMsgs)
+		fields.Set(VMPoolInfoFieldStatus)
 	} else {
 		for i1 := 0; i1 < len(m.Status.Msgs); i1++ {
 			if m.Status.Msgs[i1] != o.Status.Msgs[i1] {
-				fields[VMPoolInfoFieldStatusMsgs] = struct{}{}
-				fields[VMPoolInfoFieldStatus] = struct{}{}
+				fields.Set(VMPoolInfoFieldStatusMsgs)
+				fields.Set(VMPoolInfoFieldStatus)
 				break
 			}
 		}
 	}
+}
+
+func (m *VMPoolInfo) GetDiffFields(o *VMPoolInfo) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
 }
 
 func (m *VMPoolInfo) Clone() *VMPoolInfo {
@@ -3460,27 +3486,27 @@ func (m *VMPoolInfo) CopyInFields(src *VMPoolInfo) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.NotifyId != src.NotifyId {
 			m.NotifyId = src.NotifyId
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.HasOrHasChild("4") {
 		if src.Vms != nil {
 			if updateListAction == "add" {
 				changed += m.AddVms(src.Vms...)
@@ -3498,13 +3524,13 @@ func (m *VMPoolInfo) CopyInFields(src *VMPoolInfo) int {
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.State != src.State {
 			m.State = src.State
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if src.Errors != nil {
 			if updateListAction == "add" {
 				changed += m.AddErrors(src.Errors...)
@@ -3520,38 +3546,38 @@ func (m *VMPoolInfo) CopyInFields(src *VMPoolInfo) int {
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
-		if _, set := fmap["7.1"]; set {
+	if fmap.HasOrHasChild("7") {
+		if fmap.Has("7.1") {
 			if m.Status.TaskNumber != src.Status.TaskNumber {
 				m.Status.TaskNumber = src.Status.TaskNumber
 				changed++
 			}
 		}
-		if _, set := fmap["7.2"]; set {
+		if fmap.Has("7.2") {
 			if m.Status.MaxTasks != src.Status.MaxTasks {
 				m.Status.MaxTasks = src.Status.MaxTasks
 				changed++
 			}
 		}
-		if _, set := fmap["7.3"]; set {
+		if fmap.Has("7.3") {
 			if m.Status.TaskName != src.Status.TaskName {
 				m.Status.TaskName = src.Status.TaskName
 				changed++
 			}
 		}
-		if _, set := fmap["7.4"]; set {
+		if fmap.Has("7.4") {
 			if m.Status.StepName != src.Status.StepName {
 				m.Status.StepName = src.Status.StepName
 				changed++
 			}
 		}
-		if _, set := fmap["7.5"]; set {
+		if fmap.Has("7.5") {
 			if m.Status.MsgCount != src.Status.MsgCount {
 				m.Status.MsgCount = src.Status.MsgCount
 				changed++
 			}
 		}
-		if _, set := fmap["7.6"]; set {
+		if fmap.Has("7.6") {
 			if src.Status.Msgs != nil {
 				if updateListAction == "add" {
 					changed += m.AddStatusMsgs(src.Status.Msgs...)
@@ -3809,6 +3835,7 @@ type VMPoolInfoCache struct {
 	KeyWatchers   map[VMPoolKey][]*VMPoolInfoKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *VMPoolKey)
 	DeletedKeyCbs []func(ctx context.Context, key *VMPoolKey)
+	Store         VMPoolInfoStore
 }
 
 func NewVMPoolInfoCache() *VMPoolInfoCache {
@@ -4209,6 +4236,199 @@ func (c *VMPoolInfoCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
+func (s *VMPoolInfoCache) InitCacheWithSync(sync DataSync) {
+	InitVMPoolInfoCache(s)
+	s.InitSync(sync)
+}
+
+func (s *VMPoolInfoCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewVMPoolInfoStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
+// VMPoolInfoObjectUpdater defines a way of updating a specific VMPoolInfo
+type VMPoolInfoObjectUpdater interface {
+	// Get the current VMPoolInfo
+	Get() *VMPoolInfo
+	// Update the VMPoolInfo for the specified Fields flags.
+	Update(*VMPoolInfo) error
+}
+
+// VMPoolInfoSender allows for streaming updates to VMPoolInfo
+type VMPoolInfoSender interface {
+	// SendUpdate sends the updated object, fields without field flags set will be ignored
+	SendUpdate(updateFn func(update *VMPoolInfo) error) error
+	// SendState sends an updated state. It will clear any errors unless
+	// the WithStateError option is specified.
+	SendState(state TrackedState, ops ...SenderOp) error
+	// SendStatus appends the status message and sends it.
+	SendStatus(updateType CacheUpdateType, message string, ops ...SenderOp) error
+	// SendStatusIgnoreErr is the same as SendStatus but without error return
+	// and without options to be compatible with older code.
+	SendStatusIgnoreErr(updateType CacheUpdateType, message string)
+}
+
+// VMPoolInfoSenderHelper implements VMPoolInfoSender
+type VMPoolInfoSenderHelper struct {
+	updater VMPoolInfoObjectUpdater
+}
+
+func (s *VMPoolInfoSenderHelper) SetUpdater(updater VMPoolInfoObjectUpdater) {
+	s.updater = updater
+}
+
+// SendUpdate sends only the updated fields set by the Fields flags.
+func (s *VMPoolInfoSenderHelper) SendUpdate(updateFn func(update *VMPoolInfo) error) error {
+	obj := s.updater.Get()
+	if err := updateFn(obj); err != nil {
+		return err
+	}
+	return s.updater.Update(obj)
+}
+
+// SendState sends an updated state
+func (s *VMPoolInfoSenderHelper) SendState(state TrackedState, ops ...SenderOp) error {
+	opts := GetSenderOptions(ops...)
+	obj := s.updater.Get()
+	obj.Fields = []string{
+		VMPoolInfoFieldState,
+		VMPoolInfoFieldErrors,
+		VMPoolInfoFieldStatus,
+	}
+	s.applyOpts(obj, opts)
+
+	if opts.stateErr != nil {
+		obj.Errors = []string{opts.stateErr.Error()}
+	}
+	obj.State = state
+	obj.Status.SetTask(TrackedState_CamelName[int32(state)])
+	return s.updater.Update(obj)
+}
+
+// SendStatus appends the status message and sends it.
+func (s *VMPoolInfoSenderHelper) SendStatus(updateType CacheUpdateType, message string, ops ...SenderOp) error {
+	opts := GetSenderOptions(ops...)
+	obj := s.updater.Get()
+	obj.Fields = []string{
+		VMPoolInfoFieldStatus,
+	}
+	s.applyOpts(obj, opts)
+
+	switch updateType {
+	case UpdateTask:
+		obj.Status.SetTask(message)
+	case UpdateStep:
+		obj.Status.SetStep(message)
+	}
+	return s.updater.Update(obj)
+}
+
+func (s *VMPoolInfoSenderHelper) SendStatusIgnoreErr(updateType CacheUpdateType, message string) {
+	s.SendStatus(updateType, message)
+}
+
+func (s *VMPoolInfoSenderHelper) applyOpts(obj *VMPoolInfo, opts *SenderOptions) {
+	if opts.resetStatus {
+		obj.Fields = append(obj.Fields, VMPoolInfoFieldStatus)
+		obj.Status.StatusReset()
+	}
+}
+
+// VMPoolInfoCacheUpdater implements VMPoolInfoSender via a cache
+// that can send data over notify.
+type VMPoolInfoCacheUpdater struct {
+	VMPoolInfoSenderHelper
+	ctx   context.Context
+	key   VMPoolKey
+	cache *VMPoolInfoCache
+}
+
+func NewVMPoolInfoCacheUpdater(ctx context.Context, cache *VMPoolInfoCache, key VMPoolKey) *VMPoolInfoCacheUpdater {
+	s := &VMPoolInfoCacheUpdater{
+		ctx:   ctx,
+		key:   key,
+		cache: cache,
+	}
+	s.SetUpdater(s)
+	return s
+}
+
+func (s *VMPoolInfoCacheUpdater) Get() *VMPoolInfo {
+	obj := VMPoolInfo{}
+	if !s.cache.Get(&s.key, &obj) {
+		obj.Key = s.key
+	}
+	return &obj
+}
+
+func (s *VMPoolInfoCacheUpdater) Update(obj *VMPoolInfo) error {
+	s.cache.Update(s.ctx, obj, 0)
+	return nil
+}
+
+type VMPoolInfoSendAPI interface {
+	Send(*VMPoolInfo) error
+}
+
+// VMPoolInfoSendUpdater implements VMPoolInfoObjectUpdater via a generic
+// send API. To allow for building up the list of status messages
+// which need to accumulate over time, we keep a local copy of
+// the object.
+type VMPoolInfoSendUpdater struct {
+	VMPoolInfoSenderHelper
+	ctx    context.Context
+	sender VMPoolInfoSendAPI
+	local  VMPoolInfo
+	mux    sync.Mutex
+}
+
+func NewVMPoolInfoSendUpdater(ctx context.Context, sender VMPoolInfoSendAPI, key VMPoolKey) *VMPoolInfoSendUpdater {
+	s := &VMPoolInfoSendUpdater{
+		ctx:    ctx,
+		sender: sender,
+	}
+	s.local.Key = key
+	s.SetUpdater(s)
+	return s
+}
+
+func (s *VMPoolInfoSendUpdater) Get() *VMPoolInfo {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	cp := VMPoolInfo{}
+	cp.DeepCopyIn(&s.local)
+	return &cp
+}
+
+func (s *VMPoolInfoSendUpdater) Update(obj *VMPoolInfo) error {
+	s.mux.Lock()
+	s.local.DeepCopyIn(obj)
+	s.mux.Unlock()
+	return s.sender.Send(obj)
+}
+
+// VMPoolInfoPrintUpdater just prints the updates
+type VMPoolInfoPrintUpdater struct {
+	VMPoolInfoSenderHelper
+}
+
+func NewVMPoolInfoPrintUpdater() *VMPoolInfoPrintUpdater {
+	s := &VMPoolInfoPrintUpdater{}
+	s.SetUpdater(s)
+	return s
+}
+
+func (s *VMPoolInfoPrintUpdater) Get() *VMPoolInfo {
+	return &VMPoolInfo{}
+}
+
+func (s *VMPoolInfoPrintUpdater) Update(obj *VMPoolInfo) error {
+	fmt.Printf("%v\n", obj)
+	return nil
+}
+
 func WaitForVMPoolInfo(ctx context.Context, key *VMPoolKey, store VMPoolStore, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 	var lastMsgCnt int
 	var err error
@@ -4281,7 +4501,11 @@ func WaitForVMPoolInfo(ctx context.Context, key *VMPoolKey, store VMPoolStore, t
 			switch info.State {
 			case errorState:
 				errs := strings.Join(info.Errors, ", ")
-				err = fmt.Errorf("Encountered failures: %s", errs)
+				if len(info.Errors) == 1 {
+					err = fmt.Errorf("%s", errs)
+				} else {
+					err = fmt.Errorf("Encountered failures: %s", errs)
+				}
 				return err
 			case targetState:
 				handleTargetState()

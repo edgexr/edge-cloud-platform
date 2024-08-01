@@ -23,6 +23,7 @@ import (
 	math "math"
 	math_bits "math/bits"
 	reflect "reflect"
+	"sort"
 	"strconv"
 	strings "strings"
 )
@@ -1742,7 +1743,7 @@ var TestGenAllFields = []string{
 	TestGenFieldUnused,
 }
 
-var TestGenAllFieldsMap = map[string]struct{}{
+var TestGenAllFieldsMap = NewFieldMap(map[string]struct{}{
 	TestGenFieldName:                                 struct{}{},
 	TestGenFieldDb:                                   struct{}{},
 	TestGenFieldFl:                                   struct{}{},
@@ -1827,7 +1828,7 @@ var TestGenAllFieldsMap = map[string]struct{}{
 	TestGenFieldMsgMapKey:                            struct{}{},
 	TestGenFieldMsgMapValueName:                      struct{}{},
 	TestGenFieldUnused:                               struct{}{},
-}
+})
 
 var TestGenAllFieldsStringMap = map[string]string{
 	TestGenFieldName:                                 "Name",
@@ -1920,499 +1921,505 @@ func (m *TestGen) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, TestGenFieldName+".") || s == TestGenFieldName
 }
 
-func (m *TestGen) DiffFields(o *TestGen, fields map[string]struct{}) {
+func (m *TestGen) DiffFields(o *TestGen, fields *FieldMap) {
 	if m.Name != o.Name {
-		fields[TestGenFieldName] = struct{}{}
+		fields.Set(TestGenFieldName)
 	}
 	if m.Db != o.Db {
-		fields[TestGenFieldDb] = struct{}{}
+		fields.Set(TestGenFieldDb)
 	}
 	if m.Fl != o.Fl {
-		fields[TestGenFieldFl] = struct{}{}
+		fields.Set(TestGenFieldFl)
 	}
 	if m.I32 != o.I32 {
-		fields[TestGenFieldI32] = struct{}{}
+		fields.Set(TestGenFieldI32)
 	}
 	if m.I64 != o.I64 {
-		fields[TestGenFieldI64] = struct{}{}
+		fields.Set(TestGenFieldI64)
 	}
 	if m.U32 != o.U32 {
-		fields[TestGenFieldU32] = struct{}{}
+		fields.Set(TestGenFieldU32)
 	}
 	if m.U64 != o.U64 {
-		fields[TestGenFieldU64] = struct{}{}
+		fields.Set(TestGenFieldU64)
 	}
 	if m.S32 != o.S32 {
-		fields[TestGenFieldS32] = struct{}{}
+		fields.Set(TestGenFieldS32)
 	}
 	if m.S64 != o.S64 {
-		fields[TestGenFieldS64] = struct{}{}
+		fields.Set(TestGenFieldS64)
 	}
 	if m.F32 != o.F32 {
-		fields[TestGenFieldF32] = struct{}{}
+		fields.Set(TestGenFieldF32)
 	}
 	if m.F64 != o.F64 {
-		fields[TestGenFieldF64] = struct{}{}
+		fields.Set(TestGenFieldF64)
 	}
 	if m.Sf32 != o.Sf32 {
-		fields[TestGenFieldSf32] = struct{}{}
+		fields.Set(TestGenFieldSf32)
 	}
 	if m.Sf64 != o.Sf64 {
-		fields[TestGenFieldSf64] = struct{}{}
+		fields.Set(TestGenFieldSf64)
 	}
 	if m.Bb != o.Bb {
-		fields[TestGenFieldBb] = struct{}{}
+		fields.Set(TestGenFieldBb)
 	}
 	if m.OuterEn != o.OuterEn {
-		fields[TestGenFieldOuterEn] = struct{}{}
+		fields.Set(TestGenFieldOuterEn)
 	}
 	if m.InnerEn != o.InnerEn {
-		fields[TestGenFieldInnerEn] = struct{}{}
+		fields.Set(TestGenFieldInnerEn)
 	}
 	if m.InnerMsg != nil && o.InnerMsg != nil {
 		if m.InnerMsg.Url != o.InnerMsg.Url {
-			fields[TestGenFieldInnerMsgUrl] = struct{}{}
-			fields[TestGenFieldInnerMsg] = struct{}{}
+			fields.Set(TestGenFieldInnerMsgUrl)
+			fields.Set(TestGenFieldInnerMsg)
 		}
 		if m.InnerMsg.Id != o.InnerMsg.Id {
-			fields[TestGenFieldInnerMsgId] = struct{}{}
-			fields[TestGenFieldInnerMsg] = struct{}{}
+			fields.Set(TestGenFieldInnerMsgId)
+			fields.Set(TestGenFieldInnerMsg)
 		}
 	} else if (m.InnerMsg != nil && o.InnerMsg == nil) || (m.InnerMsg == nil && o.InnerMsg != nil) {
-		fields[TestGenFieldInnerMsg] = struct{}{}
+		fields.Set(TestGenFieldInnerMsg)
 	}
 	if m.InnerMsgNonnull.Url != o.InnerMsgNonnull.Url {
-		fields[TestGenFieldInnerMsgNonnullUrl] = struct{}{}
-		fields[TestGenFieldInnerMsgNonnull] = struct{}{}
+		fields.Set(TestGenFieldInnerMsgNonnullUrl)
+		fields.Set(TestGenFieldInnerMsgNonnull)
 	}
 	if m.InnerMsgNonnull.Id != o.InnerMsgNonnull.Id {
-		fields[TestGenFieldInnerMsgNonnullId] = struct{}{}
-		fields[TestGenFieldInnerMsgNonnull] = struct{}{}
+		fields.Set(TestGenFieldInnerMsgNonnullId)
+		fields.Set(TestGenFieldInnerMsgNonnull)
 	}
 	if m.IncludeMsg != nil && o.IncludeMsg != nil {
 		if m.IncludeMsg.Name != o.IncludeMsg.Name {
-			fields[TestGenFieldIncludeMsgName] = struct{}{}
-			fields[TestGenFieldIncludeMsg] = struct{}{}
+			fields.Set(TestGenFieldIncludeMsgName)
+			fields.Set(TestGenFieldIncludeMsg)
 		}
 		if m.IncludeMsg.Id != o.IncludeMsg.Id {
-			fields[TestGenFieldIncludeMsgId] = struct{}{}
-			fields[TestGenFieldIncludeMsg] = struct{}{}
+			fields.Set(TestGenFieldIncludeMsgId)
+			fields.Set(TestGenFieldIncludeMsg)
 		}
 		if m.IncludeMsg.NestedMsg != nil && o.IncludeMsg.NestedMsg != nil {
 			if m.IncludeMsg.NestedMsg.Name != o.IncludeMsg.NestedMsg.Name {
-				fields[TestGenFieldIncludeMsgNestedMsgName] = struct{}{}
-				fields[TestGenFieldIncludeMsgNestedMsg] = struct{}{}
-				fields[TestGenFieldIncludeMsg] = struct{}{}
+				fields.Set(TestGenFieldIncludeMsgNestedMsgName)
+				fields.Set(TestGenFieldIncludeMsgNestedMsg)
+				fields.Set(TestGenFieldIncludeMsg)
 			}
 		} else if (m.IncludeMsg.NestedMsg != nil && o.IncludeMsg.NestedMsg == nil) || (m.IncludeMsg.NestedMsg == nil && o.IncludeMsg.NestedMsg != nil) {
-			fields[TestGenFieldIncludeMsgNestedMsg] = struct{}{}
-			fields[TestGenFieldIncludeMsg] = struct{}{}
+			fields.Set(TestGenFieldIncludeMsgNestedMsg)
+			fields.Set(TestGenFieldIncludeMsg)
 		}
 	} else if (m.IncludeMsg != nil && o.IncludeMsg == nil) || (m.IncludeMsg == nil && o.IncludeMsg != nil) {
-		fields[TestGenFieldIncludeMsg] = struct{}{}
+		fields.Set(TestGenFieldIncludeMsg)
 	}
 	if m.IncludeMsgNonnull.Name != o.IncludeMsgNonnull.Name {
-		fields[TestGenFieldIncludeMsgNonnullName] = struct{}{}
-		fields[TestGenFieldIncludeMsgNonnull] = struct{}{}
+		fields.Set(TestGenFieldIncludeMsgNonnullName)
+		fields.Set(TestGenFieldIncludeMsgNonnull)
 	}
 	if m.IncludeMsgNonnull.Id != o.IncludeMsgNonnull.Id {
-		fields[TestGenFieldIncludeMsgNonnullId] = struct{}{}
-		fields[TestGenFieldIncludeMsgNonnull] = struct{}{}
+		fields.Set(TestGenFieldIncludeMsgNonnullId)
+		fields.Set(TestGenFieldIncludeMsgNonnull)
 	}
 	if m.IncludeMsgNonnull.NestedMsg != nil && o.IncludeMsgNonnull.NestedMsg != nil {
 		if m.IncludeMsgNonnull.NestedMsg.Name != o.IncludeMsgNonnull.NestedMsg.Name {
-			fields[TestGenFieldIncludeMsgNonnullNestedMsgName] = struct{}{}
-			fields[TestGenFieldIncludeMsgNonnullNestedMsg] = struct{}{}
-			fields[TestGenFieldIncludeMsgNonnull] = struct{}{}
+			fields.Set(TestGenFieldIncludeMsgNonnullNestedMsgName)
+			fields.Set(TestGenFieldIncludeMsgNonnullNestedMsg)
+			fields.Set(TestGenFieldIncludeMsgNonnull)
 		}
 	} else if (m.IncludeMsgNonnull.NestedMsg != nil && o.IncludeMsgNonnull.NestedMsg == nil) || (m.IncludeMsgNonnull.NestedMsg == nil && o.IncludeMsgNonnull.NestedMsg != nil) {
-		fields[TestGenFieldIncludeMsgNonnullNestedMsg] = struct{}{}
-		fields[TestGenFieldIncludeMsgNonnull] = struct{}{}
+		fields.Set(TestGenFieldIncludeMsgNonnullNestedMsg)
+		fields.Set(TestGenFieldIncludeMsgNonnull)
 	}
 	if m.IncludeFields != nil && o.IncludeFields != nil {
 		if m.IncludeFields.Name != o.IncludeFields.Name {
-			fields[TestGenFieldIncludeFieldsName] = struct{}{}
-			fields[TestGenFieldIncludeFields] = struct{}{}
+			fields.Set(TestGenFieldIncludeFieldsName)
+			fields.Set(TestGenFieldIncludeFields)
 		}
 	} else if (m.IncludeFields != nil && o.IncludeFields == nil) || (m.IncludeFields == nil && o.IncludeFields != nil) {
-		fields[TestGenFieldIncludeFields] = struct{}{}
+		fields.Set(TestGenFieldIncludeFields)
 	}
 	if m.IncludeFieldsNonnull.Name != o.IncludeFieldsNonnull.Name {
-		fields[TestGenFieldIncludeFieldsNonnullName] = struct{}{}
-		fields[TestGenFieldIncludeFieldsNonnull] = struct{}{}
+		fields.Set(TestGenFieldIncludeFieldsNonnullName)
+		fields.Set(TestGenFieldIncludeFieldsNonnull)
 	}
 	if m.Loc != nil && o.Loc != nil {
 		if m.Loc.Latitude != o.Loc.Latitude {
-			fields[TestGenFieldLocLatitude] = struct{}{}
-			fields[TestGenFieldLoc] = struct{}{}
+			fields.Set(TestGenFieldLocLatitude)
+			fields.Set(TestGenFieldLoc)
 		}
 		if m.Loc.Longitude != o.Loc.Longitude {
-			fields[TestGenFieldLocLongitude] = struct{}{}
-			fields[TestGenFieldLoc] = struct{}{}
+			fields.Set(TestGenFieldLocLongitude)
+			fields.Set(TestGenFieldLoc)
 		}
 		if m.Loc.HorizontalAccuracy != o.Loc.HorizontalAccuracy {
-			fields[TestGenFieldLocHorizontalAccuracy] = struct{}{}
-			fields[TestGenFieldLoc] = struct{}{}
+			fields.Set(TestGenFieldLocHorizontalAccuracy)
+			fields.Set(TestGenFieldLoc)
 		}
 		if m.Loc.VerticalAccuracy != o.Loc.VerticalAccuracy {
-			fields[TestGenFieldLocVerticalAccuracy] = struct{}{}
-			fields[TestGenFieldLoc] = struct{}{}
+			fields.Set(TestGenFieldLocVerticalAccuracy)
+			fields.Set(TestGenFieldLoc)
 		}
 		if m.Loc.Altitude != o.Loc.Altitude {
-			fields[TestGenFieldLocAltitude] = struct{}{}
-			fields[TestGenFieldLoc] = struct{}{}
+			fields.Set(TestGenFieldLocAltitude)
+			fields.Set(TestGenFieldLoc)
 		}
 		if m.Loc.Course != o.Loc.Course {
-			fields[TestGenFieldLocCourse] = struct{}{}
-			fields[TestGenFieldLoc] = struct{}{}
+			fields.Set(TestGenFieldLocCourse)
+			fields.Set(TestGenFieldLoc)
 		}
 		if m.Loc.Speed != o.Loc.Speed {
-			fields[TestGenFieldLocSpeed] = struct{}{}
-			fields[TestGenFieldLoc] = struct{}{}
+			fields.Set(TestGenFieldLocSpeed)
+			fields.Set(TestGenFieldLoc)
 		}
 		if m.Loc.Timestamp != nil && o.Loc.Timestamp != nil {
 			if m.Loc.Timestamp.Seconds != o.Loc.Timestamp.Seconds {
-				fields[TestGenFieldLocTimestampSeconds] = struct{}{}
-				fields[TestGenFieldLocTimestamp] = struct{}{}
-				fields[TestGenFieldLoc] = struct{}{}
+				fields.Set(TestGenFieldLocTimestampSeconds)
+				fields.Set(TestGenFieldLocTimestamp)
+				fields.Set(TestGenFieldLoc)
 			}
 			if m.Loc.Timestamp.Nanos != o.Loc.Timestamp.Nanos {
-				fields[TestGenFieldLocTimestampNanos] = struct{}{}
-				fields[TestGenFieldLocTimestamp] = struct{}{}
-				fields[TestGenFieldLoc] = struct{}{}
+				fields.Set(TestGenFieldLocTimestampNanos)
+				fields.Set(TestGenFieldLocTimestamp)
+				fields.Set(TestGenFieldLoc)
 			}
 		} else if (m.Loc.Timestamp != nil && o.Loc.Timestamp == nil) || (m.Loc.Timestamp == nil && o.Loc.Timestamp != nil) {
-			fields[TestGenFieldLocTimestamp] = struct{}{}
-			fields[TestGenFieldLoc] = struct{}{}
+			fields.Set(TestGenFieldLocTimestamp)
+			fields.Set(TestGenFieldLoc)
 		}
 	} else if (m.Loc != nil && o.Loc == nil) || (m.Loc == nil && o.Loc != nil) {
-		fields[TestGenFieldLoc] = struct{}{}
+		fields.Set(TestGenFieldLoc)
 	}
 	if m.LocNonnull.Latitude != o.LocNonnull.Latitude {
-		fields[TestGenFieldLocNonnullLatitude] = struct{}{}
-		fields[TestGenFieldLocNonnull] = struct{}{}
+		fields.Set(TestGenFieldLocNonnullLatitude)
+		fields.Set(TestGenFieldLocNonnull)
 	}
 	if m.LocNonnull.Longitude != o.LocNonnull.Longitude {
-		fields[TestGenFieldLocNonnullLongitude] = struct{}{}
-		fields[TestGenFieldLocNonnull] = struct{}{}
+		fields.Set(TestGenFieldLocNonnullLongitude)
+		fields.Set(TestGenFieldLocNonnull)
 	}
 	if m.LocNonnull.HorizontalAccuracy != o.LocNonnull.HorizontalAccuracy {
-		fields[TestGenFieldLocNonnullHorizontalAccuracy] = struct{}{}
-		fields[TestGenFieldLocNonnull] = struct{}{}
+		fields.Set(TestGenFieldLocNonnullHorizontalAccuracy)
+		fields.Set(TestGenFieldLocNonnull)
 	}
 	if m.LocNonnull.VerticalAccuracy != o.LocNonnull.VerticalAccuracy {
-		fields[TestGenFieldLocNonnullVerticalAccuracy] = struct{}{}
-		fields[TestGenFieldLocNonnull] = struct{}{}
+		fields.Set(TestGenFieldLocNonnullVerticalAccuracy)
+		fields.Set(TestGenFieldLocNonnull)
 	}
 	if m.LocNonnull.Altitude != o.LocNonnull.Altitude {
-		fields[TestGenFieldLocNonnullAltitude] = struct{}{}
-		fields[TestGenFieldLocNonnull] = struct{}{}
+		fields.Set(TestGenFieldLocNonnullAltitude)
+		fields.Set(TestGenFieldLocNonnull)
 	}
 	if m.LocNonnull.Course != o.LocNonnull.Course {
-		fields[TestGenFieldLocNonnullCourse] = struct{}{}
-		fields[TestGenFieldLocNonnull] = struct{}{}
+		fields.Set(TestGenFieldLocNonnullCourse)
+		fields.Set(TestGenFieldLocNonnull)
 	}
 	if m.LocNonnull.Speed != o.LocNonnull.Speed {
-		fields[TestGenFieldLocNonnullSpeed] = struct{}{}
-		fields[TestGenFieldLocNonnull] = struct{}{}
+		fields.Set(TestGenFieldLocNonnullSpeed)
+		fields.Set(TestGenFieldLocNonnull)
 	}
 	if m.LocNonnull.Timestamp != nil && o.LocNonnull.Timestamp != nil {
 		if m.LocNonnull.Timestamp.Seconds != o.LocNonnull.Timestamp.Seconds {
-			fields[TestGenFieldLocNonnullTimestampSeconds] = struct{}{}
-			fields[TestGenFieldLocNonnullTimestamp] = struct{}{}
-			fields[TestGenFieldLocNonnull] = struct{}{}
+			fields.Set(TestGenFieldLocNonnullTimestampSeconds)
+			fields.Set(TestGenFieldLocNonnullTimestamp)
+			fields.Set(TestGenFieldLocNonnull)
 		}
 		if m.LocNonnull.Timestamp.Nanos != o.LocNonnull.Timestamp.Nanos {
-			fields[TestGenFieldLocNonnullTimestampNanos] = struct{}{}
-			fields[TestGenFieldLocNonnullTimestamp] = struct{}{}
-			fields[TestGenFieldLocNonnull] = struct{}{}
+			fields.Set(TestGenFieldLocNonnullTimestampNanos)
+			fields.Set(TestGenFieldLocNonnullTimestamp)
+			fields.Set(TestGenFieldLocNonnull)
 		}
 	} else if (m.LocNonnull.Timestamp != nil && o.LocNonnull.Timestamp == nil) || (m.LocNonnull.Timestamp == nil && o.LocNonnull.Timestamp != nil) {
-		fields[TestGenFieldLocNonnullTimestamp] = struct{}{}
-		fields[TestGenFieldLocNonnull] = struct{}{}
+		fields.Set(TestGenFieldLocNonnullTimestamp)
+		fields.Set(TestGenFieldLocNonnull)
 	}
 	if len(m.RepeatedInt) != len(o.RepeatedInt) {
-		fields[TestGenFieldRepeatedInt] = struct{}{}
+		fields.Set(TestGenFieldRepeatedInt)
 	} else {
 		for i0 := 0; i0 < len(m.RepeatedInt); i0++ {
 			if m.RepeatedInt[i0] != o.RepeatedInt[i0] {
-				fields[TestGenFieldRepeatedInt] = struct{}{}
+				fields.Set(TestGenFieldRepeatedInt)
 				break
 			}
 		}
 	}
 	if len(m.Ip) != len(o.Ip) {
-		fields[TestGenFieldIp] = struct{}{}
+		fields.Set(TestGenFieldIp)
 	} else {
 		for i0 := 0; i0 < len(m.Ip); i0++ {
 			if m.Ip[i0] != o.Ip[i0] {
-				fields[TestGenFieldIp] = struct{}{}
+				fields.Set(TestGenFieldIp)
 				break
 			}
 		}
 	}
 	if len(m.Names) != len(o.Names) {
-		fields[TestGenFieldNames] = struct{}{}
+		fields.Set(TestGenFieldNames)
 	} else {
 		for i0 := 0; i0 < len(m.Names); i0++ {
 			if m.Names[i0] != o.Names[i0] {
-				fields[TestGenFieldNames] = struct{}{}
+				fields.Set(TestGenFieldNames)
 				break
 			}
 		}
 	}
 	if m.RepeatedMsg != nil && o.RepeatedMsg != nil {
 		if len(m.RepeatedMsg) != len(o.RepeatedMsg) {
-			fields[TestGenFieldRepeatedMsg] = struct{}{}
+			fields.Set(TestGenFieldRepeatedMsg)
 		} else {
 			for i0 := 0; i0 < len(m.RepeatedMsg); i0++ {
 				if m.RepeatedMsg[i0].Name != o.RepeatedMsg[i0].Name {
-					fields[TestGenFieldRepeatedMsgName] = struct{}{}
-					fields[TestGenFieldRepeatedMsg] = struct{}{}
+					fields.Set(TestGenFieldRepeatedMsgName)
+					fields.Set(TestGenFieldRepeatedMsg)
 				}
 				if m.RepeatedMsg[i0].Id != o.RepeatedMsg[i0].Id {
-					fields[TestGenFieldRepeatedMsgId] = struct{}{}
-					fields[TestGenFieldRepeatedMsg] = struct{}{}
+					fields.Set(TestGenFieldRepeatedMsgId)
+					fields.Set(TestGenFieldRepeatedMsg)
 				}
 				if m.RepeatedMsg[i0].NestedMsg != nil && o.RepeatedMsg[i0].NestedMsg != nil {
 					if m.RepeatedMsg[i0].NestedMsg.Name != o.RepeatedMsg[i0].NestedMsg.Name {
-						fields[TestGenFieldRepeatedMsgNestedMsgName] = struct{}{}
-						fields[TestGenFieldRepeatedMsgNestedMsg] = struct{}{}
-						fields[TestGenFieldRepeatedMsg] = struct{}{}
+						fields.Set(TestGenFieldRepeatedMsgNestedMsgName)
+						fields.Set(TestGenFieldRepeatedMsgNestedMsg)
+						fields.Set(TestGenFieldRepeatedMsg)
 					}
 				} else if (m.RepeatedMsg[i0].NestedMsg != nil && o.RepeatedMsg[i0].NestedMsg == nil) || (m.RepeatedMsg[i0].NestedMsg == nil && o.RepeatedMsg[i0].NestedMsg != nil) {
-					fields[TestGenFieldRepeatedMsgNestedMsg] = struct{}{}
-					fields[TestGenFieldRepeatedMsg] = struct{}{}
+					fields.Set(TestGenFieldRepeatedMsgNestedMsg)
+					fields.Set(TestGenFieldRepeatedMsg)
 				}
 			}
 		}
 	} else if (m.RepeatedMsg != nil && o.RepeatedMsg == nil) || (m.RepeatedMsg == nil && o.RepeatedMsg != nil) {
-		fields[TestGenFieldRepeatedMsg] = struct{}{}
+		fields.Set(TestGenFieldRepeatedMsg)
 	}
 	if len(m.RepeatedMsgNonnull) != len(o.RepeatedMsgNonnull) {
-		fields[TestGenFieldRepeatedMsgNonnull] = struct{}{}
+		fields.Set(TestGenFieldRepeatedMsgNonnull)
 	} else {
 		for i0 := 0; i0 < len(m.RepeatedMsgNonnull); i0++ {
 			if m.RepeatedMsgNonnull[i0].Name != o.RepeatedMsgNonnull[i0].Name {
-				fields[TestGenFieldRepeatedMsgNonnullName] = struct{}{}
-				fields[TestGenFieldRepeatedMsgNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedMsgNonnullName)
+				fields.Set(TestGenFieldRepeatedMsgNonnull)
 			}
 			if m.RepeatedMsgNonnull[i0].Id != o.RepeatedMsgNonnull[i0].Id {
-				fields[TestGenFieldRepeatedMsgNonnullId] = struct{}{}
-				fields[TestGenFieldRepeatedMsgNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedMsgNonnullId)
+				fields.Set(TestGenFieldRepeatedMsgNonnull)
 			}
 			if m.RepeatedMsgNonnull[i0].NestedMsg != nil && o.RepeatedMsgNonnull[i0].NestedMsg != nil {
 				if m.RepeatedMsgNonnull[i0].NestedMsg.Name != o.RepeatedMsgNonnull[i0].NestedMsg.Name {
-					fields[TestGenFieldRepeatedMsgNonnullNestedMsgName] = struct{}{}
-					fields[TestGenFieldRepeatedMsgNonnullNestedMsg] = struct{}{}
-					fields[TestGenFieldRepeatedMsgNonnull] = struct{}{}
+					fields.Set(TestGenFieldRepeatedMsgNonnullNestedMsgName)
+					fields.Set(TestGenFieldRepeatedMsgNonnullNestedMsg)
+					fields.Set(TestGenFieldRepeatedMsgNonnull)
 				}
 			} else if (m.RepeatedMsgNonnull[i0].NestedMsg != nil && o.RepeatedMsgNonnull[i0].NestedMsg == nil) || (m.RepeatedMsgNonnull[i0].NestedMsg == nil && o.RepeatedMsgNonnull[i0].NestedMsg != nil) {
-				fields[TestGenFieldRepeatedMsgNonnullNestedMsg] = struct{}{}
-				fields[TestGenFieldRepeatedMsgNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedMsgNonnullNestedMsg)
+				fields.Set(TestGenFieldRepeatedMsgNonnull)
 			}
 		}
 	}
 	if m.RepeatedFields != nil && o.RepeatedFields != nil {
 		if len(m.RepeatedFields) != len(o.RepeatedFields) {
-			fields[TestGenFieldRepeatedFields] = struct{}{}
+			fields.Set(TestGenFieldRepeatedFields)
 		} else {
 			for i0 := 0; i0 < len(m.RepeatedFields); i0++ {
 				if m.RepeatedFields[i0].Name != o.RepeatedFields[i0].Name {
-					fields[TestGenFieldRepeatedFieldsName] = struct{}{}
-					fields[TestGenFieldRepeatedFields] = struct{}{}
+					fields.Set(TestGenFieldRepeatedFieldsName)
+					fields.Set(TestGenFieldRepeatedFields)
 				}
 			}
 		}
 	} else if (m.RepeatedFields != nil && o.RepeatedFields == nil) || (m.RepeatedFields == nil && o.RepeatedFields != nil) {
-		fields[TestGenFieldRepeatedFields] = struct{}{}
+		fields.Set(TestGenFieldRepeatedFields)
 	}
 	if len(m.RepeatedFieldsNonnull) != len(o.RepeatedFieldsNonnull) {
-		fields[TestGenFieldRepeatedFieldsNonnull] = struct{}{}
+		fields.Set(TestGenFieldRepeatedFieldsNonnull)
 	} else {
 		for i0 := 0; i0 < len(m.RepeatedFieldsNonnull); i0++ {
 			if m.RepeatedFieldsNonnull[i0].Name != o.RepeatedFieldsNonnull[i0].Name {
-				fields[TestGenFieldRepeatedFieldsNonnullName] = struct{}{}
-				fields[TestGenFieldRepeatedFieldsNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedFieldsNonnullName)
+				fields.Set(TestGenFieldRepeatedFieldsNonnull)
 			}
 		}
 	}
 	if m.RepeatedInnerMsg != nil && o.RepeatedInnerMsg != nil {
 		if len(m.RepeatedInnerMsg) != len(o.RepeatedInnerMsg) {
-			fields[TestGenFieldRepeatedInnerMsg] = struct{}{}
+			fields.Set(TestGenFieldRepeatedInnerMsg)
 		} else {
 			for i0 := 0; i0 < len(m.RepeatedInnerMsg); i0++ {
 				if m.RepeatedInnerMsg[i0].Url != o.RepeatedInnerMsg[i0].Url {
-					fields[TestGenFieldRepeatedInnerMsgUrl] = struct{}{}
-					fields[TestGenFieldRepeatedInnerMsg] = struct{}{}
+					fields.Set(TestGenFieldRepeatedInnerMsgUrl)
+					fields.Set(TestGenFieldRepeatedInnerMsg)
 				}
 				if m.RepeatedInnerMsg[i0].Id != o.RepeatedInnerMsg[i0].Id {
-					fields[TestGenFieldRepeatedInnerMsgId] = struct{}{}
-					fields[TestGenFieldRepeatedInnerMsg] = struct{}{}
+					fields.Set(TestGenFieldRepeatedInnerMsgId)
+					fields.Set(TestGenFieldRepeatedInnerMsg)
 				}
 			}
 		}
 	} else if (m.RepeatedInnerMsg != nil && o.RepeatedInnerMsg == nil) || (m.RepeatedInnerMsg == nil && o.RepeatedInnerMsg != nil) {
-		fields[TestGenFieldRepeatedInnerMsg] = struct{}{}
+		fields.Set(TestGenFieldRepeatedInnerMsg)
 	}
 	if len(m.RepeatedInnerMsgNonnull) != len(o.RepeatedInnerMsgNonnull) {
-		fields[TestGenFieldRepeatedInnerMsgNonnull] = struct{}{}
+		fields.Set(TestGenFieldRepeatedInnerMsgNonnull)
 	} else {
 		for i0 := 0; i0 < len(m.RepeatedInnerMsgNonnull); i0++ {
 			if m.RepeatedInnerMsgNonnull[i0].Url != o.RepeatedInnerMsgNonnull[i0].Url {
-				fields[TestGenFieldRepeatedInnerMsgNonnullUrl] = struct{}{}
-				fields[TestGenFieldRepeatedInnerMsgNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedInnerMsgNonnullUrl)
+				fields.Set(TestGenFieldRepeatedInnerMsgNonnull)
 			}
 			if m.RepeatedInnerMsgNonnull[i0].Id != o.RepeatedInnerMsgNonnull[i0].Id {
-				fields[TestGenFieldRepeatedInnerMsgNonnullId] = struct{}{}
-				fields[TestGenFieldRepeatedInnerMsgNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedInnerMsgNonnullId)
+				fields.Set(TestGenFieldRepeatedInnerMsgNonnull)
 			}
 		}
 	}
 	if m.RepeatedLoc != nil && o.RepeatedLoc != nil {
 		if len(m.RepeatedLoc) != len(o.RepeatedLoc) {
-			fields[TestGenFieldRepeatedLoc] = struct{}{}
+			fields.Set(TestGenFieldRepeatedLoc)
 		} else {
 			for i0 := 0; i0 < len(m.RepeatedLoc); i0++ {
 				if m.RepeatedLoc[i0].Latitude != o.RepeatedLoc[i0].Latitude {
-					fields[TestGenFieldRepeatedLocLatitude] = struct{}{}
-					fields[TestGenFieldRepeatedLoc] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocLatitude)
+					fields.Set(TestGenFieldRepeatedLoc)
 				}
 				if m.RepeatedLoc[i0].Longitude != o.RepeatedLoc[i0].Longitude {
-					fields[TestGenFieldRepeatedLocLongitude] = struct{}{}
-					fields[TestGenFieldRepeatedLoc] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocLongitude)
+					fields.Set(TestGenFieldRepeatedLoc)
 				}
 				if m.RepeatedLoc[i0].HorizontalAccuracy != o.RepeatedLoc[i0].HorizontalAccuracy {
-					fields[TestGenFieldRepeatedLocHorizontalAccuracy] = struct{}{}
-					fields[TestGenFieldRepeatedLoc] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocHorizontalAccuracy)
+					fields.Set(TestGenFieldRepeatedLoc)
 				}
 				if m.RepeatedLoc[i0].VerticalAccuracy != o.RepeatedLoc[i0].VerticalAccuracy {
-					fields[TestGenFieldRepeatedLocVerticalAccuracy] = struct{}{}
-					fields[TestGenFieldRepeatedLoc] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocVerticalAccuracy)
+					fields.Set(TestGenFieldRepeatedLoc)
 				}
 				if m.RepeatedLoc[i0].Altitude != o.RepeatedLoc[i0].Altitude {
-					fields[TestGenFieldRepeatedLocAltitude] = struct{}{}
-					fields[TestGenFieldRepeatedLoc] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocAltitude)
+					fields.Set(TestGenFieldRepeatedLoc)
 				}
 				if m.RepeatedLoc[i0].Course != o.RepeatedLoc[i0].Course {
-					fields[TestGenFieldRepeatedLocCourse] = struct{}{}
-					fields[TestGenFieldRepeatedLoc] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocCourse)
+					fields.Set(TestGenFieldRepeatedLoc)
 				}
 				if m.RepeatedLoc[i0].Speed != o.RepeatedLoc[i0].Speed {
-					fields[TestGenFieldRepeatedLocSpeed] = struct{}{}
-					fields[TestGenFieldRepeatedLoc] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocSpeed)
+					fields.Set(TestGenFieldRepeatedLoc)
 				}
 				if m.RepeatedLoc[i0].Timestamp != nil && o.RepeatedLoc[i0].Timestamp != nil {
 					if m.RepeatedLoc[i0].Timestamp.Seconds != o.RepeatedLoc[i0].Timestamp.Seconds {
-						fields[TestGenFieldRepeatedLocTimestampSeconds] = struct{}{}
-						fields[TestGenFieldRepeatedLocTimestamp] = struct{}{}
-						fields[TestGenFieldRepeatedLoc] = struct{}{}
+						fields.Set(TestGenFieldRepeatedLocTimestampSeconds)
+						fields.Set(TestGenFieldRepeatedLocTimestamp)
+						fields.Set(TestGenFieldRepeatedLoc)
 					}
 					if m.RepeatedLoc[i0].Timestamp.Nanos != o.RepeatedLoc[i0].Timestamp.Nanos {
-						fields[TestGenFieldRepeatedLocTimestampNanos] = struct{}{}
-						fields[TestGenFieldRepeatedLocTimestamp] = struct{}{}
-						fields[TestGenFieldRepeatedLoc] = struct{}{}
+						fields.Set(TestGenFieldRepeatedLocTimestampNanos)
+						fields.Set(TestGenFieldRepeatedLocTimestamp)
+						fields.Set(TestGenFieldRepeatedLoc)
 					}
 				} else if (m.RepeatedLoc[i0].Timestamp != nil && o.RepeatedLoc[i0].Timestamp == nil) || (m.RepeatedLoc[i0].Timestamp == nil && o.RepeatedLoc[i0].Timestamp != nil) {
-					fields[TestGenFieldRepeatedLocTimestamp] = struct{}{}
-					fields[TestGenFieldRepeatedLoc] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocTimestamp)
+					fields.Set(TestGenFieldRepeatedLoc)
 				}
 			}
 		}
 	} else if (m.RepeatedLoc != nil && o.RepeatedLoc == nil) || (m.RepeatedLoc == nil && o.RepeatedLoc != nil) {
-		fields[TestGenFieldRepeatedLoc] = struct{}{}
+		fields.Set(TestGenFieldRepeatedLoc)
 	}
 	if len(m.RepeatedLocNonnull) != len(o.RepeatedLocNonnull) {
-		fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+		fields.Set(TestGenFieldRepeatedLocNonnull)
 	} else {
 		for i0 := 0; i0 < len(m.RepeatedLocNonnull); i0++ {
 			if m.RepeatedLocNonnull[i0].Latitude != o.RepeatedLocNonnull[i0].Latitude {
-				fields[TestGenFieldRepeatedLocNonnullLatitude] = struct{}{}
-				fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedLocNonnullLatitude)
+				fields.Set(TestGenFieldRepeatedLocNonnull)
 			}
 			if m.RepeatedLocNonnull[i0].Longitude != o.RepeatedLocNonnull[i0].Longitude {
-				fields[TestGenFieldRepeatedLocNonnullLongitude] = struct{}{}
-				fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedLocNonnullLongitude)
+				fields.Set(TestGenFieldRepeatedLocNonnull)
 			}
 			if m.RepeatedLocNonnull[i0].HorizontalAccuracy != o.RepeatedLocNonnull[i0].HorizontalAccuracy {
-				fields[TestGenFieldRepeatedLocNonnullHorizontalAccuracy] = struct{}{}
-				fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedLocNonnullHorizontalAccuracy)
+				fields.Set(TestGenFieldRepeatedLocNonnull)
 			}
 			if m.RepeatedLocNonnull[i0].VerticalAccuracy != o.RepeatedLocNonnull[i0].VerticalAccuracy {
-				fields[TestGenFieldRepeatedLocNonnullVerticalAccuracy] = struct{}{}
-				fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedLocNonnullVerticalAccuracy)
+				fields.Set(TestGenFieldRepeatedLocNonnull)
 			}
 			if m.RepeatedLocNonnull[i0].Altitude != o.RepeatedLocNonnull[i0].Altitude {
-				fields[TestGenFieldRepeatedLocNonnullAltitude] = struct{}{}
-				fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedLocNonnullAltitude)
+				fields.Set(TestGenFieldRepeatedLocNonnull)
 			}
 			if m.RepeatedLocNonnull[i0].Course != o.RepeatedLocNonnull[i0].Course {
-				fields[TestGenFieldRepeatedLocNonnullCourse] = struct{}{}
-				fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedLocNonnullCourse)
+				fields.Set(TestGenFieldRepeatedLocNonnull)
 			}
 			if m.RepeatedLocNonnull[i0].Speed != o.RepeatedLocNonnull[i0].Speed {
-				fields[TestGenFieldRepeatedLocNonnullSpeed] = struct{}{}
-				fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedLocNonnullSpeed)
+				fields.Set(TestGenFieldRepeatedLocNonnull)
 			}
 			if m.RepeatedLocNonnull[i0].Timestamp != nil && o.RepeatedLocNonnull[i0].Timestamp != nil {
 				if m.RepeatedLocNonnull[i0].Timestamp.Seconds != o.RepeatedLocNonnull[i0].Timestamp.Seconds {
-					fields[TestGenFieldRepeatedLocNonnullTimestampSeconds] = struct{}{}
-					fields[TestGenFieldRepeatedLocNonnullTimestamp] = struct{}{}
-					fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocNonnullTimestampSeconds)
+					fields.Set(TestGenFieldRepeatedLocNonnullTimestamp)
+					fields.Set(TestGenFieldRepeatedLocNonnull)
 				}
 				if m.RepeatedLocNonnull[i0].Timestamp.Nanos != o.RepeatedLocNonnull[i0].Timestamp.Nanos {
-					fields[TestGenFieldRepeatedLocNonnullTimestampNanos] = struct{}{}
-					fields[TestGenFieldRepeatedLocNonnullTimestamp] = struct{}{}
-					fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+					fields.Set(TestGenFieldRepeatedLocNonnullTimestampNanos)
+					fields.Set(TestGenFieldRepeatedLocNonnullTimestamp)
+					fields.Set(TestGenFieldRepeatedLocNonnull)
 				}
 			} else if (m.RepeatedLocNonnull[i0].Timestamp != nil && o.RepeatedLocNonnull[i0].Timestamp == nil) || (m.RepeatedLocNonnull[i0].Timestamp == nil && o.RepeatedLocNonnull[i0].Timestamp != nil) {
-				fields[TestGenFieldRepeatedLocNonnullTimestamp] = struct{}{}
-				fields[TestGenFieldRepeatedLocNonnull] = struct{}{}
+				fields.Set(TestGenFieldRepeatedLocNonnullTimestamp)
+				fields.Set(TestGenFieldRepeatedLocNonnull)
 			}
 		}
 	}
 	if m.IntMap != nil && o.IntMap != nil {
 		if len(m.IntMap) != len(o.IntMap) {
-			fields[TestGenFieldIntMap] = struct{}{}
+			fields.Set(TestGenFieldIntMap)
 		} else {
 			for k0, _ := range m.IntMap {
 				_, vok0 := o.IntMap[k0]
 				if !vok0 {
-					fields[TestGenFieldIntMap] = struct{}{}
+					fields.Set(TestGenFieldIntMap)
 				} else {
 					if m.IntMap[k0] != o.IntMap[k0] {
-						fields[TestGenFieldIntMap] = struct{}{}
+						fields.Set(TestGenFieldIntMap)
 						break
 					}
 				}
 			}
 		}
 	} else if (m.IntMap != nil && o.IntMap == nil) || (m.IntMap == nil && o.IntMap != nil) {
-		fields[TestGenFieldIntMap] = struct{}{}
+		fields.Set(TestGenFieldIntMap)
 	}
 	if m.MsgMap != nil && o.MsgMap != nil {
 		if len(m.MsgMap) != len(o.MsgMap) {
-			fields[TestGenFieldMsgMap] = struct{}{}
+			fields.Set(TestGenFieldMsgMap)
 		} else {
 			for k0, _ := range m.MsgMap {
 				_, vok0 := o.MsgMap[k0]
 				if !vok0 {
-					fields[TestGenFieldMsgMap] = struct{}{}
+					fields.Set(TestGenFieldMsgMap)
 				} else {
 					if m.MsgMap[k0].Name != o.MsgMap[k0].Name {
-						fields[TestGenFieldMsgMapValueName] = struct{}{}
-						fields[TestGenFieldMsgMapValue] = struct{}{}
-						fields[TestGenFieldMsgMap] = struct{}{}
+						fields.Set(TestGenFieldMsgMapValueName)
+						fields.Set(TestGenFieldMsgMapValue)
+						fields.Set(TestGenFieldMsgMap)
 					}
 				}
 			}
 		}
 	} else if (m.MsgMap != nil && o.MsgMap == nil) || (m.MsgMap == nil && o.MsgMap != nil) {
-		fields[TestGenFieldMsgMap] = struct{}{}
+		fields.Set(TestGenFieldMsgMap)
 	}
 	if m.Unused != o.Unused {
-		fields[TestGenFieldUnused] = struct{}{}
+		fields.Set(TestGenFieldUnused)
 	}
+}
+
+func (m *TestGen) GetDiffFields(o *TestGen) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
 }
 
 func (m *TestGen) Clone() *TestGen {
@@ -2735,114 +2742,114 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
+	if fmap.Has("2") {
 		if m.Name != src.Name {
 			m.Name = src.Name
 			changed++
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.Db != src.Db {
 			m.Db = src.Db
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.Fl != src.Fl {
 			m.Fl = src.Fl
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.I32 != src.I32 {
 			m.I32 = src.I32
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if m.I64 != src.I64 {
 			m.I64 = src.I64
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.U32 != src.U32 {
 			m.U32 = src.U32
 			changed++
 		}
 	}
-	if _, set := fmap["8"]; set {
+	if fmap.Has("8") {
 		if m.U64 != src.U64 {
 			m.U64 = src.U64
 			changed++
 		}
 	}
-	if _, set := fmap["9"]; set {
+	if fmap.Has("9") {
 		if m.S32 != src.S32 {
 			m.S32 = src.S32
 			changed++
 		}
 	}
-	if _, set := fmap["10"]; set {
+	if fmap.Has("10") {
 		if m.S64 != src.S64 {
 			m.S64 = src.S64
 			changed++
 		}
 	}
-	if _, set := fmap["11"]; set {
+	if fmap.Has("11") {
 		if m.F32 != src.F32 {
 			m.F32 = src.F32
 			changed++
 		}
 	}
-	if _, set := fmap["12"]; set {
+	if fmap.Has("12") {
 		if m.F64 != src.F64 {
 			m.F64 = src.F64
 			changed++
 		}
 	}
-	if _, set := fmap["13"]; set {
+	if fmap.Has("13") {
 		if m.Sf32 != src.Sf32 {
 			m.Sf32 = src.Sf32
 			changed++
 		}
 	}
-	if _, set := fmap["14"]; set {
+	if fmap.Has("14") {
 		if m.Sf64 != src.Sf64 {
 			m.Sf64 = src.Sf64
 			changed++
 		}
 	}
-	if _, set := fmap["15"]; set {
+	if fmap.Has("15") {
 		if m.Bb != src.Bb {
 			m.Bb = src.Bb
 			changed++
 		}
 	}
-	if _, set := fmap["16"]; set {
+	if fmap.Has("16") {
 		if m.OuterEn != src.OuterEn {
 			m.OuterEn = src.OuterEn
 			changed++
 		}
 	}
-	if _, set := fmap["17"]; set {
+	if fmap.Has("17") {
 		if m.InnerEn != src.InnerEn {
 			m.InnerEn = src.InnerEn
 			changed++
 		}
 	}
-	if _, set := fmap["18"]; set {
+	if fmap.HasOrHasChild("18") {
 		if src.InnerMsg != nil {
 			if m.InnerMsg == nil {
 				m.InnerMsg = &TestGen_InnerMessage{}
 			}
-			if _, set := fmap["18.1"]; set {
+			if fmap.Has("18.1") {
 				if m.InnerMsg.Url != src.InnerMsg.Url {
 					m.InnerMsg.Url = src.InnerMsg.Url
 					changed++
 				}
 			}
-			if _, set := fmap["18.2"]; set {
+			if fmap.Has("18.2") {
 				if m.InnerMsg.Id != src.InnerMsg.Id {
 					m.InnerMsg.Id = src.InnerMsg.Id
 					changed++
@@ -2853,43 +2860,43 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["19"]; set {
-		if _, set := fmap["19.1"]; set {
+	if fmap.HasOrHasChild("19") {
+		if fmap.Has("19.1") {
 			if m.InnerMsgNonnull.Url != src.InnerMsgNonnull.Url {
 				m.InnerMsgNonnull.Url = src.InnerMsgNonnull.Url
 				changed++
 			}
 		}
-		if _, set := fmap["19.2"]; set {
+		if fmap.Has("19.2") {
 			if m.InnerMsgNonnull.Id != src.InnerMsgNonnull.Id {
 				m.InnerMsgNonnull.Id = src.InnerMsgNonnull.Id
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["20"]; set {
+	if fmap.HasOrHasChild("20") {
 		if src.IncludeMsg != nil {
 			if m.IncludeMsg == nil {
 				m.IncludeMsg = &IncludeMessage{}
 			}
-			if _, set := fmap["20.1"]; set {
+			if fmap.Has("20.1") {
 				if m.IncludeMsg.Name != src.IncludeMsg.Name {
 					m.IncludeMsg.Name = src.IncludeMsg.Name
 					changed++
 				}
 			}
-			if _, set := fmap["20.2"]; set {
+			if fmap.Has("20.2") {
 				if m.IncludeMsg.Id != src.IncludeMsg.Id {
 					m.IncludeMsg.Id = src.IncludeMsg.Id
 					changed++
 				}
 			}
-			if _, set := fmap["20.3"]; set {
+			if fmap.HasOrHasChild("20.3") {
 				if src.IncludeMsg.NestedMsg != nil {
 					if m.IncludeMsg.NestedMsg == nil {
 						m.IncludeMsg.NestedMsg = &NestedMessage{}
 					}
-					if _, set := fmap["20.3.1"]; set {
+					if fmap.Has("20.3.1") {
 						if m.IncludeMsg.NestedMsg.Name != src.IncludeMsg.NestedMsg.Name {
 							m.IncludeMsg.NestedMsg.Name = src.IncludeMsg.NestedMsg.Name
 							changed++
@@ -2905,25 +2912,25 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["21"]; set {
-		if _, set := fmap["21.1"]; set {
+	if fmap.HasOrHasChild("21") {
+		if fmap.Has("21.1") {
 			if m.IncludeMsgNonnull.Name != src.IncludeMsgNonnull.Name {
 				m.IncludeMsgNonnull.Name = src.IncludeMsgNonnull.Name
 				changed++
 			}
 		}
-		if _, set := fmap["21.2"]; set {
+		if fmap.Has("21.2") {
 			if m.IncludeMsgNonnull.Id != src.IncludeMsgNonnull.Id {
 				m.IncludeMsgNonnull.Id = src.IncludeMsgNonnull.Id
 				changed++
 			}
 		}
-		if _, set := fmap["21.3"]; set {
+		if fmap.HasOrHasChild("21.3") {
 			if src.IncludeMsgNonnull.NestedMsg != nil {
 				if m.IncludeMsgNonnull.NestedMsg == nil {
 					m.IncludeMsgNonnull.NestedMsg = &NestedMessage{}
 				}
-				if _, set := fmap["21.3.1"]; set {
+				if fmap.Has("21.3.1") {
 					if m.IncludeMsgNonnull.NestedMsg.Name != src.IncludeMsgNonnull.NestedMsg.Name {
 						m.IncludeMsgNonnull.NestedMsg.Name = src.IncludeMsgNonnull.NestedMsg.Name
 						changed++
@@ -2935,12 +2942,12 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			}
 		}
 	}
-	if _, set := fmap["22"]; set {
+	if fmap.HasOrHasChild("22") {
 		if src.IncludeFields != nil {
 			if m.IncludeFields == nil {
 				m.IncludeFields = &IncludeFields{}
 			}
-			if _, set := fmap["22.2"]; set {
+			if fmap.Has("22.2") {
 				if m.IncludeFields.Name != src.IncludeFields.Name {
 					m.IncludeFields.Name = src.IncludeFields.Name
 					changed++
@@ -2951,73 +2958,73 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["23"]; set {
-		if _, set := fmap["23.2"]; set {
+	if fmap.HasOrHasChild("23") {
+		if fmap.Has("23.2") {
 			if m.IncludeFieldsNonnull.Name != src.IncludeFieldsNonnull.Name {
 				m.IncludeFieldsNonnull.Name = src.IncludeFieldsNonnull.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["24"]; set {
+	if fmap.HasOrHasChild("24") {
 		if src.Loc != nil {
 			if m.Loc == nil {
 				m.Loc = &distributed_match_engine.Loc{}
 			}
-			if _, set := fmap["24.1"]; set {
+			if fmap.Has("24.1") {
 				if m.Loc.Latitude != src.Loc.Latitude {
 					m.Loc.Latitude = src.Loc.Latitude
 					changed++
 				}
 			}
-			if _, set := fmap["24.2"]; set {
+			if fmap.Has("24.2") {
 				if m.Loc.Longitude != src.Loc.Longitude {
 					m.Loc.Longitude = src.Loc.Longitude
 					changed++
 				}
 			}
-			if _, set := fmap["24.3"]; set {
+			if fmap.Has("24.3") {
 				if m.Loc.HorizontalAccuracy != src.Loc.HorizontalAccuracy {
 					m.Loc.HorizontalAccuracy = src.Loc.HorizontalAccuracy
 					changed++
 				}
 			}
-			if _, set := fmap["24.4"]; set {
+			if fmap.Has("24.4") {
 				if m.Loc.VerticalAccuracy != src.Loc.VerticalAccuracy {
 					m.Loc.VerticalAccuracy = src.Loc.VerticalAccuracy
 					changed++
 				}
 			}
-			if _, set := fmap["24.5"]; set {
+			if fmap.Has("24.5") {
 				if m.Loc.Altitude != src.Loc.Altitude {
 					m.Loc.Altitude = src.Loc.Altitude
 					changed++
 				}
 			}
-			if _, set := fmap["24.6"]; set {
+			if fmap.Has("24.6") {
 				if m.Loc.Course != src.Loc.Course {
 					m.Loc.Course = src.Loc.Course
 					changed++
 				}
 			}
-			if _, set := fmap["24.7"]; set {
+			if fmap.Has("24.7") {
 				if m.Loc.Speed != src.Loc.Speed {
 					m.Loc.Speed = src.Loc.Speed
 					changed++
 				}
 			}
-			if _, set := fmap["24.8"]; set {
+			if fmap.HasOrHasChild("24.8") {
 				if src.Loc.Timestamp != nil {
 					if m.Loc.Timestamp == nil {
 						m.Loc.Timestamp = &distributed_match_engine.Timestamp{}
 					}
-					if _, set := fmap["24.8.1"]; set {
+					if fmap.Has("24.8.1") {
 						if m.Loc.Timestamp.Seconds != src.Loc.Timestamp.Seconds {
 							m.Loc.Timestamp.Seconds = src.Loc.Timestamp.Seconds
 							changed++
 						}
 					}
-					if _, set := fmap["24.8.2"]; set {
+					if fmap.Has("24.8.2") {
 						if m.Loc.Timestamp.Nanos != src.Loc.Timestamp.Nanos {
 							m.Loc.Timestamp.Nanos = src.Loc.Timestamp.Nanos
 							changed++
@@ -3033,61 +3040,61 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["25"]; set {
-		if _, set := fmap["25.1"]; set {
+	if fmap.HasOrHasChild("25") {
+		if fmap.Has("25.1") {
 			if m.LocNonnull.Latitude != src.LocNonnull.Latitude {
 				m.LocNonnull.Latitude = src.LocNonnull.Latitude
 				changed++
 			}
 		}
-		if _, set := fmap["25.2"]; set {
+		if fmap.Has("25.2") {
 			if m.LocNonnull.Longitude != src.LocNonnull.Longitude {
 				m.LocNonnull.Longitude = src.LocNonnull.Longitude
 				changed++
 			}
 		}
-		if _, set := fmap["25.3"]; set {
+		if fmap.Has("25.3") {
 			if m.LocNonnull.HorizontalAccuracy != src.LocNonnull.HorizontalAccuracy {
 				m.LocNonnull.HorizontalAccuracy = src.LocNonnull.HorizontalAccuracy
 				changed++
 			}
 		}
-		if _, set := fmap["25.4"]; set {
+		if fmap.Has("25.4") {
 			if m.LocNonnull.VerticalAccuracy != src.LocNonnull.VerticalAccuracy {
 				m.LocNonnull.VerticalAccuracy = src.LocNonnull.VerticalAccuracy
 				changed++
 			}
 		}
-		if _, set := fmap["25.5"]; set {
+		if fmap.Has("25.5") {
 			if m.LocNonnull.Altitude != src.LocNonnull.Altitude {
 				m.LocNonnull.Altitude = src.LocNonnull.Altitude
 				changed++
 			}
 		}
-		if _, set := fmap["25.6"]; set {
+		if fmap.Has("25.6") {
 			if m.LocNonnull.Course != src.LocNonnull.Course {
 				m.LocNonnull.Course = src.LocNonnull.Course
 				changed++
 			}
 		}
-		if _, set := fmap["25.7"]; set {
+		if fmap.Has("25.7") {
 			if m.LocNonnull.Speed != src.LocNonnull.Speed {
 				m.LocNonnull.Speed = src.LocNonnull.Speed
 				changed++
 			}
 		}
-		if _, set := fmap["25.8"]; set {
+		if fmap.HasOrHasChild("25.8") {
 			if src.LocNonnull.Timestamp != nil {
 				if m.LocNonnull.Timestamp == nil {
 					m.LocNonnull.Timestamp = &distributed_match_engine.Timestamp{}
 				}
-				if _, set := fmap["25.8.1"]; set {
+				if fmap.Has("25.8.1") {
 					if m.LocNonnull.Timestamp.Seconds != src.LocNonnull.Timestamp.Seconds {
 						m.LocNonnull.Timestamp.Seconds = src.LocNonnull.Timestamp.Seconds
 						changed++
 					}
 				}
-				if _, set := fmap["25.8.2"]; set {
+				if fmap.Has("25.8.2") {
 					if m.LocNonnull.Timestamp.Nanos != src.LocNonnull.Timestamp.Nanos {
 						m.LocNonnull.Timestamp.Nanos = src.LocNonnull.Timestamp.Nanos
 						changed++
@@ -3099,7 +3106,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			}
 		}
 	}
-	if _, set := fmap["26"]; set {
+	if fmap.Has("26") {
 		if src.RepeatedInt != nil {
 			if updateListAction == "add" {
 				changed += m.AddRepeatedInt(src.RepeatedInt...)
@@ -3115,13 +3122,13 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["27"]; set {
+	if fmap.Has("27") {
 		if src.Ip != nil {
 			m.Ip = src.Ip
 			changed++
 		}
 	}
-	if _, set := fmap["28"]; set {
+	if fmap.Has("28") {
 		if src.Names != nil {
 			if updateListAction == "add" {
 				changed += m.AddNames(src.Names...)
@@ -3137,7 +3144,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["29"]; set {
+	if fmap.HasOrHasChild("29") {
 		if src.RepeatedMsg != nil {
 			if updateListAction == "add" {
 				changed += m.AddRepeatedMsg(src.RepeatedMsg...)
@@ -3155,7 +3162,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["30"]; set {
+	if fmap.HasOrHasChild("30") {
 		if src.RepeatedMsgNonnull != nil {
 			if updateListAction == "add" {
 				changed += m.AddRepeatedMsgNonnull(src.RepeatedMsgNonnull...)
@@ -3173,7 +3180,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["31"]; set {
+	if fmap.HasOrHasChild("31") {
 		if src.RepeatedFields != nil {
 			if updateListAction == "add" {
 				changed += m.AddRepeatedFields(src.RepeatedFields...)
@@ -3191,7 +3198,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["32"]; set {
+	if fmap.HasOrHasChild("32") {
 		if src.RepeatedFieldsNonnull != nil {
 			if updateListAction == "add" {
 				changed += m.AddRepeatedFieldsNonnull(src.RepeatedFieldsNonnull...)
@@ -3209,7 +3216,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["33"]; set {
+	if fmap.HasOrHasChild("33") {
 		if src.RepeatedInnerMsg != nil {
 			if updateListAction == "add" {
 				changed += m.AddRepeatedInnerMsg(src.RepeatedInnerMsg...)
@@ -3227,7 +3234,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["34"]; set {
+	if fmap.HasOrHasChild("34") {
 		if src.RepeatedInnerMsgNonnull != nil {
 			if updateListAction == "add" {
 				changed += m.AddRepeatedInnerMsgNonnull(src.RepeatedInnerMsgNonnull...)
@@ -3245,7 +3252,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["35"]; set {
+	if fmap.HasOrHasChild("35") {
 		if src.RepeatedLoc != nil {
 			if updateListAction == "add" {
 				changed += m.AddRepeatedLoc(src.RepeatedLoc...)
@@ -3263,7 +3270,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["36"]; set {
+	if fmap.HasOrHasChild("36") {
 		if src.RepeatedLocNonnull != nil {
 			if updateListAction == "add" {
 				changed += m.AddRepeatedLocNonnull(src.RepeatedLocNonnull...)
@@ -3281,7 +3288,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["37"]; set {
+	if fmap.HasOrHasChild("37") {
 		if src.IntMap != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.IntMap {
@@ -3307,7 +3314,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["38"]; set {
+	if fmap.HasOrHasChild("38") {
 		if src.MsgMap != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.MsgMap {
@@ -3334,7 +3341,7 @@ func (m *TestGen) CopyInFields(src *TestGen) int {
 			changed++
 		}
 	}
-	if _, set := fmap["39"]; set {
+	if fmap.Has("39") {
 		if m.Unused != src.Unused {
 			m.Unused = src.Unused
 			changed++
@@ -3920,6 +3927,85 @@ func applyMatchOptions(opts *MatchOptions, args ...MatchOpt) {
 	for _, f := range args {
 		f(opts)
 	}
+}
+
+type FieldMap struct {
+	fields map[string]struct{}
+}
+
+func MakeFieldMap(fields []string) *FieldMap {
+	fmap := &FieldMap{}
+	fmap.fields = map[string]struct{}{}
+	if fields == nil {
+		return fmap
+	}
+	for _, set := range fields {
+		fmap.fields[set] = struct{}{}
+	}
+	return fmap
+}
+
+func NewFieldMap(fields map[string]struct{}) *FieldMap {
+	if fields == nil {
+		fields = map[string]struct{}{}
+	}
+	return &FieldMap{
+		fields: fields,
+	}
+}
+
+// Has checks if the key is set. Note that setting
+// a parent key implies that all child keys are also set.
+func (s *FieldMap) Has(key string) bool {
+	// key or parent is specified
+	for {
+		if _, ok := s.fields[key]; ok {
+			return true
+		}
+		idx := strings.LastIndex(key, ".")
+		if idx == -1 {
+			break
+		}
+		key = key[:idx]
+	}
+	return false
+}
+
+// HasOrHasChild checks if the key, or any child
+// of the key is set. Note that as with Has(), if
+// a parent of the key is set, this returns true.
+func (s *FieldMap) HasOrHasChild(key string) bool {
+	if s.Has(key) {
+		return true
+	}
+	prefix := key + "."
+	for k := range s.fields {
+		if strings.HasPrefix(k, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *FieldMap) Set(key string) {
+	s.fields[key] = struct{}{}
+}
+
+func (s *FieldMap) Clear(key string) {
+	delete(s.fields, key)
+}
+
+func (s *FieldMap) Fields() []string {
+	fields := []string{}
+	for k := range s.fields {
+		fields = append(fields, k)
+	}
+	sort.Strings(fields)
+	return fields
+}
+
+func (s *FieldMap) Count() int {
+	return len(s.fields)
 }
 
 // DecodeHook for use with the mapstructure package.

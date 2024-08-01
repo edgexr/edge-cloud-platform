@@ -33,7 +33,7 @@ func (a *AwsEc2Platform) GetCloudletImageSuffix(ctx context.Context) string {
 	return ""
 }
 
-//CreateImageFromUrl downloads image from URL and then imports to the datastore
+// CreateImageFromUrl downloads image from URL and then imports to the datastore
 func (a *AwsEc2Platform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string) error {
 	return fmt.Errorf("CreateImageFromUrl not implemented")
 }
@@ -128,6 +128,7 @@ func (a *AwsEc2Platform) InitProvider(ctx context.Context, caches *platform.Cach
 			return nil
 		}
 	}
+	a.reservedSubnets = a.VMProperties.CommonPf.PlatformConfig.SyncFactory.NewSyncReservations("subnets")
 
 	acct, err := a.GetIamAccountForImage(ctx)
 	if err != nil {

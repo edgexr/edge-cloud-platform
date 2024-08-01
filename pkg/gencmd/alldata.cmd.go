@@ -97,6 +97,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		}
 		for i1 := 0; i1 < len(in.Cloudlets[i0].InfraFlavors); i1++ {
 		}
+		if _, found := tags["nocmp"]; found {
+			in.Cloudlets[i0].ObjId = ""
+		}
 	}
 	for i0 := 0; i0 < len(in.CloudletInfos); i0++ {
 		if _, found := tags["nocmp"]; found {
@@ -178,6 +181,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		if _, found := tags["timestamp"]; found {
 			in.ClusterInsts[i0].ReservationEndedAt = distributed_match_engine.Timestamp{}
 		}
+		if _, found := tags["nocmp"]; found {
+			in.ClusterInsts[i0].ObjId = ""
+		}
 	}
 	for i0 := 0; i0 < len(in.Apps); i0++ {
 		if _, found := tags["nocmp"]; found {
@@ -222,6 +228,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		}
 		if _, found := tags["nocmp"]; found {
 			in.AppInstances[i0].VirtualClusterKey = edgeproto.ClusterKey{}
+		}
+		if _, found := tags["nocmp"]; found {
+			in.AppInstances[i0].ObjId = ""
 		}
 	}
 	for i0 := 0; i0 < len(in.AppInstRefs); i0++ {
@@ -305,7 +314,7 @@ var AllDataOptionalArgs = []string{
 	"settings.resourcesnapshotthreadinterval",
 	"settings.platformhainstancepollinterval",
 	"settings.platformhainstanceactiveexpiretime",
-	"settings.ccrmredisapitimeout",
+	"settings.ccrmapitimeout",
 	"operatorcodes:#.code",
 	"operatorcodes:#.organization",
 	"restagtables:#.fields",
@@ -365,6 +374,9 @@ var AllDataOptionalArgs = []string{
 	"platformfeatures:#.noclustersupport",
 	"platformfeatures:#.isedgebox",
 	"platformfeatures:#.supportsipv6",
+	"platformfeatures:#.requirescrmonedge",
+	"platformfeatures:#.requirescrmoffedge",
+	"platformfeatures:#.requirescertrefresh",
 	"platformfeatures:#.resourcequotaproperties:#.name",
 	"platformfeatures:#.resourcequotaproperties:#.value",
 	"platformfeatures:#.resourcequotaproperties:#.inframaxvalue",
@@ -395,7 +407,6 @@ var AllDataOptionalArgs = []string{
 	"cloudlets:#.timelimits.updateappinsttimeout",
 	"cloudlets:#.timelimits.deleteappinsttimeout",
 	"cloudlets:#.errors",
-	"cloudlets:#.onboardingstate",
 	"cloudlets:#.state",
 	"cloudlets:#.crmoverride",
 	"cloudlets:#.deploymentlocal",
@@ -478,6 +489,8 @@ var AllDataOptionalArgs = []string{
 	"cloudlets:#.infraflavors:#.disk",
 	"cloudlets:#.infraflavors:#.propmap",
 	"cloudlets:#.edgeboxonly",
+	"cloudlets:#.crmonedge",
+	"cloudlets:#.objid",
 	"cloudletinfos:#.fields",
 	"cloudletinfos:#.key.organization",
 	"cloudletinfos:#.key.name",
@@ -646,6 +659,7 @@ var AllDataOptionalArgs = []string{
 	"clusterinsts:#.dnslabel",
 	"clusterinsts:#.fqdn",
 	"clusterinsts:#.enableipv6",
+	"clusterinsts:#.objid",
 	"apps:#.fields",
 	"apps:#.key.organization",
 	"apps:#.key.name",
@@ -759,6 +773,7 @@ var AllDataOptionalArgs = []string{
 	"appinstances:#.virtualclusterkey.name",
 	"appinstances:#.virtualclusterkey.organization",
 	"appinstances:#.enableipv6",
+	"appinstances:#.objid",
 	"appinstrefs:#.key.organization",
 	"appinstrefs:#.key.name",
 	"appinstrefs:#.key.version",
@@ -881,7 +896,7 @@ var AllDataComments = map[string]string{
 	"settings.resourcesnapshotthreadinterval":                                    "ResourceSnapshot Refresh thread run interval",
 	"settings.platformhainstancepollinterval":                                    "Platform HA instance poll interval",
 	"settings.platformhainstanceactiveexpiretime":                                "Platform HA instance active time",
-	"settings.ccrmredisapitimeout":                                               "Timeout for controller platform-specific API calls to CCRM",
+	"settings.ccrmapitimeout":                                                    "Timeout for controller platform-specific API calls to CCRM",
 	"operatorcodes:#.code":                                                       "MCC plus MNC code, or custom carrier code designation.",
 	"operatorcodes:#.organization":                                               "Operator Organization name",
 	"restagtables:#.key.name":                                                    "Resource Table Name",
@@ -940,6 +955,9 @@ var AllDataComments = map[string]string{
 	"platformfeatures:#.noclustersupport":                                        "No cluster support. Some platforms, like Federation, do not support clusters.",
 	"platformfeatures:#.isedgebox":                                               "Edgebox platforms are for user-hosted cloudlets, and must use public images and do not get DNS mapping, as they do not get access to sensitive data.",
 	"platformfeatures:#.supportsipv6":                                            "Supports IPv6",
+	"platformfeatures:#.requirescrmonedge":                                       "Requires on-edge-site CRM",
+	"platformfeatures:#.requirescrmoffedge":                                      "Requires off-edge-site CRM, i.e. CCRM",
+	"platformfeatures:#.requirescertrefresh":                                     "Requires certificate refresh",
 	"platformfeatures:#.resourcequotaproperties:#.name":                          "Resource name",
 	"platformfeatures:#.resourcequotaproperties:#.value":                         "Resource value",
 	"platformfeatures:#.resourcequotaproperties:#.inframaxvalue":                 "Resource infra max value",
@@ -970,10 +988,9 @@ var AllDataComments = map[string]string{
 	"cloudlets:#.timelimits.updateappinsttimeout":                                "Override default max time to update an app instance (duration)",
 	"cloudlets:#.timelimits.deleteappinsttimeout":                                "Override default max time to delete an app instance (duration)",
 	"cloudlets:#.errors":                                                         "Any errors trying to create, update, or delete the Cloudlet.",
-	"cloudlets:#.onboardingstate":                                                "Onboarding state of the cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"cloudlets:#.state":                                                          "Current state of the crm, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"cloudlets:#.crmoverride":                                                    "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
-	"cloudlets:#.deploymentlocal":                                                "Deploy cloudlet services locally",
+	"cloudlets:#.deploymentlocal":                                                "(Deprecated, replaced by CrmOnEdge) Deploy cloudlet services locally",
 	"cloudlets:#.platformtype":                                                   "Platform type",
 	"cloudlets:#.notifysrvaddr":                                                  "Address for the CRM notify listener to run on",
 	"cloudlets:#.flavor.name":                                                    "Flavor name",
@@ -1004,7 +1021,7 @@ var AllDataComments = map[string]string{
 	"cloudlets:#.config.ansiblepublicaddr":                                       "Ansible public address for CRM to connect to CCRM",
 	"cloudlets:#.config.envoywithcurlimage":                                      "docker image path for envoy with curl",
 	"cloudlets:#.config.nginxwithcurlimage":                                      "docker image path for nginx with curl",
-	"cloudlets:#.accessvars":                                                     "Secrets required to access cloudlet, will be saved in encrypted storage",
+	"cloudlets:#.accessvars":                                                     "Secrets required to access cloudlet, will be saved in encrypted storage, and cleared on the cloudlet object",
 	"cloudlets:#.vmimageversion":                                                 "EdgeCloud baseimage version where CRM services reside",
 	"cloudlets:#.deployment":                                                     "Deployment type to bring up CRM services (docker, kubernetes)",
 	"cloudlets:#.infraapiaccess":                                                 "Infra Access Type is the type of access available to Infra API Endpoint, one of DirectAccess, RestrictedAccess",
@@ -1053,6 +1070,8 @@ var AllDataComments = map[string]string{
 	"cloudlets:#.infraflavors:#.disk":                                            "Amount of disk in GB on the Cloudlet",
 	"cloudlets:#.infraflavors:#.propmap":                                         "OS Flavor Properties, if any",
 	"cloudlets:#.edgeboxonly":                                                    "Edgebox only cloudlets allow for developers to set up cloudlets anywhere (laptop, etc) but can only use public images and do not support DNS mapping.",
+	"cloudlets:#.crmonedge":                                                      "CRM shall run on the edge site if true (required for restricted cloudlets), otherwise runs centrally (default)",
+	"cloudlets:#.objid":                                                          "Universally unique object ID",
 	"cloudletinfos:#.fields":                                                     "Fields are used for the Update API to specify which fields to apply",
 	"cloudletinfos:#.key.organization":                                           "Organization of the cloudlet site",
 	"cloudletinfos:#.key.name":                                                   "Name of the cloudlet",
@@ -1221,6 +1240,7 @@ var AllDataComments = map[string]string{
 	"clusterinsts:#.dnslabel":                                                    "DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts",
 	"clusterinsts:#.fqdn":                                                        "FQDN is a globally unique DNS id for the ClusterInst",
 	"clusterinsts:#.enableipv6":                                                  "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting",
+	"clusterinsts:#.objid":                                                       "Universally unique object ID",
 	"apps:#.fields":                                                              "Fields are used for the Update API to specify which fields to apply",
 	"apps:#.key.organization":                                                    "App developer organization",
 	"apps:#.key.name":                                                            "App name",
@@ -1334,6 +1354,7 @@ var AllDataComments = map[string]string{
 	"appinstances:#.virtualclusterkey.name":                                      "Cluster name",
 	"appinstances:#.virtualclusterkey.organization":                              "Name of the organization that this cluster belongs to",
 	"appinstances:#.enableipv6":                                                  "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting for VM Apps and auto-clusters, otherwise defaults to target cluster instance setting.",
+	"appinstances:#.objid":                                                       "Universally unique object ID",
 	"appinstrefs:#.key.organization":                                             "App developer organization",
 	"appinstrefs:#.key.name":                                                     "App name",
 	"appinstrefs:#.key.version":                                                  "App version",

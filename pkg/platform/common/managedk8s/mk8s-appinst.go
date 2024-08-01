@@ -28,9 +28,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst", "appInst", appInst)
-	updateCallback(edgeproto.UpdateTask, "Creating AppInst")
+	updateSender.SendStatus(edgeproto.UpdateTask, "Creating AppInst")
 
 	if err := m.SetupKconf(ctx, clusterInst); err != nil {
 		return fmt.Errorf("can't set up kconf, %s", err.Error())
@@ -45,7 +45,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	}
 	features := m.GetFeatures()
 
-	updateCallback(edgeproto.UpdateTask, "Creating Registry Secret")
+	updateSender.SendStatus(edgeproto.UpdateTask, "Creating Registry Secret")
 	for _, imagePath := range names.ImagePaths {
 		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, m.CommonPf.PlatformConfig.AccessApi, names, nil)
 		if err != nil {
@@ -57,7 +57,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	case cloudcommon.DeploymentTypeKubernetes:
 		err = k8smgmt.CreateAppInst(ctx, m.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst, flavor)
 		if err == nil {
-			updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
+			updateSender.SendStatus(edgeproto.UpdateTask, "Waiting for AppInst to Start")
 
 			err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
 		}
@@ -67,7 +67,7 @@ func (m *ManagedK8sPlatform) CreateAppInst(ctx context.Context, clusterInst *edg
 	if err != nil {
 		return err
 	}
-	updateCallback(edgeproto.UpdateTask, "Waiting for Load Balancer External IP")
+	updateSender.SendStatus(edgeproto.UpdateTask, "Waiting for Load Balancer External IP")
 
 	// set up dns
 	getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
@@ -195,4 +195,7 @@ func (m *ManagedK8sPlatform) CreatePlatformApp(ctx context.Context, name string,
 	// TODO: we can either create the crm app directly here on the cloudlet cluster, or we can create some kind
 	// of sidecar app that then runs and creates/maintains the crm pod
 	return fmt.Errorf("CreatePlatformApp not yet implemented")
+}
+
+func (m *ManagedK8sPlatform) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {
 }

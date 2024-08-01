@@ -17,17 +17,21 @@ package cloudcommon
 import (
 	"context"
 	ctls "crypto/tls"
+	"errors"
+	"io"
 	"math"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/status"
 )
 
 func ParseGrpcMethod(method string) (path string, cmd string) {
@@ -126,4 +130,66 @@ var GRPCClientKeepaliveParams = keepalive.ClientParameters{
 }
 var GRPCServerKeepaliveEnforcement = keepalive.EnforcementPolicy{
 	MinTime: 1 * time.Second,
+}
+
+// GRPCError unwraps status.Status errors, this avoids
+// ugly type print outs when various library code converts
+// the error to a string.
+func GRPCErrorUnwrap(err error) error {
+	st, ok := status.FromError(err)
+	if ok && st != nil {
+		return errors.New(st.Message())
+	}
+	return err
+}
+
+type GRPCStreamRecv[Object any] interface {
+	Recv() (Object, error)
+}
+
+// StreamRecv converts a grpc stream receiver into callbacks
+func StreamRecv[Object any](ctx context.Context, stream GRPCStreamRecv[Object], cb func(obj Object) error) error {
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			err = nil
+			break
+		}
+		if err != nil {
+			return GRPCErrorUnwrap(err)
+		}
+		err = cb(obj)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type StatusObj interface {
+	GetStatus() *edgeproto.StatusInfo
+}
+
+// StreamRecvWithStatus is like StreamRecv, but for objects that include
+// a StatusInfo object whose new status messages should be sent via the
+// statusSend callback.
+func StreamRecvWithStatus[Object StatusObj](ctx context.Context, stream GRPCStreamRecv[Object], statusSend func(*edgeproto.Result) error, cb func(obj Object) error) error {
+	lastMsgCnt := 0
+	return StreamRecv(ctx, stream, func(obj Object) error {
+		cb(obj)
+
+		status := obj.GetStatus()
+		if status != nil {
+			for ii := lastMsgCnt; ii < len(status.Msgs); ii++ {
+				err := statusSend(&edgeproto.Result{
+					Message: status.Msgs[ii],
+				})
+				if err != nil {
+					return err
+				}
+			}
+			lastMsgCnt = len(status.Msgs)
+		}
+		return nil
+	})
 }

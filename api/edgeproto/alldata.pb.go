@@ -1803,6 +1803,9 @@ func IgnoreAllDataFields(taglist string) cmp.Option {
 		names = append(names, "Cloudlets.Config.SecondaryCrmAccessPrivateKey")
 	}
 	if _, found := tags["nocmp"]; found {
+		names = append(names, "Cloudlets.AccessVars")
+	}
+	if _, found := tags["nocmp"]; found {
 		names = append(names, "Cloudlets.CrmAccessPublicKey")
 	}
 	if _, found := tags["timestamp"]; found {
@@ -1819,6 +1822,9 @@ func IgnoreAllDataFields(taglist string) cmp.Option {
 	}
 	if _, found := tags["nocmp"]; found {
 		names = append(names, "Cloudlets.SecondaryNotifySrvAddr")
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "Cloudlets.ObjId")
 	}
 	if _, found := tags["nocmp"]; found {
 		names = append(names, "CloudletInfos.NotifyId")
@@ -1854,6 +1860,9 @@ func IgnoreAllDataFields(taglist string) cmp.Option {
 		names = append(names, "ClusterInsts.ReservationEndedAt")
 	}
 	if _, found := tags["nocmp"]; found {
+		names = append(names, "ClusterInsts.ObjId")
+	}
+	if _, found := tags["nocmp"]; found {
 		names = append(names, "Apps.AuthPublicKey")
 	}
 	if _, found := tags["nocmp"]; found {
@@ -1885,6 +1894,9 @@ func IgnoreAllDataFields(taglist string) cmp.Option {
 	}
 	if _, found := tags["nocmp"]; found {
 		names = append(names, "AppInstances.VirtualClusterKey")
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "AppInstances.ObjId")
 	}
 	if _, found := tags["timestamp"]; found {
 		names = append(names, "VmPools.Vms.UpdatedAt")

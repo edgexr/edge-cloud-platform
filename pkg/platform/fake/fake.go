@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -39,16 +38,24 @@ import (
 )
 
 type Platform struct {
-	consoleServer *httptest.Server
-	caches        *platform.Caches
-	clusterTPEs   map[cloudcommon.TrustPolicyExceptionKeyClusterInstKey]struct{}
-	mux           sync.Mutex
-	cloudletKey   *edgeproto.CloudletKey
-	crmServiceOps []process.CrmServiceOp
-	resources     fakecommon.Resources
+	consoleServer  *httptest.Server
+	caches         *platform.Caches
+	clusterTPEs    map[cloudcommon.TrustPolicyExceptionKeyClusterInstKey]struct{}
+	mux            sync.Mutex
+	cloudletKey    *edgeproto.CloudletKey
+	crmServiceOps  []process.CrmServiceOp
+	resources      fakecommon.Resources
+	platformConfig *platform.PlatformConfig
+	// settings used for unit testing
+	simulateAppCreateFailure     bool
+	simulateAppDeleteFailure     bool
+	simulateClusterCreateFailure bool
+	simulateClusterDeleteFailure bool
+	pause                        sync.WaitGroup
+	FlavorList                   []*edgeproto.FlavorInfo
 }
 
-var (
+const (
 	FakeRamMax         = uint64(40960)
 	FakeVcpusMax       = uint64(50)
 	FakeDiskMax        = uint64(5000)
@@ -57,7 +64,7 @@ var (
 
 var FakeAppDNSRoot = "fake.net"
 
-var FakeFlavorList = []*edgeproto.FlavorInfo{
+var DefaultFlavorList = []*edgeproto.FlavorInfo{
 	&edgeproto.FlavorInfo{
 		Name:  "x1.tiny",
 		Vcpus: uint64(1),
@@ -71,8 +78,6 @@ var FakeFlavorList = []*edgeproto.FlavorInfo{
 		Disk:  uint64(40),
 	},
 }
-
-var rootLbFlavor = FakeFlavorList[1]
 
 var fakeProps = map[string]*edgeproto.PropertyInfo{
 	// Property: Default-Value
@@ -89,65 +94,64 @@ var fakeProps = map[string]*edgeproto.PropertyInfo{
 	},
 }
 
+var AccessVarProps = map[string]*edgeproto.PropertyInfo{
+	"APIKey": &edgeproto.PropertyInfo{
+		Name:        "API Key",
+		Description: "API Key for authentication",
+		Secret:      true,
+	},
+}
+
 var quotaProps = cloudcommon.GetCommonResourceQuotaProps(
 	cloudcommon.ResourceInstances,
 )
-
-var maxPrimaryCrmStartupWait = 10 * time.Second
 
 func NewPlatform() platform.Platform {
 	return &Platform{}
 }
 
-func UpdateResourcesMax() error {
+func (s *Platform) UpdateResourcesMax(envVars map[string]string) error {
 	// Make fake resource limits configurable for QA testing
-	ramMax := os.Getenv("FAKE_RAM_MAX")
-	if ramMax != "" {
-		ram, err := strconv.Atoi(ramMax)
+	ramMax := FakeRamMax
+	vcpusMax := FakeVcpusMax
+	diskMax := FakeDiskMax
+
+	ramMaxStr := envVars["FAKE_RAM_MAX"]
+	if ramMaxStr != "" {
+		ram, err := strconv.Atoi(ramMaxStr)
 		if err != nil {
 			return err
 		}
 		if ram > 0 {
-			FakeRamMax = uint64(ram)
+			ramMax = uint64(ram)
 		}
 	}
-	vcpusMax := os.Getenv("FAKE_VCPUS_MAX")
-	if vcpusMax != "" {
-		vcpus, err := strconv.Atoi(vcpusMax)
+	vcpusMaxStr := envVars["FAKE_VCPUS_MAX"]
+	if vcpusMaxStr != "" {
+		vcpus, err := strconv.Atoi(vcpusMaxStr)
 		if err != nil {
 			return err
 		}
 		if vcpus > 0 {
-			FakeVcpusMax = uint64(vcpus)
+			vcpusMax = uint64(vcpus)
 		}
 	}
-	diskMax := os.Getenv("FAKE_DISK_MAX")
-	if diskMax != "" {
-		disk, err := strconv.Atoi(diskMax)
+	diskMaxStr := envVars["FAKE_DISK_MAX"]
+	if diskMaxStr != "" {
+		disk, err := strconv.Atoi(diskMaxStr)
 		if err != nil {
 			return err
 		}
 		if disk > 0 {
-			FakeDiskMax = uint64(disk)
+			diskMax = uint64(disk)
 		}
 	}
+	s.resources.SetMaxResources(ramMax, vcpusMax, diskMax, FakeExternalIpsMax)
 	return nil
 }
 
-func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "running in fake cloudlet mode")
-	platformConfig.NodeMgr.Debug.AddDebugFunc("fakecmd", s.runDebug)
-
-	s.caches = caches
-	s.cloudletKey = platformConfig.CloudletKey
-	updateCallback(edgeproto.UpdateTask, "Done initializing fake platform")
-	s.consoleServer = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "Console Content")
-	}))
-	s.resources.Init()
-	s.resources.SetCloudletFlavors(FakeFlavorList, rootLbFlavor.Name)
-	// Update resource info for platformVM and RootLBVM
-	platvm := edgeproto.VmInfo{
+func GetPlatformVMs() []edgeproto.VmInfo {
+	return []edgeproto.VmInfo{{
 		Name:        "fake-platform-vm",
 		Type:        cloudcommon.NodeTypePlatformVM.String(),
 		InfraFlavor: "x1.small",
@@ -155,8 +159,7 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 		Ipaddresses: []edgeproto.IpAddr{
 			{ExternalIp: "10.101.100.10"},
 		},
-	}
-	rlbvm := edgeproto.VmInfo{
+	}, {
 		Name:        "fake-rootlb-vm",
 		Type:        cloudcommon.NodeTypeDedicatedRootLB.String(),
 		InfraFlavor: "x1.small",
@@ -164,22 +167,42 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 		Ipaddresses: []edgeproto.IpAddr{
 			{ExternalIp: "10.101.100.11"},
 		},
+	}}
+}
+
+func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "running in fake cloudlet mode", "envVars", platformConfig.EnvVars)
+	platformConfig.NodeMgr.Debug.AddDebugFunc("fakecmd", s.runDebug)
+
+	s.caches = caches
+	s.cloudletKey = platformConfig.CloudletKey
+	s.platformConfig = platformConfig
+	updateCallback(edgeproto.UpdateTask, "Done initializing fake platform")
+	s.consoleServer = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Console Content")
+	}))
+	if len(s.FlavorList) == 0 {
+		s.FlavorList = DefaultFlavorList
 	}
-	s.resources.AddPlatformVM(platvm)
-	s.resources.AddPlatformVM(rlbvm)
+	rootLbFlavor := s.FlavorList[1]
+	s.resources.Init()
+	s.resources.SetCloudletFlavors(s.FlavorList, rootLbFlavor.Name)
+	// Update resource info for platformVM and RootLBVM
+	for _, vm := range GetPlatformVMs() {
+		s.resources.AddPlatformVM(vm)
+	}
 	s.resources.UpdateExternalIP(fakecommon.ResourceAdd)
 
-	err := UpdateResourcesMax()
+	err := s.UpdateResourcesMax(platformConfig.EnvVars)
 	if err != nil {
 		return err
 	}
-	s.resources.SetMaxResources(FakeRamMax, FakeVcpusMax, FakeDiskMax, FakeExternalIpsMax)
 	s.clusterTPEs = make(map[cloudcommon.TrustPolicyExceptionKeyClusterInstKey]struct{})
 
 	return nil
 }
 
-func (s *Platform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
 	return s.updateResourceCounts(ctx)
 }
 
@@ -200,14 +223,19 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsPlatformHighAvailabilityOnK8S:    true,
 		Properties:                               fakeProps,
 		ResourceQuotaProperties:                  quotaProps,
+		AccessVars:                               AccessVarProps,
 	}
 }
 
 func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
-	info.OsMaxRam = FakeRamMax
-	info.OsMaxVcores = FakeVcpusMax
-	info.OsMaxVolGb = FakeDiskMax
-	info.Flavors = FakeFlavorList
+	ramMax, vcpusMax, diskMax, _ := s.resources.GetMaxResources()
+	info.OsMaxRam = ramMax
+	info.OsMaxVcores = vcpusMax
+	info.OsMaxVolGb = diskMax
+	if len(s.FlavorList) == 0 {
+		s.FlavorList = DefaultFlavorList
+	}
+	info.Flavors = s.FlavorList
 	return nil
 }
 
@@ -223,6 +251,10 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake CreateClusterInst", "clusterInst", clusterInst)
 	updateCallback(edgeproto.UpdateTask, "First Create Task")
 	updateCallback(edgeproto.UpdateTask, "Second Create Task")
+	s.pause.Wait()
+	if s.simulateClusterCreateFailure {
+		return errors.New("fake platform create ClusterInst failed")
+	}
 	s.resources.AddClusterResources(clusterInst)
 
 	// verify we can find any provisioned networks
@@ -240,6 +272,10 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	updateCallback(edgeproto.UpdateTask, "First Delete Task")
 	updateCallback(edgeproto.UpdateTask, "Second Delete Task")
+	s.pause.Wait()
+	if s.simulateClusterDeleteFailure {
+		return errors.New("fake platform delete ClusterInst failed")
+	}
 	s.resources.RemoveClusterResources(&clusterInst.Key)
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake ClusterInst deleted")
@@ -287,10 +323,15 @@ func (s *Platform) GetClusterInfraResources(ctx context.Context, clusterKey *edg
 	return s.resources.GetClusterResources(clusterKey), nil
 }
 
-func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
-	clusterSvcAppInstFail := os.Getenv("FAKE_PLATFORM_APPINST_CREATE_FAIL")
+func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
+	updateCallback := updateSender.SendStatusIgnoreErr
+	clusterSvcAppInstFail := s.platformConfig.EnvVars["FAKE_PLATFORM_APPINST_CREATE_FAIL"]
 	if clusterSvcAppInstFail != "" {
 		return errors.New("FAKE_PLATFORM_APPINST_CREATE_FAIL")
+	}
+	s.pause.Wait()
+	if s.simulateAppCreateFailure {
+		return errors.New("fake platform create app inst failed")
 	}
 	updateCallback(edgeproto.UpdateTask, "Creating App Inst")
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake AppInst ready")
@@ -301,6 +342,10 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	updateCallback(edgeproto.UpdateTask, "First Delete Task")
 	updateCallback(edgeproto.UpdateTask, "Second Delete Task")
+	s.pause.Wait()
+	if s.simulateAppDeleteFailure {
+		return errors.New("fake platform delete app inst failed")
+	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake AppInst deleted")
 	s.resources.RemoveVmAppResCount(ctx, app, appInst)
 	return nil
@@ -360,7 +405,7 @@ func (s *Platform) AddCrmServiceOps(ops ...process.CrmServiceOp) {
 	s.crmServiceOps = append(s.crmServiceOps, ops...)
 }
 
-func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
+func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, flavor *edgeproto.Flavor, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "create fake cloudlet", "key", cloudlet.Key)
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
 		return true, nil
@@ -371,46 +416,15 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	if cloudlet.PlatformHighAvailability {
 		redisCfg.StandaloneAddr = rediscache.DefaultRedisStandaloneAddr
 	}
-	err := process.StartCRMService(ctx, cloudlet, pfConfig, process.HARolePrimary, &redisCfg, s.crmServiceOps...)
+	var err error
+	if cloudlet.PlatformHighAvailability {
+		err = process.StartCRMServicesHA(ctx, cloudlet, pfConfig, &redisCfg, s.crmServiceOps...)
+	} else {
+		err = process.StartCRMService(ctx, cloudlet, pfConfig, process.HARolePrimary, &redisCfg, s.crmServiceOps...)
+	}
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "fake cloudlet create failed to start CRM", "err", err)
 		return true, err
-	}
-	if cloudlet.PlatformHighAvailability {
-		log.SpanLog(ctx, log.DebugLevelInfra, "creating 2 instances for H/A", "key", cloudlet.Key)
-		// Pause before starting the secondary to let the primary become active first for the sake of
-		// e2e tests that need consistent ordering. Secondary will be started up in a separate thread after
-		// cloudletInfo shows up from the primary
-		go func() {
-			start := time.Now()
-			var err error
-			var cloudletInfo edgeproto.CloudletInfo
-			for {
-				time.Sleep(time.Millisecond * 200)
-				elapsed := time.Since(start)
-				if elapsed >= (maxPrimaryCrmStartupWait) {
-					log.SpanLog(ctx, log.DebugLevelInfra, "timed out waiting for primary CRM to report cloudlet info")
-					err = fmt.Errorf("timed out waiting for primary CRM to report cloudlet info")
-					break
-				}
-				if !caches.CloudletInfoCache.Get(&cloudlet.Key, &cloudletInfo) {
-					log.SpanLog(ctx, log.DebugLevelInfra, "failed to get cloudlet info after starting primary CRM, will retry", "cloudletKey", s.cloudletKey)
-				} else {
-					log.SpanLog(ctx, log.DebugLevelInfra, "got cloudlet info from primary CRM, will start secondary", "cloudletKey", cloudlet.Key, "active", cloudletInfo.ActiveCrmInstance, "ci", cloudletInfo)
-					err = process.StartCRMService(ctx, cloudlet, pfConfig, process.HARoleSecondary, &redisCfg, s.crmServiceOps...)
-					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "fake cloudlet create failed to start secondary CRM", "err", err)
-					}
-					break
-				}
-			}
-			if err != nil {
-				cloudletInfo.Key = cloudlet.Key
-				cloudletInfo.Errors = append(cloudletInfo.Errors, "fake cloudlet create failed to start secondary CRM: "+err.Error())
-				cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_ERRORS
-				caches.CloudletInfoCache.Update(ctx, &cloudletInfo, 0)
-			}
-		}()
 	}
 	return true, nil
 }
@@ -483,7 +497,7 @@ func (s *Platform) TrustPolicyExceptionCount(ctx context.Context) int {
 	return count
 }
 
-func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.DebugLog(log.DebugLevelInfra, "delete fake Cloudlet", "key", cloudlet.Key)
 	updateCallback(edgeproto.UpdateTask, "Deleting Cloudlet")
 	updateCallback(edgeproto.UpdateTask, "Stopping CRMServer")
@@ -513,11 +527,11 @@ func (s *Platform) updateResourceCounts(ctx context.Context) error {
 	if s.caches == nil {
 		return fmt.Errorf("caches is nil")
 	}
-	s.resources.SetUserResources(ctx, s.caches)
+	s.resources.SetUserResources(ctx, s.cloudletKey, s.caches)
 	return nil
 }
 
-func (s *Platform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, flavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
+func (s *Platform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, accessApi platform.AccessApi, flavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
 	return &edgeproto.CloudletManifest{Manifest: "fake manifest\n" + pfConfig.CrmAccessPrivateKey}, nil
 }
@@ -546,6 +560,10 @@ func (s *Platform) GetVersionProperties(ctx context.Context) map[string]string {
 }
 
 func (s *Platform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error) {
+	if len(s.FlavorList) == 0 {
+		s.FlavorList = DefaultFlavorList
+	}
+	rootLbFlavor := s.FlavorList[1]
 	return &edgeproto.Flavor{
 		Key: edgeproto.FlavorKey{
 			Name: rootLbFlavor.Name,
@@ -563,4 +581,36 @@ func (s *Platform) ActiveChanged(ctx context.Context, platformActive bool) error
 
 func (s *Platform) NameSanitize(name string) string {
 	return name
+}
+
+func (s *Platform) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {}
+
+func (s *Platform) GetResources() *fakecommon.Resources {
+	return &s.resources
+}
+
+func (s *Platform) SetSimulateAppCreateFailure(state bool) {
+	s.simulateAppCreateFailure = state
+}
+
+func (s *Platform) SetSimulateAppDeleteFailure(state bool) {
+	s.simulateAppDeleteFailure = state
+}
+
+func (s *Platform) SetSimulateClusterCreateFailure(state bool) {
+	s.simulateClusterCreateFailure = state
+}
+
+func (s *Platform) SetSimulateClusterDeleteFailure(state bool) {
+	s.simulateClusterDeleteFailure = state
+}
+
+// SetPause pauses responder until unpaused.
+// Warning: don't double-pause or double-unpause.
+func (s *Platform) SetPause(enable bool) {
+	if enable {
+		s.pause.Add(1)
+	} else {
+		s.pause.Done()
+	}
 }

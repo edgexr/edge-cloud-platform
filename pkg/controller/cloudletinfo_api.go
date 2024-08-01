@@ -25,7 +25,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
@@ -68,6 +67,17 @@ func (s *CloudletInfoApi) ShowCloudletInfo(in *edgeproto.CloudletInfo, cb edgepr
 	return err
 }
 
+func (s *CloudletInfoApi) UpdateRPC(ctx context.Context, in *edgeproto.CloudletInfo) {
+	// For RPC calls, source of truth is the controller, and
+	// RPC sends back just changes, not the complete info state.
+	info := edgeproto.CloudletInfo{}
+	if !s.cache.Get(&in.Key, &info) {
+		info.Key = in.Key
+	}
+	info.CopyInFields(in)
+	s.Update(ctx, &info, 0)
+}
+
 func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo, rev int64) {
 	var err error
 	log.SpanLog(ctx, log.DebugLevelNotify, "Cloudlet Info Update", "in", in)
@@ -78,7 +88,7 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 	}
 
 	inCopy := *in // save Status to publish to Redis
-	in.Fields = edgeproto.CloudletInfoAllFields
+	in.Fields = nil
 	in.Controller = ControllerId
 	changedToOnline := false
 	s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
@@ -98,9 +108,8 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 			in.Flavors = info.Flavors
 		}
 
-		fields := make(map[string]struct{})
-		info.DiffFields(in, fields)
-		if len(fields) > 0 {
+		diffFields := info.GetDiffFields(in)
+		if diffFields.Count() > 0 {
 			s.store.STMPut(stm, in)
 		}
 		return nil
@@ -452,7 +461,7 @@ func (s *CloudletInfoApi) checkCloudletReady(cctx *CallContext, stm concurrency.
 func (s *CloudletInfoApi) cleanupCloudletInfo(ctx context.Context, in *edgeproto.Cloudlet) {
 	var delErr error
 	info := edgeproto.CloudletInfo{}
-	if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS || in.Key.FederatedOrganization != "" {
+	if !in.CrmOnEdge || in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS || in.Key.FederatedOrganization != "" {
 		// no way for the controller to shutdown the crm,
 		// so just clean up the CloudletInfo
 		delErr = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
@@ -549,56 +558,4 @@ func getCloudletPropertyBool(info *edgeproto.CloudletInfo, prop string, def bool
 		return def
 	}
 	return val
-}
-
-var recvCloudletOnboardingInfoAcceptedStates = map[edgeproto.TrackedState]struct{}{
-	edgeproto.TrackedState_CREATING:     {},
-	edgeproto.TrackedState_CREATE_ERROR: {},
-	edgeproto.TrackedState_READY:        {},
-	edgeproto.TrackedState_DELETING:     {},
-	edgeproto.TrackedState_DELETE_ERROR: {},
-	edgeproto.TrackedState_DELETE_DONE:  {},
-}
-
-func (s *CloudletInfoApi) RecvCloudletOnboardingInfo(ctx context.Context, msg *edgeproto.CloudletOnboardingInfo) {
-	log.SpanLog(ctx, log.DebugLevelNotify, "CloudletOnboardingInfo Update", "msg", msg)
-
-	if _, ok := recvCloudletOnboardingInfoAcceptedStates[msg.OnboardingState]; !ok {
-		log.SpanLog(ctx, log.DebugLevelNotify, "CloudletOnboardingInfo unexpected state", "msg", msg)
-		return
-	}
-
-	info := edgeproto.CloudletInfo{
-		Key: msg.Key,
-	}
-	// Write state to Etcd. This is just for user visibility,
-	// as functionally the Controller waits on the redis message,
-	// not the Etcd state change.
-	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		cloudlet := edgeproto.Cloudlet{}
-		if !s.all.cloudletApi.store.STMGet(stm, &msg.Key, &cloudlet) {
-			return nil
-		}
-		// ignore error, blank info is ok, just want to get state
-		// if it already has it set
-		s.all.cloudletInfoApi.store.STMGet(stm, &msg.Key, &info)
-
-		if cloudlet.OnboardingState == msg.OnboardingState {
-			return nil
-		}
-		cloudlet.OnboardingState = msg.OnboardingState
-		if len(msg.Errors) > 0 && len(cloudlet.Errors) == 0 {
-			// Errors may also be set by CRM.
-			cloudlet.Errors = msg.Errors
-		}
-		s.all.cloudletApi.store.STMPut(stm, &cloudlet)
-		return nil
-	})
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelNotify, "CloudletOnboardingInfo update cloudlet state failed", "msg", msg, "err", err)
-		// continue to send message
-	}
-
-	// Send to any processes waiting for a state change.
-	rediscache.SendMessage(ctx, redisClient, msg)
 }

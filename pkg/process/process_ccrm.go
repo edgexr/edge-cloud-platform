@@ -27,6 +27,7 @@ type CCRM struct {
 	NodeCommon                    `yaml:",inline"`
 	RedisClientCommon             `yaml:",inline"`
 	Region                        string
+	APIAddr                       string
 	AppDNSRoot                    string
 	CloudletRegistryPath          string
 	CloudletVMImagePath           string
@@ -38,17 +39,22 @@ type CCRM struct {
 	ThanosRecvAddr                string
 	AnsibleListenAddr             string
 	AnsiblePublicAddr             string
+	EtcdAddrs                     string
+	FederationExternalAddr        string
 	TestMode                      bool
 	cmd                           *exec.Cmd
 }
 
 func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
-	args := []string{}
+	args := []string{"--etcdUrls", p.EtcdAddrs}
 	args = append(args, p.GetNodeMgrArgs()...)
 	args = append(args, p.GetRedisClientArgs()...)
 
 	if p.Region != "" {
 		args = append(args, "--region", p.Region)
+	}
+	if p.APIAddr != "" {
+		args = append(args, "--apiAddr", p.APIAddr)
 	}
 	if p.AppDNSRoot != "" {
 		args = append(args, "--appDNSRoot", p.AppDNSRoot)
@@ -85,6 +91,9 @@ func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
 	if p.ThanosRecvAddr != "" {
 		args = append(args, "--thanosRecvAddr")
 		args = append(args, p.ThanosRecvAddr)
+	}
+	if p.FederationExternalAddr != "" {
+		args = append(args, "--federationExternalAddr", p.FederationExternalAddr)
 	}
 	if p.TestMode {
 		args = append(args, "-testMode")

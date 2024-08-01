@@ -46,6 +46,7 @@ const (
 	AppConfigPodArgs       = "podArgs"
 
 	GPUDriverLicenseConfig = "license.conf"
+	ForceImport            = "force-import"
 )
 
 var ValidConfigKinds = map[string]struct{}{
@@ -206,7 +207,7 @@ func (key *OperatorCodeKey) ValidateKey() error {
 	return nil
 }
 
-func (s *OperatorCode) Validate(fields map[string]struct{}) error {
+func (s *OperatorCode) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -236,7 +237,7 @@ func (key *ClusterInstKey) ValidateKey() error {
 	return nil
 }
 
-func (s *ClusterInst) Validate(fields map[string]struct{}) error {
+func (s *ClusterInst) Validate(fmap objstore.FieldMap) error {
 	return s.GetKey().ValidateKey()
 }
 
@@ -247,18 +248,18 @@ func (key *FlavorKey) ValidateKey() error {
 	return nil
 }
 
-func (s *Flavor) Validate(fields map[string]struct{}) error {
+func (s *Flavor) Validate(fmap objstore.FieldMap) error {
 	err := s.GetKey().ValidateKey()
 	if err != nil {
 		return err
 	}
-	if _, found := fields[FlavorFieldRam]; found && s.Ram == 0 {
+	if fmap.Has(FlavorFieldRam) && s.Ram == 0 {
 		return errors.New("Ram cannot be 0")
 	}
-	if _, found := fields[FlavorFieldVcpus]; found && s.Vcpus == 0 {
+	if fmap.Has(FlavorFieldVcpus) && s.Vcpus == 0 {
 		return errors.New("Vcpus cannot be 0")
 	}
-	if _, found := fields[FlavorFieldDisk]; found && s.Disk == 0 {
+	if fmap.Has(FlavorFieldDisk) && s.Disk == 0 {
 		return errors.New("Disk cannot be 0")
 	}
 	return nil
@@ -286,7 +287,7 @@ func validateCustomizationConfigs(configs []*ConfigFile) error {
 	return nil
 }
 
-func (s *App) Validate(fields map[string]struct{}) error {
+func (s *App) Validate(fmap objstore.FieldMap) error {
 	var err error
 	if err = s.GetKey().ValidateKey(); err != nil {
 		return err
@@ -294,7 +295,7 @@ func (s *App) Validate(fields map[string]struct{}) error {
 	if err = s.ValidateEnums(); err != nil {
 		return err
 	}
-	if _, found := fields[AppFieldAccessPorts]; found {
+	if fmap.Has(AppFieldAccessPorts) {
 		if s.AccessPorts != "" {
 			_, err = ParseAppPorts(s.AccessPorts)
 			if err != nil {
@@ -324,7 +325,7 @@ func (key PlatformFeaturesKey) ValidateKey() error {
 	return nil
 }
 
-func (s *PlatformFeatures) Validate(fields map[string]struct{}) error {
+func (s *PlatformFeatures) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
@@ -389,7 +390,7 @@ func (g *GPUDriverBuildMember) Validate() error {
 	return nil
 }
 
-func (g *GPUDriver) Validate(fields map[string]struct{}) error {
+func (g *GPUDriver) Validate(fmap objstore.FieldMap) error {
 	if err := g.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -419,21 +420,21 @@ func (key *CloudletKey) ValidateKey() error {
 	return nil
 }
 
-func (s *Cloudlet) Validate(fields map[string]struct{}) error {
+func (s *Cloudlet) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
-	if _, found := fields[CloudletFieldLocationLatitude]; found {
+	if fmap.Has(CloudletFieldLocationLatitude) {
 		if !util.IsLatitudeValid(s.Location.Latitude) {
 			return errors.New("Invalid latitude value")
 		}
 	}
-	if _, found := fields[CloudletFieldLocationLongitude]; found {
+	if fmap.Has(CloudletFieldLocationLongitude) {
 		if !util.IsLongitudeValid(s.Location.Longitude) {
 			return errors.New("Invalid longitude value")
 		}
 	}
-	if _, found := fields[CloudletFieldMaintenanceState]; found {
+	if fmap.Has(CloudletFieldMaintenanceState) {
 		if s.MaintenanceState != dme.MaintenanceState_NORMAL_OPERATION && s.MaintenanceState != dme.MaintenanceState_MAINTENANCE_START && s.MaintenanceState != dme.MaintenanceState_MAINTENANCE_START_NO_FAILOVER {
 			return errors.New("Invalid maintenance state, only normal operation and maintenance start states are allowed")
 		}
@@ -447,7 +448,7 @@ func (s *Cloudlet) Validate(fields map[string]struct{}) error {
 		return err
 	}
 
-	if _, found := fields[CloudletFieldDefaultResourceAlertThreshold]; found {
+	if fmap.Has(CloudletFieldDefaultResourceAlertThreshold) {
 		if s.DefaultResourceAlertThreshold < 0 || s.DefaultResourceAlertThreshold > 100 {
 			return fmt.Errorf("Invalid resource alert threshold %d specified, valid threshold is in the range of 0 to 100", s.DefaultResourceAlertThreshold)
 
@@ -464,11 +465,11 @@ func (s *Cloudlet) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
-func (s *CloudletInfo) Validate(fields map[string]struct{}) error {
+func (s *CloudletInfo) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
-func (s *CloudletInternal) Validate(fields map[string]struct{}) error {
+func (s *CloudletInternal) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
@@ -480,7 +481,7 @@ func (s CloudletNodeKey) ValidateKey() error {
 	return s.CloudletKey.ValidateKey()
 }
 
-func (s *CloudletNode) Validate(fields map[string]struct{}) error {
+func (s *CloudletNode) Validate(fmap objstore.FieldMap) error {
 	if err := s.Key.ValidateKey(); err != nil {
 		return err
 	}
@@ -497,7 +498,7 @@ func (key *CloudletPoolKey) ValidateKey() error {
 	return nil
 }
 
-func (s *CloudletPool) Validate(fields map[string]struct{}) error {
+func (s *CloudletPool) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -553,7 +554,7 @@ func (key *VMPoolKey) ValidateKey() error {
 	return nil
 }
 
-func (s *VMPool) Validate(fields map[string]struct{}) error {
+func (s *VMPool) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -585,7 +586,7 @@ func (s *VMPool) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
-func (s *VMPoolMember) Validate(fields map[string]struct{}) error {
+func (s *VMPoolMember) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -595,7 +596,7 @@ func (s *VMPoolMember) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
-func (s *VMPoolInfo) Validate(fields map[string]struct{}) error {
+func (s *VMPoolInfo) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
@@ -606,7 +607,7 @@ func (key *ResTagTableKey) ValidateKey() error {
 	return nil
 }
 
-func (s *ResTagTable) Validate(fields map[string]struct{}) error {
+func (s *ResTagTable) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -626,7 +627,7 @@ func (key *AppInstKey) ValidateKey() error {
 	return nil
 }
 
-func (s *AppInst) Validate(fields map[string]struct{}) error {
+func (s *AppInst) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -641,7 +642,7 @@ func (s *FedAppInstKey) ValidateKey() error {
 	return nil
 }
 
-func (s *FedAppInst) Validate(fields map[string]struct{}) error {
+func (s *FedAppInst) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
@@ -652,7 +653,7 @@ func (key *ControllerKey) ValidateKey() error {
 	return nil
 }
 
-func (s *Controller) Validate(fields map[string]struct{}) error {
+func (s *Controller) Validate(fmap objstore.FieldMap) error {
 	return s.GetKey().ValidateKey()
 }
 
@@ -663,7 +664,7 @@ func (key *NodeKey) ValidateKey() error {
 	return key.CloudletKey.ValidateKey()
 }
 
-func (s *Node) Validate(fields map[string]struct{}) error {
+func (s *Node) Validate(fmap objstore.FieldMap) error {
 	return s.GetKey().ValidateKey()
 }
 
@@ -674,27 +675,27 @@ func (key *AlertKey) ValidateKey() error {
 	return nil
 }
 
-func (s *Alert) Validate(fields map[string]struct{}) error {
+func (s *Alert) Validate(fmap objstore.FieldMap) error {
 	return s.GetKey().ValidateKey()
 }
 
-func (s *AppInstInfo) Validate(fields map[string]struct{}) error {
+func (s *AppInstInfo) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
-func (s *ClusterInstInfo) Validate(fields map[string]struct{}) error {
+func (s *ClusterInstInfo) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
-func (s *CloudletRefs) Validate(fields map[string]struct{}) error {
+func (s *CloudletRefs) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
-func (s *ClusterRefs) Validate(fields map[string]struct{}) error {
+func (s *ClusterRefs) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
-func (s *AppInstRefs) Validate(fields map[string]struct{}) error {
+func (s *AppInstRefs) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
@@ -718,7 +719,7 @@ func (s *AppInstClientKey) ValidateKey() error {
 	return nil
 }
 
-func (s *AppInstClientKey) Validate(fields map[string]struct{}) error {
+func (s *AppInstClientKey) Validate(fmap objstore.FieldMap) error {
 	return s.ValidateKey()
 }
 
@@ -741,7 +742,7 @@ const DefaultStabilizationWindowSec = 300
 // Validate fields. Note that specified fields is ignored, so this function
 // must be used only in the context when all fields are present (i.e. after
 // CopyInFields for an update).
-func (s *AutoScalePolicy) Validate(fields map[string]struct{}) error {
+func (s *AutoScalePolicy) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -785,7 +786,7 @@ func (s *AutoScalePolicy) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
-func (s *AutoProvPolicy) Validate(fields map[string]struct{}) error {
+func (s *AutoProvPolicy) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -798,7 +799,7 @@ func (s *AutoProvPolicy) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
-func (s *AutoProvInfo) Validate(fields map[string]struct{}) error {
+func (s *AutoProvInfo) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
@@ -832,7 +833,7 @@ func ValidateSecurityRules(rules []SecurityRule) error {
 }
 
 // Always valid
-func (s *DeviceReport) Validate(fields map[string]struct{}) error {
+func (s *DeviceReport) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
@@ -842,7 +843,7 @@ func (key *DeviceKey) ValidateKey() error {
 	}
 	return nil
 }
-func (s *Device) Validate(fields map[string]struct{}) error {
+func (s *Device) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -859,7 +860,7 @@ func (key *NetworkKey) ValidateKey() error {
 	}
 	return nil
 }
-func (s *Network) Validate(fields map[string]struct{}) error {
+func (s *Network) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -877,39 +878,6 @@ func (s *Network) Validate(fields map[string]struct{}) error {
 		}
 	}
 	return nil
-}
-
-func MakeFieldMap(fields []string) map[string]struct{} {
-	fmap := make(map[string]struct{})
-	if fields == nil {
-		return fmap
-	}
-	for _, set := range fields {
-		for {
-			fmap[set] = struct{}{}
-			idx := strings.LastIndex(set, ".")
-			if idx == -1 {
-				break
-			}
-			set = set[:idx]
-		}
-	}
-	return fmap
-}
-
-func GetFields(fmap map[string]struct{}) []string {
-	var fields []string
-
-	for k, _ := range fmap {
-		fields = append(fields, k)
-	}
-
-	return fields
-}
-
-func HasField(fmap map[string]struct{}, field string) bool {
-	_, ok := fmap[field]
-	return ok
 }
 
 // AddTagFunc is used to collect tags and values
@@ -1385,7 +1353,7 @@ func (key *AlertPolicyKey) ValidateKey() error {
 	return nil
 }
 
-func (a *AlertPolicy) Validate(fields map[string]struct{}) error {
+func (a *AlertPolicy) Validate(fmap objstore.FieldMap) error {
 	if err := a.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -1440,7 +1408,7 @@ func (app *App) AppAlertPoliciesDifferent(other *App) bool {
 	return alertsDiff
 }
 
-func (s *TrustPolicy) Validate(fields map[string]struct{}) error {
+func (s *TrustPolicy) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -1463,12 +1431,23 @@ func (key *TrustPolicyExceptionKey) ValidateKey() error {
 	return nil
 }
 
-func (s *TrustPolicyException) Validate(fields map[string]struct{}) error {
+func (s *TrustPolicyException) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
 	log.DebugLog(log.DebugLevelInfra, "ValidateSecurityRules()", "TrustPolicyException:", s.GetKey().Name)
+	if len(s.OutboundSecurityRules) == 0 {
+		return fmt.Errorf("Security rules must be specified")
+	}
 	return ValidateSecurityRules(s.OutboundSecurityRules)
+}
+
+func (s *TPEInstanceKey) ValidateKey() error {
+	return nil
+}
+
+func (s *TPEInstanceState) Validate(fmap objstore.FieldMap) error {
+	return nil
 }
 
 func fixupSecurityRules(ctx context.Context, rules []SecurityRule) {

@@ -156,6 +156,9 @@ func compareJson(funcName, key, expected, actual string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("Unmarshal failed, %v, %s\n", err, actual)
 	}
+	randomValKeys := []string{"obj_id"}
+	normalizeRandomFields(expectedMap, randomValKeys...)
+	normalizeRandomFields(actualMap, randomValKeys...)
 	if !cmp.Equal(expectedMap, actualMap) {
 		fmt.Printf("[%s] comparsion fail for key: %s\n", funcName, key)
 		fmt.Printf("expected vs actual:\n")
@@ -173,6 +176,22 @@ func compareString(funcName, key, expected, actual string) error {
 		return fmt.Errorf("Values don't match for the key, upgradeFunc: %s", funcName)
 	}
 	return nil
+}
+
+// comparison fails for fields with random values (UUIDs, etc)
+func normalizeRandomFields(m map[string]interface{}, keys ...string) {
+	for _, key := range keys {
+		val, ok := m[key]
+		if !ok {
+			continue
+		}
+		switch v := val.(type) {
+		case string:
+			if len(v) > 0 {
+				m[key] = "normalizedStringVal"
+			}
+		}
+	}
 }
 
 type VaultUpgradeData struct {
@@ -278,7 +297,6 @@ func getTestFileName(funcName, suffix string) string {
 func TestAllUpgradeFuncs(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelUpgrade | log.DebugLevelApi)
 	objStore := regiondata.InMemoryStore{}
-	objstore.InitRegion(1)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 

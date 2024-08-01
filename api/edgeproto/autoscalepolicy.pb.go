@@ -783,7 +783,7 @@ var AutoScalePolicyAllFields = []string{
 	AutoScalePolicyFieldDeletePrepare,
 }
 
-var AutoScalePolicyAllFieldsMap = map[string]struct{}{
+var AutoScalePolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AutoScalePolicyFieldKeyOrganization:         struct{}{},
 	AutoScalePolicyFieldKeyName:                 struct{}{},
 	AutoScalePolicyFieldMinNodes:                struct{}{},
@@ -796,7 +796,7 @@ var AutoScalePolicyAllFieldsMap = map[string]struct{}{
 	AutoScalePolicyFieldTargetMem:               struct{}{},
 	AutoScalePolicyFieldTargetActiveConnections: struct{}{},
 	AutoScalePolicyFieldDeletePrepare:           struct{}{},
-}
+})
 
 var AutoScalePolicyAllFieldsStringMap = map[string]string{
 	AutoScalePolicyFieldKeyOrganization:         "Key Organization",
@@ -817,48 +817,54 @@ func (m *AutoScalePolicy) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AutoScalePolicyFieldKey+".") || s == AutoScalePolicyFieldKey
 }
 
-func (m *AutoScalePolicy) DiffFields(o *AutoScalePolicy, fields map[string]struct{}) {
+func (m *AutoScalePolicy) DiffFields(o *AutoScalePolicy, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {
-		fields[AutoScalePolicyFieldKeyOrganization] = struct{}{}
-		fields[AutoScalePolicyFieldKey] = struct{}{}
+		fields.Set(AutoScalePolicyFieldKeyOrganization)
+		fields.Set(AutoScalePolicyFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[AutoScalePolicyFieldKeyName] = struct{}{}
-		fields[AutoScalePolicyFieldKey] = struct{}{}
+		fields.Set(AutoScalePolicyFieldKeyName)
+		fields.Set(AutoScalePolicyFieldKey)
 	}
 	if m.MinNodes != o.MinNodes {
-		fields[AutoScalePolicyFieldMinNodes] = struct{}{}
+		fields.Set(AutoScalePolicyFieldMinNodes)
 	}
 	if m.MaxNodes != o.MaxNodes {
-		fields[AutoScalePolicyFieldMaxNodes] = struct{}{}
+		fields.Set(AutoScalePolicyFieldMaxNodes)
 	}
 	if m.ScaleUpCpuThresh != o.ScaleUpCpuThresh {
-		fields[AutoScalePolicyFieldScaleUpCpuThresh] = struct{}{}
+		fields.Set(AutoScalePolicyFieldScaleUpCpuThresh)
 	}
 	if m.ScaleDownCpuThresh != o.ScaleDownCpuThresh {
-		fields[AutoScalePolicyFieldScaleDownCpuThresh] = struct{}{}
+		fields.Set(AutoScalePolicyFieldScaleDownCpuThresh)
 	}
 	if m.TriggerTimeSec != o.TriggerTimeSec {
-		fields[AutoScalePolicyFieldTriggerTimeSec] = struct{}{}
+		fields.Set(AutoScalePolicyFieldTriggerTimeSec)
 	}
 	if m.StabilizationWindowSec != o.StabilizationWindowSec {
-		fields[AutoScalePolicyFieldStabilizationWindowSec] = struct{}{}
+		fields.Set(AutoScalePolicyFieldStabilizationWindowSec)
 	}
 	if m.TargetCpu != o.TargetCpu {
-		fields[AutoScalePolicyFieldTargetCpu] = struct{}{}
+		fields.Set(AutoScalePolicyFieldTargetCpu)
 	}
 	if m.TargetMem != o.TargetMem {
-		fields[AutoScalePolicyFieldTargetMem] = struct{}{}
+		fields.Set(AutoScalePolicyFieldTargetMem)
 	}
 	if m.TargetActiveConnections != o.TargetActiveConnections {
-		fields[AutoScalePolicyFieldTargetActiveConnections] = struct{}{}
+		fields.Set(AutoScalePolicyFieldTargetActiveConnections)
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[AutoScalePolicyFieldDeletePrepare] = struct{}{}
+		fields.Set(AutoScalePolicyFieldDeletePrepare)
 	}
 }
 
-var UpdateAutoScalePolicyFieldsMap = map[string]struct{}{
+func (m *AutoScalePolicy) GetDiffFields(o *AutoScalePolicy) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateAutoScalePolicyFieldsMap = NewFieldMap(map[string]struct{}{
 	AutoScalePolicyFieldMinNodes:                struct{}{},
 	AutoScalePolicyFieldMaxNodes:                struct{}{},
 	AutoScalePolicyFieldScaleUpCpuThresh:        struct{}{},
@@ -868,7 +874,7 @@ var UpdateAutoScalePolicyFieldsMap = map[string]struct{}{
 	AutoScalePolicyFieldTargetCpu:               struct{}{},
 	AutoScalePolicyFieldTargetMem:               struct{}{},
 	AutoScalePolicyFieldTargetActiveConnections: struct{}{},
-}
+})
 
 func (m *AutoScalePolicy) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -876,11 +882,11 @@ func (m *AutoScalePolicy) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateAutoScalePolicyFieldsMap[field]; !ok {
+		if !UpdateAutoScalePolicyFieldsMap.Has(field) {
 			if _, ok := AutoScalePolicyAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -902,75 +908,75 @@ func (m *AutoScalePolicy) Clone() *AutoScalePolicy {
 func (m *AutoScalePolicy) CopyInFields(src *AutoScalePolicy) int {
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.MinNodes != src.MinNodes {
 			m.MinNodes = src.MinNodes
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.MaxNodes != src.MaxNodes {
 			m.MaxNodes = src.MaxNodes
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.ScaleUpCpuThresh != src.ScaleUpCpuThresh {
 			m.ScaleUpCpuThresh = src.ScaleUpCpuThresh
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if m.ScaleDownCpuThresh != src.ScaleDownCpuThresh {
 			m.ScaleDownCpuThresh = src.ScaleDownCpuThresh
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.TriggerTimeSec != src.TriggerTimeSec {
 			m.TriggerTimeSec = src.TriggerTimeSec
 			changed++
 		}
 	}
-	if _, set := fmap["8"]; set {
+	if fmap.Has("8") {
 		if m.StabilizationWindowSec != src.StabilizationWindowSec {
 			m.StabilizationWindowSec = src.StabilizationWindowSec
 			changed++
 		}
 	}
-	if _, set := fmap["9"]; set {
+	if fmap.Has("9") {
 		if m.TargetCpu != src.TargetCpu {
 			m.TargetCpu = src.TargetCpu
 			changed++
 		}
 	}
-	if _, set := fmap["10"]; set {
+	if fmap.Has("10") {
 		if m.TargetMem != src.TargetMem {
 			m.TargetMem = src.TargetMem
 			changed++
 		}
 	}
-	if _, set := fmap["11"]; set {
+	if fmap.Has("11") {
 		if m.TargetActiveConnections != src.TargetActiveConnections {
 			m.TargetActiveConnections = src.TargetActiveConnections
 			changed++
 		}
 	}
-	if _, set := fmap["12"]; set {
+	if fmap.Has("12") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
@@ -1208,6 +1214,7 @@ type AutoScalePolicyCache struct {
 	KeyWatchers   map[PolicyKey][]*AutoScalePolicyKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *PolicyKey)
 	DeletedKeyCbs []func(ctx context.Context, key *PolicyKey)
+	Store         AutoScalePolicyStore
 }
 
 func NewAutoScalePolicyCache() *AutoScalePolicyCache {
@@ -1570,6 +1577,18 @@ func (c *AutoScalePolicyCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *AutoScalePolicyCache) InitCacheWithSync(sync DataSync) {
+	InitAutoScalePolicyCache(s)
+	s.InitSync(sync)
+}
+
+func (s *AutoScalePolicyCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewAutoScalePolicyStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

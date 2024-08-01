@@ -109,6 +109,9 @@ func CloudletHideTags(in *edgeproto.Cloudlet) {
 	}
 	for i0 := 0; i0 < len(in.InfraFlavors); i0++ {
 	}
+	if _, found := tags["nocmp"]; found {
+		in.ObjId = ""
+	}
 }
 
 func CloudletInfoHideTags(in *edgeproto.CloudletInfo) {
@@ -2516,6 +2519,9 @@ var PlatformFeaturesOptionalArgs = []string{
 	"noclustersupport",
 	"isedgebox",
 	"supportsipv6",
+	"requirescrmonedge",
+	"requirescrmoffedge",
+	"requirescertrefresh",
 	"resourcequotaproperties:#.name",
 	"resourcequotaproperties:#.value",
 	"resourcequotaproperties:#.inframaxvalue",
@@ -2551,6 +2557,9 @@ var PlatformFeaturesComments = map[string]string{
 	"noclustersupport":                         "No cluster support. Some platforms, like Federation, do not support clusters.",
 	"isedgebox":                                "Edgebox platforms are for user-hosted cloudlets, and must use public images and do not get DNS mapping, as they do not get access to sensitive data.",
 	"supportsipv6":                             "Supports IPv6",
+	"requirescrmonedge":                        "Requires on-edge-site CRM",
+	"requirescrmoffedge":                       "Requires off-edge-site CRM, i.e. CCRM",
+	"requirescertrefresh":                      "Requires certificate refresh",
 	"resourcequotaproperties:#.name":           "Resource name",
 	"resourcequotaproperties:#.value":          "Resource value",
 	"resourcequotaproperties:#.inframaxvalue":  "Resource infra max value",
@@ -2768,7 +2777,6 @@ var CloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
-	"onboardingstate",
 	"crmoverride",
 	"deploymentlocal",
 	"platformtype",
@@ -2811,6 +2819,8 @@ var CloudletOptionalArgs = []string{
 	"infraflavors:#.disk",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
+	"crmonedge",
+	"objid",
 }
 var CloudletAliasArgs = []string{
 	"cloudletorg=key.organization",
@@ -2840,10 +2850,9 @@ var CloudletComments = map[string]string{
 	"timelimits.updateappinsttimeout":        "Override default max time to update an app instance (duration)",
 	"timelimits.deleteappinsttimeout":        "Override default max time to delete an app instance (duration)",
 	"errors":                                 "Any errors trying to create, update, or delete the Cloudlet., specify errors:empty=true to clear",
-	"onboardingstate":                        "Onboarding state of the cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"state":                                  "Current state of the crm, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
-	"deploymentlocal":                        "Deploy cloudlet services locally",
+	"deploymentlocal":                        "(Deprecated, replaced by CrmOnEdge) Deploy cloudlet services locally",
 	"platformtype":                           "Platform type",
 	"notifysrvaddr":                          "Address for the CRM notify listener to run on",
 	"flavor.name":                            "Flavor name",
@@ -2874,7 +2883,7 @@ var CloudletComments = map[string]string{
 	"config.ansiblepublicaddr":               "Ansible public address for CRM to connect to CCRM",
 	"config.envoywithcurlimage":              "docker image path for envoy with curl",
 	"config.nginxwithcurlimage":              "docker image path for nginx with curl",
-	"accessvars":                             "Secrets required to access cloudlet, will be saved in encrypted storage, specify accessvars:empty=true to clear",
+	"accessvars":                             "Secrets required to access cloudlet, will be saved in encrypted storage, and cleared on the cloudlet object, specify accessvars:empty=true to clear",
 	"vmimageversion":                         "EdgeCloud baseimage version where CRM services reside",
 	"deployment":                             "Deployment type to bring up CRM services (docker, kubernetes)",
 	"infraapiaccess":                         "Infra Access Type is the type of access available to Infra API Endpoint, one of DirectAccess, RestrictedAccess",
@@ -2925,6 +2934,8 @@ var CloudletComments = map[string]string{
 	"infraflavors:#.disk":                    "Amount of disk in GB on the Cloudlet",
 	"infraflavors:#.propmap":                 "OS Flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
 	"edgeboxonly":                            "Edgebox only cloudlets allow for developers to set up cloudlets anywhere (laptop, etc) but can only use public images and do not support DNS mapping.",
+	"crmonedge":                              "CRM shall run on the edge site if true (required for restricted cloudlets), otherwise runs centrally (default)",
+	"objid":                                  "Universally unique object ID",
 }
 var CloudletSpecialArgs = map[string]string{
 	"accessvars":             "StringToString",
@@ -3124,39 +3135,6 @@ var OSImageComments = map[string]string{
 	"diskformat": "format qcow2, img, etc",
 }
 var OSImageSpecialArgs = map[string]string{}
-var CloudletOnboardingInfoRequiredArgs = []string{
-	"key.organization",
-	"key.name",
-	"key.federatedorganization",
-}
-var CloudletOnboardingInfoOptionalArgs = []string{
-	"onboardingstate",
-	"status.tasknumber",
-	"status.maxtasks",
-	"status.taskname",
-	"status.stepname",
-	"status.msgcount",
-	"status.msgs",
-	"errors",
-}
-var CloudletOnboardingInfoAliasArgs = []string{}
-var CloudletOnboardingInfoComments = map[string]string{
-	"key.organization":          "Organization of the cloudlet site",
-	"key.name":                  "Name of the cloudlet",
-	"key.federatedorganization": "Federated operator organization who shared this cloudlet",
-	"onboardingstate":           "Onboarding state of the cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
-	"status.tasknumber":         "Task number",
-	"status.maxtasks":           "Max tasks",
-	"status.taskname":           "Task name",
-	"status.stepname":           "Step name",
-	"status.msgcount":           "Message count",
-	"status.msgs":               "Messages",
-	"errors":                    "Any errors encountered while making changes to the Cloudlet",
-}
-var CloudletOnboardingInfoSpecialArgs = map[string]string{
-	"errors":      "StringArray",
-	"status.msgs": "StringArray",
-}
 var CloudletInfoRequiredArgs = []string{
 	"cloudletorg",
 	"cloudlet",
@@ -3362,7 +3340,6 @@ var CreateCloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
-	"onboardingstate",
 	"crmoverride",
 	"deploymentlocal",
 	"platformtype",
@@ -3403,6 +3380,8 @@ var CreateCloudletOptionalArgs = []string{
 	"infraflavors:#.disk",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
+	"crmonedge",
+	"objid",
 }
 var DeleteCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3422,7 +3401,6 @@ var DeleteCloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
-	"onboardingstate",
 	"crmoverride",
 	"deploymentlocal",
 	"platformtype",
@@ -3463,6 +3441,8 @@ var DeleteCloudletOptionalArgs = []string{
 	"infraflavors:#.disk",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
+	"crmonedge",
+	"objid",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3482,7 +3462,6 @@ var UpdateCloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
-	"onboardingstate",
 	"crmoverride",
 	"notifysrvaddr",
 	"envvar",
@@ -3512,6 +3491,8 @@ var UpdateCloudletOptionalArgs = []string{
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
 	"infraflavors:#.propmap",
+	"crmonedge",
+	"objid",
 }
 var ShowCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3531,7 +3512,6 @@ var ShowCloudletOptionalArgs = []string{
 	"timelimits.createappinsttimeout",
 	"timelimits.updateappinsttimeout",
 	"timelimits.deleteappinsttimeout",
-	"onboardingstate",
 	"crmoverride",
 	"deploymentlocal",
 	"platformtype",
@@ -3572,6 +3552,8 @@ var ShowCloudletOptionalArgs = []string{
 	"infraflavors:#.disk",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
+	"crmonedge",
+	"objid",
 }
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",

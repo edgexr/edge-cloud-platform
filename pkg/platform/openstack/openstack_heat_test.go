@@ -30,6 +30,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 	"github.com/stretchr/testify/require"
 )
 
@@ -85,30 +86,66 @@ var vms = []*vmlayer.VMRequestSpec{
 
 func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrchestrationParams, op *OpenstackPlatform) {
 
+	reservedSubnets, err := op.reservedSubnets.Get(ctx)
+	require.Nil(t, err)
+	reservedFloatingIPs, err := op.reservedFloatingIPs.Get(ctx)
+	require.Nil(t, err)
 	// keep track of reserved resources, numbers should return to original values
-	numReservedSubnetsStart := len(ReservedSubnets)
-	numReservedFipsStart := len(ReservedFloatingIPs)
+	numReservedSubnetsStart := len(reservedSubnets)
+	numReservedFipsStart := len(reservedFloatingIPs)
 
-	resources, err := op.populateParams(ctx, vmgp, heatTest)
-	log.SpanLog(ctx, log.DebugLevelInfra, "populateParams done", "resources", resources, "err", err)
+	numSubnetsToReserve := 0
+	numFloatingIPsToReserve := 0
+	for _, s := range vmgp.Subnets {
+		if s.CIDR == vmlayer.NextAvailableResource {
+			numSubnetsToReserve++
+		}
+	}
+	for _, f := range vmgp.FloatingIPs {
+		if f.FloatingIpId == vmlayer.NextAvailableResource {
+			numFloatingIPsToReserve++
+		}
+	}
 
-	require.NotNil(t, resources, err)
-	require.Equal(t, len(resources.Subnets), len(ReservedSubnets)+numReservedSubnetsStart)
-	require.Equal(t, len(resources.FloatingIpIds), len(ReservedFloatingIPs)+numReservedFipsStart)
+	out, err := yaml.Marshal(vmgp)
+	require.Nil(t, err)
+	fmt.Println(string(out))
+
+	err = op.populateParams(ctx, vmgp, heatTest)
+	require.Nil(t, err)
+
+	// get updated reserved resources
+	reservedSubnets, err = op.reservedSubnets.Get(ctx)
+	require.Nil(t, err)
+	reservedFloatingIPs, err = op.reservedFloatingIPs.Get(ctx)
+	require.Nil(t, err)
+
+	require.Equal(t, numReservedSubnetsStart+numSubnetsToReserve, len(reservedSubnets), "subnets initially reserved(%d) plus to reserve(%d) should equal currently reserved (%d)", numReservedSubnetsStart, numSubnetsToReserve, len(reservedSubnets))
+	require.Equal(t, numReservedFipsStart+numFloatingIPsToReserve, len(reservedFloatingIPs), "floating IPs initially reserved(%d) plus to reserve(%d) should equal currently reserved (%d)", numReservedFipsStart, numFloatingIPsToReserve, len(reservedFloatingIPs))
 
 	require.Nil(t, err)
 	err = op.createOrUpdateHeatStackFromTemplate(ctx, vmgp, vmgp.GroupName, VmGroupTemplate, heatTest, edgeproto.DummyUpdateCallback)
 	log.SpanLog(ctx, log.DebugLevelInfra, "created test stack file", "err", err)
 	require.Nil(t, err)
 
-	err = op.ReleaseReservations(ctx, resources)
+	// reservations may be released when the owner is deleted,
+	// or they may be released once the reservations are committed to the infra.
+	err = op.reservedSubnets.ReleaseForOwner(ctx, vmgp.OwnerID)
+	require.Nil(t, err)
+	err = op.reservedFloatingIPs.ReleaseForOwner(ctx, vmgp.OwnerID)
+	require.Nil(t, err)
+
+	// get updated reserved resources
+	reservedSubnets, err = op.reservedSubnets.Get(ctx)
+	require.Nil(t, err)
+	reservedFloatingIPs, err = op.reservedFloatingIPs.Get(ctx)
 	require.Nil(t, err)
 
 	// make sure reservations go back to previous values
-	require.Equal(t, len(ReservedSubnets), numReservedSubnetsStart)
-	require.Equal(t, len(ReservedFloatingIPs), numReservedFipsStart)
+	require.Equal(t, len(reservedSubnets), numReservedSubnetsStart)
+	require.Equal(t, len(reservedFloatingIPs), numReservedFipsStart)
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "ReleaseReservations done", "ReservedSubnets", ReservedSubnets, "err", err)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ReleaseReservations done", "ReservedSubnets", reservedSubnets, "err", err)
 
 	generatedFile := vmgp.GroupName + "-heat.yaml"
 	expectedResultsFile := vmgp.GroupName + "-heat-expected.yaml"
@@ -143,57 +180,6 @@ func validateStack(ctx context.Context, t *testing.T, vmgp *vmlayer.VMGroupOrche
 	}
 }
 
-func validateReservations(ctx context.Context, t *testing.T, op *OpenstackPlatform) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "validateReservations")
-	testRes := ReservedResources{
-		FloatingIpIds: []string{"fipid-xyz", "fipid-abc"},
-		Subnets:       []string{"10.101.99.0", "10.101.88.0"},
-	}
-
-	// reserve one of each one at a time
-	err := op.reserveFloatingIPLocked(ctx, testRes.FloatingIpIds[0], "heat-test")
-	require.Nil(t, err)
-	err = op.reserveSubnetLocked(ctx, testRes.Subnets[0], "heat-test")
-	require.Nil(t, err)
-
-	// reserve second of each one at a time
-	err = op.reserveSubnetLocked(ctx, testRes.Subnets[1], "heat-test")
-	require.Nil(t, err)
-	err = op.reserveFloatingIPLocked(ctx, testRes.FloatingIpIds[1], "heat-test")
-	require.Nil(t, err)
-
-	// try to reserve one already used
-	err = op.reserveFloatingIPLocked(ctx, testRes.FloatingIpIds[0], "heat-test")
-	require.Contains(t, err.Error(), "Floating IP already reserved")
-	err = op.reserveSubnetLocked(ctx, testRes.Subnets[0], "heat-test")
-	require.Contains(t, err.Error(), "Subnet CIDR already reserved")
-
-	// release and try again
-	err = op.ReleaseReservations(ctx, &testRes)
-	require.Nil(t, err)
-
-	err = op.ReserveResourcesLocked(ctx, &testRes, "heat-test")
-	require.Nil(t, err)
-
-	// should have 2 of each reserved
-	require.Equal(t, len(ReservedSubnets), 2)
-	require.Equal(t, len(ReservedFloatingIPs), 2)
-
-	// release and verify nothing is still reserved
-	err = op.ReleaseReservations(ctx, &testRes)
-	require.Nil(t, err)
-
-	// try to release again, this should error
-	err = op.ReleaseReservations(ctx, &testRes)
-	require.Contains(t, err.Error(), "Floating IP not reserved, cannot be released")
-	require.Contains(t, err.Error(), "Subnet not reserved, cannot be released")
-
-	// nothing should still be reserved
-	require.Equal(t, len(ReservedSubnets), 0)
-	require.Equal(t, len(ReservedFloatingIPs), 0)
-
-}
-
 func TestHeatTemplate(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelInfra)
 	infracommon.SetTestMode(true)
@@ -209,6 +195,7 @@ func TestHeatTemplate(t *testing.T) {
 
 	pc := pf.PlatformConfig{}
 	pc.CloudletKey = &ckey
+	pc.SyncFactory = syncdata.NewMutexSyncFactory()
 
 	op := OpenstackPlatform{}
 	var vmp = vmlayer.VMPlatform{
@@ -239,7 +226,7 @@ func TestHeatTemplate(t *testing.T) {
 	}
 
 	vmgp1, err := vmp.GetVMGroupOrchestrationParamsFromVMSpec(ctx,
-		"openstack-test",
+		"openstack-test", "1",
 		vms,
 		vmlayer.WithNewSecurityGroup("testvmgroup-sg"),
 		vmlayer.WithAccessPorts("tcp:7777,udp:8888"),
@@ -255,19 +242,15 @@ func TestHeatTemplate(t *testing.T) {
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_VM_APP_SUBNET_DHCP_ENABLED", "yes")
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_NETWORK_SCHEME", "cidr=10.101.X.0/24,ipv6routingprefix=fc00:101:ecec,floatingipnet=public_internal,floatingipsubnet=subnetname,floatingipextnet=public")
 	vmgp2, err := vmp.GetVMGroupOrchestrationParamsFromVMSpec(ctx,
-		"openstack-fip-test",
+		"openstack-fip-test", "2",
 		vms,
 		vmlayer.WithNewSecurityGroup("testvmgroup-sg"),
 		vmlayer.WithAccessPorts("tcp:7777,udp:8888"),
 		vmlayer.WithNewSubnet(subnetNames),
-		vmlayer.WithSkipInfraSpecificCheck(true),
 		vmlayer.WithEnableIPV6(true),
 	)
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "got VM group params", "vmgp", vmgp2, "err", err)
 	require.Nil(t, err)
 	validateStack(ctx, t, vmgp2, &op)
-
-	validateReservations(ctx, t, &op)
-
 }

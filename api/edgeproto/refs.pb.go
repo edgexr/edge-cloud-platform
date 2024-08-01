@@ -1686,6 +1686,7 @@ type CloudletRefsCache struct {
 	KeyWatchers   map[CloudletKey][]*CloudletRefsKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *CloudletKey)
 	DeletedKeyCbs []func(ctx context.Context, key *CloudletKey)
+	Store         CloudletRefsStore
 }
 
 func NewCloudletRefsCache() *CloudletRefsCache {
@@ -2048,6 +2049,18 @@ func (c *CloudletRefsCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *CloudletRefsCache) InitCacheWithSync(sync DataSync) {
+	InitCloudletRefsCache(s)
+	s.InitSync(sync)
+}
+
+func (s *CloudletRefsCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewCloudletRefsStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 
@@ -2453,6 +2466,7 @@ type ClusterRefsCache struct {
 	KeyWatchers   map[ClusterInstKey][]*ClusterRefsKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *ClusterInstKey)
 	DeletedKeyCbs []func(ctx context.Context, key *ClusterInstKey)
+	Store         ClusterRefsStore
 }
 
 func NewClusterRefsCache() *ClusterRefsCache {
@@ -2815,6 +2829,18 @@ func (c *ClusterRefsCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *ClusterRefsCache) InitCacheWithSync(sync DataSync) {
+	InitClusterRefsCache(s)
+	s.InitSync(sync)
+}
+
+func (s *ClusterRefsCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewClusterRefsStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 
@@ -3208,6 +3234,7 @@ type AppInstRefsCache struct {
 	KeyWatchers   map[AppKey][]*AppInstRefsKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *AppKey)
 	DeletedKeyCbs []func(ctx context.Context, key *AppKey)
+	Store         AppInstRefsStore
 }
 
 func NewAppInstRefsCache() *AppInstRefsCache {
@@ -3570,6 +3597,18 @@ func (c *AppInstRefsCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *AppInstRefsCache) InitCacheWithSync(sync DataSync) {
+	InitAppInstRefsCache(s)
+	s.InitSync(sync)
+}
+
+func (s *AppInstRefsCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewAppInstRefsStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

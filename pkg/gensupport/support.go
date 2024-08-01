@@ -720,6 +720,10 @@ func GetRedisApi(service *descriptor.ServiceDescriptorProto) bool {
 	return proto.GetBoolExtension(service.Options, protogen.E_RedisApi, false)
 }
 
+func GetInternalApi(service *descriptor.ServiceDescriptorProto) bool {
+	return proto.GetBoolExtension(service.Options, protogen.E_InternalApi, false)
+}
+
 const (
 	PrefixCreate = "Create"
 	PrefixDelete = "Delete"

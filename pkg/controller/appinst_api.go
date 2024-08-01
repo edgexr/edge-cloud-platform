@@ -30,10 +30,10 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/gogo/protobuf/types"
+	"github.com/oklog/ulid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -479,6 +479,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	var cloudletPlatformType string
 	var cloudletLoc dme.Loc
 	var platformSupportsIPV6 bool
+	crmOnEdge := false
 
 	in.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
 
@@ -547,6 +548,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if cloudlet.DeletePrepare {
 			return cloudlet.Key.BeingDeletedError()
 		}
+		crmOnEdge = cloudlet.CrmOnEdge
 		cloudletPlatformType = cloudlet.PlatformType
 		cloudletLoc = cloudlet.Location
 		info := edgeproto.CloudletInfo{}
@@ -876,6 +878,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if in.UniqueId == "" {
 			return fmt.Errorf("Unable to compute unique AppInstId, please change AppInst key values")
 		}
+		in.ObjId = ulid.Make().String()
 		if err := s.setDnsLabel(stm, in); err != nil {
 			return err
 		}
@@ -1236,12 +1239,39 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CreateAppInstTimeout.TimeDuration())
 	defer reqCancel()
 
-	err = edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, s.store,
-		edgeproto.TrackedState_READY,
-		CreateAppInstTransitions, edgeproto.TrackedState_CREATE_ERROR,
-		"Created AppInst successfully", cb.Send,
-		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
-	)
+	crmAction := func() error {
+		successMsg := "Created AppInst successfully"
+		if crmOnEdge {
+			return edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, s.store,
+				edgeproto.TrackedState_READY,
+				CreateAppInstTransitions, edgeproto.TrackedState_CREATE_ERROR,
+				successMsg, cb.Send,
+				edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+			)
+		} else {
+			conn, err := services.platformServiceConnCache.GetConn(ctx, cloudletFeatures.NodeType)
+			if err != nil {
+				return err
+			}
+			api := edgeproto.NewAppInstPlatformAPIClient(conn)
+			in.Fields = edgeproto.AppInstAllFields
+			outStream, err := api.ApplyAppInst(reqCtx, in)
+			if err != nil {
+				return cloudcommon.GRPCErrorUnwrap(err)
+			}
+			err = cloudcommon.StreamRecvWithStatus(ctx, outStream, cb.Send, func(info *edgeproto.AppInstInfo) error {
+				s.all.appInstApi.UpdateFromInfo(ctx, info)
+				return nil
+			})
+			if err == nil {
+				cb.Send(&edgeproto.Result{
+					Message: successMsg,
+				})
+			}
+			return err
+		}
+	}
+	err = crmAction()
 	if err != nil && cctx.Override == edgeproto.CRMOverride_IGNORE_CRM_ERRORS {
 		cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Create AppInst ignoring CRM failure: %s", err.Error())})
 		s.ReplaceErrorState(ctx, in, edgeproto.TrackedState_READY)
@@ -1363,7 +1393,7 @@ func (s *AppInstApi) updateAppInstStore(ctx context.Context, in *edgeproto.AppIn
 }
 
 // refreshAppInstInternal returns true if the appinst updated, false otherwise.  False value with no error means no update was needed
-func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.AppInstKey, appKey edgeproto.AppKey, inCb edgeproto.AppInstApi_RefreshAppInstServer, forceUpdate, vmAppIpv6Enabled bool) (retbool bool, reterr error) {
+func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.AppInstKey, appKey edgeproto.AppKey, inCb edgeproto.AppInstApi_RefreshAppInstServer, forceUpdate, vmAppIpv6Enabled bool, updateDiffFields *edgeproto.FieldMap) (retbool bool, reterr error) {
 	ctx := inCb.Context()
 	log.SpanLog(ctx, log.DebugLevelApi, "refreshAppInstInternal", "key", key)
 
@@ -1439,19 +1469,51 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 		reqCtx, reqCancel := context.WithTimeout(cb.Context(), s.all.settingsApi.Get().UpdateAppInstTimeout.TimeDuration())
 		defer reqCancel()
 
-		err = edgeproto.WaitForAppInstInfo(reqCtx, &key, s.store, edgeproto.TrackedState_READY,
-			UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
-			"", cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
-		)
+		cloudlet := edgeproto.Cloudlet{}
+		if !s.all.cloudletApi.cache.Get(&curr.Key.CloudletKey, &cloudlet) {
+			return false, curr.Key.CloudletKey.NotFoundError()
+		}
+		if cloudlet.CrmOnEdge {
+			err = edgeproto.WaitForAppInstInfo(reqCtx, &key, s.store, edgeproto.TrackedState_READY,
+				UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
+				"", cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+			)
+		} else {
+			features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+			if err != nil {
+				return false, err
+			}
+			conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
+			if err != nil {
+				return false, err
+			}
+			api := edgeproto.NewAppInstPlatformAPIClient(conn)
+			curr.Fields = []string{edgeproto.AppInstFieldState}
+			if updateDiffFields != nil {
+				for _, k := range updateDiffFields.Fields() {
+					curr.Fields = append(curr.Fields, k)
+				}
+			}
+			outStream, err := api.ApplyAppInst(reqCtx, &curr)
+			if err != nil {
+				return false, cloudcommon.GRPCErrorUnwrap(err)
+			}
+			err = cloudcommon.StreamRecvWithStatus(ctx, outStream, cb.Send, func(info *edgeproto.AppInstInfo) error {
+				s.all.appInstApi.UpdateFromInfo(ctx, info)
+				return nil
+			})
+			if err != nil {
+				return false, err
+			}
+		}
+		if err != nil {
+			return false, err
+		}
 		if vmAppIpv6Enabled {
 			cb.Send(&edgeproto.Result{Message: "IPv6 enabled, you may need to manually update the network configuration on your VM"})
 		}
 	}
-	if err != nil {
-		return false, err
-	} else {
-		return updatedRevision, s.updateAppInstRevision(ctx, &key, app.Revision)
-	}
+	return updatedRevision, s.updateAppInstRevision(ctx, &key, app.Revision)
 }
 
 func (s *AppInstApi) RefreshAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstApi_RefreshAppInstServer) error {
@@ -1512,7 +1574,7 @@ func (s *AppInstApi) RefreshAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstA
 	for instkey, _ := range instances {
 		go func(k edgeproto.AppInstKey) {
 			log.SpanLog(ctx, log.DebugLevelApi, "updating AppInst", "key", k)
-			updated, err := s.refreshAppInstInternal(DefCallContext(), k, appKey, cb, in.ForceUpdate, vmAppIpv6Enabled)
+			updated, err := s.refreshAppInstInternal(DefCallContext(), k, appKey, cb, in.ForceUpdate, vmAppIpv6Enabled, nil)
 			if err == nil {
 				instanceUpdateResults[k] <- updateResult{errString: "", revisionUpdated: updated}
 			} else {
@@ -1572,14 +1634,14 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 		return err
 	}
 	powerState := edgeproto.PowerState_POWER_STATE_UNKNOWN
-	if _, found := fmap[edgeproto.AppInstFieldPowerState]; found {
+	if fmap.Has(edgeproto.AppInstFieldPowerState) {
 		for _, field := range in.Fields {
 			if field == edgeproto.AppInstFieldCrmOverride ||
 				field == edgeproto.AppInstFieldKey ||
 				field == edgeproto.AppInstFieldPowerState ||
 				in.IsKeyField(field) {
 				continue
-			} else if _, ok := edgeproto.UpdateAppInstFieldsMap[field]; ok {
+			} else if edgeproto.UpdateAppInstFieldsMap.Has(field) {
 				return fmt.Errorf("If powerstate is to be updated, then no other fields can be modified")
 			}
 		}
@@ -1596,6 +1658,7 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 	cur := edgeproto.AppInst{}
 	changeCount := 0
 	vmAppIpv6Enabled := false
+	var diffFields *edgeproto.FieldMap
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		if !s.store.STMGet(stm, &in.Key, &cur) {
 			return in.Key.NotFoundError()
@@ -1604,7 +1667,7 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 		if !s.all.appApi.store.STMGet(stm, &cur.AppKey, &app) {
 			return in.AppKey.NotFoundError()
 		}
-		if _, found := fmap[edgeproto.AppInstFieldEnableIpv6]; found {
+		if fmap.Has(edgeproto.AppInstFieldEnableIpv6) {
 			if cloudcommon.IsClusterInstReqd(&app) {
 				// ipv6 setting is based on clusterInst setting
 				clusterInst := edgeproto.ClusterInst{}
@@ -1632,11 +1695,14 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 				}
 			}
 		}
+		old := edgeproto.AppInst{}
+		old.DeepCopyIn(&cur)
 		changeCount = cur.CopyInFields(in)
 		if changeCount == 0 {
 			// nothing changed
 			return nil
 		}
+		diffFields = old.GetDiffFields(&cur)
 		if !ignoreCRM(cctx) && powerState != edgeproto.PowerState_POWER_STATE_UNKNOWN {
 			if app.Deployment != cloudcommon.DeploymentTypeVM {
 				return fmt.Errorf("Updating powerstate is only supported for VM deployment")
@@ -1657,7 +1723,7 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 		return nil
 	}
 	forceUpdate := true
-	_, err = s.refreshAppInstInternal(cctx, in.Key, cur.AppKey, cb, forceUpdate, vmAppIpv6Enabled)
+	_, err = s.refreshAppInstInternal(cctx, in.Key, cur.AppKey, cb, forceUpdate, vmAppIpv6Enabled, diffFields)
 	return err
 }
 
@@ -1698,6 +1764,8 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 	}()
 
+	crmOnEdge := false
+	nodeType := ""
 	log.SpanLog(ctx, log.DebugLevelApi, "deleteAppInstInternal", "AppInst", in)
 	// populate the clusterinst developer from the app developer if not already present
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
@@ -1719,6 +1787,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if !s.all.cloudletApi.store.STMGet(stm, &in.Key.CloudletKey, &cloudlet) {
 			return fmt.Errorf("For AppInst, %v", in.Key.CloudletKey.NotFoundError())
 		}
+		crmOnEdge = cloudlet.CrmOnEdge
 		app = edgeproto.App{}
 		if !s.all.appApi.store.STMGet(stm, &in.AppKey, &app) {
 			return fmt.Errorf("For AppInst, %v", in.AppKey.NotFoundError())
@@ -1787,6 +1856,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
+		nodeType = cloudletFeatures.NodeType
 		if platform.TrackK8sAppInst(ctx, &app, cloudletFeatures) {
 			ii := 0
 			for ; ii < len(cloudletRefs.K8SAppInsts); ii++ {
@@ -1866,11 +1936,38 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().DeleteAppInstTimeout.TimeDuration())
 		defer reqCancel()
 
-		err = edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_NOT_PRESENT,
-			DeleteAppInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
-			"Deleted AppInst successfully", cb.Send,
-			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
-		)
+		crmAction := func() error {
+			successMsg := "Deleted AppInst successfully"
+			if crmOnEdge {
+				return edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_NOT_PRESENT,
+					DeleteAppInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
+					successMsg, cb.Send,
+					edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+				)
+			} else {
+				conn, err := services.platformServiceConnCache.GetConn(ctx, nodeType)
+				if err != nil {
+					return err
+				}
+				api := edgeproto.NewAppInstPlatformAPIClient(conn)
+				in.Fields = []string{edgeproto.AppInstFieldState}
+				outStream, err := api.ApplyAppInst(reqCtx, in)
+				if err != nil {
+					return cloudcommon.GRPCErrorUnwrap(err)
+				}
+				err = cloudcommon.StreamRecvWithStatus(ctx, outStream, cb.Send, func(info *edgeproto.AppInstInfo) error {
+					s.UpdateFromInfo(ctx, info)
+					return nil
+				})
+				if err == nil {
+					cb.Send(&edgeproto.Result{
+						Message: successMsg,
+					})
+				}
+				return err
+			}
+		}
+		err = crmAction()
 		if err != nil && cctx.Override == edgeproto.CRMOverride_IGNORE_CRM_ERRORS {
 			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Delete AppInst ignoring CRM failure: %s", err.Error())})
 			s.ReplaceErrorState(ctx, in, edgeproto.TrackedState_DELETE_DONE)
@@ -1945,97 +2042,115 @@ func (s *AppInstApi) HealthCheckUpdate(ctx context.Context, key *edgeproto.AppIn
 
 func (s *AppInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.AppInstInfo) {
 	log.SpanLog(ctx, log.DebugLevelApi, "Update AppInst from info", "key", in.Key, "state", in.State, "status", in.Status, "powerstate", in.PowerState, "uri", in.Uri)
+	fmap := edgeproto.MakeFieldMap(in.Fields)
 
+	readyChanged := false
+	inst := edgeproto.AppInst{}
 	s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		applyUpdate := false
-		inst := edgeproto.AppInst{}
 		if !s.store.STMGet(stm, &in.Key, &inst) {
 			// got deleted in the meantime
 			return nil
 		}
-		if in.PowerState != edgeproto.PowerState_POWER_STATE_UNKNOWN &&
-			inst.PowerState != in.PowerState {
-			inst.PowerState = in.PowerState
-			applyUpdate = true
-		}
-		// If AppInst is ready and state has not been set yet by HealthCheckUpdate, default to Ok.
-		if in.State == edgeproto.TrackedState_READY &&
-			inst.HealthCheck == dme.HealthCheck_HEALTH_CHECK_UNKNOWN {
-			inst.HealthCheck = dme.HealthCheck_HEALTH_CHECK_OK
-			applyUpdate = true
-		}
-
-		if in.Uri != "" && inst.Uri != in.Uri {
-			inst.Uri = in.Uri
-			applyUpdate = true
-		}
-		if in.FedKey.AppInstId != "" && inst.FedKey.AppInstId == "" {
-			inst.FedKey = in.FedKey
-			fedAppInst := edgeproto.FedAppInst{
-				Key:        in.FedKey,
-				AppInstKey: in.Key,
-			}
-			s.fedStore.STMPut(stm, &fedAppInst)
-			applyUpdate = true
-		}
-		if len(in.FedPorts) > 0 {
-			log.SpanLog(ctx, log.DebugLevelApi, "Updating ports on federated appinst", "key", in.Key, "ports", in.FedPorts)
-			fedPortLookup := map[string]*dme.AppPort{}
-			for ii := range in.FedPorts {
-				key := edgeproto.AppPortLookupKey(&in.FedPorts[ii])
-				fedPortLookup[key] = &in.FedPorts[ii]
-			}
-			for ii, port := range inst.MappedPorts {
-				key := edgeproto.AppPortLookupKey(&port)
-				fedPort, ok := fedPortLookup[key]
-				if !ok {
-					continue
-				}
-				if inst.MappedPorts[ii].FqdnPrefix == fedPort.FqdnPrefix && inst.MappedPorts[ii].PublicPort == fedPort.PublicPort {
-					continue
-				}
-				inst.MappedPorts[ii].FqdnPrefix = fedPort.FqdnPrefix
-				inst.MappedPorts[ii].PublicPort = fedPort.PublicPort
-				applyUpdate = true
-			}
-			// clear URI, as full path to port is in FqdnPrefix
-			if inst.Uri != "" {
-				inst.Uri = ""
+		if fmap.Has(edgeproto.AppInstInfoFieldPowerState) {
+			if in.PowerState != edgeproto.PowerState_POWER_STATE_UNKNOWN &&
+				inst.PowerState != in.PowerState {
+				inst.PowerState = in.PowerState
 				applyUpdate = true
 			}
 		}
-
-		if inst.State == in.State {
-			// already in that state
-			if in.State == edgeproto.TrackedState_READY {
-				// update runtime info
-				if len(in.RuntimeInfo.ContainerIds) > 0 {
-					inst.RuntimeInfo = in.RuntimeInfo
+		if fmap.Has(edgeproto.AppInstInfoFieldState) {
+			// If AppInst is ready and state has not been set yet by HealthCheckUpdate, default to Ok.
+			if in.State == edgeproto.TrackedState_READY &&
+				inst.HealthCheck == dme.HealthCheck_HEALTH_CHECK_UNKNOWN {
+				inst.HealthCheck = dme.HealthCheck_HEALTH_CHECK_OK
+				applyUpdate = true
+			}
+		}
+		if fmap.Has(edgeproto.AppInstInfoFieldUri) {
+			if in.Uri != "" && inst.Uri != in.Uri {
+				inst.Uri = in.Uri
+				applyUpdate = true
+			}
+		}
+		if fmap.HasOrHasChild(edgeproto.AppInstInfoFieldFedKey) {
+			if in.FedKey.AppInstId != "" && inst.FedKey.AppInstId == "" {
+				inst.FedKey = in.FedKey
+				fedAppInst := edgeproto.FedAppInst{
+					Key:        in.FedKey,
+					AppInstKey: in.Key,
+				}
+				s.fedStore.STMPut(stm, &fedAppInst)
+				applyUpdate = true
+			}
+		}
+		if fmap.HasOrHasChild(edgeproto.AppInstInfoFieldFedPorts) {
+			if len(in.FedPorts) > 0 {
+				log.SpanLog(ctx, log.DebugLevelApi, "Updating ports on federated appinst", "key", in.Key, "ports", in.FedPorts)
+				fedPortLookup := map[string]*dme.AppPort{}
+				for ii := range in.FedPorts {
+					key := edgeproto.AppPortLookupKey(&in.FedPorts[ii])
+					fedPortLookup[key] = &in.FedPorts[ii]
+				}
+				for ii, port := range inst.MappedPorts {
+					key := edgeproto.AppPortLookupKey(&port)
+					fedPort, ok := fedPortLookup[key]
+					if !ok {
+						continue
+					}
+					if inst.MappedPorts[ii].FqdnPrefix == fedPort.FqdnPrefix && inst.MappedPorts[ii].PublicPort == fedPort.PublicPort {
+						continue
+					}
+					inst.MappedPorts[ii].FqdnPrefix = fedPort.FqdnPrefix
+					inst.MappedPorts[ii].PublicPort = fedPort.PublicPort
+					applyUpdate = true
+				}
+				// clear URI, as full path to port is in FqdnPrefix
+				if inst.Uri != "" {
+					inst.Uri = ""
 					applyUpdate = true
 				}
 			}
-		} else {
-			// please see state_transitions.md
-			if !crmTransitionOk(inst.State, in.State) {
-				log.SpanLog(ctx, log.DebugLevelApi, "Invalid state transition",
-					"key", &in.Key, "cur", inst.State, "next", in.State)
-				return nil
-			}
-			if inst.State == edgeproto.TrackedState_DELETE_REQUESTED && in.State != edgeproto.TrackedState_DELETE_REQUESTED {
-				s.all.appInstRefsApi.removeDeleteRequestedRef(stm, &inst.AppKey, &in.Key)
-			}
-			inst.State = in.State
-			applyUpdate = true
-		}
-		if in.State == edgeproto.TrackedState_CREATE_ERROR || in.State == edgeproto.TrackedState_DELETE_ERROR || in.State == edgeproto.TrackedState_UPDATE_ERROR {
-			inst.Errors = in.Errors
-		} else {
-			inst.Errors = nil
 		}
 
-		if len(in.RuntimeInfo.ContainerIds) > 0 {
-			inst.RuntimeInfo = in.RuntimeInfo
-			applyUpdate = true
+		if fmap.Has(edgeproto.AppInstInfoFieldState) {
+			if inst.State == in.State {
+				// already in that state
+				if in.State == edgeproto.TrackedState_READY {
+					// update runtime info
+					if len(in.RuntimeInfo.ContainerIds) > 0 {
+						inst.RuntimeInfo = in.RuntimeInfo
+						applyUpdate = true
+					}
+				}
+			} else {
+				if inst.State == edgeproto.TrackedState_READY || in.State == edgeproto.TrackedState_READY {
+					readyChanged = true
+				}
+				// please see state_transitions.md
+				if !crmTransitionOk(inst.State, in.State) {
+					log.SpanLog(ctx, log.DebugLevelApi, "Invalid state transition",
+						"key", &in.Key, "cur", inst.State, "next", in.State)
+					return nil
+				}
+				if inst.State == edgeproto.TrackedState_DELETE_REQUESTED && in.State != edgeproto.TrackedState_DELETE_REQUESTED {
+					s.all.appInstRefsApi.removeDeleteRequestedRef(stm, &inst.AppKey, &in.Key)
+				}
+				inst.State = in.State
+				applyUpdate = true
+			}
+			if in.State == edgeproto.TrackedState_CREATE_ERROR || in.State == edgeproto.TrackedState_DELETE_ERROR || in.State == edgeproto.TrackedState_UPDATE_ERROR {
+				inst.Errors = in.Errors
+			} else {
+				inst.Errors = nil
+			}
+		}
+
+		if fmap.HasOrHasChild(edgeproto.AppInstInfoFieldRuntimeInfo) {
+			if len(in.RuntimeInfo.ContainerIds) > 0 {
+				inst.RuntimeInfo = in.RuntimeInfo
+				applyUpdate = true
+			}
 		}
 		if applyUpdate {
 			s.store.STMPut(stm, &inst)
@@ -2055,6 +2170,9 @@ func (s *AppInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.AppInstIn
 		// update stream message about deletion of main object
 		in.State = edgeproto.TrackedState_NOT_PRESENT
 		s.all.streamObjApi.UpdateStatus(ctx, in, &in.State, nil, in.Key.StreamKey())
+	}
+	if readyChanged {
+		s.all.trustPolicyExceptionApi.applyAllTPEsForAppInst(ctx, &inst)
 	}
 }
 
@@ -2343,14 +2461,19 @@ func (s *AppInstIDSanitizer) NameSanitize(name string) (string, error) {
 
 	reqCtx, cancel := context.WithTimeout(s.ctx, 3*time.Second)
 	defer cancel()
-	client := rediscache.GetCCRMAPIClient(redisClient, features.NodeType)
+
+	conn, err := services.platformServiceConnCache.GetConn(s.ctx, features.NodeType)
+	if err != nil {
+		return "", err
+	}
+	api := edgeproto.NewCloudletPlatformAPIClient(conn)
 	req := edgeproto.NameSanitizeReq{
 		CloudletKey: &s.cloudlet.Key,
 		Message:     name,
 	}
-	res, err := client.NameSanitize(reqCtx, &req)
+	res, err := api.NameSanitize(reqCtx, &req)
 	if err != nil {
-		return "", err
+		return "", cloudcommon.GRPCErrorUnwrap(err)
 	}
 	return res.Message, nil
 }

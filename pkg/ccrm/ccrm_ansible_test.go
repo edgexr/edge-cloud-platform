@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,6 +37,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -57,11 +59,13 @@ var testFlags = Flags{
 	DebugLevels:                   "api,infra,notify",
 }
 
-var testAuth = &cloudcommon.RegistryAuth{
-	AuthType: cloudcommon.BasicAuth,
-	Hostname: "ghcr.io",
-	Username: "testuser",
-	Password: "testpass",
+var testRegAuthApi = &cloudcommon.DummyRegistryAuthApi{
+	DummyAuth: cloudcommon.RegistryAuth{
+		AuthType: cloudcommon.BasicAuth,
+		Hostname: "ghcr.io",
+		Username: "testuser",
+		Password: "testpass",
+	},
 }
 
 func getTestCloudlet() edgeproto.Cloudlet {
@@ -120,29 +124,44 @@ func TestNodeAttributesYaml(t *testing.T) {
 	nodeMgr := node.NodeMgr{}
 	nodeMgr.DeploymentTag = "main"
 	nodeMgr.InternalPki.UseVaultPki = true
+	nodeMgr.MyNode.Key.Type = "ccrm"
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
 	caches := CCRMCaches{}
-	caches.Init(ctx, "ccrm", &nodeMgr, nil)
+	caches.Init(ctx)
 	handler := CCRMHandler{}
-	handler.Init(ctx, "ccrm", &nodeMgr, &caches, nil, nil, &testFlags, testAuth)
+	handler.Init(ctx, &nodeMgr, &caches, nil, &testFlags, testRegAuthApi)
 
 	cloudlet := getTestCloudlet()
-	baseAttributes, err := handler.getCloudletPlatformAttributes(ctx, &cloudlet)
-	require.Nil(t, err)
+	for _, crmOnEdge := range []bool{true, false} {
+		// when CRM is on edge-site, then Shepherd's notifyAddrs
+		// will point to the CRM.
+		// when CRM on off edge-site, then Shepherd's notifyAddrs
+		// will point directly to the controller
+		cloudlet.CrmOnEdge = crmOnEdge
+		baseAttributes, err := handler.getCloudletPlatformAttributes(ctx, &cloudlet)
+		require.Nil(t, err)
 
-	node, _ := getTestCloudletNode(cloudlet.Key)
-	handler.updateNodeAttributes(ctx, baseAttributes, &node)
+		node, _ := getTestCloudletNode(cloudlet.Key)
+		handler.updateNodeAttributes(ctx, baseAttributes, &node)
 
-	data, ok := handler.nodeAttributesCache.Get(node.Key)
-	require.True(t, ok)
-	if testNodeAttributesExp != string(data.yamlData) {
-		fmt.Println(string(data.yamlData))
+		data, ok := handler.nodeAttributesCache.Get(node.Key)
+		require.True(t, ok)
+		expData := testNodeAttributesExp
+		if !crmOnEdge {
+			// replace shepherd's notifyAddrs to point to controller instead of CRM
+			idx := strings.Index(expData, "shepherd:")
+			shepherd := strings.Replace(expData[idx:], "127.0.0.1:51002", testFlags.ControllerPublicNotifyAddr, 1)
+			expData = expData[:idx] + shepherd
+		}
+		if expData != string(data.yamlData) {
+			fmt.Println(string(data.yamlData))
+		}
+		require.Equal(t, expData, string(data.yamlData))
+		checksum := fmt.Sprintf("%x", md5.Sum([]byte(expData)))
+		require.Equal(t, checksum, data.checksum)
 	}
-	require.Equal(t, testNodeAttributesExp, string(data.yamlData))
-	checksum := fmt.Sprintf("%x", md5.Sum([]byte(testNodeAttributesExp)))
-	require.Equal(t, checksum, data.checksum)
 }
 
 func TestAnsibleServer(t *testing.T) {
@@ -158,20 +177,21 @@ func TestAnsibleServer(t *testing.T) {
 	ccrm := CCRM{
 		flags: testFlags,
 	}
+	ccrmType := "ccrm"
 	ccrm.nodeMgr.InternalPki.UseVaultPki = true
 	ccrm.nodeMgr.DeploymentTag = "main"
+	ccrm.nodeMgr.MyNode.Key.Type = ccrmType
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	ccrm.nodeMgr.CloudletLookup = cloudletLookup
 
-	ccrmType := "ccrm"
-	ccrm.caches.Init(ctx, ccrmType, &ccrm.nodeMgr, nil)
-	ccrm.handler.Init(ctx, ccrmType, &ccrm.nodeMgr, &ccrm.caches, nil, nil, &ccrm.flags, nil)
+	ccrm.caches.Init(ctx)
+	ccrm.handler.Init(ctx, &ccrm.nodeMgr, &ccrm.caches, nil, &ccrm.flags, &cloudcommon.DummyRegistryAuthApi{})
 	ccrm.echoServ = ccrm.initAnsibleServer(ctx)
 
 	// test cloudlet
 	cloudlet := getTestCloudlet()
-	ccrm.caches.CloudletCache.Update(ctx, &cloudlet, 0)
+	ccrm.handler.crmHandler.CloudletCache.Update(ctx, &cloudlet, 0)
 
 	// test cloudletNode
 	node, password := getTestCloudletNode(cloudlet.Key)
@@ -332,8 +352,11 @@ func TestAnsibleServer(t *testing.T) {
 
 	// Change the cloudletNode config, will cause the update to run.
 	// Normally CCRM would be restarted to update the versionTag.
+	outStream := testutil.ShowCloudletInfo{}
+	outStream.Init()
+	outStream.Ctx = ctx
 	ccrm.flags.VersionTag = "NewTag"
-	ccrm.handler.cloudletChanged(ctx, nil, &cloudlet)
+	ccrm.handler.ApplyCloudlet(&cloudlet, &outStream)
 	out = runCmd()
 	require.Contains(t, out, "ansible.tar.gz md5 matches, skipping download")
 	require.Contains(t, out, "vars.yaml md5 mismatch, will download")
@@ -379,7 +402,7 @@ func TestAnsibleServer(t *testing.T) {
 
 		// trigger update - docker crm role
 		ccrm.flags.VersionTag = "NewTag2"
-		ccrm.handler.cloudletChanged(ctx, nil, &cloudlet)
+		ccrm.handler.ApplyCloudlet(&cloudlet, &outStream)
 
 		out = runCmd()
 		fmt.Println(out)

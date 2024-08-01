@@ -1798,7 +1798,7 @@ var FlowRateLimitSettingsAllFields = []string{
 	FlowRateLimitSettingsFieldSettingsBurstSize,
 }
 
-var FlowRateLimitSettingsAllFieldsMap = map[string]struct{}{
+var FlowRateLimitSettingsAllFieldsMap = NewFieldMap(map[string]struct{}{
 	FlowRateLimitSettingsFieldKeyFlowSettingsName:            struct{}{},
 	FlowRateLimitSettingsFieldKeyRateLimitKeyApiName:         struct{}{},
 	FlowRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType: struct{}{},
@@ -1806,7 +1806,7 @@ var FlowRateLimitSettingsAllFieldsMap = map[string]struct{}{
 	FlowRateLimitSettingsFieldSettingsFlowAlgorithm:          struct{}{},
 	FlowRateLimitSettingsFieldSettingsReqsPerSecond:          struct{}{},
 	FlowRateLimitSettingsFieldSettingsBurstSize:              struct{}{},
-}
+})
 
 var FlowRateLimitSettingsAllFieldsStringMap = map[string]string{
 	FlowRateLimitSettingsFieldKeyFlowSettingsName:            "Key Flow Settings Name",
@@ -1822,38 +1822,44 @@ func (m *FlowRateLimitSettings) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, FlowRateLimitSettingsFieldKey+".") || s == FlowRateLimitSettingsFieldKey
 }
 
-func (m *FlowRateLimitSettings) DiffFields(o *FlowRateLimitSettings, fields map[string]struct{}) {
+func (m *FlowRateLimitSettings) DiffFields(o *FlowRateLimitSettings, fields *FieldMap) {
 	if m.Key.FlowSettingsName != o.Key.FlowSettingsName {
-		fields[FlowRateLimitSettingsFieldKeyFlowSettingsName] = struct{}{}
-		fields[FlowRateLimitSettingsFieldKey] = struct{}{}
+		fields.Set(FlowRateLimitSettingsFieldKeyFlowSettingsName)
+		fields.Set(FlowRateLimitSettingsFieldKey)
 	}
 	if m.Key.RateLimitKey.ApiName != o.Key.RateLimitKey.ApiName {
-		fields[FlowRateLimitSettingsFieldKeyRateLimitKeyApiName] = struct{}{}
-		fields[FlowRateLimitSettingsFieldKeyRateLimitKey] = struct{}{}
-		fields[FlowRateLimitSettingsFieldKey] = struct{}{}
+		fields.Set(FlowRateLimitSettingsFieldKeyRateLimitKeyApiName)
+		fields.Set(FlowRateLimitSettingsFieldKeyRateLimitKey)
+		fields.Set(FlowRateLimitSettingsFieldKey)
 	}
 	if m.Key.RateLimitKey.ApiEndpointType != o.Key.RateLimitKey.ApiEndpointType {
-		fields[FlowRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType] = struct{}{}
-		fields[FlowRateLimitSettingsFieldKeyRateLimitKey] = struct{}{}
-		fields[FlowRateLimitSettingsFieldKey] = struct{}{}
+		fields.Set(FlowRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType)
+		fields.Set(FlowRateLimitSettingsFieldKeyRateLimitKey)
+		fields.Set(FlowRateLimitSettingsFieldKey)
 	}
 	if m.Key.RateLimitKey.RateLimitTarget != o.Key.RateLimitKey.RateLimitTarget {
-		fields[FlowRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget] = struct{}{}
-		fields[FlowRateLimitSettingsFieldKeyRateLimitKey] = struct{}{}
-		fields[FlowRateLimitSettingsFieldKey] = struct{}{}
+		fields.Set(FlowRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget)
+		fields.Set(FlowRateLimitSettingsFieldKeyRateLimitKey)
+		fields.Set(FlowRateLimitSettingsFieldKey)
 	}
 	if m.Settings.FlowAlgorithm != o.Settings.FlowAlgorithm {
-		fields[FlowRateLimitSettingsFieldSettingsFlowAlgorithm] = struct{}{}
-		fields[FlowRateLimitSettingsFieldSettings] = struct{}{}
+		fields.Set(FlowRateLimitSettingsFieldSettingsFlowAlgorithm)
+		fields.Set(FlowRateLimitSettingsFieldSettings)
 	}
 	if m.Settings.ReqsPerSecond != o.Settings.ReqsPerSecond {
-		fields[FlowRateLimitSettingsFieldSettingsReqsPerSecond] = struct{}{}
-		fields[FlowRateLimitSettingsFieldSettings] = struct{}{}
+		fields.Set(FlowRateLimitSettingsFieldSettingsReqsPerSecond)
+		fields.Set(FlowRateLimitSettingsFieldSettings)
 	}
 	if m.Settings.BurstSize != o.Settings.BurstSize {
-		fields[FlowRateLimitSettingsFieldSettingsBurstSize] = struct{}{}
-		fields[FlowRateLimitSettingsFieldSettings] = struct{}{}
+		fields.Set(FlowRateLimitSettingsFieldSettingsBurstSize)
+		fields.Set(FlowRateLimitSettingsFieldSettings)
 	}
+}
+
+func (m *FlowRateLimitSettings) GetDiffFields(o *FlowRateLimitSettings) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
 }
 
 func (m *FlowRateLimitSettings) Clone() *FlowRateLimitSettings {
@@ -1865,27 +1871,27 @@ func (m *FlowRateLimitSettings) Clone() *FlowRateLimitSettings {
 func (m *FlowRateLimitSettings) CopyInFields(src *FlowRateLimitSettings) int {
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.FlowSettingsName != src.Key.FlowSettingsName {
 				m.Key.FlowSettingsName = src.Key.FlowSettingsName
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
-			if _, set := fmap["2.2.1"]; set {
+		if fmap.HasOrHasChild("2.2") {
+			if fmap.Has("2.2.1") {
 				if m.Key.RateLimitKey.ApiName != src.Key.RateLimitKey.ApiName {
 					m.Key.RateLimitKey.ApiName = src.Key.RateLimitKey.ApiName
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.2"]; set {
+			if fmap.Has("2.2.2") {
 				if m.Key.RateLimitKey.ApiEndpointType != src.Key.RateLimitKey.ApiEndpointType {
 					m.Key.RateLimitKey.ApiEndpointType = src.Key.RateLimitKey.ApiEndpointType
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.3"]; set {
+			if fmap.Has("2.2.3") {
 				if m.Key.RateLimitKey.RateLimitTarget != src.Key.RateLimitKey.RateLimitTarget {
 					m.Key.RateLimitKey.RateLimitTarget = src.Key.RateLimitKey.RateLimitTarget
 					changed++
@@ -1893,20 +1899,20 @@ func (m *FlowRateLimitSettings) CopyInFields(src *FlowRateLimitSettings) int {
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
-		if _, set := fmap["3.1"]; set {
+	if fmap.HasOrHasChild("3") {
+		if fmap.Has("3.1") {
 			if m.Settings.FlowAlgorithm != src.Settings.FlowAlgorithm {
 				m.Settings.FlowAlgorithm = src.Settings.FlowAlgorithm
 				changed++
 			}
 		}
-		if _, set := fmap["3.2"]; set {
+		if fmap.Has("3.2") {
 			if m.Settings.ReqsPerSecond != src.Settings.ReqsPerSecond {
 				m.Settings.ReqsPerSecond = src.Settings.ReqsPerSecond
 				changed++
 			}
 		}
-		if _, set := fmap["3.3"]; set {
+		if fmap.Has("3.3") {
 			if m.Settings.BurstSize != src.Settings.BurstSize {
 				m.Settings.BurstSize = src.Settings.BurstSize
 				changed++
@@ -2136,6 +2142,7 @@ type FlowRateLimitSettingsCache struct {
 	KeyWatchers   map[FlowRateLimitSettingsKey][]*FlowRateLimitSettingsKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *FlowRateLimitSettingsKey)
 	DeletedKeyCbs []func(ctx context.Context, key *FlowRateLimitSettingsKey)
+	Store         FlowRateLimitSettingsStore
 }
 
 func NewFlowRateLimitSettingsCache() *FlowRateLimitSettingsCache {
@@ -2501,6 +2508,18 @@ func (c *FlowRateLimitSettingsCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
+func (s *FlowRateLimitSettingsCache) InitCacheWithSync(sync DataSync) {
+	InitFlowRateLimitSettingsCache(s)
+	s.InitSync(sync)
+}
+
+func (s *FlowRateLimitSettingsCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewFlowRateLimitSettingsStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
 func (c *FlowRateLimitSettingsCache) UsesOrg(org string) bool {
 	return false
 }
@@ -2759,7 +2778,7 @@ var MaxReqsRateLimitSettingsAllFields = []string{
 	MaxReqsRateLimitSettingsFieldSettingsInterval,
 }
 
-var MaxReqsRateLimitSettingsAllFieldsMap = map[string]struct{}{
+var MaxReqsRateLimitSettingsAllFieldsMap = NewFieldMap(map[string]struct{}{
 	MaxReqsRateLimitSettingsFieldKeyMaxReqsSettingsName:         struct{}{},
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiName:         struct{}{},
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType: struct{}{},
@@ -2767,7 +2786,7 @@ var MaxReqsRateLimitSettingsAllFieldsMap = map[string]struct{}{
 	MaxReqsRateLimitSettingsFieldSettingsMaxReqsAlgorithm:       struct{}{},
 	MaxReqsRateLimitSettingsFieldSettingsMaxRequests:            struct{}{},
 	MaxReqsRateLimitSettingsFieldSettingsInterval:               struct{}{},
-}
+})
 
 var MaxReqsRateLimitSettingsAllFieldsStringMap = map[string]string{
 	MaxReqsRateLimitSettingsFieldKeyMaxReqsSettingsName:         "Key Max Reqs Settings Name",
@@ -2783,38 +2802,44 @@ func (m *MaxReqsRateLimitSettings) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, MaxReqsRateLimitSettingsFieldKey+".") || s == MaxReqsRateLimitSettingsFieldKey
 }
 
-func (m *MaxReqsRateLimitSettings) DiffFields(o *MaxReqsRateLimitSettings, fields map[string]struct{}) {
+func (m *MaxReqsRateLimitSettings) DiffFields(o *MaxReqsRateLimitSettings, fields *FieldMap) {
 	if m.Key.MaxReqsSettingsName != o.Key.MaxReqsSettingsName {
-		fields[MaxReqsRateLimitSettingsFieldKeyMaxReqsSettingsName] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldKey] = struct{}{}
+		fields.Set(MaxReqsRateLimitSettingsFieldKeyMaxReqsSettingsName)
+		fields.Set(MaxReqsRateLimitSettingsFieldKey)
 	}
 	if m.Key.RateLimitKey.ApiName != o.Key.RateLimitKey.ApiName {
-		fields[MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiName] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldKeyRateLimitKey] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldKey] = struct{}{}
+		fields.Set(MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiName)
+		fields.Set(MaxReqsRateLimitSettingsFieldKeyRateLimitKey)
+		fields.Set(MaxReqsRateLimitSettingsFieldKey)
 	}
 	if m.Key.RateLimitKey.ApiEndpointType != o.Key.RateLimitKey.ApiEndpointType {
-		fields[MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldKeyRateLimitKey] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldKey] = struct{}{}
+		fields.Set(MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType)
+		fields.Set(MaxReqsRateLimitSettingsFieldKeyRateLimitKey)
+		fields.Set(MaxReqsRateLimitSettingsFieldKey)
 	}
 	if m.Key.RateLimitKey.RateLimitTarget != o.Key.RateLimitKey.RateLimitTarget {
-		fields[MaxReqsRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldKeyRateLimitKey] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldKey] = struct{}{}
+		fields.Set(MaxReqsRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget)
+		fields.Set(MaxReqsRateLimitSettingsFieldKeyRateLimitKey)
+		fields.Set(MaxReqsRateLimitSettingsFieldKey)
 	}
 	if m.Settings.MaxReqsAlgorithm != o.Settings.MaxReqsAlgorithm {
-		fields[MaxReqsRateLimitSettingsFieldSettingsMaxReqsAlgorithm] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldSettings] = struct{}{}
+		fields.Set(MaxReqsRateLimitSettingsFieldSettingsMaxReqsAlgorithm)
+		fields.Set(MaxReqsRateLimitSettingsFieldSettings)
 	}
 	if m.Settings.MaxRequests != o.Settings.MaxRequests {
-		fields[MaxReqsRateLimitSettingsFieldSettingsMaxRequests] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldSettings] = struct{}{}
+		fields.Set(MaxReqsRateLimitSettingsFieldSettingsMaxRequests)
+		fields.Set(MaxReqsRateLimitSettingsFieldSettings)
 	}
 	if m.Settings.Interval != o.Settings.Interval {
-		fields[MaxReqsRateLimitSettingsFieldSettingsInterval] = struct{}{}
-		fields[MaxReqsRateLimitSettingsFieldSettings] = struct{}{}
+		fields.Set(MaxReqsRateLimitSettingsFieldSettingsInterval)
+		fields.Set(MaxReqsRateLimitSettingsFieldSettings)
 	}
+}
+
+func (m *MaxReqsRateLimitSettings) GetDiffFields(o *MaxReqsRateLimitSettings) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
 }
 
 func (m *MaxReqsRateLimitSettings) Clone() *MaxReqsRateLimitSettings {
@@ -2826,27 +2851,27 @@ func (m *MaxReqsRateLimitSettings) Clone() *MaxReqsRateLimitSettings {
 func (m *MaxReqsRateLimitSettings) CopyInFields(src *MaxReqsRateLimitSettings) int {
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.MaxReqsSettingsName != src.Key.MaxReqsSettingsName {
 				m.Key.MaxReqsSettingsName = src.Key.MaxReqsSettingsName
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
-			if _, set := fmap["2.2.1"]; set {
+		if fmap.HasOrHasChild("2.2") {
+			if fmap.Has("2.2.1") {
 				if m.Key.RateLimitKey.ApiName != src.Key.RateLimitKey.ApiName {
 					m.Key.RateLimitKey.ApiName = src.Key.RateLimitKey.ApiName
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.2"]; set {
+			if fmap.Has("2.2.2") {
 				if m.Key.RateLimitKey.ApiEndpointType != src.Key.RateLimitKey.ApiEndpointType {
 					m.Key.RateLimitKey.ApiEndpointType = src.Key.RateLimitKey.ApiEndpointType
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.3"]; set {
+			if fmap.Has("2.2.3") {
 				if m.Key.RateLimitKey.RateLimitTarget != src.Key.RateLimitKey.RateLimitTarget {
 					m.Key.RateLimitKey.RateLimitTarget = src.Key.RateLimitKey.RateLimitTarget
 					changed++
@@ -2854,20 +2879,20 @@ func (m *MaxReqsRateLimitSettings) CopyInFields(src *MaxReqsRateLimitSettings) i
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
-		if _, set := fmap["3.1"]; set {
+	if fmap.HasOrHasChild("3") {
+		if fmap.Has("3.1") {
 			if m.Settings.MaxReqsAlgorithm != src.Settings.MaxReqsAlgorithm {
 				m.Settings.MaxReqsAlgorithm = src.Settings.MaxReqsAlgorithm
 				changed++
 			}
 		}
-		if _, set := fmap["3.2"]; set {
+		if fmap.Has("3.2") {
 			if m.Settings.MaxRequests != src.Settings.MaxRequests {
 				m.Settings.MaxRequests = src.Settings.MaxRequests
 				changed++
 			}
 		}
-		if _, set := fmap["3.3"]; set {
+		if fmap.Has("3.3") {
 			if m.Settings.Interval != src.Settings.Interval {
 				m.Settings.Interval = src.Settings.Interval
 				changed++
@@ -3097,6 +3122,7 @@ type MaxReqsRateLimitSettingsCache struct {
 	KeyWatchers   map[MaxReqsRateLimitSettingsKey][]*MaxReqsRateLimitSettingsKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *MaxReqsRateLimitSettingsKey)
 	DeletedKeyCbs []func(ctx context.Context, key *MaxReqsRateLimitSettingsKey)
+	Store         MaxReqsRateLimitSettingsStore
 }
 
 func NewMaxReqsRateLimitSettingsCache() *MaxReqsRateLimitSettingsCache {
@@ -3459,6 +3485,18 @@ func (c *MaxReqsRateLimitSettingsCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *MaxReqsRateLimitSettingsCache) InitCacheWithSync(sync DataSync) {
+	InitMaxReqsRateLimitSettingsCache(s)
+	s.InitSync(sync)
+}
+
+func (s *MaxReqsRateLimitSettingsCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewMaxReqsRateLimitSettingsStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

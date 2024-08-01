@@ -109,6 +109,9 @@ path "$REGION/totp/keys/*" {
 path "$REGION/totp/code/*" {
   capabilities = [ "read" ]
 }
+path "secret/data/federation/*" {
+  capabilities = [ "read" ]
+}
 EOF
 vault policy write $REGION.controller $TMP/controller-pol.hcl
 rm $TMP/controller-pol.hcl

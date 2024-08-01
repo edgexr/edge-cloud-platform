@@ -78,6 +78,7 @@ type NodeMgr struct {
 	CloudletLookup     CloudletLookup
 	testTransport      http.RoundTripper // for unit tests
 	ValidDomains       string
+	cachesLinkToStore  bool
 
 	unitTestMode bool
 }
@@ -144,6 +145,7 @@ func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context
 	s.CloudletPoolLookup = opts.cloudletPoolLookup
 	s.CloudletLookup = opts.cloudletLookup
 	s.testTransport = opts.testTransport
+	s.cachesLinkToStore = opts.cachesLinkToStore
 	if err := s.AccessKeyClient.init(initCtx, nodeType, tlsClientIssuer, opts.cloudletKey, s.DeploymentTag, opts.haRole); err != nil {
 		log.SpanLog(initCtx, log.DebugLevelInfo, "access key client init failed", "err", err)
 		return initCtx, nil, err
@@ -158,7 +160,9 @@ func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context
 		s.AccessApiClient = edgeproto.NewCloudletAccessApiClient(s.accessApiConn)
 	} else {
 		// init vault before pki
-		s.VaultConfig = opts.vaultConfig
+		if opts.vaultConfig != nil {
+			s.VaultConfig = opts.vaultConfig
+		}
 		if s.VaultConfig == nil {
 			s.VaultConfig, err = vault.BestConfig(s.VaultAddr)
 			if err != nil {
@@ -293,6 +297,7 @@ type NodeOptions struct {
 	cloudletLookup     CloudletLookup
 	haRole             process.HARole
 	testTransport      http.RoundTripper
+	cachesLinkToStore  bool // caches link direct to objstore, not updated over notify
 }
 
 type CloudletInPoolFunc func(region, key edgeproto.CloudletKey) bool
@@ -347,6 +352,10 @@ func WithTestTransport(tr http.RoundTripper) NodeOp {
 	return func(opts *NodeOptions) { opts.testTransport = tr }
 }
 
+func WithCachesLinkToKVStore() NodeOp {
+	return func(opts *NodeOptions) { opts.cachesLinkToStore = true }
+}
+
 func (s *NodeMgr) UpdateMyNode(ctx context.Context) {
 	s.NodeCache.Update(ctx, &s.MyNode, 0)
 }
@@ -355,7 +364,7 @@ func (s *NodeMgr) RegisterClient(client *notify.Client) {
 	client.RegisterSendNodeCache(&s.NodeCache)
 	s.Debug.RegisterClient(client)
 	// MC notify handling of CloudletPoolCache is done outside of nodemgr.
-	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && s.MyNode.Key.Type != NodeTypeController {
+	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && !s.cachesLinkToStore {
 		cache := s.CloudletPoolLookup.GetCloudletPoolCache(s.Region)
 		client.RegisterRecvCloudletPoolCache(cache)
 	}
@@ -365,7 +374,7 @@ func (s *NodeMgr) RegisterServer(server *notify.ServerMgr) {
 	server.RegisterRecvNodeCache(&s.NodeCache)
 	s.Debug.RegisterServer(server)
 	// MC notify handling of CloudletPoolCache is done outside of nodemgr.
-	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && s.MyNode.Key.Type != NodeTypeController {
+	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && s.MyNode.Key.Type != NodeTypeController && s.MyNode.Key.Type != NodeTypeCCRM {
 		cache := s.CloudletPoolLookup.GetCloudletPoolCache(s.Region)
 		server.RegisterSendCloudletPoolCache(cache)
 	}

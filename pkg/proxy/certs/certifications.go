@@ -137,7 +137,7 @@ func (s *ProxyCerts) Start(ctx context.Context) {
 	go func() {
 		for {
 			lbCertsSpan := log.StartSpan(log.DebugLevelInfo, "get rootlb certs thread", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
-			err := s.refreshCerts(ctx)
+			err := s.RefreshCerts(ctx)
 			if err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "refresh certs failed", "err", err)
 			}
@@ -209,10 +209,10 @@ func (s *ProxyCerts) newCert(ctx context.Context, wildcardName string) (access.T
 	return tls, nil
 }
 
-func (s *ProxyCerts) refreshCerts(ctx context.Context) error {
+func (s *ProxyCerts) RefreshCerts(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCerts refresh certs")
 	var err error
-	if !s.haMgr.PlatformInstanceActive {
+	if s.haMgr != nil && !s.haMgr.PlatformInstanceActive {
 		log.SpanLog(ctx, log.DebugLevelInfra, "skipping lb certs update for standby CRM")
 		return nil
 	}

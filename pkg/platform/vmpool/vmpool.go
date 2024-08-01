@@ -57,6 +57,7 @@ func (o *VMPoolPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		IsVmPool:                   true,
 		Properties:                 VMPoolProps,
 		ResourceQuotaProperties:    cloudcommon.CommonResourceQuotaProps,
+		RequiresCrmOnEdge:          true, // CRM keeps local state of VMs (inuse, etc), should be moved to controller
 	}
 }
 

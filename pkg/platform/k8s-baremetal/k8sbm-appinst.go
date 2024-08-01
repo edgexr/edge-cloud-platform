@@ -43,8 +43,9 @@ func (k *K8sBareMetalPlatform) GetClusterMasterNodeIp(ctx context.Context, clien
 	return ipaddr, nil
 }
 
-func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst", "appInst", appInst)
+	updateCallback := updateSender.SendStatusIgnoreErr
 
 	var err error
 	switch deployment := app.Deployment; deployment {
@@ -285,4 +286,7 @@ func (k *K8sBareMetalPlatform) GetAppInstRuntime(ctx context.Context, clusterIns
 func (k *K8sBareMetalPlatform) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetContainerCommand", "app", app)
 	return k8smgmt.GetContainerCommand(ctx, clusterInst, app, appInst, req)
+}
+
+func (s *K8sBareMetalPlatform) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {
 }

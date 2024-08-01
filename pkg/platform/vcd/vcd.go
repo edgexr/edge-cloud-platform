@@ -18,9 +18,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 
@@ -40,24 +42,26 @@ var NoRefresh Refresh = false
 // Most all types in govcd are arranged as a containerized type in govcd that compose Client and
 // specific methods, with the business end of the type in types.go. example found in vdc.go:
 //
-//   type Vdc struct {
-//  	  Vdc    *types.Vdc
-//	  client *Client
-//   }
+//	  type Vdc struct {
+//	 	  Vdc    *types.Vdc
+//		  client *Client
+//	  }
 //
 // The method calls are accessed via the "outer" govcd.Vdc object utilizing the client object, and operate on
 // the 'inner' types.Vdc object.
-//
 var vcdProviderVersion = "-0.1-alpha"
 var VCDVdcCtxKey = "VCDVdcCtxKey"
 
 type VcdPlatform struct {
-	vmProperties *vmlayer.VMProperties
-	vcdVars      map[string]string
-	caches       *platform.Caches
-	Creds        *VcdConfigParams
-	TestMode     bool
-	Verbose      bool
+	vmProperties          *vmlayer.VMProperties
+	vcdVars               map[string]string
+	caches                *platform.Caches
+	Creds                 *VcdConfigParams
+	TestMode              bool
+	Verbose               bool
+	reservedCommonIpRange syncdata.SyncReservations
+	VmNameToHref          map[string]string
+	vcdVmHrefMux          sync.Mutex // optimization cache lock to reduce API calls
 }
 
 var DefaultClientRefreshInterval uint64 = 7 * 60 * 60 // 7 hours
@@ -86,7 +90,9 @@ type NetMap map[string]*govcd.OrgVDCNetwork
 
 func NewPlatform() platform.Platform {
 	return &vmlayer.VMPlatform{
-		VMProvider: &VcdPlatform{},
+		VMProvider: &VcdPlatform{
+			VmNameToHref: make(map[string]string),
+		},
 	}
 }
 
@@ -95,6 +101,8 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider for Vcd", "stage", stage)
 	v.Verbose = v.GetVcdVerbose()
 	v.InitData(ctx, caches)
+	syncFactory := v.vmProperties.CommonPf.PlatformConfig.SyncFactory
+	v.reservedCommonIpRange = syncFactory.NewSyncReservations("common-ip-range")
 
 	switch stage {
 	case vmlayer.ProviderInitPlatformStartCrmConditional:
@@ -107,12 +115,6 @@ func (v *VcdPlatform) InitProvider(ctx context.Context, caches *platform.Caches,
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider", "mexInternalNetRange", mexInternalNetRange)
 
-		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider update isonet metadata", "stage", stage)
-		err = v.UpdateLegacyIsoNetMetaData(ctx)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider UpdateLegacyIsoNetMetaData failed", "error", err)
-			return err
-		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitProvider DisableRuntimeLeases", "stage", stage)
 		overrideLeaseDisable := v.GetLeaseOverride()
 		if !overrideLeaseDisable {
@@ -173,6 +175,7 @@ func (o *VcdPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsImageTypeOva:                  true,
 		SupportsAdditionalNetworks:            true,
 		SupportsPlatformHighAvailabilityOnK8S: true,
+		RequiresCrmOnEdge:                     true, // vmprovider sharedRootLBPortLock needs to be removed
 		AccessVars:                            AccessVarProps,
 		Properties:                            VcdProps,
 		ResourceQuotaProperties:               quotaProps,
@@ -209,7 +212,7 @@ func (v *VcdPlatform) GetResourceID(ctx context.Context, resourceType vmlayer.Re
 // check server ready without cloudlets
 //
 // CheckServerReady
-func (v VcdPlatform) CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error {
+func (v *VcdPlatform) CheckServerReady(ctx context.Context, client ssh.Client, serverName string) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "CheckServerReady", "serverName", serverName)
 	detail, err := v.GetServerDetail(ctx, serverName)

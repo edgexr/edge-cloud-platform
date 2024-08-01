@@ -25,6 +25,7 @@ import (
 type ElasticSearch struct {
 	DockerGeneric `yaml:",inline"`
 	Type          string
+	Port          string
 }
 
 func (p *ElasticSearch) StartLocal(logfile string, opts ...StartOp) error {
@@ -38,9 +39,12 @@ func (p *ElasticSearch) StartLocal(logfile string, opts ...StartOp) error {
 
 func (p *ElasticSearch) StartElasticSearch(logfile string, opts ...StartOp) error {
 	// simple single node cluster
+	if p.Port == "" {
+		p.Port = "9200"
+	}
 	args := p.GetRunArgs()
 	args = append(args,
-		"-p", "9200:9200",
+		"-p", p.Port+":9200",
 		"-p", "9300:9300",
 		"-e", "discovery.type=single-node",
 		"-e", "plugins.security.disabled=true",
@@ -50,7 +54,7 @@ func (p *ElasticSearch) StartElasticSearch(logfile string, opts ...StartOp) erro
 	p.SetCmd(cmd)
 	if err == nil {
 		// wait until up
-		addr := "http://127.0.0.1:9200"
+		addr := "http://127.0.0.1:" + p.Port
 		cfg := opensearch.Config{
 			Addresses: []string{addr},
 		}
@@ -81,7 +85,7 @@ func (p *ElasticSearch) GetBindAddrs() []string {
 	case "kibana":
 		return []string{":5601"}
 	default:
-		return []string{":9200", ":9300"}
+		return []string{":" + p.Port, ":9300"}
 	}
 }
 

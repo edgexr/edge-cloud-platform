@@ -31,25 +31,26 @@ import (
 )
 
 type Controller struct {
-	Common             `yaml:",inline"`
-	NodeCommon         `yaml:",inline"`
-	RedisClientCommon  `yaml:",inline"`
-	EtcdAddrs          string
-	ApiAddr            string
-	HttpAddr           string
-	NotifyAddr         string
-	NotifyRootAddrs    string
-	NotifyParentAddrs  string
-	EdgeTurnAddr       string
-	InfluxAddr         string
-	Region             string
-	cmd                *exec.Cmd
-	TestMode           bool
-	RegistryFQDN       string
-	ArtifactoryFQDN    string
-	VersionTag         string
-	CheckpointInterval string
-	AppDNSRoot         string
+	Common               `yaml:",inline"`
+	NodeCommon           `yaml:",inline"`
+	RedisClientCommon    `yaml:",inline"`
+	EtcdAddrs            string
+	ApiAddr              string
+	HttpAddr             string
+	NotifyAddr           string
+	NotifyRootAddrs      string
+	NotifyParentAddrs    string
+	EdgeTurnAddr         string
+	InfluxAddr           string
+	Region               string
+	cmd                  *exec.Cmd
+	TestMode             bool
+	RegistryFQDN         string
+	ArtifactoryFQDN      string
+	VersionTag           string
+	CheckpointInterval   string
+	AppDNSRoot           string
+	PlatformServiceAddrs []string
 }
 
 func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
@@ -98,6 +99,9 @@ func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
 	if p.AppDNSRoot != "" {
 		args = append(args, "--appDNSRoot")
 		args = append(args, p.AppDNSRoot)
+	}
+	for _, addr := range p.PlatformServiceAddrs {
+		args = append(args, "--platformServiceAddr", addr)
 	}
 	options := StartOptions{}
 	options.ApplyStartOptions(opts...)

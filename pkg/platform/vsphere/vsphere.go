@@ -48,6 +48,7 @@ func (o *VSpherePlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		PlatformType:               platform.PlatformTypeVSphere,
 		SupportsMultiTenantCluster: true,
 		SupportsSharedVolume:       true,
+		RequiresCrmOnEdge:          true, // mutexes used during simultaneous ClusterInst create threads need to be changed to handle simultaneous ClusterInst creates from different processes.
 		AccessVars:                 AccessVarProps,
 		Properties:                 VSphereProps,
 		ResourceQuotaProperties:    cloudcommon.CommonResourceQuotaProps,

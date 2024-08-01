@@ -190,7 +190,7 @@ func GetTypeString(p interface{}) string {
 	return t.Name()
 }
 
-//get list of pids for a process name
+// get list of pids for a process name
 func getPidsByName(processName string, processArgs string) ([]ProcessInfo, error) {
 	//pidlist is a set of pids and alive bool
 	var processes []ProcessInfo
@@ -257,8 +257,8 @@ func StopProcess(p Process, maxwait time.Duration, c chan string) {
 	KillProcessesByName(p.GetExeName(), maxwait, p.LookupArgs(), c)
 }
 
-//first tries to kill process with SIGINT, then waits up to maxwait time
-//for it to die.  After that point it kills with SIGKILL
+// first tries to kill process with SIGINT, then waits up to maxwait time
+// for it to die.  After that point it kills with SIGKILL
 func KillProcessesByName(processName string, maxwait time.Duration, processArgs string, c chan string) {
 	processes, err := getPidsByName(processName, processArgs)
 	if err != nil {

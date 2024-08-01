@@ -56,13 +56,16 @@ func NewExecApi(all *AllApis) *ExecApi {
 	return &execApi
 }
 
-func (s *ExecApi) getApp(ctx context.Context, req *edgeproto.ExecRequest, app *edgeproto.App) error {
+func (s *ExecApi) getApp(ctx context.Context, req *edgeproto.ExecRequest, app *edgeproto.App, cloudlet *edgeproto.Cloudlet) error {
 	appInst := edgeproto.AppInst{}
 	if !s.all.appInstApi.Get(&req.AppInstKey, &appInst) {
 		return req.AppInstKey.NotFoundError()
 	}
 	if !s.all.appApi.Get(&appInst.AppKey, app) {
 		return appInst.AppKey.NotFoundError()
+	}
+	if !s.all.cloudletApi.Get(&appInst.Key.CloudletKey, cloudlet) {
+		return appInst.Key.CloudletKey.NotFoundError()
 	}
 	return nil
 }
@@ -91,7 +94,8 @@ func (s *ExecApi) ShowLogs(ctx context.Context, req *edgeproto.ExecRequest) (*ed
 		req.Log = &edgeproto.ShowLog{}
 	}
 	app := edgeproto.App{}
-	if err := s.getApp(ctx, req, &app); err != nil {
+	cloudlet := edgeproto.Cloudlet{}
+	if err := s.getApp(ctx, req, &app, &cloudlet); err != nil {
 		return nil, err
 	}
 	req.Timeout = ShortTimeout
@@ -110,7 +114,7 @@ func (s *ExecApi) ShowLogs(ctx context.Context, req *edgeproto.ExecRequest) (*ed
 			return nil, fmt.Errorf("Unable to parse Since field as duration or RFC3339 formatted time")
 		}
 	}
-	return s.doExchange(ctx, req)
+	return s.doExchange(ctx, &cloudlet, req)
 }
 
 func (s *ExecApi) RunCommand(ctx context.Context, req *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
@@ -119,7 +123,8 @@ func (s *ExecApi) RunCommand(ctx context.Context, req *edgeproto.ExecRequest) (*
 		return nil, fmt.Errorf("No run command specified")
 	}
 	app := edgeproto.App{}
-	if err := s.getApp(ctx, req, &app); err != nil {
+	cloudlet := edgeproto.Cloudlet{}
+	if err := s.getApp(ctx, req, &app, &cloudlet); err != nil {
 		return nil, err
 	}
 	if app.Deployment == cloudcommon.DeploymentTypeVM {
@@ -135,7 +140,7 @@ func (s *ExecApi) RunCommand(ctx context.Context, req *edgeproto.ExecRequest) (*
 	if cmd.Command == "" {
 		return nil, fmt.Errorf("command argument required")
 	}
-	return s.doExchange(ctx, req)
+	return s.doExchange(ctx, &cloudlet, req)
 }
 
 func (s *ExecApi) AccessCloudlet(ctx context.Context, req *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
@@ -146,8 +151,12 @@ func (s *ExecApi) AccessCloudlet(ctx context.Context, req *edgeproto.ExecRequest
 	if cmd.CloudletMgmtNode == nil {
 		return nil, fmt.Errorf("No cloudlet mgmt node specified")
 	}
+	cloudlet := edgeproto.Cloudlet{}
+	if !s.all.cloudletApi.Get(&req.AppInstKey.CloudletKey, &cloudlet) {
+		return nil, req.AppInstKey.CloudletKey.NotFoundError()
+	}
 	req.Timeout = ShortTimeout
-	return s.doExchange(ctx, req)
+	return s.doExchange(ctx, &cloudlet, req)
 }
 
 func (s *ExecApi) RunConsole(ctx context.Context, req *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
@@ -156,17 +165,18 @@ func (s *ExecApi) RunConsole(ctx context.Context, req *edgeproto.ExecRequest) (*
 	req.Console = &edgeproto.RunVMConsole{}
 
 	app := edgeproto.App{}
-	if err := s.getApp(ctx, req, &app); err != nil {
+	cloudlet := edgeproto.Cloudlet{}
+	if err := s.getApp(ctx, req, &app, &cloudlet); err != nil {
 		return nil, err
 	}
 	req.Timeout = LongTimeout
 	if app.Deployment != cloudcommon.DeploymentTypeVM {
 		return nil, fmt.Errorf("RunConsole only available for VM deployments, use RunCommand instead")
 	}
-	return s.doExchange(ctx, req)
+	return s.doExchange(ctx, &cloudlet, req)
 }
 
-func (s *ExecApi) doExchange(ctx context.Context, req *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
+func (s *ExecApi) doExchange(ctx context.Context, cloudlet *edgeproto.Cloudlet, req *edgeproto.ExecRequest) (*edgeproto.ExecRequest, error) {
 	// Make sure EdgeTurn Server Address is present
 	if *edgeTurnAddr == "" {
 		return nil, fmt.Errorf("EdgeTurn server address is required to run commands")
@@ -175,6 +185,27 @@ func (s *ExecApi) doExchange(ctx context.Context, req *edgeproto.ExecRequest) (*
 	req.EdgeTurnProxyAddr = *edgeTurnProxyAddr
 	reqId := ksuid.New()
 	req.Offer = reqId.String()
+
+	if !cloudlet.CrmOnEdge {
+		// no CRM for cloudlet, send to CCRMs
+		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		if err != nil {
+			return nil, err
+		}
+		conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
+		if err != nil {
+			return nil, cloudcommon.GRPCErrorUnwrap(err)
+		}
+		reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmApiTimeout.TimeDuration())
+		defer cancel()
+		api := edgeproto.NewCloudletPlatformAPIClient(conn)
+		sendReq := edgeproto.CloudletExecReq{
+			CloudletKey: &cloudlet.Key,
+			ExecReq:     req,
+		}
+		return api.ProcessExecRequest(reqCtx, &sendReq)
+	}
+
 	// Increase timeout, as for EdgeTurn based implemention,
 	// CRM connects to EdgeTurn server. Hence it can take some
 	// time to reply back
@@ -182,7 +213,7 @@ func (s *ExecApi) doExchange(ctx context.Context, req *edgeproto.ExecRequest) (*
 	// Forward the offer.
 	// Currently we don't know which controller has the CRM connected
 	// (or if it's even present), so just broadcast to all.
-	err := s.all.controllerApi.RunJobs(func(arg interface{}, addr string) error {
+	err := s.all.controllerApi.RunJobs(ctx, func(fctx context.Context, arg interface{}, addr string) error {
 		var err error
 		var reply *edgeproto.ExecRequest
 		if addr == *externalApiAddr {
@@ -197,9 +228,9 @@ func (s *ExecApi) doExchange(ctx context.Context, req *edgeproto.ExecRequest) (*
 			defer conn.Close()
 
 			cmd := edgeproto.NewExecApiClient(conn)
-			ctx, cancel := context.WithTimeout(context.Background(), req.Timeout.TimeDuration()+2)
+			fctx, cancel := context.WithTimeout(fctx, req.Timeout.TimeDuration()+2)
 			defer cancel()
-			reply, err = cmd.SendLocalRequest(ctx, req)
+			reply, err = cmd.SendLocalRequest(fctx, req)
 		}
 		if err == nil && reply != nil {
 			req.Answer = reply.Answer
