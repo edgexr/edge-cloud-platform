@@ -19,12 +19,13 @@ import "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 // ApplyClusterInst implements a GRPC ClusterInstPlatform server method
 func (s *CCRMHandler) ApplyClusterInst(in *edgeproto.ClusterInst, stream edgeproto.ClusterPlatformAPI_ApplyClusterInstServer) error {
 	ctx := stream.Context()
-	updateResources := false
 	responseSender := edgeproto.NewClusterInstInfoSendUpdater(ctx, stream, in.Key)
-	err := s.crmHandler.ClusterInstChanged(ctx, &in.Key.CloudletKey, in, &updateResources, responseSender)
-	if err == nil && updateResources {
+	needsUpdate, err := s.crmHandler.ClusterInstChanged(ctx, &in.Key.CloudletKey, in, responseSender)
+	if err == nil && needsUpdate.Resources {
 		s.vmResourceActionEnd(ctx, &in.Key.CloudletKey)
 	}
-	// TODO: Refresh AppInstRuntime
+	if err == nil && needsUpdate.AppInstRuntime {
+		s.refreshAppInstRuntime(ctx, &in.Key.CloudletKey, in, nil)
+	}
 	return err
 }

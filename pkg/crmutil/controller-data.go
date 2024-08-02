@@ -195,13 +195,18 @@ func (cd *CRMHandler) CaptureResourcesSnapshot(ctx context.Context, pf platform.
 	return resources, nil
 }
 
-func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.ClusterInst, updateResources *bool, sender edgeproto.ClusterInstInfoSender) (reterr error) {
+type NeedsUpdate struct {
+	Resources      bool
+	AppInstRuntime bool
+}
+
+func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.ClusterInst, sender edgeproto.ClusterInstInfoSender) (nu NeedsUpdate, reterr error) {
 	var err error
 
 	fmap := edgeproto.MakeFieldMap(new.Fields)
 
 	if !fmap.Has(edgeproto.ClusterInstFieldState) {
-		return nil
+		return nu, nil
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "ClusterInstChange", "key", new.Key, "state", new.State)
@@ -210,18 +215,17 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 
 	pf, err := cd.getPlatform(ctx, target)
 	if err != nil {
-		return err
+		return nu, err
 	}
 
-	defer func(reqState edgeproto.TrackedState) {
-		if reterr == nil {
-			if reqState == edgeproto.TrackedState_CREATE_REQUESTED ||
-				reqState == edgeproto.TrackedState_UPDATE_REQUESTED ||
-				reqState == edgeproto.TrackedState_DELETE_REQUESTED {
-				*updateResources = true
-			}
-		}
-	}(new.State)
+	if new.State == edgeproto.TrackedState_CREATE_REQUESTED ||
+		new.State == edgeproto.TrackedState_UPDATE_REQUESTED ||
+		new.State == edgeproto.TrackedState_DELETE_REQUESTED {
+		nu.Resources = true
+	}
+	if new.State == edgeproto.TrackedState_UPDATE_REQUESTED {
+		nu.AppInstRuntime = true
+	}
 
 	// do request
 	if new.State == edgeproto.TrackedState_CREATE_REQUESTED {
@@ -231,14 +235,14 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		// create or update k8s cluster on this cloudlet
 		err = sender.SendState(edgeproto.TrackedState_CREATING, edgeproto.WithSenderResetStatus())
 		if err != nil {
-			return err
+			return nu, err
 		}
 		var cloudlet edgeproto.Cloudlet
 
 		if !cd.CloudletCache.Get(&new.Key.CloudletKey, &cloudlet) {
 			err = new.Key.CloudletKey.NotFoundError()
 			sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
-			return err
+			return nu, err
 		}
 		timeout := cd.Settings.CreateClusterInstTimeout.TimeDuration()
 		if cloudlet.TimeLimits.CreateClusterInstTimeout != 0 {
@@ -250,7 +254,7 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "error cluster create fail", "error", err)
 			sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
-			return err
+			return nu, err
 		}
 		// Get cluster resources and report to controller.
 		updateClusterCacheCallback(edgeproto.UpdateTask, "Getting Cluster Infra Resources")
@@ -271,7 +275,7 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		// reset status messages
 		err = sender.SendState(edgeproto.TrackedState_UPDATING, edgeproto.WithSenderResetStatus())
 		if err != nil {
-			return err
+			return nu, err
 		}
 
 		log.SpanLog(ctx, log.DebugLevelInfra, "update cluster inst", "ClusterInst", *new)
@@ -279,7 +283,7 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		if err != nil {
 			err := fmt.Errorf("update failed: %s", err)
 			sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
-			return err
+			return nu, err
 		}
 		// Get cluster resources and report to controller.
 		updateClusterCacheCallback(edgeproto.UpdateTask, "Getting Cluster Infra Resources")
@@ -299,9 +303,9 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		log.SpanLog(ctx, log.DebugLevelInfra, "cluster inst delete", "ClusterInst", *new)
 		// reset status messages
 		// clusterInst was deleted
-		sender.SendState(edgeproto.TrackedState_DELETING, edgeproto.WithSenderResetStatus())
+		err = sender.SendState(edgeproto.TrackedState_DELETING, edgeproto.WithSenderResetStatus())
 		if err != nil {
-			return err
+			return nu, err
 		}
 
 		log.SpanLog(ctx, log.DebugLevelInfra, "delete cluster inst", "ClusterInst", *new)
@@ -309,13 +313,13 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		if err != nil {
 			err := fmt.Errorf("Delete failed: %s", err)
 			sender.SendState(edgeproto.TrackedState_DELETE_ERROR, edgeproto.WithStateError(err))
-			return err
+			return nu, err
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "set cluster inst deleted", "ClusterInst", *new)
 
 		sender.SendState(edgeproto.TrackedState_DELETE_DONE)
 	}
-	return nil
+	return nu, nil
 }
 
 func (cd *CRMHandler) CloudletHasTrustPolicy(ctx context.Context, cloudletKey *edgeproto.CloudletKey) (bool, error) {
@@ -332,13 +336,13 @@ func (cd *CRMHandler) CloudletHasTrustPolicy(ctx context.Context, cloudletKey *e
 	return true, nil
 }
 
-func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.AppInst, updateResources *bool, sender edgeproto.AppInstInfoSender) (reterr error) {
+func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.AppInst, sender edgeproto.AppInstInfoSender) (nu NeedsUpdate, reterr error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "appInstChanged", "new", new)
 
 	var err error
 	fmap := edgeproto.MakeFieldMap(new.Fields)
 	if !fmap.Has(edgeproto.AppInstFieldState) {
-		return nil
+		return nu, nil
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "process app inst change", "key", new.Key, "state", new.State)
@@ -346,24 +350,24 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 	found := cd.AppCache.Get(&new.AppKey, &app)
 	if !found {
 		log.SpanLog(ctx, log.DebugLevelInfra, "App not found for AppInst", "key", new.Key)
-		return new.AppKey.NotFoundError()
+		return nu, new.AppKey.NotFoundError()
 	}
 	pf, err := cd.getPlatform(ctx, target)
 	if err != nil {
-		return err
+		return nu, err
 	}
 
-	defer func(reqState edgeproto.TrackedState) {
-		if reterr == nil {
-			trackChange := app.Deployment == cloudcommon.DeploymentTypeVM || platform.TrackK8sAppInst(ctx, &app, pf.GetFeatures())
-			validReqState := reqState == edgeproto.TrackedState_CREATE_REQUESTED ||
-				reqState == edgeproto.TrackedState_UPDATE_REQUESTED ||
-				reqState == edgeproto.TrackedState_DELETE_REQUESTED
-			if trackChange && validReqState {
-				*updateResources = true
-			}
-		}
-	}(new.State)
+	trackChange := app.Deployment == cloudcommon.DeploymentTypeVM || platform.TrackK8sAppInst(ctx, &app, pf.GetFeatures())
+	validReqState := new.State == edgeproto.TrackedState_CREATE_REQUESTED ||
+		new.State == edgeproto.TrackedState_UPDATE_REQUESTED ||
+		new.State == edgeproto.TrackedState_DELETE_REQUESTED
+	if trackChange && validReqState {
+		nu.Resources = true
+	}
+	if new.State == edgeproto.TrackedState_CREATE_REQUESTED ||
+		new.State == edgeproto.TrackedState_UPDATE_REQUESTED {
+		nu.AppInstRuntime = true
+	}
 
 	// do request
 	updateAppCacheCallback := sender.SendStatusIgnoreErr
@@ -373,7 +377,7 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 		// create
 		err = sender.SendState(edgeproto.TrackedState_CREATING, edgeproto.WithSenderResetStatus())
 		if err != nil {
-			return err
+			return nu, err
 		}
 
 		flavor := edgeproto.Flavor{}
@@ -381,14 +385,14 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 		if !flavorFound {
 			err = new.Flavor.NotFoundError()
 			sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
-			return err
+			return nu, err
 		}
 		clusterInst := edgeproto.ClusterInst{}
 		if cloudcommon.IsClusterInstReqd(&app) {
 			if !cd.ClusterInstCache.Get(new.ClusterInstKey(), &clusterInst) {
 				err = new.ClusterInstKey().ClusterKey.NotFoundError()
 				sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
-				return err
+				return nu, err
 			}
 		}
 
@@ -404,7 +408,7 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 			if derr != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "can't cleanup app inst", "error", derr, "key", new.Key)
 			}
-			return err
+			return nu, err
 		}
 		if new.Uri != "" && oldUri != new.Uri {
 			sender.SendUpdate(func(info *edgeproto.AppInstInfo) error {
@@ -428,14 +432,14 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 		// reset status messages
 		err = sender.SendState(edgeproto.TrackedState_UPDATING, edgeproto.WithSenderResetStatus())
 		if err != nil {
-			return err
+			return nu, err
 		}
 		flavor := edgeproto.Flavor{}
 		flavorFound := cd.FlavorCache.Get(&new.Flavor, &flavor)
 		if !flavorFound {
 			err = new.Flavor.NotFoundError()
 			sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
-			return err
+			return nu, err
 		}
 		// Only proceed with power action if current state and it reflecting state is valid
 		nextPowerState := edgeproto.GetNextPowerState(new.PowerState, edgeproto.TransientState)
@@ -448,12 +452,12 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 				cd.appInstInfoPowerState(ctx, sender, edgeproto.PowerState_POWER_STATE_ERROR)
 				sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
 				log.SpanLog(ctx, log.DebugLevelInfra, "can't set power state on AppInst", "error", err, "key", new.Key)
-				return err
+				return nu, err
 			} else {
 				cd.appInstInfoPowerState(ctx, sender, edgeproto.GetNextPowerState(nextPowerState, edgeproto.FinalState))
 				sender.SendState(edgeproto.TrackedState_READY)
 			}
-			return nil
+			return nu, nil
 		}
 		clusterInst := edgeproto.ClusterInst{}
 		if cloudcommon.IsClusterInstReqd(&app) {
@@ -461,7 +465,7 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 			if !clusterInstFound {
 				err = new.ClusterInstKey().ClusterKey.NotFoundError()
 				sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
-				return err
+				return nu, err
 			}
 		}
 		err = pf.UpdateAppInst(ctx, &clusterInst, &app, new, &flavor, updateAppCacheCallback)
@@ -469,7 +473,7 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 			err := fmt.Errorf("Update App Inst failed: %s", err)
 			sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
 			log.SpanLog(ctx, log.DebugLevelInfra, "can't update app inst", "error", err, "key", new.Key)
-			return err
+			return nu, err
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "updated app inst", "appisnt", new, "ClusterInst", clusterInst)
 		rt, err := pf.GetAppInstRuntime(ctx, &clusterInst, &app, new)
@@ -483,7 +487,7 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 		// reset status messages
 		err = sender.SendState(edgeproto.TrackedState_DELETING, edgeproto.WithSenderResetStatus())
 		if err != nil {
-			return err
+			return nu, err
 		}
 		clusterInst := edgeproto.ClusterInst{}
 		if cloudcommon.IsClusterInstReqd(&app) {
@@ -491,7 +495,7 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 			if !clusterInstFound {
 				err = new.ClusterInstKey().ClusterKey.NotFoundError()
 				sender.SendState(edgeproto.TrackedState_DELETE_ERROR, edgeproto.WithStateError(err))
-				return err
+				return nu, err
 			}
 		}
 		// appInst was deleted
@@ -502,12 +506,12 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 			err = fmt.Errorf("Delete App Inst failed: %s", err)
 			sender.SendState(edgeproto.TrackedState_DELETE_ERROR, edgeproto.WithStateError(err))
 			log.SpanLog(ctx, log.DebugLevelInfra, "can't delete app inst", "error", err, "key", new.Key)
-			return err
+			return nu, err
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "deleted app inst", "AppInst", new, "ClusterInst", clusterInst)
 		sender.SendState(edgeproto.TrackedState_DELETE_DONE)
 	}
-	return nil
+	return nu, nil
 }
 
 func (cd *CRMHandler) clusterInstInfoResources(ctx context.Context, sender edgeproto.ClusterInstInfoSender, resources *edgeproto.InfraResources) error {
@@ -721,29 +725,53 @@ func (cd *CRMHandler) HandleTrustPolicyException(ctx context.Context, inst *edge
 	}
 }
 
-func (cd *CRMHandler) GetAppInstRuntime(ctx context.Context, target *edgeproto.CloudletKey, obj *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "Refresh appinst runtime info", "key", obj.Key)
+type UpdateRuntimeCb = func(ctx context.Context, key *edgeproto.AppInstKey, rt *edgeproto.AppInstRuntime, getRuntimeErr error)
 
-	pf, err := cd.getPlatform(ctx, target)
+// RefreshAppInstRuntime refreshes AppInst runtimes. AppInst may be nil to
+// update all AppInsts on a cluster. ClusterInst may be nil to refresh
+// all AppInsts on the cloudlet.
+func (cd *CRMHandler) RefreshAppInstRuntime(ctx context.Context, cloudletKey *edgeproto.CloudletKey, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst, updateRuntimeCb UpdateRuntimeCb) error {
+	appInsts := []*edgeproto.AppInst{}
+	if appInst != nil {
+		appInsts = append(appInsts, appInst)
+	} else {
+		cd.AppInstCache.Show(&edgeproto.AppInst{}, func(ai *edgeproto.AppInst) error {
+			if !ai.Key.CloudletKey.Matches(cloudletKey) {
+				return nil
+			}
+			if clusterInst != nil {
+				if !ai.ClusterInstKey().Matches(&clusterInst.Key) {
+					return nil
+				}
+			}
+			cp := edgeproto.AppInst{}
+			cp.DeepCopyIn(ai)
+			appInsts = append(appInsts, &cp)
+			return nil
+		})
+	}
+
+	pf, err := cd.getPlatform(ctx, cloudletKey)
 	if err != nil {
-		return nil, nil
+		return err
 	}
-	var app edgeproto.App
-	var clusterInst edgeproto.ClusterInst
-	if obj.State != edgeproto.TrackedState_READY {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to get runtime info, as AppInst is not in Ready state", "key", obj.Key, "state", obj.State)
-		return nil, nil
+
+	for _, ai := range appInsts {
+		clusterInst := edgeproto.ClusterInst{}
+		if !cd.ClusterInstCache.Get(ai.ClusterInstKey(), &clusterInst) {
+			log.SpanLog(ctx, log.DebugLevelApi, "refresh appinst runtime, cluster not found", "cluster", clusterInst.Key, "appInst", ai.Key)
+			// maybe deleted, continue to update other AppInsts
+			continue
+		}
+		app := edgeproto.App{}
+		if !cd.AppCache.Get(&ai.AppKey, &app) {
+			log.SpanLog(ctx, log.DebugLevelApi, "refresh appinst runtime, app not found", "cluster", clusterInst.Key, "app", ai.AppKey, "appInst", ai.Key)
+			// maybe deleted, continue to update other AppInsts
+			continue
+		}
+		rt, err := pf.GetAppInstRuntime(ctx, &clusterInst, &app, ai)
+		updateRuntimeCb(ctx, &ai.Key, rt, err)
+		log.SpanLog(ctx, log.DebugLevelApi, "refreshed appinst runtime", "appInst", ai.Key, "err", err)
 	}
-	if !cd.AppCache.Get(&obj.AppKey, &app) {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to get runtime info, as app definition is missing", "key", obj.Key)
-		return nil, obj.AppKey.NotFoundError()
-	}
-	if app.Deployment == cloudcommon.DeploymentTypeVM {
-		return nil, nil
-	}
-	if !cd.ClusterInstCache.Get(obj.ClusterInstKey(), &clusterInst) {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to get runtime info, as ClusterInst is missing", "key", obj.Key)
-		return nil, obj.ClusterInstKey().NotFoundError()
-	}
-	return pf.GetAppInstRuntime(ctx, &clusterInst, &app, obj)
+	return nil
 }

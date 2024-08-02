@@ -410,14 +410,11 @@ func (s *AppInstInfoCache) SetUri(ctx context.Context, key *AppInstKey, uri stri
 	return
 }
 
-func (s *AppInstInfoCache) SetStateRuntime(ctx context.Context, key *AppInstKey, state TrackedState, rt *AppInstRuntime) {
+func (s *AppInstInfoCache) SetRuntime(ctx context.Context, key *AppInstKey, rt *AppInstRuntime) {
 	info := AppInstInfo{}
 	if !s.Get(key, &info) {
 		info.Key = *key
-		info.Status = StatusInfo{}
 	}
-	info.Errors = nil
-	info.State = state
 	info.RuntimeInfo = *rt
 	s.Update(ctx, &info, 0)
 }

@@ -69,10 +69,12 @@ func (s *CRMData) appInstChanged(ctx context.Context, old *edgeproto.AppInst, ne
 			} else {
 				new.Fields = old.GetDiffFields(new).Fields()
 			}
-			updateResources := false
-			s.AppInstChanged(ctx, s.cloudletKey, new, &updateResources, responseSender)
-			if updateResources {
+			needsUpdate, err := s.AppInstChanged(ctx, s.cloudletKey, new, responseSender)
+			if err == nil && needsUpdate.Resources {
 				s.vmResourceActionEnd(ctx)
+			}
+			if err == nil && needsUpdate.AppInstRuntime {
+				s.refreshAppInstRuntime(ctx, nil, new)
 			}
 		}
 	}()
@@ -110,20 +112,19 @@ func (s *CRMData) appInstInfoCheckState(ctx context.Context, key *edgeproto.AppI
 
 func (s *CRMData) RefreshAppInstRuntime(ctx context.Context) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Refresh appinst runtime info")
-	appInsts := []edgeproto.AppInst{}
+	s.refreshAppInstRuntime(ctx, nil, nil)
+}
 
-	s.AppInstCache.Show(&edgeproto.AppInst{}, func(obj *edgeproto.AppInst) error {
-		cp := edgeproto.AppInst{}
-		cp.DeepCopyIn(obj)
-		appInsts = append(appInsts, cp)
-		return nil
-	})
-	for ii := range appInsts {
-		rt, err := s.CRMHandler.GetAppInstRuntime(ctx, s.cloudletKey, &appInsts[ii])
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "unable to get AppInstRuntime", "key", appInsts[ii].Key, "err", err)
+func (s *CRMData) refreshAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst) {
+	err := s.CRMHandler.RefreshAppInstRuntime(ctx, s.cloudletKey, clusterInst, appInst, func(ctx context.Context, key *edgeproto.AppInstKey, rt *edgeproto.AppInstRuntime, getRuntimeErr error) {
+		if getRuntimeErr != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to get runtime info for appinst", "appinst", key, "err", getRuntimeErr)
+			return
 		} else if rt != nil {
-			s.AppInstInfoCache.SetStateRuntime(ctx, &appInsts[ii].Key, appInsts[ii].State, rt)
+			s.AppInstInfoCache.SetRuntime(ctx, key, rt)
 		}
+	})
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to refresh appinst runtime", "err", err)
 	}
 }

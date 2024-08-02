@@ -64,12 +64,13 @@ func (s *CRMData) clusterInstChanged(ctx context.Context, old *edgeproto.Cluster
 			} else {
 				new.Fields = old.GetDiffFields(new).Fields()
 			}
-			updateResources := false
-			s.ClusterInstChanged(ctx, s.cloudletKey, new, &updateResources, responseSender)
-			if updateResources {
+			needsUpdate, err := s.ClusterInstChanged(ctx, s.cloudletKey, new, responseSender)
+			if err == nil && needsUpdate.Resources {
 				s.vmResourceActionEnd(ctx)
 			}
-			// TODO: Refresh AppInstRuntime
+			if err == nil && needsUpdate.AppInstRuntime {
+				s.refreshAppInstRuntime(ctx, new, nil)
+			}
 		}
 	}()
 }
