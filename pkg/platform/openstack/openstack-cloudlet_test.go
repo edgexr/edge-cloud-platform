@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"github.com/stretchr/testify/require"
@@ -312,4 +313,74 @@ runcmd:
 		}
 		require.Nil(t, err)
 	}
+}
+
+func TestOpenstackAPI(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	cloudletVMImagePath := os.Getenv("CLOUDLET_VM_IMAGE_PATH")
+	registryAuthUsername := os.Getenv("REGISTRY_AUTH_USERNAME")
+	registryAuthPassword := os.Getenv("REGISTRY_AUTH_PASSWORD")
+
+	cloudlet := &edgeproto.Cloudlet{
+		Key: edgeproto.CloudletKey{
+			Name:         "functest",
+			Organization: "edgexr",
+		},
+		Deployment: cloudcommon.DeploymentTypeDocker,
+	}
+
+	nodeMgr := &node.NodeMgr{}
+	nodeMgr.Debug.Init(nodeMgr)
+	cloudletPoolLookup := &node.CloudletPoolCache{}
+	cloudletPoolLookup.Init()
+	nodeMgr.CloudletPoolLookup = cloudletPoolLookup
+	nodeMgr.MyNode.Key.CloudletKey = cloudlet.Key
+	accessAPI := &accessapi.TestHandler{
+		AccessVars: map[string]string{
+			OS_PROJECT_NAME: os.Getenv(OS_PROJECT_NAME),
+		},
+		RegistryAuth: cloudcommon.RegistryAuth{
+			AuthType: cloudcommon.BasicAuth,
+			Username: registryAuthUsername,
+			Password: registryAuthPassword,
+		},
+	}
+
+	caches := platform.BuildCaches()
+	caches.CloudletCache.Update(ctx, cloudlet, 0)
+	haMgr := &redundancy.HighAvailabilityManager{}
+
+	pfConfig := &platform.PlatformConfig{
+		CloudletKey:         &cloudlet.Key,
+		CacheDir:            "/var/tmp", // must exist locally
+		TestMode:            false,
+		NodeMgr:             nodeMgr,
+		CloudletVMImagePath: cloudletVMImagePath,
+		DeploymentTag:       "main",
+		AppDNSRoot:          "app.functest.ut",
+		RootLBFQDN:          "shared.functest.ut",
+		AccessApi:           accessAPI,
+	}
+	plat := NewPlatform().(*vmlayer.VMPlatform)
+	cb := func(updateType edgeproto.CacheUpdateType, value string) {
+		fmt.Println(value)
+	}
+	err := plat.InitCommon(ctx, pfConfig, caches, haMgr, cb)
+	require.Nil(t, err)
+
+	prov := plat.VMProvider
+	osp, ok := prov.(*OpenstackPlatform)
+	require.True(t, ok)
+
+	start := time.Now()
+	for ii := 0; ii < 5; ii++ {
+		_, err := osp.ListServers(ctx)
+		require.Nil(t, err)
+		fmt.Printf("%d call took %s\n", ii, time.Since(start))
+	}
+	fmt.Printf("took %s\n", time.Since(start))
 }

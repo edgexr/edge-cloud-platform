@@ -16,11 +16,17 @@ package openstack
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"net/http"
+	"os"
 	"strings"
 	"unicode"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -33,6 +39,7 @@ type OpenstackPlatform struct {
 	VMProperties *vmlayer.VMProperties
 	caches       *platform.Caches
 	apiStats     APIStats
+	client       *gophercloud.ProviderClient
 }
 
 func NewPlatform() platform.Platform {
@@ -83,6 +90,102 @@ func (a *OpenstackPlatform) InitOperationContext(ctx context.Context, operationS
 
 func (o *OpenstackPlatform) InitData(ctx context.Context, caches *platform.Caches) {
 	o.caches = caches
+}
+
+var cmdToService = map[string]string{
+	"image":        "image",
+	"availability": "compute",
+	"console":      "compute",
+	"flavor":       "compute",
+	"limits":       "compute",
+	"server":       "compute",
+	"floating":     "network",
+	"network":      "network",
+	"port":         "network",
+	"router":       "network",
+	"security":     "network",
+	"subnet":       "network",
+	"stack":        "orchestration",
+	"project":      "identity",
+}
+
+const (
+	ServiceCompute       = "compute"
+	ServiceNetwork       = "network"
+	ServiceImage         = "image"
+	ServiceOrchestration = "orchestration"
+	ServiceIdentity      = "identity"
+)
+
+func (o *OpenstackPlatform) getServiceClient(service string) (*gophercloud.ServiceClient, error) {
+	client, err := o.getClient()
+	if err != nil {
+		return nil, err
+	}
+	ep := gophercloud.EndpointOpts{
+		Region: o.openRCVars[OS_REGION_NAME],
+	}
+	switch service {
+	case ServiceCompute:
+		return openstack.NewComputeV2(client, ep)
+	case ServiceNetwork:
+		return openstack.NewNetworkV2(client, ep)
+	case ServiceImage:
+		return openstack.NewImageServiceV2(client, ep)
+	case ServiceOrchestration:
+		return openstack.NewOrchestrationV1(client, ep)
+	case ServiceIdentity:
+		return openstack.NewIdentityV2(client, ep)
+	default:
+		return nil, fmt.Errorf("get client unsupported service %s", service)
+	}
+}
+
+func (o *OpenstackPlatform) getClient() (*gophercloud.ProviderClient, error) {
+	if o.client != nil {
+		return o.client, nil
+	}
+	opts := gophercloud.AuthOptions{
+		IdentityEndpoint: o.openRCVars[OS_AUTH_URL],
+		Username:         o.openRCVars[OS_USERNAME],
+		Password:         o.openRCVars[OS_PASSWORD],
+		DomainName:       o.openRCVars[OS_USER_DOMAIN_NAME],
+	}
+	client, err := openstack.NewClient(opts.IdentityEndpoint)
+	if err != nil {
+		return nil, err
+	}
+	caPEM, ok := o.openRCVars[OS_CACERT_DATA]
+	if !ok {
+		if caFile := o.openRCVars[OS_CACERT]; caFile != "" {
+			data, err := os.ReadFile(caFile)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file %s, %s", caFile, err)
+			}
+			caPEM = string(data)
+		}
+	}
+	if caPEM != "" {
+		caPool, err := x509.SystemCertPool()
+		if err != nil {
+			return nil, err
+		}
+		ok := caPool.AppendCertsFromPEM([]byte(caPEM))
+		if !ok {
+			return nil, fmt.Errorf("failed to add CA cert to CA pool")
+		}
+		client.HTTPClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs: caPool,
+			},
+		}
+	}
+	err = openstack.Authenticate(client, opts)
+	if err != nil {
+		return nil, err
+	}
+	o.client = client
+	return client, nil
 }
 
 func (o *OpenstackPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {

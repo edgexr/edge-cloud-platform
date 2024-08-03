@@ -29,6 +29,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
+	"github.com/gophercloud/gophercloud/pagination"
 )
 
 const ImageNotFound string = "No Image found"
@@ -60,28 +62,58 @@ func (s *OpenstackPlatform) TimedOpenStackCommand(ctx context.Context, name stri
 	atomic.AddUint64(&s.apiStats.Successful, 1)
 	log.SpanLog(ctx, log.DebugLevelInfra, "OpenStack Command Done", "parmstr", parmstr, "elapsed time", time.Since(start), "stats", s.apiStats)
 	return out, nil
-
 }
 
 // ListServers returns a map of servers keyed by name
 func (s *OpenstackPlatform) ListServers(ctx context.Context) (map[string]OSServer, error) {
-	out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "list", "-f", "json")
+	client, err := s.getServiceClient(ServiceCompute)
 	if err != nil {
-		err = fmt.Errorf("cannot get server list, %s, %v", out, err)
 		return nil, err
 	}
-	var servers []OSServer
-	var serverMap = make(map[string]OSServer)
-
-	err = json.Unmarshal(out, &servers)
+	serverMap := make(map[string]servers.Server)
+	pager := servers.List(client, servers.ListOpts{})
+	err = pager.EachPage(func(page pagination.Page) (bool, error) {
+		list, err := servers.ExtractServers(page)
+		if err != nil {
+			return false, err
+		}
+		for _, in := range list {
+			serverMap[in.Name] = in
+		}
+	})
 	if err != nil {
-		err = fmt.Errorf("cannot unmarshal, %v", err)
 		return nil, err
 	}
-	for _, s := range servers {
-		serverMap[s.Name] = s
-	}
+	// TODO: use golang structs from gophercloud instead of our own in openstack-objs.
+	// TODO: the data returned from the openstack API is different from what is
+	// returned from the cli, i.e. the servers list cli output includes networks
+	// for each server, but the API output does not. We'll need rework much of the
+	// logic surrounding these API calls due to this.
 	return serverMap, nil
+	/*
+	   out, err := s.TimedOpenStackCommand(ctx, "openstack", "server", "list", "-f", "json")
+
+	   	if err != nil {
+	   		err = fmt.Errorf("cannot get server list, %s, %v", out, err)
+	   		return nil, err
+	   	}
+
+	   var servers []OSServer
+	   var serverMap = make(map[string]OSServer)
+
+	   err = json.Unmarshal(out, &servers)
+
+	   	if err != nil {
+	   		err = fmt.Errorf("cannot unmarshal, %v", err)
+	   		return nil, err
+	   	}
+
+	   	for _, s := range servers {
+	   		serverMap[s.Name] = s
+	   	}
+
+	   return serverMap, nil
+	*/
 }
 
 // ListPorts returns a list of ports
