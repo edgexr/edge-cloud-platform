@@ -2852,7 +2852,7 @@ var CloudletComments = map[string]string{
 	"errors":                                 "Any errors trying to create, update, or delete the Cloudlet., specify errors:empty=true to clear",
 	"state":                                  "Current state of the crm, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
-	"deploymentlocal":                        "(Deprecated, replaced by CrmOnEdge) Deploy cloudlet services locally",
+	"deploymentlocal":                        "Deploy cloudlet services locally for testing purposes",
 	"platformtype":                           "Platform type",
 	"notifysrvaddr":                          "Address for the CRM notify listener to run on",
 	"flavor.name":                            "Flavor name",

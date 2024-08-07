@@ -35,7 +35,7 @@ import (
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/cloudletssh"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
-	"github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
@@ -80,7 +80,6 @@ var notifyServer *notify.ServerMgr
 var platform pf.Platform
 var finishInfraResourceThread bool
 var finishUpdateCloudletInfoHAThread bool
-var proxyCerts *certs.ProxyCerts
 
 const ControllerTimeout = 1 * time.Minute
 
@@ -305,9 +304,10 @@ func Start(builders map[string]pf.PlatformBuilder) error {
 			AnsiblePublicAddr:   *ansiblePublicAddr,
 			CommercialCerts:     *commercialCerts,
 			PlatformInitConfig: pf.PlatformInitConfig{
-				AccessApi:      accessApi,
-				CloudletSSHKey: cloudletSSHKey,
-				SyncFactory:    syncdata.NewMutexSyncFactory(),
+				AccessApi:       accessApi,
+				CloudletSSHKey:  cloudletSSHKey,
+				SyncFactory:     syncdata.NewMutexSyncFactory(),
+				ProxyCertsCache: certscache.NewProxyCertsCache(accessApi),
 			},
 		}
 
@@ -387,12 +387,6 @@ func Start(builders map[string]pf.PlatformBuilder) error {
 		crmdata.CloudletInfoCache.Update(ctx, &myCloudletInfo, 0)
 		log.SpanLog(ctx, log.DebugLevelInfo, "sent cloudletinfocache update")
 
-		if features.RequiresCertRefresh {
-			// start proxy certs
-			proxyCerts = certs.NewProxyCerts(ctx, pc.CloudletKey, platform, pc.AccessApi, pc.NodeMgr, &highAvailabilityManager, features, pc.CommercialCerts, pc.EnvoyWithCurlImage)
-			proxyCerts.Start(ctx)
-		}
-
 		cspan.Finish()
 
 		if err != nil {
@@ -420,10 +414,6 @@ func Start(builders map[string]pf.PlatformBuilder) error {
 }
 
 func Stop() {
-	if proxyCerts != nil {
-		proxyCerts.Stop()
-		proxyCerts = nil
-	}
 	if finishInfraResourceThread {
 		crmdata.FinishInfraResourceRefreshThread()
 		finishInfraResourceThread = false

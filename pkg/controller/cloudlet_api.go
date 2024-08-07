@@ -341,6 +341,17 @@ func (s *CloudletApi) CreateCloudlet(in *edgeproto.Cloudlet, cb edgeproto.Cloudl
 		in.DefaultResourceAlertThreshold = DefaultResourceAlertThreshold
 	}
 
+	if in.DeploymentLocal {
+		if !in.CrmOnEdge {
+			return fmt.Errorf("deployment local is only for testing CRMs locally, must set CrmOnEdge to true")
+		}
+		if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
+			return errors.New("infra access type restricted is not supported for local deployment")
+		}
+		if in.Deployment != "" && in.Deployment != cloudcommon.DeploymentTypeDocker {
+			return fmt.Errorf("deployment type for local must be docker")
+		}
+	}
 	if in.Deployment == "" {
 		in.Deployment = cloudcommon.DeploymentTypeDocker
 	}
@@ -751,7 +762,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			cloudlet.State = edgeproto.TrackedState_READY
 			saveCloudlet = true
 		}
-		if features.CloudletServicesLocal {
+		if in.DeploymentLocal || features.CloudletServicesLocal {
 			// Store controller address if crmserver is started locally
 			cloudlet.HostController = *externalApiAddr
 			saveCloudlet = true

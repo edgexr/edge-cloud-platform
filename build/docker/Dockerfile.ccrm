@@ -8,6 +8,7 @@ FROM $EDGE_CLOUD_INFRA_BASE
 
 COPY --from=allinone /usr/local/bin/kubectl /usr/bin/kubectl
 COPY --from=allinone /usr/local/bin/ccrm /usr/bin/ccrm
+COPY --from=allinone /usr/local/bin/atomic-certs-update.sh /usr/local/bin/
 
 ENTRYPOINT []
 CMD [ "/usr/bin/ccrm" ]

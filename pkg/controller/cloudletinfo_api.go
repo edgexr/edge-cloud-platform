@@ -68,17 +68,21 @@ func (s *CloudletInfoApi) ShowCloudletInfo(in *edgeproto.CloudletInfo, cb edgepr
 }
 
 func (s *CloudletInfoApi) UpdateRPC(ctx context.Context, in *edgeproto.CloudletInfo) {
-	// For RPC calls, source of truth is the controller, and
-	// RPC sends back just changes, not the complete info state.
-	info := edgeproto.CloudletInfo{}
-	if !s.cache.Get(&in.Key, &info) {
-		info.Key = in.Key
-	}
-	info.CopyInFields(in)
-	s.Update(ctx, &info, 0)
+	// CCRM handles Cloudlet Create/Delete calls via GRPC,
+	// even though CRM is the source of truth of the CloudletInfo
+	// for CRM on edge.
+	// So make sure to only update the specified fields.
+	s.UpdateFields(ctx, in, 0)
 }
 
 func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo, rev int64) {
+	// CRM notify is the owner so it updates all fields
+	// This path should never get called for CrmOnEdge=false.
+	in.Fields = edgeproto.CloudletInfoAllFields
+	s.UpdateFields(ctx, in, rev)
+}
+
+func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.CloudletInfo, rev int64) {
 	var err error
 	log.SpanLog(ctx, log.DebugLevelNotify, "Cloudlet Info Update", "in", in)
 	// for now assume all fields have been specified
@@ -86,34 +90,47 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 		log.SpanLog(ctx, log.DebugLevelNotify, "skipping due to info from standby CRM")
 		return
 	}
+	fmap := edgeproto.MakeFieldMap(in.Fields)
 
 	inCopy := *in // save Status to publish to Redis
-	in.Fields = nil
 	in.Controller = ControllerId
 	changedToOnline := false
+	info := edgeproto.CloudletInfo{}
 	s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		info := edgeproto.CloudletInfo{}
+		info = edgeproto.CloudletInfo{
+			Key: in.Key,
+		}
+		oldState := in.State
 		if s.store.STMGet(stm, &in.Key, &info) {
+			oldState = info.State
+		}
+		if fmap.Has(edgeproto.CloudletInfoFieldState) {
 			if in.State == dme.CloudletState_CLOUDLET_STATE_READY &&
-				info.State != dme.CloudletState_CLOUDLET_STATE_READY {
+				oldState != dme.CloudletState_CLOUDLET_STATE_READY {
 				changedToOnline = true
 			}
 		}
 		// Clear fields that are cached in Redis as they should not be stored in DB
 		in.ClearRedisOnlyFields()
+		info.ClearRedisOnlyFields()
 
 		// For federated cloudlets, flavors come from MC using
 		// InjectCloudletInfo. Don't let FRM overwrite them.
-		if in.Key.FederatedOrganization != "" {
+		if fmap.Has(edgeproto.CloudletInfoFieldKeyFederatedOrganization) && in.Key.FederatedOrganization != "" {
 			in.Flavors = info.Flavors
 		}
 
 		diffFields := info.GetDiffFields(in)
 		if diffFields.Count() > 0 {
-			s.store.STMPut(stm, in)
+			info.CopyInFields(in)
+			log.SpanLog(ctx, log.DebugLevelApi, "CloudletInfo updating fields", "fields", diffFields.Fields())
+			s.store.STMPut(stm, &info)
 		}
 		return nil
 	})
+
+	// info is the updated state
+	in = &info
 
 	// publish the received info object on redis
 	// must be done after updating etcd, see AppInst UpdateFromInfo comment

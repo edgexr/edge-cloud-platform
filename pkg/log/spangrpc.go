@@ -17,6 +17,7 @@ package log
 import (
 	"context"
 	"io"
+	strings "strings"
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -34,10 +35,15 @@ func UnaryClientTraceGrpc(ctx context.Context, method string, req, resp interfac
 	start := time.Now()
 	SpanLog(ctx, DebugLevelApi, "grpc client unary start", "method", method, "req", req)
 	err := invoker(ctx, method, req, resp, cc, opts...)
+	logResp := resp
+	if strings.Contains(method, "/edgeproto.CloudletAccessApi/") {
+		// some of these APIs deliver certificates and private keys, do not log response
+		logResp = "***redacted***"
+	}
 	if err == nil {
-		SpanLog(ctx, DebugLevelApi, "grpc client unary done", "method", method, "resp", resp, "dur", time.Since(start))
+		SpanLog(ctx, DebugLevelApi, "grpc client unary done", "method", method, "resp", logResp, "dur", time.Since(start))
 	} else {
-		SpanLog(ctx, DebugLevelApi, "grpc client unary failed", "method", method, "resp", resp, "dur", time.Since(start), "err", err)
+		SpanLog(ctx, DebugLevelApi, "grpc client unary failed", "method", method, "resp", logResp, "dur", time.Since(start), "err", err)
 	}
 	return err
 }

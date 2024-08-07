@@ -907,7 +907,7 @@ type Cloudlet struct {
 	State TrackedState `protobuf:"varint,12,opt,name=state,proto3,enum=edgeproto.TrackedState" json:"state,omitempty"`
 	// Override actions to CRM
 	CrmOverride CRMOverride `protobuf:"varint,13,opt,name=crm_override,json=crmOverride,proto3,enum=edgeproto.CRMOverride" json:"crm_override,omitempty"`
-	// (Deprecated, replaced by CrmOnEdge) Deploy cloudlet services locally
+	// Deploy cloudlet services locally for testing purposes
 	DeploymentLocal bool `protobuf:"varint,14,opt,name=deployment_local,json=deploymentLocal,proto3" json:"deployment_local,omitempty"`
 	// Platform type
 	PlatformType string `protobuf:"bytes,15,opt,name=platform_type,json=platformType,proto3" json:"platform_type,omitempty"`

@@ -197,7 +197,9 @@ func TestHeatTemplate(t *testing.T) {
 	pc.CloudletKey = &ckey
 	pc.SyncFactory = syncdata.NewMutexSyncFactory()
 
-	op := OpenstackPlatform{}
+	op := OpenstackPlatform{
+		useFakeSecurityGroupID: true,
+	}
 	var vmp = vmlayer.VMPlatform{
 		Type:         "openstack",
 		VMProvider:   &op,
@@ -211,6 +213,7 @@ func TestHeatTemplate(t *testing.T) {
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_EXT_NETWORK_SECONDARY", "external-network-shared-ipv6")
 	op.VMProperties.CommonPf.Properties.SetValue("MEX_VM_APP_SUBNET_DHCP_ENABLED", "no")
 	op.VMProperties.CommonPf.PlatformConfig.TestMode = true
+	op.VMProperties.UseTestCACert = true
 	// Add chef params
 	for _, vm := range vms {
 		vm.ConfigureNodeVars = &confignode.ConfigureNodeVars{

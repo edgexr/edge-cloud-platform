@@ -504,7 +504,7 @@ message Cloudlet {
   TrackedState state = 12 [(protogen.backend) = true];
   // Override actions to CRM
   CRMOverride crm_override = 13 [(protogen.backend) = true];
-  // (Deprecated, replaced by CrmOnEdge) Deploy cloudlet services locally
+  // Deploy cloudlet services locally for testing purposes
   bool deployment_local = 14 [(protogen.backend) = true];
   // Platform type
   string platform_type = 15 [(protogen.refers_to) = "PlatformFeatures"];

@@ -875,7 +875,7 @@ func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context
 	}
 
 	var vaultSSHCert string
-	if v.VMProperties.CommonPf.PlatformConfig.TestMode {
+	if v.VMProperties.UseTestCACert {
 		vaultSSHCert = TestCACert
 	} else {
 		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi

@@ -2,6 +2,8 @@ module github.com/edgexr/edge-cloud-platform
 
 go 1.21
 
+toolchain go1.21.6
+
 require (
 	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
 	github.com/Bose/minisentinel v0.0.0-20200130220412-917c5a9223bb

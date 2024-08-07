@@ -129,7 +129,15 @@ vault write -f auth/approle/role/notifyroot/secret-id
 
 # enable vault ssh secrets engine
 vault secrets enable -path=ssh ssh
-vault write ssh/config/ca generate_signing_key=true
+mykey=$HOME/.ssh/id_rsa
+if [ -f $mykey ]; then
+  echo "Using my key $mykey"
+  vault write ssh/config/ca \
+    private_key=@$mykey \
+    public_key=@${mykey}.pub
+else
+  vault write ssh/config/ca generate_signing_key=true
+fi
 vault write ssh/roles/machine -<<"EOH"
 {
   "allow_user_certificates": true,
@@ -285,3 +293,9 @@ vault read auth/approle/role/alertmgrsidecar/role-id
 vault write -f auth/approle/role/alertmgrsidecar/secret-id
 
 rm -Rf $TMP
+
+if [ -n "$CLOUDFLARE_APIKEY" ]; then
+  if [ -n "$DNSZONE" ]; then
+    vault kv put secret/accounts/dnsprovidersbyzone/$DNSZONE token=$CLOUDFLARE_APIKEY dnsprovidertype=cloudflare
+  fi
+fi

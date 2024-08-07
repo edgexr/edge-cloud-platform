@@ -42,6 +42,9 @@ type CCRM struct {
 	EtcdAddrs                     string
 	FederationExternalAddr        string
 	TestMode                      bool
+	DNSZone                       string
+	EnvoyWithCurlImage            string
+	NginxWithCurlImage            string
 	cmd                           *exec.Cmd
 }
 
@@ -94,6 +97,15 @@ func (p *CCRM) StartLocal(logfile string, opts ...StartOp) error {
 	}
 	if p.FederationExternalAddr != "" {
 		args = append(args, "--federationExternalAddr", p.FederationExternalAddr)
+	}
+	if p.DNSZone != "" {
+		args = append(args, "--dnsZone", p.DNSZone)
+	}
+	if p.EnvoyWithCurlImage != "" {
+		args = append(args, "--envoyWithCurlImage", p.EnvoyWithCurlImage)
+	}
+	if p.NginxWithCurlImage != "" {
+		args = append(args, "--nginxWithCurlImage", p.NginxWithCurlImage)
 	}
 	if p.TestMode {
 		args = append(args, "-testMode")

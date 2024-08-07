@@ -29,6 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"github.com/stretchr/testify/require"
 )
@@ -90,6 +91,10 @@ func TestOpenstackLive(t *testing.T) {
 	caches.CloudletCache.Update(ctx, cloudlet, 0)
 	haMgr := &redundancy.HighAvailabilityManager{}
 
+	store := regiondata.InMemoryStore{}
+	store.Start()
+	defer store.Stop()
+
 	pfConfig := &platform.PlatformConfig{
 		CloudletKey:         &cloudlet.Key,
 		CacheDir:            "/var/tmp", // must exist locally
@@ -100,7 +105,8 @@ func TestOpenstackLive(t *testing.T) {
 		AppDNSRoot:          "app.functest.ut",
 		RootLBFQDN:          "shared.functest.ut",
 		PlatformInitConfig: platform.PlatformInitConfig{
-			AccessApi: accessAPI,
+			AccessApi:   accessAPI,
+			SyncFactory: regiondata.NewKVStoreSyncFactory(&store, "ccrm", "cloudlet1"),
 		},
 	}
 

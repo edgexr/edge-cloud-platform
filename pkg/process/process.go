@@ -96,6 +96,7 @@ type NodeCommon struct {
 	DeploymentTag string
 	AccessApiAddr string
 	AccessKeyFile string
+	ValidDomains  string
 }
 
 func (p *NodeCommon) GetNodeMgrArgs() []string {
@@ -114,6 +115,9 @@ func (p *NodeCommon) GetNodeMgrArgs() []string {
 	}
 	if p.AccessKeyFile != "" {
 		args = append(args, "--accessKeyFile", p.AccessKeyFile)
+	}
+	if p.ValidDomains != "" {
+		args = append(args, "--validDomains", p.ValidDomains)
 	}
 	return p.TLS.AddInternalPkiArgs(args)
 }

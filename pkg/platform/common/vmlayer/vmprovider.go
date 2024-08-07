@@ -423,6 +423,9 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 		v.VMProperties.SetCloudletExternalNetwork(cloudlet.InfraConfig.ExternalNetworkName)
 	}
 
+	v.proxyCerts = certs.NewProxyCerts(ctx, platformConfig.CloudletKey, v, platformConfig.NodeMgr, haMgr, v.GetFeatures(), platformConfig.CommercialCerts, platformConfig.EnvoyWithCurlImage, platformConfig.ProxyCertsCache)
+	v.proxyCerts.Start(ctx)
+
 	if err = v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStartCrmCommon, updateCallback); err != nil {
 		return err
 	}

@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
+	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	"gopkg.in/yaml.v2"
@@ -84,6 +85,13 @@ func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 	pfConfig, err := s.getPlatformConfig(ctx, in, accessKeys)
 	if err != nil {
 		return err
+	}
+
+	if in.DeploymentLocal {
+		if err := sender.SendStatus(edgeproto.UpdateTask, "Starting CRMServer"); err != nil {
+			return err
+		}
+		return process.StartCRMService(ctx, in, pfConfig, process.HARolePrimary, nil)
 	}
 
 	pfFlavor := edgeproto.Flavor{}
@@ -165,6 +173,11 @@ func (s *CCRMHandler) deleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 	caches := s.crmHandler.GetCaches()
 	pfInitConfig := s.getPlatformInitConfig(in)
 
+	if in.DeploymentLocal {
+		sender.SendStatus(edgeproto.UpdateTask, "Stopping CRM server")
+		return process.StopCRMService(ctx, in, process.HARoleAll)
+	}
+
 	err = cloudletPlatform.DeleteCloudlet(ctx, in, pfConfig, pfInitConfig, caches, sender.SendStatusIgnoreErr)
 	if err == nil {
 		s.crmPlatforms.Delete(&in.Key)
@@ -208,9 +221,10 @@ func (s *CCRMHandler) getPlatformConfig(ctx context.Context, cloudlet *edgeproto
 
 func (s *CCRMHandler) getPlatformInitConfig(cloudlet *edgeproto.Cloudlet) *platform.PlatformInitConfig {
 	return &platform.PlatformInitConfig{
-		AccessApi:      s.vaultClient.CloudletContext(cloudlet),
-		CloudletSSHKey: s.cloudletSSHKey,
-		SyncFactory:    regiondata.NewKVStoreSyncFactory(s.sync.GetKVStore(), s.nodeType, cloudlet.Key.GetKeyString()),
+		AccessApi:       s.vaultClient.CloudletContext(cloudlet),
+		CloudletSSHKey:  s.cloudletSSHKey,
+		SyncFactory:     regiondata.NewKVStoreSyncFactory(s.sync.GetKVStore(), s.nodeType, cloudlet.Key.GetKeyString()),
+		ProxyCertsCache: s.proxyCertsCache,
 	}
 }
 

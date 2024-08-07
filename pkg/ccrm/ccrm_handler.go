@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/cloudletssh"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/go-redis/redis/v8"
 	"google.golang.org/grpc"
 )
@@ -57,6 +58,7 @@ type CCRMHandler struct {
 	crmHandler          *crmutil.CRMHandler
 	cloudletSSHKey      *cloudletssh.SSHKey
 	sync                edgeproto.DataSync
+	proxyCertsCache     *certscache.ProxyCertsCache
 }
 
 type CRMPlatformCache struct {
@@ -93,6 +95,7 @@ func (s *CCRMHandler) Init(ctx context.Context, nodeMgr *node.NodeMgr, caches *C
 	s.vaultClient = accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, s, flags.Region, flags.DnsZone, nodeMgr.ValidDomains)
 	s.cloudletSSHKey = cloudletssh.NewSSHKey(s.vaultClient)
 	s.crmHandler = crmutil.NewCRMHandler(s.getCRMCloudletPlatform, s.nodeMgr)
+	s.proxyCertsCache = certscache.NewProxyCertsCache(s.vaultClient)
 
 	s.caches.CloudletNodeCache.AddUpdatedCb(s.cloudletNodeChanged)
 	s.crmHandler.SettingsCache.AddUpdatedCb(s.crmHandler.SettingsChanged)
@@ -135,9 +138,11 @@ func (s *CCRMHandler) InitConnectivity(client *notify.Client, kvstore objstore.K
 	}
 
 	// grpc handlers
-	edgeproto.RegisterCloudletPlatformAPIServer(grpcServer, s)
-	edgeproto.RegisterClusterPlatformAPIServer(grpcServer, s)
-	edgeproto.RegisterAppInstPlatformAPIServer(grpcServer, s)
+	if grpcServer != nil {
+		edgeproto.RegisterCloudletPlatformAPIServer(grpcServer, s)
+		edgeproto.RegisterClusterPlatformAPIServer(grpcServer, s)
+		edgeproto.RegisterAppInstPlatformAPIServer(grpcServer, s)
+	}
 }
 
 func (s *CCRMHandler) Start(ctx context.Context, ctrlConn *grpc.ClientConn) {
@@ -253,7 +258,9 @@ func (s *CCRMHandler) getCloudletPlatform(ctx context.Context, key *edgeproto.Cl
 		return nil, nil, fmt.Errorf("CloudletKey not specified")
 	}
 	cloudlet := edgeproto.Cloudlet{}
-	if !s.crmHandler.CloudletCache.Get(key, &cloudlet) {
+	// make sure to go direct to etcd to avoid any race condition
+	// on cloudlet create, as cache may not be updated yet.
+	if !s.crmHandler.CloudletCache.Store.Get(ctx, key, &cloudlet) {
 		return nil, nil, key.NotFoundError()
 	}
 	cloudletPlatform, found := s.newPlatform(cloudlet.PlatformType)

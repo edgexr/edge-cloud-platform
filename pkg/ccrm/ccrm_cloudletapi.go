@@ -148,9 +148,8 @@ func (s *CCRMHandler) RefreshCerts(ctx context.Context, in *edgeproto.Cloudlet) 
 		return nil, err
 	}
 	features := pf.GetFeatures()
-	accessAPI := s.vaultClient.CloudletContext(in)
 
-	proxyCerts := certs.NewProxyCerts(ctx, &in.Key, pf, accessAPI, s.nodeMgr, nil, features, s.flags.CommercialCerts, s.flags.EnvoyWithCurlImage)
+	proxyCerts := certs.NewProxyCerts(ctx, &in.Key, pf, s.nodeMgr, nil, features, s.flags.CommercialCerts, s.flags.EnvoyWithCurlImage, s.proxyCertsCache)
 	err = proxyCerts.RefreshCerts(ctx)
 	return &edgeproto.Result{}, err
 }

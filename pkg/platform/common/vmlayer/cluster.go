@@ -286,7 +286,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 			}
 		}
 	}
-	err = v.VMProvider.DeleteVMs(ctx, clusterInst.ObjId, name)
+	err = v.VMProvider.DeleteVMs(ctx, name, clusterInst.ObjId)
 	if err != nil && err.Error() != ServerDoesNotExistError {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs failed", "name", name, "err", err)
 		return err

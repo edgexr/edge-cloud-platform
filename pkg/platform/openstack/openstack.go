@@ -30,12 +30,13 @@ import (
 )
 
 type OpenstackPlatform struct {
-	openRCVars          map[string]string
-	VMProperties        *vmlayer.VMProperties
-	caches              *platform.Caches
-	apiStats            APIStats
-	reservedFloatingIPs syncdata.SyncReservations
-	reservedSubnets     syncdata.SyncReservations
+	openRCVars             map[string]string
+	VMProperties           *vmlayer.VMProperties
+	caches                 *platform.Caches
+	apiStats               APIStats
+	reservedFloatingIPs    syncdata.SyncReservations
+	reservedSubnets        syncdata.SyncReservations
+	useFakeSecurityGroupID bool
 }
 
 func NewPlatform() platform.Platform {
@@ -127,7 +128,7 @@ func (o *OpenstackPlatform) GetResourceID(ctx context.Context, resourceType vmla
 	switch resourceType {
 	case vmlayer.ResourceTypeSecurityGroup:
 		// for testing mode, don't try to run APIs just fake a value
-		if o.VMProperties.CommonPf.PlatformConfig.TestMode {
+		if o.useFakeSecurityGroupID {
 			return resourceName + "-testingID", nil
 		}
 		return o.GetSecurityGroupIDForName(ctx, resourceName)

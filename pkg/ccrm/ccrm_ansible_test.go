@@ -36,6 +36,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
@@ -184,9 +185,18 @@ func TestAnsibleServer(t *testing.T) {
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	ccrm.nodeMgr.CloudletLookup = cloudletLookup
+	cloudletPoolLookup := &node.CloudletPoolCache{}
+	cloudletPoolLookup.Init()
+	ccrm.nodeMgr.CloudletPoolLookup = cloudletPoolLookup
+
+	store := regiondata.InMemoryStore{}
+	store.Start()
+	defer store.Stop()
+	sync := regiondata.InitSync(&store)
 
 	ccrm.caches.Init(ctx)
 	ccrm.handler.Init(ctx, &ccrm.nodeMgr, &ccrm.caches, nil, &ccrm.flags, &cloudcommon.DummyRegistryAuthApi{})
+	ccrm.handler.InitConnectivity(nil, &store, &ccrm.nodeMgr, nil, sync)
 	ccrm.echoServ = ccrm.initAnsibleServer(ctx)
 
 	// test cloudlet

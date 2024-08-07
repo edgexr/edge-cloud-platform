@@ -31,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/cloudletssh"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -70,9 +71,10 @@ type PlatformConfig struct {
 // platform.PlatformConfig. However, that requires a lot of rework in the
 // platform code, so shall be taken up later.
 type PlatformInitConfig struct {
-	AccessApi      AccessApi
-	SyncFactory    syncdata.SyncFactory
-	CloudletSSHKey *cloudletssh.SSHKey
+	AccessApi       AccessApi
+	SyncFactory     syncdata.SyncFactory
+	CloudletSSHKey  *cloudletssh.SSHKey
+	ProxyCertsCache *certscache.ProxyCertsCache
 }
 
 type Caches struct {

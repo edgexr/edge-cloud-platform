@@ -50,6 +50,7 @@ type Controller struct {
 	VersionTag           string
 	CheckpointInterval   string
 	AppDNSRoot           string
+	DNSZone              string
 	PlatformServiceAddrs []string
 }
 
@@ -119,6 +120,9 @@ func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
 	if p.CheckpointInterval != "" {
 		args = append(args, "--checkpointInterval")
 		args = append(args, p.CheckpointInterval)
+	}
+	if p.DNSZone != "" {
+		args = append(args, "--dnsZone", p.DNSZone)
 	}
 
 	envs := p.GetEnv()
