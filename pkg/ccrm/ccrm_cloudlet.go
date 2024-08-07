@@ -17,7 +17,6 @@ package ccrm
 import (
 	"context"
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"os"
 
@@ -132,9 +131,7 @@ func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 	// copy of the platform object that has been initialized with InitCommon.
 	pf, err := s.getCRMCloudletPlatform(ctx, &in.Key)
 	if err != nil {
-		if errors.Is(err, ErrPlatformNotFound) {
-			return nil
-		}
+		log.SpanLog(ctx, log.DebugLevelApi, "unexpected error getting platform for cloudlet", "key", in.Key, "platformType", in.PlatformType, "err", err)
 		return err
 	}
 
