@@ -80,6 +80,7 @@ require (
 	github.com/hashicorp/vault/sdk v0.10.2
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/matoous/go-nanoid/v2 v2.0.0
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/opensearch-project/opensearch-go/v2 v2.3.0
 	github.com/sethvargo/go-password v0.2.0
 	github.com/xdg-go/pbkdf2 v1.0.0
@@ -166,7 +167,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/oklog/ulid/v2 v2.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
 	github.com/opencontainers/runc v1.1.6 // indirect
