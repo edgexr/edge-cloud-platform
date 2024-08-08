@@ -78,7 +78,7 @@ func (s *keySigner) SignSSHKey(ctx context.Context, publicKey string) (string, e
 		return "", fmt.Errorf("key signer sign cert failed, %s", err)
 	}
 	s.signedCount++
-	out := cert.Marshal()
+	out := ssh.MarshalAuthorizedKey(&cert)
 	return string(out), nil
 }
 

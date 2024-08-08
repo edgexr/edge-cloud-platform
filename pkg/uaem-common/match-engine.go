@@ -704,6 +704,7 @@ func SetInstStateFromCloudlet(ctx context.Context, in *edgeproto.Cloudlet) {
 			log.SpanLog(ctx, log.DebugLevelDmedb, "SetInstStateFromCloudlet: appInst lookup failed", "key", appInstKey, "err", err)
 			continue
 		}
+		log.SpanLog(ctx, log.DebugLevelDmedb, "SetInstStateFromCloudlet: set appInst maintenance", "key", appInstKey, "maintenance", in.MaintenanceState, "existingState", appinst.CloudletState)
 		appinst.MaintenanceState = in.MaintenanceState
 		if sendAvailableAppInst && IsAppInstUsable(appinst) {
 			go EEHandler.SendAvailableAppInst(ctx, app, appInstKey, appinst, carrier)
@@ -756,6 +757,7 @@ func SetInstStateFromCloudletInfo(ctx context.Context, info *edgeproto.CloudletI
 			log.SpanLog(ctx, log.DebugLevelDmedb, "SetInstStateFromCloudletInfo: appInst lookup failed", "key", appInstKey, "err", err)
 			continue
 		}
+		log.SpanLog(ctx, log.DebugLevelDmedb, "SetInstStateFromCloudletInfo: set appInst state", "key", appInstKey, "cloudletState", info.State, "maintenance", info.MaintenanceState)
 		appinst.CloudletState = info.State
 		appinst.MaintenanceState = info.MaintenanceState
 		if sendAvailableAppInst && IsAppInstUsable(appinst) {

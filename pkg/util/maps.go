@@ -37,6 +37,19 @@ func AddMaps(maps ...map[string]string) map[string]string {
 	return merged
 }
 
+func MapsEqual(a, b map[string]string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		bv, ok := b[k]
+		if !ok || bv != v {
+			return false
+		}
+	}
+	return true
+}
+
 func AddStringSliceUniques(ss []string, add []string) []string {
 	m1 := map[string]struct{}{}
 	for _, val := range ss {

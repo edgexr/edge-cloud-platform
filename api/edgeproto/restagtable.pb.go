@@ -891,14 +891,14 @@ var ResTagTableAllFields = []string{
 	ResTagTableFieldDeletePrepare,
 }
 
-var ResTagTableAllFieldsMap = map[string]struct{}{
+var ResTagTableAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ResTagTableFieldKeyName:         struct{}{},
 	ResTagTableFieldKeyOrganization: struct{}{},
 	ResTagTableFieldTagsKey:         struct{}{},
 	ResTagTableFieldTagsValue:       struct{}{},
 	ResTagTableFieldAzone:           struct{}{},
 	ResTagTableFieldDeletePrepare:   struct{}{},
-}
+})
 
 var ResTagTableAllFieldsStringMap = map[string]string{
 	ResTagTableFieldKeyName:         "Key Name",
@@ -913,48 +913,54 @@ func (m *ResTagTable) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, ResTagTableFieldKey+".") || s == ResTagTableFieldKey
 }
 
-func (m *ResTagTable) DiffFields(o *ResTagTable, fields map[string]struct{}) {
+func (m *ResTagTable) DiffFields(o *ResTagTable, fields *FieldMap) {
 	if m.Key.Name != o.Key.Name {
-		fields[ResTagTableFieldKeyName] = struct{}{}
-		fields[ResTagTableFieldKey] = struct{}{}
+		fields.Set(ResTagTableFieldKeyName)
+		fields.Set(ResTagTableFieldKey)
 	}
 	if m.Key.Organization != o.Key.Organization {
-		fields[ResTagTableFieldKeyOrganization] = struct{}{}
-		fields[ResTagTableFieldKey] = struct{}{}
+		fields.Set(ResTagTableFieldKeyOrganization)
+		fields.Set(ResTagTableFieldKey)
 	}
 	if m.Tags != nil && o.Tags != nil {
 		if len(m.Tags) != len(o.Tags) {
-			fields[ResTagTableFieldTags] = struct{}{}
+			fields.Set(ResTagTableFieldTags)
 		} else {
 			for k0, _ := range m.Tags {
 				_, vok0 := o.Tags[k0]
 				if !vok0 {
-					fields[ResTagTableFieldTags] = struct{}{}
+					fields.Set(ResTagTableFieldTags)
 				} else {
 					if m.Tags[k0] != o.Tags[k0] {
-						fields[ResTagTableFieldTags] = struct{}{}
+						fields.Set(ResTagTableFieldTags)
 						break
 					}
 				}
 			}
 		}
 	} else if (m.Tags != nil && o.Tags == nil) || (m.Tags == nil && o.Tags != nil) {
-		fields[ResTagTableFieldTags] = struct{}{}
+		fields.Set(ResTagTableFieldTags)
 	}
 	if m.Azone != o.Azone {
-		fields[ResTagTableFieldAzone] = struct{}{}
+		fields.Set(ResTagTableFieldAzone)
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[ResTagTableFieldDeletePrepare] = struct{}{}
+		fields.Set(ResTagTableFieldDeletePrepare)
 	}
 }
 
-var UpdateResTagTableFieldsMap = map[string]struct{}{
+func (m *ResTagTable) GetDiffFields(o *ResTagTable) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateResTagTableFieldsMap = NewFieldMap(map[string]struct{}{
 	ResTagTableFieldTags:      struct{}{},
 	ResTagTableFieldTagsKey:   struct{}{},
 	ResTagTableFieldTagsValue: struct{}{},
 	ResTagTableFieldAzone:     struct{}{},
-}
+})
 
 func (m *ResTagTable) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -962,11 +968,11 @@ func (m *ResTagTable) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateResTagTableFieldsMap[field]; !ok {
+		if !UpdateResTagTableFieldsMap.Has(field) {
 			if _, ok := ResTagTableAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -989,21 +995,21 @@ func (m *ResTagTable) CopyInFields(src *ResTagTable) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.HasOrHasChild("3") {
 		if src.Tags != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.Tags {
@@ -1029,13 +1035,13 @@ func (m *ResTagTable) CopyInFields(src *ResTagTable) int {
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.Azone != src.Azone {
 			m.Azone = src.Azone
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
@@ -1273,6 +1279,7 @@ type ResTagTableCache struct {
 	KeyWatchers   map[ResTagTableKey][]*ResTagTableKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *ResTagTableKey)
 	DeletedKeyCbs []func(ctx context.Context, key *ResTagTableKey)
+	Store         ResTagTableStore
 }
 
 func NewResTagTableCache() *ResTagTableCache {
@@ -1635,6 +1642,18 @@ func (c *ResTagTableCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *ResTagTableCache) InitCacheWithSync(sync DataSync) {
+	InitResTagTableCache(s)
+	s.InitSync(sync)
+}
+
+func (s *ResTagTableCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewResTagTableStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

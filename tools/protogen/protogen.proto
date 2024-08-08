@@ -205,6 +205,8 @@ extend google.protobuf.MethodOptions {
 extend google.protobuf.ServiceOptions {
   // For test code, add message to dummy server (typically for CUDs/caches)
   bool dummy_server = 51026;
+  // Internal api over GRPC
+  bool internal_api = 51065;
   // Internal api over Redis
-  bool redis_api = 51065;
+  bool redis_api = 51066;
 }

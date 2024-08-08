@@ -371,6 +371,12 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 		features[ii].SupportsAdditionalNetworks = true
 		features[ii].SupportsPlatformHighAvailabilityOnDocker = true
 		features[ii].SupportsPlatformHighAvailabilityOnK8S = true
+		features[ii].AccessVars = map[string]*edgeproto.PropertyInfo{
+			"APIKey": &edgeproto.PropertyInfo{
+				Name:        "API Key",
+				Description: "API Key for authentication",
+				Secret:      true,
+			}}
 	}
 	return features
 }
@@ -391,10 +397,17 @@ func CloudletData() []edgeproto.Cloudlet {
 			Latitude:  37.338207,
 			Longitude: -121.886330,
 		},
-		PlatformType:                  "fake",
-		Flavor:                        flavorData[0].Key,
-		NotifySrvAddr:                 "127.0.0.1:51001",
-		CrmOverride:                   edgeproto.CRMOverride_IGNORE_CRM,
+		PlatformType:  "fake",
+		Flavor:        flavorData[0].Key,
+		NotifySrvAddr: "127.0.0.1:51001",
+		//CrmOverride:   edgeproto.CRMOverride_IGNORE_CRM,
+		AccessVars: map[string]string{
+			"APIKey": "xyz",
+		},
+		EnvVar: map[string]string{
+			"FAKE_RAM_MAX":   "500000",
+			"FAKE_VCPUS_MAX": "500",
+		},
 		PhysicalName:                  "SanJoseSite",
 		Deployment:                    "docker",
 		DefaultResourceAlertThreshold: 80,
@@ -434,6 +447,7 @@ func CloudletData() []edgeproto.Cloudlet {
 		PhysicalName:                  "NewYorkSite",
 		Deployment:                    "docker",
 		DefaultResourceAlertThreshold: 80,
+		CrmOnEdge:                     true,
 	}, { // edgeproto.Cloudlet
 		Key: edgeproto.CloudletKey{
 			Organization: operatorData[1],
@@ -457,6 +471,7 @@ func CloudletData() []edgeproto.Cloudlet {
 		PhysicalName:                  "SanFranciscoSite",
 		Deployment:                    "docker",
 		DefaultResourceAlertThreshold: 80,
+		CrmOnEdge:                     true,
 	}, { // edgeproto.Cloudlet
 		Key: edgeproto.CloudletKey{
 			Organization: operatorData[2],
@@ -468,10 +483,17 @@ func CloudletData() []edgeproto.Cloudlet {
 			Latitude:  21.306944,
 			Longitude: -157.858337,
 		},
-		Flavor:                        flavorData[0].Key,
-		PlatformType:                  "fake",
-		NotifySrvAddr:                 "127.0.0.1:51004",
-		CrmOverride:                   edgeproto.CRMOverride_IGNORE_CRM,
+		Flavor:        flavorData[0].Key,
+		PlatformType:  "fake",
+		NotifySrvAddr: "127.0.0.1:51004",
+		//CrmOverride:                   edgeproto.CRMOverride_IGNORE_CRM,
+		AccessVars: map[string]string{
+			"APIKey": "xyz",
+		},
+		EnvVar: map[string]string{
+			"FAKE_RAM_MAX":   "50000000",
+			"FAKE_VCPUS_MAX": "50000",
+		},
 		PhysicalName:                  "HawaiiSite",
 		Deployment:                    "docker",
 		DefaultResourceAlertThreshold: 80,
@@ -705,6 +727,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[0].Key,
 		ClusterKey:  clusterInstData[0].Key.ClusterKey,
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 1
 		Key: edgeproto.AppInstKey{
 			Name:         appData[0].Key.Name + "2",
@@ -714,6 +737,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[0].Key,
 		ClusterKey:  clusterInstData[3].Key.ClusterKey,
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 2
 		Key: edgeproto.AppInstKey{
 			Name:         appData[0].Key.Name + "3",
@@ -723,6 +747,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[0].Key,
 		ClusterKey:  clusterInstData[1].Key.ClusterKey,
 		CloudletLoc: cloudletData[1].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 3
 		Key: edgeproto.AppInstKey{
 			Name:         appData[1].Key.Name + "1",
@@ -731,6 +756,7 @@ func AppInstData() []edgeproto.AppInst {
 		},
 		AppKey:      appData[1].Key,
 		CloudletLoc: cloudletData[1].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 4
 		Key: edgeproto.AppInstKey{
 			Name:         appData[2].Key.Name + "1",
@@ -739,6 +765,7 @@ func AppInstData() []edgeproto.AppInst {
 		},
 		AppKey:      appData[2].Key,
 		CloudletLoc: cloudletData[2].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 5
 		Key: edgeproto.AppInstKey{
 			Name:         appData[5].Key.Name + "1",
@@ -748,6 +775,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[5].Key,
 		ClusterKey:  clusterInstData[2].Key.ClusterKey,
 		CloudletLoc: cloudletData[2].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 6
 		Key: edgeproto.AppInstKey{
 			Name:         appData[6].Key.Name + "1",
@@ -756,6 +784,7 @@ func AppInstData() []edgeproto.AppInst {
 		},
 		AppKey:      appData[6].Key,
 		CloudletLoc: cloudletData[2].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 7
 		Key: edgeproto.AppInstKey{
 			Name:         appData[6].Key.Name + "2",
@@ -765,6 +794,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[6].Key,
 		ClusterKey:  clusterInstData[0].Key.ClusterKey,
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 8
 		Key: edgeproto.AppInstKey{
 			Name:         appData[7].Key.Name + "1",
@@ -774,6 +804,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[7].Key,
 		ClusterKey:  clusterInstData[0].Key.ClusterKey,
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 9
 		Key: edgeproto.AppInstKey{
 			Name:         appData[9].Key.Name + "1",
@@ -783,6 +814,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[9].Key, // auto-delete app
 		ClusterKey:  clusterInstData[0].Key.ClusterKey,
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 10
 		Key: edgeproto.AppInstKey{
 			Name:         appData[9].Key.Name + "2",
@@ -792,6 +824,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[9].Key, //auto-delete app
 		ClusterKey:  clusterInstAutoData[0].Key.ClusterKey,
 		CloudletLoc: cloudletData[1].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 11
 		Key: edgeproto.AppInstKey{
 			Name:         appData[12].Key.Name + "1",
@@ -800,6 +833,7 @@ func AppInstData() []edgeproto.AppInst {
 		},
 		AppKey:      appData[12].Key, //vm app with lb
 		CloudletLoc: cloudletData[1].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 12 - deploy EdgeCloud app to reservable autocluster
 		Key: edgeproto.AppInstKey{
 			Name:         appData[13].Key.Name + "1",
@@ -808,6 +842,7 @@ func AppInstData() []edgeproto.AppInst {
 		},
 		AppKey:      appData[13].Key, // edgecloud sample app
 		CloudletLoc: cloudletData[3].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 13
 		Key: edgeproto.AppInstKey{
 			Name:         appData[0].Key.Name + "6",
@@ -817,6 +852,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey: appData[0].Key,
 		// No ClusterKey, autocluster should choose MT first
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 14
 		Key: edgeproto.AppInstKey{
 			Name:         appData[9].Key.Name + "3",
@@ -826,6 +862,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[9].Key,                    // sidecar app
 		ClusterKey:  clusterInstData[8].Key.ClusterKey, // sidecar requires cluster key
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 15
 		Key: edgeproto.AppInstKey{
 			Name:         appData[13].Key.Name + "2",
@@ -835,6 +872,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey: appData[13].Key,
 		// No ClusterKey, autocluster should choose MT first
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 16
 		Key: edgeproto.AppInstKey{
 			Name:         appData[14].Key.Name + "1",
@@ -844,6 +882,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey: appData[14].Key,
 		// No ClusterKey, autocluster should choose MT first
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 17
 		Key: edgeproto.AppInstKey{
 			Name:         appData[15].Key.Name + "1",
@@ -853,6 +892,7 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:      appData[15].Key,
 		ClusterKey:  clusterInstData[9].Key.ClusterKey,
 		CloudletLoc: cloudletData[0].Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
 	}}
 }
 

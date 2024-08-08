@@ -343,6 +343,8 @@ func TestConversion(t *testing.T) {
 			"fields":           "StringArray",
 			"autoprovpolicies": "StringArray",
 			"optresmap":        "StringToString",
+			"envvar":           "StringToString",
+			"accessvars":       "StringToString",
 		},
 	}
 	for _, flavor := range testutil.FlavorData() {

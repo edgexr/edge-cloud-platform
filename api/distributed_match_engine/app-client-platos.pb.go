@@ -18,6 +18,7 @@ import (
 	math "math"
 	math_bits "math/bits"
 	reflect "reflect"
+	"sort"
 	"strconv"
 	strings "strings"
 )
@@ -1265,6 +1266,85 @@ func applyMatchOptions(opts *MatchOptions, args ...MatchOpt) {
 	for _, f := range args {
 		f(opts)
 	}
+}
+
+type FieldMap struct {
+	fields map[string]struct{}
+}
+
+func MakeFieldMap(fields []string) *FieldMap {
+	fmap := &FieldMap{}
+	fmap.fields = map[string]struct{}{}
+	if fields == nil {
+		return fmap
+	}
+	for _, set := range fields {
+		fmap.fields[set] = struct{}{}
+	}
+	return fmap
+}
+
+func NewFieldMap(fields map[string]struct{}) *FieldMap {
+	if fields == nil {
+		fields = map[string]struct{}{}
+	}
+	return &FieldMap{
+		fields: fields,
+	}
+}
+
+// Has checks if the key is set. Note that setting
+// a parent key implies that all child keys are also set.
+func (s *FieldMap) Has(key string) bool {
+	// key or parent is specified
+	for {
+		if _, ok := s.fields[key]; ok {
+			return true
+		}
+		idx := strings.LastIndex(key, ".")
+		if idx == -1 {
+			break
+		}
+		key = key[:idx]
+	}
+	return false
+}
+
+// HasOrHasChild checks if the key, or any child
+// of the key is set. Note that as with Has(), if
+// a parent of the key is set, this returns true.
+func (s *FieldMap) HasOrHasChild(key string) bool {
+	if s.Has(key) {
+		return true
+	}
+	prefix := key + "."
+	for k := range s.fields {
+		if strings.HasPrefix(k, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *FieldMap) Set(key string) {
+	s.fields[key] = struct{}{}
+}
+
+func (s *FieldMap) Clear(key string) {
+	delete(s.fields, key)
+}
+
+func (s *FieldMap) Fields() []string {
+	fields := []string{}
+	for k := range s.fields {
+		fields = append(fields, k)
+	}
+	sort.Strings(fields)
+	return fields
+}
+
+func (s *FieldMap) Count() int {
+	return len(s.fields)
 }
 
 // DecodeHook for use with the mapstructure package.

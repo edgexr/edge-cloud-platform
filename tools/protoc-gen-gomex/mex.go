@@ -63,6 +63,7 @@ type mex struct {
 	importCmp              bool
 	importReflect          bool
 	importJson             bool
+	importSync             bool
 	firstFile              string
 	support                gensupport.PluginSupport
 	refData                *gensupport.RefData
@@ -117,6 +118,7 @@ func (m *mex) Generate(file *generator.FileDescriptor) {
 	m.importCmp = false
 	m.importReflect = false
 	m.importJson = false
+	m.importSync = false
 	if m.firstFile == *file.FileDescriptorProto.Name {
 		m.refData = m.support.GatherRefData(m.gen)
 		m.checkDeletePrepares()
@@ -135,10 +137,13 @@ func (m *mex) Generate(file *generator.FileDescriptor) {
 
 	if m.firstFile == *file.FileDescriptorProto.Name {
 		m.P(matchOptions)
+		m.P(fieldMap)
 		m.generateEnumDecodeHook()
 		m.generateShowCheck()
 		m.generateAllKeyTags()
 		m.generateGetReferences()
+		m.importStrings = true
+		m.importSort = true
 	}
 }
 
@@ -186,6 +191,9 @@ func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 	}
 	if m.importReflect {
 		m.gen.PrintImport("reflect", "reflect")
+	}
+	if m.importSync {
+		m.gen.PrintImport("", "sync")
 	}
 	if m.importCmp {
 		m.gen.PrintImport("", "github.com/google/go-cmp/cmp")
@@ -394,6 +402,88 @@ func applyMatchOptions(opts *MatchOptions, args ...MatchOpt) {
 	for _, f := range args {
 		f(opts)
 	}
+}
+
+`
+
+var fieldMap = `
+type FieldMap struct {
+	fields map[string]struct{}
+}
+
+func MakeFieldMap(fields []string) *FieldMap {
+	fmap := &FieldMap{}
+	fmap.fields = map[string]struct{}{}
+	if fields == nil {
+		return fmap
+	}
+	for _, set := range fields {
+		fmap.fields[set] = struct{}{}
+	}
+	return fmap
+}
+
+func NewFieldMap(fields map[string]struct{}) *FieldMap {
+	if fields == nil {
+		fields = map[string]struct{}{}
+	}
+	return &FieldMap{
+		fields: fields,
+	}
+}
+
+// Has checks if the key is set. Note that setting
+// a parent key implies that all child keys are also set.
+func (s *FieldMap) Has(key string) bool {
+	// key or parent is specified
+	for {
+		if _, ok := s.fields[key]; ok {
+			return true
+		}
+		idx := strings.LastIndex(key, ".")
+		if idx == -1 {
+			break
+		}
+		key = key[:idx]
+	}
+	return false
+}
+
+// HasOrHasChild checks if the key, or any child
+// of the key is set. Note that as with Has(), if
+// a parent of the key is set, this returns true.
+func (s *FieldMap) HasOrHasChild(key string) bool {
+	if s.Has(key) {
+		return true
+	}
+	prefix := key + "."
+	for k := range s.fields {
+		if strings.HasPrefix(k, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *FieldMap) Set(key string) {
+	s.fields[key] = struct{}{}
+}
+
+func (s *FieldMap) Clear(key string) {
+	delete(s.fields, key)
+}
+
+func (s *FieldMap) Fields() []string {
+	fields := []string{}
+	for k := range s.fields {
+		fields = append(fields, k)
+	}
+	sort.Strings(fields)
+	return fields
+}
+
+func (s *FieldMap) Count() int {
+	return len(s.fields)
 }
 
 `
@@ -634,7 +724,7 @@ func (m *mex) printCopyInMakeArray(name string, desc *generator.Descriptor, fiel
 	mapType := m.support.GetMapType(m.gen, field)
 	if mapType != nil {
 		valType := mapType.ValType
-		if mapType.ValIsMessage {
+		if mapType.ValIsMessage && gogoproto.IsNullable(field) {
 			valType = "*" + valType
 		}
 		m.P("m.", name, " = make(map[", mapType.KeyType, "]", valType, ")")
@@ -674,7 +764,7 @@ func (m *mex) markDiff(names []string, name string) {
 	names = append(names, name)
 	for len(names) > 1 {
 		fieldName := strings.Join(names, "")
-		m.P("fields[", fieldName, "] = struct{}{}")
+		m.P("fields.Set(", fieldName, ")")
 		names = names[:len(names)-1]
 	}
 }
@@ -1010,16 +1100,21 @@ func (m *mex) generateCopyIn(parents, nums []string, desc *generator.Descriptor,
 		idx := ""
 		nullableMessage := false
 		ref := ""
-		if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE && gogoproto.IsNullable(field) {
+		deref := "*"
+		isMessage := *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE
+		if isMessage && gogoproto.IsNullable(field) {
 			nullableMessage = true
 			ref = "*"
+			deref = ""
 		}
 		mapType := m.support.GetMapType(m.gen, field)
 		skipMessage := false
 
-		if hasGrpcFields {
-			numStr := strings.Join(append(nums, num), ".")
-			m.P("if _, set := fmap[\"", numStr, "\"]; set {")
+		numStr := strings.Join(append(nums, num), ".")
+		if hasGrpcFields && isMessage {
+			m.P("if fmap.HasOrHasChild(\"", numStr, "\") {")
+		} else if hasGrpcFields {
+			m.P("if fmap.Has(\"", numStr, "\") {")
 		}
 		if nullableMessage || *field.Label == descriptor.FieldDescriptorProto_LABEL_REPEATED {
 			m.P("if src.", hierName, " != nil {")
@@ -1035,7 +1130,7 @@ func (m *mex) generateCopyIn(parents, nums []string, desc *generator.Descriptor,
 			} else {
 				m.P("for k", depth, ", v := range src.", hierName, " {")
 				if mapType.ValIsMessage {
-					m.P("v = v.Clone()")
+					m.P("v = ", deref, "v.Clone()")
 				}
 				m.P("m.", hierName, idx, " = v")
 				m.P("changed++")
@@ -1061,10 +1156,6 @@ func (m *mex) generateCopyIn(parents, nums []string, desc *generator.Descriptor,
 				if *field.Type == descriptor.FieldDescriptorProto_TYPE_MESSAGE {
 					subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
 					typ := m.support.FQTypeName(m.gen, subDesc)
-					deref := "*"
-					if nullableMessage {
-						deref = ""
-					}
 					m.P("m.", hierName, " = make([]", ref, typ, ", 0)")
 					m.P("for k", depth, ", _ := range src.", hierName, " {")
 					m.P("m.", hierName, " = append(m.", hierName, ", ", deref, "src.", hierName, idx, ".Clone())")
@@ -1076,7 +1167,7 @@ func (m *mex) generateCopyIn(parents, nums []string, desc *generator.Descriptor,
 			} else {
 				m.P("for k", depth, ", v := range src.", hierName, " {")
 				if mapType.ValIsMessage {
-					m.P("m.", hierName, idx, " = v.Clone()")
+					m.P("m.", hierName, idx, " = ", deref, "v.Clone()")
 				} else {
 					m.P("m.", hierName, idx, " = v")
 				}
@@ -1210,22 +1301,32 @@ func (m *mex) printCopyVar(field *descriptor.FieldDescriptorProto, to, from stri
 	tmp := to
 	deepCopyRef := "&"
 	copyDeref := ""
-	if nullable {
+	useTempVar := nullable
+	if mapType != nil && mapType.ValIsMessage && deepCopy {
+		useTempVar = true
+	}
+	if useTempVar {
 		// use temp var
 		tmp = strings.TrimPrefix(from, "src.")
 		tmp = "tmp_" + tmp
 		ftype := m.support.GoType(m.gen, field)
 		m.P("var ", tmp, " ", ftype)
-		deepCopyRef = ""
-		copyDeref = "*"
+		if nullable {
+			deepCopyRef = ""
+			copyDeref = "*"
+		}
 	}
 	if deepCopy {
 		m.P(tmp, ".DeepCopyIn(", deepCopyRef, from, ")")
 	} else {
 		m.P(tmp, " = ", copyDeref, from)
 	}
-	if nullable {
-		m.P(to, " = &", tmp)
+	if useTempVar {
+		ref := ""
+		if nullable {
+			ref = "&"
+		}
+		m.P(to, " = ", ref, tmp)
 	}
 }
 
@@ -1247,11 +1348,11 @@ func (m *{{.Name}}) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := Update{{.Name}}FieldsMap[field]; !ok {
+		if !Update{{.Name}}FieldsMap.Has(field) {
 			if _, ok := {{.Name}}AllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -1464,6 +1565,7 @@ type cacheTemplateArgs struct {
 	CustomKeyType  string
 	StreamOut      bool
 	StringKeyField string
+	StateFieldType string
 }
 
 var cacheTemplateIn = `
@@ -1499,6 +1601,9 @@ type {{.Name}}Cache struct {
 	KeyWatchers map[{{.KeyType}}][]*{{.Name}}KeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *{{.KeyType}})
 	DeletedKeyCbs []func(ctx context.Context, key *{{.KeyType}})
+{{- if .CudCache}}
+	Store {{.Name}}Store
+{{- end}}
 }
 
 func New{{.Name}}Cache() *{{.Name}}Cache {
@@ -1909,6 +2014,202 @@ func (c *{{.Name}}Cache) SyncListEnd(ctx context.Context) {
 		c.TriggerKeyWatchers(ctx, &key)
 	}
 }
+
+func (s *{{.Name}}Cache) InitCacheWithSync(sync DataSync) {
+	Init{{.Name}}Cache(s)
+	s.InitSync(sync)
+}
+
+func (s *{{.Name}}Cache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = New{{.Name}}Store(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+{{- end}}
+
+{{- if .ParentObjName}}
+// {{.Name}}ObjectUpdater defines a way of updating a specific {{.Name}}
+type {{.Name}}ObjectUpdater interface {
+	// Get the current {{.Name}}
+	Get() *{{.Name}}
+	// Update the {{.Name}} for the specified Fields flags.
+	Update(*{{.Name}}) error
+}
+
+// {{.Name}}Sender allows for streaming updates to {{.Name}}
+type {{.Name}}Sender interface {
+	// SendUpdate sends the updated object, fields without field flags set will be ignored
+	SendUpdate(updateFn func(update *{{.Name}}) error) error
+	// SendState sends an updated state. It will clear any errors unless
+	// the WithStateError option is specified.
+	SendState(state {{.StateFieldType}}, ops ...SenderOp) error
+	// SendStatus appends the status message and sends it.
+	SendStatus(updateType CacheUpdateType, message string, ops ...SenderOp) error
+	// SendStatusIgnoreErr is the same as SendStatus but without error return
+	// and without options to be compatible with older code.
+	SendStatusIgnoreErr(updateType CacheUpdateType, message string)
+}
+
+// {{.Name}}SenderHelper implements {{.Name}}Sender
+type {{.Name}}SenderHelper struct {
+	updater {{.Name}}ObjectUpdater
+}
+
+func (s *{{.Name}}SenderHelper) SetUpdater(updater {{.Name}}ObjectUpdater) {
+	s.updater = updater
+}
+
+// SendUpdate sends only the updated fields set by the Fields flags.
+func (s *{{.Name}}SenderHelper) SendUpdate(updateFn func(update *{{.Name}}) error) error {
+	obj := s.updater.Get()
+	if err := updateFn(obj); err != nil {
+		return err
+	}
+	return s.updater.Update(obj)
+}
+
+// SendState sends an updated state
+func (s *{{.Name}}SenderHelper) SendState(state {{.StateFieldType}}, ops ...SenderOp) error {
+	opts := GetSenderOptions(ops...)
+	obj := s.updater.Get()
+	obj.Fields = []string{
+		{{.Name}}FieldState,
+		{{.Name}}FieldErrors,
+		{{.Name}}FieldStatus,
+	}
+	s.applyOpts(obj, opts)
+
+	if opts.stateErr != nil {
+		obj.Errors = []string{opts.stateErr.Error()}
+	}
+	obj.State = state
+	obj.Status.SetTask({{.StateFieldType}}_CamelName[int32(state)])
+	return s.updater.Update(obj)
+}
+
+// SendStatus appends the status message and sends it.
+func (s *{{.Name}}SenderHelper) SendStatus(updateType CacheUpdateType, message string, ops ...SenderOp) error {
+	opts := GetSenderOptions(ops...)
+	obj := s.updater.Get()
+	obj.Fields = []string{
+		{{.Name}}FieldStatus,
+	}
+	s.applyOpts(obj, opts)
+
+	switch updateType {
+	case UpdateTask:
+		obj.Status.SetTask(message)
+	case UpdateStep:
+		obj.Status.SetStep(message)
+	}
+	return s.updater.Update(obj)
+}
+
+func (s *{{.Name}}SenderHelper) SendStatusIgnoreErr(updateType CacheUpdateType, message string) {
+	s.SendStatus(updateType, message)
+}
+
+func (s *{{.Name}}SenderHelper) applyOpts(obj *{{.Name}}, opts *SenderOptions) {
+	if opts.resetStatus {
+		obj.Fields = append(obj.Fields, {{.Name}}FieldStatus)
+		obj.Status.StatusReset()
+	}
+}
+
+// {{.Name}}CacheUpdater implements {{.Name}}Sender via a cache
+// that can send data over notify.
+type {{.Name}}CacheUpdater struct {
+	{{.Name}}SenderHelper
+	ctx context.Context
+	key {{.KeyType}}
+	cache *{{.Name}}Cache
+}
+
+func New{{.Name}}CacheUpdater(ctx context.Context, cache *{{.Name}}Cache, key {{.KeyType}}) *{{.Name}}CacheUpdater {
+	s := &{{.Name}}CacheUpdater{
+		ctx: ctx,
+		key: key,
+		cache: cache,
+	}
+	s.SetUpdater(s)
+	return s
+}
+
+func (s *{{.Name}}CacheUpdater) Get() *{{.Name}} {
+	obj := {{.Name}}{}
+	if !s.cache.Get(&s.key, &obj) {
+		obj.Key = s.key
+	}
+	return &obj
+}
+
+func (s *{{.Name}}CacheUpdater) Update(obj *{{.Name}}) error {
+	s.cache.Update(s.ctx, obj, 0)
+	return nil
+}
+
+type {{.Name}}SendAPI interface {
+	Send(*{{.Name}}) error
+}
+
+// {{.Name}}SendUpdater implements {{.Name}}ObjectUpdater via a generic
+// send API. To allow for building up the list of status messages
+// which need to accumulate over time, we keep a local copy of
+// the object.
+type {{.Name}}SendUpdater struct {
+	{{.Name}}SenderHelper
+	ctx context.Context
+	sender {{.Name}}SendAPI
+	local {{.Name}}
+	mux sync.Mutex
+}
+
+func New{{.Name}}SendUpdater(ctx context.Context, sender {{.Name}}SendAPI, key {{.KeyType}}) *{{.Name}}SendUpdater {
+	s := &{{.Name}}SendUpdater{
+		ctx: ctx,
+		sender: sender,
+	}
+	s.local.Key = key
+	s.SetUpdater(s)
+	return s
+}
+
+func (s *{{.Name}}SendUpdater) Get() *{{.Name}} {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	cp := {{.Name}}{}
+	cp.DeepCopyIn(&s.local)
+	return &cp
+}
+
+func (s *{{.Name}}SendUpdater) Update(obj *{{.Name}}) error {
+	s.mux.Lock()
+	s.local.DeepCopyIn(obj)
+	s.mux.Unlock()
+	return s.sender.Send(obj)
+}
+
+// {{.Name}}PrintUpdater just prints the updates
+type {{.Name}}PrintUpdater struct {
+	{{.Name}}SenderHelper
+}
+
+func New{{.Name}}PrintUpdater() *{{.Name}}PrintUpdater {
+	s := &{{.Name}}PrintUpdater{}
+	s.SetUpdater(s)
+	return s
+}
+
+func (s *{{.Name}}PrintUpdater) Get() *{{.Name}} {
+	return &{{.Name}}{}
+}
+
+func (s *{{.Name}}PrintUpdater) Update(obj *{{.Name}}) error {
+	fmt.Printf("%v\n", obj)
+	return nil
+}
+
 {{- end}}
 
 {{if ne (.WaitForState) ("")}}
@@ -1995,7 +2296,11 @@ func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, store {{.Name}}Sto
 			switch info.State {
 			case errorState:
 				errs := strings.Join(info.Errors, ", ")
-				err = fmt.Errorf("Encountered failures: %s", errs)
+				if len(info.Errors) == 1 {
+					err = fmt.Errorf("%s", errs)				
+				} else {
+					err = fmt.Errorf("Encountered failures: %s", errs)
+				}
 				return err
 			case targetState:
 				handleTargetState()
@@ -2384,9 +2689,9 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		m.generateAllFields(AllFieldsGenSlice, []string{*message.Name + "Field"}, []string{}, desc)
 		m.P("}")
 		m.P("")
-		m.P("var ", *message.Name, "AllFieldsMap = map[string]struct{}{")
+		m.P("var ", *message.Name, "AllFieldsMap = NewFieldMap(map[string]struct{}{")
 		m.generateAllFields(AllFieldsGenMap, []string{*message.Name + "Field"}, []string{}, desc)
-		m.P("}")
+		m.P("})")
 		m.P("")
 		m.P("var ", *message.Name, "AllFieldsStringMap = map[string]string{")
 		m.generateAllStringFieldsMap(AllFieldsGenMap, []string{}, []string{}, *message.Name+"Field", desc)
@@ -2396,8 +2701,14 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		m.generateIsKeyField([]string{}, []string{*message.Name + "Field"}, desc)
 		m.P("}")
 		m.P("")
-		m.P("func (m *", message.Name, ") DiffFields(o *", message.Name, ", fields map[string]struct{}) {")
+		m.P("func (m *", message.Name, ") DiffFields(o *", message.Name, ", fields *FieldMap) {")
 		m.generateDiffFields([]string{}, []string{*message.Name + "Field"}, desc)
+		m.P("}")
+		m.P("")
+		m.P("func (m *", message.Name, ") GetDiffFields(o *", message.Name, ") *FieldMap {")
+		m.P("diffFields := NewFieldMap(nil)")
+		m.P("m.DiffFields(o, diffFields)")
+		m.P("return diffFields")
 		m.P("}")
 		m.P("")
 		for _, service := range file.Service {
@@ -2412,10 +2723,10 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 					continue
 				}
 				noconfigMap := make(map[string]struct{})
-				m.P("var ", *method.Name, "FieldsMap = map[string]struct{}{")
+				m.P("var ", *method.Name, "FieldsMap = NewFieldMap(map[string]struct{}{")
 				fieldPrefix := *message.Name + "Field"
 				m.generateMethodFields(fieldPrefix, []string{fieldPrefix}, noconfigMap, desc, method)
-				m.P("}")
+				m.P("})")
 				m.P("")
 				args := cudTemplateArgs{
 					Name: *message.Name,
@@ -2504,12 +2815,19 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 			StreamOut:      gensupport.GetGenerateCudStreamout(message),
 			StringKeyField: gensupport.GetStringKeyField(message),
 		}
+		stateField := gensupport.FindField(message, "State")
+		if stateField != nil {
+			args.StateFieldType = m.support.GoType(m.gen, stateField)
+		}
 		m.cacheTemplate.Execute(m.gen.Buffer, args)
 		m.importUtil = true
 		m.importLog = true
 		if args.WaitForState != "" {
 			m.importErrors = true
 			m.importStrings = true
+		}
+		if args.ParentObjName != "" {
+			m.importSync = true
 		}
 		m.generateUsesOrg(message)
 	}
@@ -2705,6 +3023,7 @@ func validateVersionHash(en *descriptor.EnumDescriptorProto, hashStr string, fil
 	// We need to check the hash and verify that we have the correct one
 	// If we don't have a correct one fail suggesting an upgrade function
 	// Check the last one(it's the latest) and if it doesn't match fail
+	// Check the substring of the value
 	lastIndex := 0
 	for i, _ := range en.Value {
 		if i > lastIndex {
@@ -2712,7 +3031,6 @@ func validateVersionHash(en *descriptor.EnumDescriptorProto, hashStr string, fil
 		}
 	}
 	latestVer := en.Value[lastIndex]
-	// Check the substring of the value
 	if !strings.Contains(*latestVer.Name, hashStr) {
 		var upgradeTemplate *template.Template
 		upgradeTemplate = template.Must(template.New("upgrade").Parse(upgradeErrorTemplete))
@@ -3240,7 +3558,7 @@ func (m *mex) generateUsesOrg(message *descriptor.DescriptorProto) {
 
 func (m *mex) generateService(file *generator.FileDescriptor, service *descriptor.ServiceDescriptorProto) {
 	if len(service.Method) != 0 {
-		if gensupport.GetRedisApi(service) {
+		if gensupport.GetInternalApi(service) {
 			return
 		}
 		for _, method := range service.Method {

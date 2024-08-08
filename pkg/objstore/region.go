@@ -24,19 +24,8 @@
 
 package objstore
 
-import "github.com/edgexr/edge-cloud-platform/pkg/log"
-
-var (
-	myRegion uint32 = 0
-)
-
-func InitRegion(region uint32) {
-	myRegion = region
-}
-
 func GetRegion() uint32 {
-	if myRegion == 0 {
-		log.FatalLog("Region not initialized")
-	}
-	return myRegion
+	// region number for etcd is a deprecated concept since we decided
+	// etcd is per-region.
+	return 1
 }

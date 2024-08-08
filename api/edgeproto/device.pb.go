@@ -1180,7 +1180,7 @@ var DeviceAllFields = []string{
 	DeviceFieldNotifyId,
 }
 
-var DeviceAllFieldsMap = map[string]struct{}{
+var DeviceAllFieldsMap = NewFieldMap(map[string]struct{}{
 	DeviceFieldKeyUniqueIdType:  struct{}{},
 	DeviceFieldKeyUniqueId:      struct{}{},
 	DeviceFieldFirstSeenSeconds: struct{}{},
@@ -1188,7 +1188,7 @@ var DeviceAllFieldsMap = map[string]struct{}{
 	DeviceFieldLastSeenSeconds:  struct{}{},
 	DeviceFieldLastSeenNanos:    struct{}{},
 	DeviceFieldNotifyId:         struct{}{},
-}
+})
 
 var DeviceAllFieldsStringMap = map[string]string{
 	DeviceFieldKeyUniqueIdType:  "Key Unique Id Type",
@@ -1204,42 +1204,48 @@ func (m *Device) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, DeviceFieldKey+".") || s == DeviceFieldKey
 }
 
-func (m *Device) DiffFields(o *Device, fields map[string]struct{}) {
+func (m *Device) DiffFields(o *Device, fields *FieldMap) {
 	if m.Key.UniqueIdType != o.Key.UniqueIdType {
-		fields[DeviceFieldKeyUniqueIdType] = struct{}{}
-		fields[DeviceFieldKey] = struct{}{}
+		fields.Set(DeviceFieldKeyUniqueIdType)
+		fields.Set(DeviceFieldKey)
 	}
 	if m.Key.UniqueId != o.Key.UniqueId {
-		fields[DeviceFieldKeyUniqueId] = struct{}{}
-		fields[DeviceFieldKey] = struct{}{}
+		fields.Set(DeviceFieldKeyUniqueId)
+		fields.Set(DeviceFieldKey)
 	}
 	if m.FirstSeen != nil && o.FirstSeen != nil {
 		if m.FirstSeen.Seconds != o.FirstSeen.Seconds {
-			fields[DeviceFieldFirstSeenSeconds] = struct{}{}
-			fields[DeviceFieldFirstSeen] = struct{}{}
+			fields.Set(DeviceFieldFirstSeenSeconds)
+			fields.Set(DeviceFieldFirstSeen)
 		}
 		if m.FirstSeen.Nanos != o.FirstSeen.Nanos {
-			fields[DeviceFieldFirstSeenNanos] = struct{}{}
-			fields[DeviceFieldFirstSeen] = struct{}{}
+			fields.Set(DeviceFieldFirstSeenNanos)
+			fields.Set(DeviceFieldFirstSeen)
 		}
 	} else if (m.FirstSeen != nil && o.FirstSeen == nil) || (m.FirstSeen == nil && o.FirstSeen != nil) {
-		fields[DeviceFieldFirstSeen] = struct{}{}
+		fields.Set(DeviceFieldFirstSeen)
 	}
 	if m.LastSeen != nil && o.LastSeen != nil {
 		if m.LastSeen.Seconds != o.LastSeen.Seconds {
-			fields[DeviceFieldLastSeenSeconds] = struct{}{}
-			fields[DeviceFieldLastSeen] = struct{}{}
+			fields.Set(DeviceFieldLastSeenSeconds)
+			fields.Set(DeviceFieldLastSeen)
 		}
 		if m.LastSeen.Nanos != o.LastSeen.Nanos {
-			fields[DeviceFieldLastSeenNanos] = struct{}{}
-			fields[DeviceFieldLastSeen] = struct{}{}
+			fields.Set(DeviceFieldLastSeenNanos)
+			fields.Set(DeviceFieldLastSeen)
 		}
 	} else if (m.LastSeen != nil && o.LastSeen == nil) || (m.LastSeen == nil && o.LastSeen != nil) {
-		fields[DeviceFieldLastSeen] = struct{}{}
+		fields.Set(DeviceFieldLastSeen)
 	}
 	if m.NotifyId != o.NotifyId {
-		fields[DeviceFieldNotifyId] = struct{}{}
+		fields.Set(DeviceFieldNotifyId)
 	}
+}
+
+func (m *Device) GetDiffFields(o *Device) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
 }
 
 func (m *Device) Clone() *Device {
@@ -1251,32 +1257,32 @@ func (m *Device) Clone() *Device {
 func (m *Device) CopyInFields(src *Device) int {
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.UniqueIdType != src.Key.UniqueIdType {
 				m.Key.UniqueIdType = src.Key.UniqueIdType
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.UniqueId != src.Key.UniqueId {
 				m.Key.UniqueId = src.Key.UniqueId
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.HasOrHasChild("3") {
 		if src.FirstSeen != nil {
 			if m.FirstSeen == nil {
 				m.FirstSeen = &types.Timestamp{}
 			}
-			if _, set := fmap["3.1"]; set {
+			if fmap.Has("3.1") {
 				if m.FirstSeen.Seconds != src.FirstSeen.Seconds {
 					m.FirstSeen.Seconds = src.FirstSeen.Seconds
 					changed++
 				}
 			}
-			if _, set := fmap["3.2"]; set {
+			if fmap.Has("3.2") {
 				if m.FirstSeen.Nanos != src.FirstSeen.Nanos {
 					m.FirstSeen.Nanos = src.FirstSeen.Nanos
 					changed++
@@ -1287,18 +1293,18 @@ func (m *Device) CopyInFields(src *Device) int {
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.HasOrHasChild("4") {
 		if src.LastSeen != nil {
 			if m.LastSeen == nil {
 				m.LastSeen = &types.Timestamp{}
 			}
-			if _, set := fmap["4.1"]; set {
+			if fmap.Has("4.1") {
 				if m.LastSeen.Seconds != src.LastSeen.Seconds {
 					m.LastSeen.Seconds = src.LastSeen.Seconds
 					changed++
 				}
 			}
-			if _, set := fmap["4.2"]; set {
+			if fmap.Has("4.2") {
 				if m.LastSeen.Nanos != src.LastSeen.Nanos {
 					m.LastSeen.Nanos = src.LastSeen.Nanos
 					changed++
@@ -1309,7 +1315,7 @@ func (m *Device) CopyInFields(src *Device) int {
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.NotifyId != src.NotifyId {
 			m.NotifyId = src.NotifyId
 			changed++
@@ -1552,6 +1558,7 @@ type DeviceCache struct {
 	KeyWatchers   map[DeviceKey][]*DeviceKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *DeviceKey)
 	DeletedKeyCbs []func(ctx context.Context, key *DeviceKey)
+	Store         DeviceStore
 }
 
 func NewDeviceCache() *DeviceCache {
@@ -1949,6 +1956,18 @@ func (c *DeviceCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *DeviceCache) InitCacheWithSync(sync DataSync) {
+	InitDeviceCache(s)
+	s.InitSync(sync)
+}
+
+func (s *DeviceCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewDeviceStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

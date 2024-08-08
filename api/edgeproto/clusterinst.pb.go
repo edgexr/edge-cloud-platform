@@ -27,6 +27,7 @@ import (
 	math_bits "math/bits"
 	reflect "reflect"
 	strings "strings"
+	"sync"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -202,6 +203,8 @@ type ClusterInst struct {
 	Fqdn string `protobuf:"bytes,36,opt,name=fqdn,proto3" json:"fqdn,omitempty"`
 	// Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting
 	EnableIpv6 bool `protobuf:"varint,37,opt,name=enable_ipv6,json=enableIpv6,proto3" json:"enable_ipv6,omitempty"`
+	// Universally unique object ID
+	ObjId string `protobuf:"bytes,38,opt,name=obj_id,json=objId,proto3" json:"obj_id,omitempty"`
 }
 
 func (m *ClusterInst) Reset()         { *m = ClusterInst{} }
@@ -338,120 +341,121 @@ func init() {
 func init() { proto.RegisterFile("clusterinst.proto", fileDescriptor_2d2ba73d39f00460) }
 
 var fileDescriptor_2d2ba73d39f00460 = []byte{
-	// 1796 bytes of a gzipped FileDescriptorProto
+	// 1814 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x57, 0x4d, 0x6c, 0x1b, 0xc7,
-	0x15, 0xd6, 0x58, 0x32, 0x45, 0x0e, 0x29, 0x4b, 0x1c, 0xc9, 0xf2, 0x58, 0xb6, 0x29, 0x9a, 0x8e,
-	0x1a, 0x35, 0xd9, 0x4a, 0x89, 0x82, 0xaa, 0xa8, 0x1a, 0xb7, 0x25, 0x65, 0x1b, 0x20, 0x1c, 0xd9,
-	0xc1, 0xca, 0x31, 0xd0, 0x5e, 0x16, 0xab, 0xdd, 0x47, 0x7a, 0xa1, 0xdd, 0x99, 0xf5, 0xfe, 0xc8,
-	0xa5, 0x4f, 0x45, 0x2f, 0xed, 0xa1, 0x87, 0xb4, 0xbd, 0x14, 0xed, 0xc5, 0x28, 0x5a, 0x20, 0xb9,
-	0xa5, 0x3e, 0xe6, 0x5e, 0xc0, 0xb7, 0x0a, 0xe8, 0xc5, 0x08, 0xd0, 0x20, 0xb5, 0x5b, 0xa0, 0xd0,
-	0x29, 0x80, 0x29, 0x26, 0xe8, 0xa9, 0x98, 0xd9, 0x1f, 0x2e, 0x49, 0x45, 0x35, 0x1c, 0xf7, 0xb6,
-	0xf3, 0xbe, 0x37, 0xdf, 0xbc, 0xf9, 0xe6, 0xcd, 0x9b, 0xb7, 0xb8, 0x6c, 0xd8, 0xa1, 0x1f, 0x80,
-	0x67, 0x31, 0x3f, 0x58, 0x71, 0x3d, 0x1e, 0x70, 0x52, 0x00, 0xb3, 0x0d, 0xf2, 0x73, 0xe1, 0x7c,
-	0x9b, 0xf3, 0xb6, 0x0d, 0xab, 0xba, 0x6b, 0xad, 0xea, 0x8c, 0xf1, 0x40, 0x0f, 0x2c, 0xce, 0xfc,
-	0xc8, 0x71, 0xe1, 0x42, 0xc0, 0xb9, 0xed, 0xaf, 0xca, 0x41, 0x1b, 0x58, 0xfa, 0x11, 0xc3, 0x25,
-	0x0f, 0xfc, 0xd0, 0x0e, 0x92, 0x51, 0xcb, 0xd6, 0xf7, 0xb8, 0x17, 0x8f, 0xa6, 0xe2, 0x65, 0xe3,
-	0x61, 0xd9, 0xb0, 0x79, 0x68, 0xda, 0x10, 0xec, 0x42, 0x27, 0xf1, 0x37, 0xb8, 0xe3, 0xf0, 0x84,
-	0x6b, 0xce, 0x62, 0x2d, 0x4f, 0xf7, 0xc0, 0xe7, 0xa1, 0x67, 0x40, 0x12, 0xc0, 0x5c, 0x9b, 0xb7,
-	0xb9, 0xfc, 0x5c, 0x15, 0x5f, 0x09, 0xb7, 0xe9, 0xc0, 0xaa, 0xcd, 0x8d, 0x68, 0x58, 0xfb, 0x17,
-	0xc2, 0x33, 0x9b, 0xd1, 0x6a, 0x4d, 0xe6, 0x07, 0xd7, 0xa1, 0x73, 0xfb, 0x4d, 0xf2, 0x7d, 0x5c,
-	0x8c, 0x23, 0xd0, 0x76, 0xa1, 0x43, 0x51, 0x15, 0x2d, 0x17, 0xd7, 0xce, 0xac, 0xa4, 0x3b, 0x5f,
-	0x89, 0x67, 0x48, 0xef, 0xc6, 0xc4, 0xa3, 0x4f, 0x17, 0xc7, 0x54, 0x6c, 0xa4, 0x36, 0x72, 0x1d,
-	0x97, 0x92, 0x90, 0x25, 0xc1, 0x09, 0x49, 0x30, 0x3f, 0x40, 0x10, 0xc1, 0xd7, 0xa1, 0xd3, 0x98,
-	0x39, 0xe8, 0xd1, 0x7c, 0x62, 0x90, 0x5c, 0x45, 0xa3, 0x0f, 0x93, 0x75, 0x5c, 0xe2, 0x5e, 0x5b,
-	0x67, 0xd6, 0x7d, 0x29, 0x2f, 0x1d, 0xaf, 0xa2, 0xe5, 0x42, 0x83, 0x7c, 0xdc, 0xa3, 0xc9, 0x92,
-	0xdc, 0x6b, 0xef, 0xf7, 0x28, 0x52, 0x07, 0xfc, 0x36, 0x4a, 0xff, 0x7e, 0x46, 0xd1, 0x97, 0xcf,
-	0x28, 0xfa, 0xe8, 0xc1, 0x22, 0xaa, 0x7d, 0x88, 0xf0, 0xa9, 0xc1, 0x7d, 0x92, 0xb7, 0x8f, 0xda,
-	0xe5, 0xe9, 0x23, 0x77, 0xf9, 0x7f, 0xde, 0xe3, 0x50, 0xac, 0xbf, 0x2a, 0xe3, 0x62, 0x26, 0x56,
-	0x32, 0x8f, 0x73, 0x2d, 0x0b, 0x6c, 0xd3, 0xa7, 0xa8, 0x3a, 0xbe, 0x5c, 0x50, 0xe3, 0x11, 0x79,
-	0x13, 0x8f, 0xf7, 0x57, 0x3e, 0x3b, 0x1a, 0x78, 0xbc, 0xd1, 0x38, 0x78, 0xe1, 0x4b, 0x7e, 0x88,
-	0x73, 0x51, 0xa6, 0x49, 0x19, 0x8b, 0x6b, 0x73, 0x99, 0x59, 0xd7, 0x24, 0x20, 0x26, 0x90, 0x0f,
-	0xba, 0x14, 0x1d, 0xf4, 0x68, 0x2e, 0x32, 0xc9, 0xe9, 0xf1, 0x3c, 0xf2, 0x6d, 0x9c, 0xb7, 0xad,
-	0x3d, 0x60, 0xe0, 0xfb, 0xb4, 0x50, 0x45, 0xcb, 0xa7, 0xd6, 0x66, 0x33, 0x1c, 0xef, 0xc4, 0x50,
-	0x63, 0x42, 0x50, 0xa8, 0xa9, 0x2b, 0xa1, 0x78, 0x42, 0x0f, 0x03, 0x4e, 0x71, 0x15, 0x2d, 0xe7,
-	0x63, 0x54, 0x5a, 0xc8, 0x5b, 0xf8, 0xa4, 0x1f, 0xe8, 0x01, 0xd0, 0x09, 0xc9, 0x96, 0x4d, 0xb3,
-	0x5b, 0x9e, 0x6e, 0xec, 0x82, 0xb9, 0x2d, 0xe0, 0x78, 0x4e, 0xe4, 0x4b, 0x96, 0x70, 0x0e, 0x3c,
-	0x8f, 0x7b, 0x3e, 0x3d, 0x29, 0x24, 0x69, 0x4c, 0x09, 0xf0, 0xd7, 0x0f, 0xcf, 0x9e, 0x64, 0xdc,
-	0x70, 0x5c, 0x35, 0x06, 0xc9, 0x77, 0x71, 0xc9, 0xf0, 0x1c, 0x8d, 0xef, 0x81, 0xe7, 0x59, 0x26,
-	0xd0, 0x9c, 0x5c, 0x62, 0xe0, 0x90, 0xd4, 0xad, 0x9b, 0x31, 0xaa, 0x16, 0x0d, 0xcf, 0x49, 0x06,
-	0x64, 0x1d, 0x17, 0x2c, 0x57, 0xd3, 0x0d, 0x43, 0x6c, 0x74, 0x72, 0x64, 0xa3, 0x4d, 0xb7, 0x2e,
-	0xa1, 0x64, 0xa3, 0x56, 0x3c, 0x26, 0x6f, 0xe0, 0x92, 0x6e, 0xdb, 0xdc, 0xd0, 0x03, 0x30, 0x35,
-	0xcb, 0xa5, 0x79, 0x99, 0xae, 0x43, 0xf1, 0x15, 0x53, 0x97, 0xa6, 0x4b, 0x96, 0x70, 0x91, 0x71,
-	0x13, 0xb4, 0xf8, 0x60, 0x8a, 0x72, 0x42, 0x44, 0x8b, 0x05, 0x10, 0x1d, 0x02, 0x79, 0x05, 0x63,
-	0x13, 0x5c, 0x9b, 0x77, 0x1c, 0x60, 0x01, 0x9d, 0xce, 0x7a, 0xf5, 0xed, 0x64, 0x11, 0x17, 0x59,
-	0xe8, 0x68, 0x8e, 0x2e, 0x12, 0xc0, 0xa7, 0x53, 0x55, 0xb4, 0x3c, 0xa5, 0x62, 0x16, 0x3a, 0x5b,
-	0x91, 0x85, 0x9c, 0xc3, 0x05, 0xe1, 0x20, 0x88, 0x7d, 0x7a, 0x4a, 0xc2, 0x79, 0x16, 0x3a, 0x37,
-	0xc4, 0x98, 0xac, 0xe3, 0x39, 0xf8, 0x49, 0x00, 0x1e, 0xd3, 0x6d, 0x6d, 0x8f, 0xdb, 0xa1, 0x03,
-	0x9a, 0x6f, 0xdd, 0x07, 0x5a, 0xae, 0xa2, 0xe5, 0x89, 0x78, 0x35, 0x92, 0x78, 0xdc, 0x96, 0x0e,
-	0xdb, 0xd6, 0x7d, 0x20, 0x3f, 0xc0, 0x65, 0x71, 0x96, 0x9a, 0x6f, 0xe8, 0x36, 0x68, 0x2e, 0xb7,
-	0x2d, 0xa3, 0x43, 0x89, 0x0c, 0x71, 0xf6, 0xa0, 0x47, 0xa7, 0xeb, 0x61, 0xc0, 0xb7, 0x05, 0xf6,
-	0xae, 0x84, 0xd4, 0x69, 0x7d, 0xd0, 0x40, 0x5e, 0xc7, 0x65, 0x7d, 0x4f, 0xb7, 0x6c, 0x7d, 0xc7,
-	0xb2, 0xad, 0xa0, 0xa3, 0xdd, 0xe7, 0x0c, 0xe8, 0xac, 0x20, 0x50, 0x67, 0xb2, 0xc0, 0x8f, 0x39,
-	0x03, 0x72, 0x09, 0x63, 0xcb, 0xd1, 0xdb, 0xa0, 0x31, 0xdd, 0x01, 0x3a, 0x97, 0x51, 0xa2, 0x20,
-	0xed, 0x37, 0x74, 0x07, 0x48, 0x05, 0x63, 0x0f, 0x7c, 0xf0, 0xf6, 0xf4, 0x1d, 0x1b, 0xe8, 0x69,
-	0x91, 0x76, 0x6a, 0xc6, 0x22, 0x54, 0x8f, 0x46, 0x60, 0x6a, 0x3b, 0x1d, 0x3a, 0x9f, 0xd5, 0x33,
-	0x01, 0x1a, 0x1d, 0xa2, 0x60, 0xe2, 0xdf, 0xd1, 0x3d, 0x30, 0x07, 0xf4, 0x38, 0x23, 0xf4, 0x50,
-	0x67, 0x22, 0x24, 0xa3, 0xc3, 0x1a, 0x26, 0x91, 0xf2, 0x5a, 0xf6, 0x44, 0xcf, 0x66, 0xb8, 0x67,
-	0x22, 0xfc, 0x46, 0xff, 0x5c, 0xdf, 0xc6, 0xe7, 0xfc, 0x5d, 0xcb, 0xd5, 0x44, 0xa2, 0x1a, 0x36,
-	0xe8, 0x2c, 0x74, 0x35, 0xce, 0xb4, 0x96, 0x6e, 0xd9, 0xa1, 0x07, 0x74, 0x41, 0x46, 0x7e, 0x46,
-	0xb8, 0x6c, 0x7a, 0xce, 0x66, 0xe4, 0x70, 0x93, 0x5d, 0x8b, 0x60, 0x72, 0x01, 0x4f, 0x72, 0x37,
-	0xd0, 0x3c, 0xf0, 0xe9, 0xb9, 0xcc, 0x32, 0x39, 0xee, 0x06, 0x2a, 0xf8, 0xa4, 0x8e, 0x0b, 0xe9,
-	0xb3, 0x40, 0xcf, 0x8f, 0x14, 0x8a, 0xa6, 0x78, 0x37, 0xd4, 0xc4, 0xa1, 0x91, 0x17, 0x73, 0xe5,
-	0x6d, 0xef, 0xcf, 0x22, 0x3f, 0xc2, 0xd8, 0xf0, 0x40, 0xa6, 0xb3, 0x1e, 0xd0, 0x0b, 0x92, 0xe3,
-	0xd2, 0x8a, 0x69, 0xf9, 0x81, 0x67, 0xed, 0x84, 0xc2, 0xec, 0xe8, 0x81, 0x71, 0x47, 0x03, 0xd6,
-	0xb6, 0x18, 0xac, 0xdc, 0xb2, 0x1c, 0xf0, 0x03, 0xdd, 0x71, 0x1b, 0xa7, 0xe3, 0x9c, 0x2f, 0x04,
-	0x89, 0x29, 0xa2, 0x8e, 0xd9, 0xea, 0x81, 0xa0, 0x0e, 0x5d, 0x33, 0xa1, 0xae, 0x7c, 0x7d, 0xea,
-	0x98, 0xad, 0x1e, 0x10, 0x1b, 0xcf, 0xc5, 0x87, 0x2d, 0x1e, 0x03, 0x0d, 0x98, 0x19, 0x2d, 0xb2,
-	0xf8, 0xb5, 0x17, 0x21, 0x19, 0xde, 0xab, 0x82, 0xb6, 0x1e, 0x90, 0x8b, 0xb8, 0xe4, 0x84, 0x76,
-	0x60, 0x69, 0x01, 0x30, 0x9d, 0x05, 0xb4, 0x2a, 0x0f, 0xad, 0x28, 0x6d, 0xb7, 0xa4, 0x89, 0xbc,
-	0x8a, 0xf3, 0x0c, 0x82, 0x7b, 0xdc, 0xdb, 0xf5, 0xe9, 0x45, 0x59, 0xb3, 0x8a, 0x07, 0x3d, 0x3a,
-	0x79, 0x23, 0xb2, 0xa9, 0x29, 0x48, 0x5e, 0xc7, 0xa7, 0x4c, 0xb0, 0x21, 0x00, 0xcd, 0xf5, 0xc0,
-	0xd5, 0x3d, 0xa0, 0xb5, 0x4c, 0xcd, 0x9c, 0x8a, 0xb0, 0x77, 0x23, 0x88, 0x5c, 0xc4, 0x05, 0x93,
-	0xf9, 0x9a, 0xad, 0xef, 0x80, 0x4d, 0x2f, 0x65, 0x12, 0x20, 0x6f, 0x32, 0xff, 0x1d, 0x61, 0x15,
-	0x95, 0xb7, 0x75, 0xd7, 0x64, 0xf4, 0x95, 0x0c, 0x2a, 0x2d, 0xa2, 0x56, 0x00, 0x13, 0x97, 0x41,
-	0xb3, 0xdc, 0xbd, 0x75, 0xba, 0x14, 0xdd, 0x91, 0xc8, 0xd4, 0x74, 0xf7, 0xd6, 0x37, 0x7e, 0x31,
-	0x21, 0xde, 0xa5, 0xcf, 0x9f, 0x51, 0xf4, 0xd3, 0x2e, 0x45, 0xef, 0x77, 0x29, 0xfa, 0x6d, 0x97,
-	0xa2, 0x8f, 0x44, 0x92, 0x74, 0x29, 0x7a, 0x2c, 0xe4, 0x39, 0xa4, 0x7f, 0x41, 0x49, 0xd1, 0x57,
-	0xc4, 0x35, 0x57, 0xb6, 0x86, 0x12, 0x5c, 0xc9, 0x7c, 0x5e, 0x1d, 0x29, 0x1d, 0x4a, 0xbd, 0x5f,
-	0x09, 0x15, 0x35, 0xbd, 0x77, 0x8a, 0xac, 0xf9, 0xca, 0x55, 0x59, 0xc6, 0x95, 0x34, 0x43, 0x95,
-	0xfa, 0x50, 0x2d, 0x50, 0x36, 0x93, 0x64, 0x52, 0xde, 0x4b, 0xce, 0x5e, 0xb9, 0x29, 0x73, 0x3f,
-	0x66, 0xcb, 0x9e, 0x93, 0x72, 0x25, 0x2b, 0x9e, 0x72, 0x25, 0x96, 0x48, 0xb9, 0x76, 0xd7, 0x64,
-	0xbf, 0x3b, 0xa4, 0x7f, 0x45, 0xf1, 0xfb, 0x7e, 0xf9, 0x3a, 0x74, 0x32, 0xaf, 0xff, 0x8a, 0x28,
-	0x28, 0x4a, 0xf2, 0x5e, 0xc7, 0x60, 0xfa, 0x78, 0x0f, 0xa2, 0xdc, 0x6b, 0x8f, 0x38, 0xdc, 0xcc,
-	0xb4, 0x25, 0x4a, 0x0b, 0x4c, 0xf0, 0x44, 0xa0, 0x47, 0x79, 0x5e, 0x4b, 0xc0, 0x81, 0x29, 0xfd,
-	0x36, 0x67, 0x38, 0xb0, 0x41, 0x66, 0xa9, 0xf1, 0xe5, 0x48, 0x6a, 0x19, 0xd5, 0x1f, 0x0e, 0xe9,
-	0xd2, 0x73, 0x2d, 0xf1, 0xc9, 0x21, 0x9d, 0x1e, 0x72, 0x7c, 0xd8, 0xa3, 0x39, 0x23, 0xf4, 0x03,
-	0xee, 0x3c, 0xf8, 0x82, 0xa2, 0xda, 0x7b, 0x78, 0xa1, 0x69, 0xda, 0xa0, 0xa6, 0x05, 0x34, 0xd3,
-	0x63, 0xf8, 0xe4, 0x9b, 0xb8, 0x60, 0x99, 0x36, 0x68, 0xe2, 0xa6, 0xc8, 0x46, 0x6a, 0xbc, 0x51,
-	0xfa, 0xcf, 0xa7, 0x8b, 0xf9, 0x2b, 0xa1, 0x27, 0xf9, 0xd5, 0xbc, 0x80, 0xc5, 0xd5, 0xda, 0x28,
-	0x7d, 0x79, 0x48, 0xd1, 0xc3, 0x1e, 0x9d, 0x60, 0x9c, 0x41, 0xed, 0x97, 0xe3, 0x78, 0x3a, 0xc3,
-	0xd4, 0x64, 0x2d, 0xfe, 0x32, 0xdb, 0x9d, 0x6f, 0xe0, 0x02, 0xe3, 0x81, 0xd5, 0xea, 0x68, 0x96,
-	0x29, 0x3b, 0x9e, 0xf1, 0x46, 0xa1, 0xff, 0x0a, 0xe7, 0x23, 0xac, 0x69, 0x92, 0x6f, 0x3d, 0x5f,
-	0x0f, 0x92, 0x74, 0x1f, 0xf3, 0x83, 0xdd, 0x47, 0xda, 0x6e, 0x7c, 0x07, 0xe7, 0x84, 0x43, 0xe8,
-	0xcb, 0x46, 0x63, 0xb0, 0x99, 0xdc, 0x96, 0x80, 0xd8, 0x60, 0xa6, 0xcc, 0xc6, 0xee, 0x83, 0x65,
-	0x7a, 0xf2, 0x45, 0xca, 0xf4, 0xc6, 0xe6, 0xf0, 0x55, 0x7d, 0xd0, 0xa5, 0xe8, 0xe3, 0x2e, 0x2d,
-	0x65, 0x37, 0xf0, 0x59, 0xb7, 0xaf, 0xfd, 0xe7, 0x3d, 0x8a, 0x1e, 0x7e, 0x41, 0xb3, 0x9d, 0xe6,
-	0xda, 0xdf, 0x27, 0x07, 0xba, 0xe4, 0xba, 0x6b, 0x91, 0x0f, 0x11, 0x2e, 0x47, 0x97, 0x6c, 0xa0,
-	0x25, 0x3d, 0x5a, 0xfe, 0x85, 0x72, 0xc6, 0xae, 0xca, 0x1f, 0x9c, 0x5a, 0xfb, 0xa0, 0x4b, 0x2f,
-	0x27, 0xc1, 0x67, 0xb3, 0x46, 0xa9, 0x1b, 0x22, 0x37, 0xb6, 0x74, 0xa6, 0xb7, 0x41, 0x39, 0x26,
-	0xb3, 0x3f, 0x38, 0xa4, 0x68, 0xff, 0x90, 0xa2, 0x9f, 0xfd, 0xed, 0x9f, 0xbf, 0x39, 0x41, 0x6b,
-	0xb3, 0xab, 0xd1, 0x0b, 0xb2, 0x9a, 0xf9, 0x39, 0xdb, 0x40, 0xaf, 0xbd, 0x81, 0xc8, 0x9f, 0x10,
-	0x2e, 0x47, 0x57, 0xfc, 0x05, 0x63, 0x35, 0x5e, 0x4a, 0xac, 0x69, 0x9c, 0x51, 0xad, 0x1e, 0x8d,
-	0xf3, 0xf7, 0x27, 0x70, 0x39, 0x2a, 0x57, 0x2f, 0x18, 0xe7, 0x63, 0xf4, 0x52, 0x02, 0xfd, 0xe4,
-	0x90, 0xde, 0x4d, 0x8a, 0x74, 0xda, 0x21, 0x8e, 0xd6, 0xd8, 0xfe, 0xa5, 0x57, 0xb6, 0x87, 0x3a,
-	0x1e, 0x25, 0xe9, 0x83, 0x95, 0x2b, 0x69, 0x0f, 0xaa, 0x34, 0x93, 0x26, 0x4c, 0x89, 0x5f, 0x37,
-	0x5f, 0xd9, 0xea, 0xbf, 0x84, 0xa9, 0x3a, 0xd1, 0x63, 0x3d, 0xaa, 0xce, 0x1f, 0x11, 0x9e, 0xde,
-	0xbe, 0xc3, 0xef, 0x3d, 0x8f, 0x36, 0x5f, 0x61, 0xaf, 0x69, 0x07, 0x5d, 0xfa, 0xbd, 0x63, 0xf4,
-	0xb9, 0x6d, 0xc1, 0xbd, 0xe3, 0xd4, 0x49, 0xd3, 0x6d, 0xbe, 0x56, 0x5e, 0xf5, 0xef, 0xf0, 0x7b,
-	0xa3, 0x61, 0xfe, 0x19, 0xe1, 0x6a, 0x94, 0x6c, 0xc7, 0x14, 0xc6, 0xa5, 0xec, 0x2d, 0xfe, 0x4a,
-	0xb7, 0xa3, 0x8e, 0x78, 0xfb, 0xa0, 0x4b, 0x6b, 0xff, 0xfb, 0x84, 0x65, 0x90, 0xaf, 0xd6, 0x6a,
-	0x49, 0xae, 0x89, 0x3a, 0xdb, 0xef, 0x72, 0x33, 0x41, 0xfb, 0x1b, 0xe8, 0xb5, 0xb5, 0x9f, 0x23,
-	0x4c, 0x86, 0xca, 0xad, 0xb8, 0xe3, 0x77, 0xf1, 0xec, 0x90, 0xe0, 0xb2, 0x10, 0x2f, 0x1c, 0x2d,
-	0xae, 0xc0, 0x16, 0x8e, 0xc1, 0x6a, 0x55, 0x19, 0xd4, 0x42, 0xed, 0xf4, 0x88, 0x72, 0x16, 0x6b,
-	0x71, 0xa9, 0x5e, 0xe3, 0xfc, 0xa3, 0x7f, 0x54, 0xc6, 0x1e, 0x3d, 0xa9, 0xa0, 0xfd, 0x27, 0x15,
-	0xf4, 0xd9, 0x93, 0x0a, 0x7a, 0xff, 0x69, 0x65, 0x6c, 0xff, 0x69, 0x65, 0xec, 0xf1, 0xd3, 0xca,
-	0xd8, 0x4e, 0x4e, 0x12, 0xbf, 0xf5, 0xdf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x16, 0xb4, 0xa4, 0xbf,
-	0x80, 0x11, 0x00, 0x00,
+	0xf5, 0xd7, 0x58, 0x32, 0x45, 0x0e, 0x29, 0x4b, 0x1c, 0xc9, 0xf2, 0x58, 0xb6, 0x29, 0x9a, 0xb6,
+	0x12, 0xfd, 0x93, 0xfd, 0x4b, 0x89, 0x82, 0xaa, 0xa8, 0x1a, 0xb7, 0x25, 0x65, 0x1b, 0x20, 0x1c,
+	0xd9, 0xc1, 0xca, 0x31, 0xd0, 0x5e, 0x16, 0xab, 0xdd, 0x47, 0x7a, 0xa3, 0xdd, 0x99, 0xf5, 0x7e,
+	0xc8, 0xa5, 0x4f, 0x45, 0x2f, 0xed, 0xa1, 0x87, 0xa0, 0xbd, 0x14, 0xed, 0xc5, 0x28, 0x5a, 0x20,
+	0xb9, 0xa5, 0xbe, 0x14, 0xc8, 0xbd, 0x80, 0x6f, 0x35, 0xd0, 0x8b, 0x11, 0xa0, 0x41, 0x6a, 0xb7,
+	0x40, 0xa1, 0x53, 0x00, 0x53, 0x4c, 0xd0, 0x53, 0x31, 0xb3, 0x1f, 0x5c, 0x92, 0x8a, 0x6a, 0x38,
+	0xee, 0x6d, 0xe7, 0xfd, 0xde, 0xfc, 0xe6, 0xcd, 0x9b, 0xf7, 0xb5, 0xb8, 0x6c, 0xd8, 0xa1, 0x1f,
+	0x80, 0x67, 0x31, 0x3f, 0x58, 0x71, 0x3d, 0x1e, 0x70, 0x52, 0x00, 0xb3, 0x0d, 0xf2, 0x73, 0xe1,
+	0x6c, 0x9b, 0xf3, 0xb6, 0x0d, 0xab, 0xba, 0x6b, 0xad, 0xea, 0x8c, 0xf1, 0x40, 0x0f, 0x2c, 0xce,
+	0xfc, 0x48, 0x71, 0xe1, 0x5c, 0xc0, 0xb9, 0xed, 0xaf, 0xca, 0x45, 0x1b, 0x58, 0xfa, 0x11, 0xc3,
+	0x25, 0x0f, 0xfc, 0xd0, 0x0e, 0x92, 0x55, 0xcb, 0xd6, 0xf7, 0xb8, 0x17, 0xaf, 0xa6, 0xe2, 0x63,
+	0xe3, 0x65, 0xd9, 0xb0, 0x79, 0x68, 0xda, 0x10, 0xec, 0x42, 0x27, 0xd1, 0x37, 0xb8, 0xe3, 0xf0,
+	0x84, 0x6b, 0xce, 0x62, 0x2d, 0x4f, 0xf7, 0xc0, 0xe7, 0xa1, 0x67, 0x40, 0x62, 0xc0, 0x5c, 0x9b,
+	0xb7, 0xb9, 0xfc, 0x5c, 0x15, 0x5f, 0x09, 0xb7, 0xe9, 0xc0, 0xaa, 0xcd, 0x8d, 0x68, 0x59, 0xfb,
+	0x27, 0xc2, 0x33, 0x9b, 0xd1, 0x69, 0x4d, 0xe6, 0x07, 0xd7, 0xa0, 0x73, 0xeb, 0x4d, 0xf2, 0x3d,
+	0x5c, 0x8c, 0x2d, 0xd0, 0x76, 0xa1, 0x43, 0x51, 0x15, 0x2d, 0x17, 0xd7, 0x4e, 0xad, 0xa4, 0x37,
+	0x5f, 0x89, 0x77, 0x48, 0xed, 0xc6, 0xc4, 0xc3, 0xcf, 0x16, 0xc7, 0x54, 0x6c, 0xa4, 0x32, 0x72,
+	0x0d, 0x97, 0x12, 0x93, 0x25, 0xc1, 0x31, 0x49, 0x30, 0x3f, 0x40, 0x10, 0xc1, 0xd7, 0xa0, 0xd3,
+	0x98, 0xd9, 0xef, 0xd1, 0x7c, 0x22, 0x90, 0x5c, 0x45, 0xa3, 0x0f, 0x93, 0x75, 0x5c, 0xe2, 0x5e,
+	0x5b, 0x67, 0xd6, 0x3d, 0xe9, 0x5e, 0x3a, 0x5e, 0x45, 0xcb, 0x85, 0x06, 0xf9, 0xa4, 0x47, 0x93,
+	0x23, 0xb9, 0xd7, 0x7e, 0xd4, 0xa3, 0x48, 0x1d, 0xd0, 0xdb, 0x28, 0xfd, 0xeb, 0x19, 0x45, 0x5f,
+	0x3d, 0xa3, 0xe8, 0xe3, 0xfb, 0x8b, 0xa8, 0xf6, 0x11, 0xc2, 0x27, 0x06, 0xef, 0x49, 0xde, 0x3e,
+	0xec, 0x96, 0x27, 0x0f, 0xbd, 0xe5, 0xff, 0xf8, 0x8e, 0x43, 0xb6, 0xfe, 0xa9, 0x8c, 0x8b, 0x19,
+	0x5b, 0xc9, 0x3c, 0xce, 0xb5, 0x2c, 0xb0, 0x4d, 0x9f, 0xa2, 0xea, 0xf8, 0x72, 0x41, 0x8d, 0x57,
+	0xe4, 0x4d, 0x3c, 0xde, 0x3f, 0xf9, 0xf4, 0xa8, 0xe1, 0xf1, 0x45, 0x63, 0xe3, 0x85, 0x2e, 0xf9,
+	0x01, 0xce, 0x45, 0x91, 0x26, 0xdd, 0x58, 0x5c, 0x9b, 0xcb, 0xec, 0xba, 0x2a, 0x01, 0xb1, 0x81,
+	0x7c, 0xd8, 0xa5, 0x68, 0xbf, 0x47, 0x73, 0x91, 0x48, 0x6e, 0x8f, 0xf7, 0x91, 0x6f, 0xe1, 0xbc,
+	0x6d, 0xed, 0x01, 0x03, 0xdf, 0xa7, 0x85, 0x2a, 0x5a, 0x3e, 0xb1, 0x36, 0x9b, 0xe1, 0x78, 0x27,
+	0x86, 0x1a, 0x13, 0x82, 0x42, 0x4d, 0x55, 0x09, 0xc5, 0x13, 0x7a, 0x18, 0x70, 0x8a, 0xab, 0x68,
+	0x39, 0x1f, 0xa3, 0x52, 0x42, 0xde, 0xc2, 0xc7, 0xfd, 0x40, 0x0f, 0x80, 0x4e, 0x48, 0xb6, 0x6c,
+	0x98, 0xdd, 0xf4, 0x74, 0x63, 0x17, 0xcc, 0x6d, 0x01, 0xc7, 0x7b, 0x22, 0x5d, 0xb2, 0x84, 0x73,
+	0xe0, 0x79, 0xdc, 0xf3, 0xe9, 0x71, 0xe1, 0x92, 0xc6, 0x94, 0x00, 0x7f, 0xf9, 0xe0, 0xf4, 0x71,
+	0xc6, 0x0d, 0xc7, 0x55, 0x63, 0x90, 0x7c, 0x07, 0x97, 0x0c, 0xcf, 0xd1, 0xf8, 0x1e, 0x78, 0x9e,
+	0x65, 0x02, 0xcd, 0xc9, 0x23, 0x06, 0x1e, 0x49, 0xdd, 0xba, 0x11, 0xa3, 0x6a, 0xd1, 0xf0, 0x9c,
+	0x64, 0x41, 0xd6, 0x71, 0xc1, 0x72, 0x35, 0xdd, 0x30, 0xc4, 0x45, 0x27, 0x47, 0x2e, 0xda, 0x74,
+	0xeb, 0x12, 0x4a, 0x2e, 0x6a, 0xc5, 0x6b, 0xf2, 0x06, 0x2e, 0xe9, 0xb6, 0xcd, 0x0d, 0x3d, 0x00,
+	0x53, 0xb3, 0x5c, 0x9a, 0x97, 0xe1, 0x3a, 0x64, 0x5f, 0x31, 0x55, 0x69, 0xba, 0x64, 0x09, 0x17,
+	0x19, 0x37, 0x41, 0x8b, 0x1f, 0xa6, 0x28, 0x37, 0x44, 0xb4, 0x58, 0x00, 0xd1, 0x23, 0x90, 0x8b,
+	0x18, 0x9b, 0xe0, 0xda, 0xbc, 0xe3, 0x00, 0x0b, 0xe8, 0x74, 0x56, 0xab, 0x2f, 0x27, 0x8b, 0xb8,
+	0xc8, 0x42, 0x47, 0x73, 0x74, 0x11, 0x00, 0x3e, 0x9d, 0xaa, 0xa2, 0xe5, 0x29, 0x15, 0xb3, 0xd0,
+	0xd9, 0x8a, 0x24, 0xe4, 0x0c, 0x2e, 0x08, 0x05, 0x41, 0xec, 0xd3, 0x13, 0x12, 0xce, 0xb3, 0xd0,
+	0xb9, 0x2e, 0xd6, 0x64, 0x1d, 0xcf, 0xc1, 0x8f, 0x03, 0xf0, 0x98, 0x6e, 0x6b, 0x7b, 0xdc, 0x0e,
+	0x1d, 0xd0, 0x7c, 0xeb, 0x1e, 0xd0, 0x72, 0x15, 0x2d, 0x4f, 0xc4, 0xa7, 0x91, 0x44, 0xe3, 0x96,
+	0x54, 0xd8, 0xb6, 0xee, 0x01, 0xf9, 0x3e, 0x2e, 0x8b, 0xb7, 0xd4, 0x7c, 0x43, 0xb7, 0x41, 0x73,
+	0xb9, 0x6d, 0x19, 0x1d, 0x4a, 0xa4, 0x89, 0xb3, 0xfb, 0x3d, 0x3a, 0x5d, 0x0f, 0x03, 0xbe, 0x2d,
+	0xb0, 0x77, 0x25, 0xa4, 0x4e, 0xeb, 0x83, 0x02, 0xf2, 0x3a, 0x2e, 0xeb, 0x7b, 0xba, 0x65, 0xeb,
+	0x3b, 0x96, 0x6d, 0x05, 0x1d, 0xed, 0x1e, 0x67, 0x40, 0x67, 0x05, 0x81, 0x3a, 0x93, 0x05, 0x7e,
+	0xc4, 0x19, 0x90, 0x0b, 0x18, 0x5b, 0x8e, 0xde, 0x06, 0x8d, 0xe9, 0x0e, 0xd0, 0xb9, 0x8c, 0x27,
+	0x0a, 0x52, 0x7e, 0x5d, 0x77, 0x80, 0x54, 0x30, 0xf6, 0xc0, 0x07, 0x6f, 0x4f, 0xdf, 0xb1, 0x81,
+	0x9e, 0x14, 0x61, 0xa7, 0x66, 0x24, 0xc2, 0xeb, 0xd1, 0x0a, 0x4c, 0x6d, 0xa7, 0x43, 0xe7, 0xb3,
+	0xfe, 0x4c, 0x80, 0x46, 0x87, 0x28, 0x98, 0xf8, 0xb7, 0x75, 0x0f, 0xcc, 0x01, 0x7f, 0x9c, 0x12,
+	0xfe, 0x50, 0x67, 0x22, 0x24, 0xe3, 0x87, 0x35, 0x4c, 0x22, 0xcf, 0x6b, 0xd9, 0x17, 0x3d, 0x9d,
+	0xe1, 0x9e, 0x89, 0xf0, 0xeb, 0xfd, 0x77, 0x7d, 0x1b, 0x9f, 0xf1, 0x77, 0x2d, 0x57, 0x13, 0x81,
+	0x6a, 0xd8, 0xa0, 0xb3, 0xd0, 0xd5, 0x38, 0xd3, 0x5a, 0xba, 0x65, 0x87, 0x1e, 0xd0, 0x05, 0x69,
+	0xf9, 0x29, 0xa1, 0xb2, 0xe9, 0x39, 0x9b, 0x91, 0xc2, 0x0d, 0x76, 0x35, 0x82, 0xc9, 0x39, 0x3c,
+	0xc9, 0xdd, 0x40, 0xf3, 0xc0, 0xa7, 0x67, 0x32, 0xc7, 0xe4, 0xb8, 0x1b, 0xa8, 0xe0, 0x93, 0x3a,
+	0x2e, 0xa4, 0x6d, 0x81, 0x9e, 0x1d, 0x29, 0x14, 0x4d, 0xd1, 0x37, 0xd4, 0x44, 0xa1, 0x91, 0x17,
+	0x7b, 0x65, 0xb6, 0xf7, 0x77, 0x91, 0x1f, 0x62, 0x6c, 0x78, 0x20, 0xc3, 0x59, 0x0f, 0xe8, 0x39,
+	0xc9, 0x71, 0x61, 0xc5, 0xb4, 0xfc, 0xc0, 0xb3, 0x76, 0x42, 0x21, 0x76, 0xf4, 0xc0, 0xb8, 0xad,
+	0x01, 0x6b, 0x5b, 0x0c, 0x56, 0x6e, 0x5a, 0x0e, 0xf8, 0x81, 0xee, 0xb8, 0x8d, 0x93, 0x71, 0xcc,
+	0x17, 0x82, 0x44, 0x14, 0x51, 0xc7, 0x6c, 0xf5, 0x40, 0x50, 0x87, 0xae, 0x99, 0x50, 0x57, 0xbe,
+	0x39, 0x75, 0xcc, 0x56, 0x0f, 0x88, 0x8d, 0xe7, 0xe2, 0xc7, 0x16, 0xcd, 0x40, 0x03, 0x66, 0x46,
+	0x87, 0x2c, 0x7e, 0xe3, 0x43, 0x48, 0x86, 0xf7, 0x8a, 0xa0, 0xad, 0x07, 0xe4, 0x3c, 0x2e, 0x39,
+	0xa1, 0x1d, 0x58, 0x5a, 0x00, 0x4c, 0x67, 0x01, 0xad, 0xca, 0x47, 0x2b, 0x4a, 0xd9, 0x4d, 0x29,
+	0x22, 0xaf, 0xe2, 0x3c, 0x83, 0xe0, 0x2e, 0xf7, 0x76, 0x7d, 0x7a, 0x5e, 0xd6, 0xac, 0xe2, 0x7e,
+	0x8f, 0x4e, 0x5e, 0x8f, 0x64, 0x6a, 0x0a, 0x92, 0xd7, 0xf1, 0x09, 0x13, 0x6c, 0x08, 0x40, 0x73,
+	0x3d, 0x70, 0x75, 0x0f, 0x68, 0x2d, 0x53, 0x33, 0xa7, 0x22, 0xec, 0xdd, 0x08, 0x22, 0xe7, 0x71,
+	0xc1, 0x64, 0xbe, 0x66, 0xeb, 0x3b, 0x60, 0xd3, 0x0b, 0x99, 0x00, 0xc8, 0x9b, 0xcc, 0x7f, 0x47,
+	0x48, 0x45, 0xe5, 0x6d, 0xdd, 0x31, 0x19, 0xbd, 0x98, 0x41, 0xa5, 0x44, 0xd4, 0x0a, 0x60, 0x22,
+	0x19, 0x34, 0xcb, 0xdd, 0x5b, 0xa7, 0x4b, 0x51, 0x8e, 0x44, 0xa2, 0xa6, 0xbb, 0xb7, 0x4e, 0x2e,
+	0xe2, 0x1c, 0xdf, 0x79, 0x5f, 0xb3, 0x4c, 0xfa, 0xca, 0x61, 0x55, 0xec, 0x38, 0xdf, 0x79, 0xbf,
+	0x69, 0x6e, 0xfc, 0x7c, 0x42, 0x74, 0xaf, 0x2f, 0x9e, 0x51, 0xf4, 0x93, 0x2e, 0x45, 0x1f, 0x74,
+	0x29, 0xfa, 0x75, 0x97, 0xa2, 0x8f, 0x45, 0x28, 0x75, 0x29, 0x7a, 0x2c, 0xb6, 0x1c, 0xd0, 0x3f,
+	0xa3, 0xa4, 0x35, 0x28, 0xa2, 0x18, 0x28, 0x5b, 0x43, 0x69, 0xa0, 0x64, 0x3e, 0xaf, 0x8c, 0x14,
+	0x18, 0xa5, 0xde, 0xaf, 0x97, 0x8a, 0x9a, 0x66, 0xa7, 0x22, 0x3b, 0x83, 0x72, 0x45, 0x16, 0x7b,
+	0x25, 0x8d, 0x63, 0xa5, 0x3e, 0x54, 0x31, 0x94, 0xcd, 0x24, 0xe4, 0x94, 0xf7, 0x92, 0x08, 0x51,
+	0x6e, 0xc8, 0x0c, 0x89, 0xd9, 0xb2, 0xaf, 0xa9, 0x5c, 0xce, 0xba, 0x58, 0xb9, 0x1c, 0x3b, 0x52,
+	0xb9, 0x7a, 0xc7, 0x64, 0xbf, 0x39, 0xa0, 0x7f, 0x41, 0xf1, 0x14, 0x70, 0xe9, 0x1a, 0x74, 0x32,
+	0x33, 0xc2, 0x8a, 0x28, 0x3b, 0x4a, 0xd2, 0xd5, 0x63, 0x30, 0x6d, 0xf1, 0x83, 0x28, 0xf7, 0xda,
+	0x23, 0x0a, 0x37, 0x32, 0xc3, 0x8b, 0xd2, 0x02, 0x13, 0x3c, 0x61, 0xe8, 0x61, 0x9a, 0x57, 0x13,
+	0x70, 0x60, 0x4b, 0x7f, 0x18, 0x1a, 0x36, 0x6c, 0x90, 0x59, 0xfa, 0xf8, 0x52, 0xe4, 0x6a, 0x69,
+	0xd5, 0xef, 0x0e, 0xe8, 0xd2, 0x73, 0x1d, 0xf1, 0xe9, 0x01, 0x9d, 0x1e, 0x52, 0x7c, 0xd0, 0xa3,
+	0x39, 0x23, 0xf4, 0x03, 0xee, 0xdc, 0xff, 0x92, 0xa2, 0xda, 0x7b, 0x78, 0xa1, 0x69, 0xda, 0xa0,
+	0xa6, 0x65, 0x36, 0x33, 0x89, 0xf8, 0xe4, 0xff, 0x70, 0xc1, 0x32, 0x6d, 0xd0, 0x44, 0x3e, 0xc9,
+	0x71, 0x6b, 0xbc, 0x51, 0xfa, 0xf7, 0x67, 0x8b, 0xf9, 0xcb, 0xa1, 0x27, 0xf9, 0xd5, 0xbc, 0x80,
+	0x45, 0x02, 0x6e, 0x94, 0xbe, 0x3a, 0xa0, 0xe8, 0x41, 0x8f, 0x4e, 0x30, 0xce, 0xa0, 0xf6, 0x8b,
+	0x71, 0x3c, 0x9d, 0x61, 0x6a, 0xb2, 0x16, 0x7f, 0x99, 0x43, 0xd1, 0x2b, 0xb8, 0xc0, 0x78, 0x60,
+	0xb5, 0x3a, 0x22, 0xd2, 0xc7, 0xa5, 0x5d, 0x85, 0x7e, 0x94, 0xe7, 0x23, 0xac, 0x69, 0x92, 0xff,
+	0x7f, 0xbe, 0x49, 0x25, 0x99, 0x51, 0xe6, 0x07, 0x67, 0x94, 0x74, 0x28, 0xf9, 0x36, 0xce, 0x09,
+	0x85, 0xd0, 0x97, 0xe3, 0xc8, 0xe0, 0xc8, 0xb9, 0x2d, 0x01, 0x71, 0xc1, 0x4c, 0x31, 0x8e, 0xd5,
+	0x07, 0x8b, 0xf9, 0xe4, 0x8b, 0x14, 0xf3, 0x8d, 0xcd, 0xe1, 0x54, 0xbd, 0xdf, 0xa5, 0xe8, 0x93,
+	0x2e, 0x2d, 0x65, 0x2f, 0xf0, 0x79, 0xb7, 0xef, 0xfb, 0x2f, 0x7a, 0x14, 0x3d, 0xf8, 0x92, 0x66,
+	0xe7, 0xd1, 0xb5, 0xbf, 0x4d, 0x0e, 0xcc, 0xd2, 0x75, 0xd7, 0x22, 0x1f, 0x21, 0x5c, 0x8e, 0x92,
+	0x6c, 0x60, 0x70, 0x3d, 0xdc, 0xfd, 0x0b, 0xe5, 0x8c, 0x5c, 0x95, 0xbf, 0x41, 0xb5, 0xf6, 0x7e,
+	0x97, 0x5e, 0x4a, 0x8c, 0xcf, 0x46, 0x8d, 0x52, 0x37, 0x44, 0x6c, 0x6c, 0xe9, 0x4c, 0x6f, 0x83,
+	0x72, 0x44, 0x64, 0x7f, 0x78, 0x40, 0xd1, 0xa3, 0x03, 0x8a, 0x7e, 0xfa, 0xd7, 0x7f, 0xfc, 0xea,
+	0x18, 0xad, 0xcd, 0xae, 0x46, 0x7d, 0x66, 0x35, 0xf3, 0x0b, 0xb7, 0x81, 0x5e, 0x7b, 0x03, 0x91,
+	0x3f, 0x20, 0x5c, 0x8e, 0x52, 0xfc, 0x05, 0x6d, 0x35, 0x5e, 0x8a, 0xad, 0xa9, 0x9d, 0x51, 0x45,
+	0x1f, 0xb5, 0xf3, 0xb7, 0xc7, 0x70, 0x39, 0x2a, 0x57, 0x2f, 0x68, 0xe7, 0x63, 0xf4, 0x52, 0x0c,
+	0xfd, 0xf4, 0x80, 0xde, 0x49, 0x8a, 0x74, 0x3a, 0x47, 0x8e, 0xd6, 0xd8, 0x7e, 0xd2, 0x2b, 0xdb,
+	0x43, 0x73, 0x91, 0x92, 0x4c, 0xcb, 0xca, 0xe5, 0x74, 0x52, 0x55, 0x9a, 0xc9, 0xa8, 0xa6, 0xc4,
+	0x3d, 0xd0, 0x57, 0xb6, 0xfa, 0xfd, 0x32, 0xf5, 0x4e, 0xd4, 0xd2, 0x47, 0xbd, 0xf3, 0x7b, 0x84,
+	0xa7, 0xb7, 0x6f, 0xf3, 0xbb, 0xcf, 0xe3, 0x9b, 0xaf, 0x91, 0xd7, 0xb4, 0xfd, 0x2e, 0xfd, 0xee,
+	0x11, 0xfe, 0xb9, 0x65, 0xc1, 0xdd, 0xa3, 0xbc, 0x93, 0x86, 0xdb, 0x7c, 0xad, 0xbc, 0xea, 0xdf,
+	0xe6, 0x77, 0x47, 0xcd, 0xfc, 0x23, 0xc2, 0xd5, 0x28, 0xd8, 0x8e, 0x28, 0x8c, 0x4b, 0xd9, 0x2c,
+	0xfe, 0x5a, 0xb5, 0xc3, 0x9e, 0x78, 0x7b, 0xbf, 0x4b, 0x6b, 0xff, 0xfd, 0x85, 0xa5, 0x91, 0xaf,
+	0xd6, 0x6a, 0x49, 0xac, 0x89, 0x3a, 0xdb, 0x9f, 0x85, 0x33, 0x46, 0xfb, 0x1b, 0xe8, 0xb5, 0xb5,
+	0x9f, 0x21, 0x4c, 0x86, 0xca, 0xad, 0xc8, 0xf1, 0x3b, 0x78, 0x76, 0xc8, 0xe1, 0xb2, 0x10, 0x2f,
+	0x1c, 0xee, 0x5c, 0x81, 0x2d, 0x1c, 0x81, 0xd5, 0xaa, 0xd2, 0xa8, 0x85, 0xda, 0xc9, 0x11, 0xcf,
+	0x59, 0xac, 0xc5, 0xa5, 0xf7, 0x1a, 0x67, 0x1f, 0xfe, 0xbd, 0x32, 0xf6, 0xf0, 0x49, 0x05, 0x3d,
+	0x7a, 0x52, 0x41, 0x9f, 0x3f, 0xa9, 0xa0, 0x0f, 0x9e, 0x56, 0xc6, 0x1e, 0x3d, 0xad, 0x8c, 0x3d,
+	0x7e, 0x5a, 0x19, 0xdb, 0xc9, 0x49, 0xe2, 0xb7, 0xfe, 0x13, 0x00, 0x00, 0xff, 0xff, 0x9e, 0x36,
+	0x4a, 0x56, 0xa6, 0x11, 0x00, 0x00,
 }
 
 func (this *ClusterInstKeyV1) GoString() string {
@@ -1047,6 +1051,15 @@ func (m *ClusterInst) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.ObjId) > 0 {
+		i -= len(m.ObjId)
+		copy(dAtA[i:], m.ObjId)
+		i = encodeVarintClusterinst(dAtA, i, uint64(len(m.ObjId)))
+		i--
+		dAtA[i] = 0x2
+		i--
+		dAtA[i] = 0xb2
+	}
 	if m.EnableIpv6 {
 		i--
 		if m.EnableIpv6 {
@@ -1938,6 +1951,13 @@ func (m *ClusterInst) Matches(o *ClusterInst, fopts ...MatchOpt) bool {
 			return false
 		}
 	}
+	if !opts.IgnoreBackend {
+		if !opts.Filter || o.ObjId != "" {
+			if o.ObjId != m.ObjId {
+				return false
+			}
+		}
+	}
 	return true
 }
 
@@ -2002,6 +2022,7 @@ const ClusterInstFieldDeletePrepare = "34"
 const ClusterInstFieldDnsLabel = "35"
 const ClusterInstFieldFqdn = "36"
 const ClusterInstFieldEnableIpv6 = "37"
+const ClusterInstFieldObjId = "38"
 
 var ClusterInstAllFields = []string{
 	ClusterInstFieldKeyClusterKeyName,
@@ -2054,9 +2075,10 @@ var ClusterInstAllFields = []string{
 	ClusterInstFieldDnsLabel,
 	ClusterInstFieldFqdn,
 	ClusterInstFieldEnableIpv6,
+	ClusterInstFieldObjId,
 }
 
-var ClusterInstAllFieldsMap = map[string]struct{}{
+var ClusterInstAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstFieldKeyClusterKeyName:                   struct{}{},
 	ClusterInstFieldKeyClusterKeyOrganization:           struct{}{},
 	ClusterInstFieldKeyCloudletKeyOrganization:          struct{}{},
@@ -2107,7 +2129,8 @@ var ClusterInstAllFieldsMap = map[string]struct{}{
 	ClusterInstFieldDnsLabel:                            struct{}{},
 	ClusterInstFieldFqdn:                                struct{}{},
 	ClusterInstFieldEnableIpv6:                          struct{}{},
-}
+	ClusterInstFieldObjId:                               struct{}{},
+})
 
 var ClusterInstAllFieldsStringMap = map[string]string{
 	ClusterInstFieldKeyClusterKeyName:                   "Key Cluster Key Name",
@@ -2160,261 +2183,272 @@ var ClusterInstAllFieldsStringMap = map[string]string{
 	ClusterInstFieldDnsLabel:                            "Dns Label",
 	ClusterInstFieldFqdn:                                "Fqdn",
 	ClusterInstFieldEnableIpv6:                          "Enable Ipv6",
+	ClusterInstFieldObjId:                               "Obj Id",
 }
 
 func (m *ClusterInst) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, ClusterInstFieldKey+".") || s == ClusterInstFieldKey
 }
 
-func (m *ClusterInst) DiffFields(o *ClusterInst, fields map[string]struct{}) {
+func (m *ClusterInst) DiffFields(o *ClusterInst, fields *FieldMap) {
 	if m.Key.ClusterKey.Name != o.Key.ClusterKey.Name {
-		fields[ClusterInstFieldKeyClusterKeyName] = struct{}{}
-		fields[ClusterInstFieldKeyClusterKey] = struct{}{}
-		fields[ClusterInstFieldKey] = struct{}{}
+		fields.Set(ClusterInstFieldKeyClusterKeyName)
+		fields.Set(ClusterInstFieldKeyClusterKey)
+		fields.Set(ClusterInstFieldKey)
 	}
 	if m.Key.ClusterKey.Organization != o.Key.ClusterKey.Organization {
-		fields[ClusterInstFieldKeyClusterKeyOrganization] = struct{}{}
-		fields[ClusterInstFieldKeyClusterKey] = struct{}{}
-		fields[ClusterInstFieldKey] = struct{}{}
+		fields.Set(ClusterInstFieldKeyClusterKeyOrganization)
+		fields.Set(ClusterInstFieldKeyClusterKey)
+		fields.Set(ClusterInstFieldKey)
 	}
 	if m.Key.CloudletKey.Organization != o.Key.CloudletKey.Organization {
-		fields[ClusterInstFieldKeyCloudletKeyOrganization] = struct{}{}
-		fields[ClusterInstFieldKeyCloudletKey] = struct{}{}
-		fields[ClusterInstFieldKey] = struct{}{}
+		fields.Set(ClusterInstFieldKeyCloudletKeyOrganization)
+		fields.Set(ClusterInstFieldKeyCloudletKey)
+		fields.Set(ClusterInstFieldKey)
 	}
 	if m.Key.CloudletKey.Name != o.Key.CloudletKey.Name {
-		fields[ClusterInstFieldKeyCloudletKeyName] = struct{}{}
-		fields[ClusterInstFieldKeyCloudletKey] = struct{}{}
-		fields[ClusterInstFieldKey] = struct{}{}
+		fields.Set(ClusterInstFieldKeyCloudletKeyName)
+		fields.Set(ClusterInstFieldKeyCloudletKey)
+		fields.Set(ClusterInstFieldKey)
 	}
 	if m.Key.CloudletKey.FederatedOrganization != o.Key.CloudletKey.FederatedOrganization {
-		fields[ClusterInstFieldKeyCloudletKeyFederatedOrganization] = struct{}{}
-		fields[ClusterInstFieldKeyCloudletKey] = struct{}{}
-		fields[ClusterInstFieldKey] = struct{}{}
+		fields.Set(ClusterInstFieldKeyCloudletKeyFederatedOrganization)
+		fields.Set(ClusterInstFieldKeyCloudletKey)
+		fields.Set(ClusterInstFieldKey)
 	}
 	if m.Flavor.Name != o.Flavor.Name {
-		fields[ClusterInstFieldFlavorName] = struct{}{}
-		fields[ClusterInstFieldFlavor] = struct{}{}
+		fields.Set(ClusterInstFieldFlavorName)
+		fields.Set(ClusterInstFieldFlavor)
 	}
 	if m.State != o.State {
-		fields[ClusterInstFieldState] = struct{}{}
+		fields.Set(ClusterInstFieldState)
 	}
 	if len(m.Errors) != len(o.Errors) {
-		fields[ClusterInstFieldErrors] = struct{}{}
+		fields.Set(ClusterInstFieldErrors)
 	} else {
 		for i0 := 0; i0 < len(m.Errors); i0++ {
 			if m.Errors[i0] != o.Errors[i0] {
-				fields[ClusterInstFieldErrors] = struct{}{}
+				fields.Set(ClusterInstFieldErrors)
 				break
 			}
 		}
 	}
 	if m.CrmOverride != o.CrmOverride {
-		fields[ClusterInstFieldCrmOverride] = struct{}{}
+		fields.Set(ClusterInstFieldCrmOverride)
 	}
 	if m.IpAccess != o.IpAccess {
-		fields[ClusterInstFieldIpAccess] = struct{}{}
+		fields.Set(ClusterInstFieldIpAccess)
 	}
 	if m.AllocatedIp != o.AllocatedIp {
-		fields[ClusterInstFieldAllocatedIp] = struct{}{}
+		fields.Set(ClusterInstFieldAllocatedIp)
 	}
 	if m.Liveness != o.Liveness {
-		fields[ClusterInstFieldLiveness] = struct{}{}
+		fields.Set(ClusterInstFieldLiveness)
 	}
 	if m.Auto != o.Auto {
-		fields[ClusterInstFieldAuto] = struct{}{}
+		fields.Set(ClusterInstFieldAuto)
 	}
 	if m.NodeFlavor != o.NodeFlavor {
-		fields[ClusterInstFieldNodeFlavor] = struct{}{}
+		fields.Set(ClusterInstFieldNodeFlavor)
 	}
 	if m.NumMasters != o.NumMasters {
-		fields[ClusterInstFieldNumMasters] = struct{}{}
+		fields.Set(ClusterInstFieldNumMasters)
 	}
 	if m.NumNodes != o.NumNodes {
-		fields[ClusterInstFieldNumNodes] = struct{}{}
+		fields.Set(ClusterInstFieldNumNodes)
 	}
 	if m.Deployment != o.Deployment {
-		fields[ClusterInstFieldDeployment] = struct{}{}
+		fields.Set(ClusterInstFieldDeployment)
 	}
 	if m.ExternalVolumeSize != o.ExternalVolumeSize {
-		fields[ClusterInstFieldExternalVolumeSize] = struct{}{}
+		fields.Set(ClusterInstFieldExternalVolumeSize)
 	}
 	if m.AutoScalePolicy != o.AutoScalePolicy {
-		fields[ClusterInstFieldAutoScalePolicy] = struct{}{}
+		fields.Set(ClusterInstFieldAutoScalePolicy)
 	}
 	if m.AvailabilityZone != o.AvailabilityZone {
-		fields[ClusterInstFieldAvailabilityZone] = struct{}{}
+		fields.Set(ClusterInstFieldAvailabilityZone)
 	}
 	if m.ImageName != o.ImageName {
-		fields[ClusterInstFieldImageName] = struct{}{}
+		fields.Set(ClusterInstFieldImageName)
 	}
 	if m.Reservable != o.Reservable {
-		fields[ClusterInstFieldReservable] = struct{}{}
+		fields.Set(ClusterInstFieldReservable)
 	}
 	if m.ReservedBy != o.ReservedBy {
-		fields[ClusterInstFieldReservedBy] = struct{}{}
+		fields.Set(ClusterInstFieldReservedBy)
 	}
 	if m.SharedVolumeSize != o.SharedVolumeSize {
-		fields[ClusterInstFieldSharedVolumeSize] = struct{}{}
+		fields.Set(ClusterInstFieldSharedVolumeSize)
 	}
 	if m.MasterNodeFlavor != o.MasterNodeFlavor {
-		fields[ClusterInstFieldMasterNodeFlavor] = struct{}{}
+		fields.Set(ClusterInstFieldMasterNodeFlavor)
 	}
 	if m.SkipCrmCleanupOnFailure != o.SkipCrmCleanupOnFailure {
-		fields[ClusterInstFieldSkipCrmCleanupOnFailure] = struct{}{}
+		fields.Set(ClusterInstFieldSkipCrmCleanupOnFailure)
 	}
 	if m.OptRes != o.OptRes {
-		fields[ClusterInstFieldOptRes] = struct{}{}
+		fields.Set(ClusterInstFieldOptRes)
 	}
 	if len(m.Resources.Vms) != len(o.Resources.Vms) {
-		fields[ClusterInstFieldResourcesVms] = struct{}{}
-		fields[ClusterInstFieldResources] = struct{}{}
+		fields.Set(ClusterInstFieldResourcesVms)
+		fields.Set(ClusterInstFieldResources)
 	} else {
 		for i1 := 0; i1 < len(m.Resources.Vms); i1++ {
 			if m.Resources.Vms[i1].Name != o.Resources.Vms[i1].Name {
-				fields[ClusterInstFieldResourcesVmsName] = struct{}{}
-				fields[ClusterInstFieldResourcesVms] = struct{}{}
-				fields[ClusterInstFieldResources] = struct{}{}
+				fields.Set(ClusterInstFieldResourcesVmsName)
+				fields.Set(ClusterInstFieldResourcesVms)
+				fields.Set(ClusterInstFieldResources)
 			}
 			if m.Resources.Vms[i1].Type != o.Resources.Vms[i1].Type {
-				fields[ClusterInstFieldResourcesVmsType] = struct{}{}
-				fields[ClusterInstFieldResourcesVms] = struct{}{}
-				fields[ClusterInstFieldResources] = struct{}{}
+				fields.Set(ClusterInstFieldResourcesVmsType)
+				fields.Set(ClusterInstFieldResourcesVms)
+				fields.Set(ClusterInstFieldResources)
 			}
 			if m.Resources.Vms[i1].Status != o.Resources.Vms[i1].Status {
-				fields[ClusterInstFieldResourcesVmsStatus] = struct{}{}
-				fields[ClusterInstFieldResourcesVms] = struct{}{}
-				fields[ClusterInstFieldResources] = struct{}{}
+				fields.Set(ClusterInstFieldResourcesVmsStatus)
+				fields.Set(ClusterInstFieldResourcesVms)
+				fields.Set(ClusterInstFieldResources)
 			}
 			if m.Resources.Vms[i1].InfraFlavor != o.Resources.Vms[i1].InfraFlavor {
-				fields[ClusterInstFieldResourcesVmsInfraFlavor] = struct{}{}
-				fields[ClusterInstFieldResourcesVms] = struct{}{}
-				fields[ClusterInstFieldResources] = struct{}{}
+				fields.Set(ClusterInstFieldResourcesVmsInfraFlavor)
+				fields.Set(ClusterInstFieldResourcesVms)
+				fields.Set(ClusterInstFieldResources)
 			}
 			if len(m.Resources.Vms[i1].Ipaddresses) != len(o.Resources.Vms[i1].Ipaddresses) {
-				fields[ClusterInstFieldResourcesVmsIpaddresses] = struct{}{}
-				fields[ClusterInstFieldResourcesVms] = struct{}{}
-				fields[ClusterInstFieldResources] = struct{}{}
+				fields.Set(ClusterInstFieldResourcesVmsIpaddresses)
+				fields.Set(ClusterInstFieldResourcesVms)
+				fields.Set(ClusterInstFieldResources)
 			} else {
 				for i2 := 0; i2 < len(m.Resources.Vms[i1].Ipaddresses); i2++ {
 					if m.Resources.Vms[i1].Ipaddresses[i2].ExternalIp != o.Resources.Vms[i1].Ipaddresses[i2].ExternalIp {
-						fields[ClusterInstFieldResourcesVmsIpaddressesExternalIp] = struct{}{}
-						fields[ClusterInstFieldResourcesVmsIpaddresses] = struct{}{}
-						fields[ClusterInstFieldResourcesVms] = struct{}{}
-						fields[ClusterInstFieldResources] = struct{}{}
+						fields.Set(ClusterInstFieldResourcesVmsIpaddressesExternalIp)
+						fields.Set(ClusterInstFieldResourcesVmsIpaddresses)
+						fields.Set(ClusterInstFieldResourcesVms)
+						fields.Set(ClusterInstFieldResources)
 					}
 					if m.Resources.Vms[i1].Ipaddresses[i2].InternalIp != o.Resources.Vms[i1].Ipaddresses[i2].InternalIp {
-						fields[ClusterInstFieldResourcesVmsIpaddressesInternalIp] = struct{}{}
-						fields[ClusterInstFieldResourcesVmsIpaddresses] = struct{}{}
-						fields[ClusterInstFieldResourcesVms] = struct{}{}
-						fields[ClusterInstFieldResources] = struct{}{}
+						fields.Set(ClusterInstFieldResourcesVmsIpaddressesInternalIp)
+						fields.Set(ClusterInstFieldResourcesVmsIpaddresses)
+						fields.Set(ClusterInstFieldResourcesVms)
+						fields.Set(ClusterInstFieldResources)
 					}
 				}
 			}
 			if m.Resources.Vms[i1].Containers != nil && o.Resources.Vms[i1].Containers != nil {
 				if len(m.Resources.Vms[i1].Containers) != len(o.Resources.Vms[i1].Containers) {
-					fields[ClusterInstFieldResourcesVmsContainers] = struct{}{}
-					fields[ClusterInstFieldResourcesVms] = struct{}{}
-					fields[ClusterInstFieldResources] = struct{}{}
+					fields.Set(ClusterInstFieldResourcesVmsContainers)
+					fields.Set(ClusterInstFieldResourcesVms)
+					fields.Set(ClusterInstFieldResources)
 				} else {
 					for i2 := 0; i2 < len(m.Resources.Vms[i1].Containers); i2++ {
 						if m.Resources.Vms[i1].Containers[i2].Name != o.Resources.Vms[i1].Containers[i2].Name {
-							fields[ClusterInstFieldResourcesVmsContainersName] = struct{}{}
-							fields[ClusterInstFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstFieldResourcesVms] = struct{}{}
-							fields[ClusterInstFieldResources] = struct{}{}
+							fields.Set(ClusterInstFieldResourcesVmsContainersName)
+							fields.Set(ClusterInstFieldResourcesVmsContainers)
+							fields.Set(ClusterInstFieldResourcesVms)
+							fields.Set(ClusterInstFieldResources)
 						}
 						if m.Resources.Vms[i1].Containers[i2].Type != o.Resources.Vms[i1].Containers[i2].Type {
-							fields[ClusterInstFieldResourcesVmsContainersType] = struct{}{}
-							fields[ClusterInstFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstFieldResourcesVms] = struct{}{}
-							fields[ClusterInstFieldResources] = struct{}{}
+							fields.Set(ClusterInstFieldResourcesVmsContainersType)
+							fields.Set(ClusterInstFieldResourcesVmsContainers)
+							fields.Set(ClusterInstFieldResourcesVms)
+							fields.Set(ClusterInstFieldResources)
 						}
 						if m.Resources.Vms[i1].Containers[i2].Status != o.Resources.Vms[i1].Containers[i2].Status {
-							fields[ClusterInstFieldResourcesVmsContainersStatus] = struct{}{}
-							fields[ClusterInstFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstFieldResourcesVms] = struct{}{}
-							fields[ClusterInstFieldResources] = struct{}{}
+							fields.Set(ClusterInstFieldResourcesVmsContainersStatus)
+							fields.Set(ClusterInstFieldResourcesVmsContainers)
+							fields.Set(ClusterInstFieldResourcesVms)
+							fields.Set(ClusterInstFieldResources)
 						}
 						if m.Resources.Vms[i1].Containers[i2].Clusterip != o.Resources.Vms[i1].Containers[i2].Clusterip {
-							fields[ClusterInstFieldResourcesVmsContainersClusterip] = struct{}{}
-							fields[ClusterInstFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstFieldResourcesVms] = struct{}{}
-							fields[ClusterInstFieldResources] = struct{}{}
+							fields.Set(ClusterInstFieldResourcesVmsContainersClusterip)
+							fields.Set(ClusterInstFieldResourcesVmsContainers)
+							fields.Set(ClusterInstFieldResourcesVms)
+							fields.Set(ClusterInstFieldResources)
 						}
 						if m.Resources.Vms[i1].Containers[i2].Restarts != o.Resources.Vms[i1].Containers[i2].Restarts {
-							fields[ClusterInstFieldResourcesVmsContainersRestarts] = struct{}{}
-							fields[ClusterInstFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstFieldResourcesVms] = struct{}{}
-							fields[ClusterInstFieldResources] = struct{}{}
+							fields.Set(ClusterInstFieldResourcesVmsContainersRestarts)
+							fields.Set(ClusterInstFieldResourcesVmsContainers)
+							fields.Set(ClusterInstFieldResourcesVms)
+							fields.Set(ClusterInstFieldResources)
 						}
 					}
 				}
 			} else if (m.Resources.Vms[i1].Containers != nil && o.Resources.Vms[i1].Containers == nil) || (m.Resources.Vms[i1].Containers == nil && o.Resources.Vms[i1].Containers != nil) {
-				fields[ClusterInstFieldResourcesVmsContainers] = struct{}{}
-				fields[ClusterInstFieldResourcesVms] = struct{}{}
-				fields[ClusterInstFieldResources] = struct{}{}
+				fields.Set(ClusterInstFieldResourcesVmsContainers)
+				fields.Set(ClusterInstFieldResourcesVms)
+				fields.Set(ClusterInstFieldResources)
 			}
 		}
 	}
 	if m.CreatedAt.Seconds != o.CreatedAt.Seconds {
-		fields[ClusterInstFieldCreatedAtSeconds] = struct{}{}
-		fields[ClusterInstFieldCreatedAt] = struct{}{}
+		fields.Set(ClusterInstFieldCreatedAtSeconds)
+		fields.Set(ClusterInstFieldCreatedAt)
 	}
 	if m.CreatedAt.Nanos != o.CreatedAt.Nanos {
-		fields[ClusterInstFieldCreatedAtNanos] = struct{}{}
-		fields[ClusterInstFieldCreatedAt] = struct{}{}
+		fields.Set(ClusterInstFieldCreatedAtNanos)
+		fields.Set(ClusterInstFieldCreatedAt)
 	}
 	if m.UpdatedAt.Seconds != o.UpdatedAt.Seconds {
-		fields[ClusterInstFieldUpdatedAtSeconds] = struct{}{}
-		fields[ClusterInstFieldUpdatedAt] = struct{}{}
+		fields.Set(ClusterInstFieldUpdatedAtSeconds)
+		fields.Set(ClusterInstFieldUpdatedAt)
 	}
 	if m.UpdatedAt.Nanos != o.UpdatedAt.Nanos {
-		fields[ClusterInstFieldUpdatedAtNanos] = struct{}{}
-		fields[ClusterInstFieldUpdatedAt] = struct{}{}
+		fields.Set(ClusterInstFieldUpdatedAtNanos)
+		fields.Set(ClusterInstFieldUpdatedAt)
 	}
 	if m.ReservationEndedAt.Seconds != o.ReservationEndedAt.Seconds {
-		fields[ClusterInstFieldReservationEndedAtSeconds] = struct{}{}
-		fields[ClusterInstFieldReservationEndedAt] = struct{}{}
+		fields.Set(ClusterInstFieldReservationEndedAtSeconds)
+		fields.Set(ClusterInstFieldReservationEndedAt)
 	}
 	if m.ReservationEndedAt.Nanos != o.ReservationEndedAt.Nanos {
-		fields[ClusterInstFieldReservationEndedAtNanos] = struct{}{}
-		fields[ClusterInstFieldReservationEndedAt] = struct{}{}
+		fields.Set(ClusterInstFieldReservationEndedAtNanos)
+		fields.Set(ClusterInstFieldReservationEndedAt)
 	}
 	if m.MultiTenant != o.MultiTenant {
-		fields[ClusterInstFieldMultiTenant] = struct{}{}
+		fields.Set(ClusterInstFieldMultiTenant)
 	}
 	if len(m.Networks) != len(o.Networks) {
-		fields[ClusterInstFieldNetworks] = struct{}{}
+		fields.Set(ClusterInstFieldNetworks)
 	} else {
 		for i0 := 0; i0 < len(m.Networks); i0++ {
 			if m.Networks[i0] != o.Networks[i0] {
-				fields[ClusterInstFieldNetworks] = struct{}{}
+				fields.Set(ClusterInstFieldNetworks)
 				break
 			}
 		}
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[ClusterInstFieldDeletePrepare] = struct{}{}
+		fields.Set(ClusterInstFieldDeletePrepare)
 	}
 	if m.DnsLabel != o.DnsLabel {
-		fields[ClusterInstFieldDnsLabel] = struct{}{}
+		fields.Set(ClusterInstFieldDnsLabel)
 	}
 	if m.Fqdn != o.Fqdn {
-		fields[ClusterInstFieldFqdn] = struct{}{}
+		fields.Set(ClusterInstFieldFqdn)
 	}
 	if m.EnableIpv6 != o.EnableIpv6 {
-		fields[ClusterInstFieldEnableIpv6] = struct{}{}
+		fields.Set(ClusterInstFieldEnableIpv6)
+	}
+	if m.ObjId != o.ObjId {
+		fields.Set(ClusterInstFieldObjId)
 	}
 }
 
-var UpdateClusterInstFieldsMap = map[string]struct{}{
+func (m *ClusterInst) GetDiffFields(o *ClusterInst) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateClusterInstFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstFieldCrmOverride:             struct{}{},
 	ClusterInstFieldNumNodes:                struct{}{},
 	ClusterInstFieldAutoScalePolicy:         struct{}{},
 	ClusterInstFieldSkipCrmCleanupOnFailure: struct{}{},
 	ClusterInstFieldEnableIpv6:              struct{}{},
-}
+	ClusterInstFieldObjId:                   struct{}{},
+})
 
 func (m *ClusterInst) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -2422,11 +2456,11 @@ func (m *ClusterInst) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateClusterInstFieldsMap[field]; !ok {
+		if !UpdateClusterInstFieldsMap.Has(field) {
 			if _, ok := ClusterInstAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -2542,35 +2576,35 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
-			if _, set := fmap["2.1.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.HasOrHasChild("2.1") {
+			if fmap.Has("2.1.1") {
 				if m.Key.ClusterKey.Name != src.Key.ClusterKey.Name {
 					m.Key.ClusterKey.Name = src.Key.ClusterKey.Name
 					changed++
 				}
 			}
-			if _, set := fmap["2.1.2"]; set {
+			if fmap.Has("2.1.2") {
 				if m.Key.ClusterKey.Organization != src.Key.ClusterKey.Organization {
 					m.Key.ClusterKey.Organization = src.Key.ClusterKey.Organization
 					changed++
 				}
 			}
 		}
-		if _, set := fmap["2.2"]; set {
-			if _, set := fmap["2.2.1"]; set {
+		if fmap.HasOrHasChild("2.2") {
+			if fmap.Has("2.2.1") {
 				if m.Key.CloudletKey.Organization != src.Key.CloudletKey.Organization {
 					m.Key.CloudletKey.Organization = src.Key.CloudletKey.Organization
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.2"]; set {
+			if fmap.Has("2.2.2") {
 				if m.Key.CloudletKey.Name != src.Key.CloudletKey.Name {
 					m.Key.CloudletKey.Name = src.Key.CloudletKey.Name
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.3"]; set {
+			if fmap.Has("2.2.3") {
 				if m.Key.CloudletKey.FederatedOrganization != src.Key.CloudletKey.FederatedOrganization {
 					m.Key.CloudletKey.FederatedOrganization = src.Key.CloudletKey.FederatedOrganization
 					changed++
@@ -2578,21 +2612,21 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
-		if _, set := fmap["3.1"]; set {
+	if fmap.HasOrHasChild("3") {
+		if fmap.Has("3.1") {
 			if m.Flavor.Name != src.Flavor.Name {
 				m.Flavor.Name = src.Flavor.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.State != src.State {
 			m.State = src.State
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if src.Errors != nil {
 			if updateListAction == "add" {
 				changed += m.AddErrors(src.Errors...)
@@ -2608,122 +2642,122 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if m.CrmOverride != src.CrmOverride {
 			m.CrmOverride = src.CrmOverride
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.IpAccess != src.IpAccess {
 			m.IpAccess = src.IpAccess
 			changed++
 		}
 	}
-	if _, set := fmap["8"]; set {
+	if fmap.Has("8") {
 		if m.AllocatedIp != src.AllocatedIp {
 			m.AllocatedIp = src.AllocatedIp
 			changed++
 		}
 	}
-	if _, set := fmap["9"]; set {
+	if fmap.Has("9") {
 		if m.Liveness != src.Liveness {
 			m.Liveness = src.Liveness
 			changed++
 		}
 	}
-	if _, set := fmap["10"]; set {
+	if fmap.Has("10") {
 		if m.Auto != src.Auto {
 			m.Auto = src.Auto
 			changed++
 		}
 	}
-	if _, set := fmap["11"]; set {
+	if fmap.Has("11") {
 		if m.NodeFlavor != src.NodeFlavor {
 			m.NodeFlavor = src.NodeFlavor
 			changed++
 		}
 	}
-	if _, set := fmap["13"]; set {
+	if fmap.Has("13") {
 		if m.NumMasters != src.NumMasters {
 			m.NumMasters = src.NumMasters
 			changed++
 		}
 	}
-	if _, set := fmap["14"]; set {
+	if fmap.Has("14") {
 		if m.NumNodes != src.NumNodes {
 			m.NumNodes = src.NumNodes
 			changed++
 		}
 	}
-	if _, set := fmap["15"]; set {
+	if fmap.Has("15") {
 		if m.Deployment != src.Deployment {
 			m.Deployment = src.Deployment
 			changed++
 		}
 	}
-	if _, set := fmap["17"]; set {
+	if fmap.Has("17") {
 		if m.ExternalVolumeSize != src.ExternalVolumeSize {
 			m.ExternalVolumeSize = src.ExternalVolumeSize
 			changed++
 		}
 	}
-	if _, set := fmap["18"]; set {
+	if fmap.Has("18") {
 		if m.AutoScalePolicy != src.AutoScalePolicy {
 			m.AutoScalePolicy = src.AutoScalePolicy
 			changed++
 		}
 	}
-	if _, set := fmap["19"]; set {
+	if fmap.Has("19") {
 		if m.AvailabilityZone != src.AvailabilityZone {
 			m.AvailabilityZone = src.AvailabilityZone
 			changed++
 		}
 	}
-	if _, set := fmap["20"]; set {
+	if fmap.Has("20") {
 		if m.ImageName != src.ImageName {
 			m.ImageName = src.ImageName
 			changed++
 		}
 	}
-	if _, set := fmap["21"]; set {
+	if fmap.Has("21") {
 		if m.Reservable != src.Reservable {
 			m.Reservable = src.Reservable
 			changed++
 		}
 	}
-	if _, set := fmap["22"]; set {
+	if fmap.Has("22") {
 		if m.ReservedBy != src.ReservedBy {
 			m.ReservedBy = src.ReservedBy
 			changed++
 		}
 	}
-	if _, set := fmap["23"]; set {
+	if fmap.Has("23") {
 		if m.SharedVolumeSize != src.SharedVolumeSize {
 			m.SharedVolumeSize = src.SharedVolumeSize
 			changed++
 		}
 	}
-	if _, set := fmap["25"]; set {
+	if fmap.Has("25") {
 		if m.MasterNodeFlavor != src.MasterNodeFlavor {
 			m.MasterNodeFlavor = src.MasterNodeFlavor
 			changed++
 		}
 	}
-	if _, set := fmap["26"]; set {
+	if fmap.Has("26") {
 		if m.SkipCrmCleanupOnFailure != src.SkipCrmCleanupOnFailure {
 			m.SkipCrmCleanupOnFailure = src.SkipCrmCleanupOnFailure
 			changed++
 		}
 	}
-	if _, set := fmap["27"]; set {
+	if fmap.Has("27") {
 		if m.OptRes != src.OptRes {
 			m.OptRes = src.OptRes
 			changed++
 		}
 	}
-	if _, set := fmap["28"]; set {
-		if _, set := fmap["28.1"]; set {
+	if fmap.HasOrHasChild("28") {
+		if fmap.HasOrHasChild("28.1") {
 			if src.Resources.Vms != nil {
 				if updateListAction == "add" {
 					changed += m.AddResourcesVms(src.Resources.Vms...)
@@ -2742,55 +2776,55 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 			}
 		}
 	}
-	if _, set := fmap["29"]; set {
-		if _, set := fmap["29.1"]; set {
+	if fmap.HasOrHasChild("29") {
+		if fmap.Has("29.1") {
 			if m.CreatedAt.Seconds != src.CreatedAt.Seconds {
 				m.CreatedAt.Seconds = src.CreatedAt.Seconds
 				changed++
 			}
 		}
-		if _, set := fmap["29.2"]; set {
+		if fmap.Has("29.2") {
 			if m.CreatedAt.Nanos != src.CreatedAt.Nanos {
 				m.CreatedAt.Nanos = src.CreatedAt.Nanos
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["30"]; set {
-		if _, set := fmap["30.1"]; set {
+	if fmap.HasOrHasChild("30") {
+		if fmap.Has("30.1") {
 			if m.UpdatedAt.Seconds != src.UpdatedAt.Seconds {
 				m.UpdatedAt.Seconds = src.UpdatedAt.Seconds
 				changed++
 			}
 		}
-		if _, set := fmap["30.2"]; set {
+		if fmap.Has("30.2") {
 			if m.UpdatedAt.Nanos != src.UpdatedAt.Nanos {
 				m.UpdatedAt.Nanos = src.UpdatedAt.Nanos
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["31"]; set {
-		if _, set := fmap["31.1"]; set {
+	if fmap.HasOrHasChild("31") {
+		if fmap.Has("31.1") {
 			if m.ReservationEndedAt.Seconds != src.ReservationEndedAt.Seconds {
 				m.ReservationEndedAt.Seconds = src.ReservationEndedAt.Seconds
 				changed++
 			}
 		}
-		if _, set := fmap["31.2"]; set {
+		if fmap.Has("31.2") {
 			if m.ReservationEndedAt.Nanos != src.ReservationEndedAt.Nanos {
 				m.ReservationEndedAt.Nanos = src.ReservationEndedAt.Nanos
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["32"]; set {
+	if fmap.Has("32") {
 		if m.MultiTenant != src.MultiTenant {
 			m.MultiTenant = src.MultiTenant
 			changed++
 		}
 	}
-	if _, set := fmap["33"]; set {
+	if fmap.Has("33") {
 		if src.Networks != nil {
 			if updateListAction == "add" {
 				changed += m.AddNetworks(src.Networks...)
@@ -2806,27 +2840,33 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 			changed++
 		}
 	}
-	if _, set := fmap["34"]; set {
+	if fmap.Has("34") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
 		}
 	}
-	if _, set := fmap["35"]; set {
+	if fmap.Has("35") {
 		if m.DnsLabel != src.DnsLabel {
 			m.DnsLabel = src.DnsLabel
 			changed++
 		}
 	}
-	if _, set := fmap["36"]; set {
+	if fmap.Has("36") {
 		if m.Fqdn != src.Fqdn {
 			m.Fqdn = src.Fqdn
 			changed++
 		}
 	}
-	if _, set := fmap["37"]; set {
+	if fmap.Has("37") {
 		if m.EnableIpv6 != src.EnableIpv6 {
 			m.EnableIpv6 = src.EnableIpv6
+			changed++
+		}
+	}
+	if fmap.Has("38") {
+		if m.ObjId != src.ObjId {
+			m.ObjId = src.ObjId
 			changed++
 		}
 	}
@@ -2881,6 +2921,7 @@ func (m *ClusterInst) DeepCopyIn(src *ClusterInst) {
 	m.DnsLabel = src.DnsLabel
 	m.Fqdn = src.Fqdn
 	m.EnableIpv6 = src.EnableIpv6
+	m.ObjId = src.ObjId
 }
 
 func (s *ClusterInst) HasFields() bool {
@@ -3098,6 +3139,7 @@ type ClusterInstCache struct {
 	KeyWatchers   map[ClusterInstKey][]*ClusterInstKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *ClusterInstKey)
 	DeletedKeyCbs []func(ctx context.Context, key *ClusterInstKey)
+	Store         ClusterInstStore
 }
 
 func NewClusterInstCache() *ClusterInstCache {
@@ -3463,6 +3505,18 @@ func (c *ClusterInstCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
+func (s *ClusterInstCache) InitCacheWithSync(sync DataSync) {
+	InitClusterInstCache(s)
+	s.InitSync(sync)
+}
+
+func (s *ClusterInstCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewClusterInstStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
 func (m *ClusterInst) GetObjKey() objstore.ObjKey {
 	return m.GetKey()
 }
@@ -3532,6 +3586,9 @@ func (s *ClusterInst) ClearTagged(tags map[string]struct{}) {
 	if _, found := tags["timestamp"]; found {
 		s.ReservationEndedAt = distributed_match_engine.Timestamp{}
 	}
+	if _, found := tags["nocmp"]; found {
+		s.ObjId = ""
+	}
 }
 
 func IgnoreClusterInstFields(taglist string) cmp.Option {
@@ -3554,6 +3611,9 @@ func IgnoreClusterInstFields(taglist string) cmp.Option {
 	}
 	if _, found := tags["timestamp"]; found {
 		names = append(names, "ReservationEndedAt")
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "ObjId")
 	}
 	return cmpopts.IgnoreFields(ClusterInst{}, names...)
 }
@@ -3697,7 +3757,7 @@ var ClusterInstInfoAllFields = []string{
 	ClusterInstInfoFieldResourcesVmsContainersRestarts,
 }
 
-var ClusterInstInfoAllFieldsMap = map[string]struct{}{
+var ClusterInstInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstInfoFieldKeyClusterKeyName:                   struct{}{},
 	ClusterInstInfoFieldKeyClusterKeyOrganization:           struct{}{},
 	ClusterInstInfoFieldKeyCloudletKeyOrganization:          struct{}{},
@@ -3723,7 +3783,7 @@ var ClusterInstInfoAllFieldsMap = map[string]struct{}{
 	ClusterInstInfoFieldResourcesVmsContainersStatus:        struct{}{},
 	ClusterInstInfoFieldResourcesVmsContainersClusterip:     struct{}{},
 	ClusterInstInfoFieldResourcesVmsContainersRestarts:      struct{}{},
-}
+})
 
 var ClusterInstInfoAllFieldsStringMap = map[string]string{
 	ClusterInstInfoFieldKeyClusterKeyName:                   "Key Cluster Key Name",
@@ -3757,171 +3817,177 @@ func (m *ClusterInstInfo) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, ClusterInstInfoFieldKey+".") || s == ClusterInstInfoFieldKey
 }
 
-func (m *ClusterInstInfo) DiffFields(o *ClusterInstInfo, fields map[string]struct{}) {
+func (m *ClusterInstInfo) DiffFields(o *ClusterInstInfo, fields *FieldMap) {
 	if m.Key.ClusterKey.Name != o.Key.ClusterKey.Name {
-		fields[ClusterInstInfoFieldKeyClusterKeyName] = struct{}{}
-		fields[ClusterInstInfoFieldKeyClusterKey] = struct{}{}
-		fields[ClusterInstInfoFieldKey] = struct{}{}
+		fields.Set(ClusterInstInfoFieldKeyClusterKeyName)
+		fields.Set(ClusterInstInfoFieldKeyClusterKey)
+		fields.Set(ClusterInstInfoFieldKey)
 	}
 	if m.Key.ClusterKey.Organization != o.Key.ClusterKey.Organization {
-		fields[ClusterInstInfoFieldKeyClusterKeyOrganization] = struct{}{}
-		fields[ClusterInstInfoFieldKeyClusterKey] = struct{}{}
-		fields[ClusterInstInfoFieldKey] = struct{}{}
+		fields.Set(ClusterInstInfoFieldKeyClusterKeyOrganization)
+		fields.Set(ClusterInstInfoFieldKeyClusterKey)
+		fields.Set(ClusterInstInfoFieldKey)
 	}
 	if m.Key.CloudletKey.Organization != o.Key.CloudletKey.Organization {
-		fields[ClusterInstInfoFieldKeyCloudletKeyOrganization] = struct{}{}
-		fields[ClusterInstInfoFieldKeyCloudletKey] = struct{}{}
-		fields[ClusterInstInfoFieldKey] = struct{}{}
+		fields.Set(ClusterInstInfoFieldKeyCloudletKeyOrganization)
+		fields.Set(ClusterInstInfoFieldKeyCloudletKey)
+		fields.Set(ClusterInstInfoFieldKey)
 	}
 	if m.Key.CloudletKey.Name != o.Key.CloudletKey.Name {
-		fields[ClusterInstInfoFieldKeyCloudletKeyName] = struct{}{}
-		fields[ClusterInstInfoFieldKeyCloudletKey] = struct{}{}
-		fields[ClusterInstInfoFieldKey] = struct{}{}
+		fields.Set(ClusterInstInfoFieldKeyCloudletKeyName)
+		fields.Set(ClusterInstInfoFieldKeyCloudletKey)
+		fields.Set(ClusterInstInfoFieldKey)
 	}
 	if m.Key.CloudletKey.FederatedOrganization != o.Key.CloudletKey.FederatedOrganization {
-		fields[ClusterInstInfoFieldKeyCloudletKeyFederatedOrganization] = struct{}{}
-		fields[ClusterInstInfoFieldKeyCloudletKey] = struct{}{}
-		fields[ClusterInstInfoFieldKey] = struct{}{}
+		fields.Set(ClusterInstInfoFieldKeyCloudletKeyFederatedOrganization)
+		fields.Set(ClusterInstInfoFieldKeyCloudletKey)
+		fields.Set(ClusterInstInfoFieldKey)
 	}
 	if m.NotifyId != o.NotifyId {
-		fields[ClusterInstInfoFieldNotifyId] = struct{}{}
+		fields.Set(ClusterInstInfoFieldNotifyId)
 	}
 	if m.State != o.State {
-		fields[ClusterInstInfoFieldState] = struct{}{}
+		fields.Set(ClusterInstInfoFieldState)
 	}
 	if len(m.Errors) != len(o.Errors) {
-		fields[ClusterInstInfoFieldErrors] = struct{}{}
+		fields.Set(ClusterInstInfoFieldErrors)
 	} else {
 		for i0 := 0; i0 < len(m.Errors); i0++ {
 			if m.Errors[i0] != o.Errors[i0] {
-				fields[ClusterInstInfoFieldErrors] = struct{}{}
+				fields.Set(ClusterInstInfoFieldErrors)
 				break
 			}
 		}
 	}
 	if m.Status.TaskNumber != o.Status.TaskNumber {
-		fields[ClusterInstInfoFieldStatusTaskNumber] = struct{}{}
-		fields[ClusterInstInfoFieldStatus] = struct{}{}
+		fields.Set(ClusterInstInfoFieldStatusTaskNumber)
+		fields.Set(ClusterInstInfoFieldStatus)
 	}
 	if m.Status.MaxTasks != o.Status.MaxTasks {
-		fields[ClusterInstInfoFieldStatusMaxTasks] = struct{}{}
-		fields[ClusterInstInfoFieldStatus] = struct{}{}
+		fields.Set(ClusterInstInfoFieldStatusMaxTasks)
+		fields.Set(ClusterInstInfoFieldStatus)
 	}
 	if m.Status.TaskName != o.Status.TaskName {
-		fields[ClusterInstInfoFieldStatusTaskName] = struct{}{}
-		fields[ClusterInstInfoFieldStatus] = struct{}{}
+		fields.Set(ClusterInstInfoFieldStatusTaskName)
+		fields.Set(ClusterInstInfoFieldStatus)
 	}
 	if m.Status.StepName != o.Status.StepName {
-		fields[ClusterInstInfoFieldStatusStepName] = struct{}{}
-		fields[ClusterInstInfoFieldStatus] = struct{}{}
+		fields.Set(ClusterInstInfoFieldStatusStepName)
+		fields.Set(ClusterInstInfoFieldStatus)
 	}
 	if m.Status.MsgCount != o.Status.MsgCount {
-		fields[ClusterInstInfoFieldStatusMsgCount] = struct{}{}
-		fields[ClusterInstInfoFieldStatus] = struct{}{}
+		fields.Set(ClusterInstInfoFieldStatusMsgCount)
+		fields.Set(ClusterInstInfoFieldStatus)
 	}
 	if len(m.Status.Msgs) != len(o.Status.Msgs) {
-		fields[ClusterInstInfoFieldStatusMsgs] = struct{}{}
-		fields[ClusterInstInfoFieldStatus] = struct{}{}
+		fields.Set(ClusterInstInfoFieldStatusMsgs)
+		fields.Set(ClusterInstInfoFieldStatus)
 	} else {
 		for i1 := 0; i1 < len(m.Status.Msgs); i1++ {
 			if m.Status.Msgs[i1] != o.Status.Msgs[i1] {
-				fields[ClusterInstInfoFieldStatusMsgs] = struct{}{}
-				fields[ClusterInstInfoFieldStatus] = struct{}{}
+				fields.Set(ClusterInstInfoFieldStatusMsgs)
+				fields.Set(ClusterInstInfoFieldStatus)
 				break
 			}
 		}
 	}
 	if len(m.Resources.Vms) != len(o.Resources.Vms) {
-		fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-		fields[ClusterInstInfoFieldResources] = struct{}{}
+		fields.Set(ClusterInstInfoFieldResourcesVms)
+		fields.Set(ClusterInstInfoFieldResources)
 	} else {
 		for i1 := 0; i1 < len(m.Resources.Vms); i1++ {
 			if m.Resources.Vms[i1].Name != o.Resources.Vms[i1].Name {
-				fields[ClusterInstInfoFieldResourcesVmsName] = struct{}{}
-				fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-				fields[ClusterInstInfoFieldResources] = struct{}{}
+				fields.Set(ClusterInstInfoFieldResourcesVmsName)
+				fields.Set(ClusterInstInfoFieldResourcesVms)
+				fields.Set(ClusterInstInfoFieldResources)
 			}
 			if m.Resources.Vms[i1].Type != o.Resources.Vms[i1].Type {
-				fields[ClusterInstInfoFieldResourcesVmsType] = struct{}{}
-				fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-				fields[ClusterInstInfoFieldResources] = struct{}{}
+				fields.Set(ClusterInstInfoFieldResourcesVmsType)
+				fields.Set(ClusterInstInfoFieldResourcesVms)
+				fields.Set(ClusterInstInfoFieldResources)
 			}
 			if m.Resources.Vms[i1].Status != o.Resources.Vms[i1].Status {
-				fields[ClusterInstInfoFieldResourcesVmsStatus] = struct{}{}
-				fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-				fields[ClusterInstInfoFieldResources] = struct{}{}
+				fields.Set(ClusterInstInfoFieldResourcesVmsStatus)
+				fields.Set(ClusterInstInfoFieldResourcesVms)
+				fields.Set(ClusterInstInfoFieldResources)
 			}
 			if m.Resources.Vms[i1].InfraFlavor != o.Resources.Vms[i1].InfraFlavor {
-				fields[ClusterInstInfoFieldResourcesVmsInfraFlavor] = struct{}{}
-				fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-				fields[ClusterInstInfoFieldResources] = struct{}{}
+				fields.Set(ClusterInstInfoFieldResourcesVmsInfraFlavor)
+				fields.Set(ClusterInstInfoFieldResourcesVms)
+				fields.Set(ClusterInstInfoFieldResources)
 			}
 			if len(m.Resources.Vms[i1].Ipaddresses) != len(o.Resources.Vms[i1].Ipaddresses) {
-				fields[ClusterInstInfoFieldResourcesVmsIpaddresses] = struct{}{}
-				fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-				fields[ClusterInstInfoFieldResources] = struct{}{}
+				fields.Set(ClusterInstInfoFieldResourcesVmsIpaddresses)
+				fields.Set(ClusterInstInfoFieldResourcesVms)
+				fields.Set(ClusterInstInfoFieldResources)
 			} else {
 				for i2 := 0; i2 < len(m.Resources.Vms[i1].Ipaddresses); i2++ {
 					if m.Resources.Vms[i1].Ipaddresses[i2].ExternalIp != o.Resources.Vms[i1].Ipaddresses[i2].ExternalIp {
-						fields[ClusterInstInfoFieldResourcesVmsIpaddressesExternalIp] = struct{}{}
-						fields[ClusterInstInfoFieldResourcesVmsIpaddresses] = struct{}{}
-						fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-						fields[ClusterInstInfoFieldResources] = struct{}{}
+						fields.Set(ClusterInstInfoFieldResourcesVmsIpaddressesExternalIp)
+						fields.Set(ClusterInstInfoFieldResourcesVmsIpaddresses)
+						fields.Set(ClusterInstInfoFieldResourcesVms)
+						fields.Set(ClusterInstInfoFieldResources)
 					}
 					if m.Resources.Vms[i1].Ipaddresses[i2].InternalIp != o.Resources.Vms[i1].Ipaddresses[i2].InternalIp {
-						fields[ClusterInstInfoFieldResourcesVmsIpaddressesInternalIp] = struct{}{}
-						fields[ClusterInstInfoFieldResourcesVmsIpaddresses] = struct{}{}
-						fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-						fields[ClusterInstInfoFieldResources] = struct{}{}
+						fields.Set(ClusterInstInfoFieldResourcesVmsIpaddressesInternalIp)
+						fields.Set(ClusterInstInfoFieldResourcesVmsIpaddresses)
+						fields.Set(ClusterInstInfoFieldResourcesVms)
+						fields.Set(ClusterInstInfoFieldResources)
 					}
 				}
 			}
 			if m.Resources.Vms[i1].Containers != nil && o.Resources.Vms[i1].Containers != nil {
 				if len(m.Resources.Vms[i1].Containers) != len(o.Resources.Vms[i1].Containers) {
-					fields[ClusterInstInfoFieldResourcesVmsContainers] = struct{}{}
-					fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-					fields[ClusterInstInfoFieldResources] = struct{}{}
+					fields.Set(ClusterInstInfoFieldResourcesVmsContainers)
+					fields.Set(ClusterInstInfoFieldResourcesVms)
+					fields.Set(ClusterInstInfoFieldResources)
 				} else {
 					for i2 := 0; i2 < len(m.Resources.Vms[i1].Containers); i2++ {
 						if m.Resources.Vms[i1].Containers[i2].Name != o.Resources.Vms[i1].Containers[i2].Name {
-							fields[ClusterInstInfoFieldResourcesVmsContainersName] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-							fields[ClusterInstInfoFieldResources] = struct{}{}
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainersName)
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainers)
+							fields.Set(ClusterInstInfoFieldResourcesVms)
+							fields.Set(ClusterInstInfoFieldResources)
 						}
 						if m.Resources.Vms[i1].Containers[i2].Type != o.Resources.Vms[i1].Containers[i2].Type {
-							fields[ClusterInstInfoFieldResourcesVmsContainersType] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-							fields[ClusterInstInfoFieldResources] = struct{}{}
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainersType)
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainers)
+							fields.Set(ClusterInstInfoFieldResourcesVms)
+							fields.Set(ClusterInstInfoFieldResources)
 						}
 						if m.Resources.Vms[i1].Containers[i2].Status != o.Resources.Vms[i1].Containers[i2].Status {
-							fields[ClusterInstInfoFieldResourcesVmsContainersStatus] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-							fields[ClusterInstInfoFieldResources] = struct{}{}
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainersStatus)
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainers)
+							fields.Set(ClusterInstInfoFieldResourcesVms)
+							fields.Set(ClusterInstInfoFieldResources)
 						}
 						if m.Resources.Vms[i1].Containers[i2].Clusterip != o.Resources.Vms[i1].Containers[i2].Clusterip {
-							fields[ClusterInstInfoFieldResourcesVmsContainersClusterip] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-							fields[ClusterInstInfoFieldResources] = struct{}{}
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainersClusterip)
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainers)
+							fields.Set(ClusterInstInfoFieldResourcesVms)
+							fields.Set(ClusterInstInfoFieldResources)
 						}
 						if m.Resources.Vms[i1].Containers[i2].Restarts != o.Resources.Vms[i1].Containers[i2].Restarts {
-							fields[ClusterInstInfoFieldResourcesVmsContainersRestarts] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVmsContainers] = struct{}{}
-							fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-							fields[ClusterInstInfoFieldResources] = struct{}{}
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainersRestarts)
+							fields.Set(ClusterInstInfoFieldResourcesVmsContainers)
+							fields.Set(ClusterInstInfoFieldResourcesVms)
+							fields.Set(ClusterInstInfoFieldResources)
 						}
 					}
 				}
 			} else if (m.Resources.Vms[i1].Containers != nil && o.Resources.Vms[i1].Containers == nil) || (m.Resources.Vms[i1].Containers == nil && o.Resources.Vms[i1].Containers != nil) {
-				fields[ClusterInstInfoFieldResourcesVmsContainers] = struct{}{}
-				fields[ClusterInstInfoFieldResourcesVms] = struct{}{}
-				fields[ClusterInstInfoFieldResources] = struct{}{}
+				fields.Set(ClusterInstInfoFieldResourcesVmsContainers)
+				fields.Set(ClusterInstInfoFieldResourcesVms)
+				fields.Set(ClusterInstInfoFieldResources)
 			}
 		}
 	}
+}
+
+func (m *ClusterInstInfo) GetDiffFields(o *ClusterInstInfo) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
 }
 
 func (m *ClusterInstInfo) Clone() *ClusterInstInfo {
@@ -4027,35 +4093,35 @@ func (m *ClusterInstInfo) CopyInFields(src *ClusterInstInfo) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
-			if _, set := fmap["2.1.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.HasOrHasChild("2.1") {
+			if fmap.Has("2.1.1") {
 				if m.Key.ClusterKey.Name != src.Key.ClusterKey.Name {
 					m.Key.ClusterKey.Name = src.Key.ClusterKey.Name
 					changed++
 				}
 			}
-			if _, set := fmap["2.1.2"]; set {
+			if fmap.Has("2.1.2") {
 				if m.Key.ClusterKey.Organization != src.Key.ClusterKey.Organization {
 					m.Key.ClusterKey.Organization = src.Key.ClusterKey.Organization
 					changed++
 				}
 			}
 		}
-		if _, set := fmap["2.2"]; set {
-			if _, set := fmap["2.2.1"]; set {
+		if fmap.HasOrHasChild("2.2") {
+			if fmap.Has("2.2.1") {
 				if m.Key.CloudletKey.Organization != src.Key.CloudletKey.Organization {
 					m.Key.CloudletKey.Organization = src.Key.CloudletKey.Organization
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.2"]; set {
+			if fmap.Has("2.2.2") {
 				if m.Key.CloudletKey.Name != src.Key.CloudletKey.Name {
 					m.Key.CloudletKey.Name = src.Key.CloudletKey.Name
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.3"]; set {
+			if fmap.Has("2.2.3") {
 				if m.Key.CloudletKey.FederatedOrganization != src.Key.CloudletKey.FederatedOrganization {
 					m.Key.CloudletKey.FederatedOrganization = src.Key.CloudletKey.FederatedOrganization
 					changed++
@@ -4063,19 +4129,19 @@ func (m *ClusterInstInfo) CopyInFields(src *ClusterInstInfo) int {
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.NotifyId != src.NotifyId {
 			m.NotifyId = src.NotifyId
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.State != src.State {
 			m.State = src.State
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if src.Errors != nil {
 			if updateListAction == "add" {
 				changed += m.AddErrors(src.Errors...)
@@ -4091,38 +4157,38 @@ func (m *ClusterInstInfo) CopyInFields(src *ClusterInstInfo) int {
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
-		if _, set := fmap["6.1"]; set {
+	if fmap.HasOrHasChild("6") {
+		if fmap.Has("6.1") {
 			if m.Status.TaskNumber != src.Status.TaskNumber {
 				m.Status.TaskNumber = src.Status.TaskNumber
 				changed++
 			}
 		}
-		if _, set := fmap["6.2"]; set {
+		if fmap.Has("6.2") {
 			if m.Status.MaxTasks != src.Status.MaxTasks {
 				m.Status.MaxTasks = src.Status.MaxTasks
 				changed++
 			}
 		}
-		if _, set := fmap["6.3"]; set {
+		if fmap.Has("6.3") {
 			if m.Status.TaskName != src.Status.TaskName {
 				m.Status.TaskName = src.Status.TaskName
 				changed++
 			}
 		}
-		if _, set := fmap["6.4"]; set {
+		if fmap.Has("6.4") {
 			if m.Status.StepName != src.Status.StepName {
 				m.Status.StepName = src.Status.StepName
 				changed++
 			}
 		}
-		if _, set := fmap["6.5"]; set {
+		if fmap.Has("6.5") {
 			if m.Status.MsgCount != src.Status.MsgCount {
 				m.Status.MsgCount = src.Status.MsgCount
 				changed++
 			}
 		}
-		if _, set := fmap["6.6"]; set {
+		if fmap.Has("6.6") {
 			if src.Status.Msgs != nil {
 				if updateListAction == "add" {
 					changed += m.AddStatusMsgs(src.Status.Msgs...)
@@ -4139,8 +4205,8 @@ func (m *ClusterInstInfo) CopyInFields(src *ClusterInstInfo) int {
 			}
 		}
 	}
-	if _, set := fmap["7"]; set {
-		if _, set := fmap["7.1"]; set {
+	if fmap.HasOrHasChild("7") {
+		if fmap.HasOrHasChild("7.1") {
 			if src.Resources.Vms != nil {
 				if updateListAction == "add" {
 					changed += m.AddResourcesVms(src.Resources.Vms...)
@@ -4393,6 +4459,7 @@ type ClusterInstInfoCache struct {
 	KeyWatchers   map[ClusterInstKey][]*ClusterInstInfoKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *ClusterInstKey)
 	DeletedKeyCbs []func(ctx context.Context, key *ClusterInstKey)
+	Store         ClusterInstInfoStore
 }
 
 func NewClusterInstInfoCache() *ClusterInstInfoCache {
@@ -4793,6 +4860,199 @@ func (c *ClusterInstInfoCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
+func (s *ClusterInstInfoCache) InitCacheWithSync(sync DataSync) {
+	InitClusterInstInfoCache(s)
+	s.InitSync(sync)
+}
+
+func (s *ClusterInstInfoCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewClusterInstInfoStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
+// ClusterInstInfoObjectUpdater defines a way of updating a specific ClusterInstInfo
+type ClusterInstInfoObjectUpdater interface {
+	// Get the current ClusterInstInfo
+	Get() *ClusterInstInfo
+	// Update the ClusterInstInfo for the specified Fields flags.
+	Update(*ClusterInstInfo) error
+}
+
+// ClusterInstInfoSender allows for streaming updates to ClusterInstInfo
+type ClusterInstInfoSender interface {
+	// SendUpdate sends the updated object, fields without field flags set will be ignored
+	SendUpdate(updateFn func(update *ClusterInstInfo) error) error
+	// SendState sends an updated state. It will clear any errors unless
+	// the WithStateError option is specified.
+	SendState(state TrackedState, ops ...SenderOp) error
+	// SendStatus appends the status message and sends it.
+	SendStatus(updateType CacheUpdateType, message string, ops ...SenderOp) error
+	// SendStatusIgnoreErr is the same as SendStatus but without error return
+	// and without options to be compatible with older code.
+	SendStatusIgnoreErr(updateType CacheUpdateType, message string)
+}
+
+// ClusterInstInfoSenderHelper implements ClusterInstInfoSender
+type ClusterInstInfoSenderHelper struct {
+	updater ClusterInstInfoObjectUpdater
+}
+
+func (s *ClusterInstInfoSenderHelper) SetUpdater(updater ClusterInstInfoObjectUpdater) {
+	s.updater = updater
+}
+
+// SendUpdate sends only the updated fields set by the Fields flags.
+func (s *ClusterInstInfoSenderHelper) SendUpdate(updateFn func(update *ClusterInstInfo) error) error {
+	obj := s.updater.Get()
+	if err := updateFn(obj); err != nil {
+		return err
+	}
+	return s.updater.Update(obj)
+}
+
+// SendState sends an updated state
+func (s *ClusterInstInfoSenderHelper) SendState(state TrackedState, ops ...SenderOp) error {
+	opts := GetSenderOptions(ops...)
+	obj := s.updater.Get()
+	obj.Fields = []string{
+		ClusterInstInfoFieldState,
+		ClusterInstInfoFieldErrors,
+		ClusterInstInfoFieldStatus,
+	}
+	s.applyOpts(obj, opts)
+
+	if opts.stateErr != nil {
+		obj.Errors = []string{opts.stateErr.Error()}
+	}
+	obj.State = state
+	obj.Status.SetTask(TrackedState_CamelName[int32(state)])
+	return s.updater.Update(obj)
+}
+
+// SendStatus appends the status message and sends it.
+func (s *ClusterInstInfoSenderHelper) SendStatus(updateType CacheUpdateType, message string, ops ...SenderOp) error {
+	opts := GetSenderOptions(ops...)
+	obj := s.updater.Get()
+	obj.Fields = []string{
+		ClusterInstInfoFieldStatus,
+	}
+	s.applyOpts(obj, opts)
+
+	switch updateType {
+	case UpdateTask:
+		obj.Status.SetTask(message)
+	case UpdateStep:
+		obj.Status.SetStep(message)
+	}
+	return s.updater.Update(obj)
+}
+
+func (s *ClusterInstInfoSenderHelper) SendStatusIgnoreErr(updateType CacheUpdateType, message string) {
+	s.SendStatus(updateType, message)
+}
+
+func (s *ClusterInstInfoSenderHelper) applyOpts(obj *ClusterInstInfo, opts *SenderOptions) {
+	if opts.resetStatus {
+		obj.Fields = append(obj.Fields, ClusterInstInfoFieldStatus)
+		obj.Status.StatusReset()
+	}
+}
+
+// ClusterInstInfoCacheUpdater implements ClusterInstInfoSender via a cache
+// that can send data over notify.
+type ClusterInstInfoCacheUpdater struct {
+	ClusterInstInfoSenderHelper
+	ctx   context.Context
+	key   ClusterInstKey
+	cache *ClusterInstInfoCache
+}
+
+func NewClusterInstInfoCacheUpdater(ctx context.Context, cache *ClusterInstInfoCache, key ClusterInstKey) *ClusterInstInfoCacheUpdater {
+	s := &ClusterInstInfoCacheUpdater{
+		ctx:   ctx,
+		key:   key,
+		cache: cache,
+	}
+	s.SetUpdater(s)
+	return s
+}
+
+func (s *ClusterInstInfoCacheUpdater) Get() *ClusterInstInfo {
+	obj := ClusterInstInfo{}
+	if !s.cache.Get(&s.key, &obj) {
+		obj.Key = s.key
+	}
+	return &obj
+}
+
+func (s *ClusterInstInfoCacheUpdater) Update(obj *ClusterInstInfo) error {
+	s.cache.Update(s.ctx, obj, 0)
+	return nil
+}
+
+type ClusterInstInfoSendAPI interface {
+	Send(*ClusterInstInfo) error
+}
+
+// ClusterInstInfoSendUpdater implements ClusterInstInfoObjectUpdater via a generic
+// send API. To allow for building up the list of status messages
+// which need to accumulate over time, we keep a local copy of
+// the object.
+type ClusterInstInfoSendUpdater struct {
+	ClusterInstInfoSenderHelper
+	ctx    context.Context
+	sender ClusterInstInfoSendAPI
+	local  ClusterInstInfo
+	mux    sync.Mutex
+}
+
+func NewClusterInstInfoSendUpdater(ctx context.Context, sender ClusterInstInfoSendAPI, key ClusterInstKey) *ClusterInstInfoSendUpdater {
+	s := &ClusterInstInfoSendUpdater{
+		ctx:    ctx,
+		sender: sender,
+	}
+	s.local.Key = key
+	s.SetUpdater(s)
+	return s
+}
+
+func (s *ClusterInstInfoSendUpdater) Get() *ClusterInstInfo {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	cp := ClusterInstInfo{}
+	cp.DeepCopyIn(&s.local)
+	return &cp
+}
+
+func (s *ClusterInstInfoSendUpdater) Update(obj *ClusterInstInfo) error {
+	s.mux.Lock()
+	s.local.DeepCopyIn(obj)
+	s.mux.Unlock()
+	return s.sender.Send(obj)
+}
+
+// ClusterInstInfoPrintUpdater just prints the updates
+type ClusterInstInfoPrintUpdater struct {
+	ClusterInstInfoSenderHelper
+}
+
+func NewClusterInstInfoPrintUpdater() *ClusterInstInfoPrintUpdater {
+	s := &ClusterInstInfoPrintUpdater{}
+	s.SetUpdater(s)
+	return s
+}
+
+func (s *ClusterInstInfoPrintUpdater) Get() *ClusterInstInfo {
+	return &ClusterInstInfo{}
+}
+
+func (s *ClusterInstInfoPrintUpdater) Update(obj *ClusterInstInfo) error {
+	fmt.Printf("%v\n", obj)
+	return nil
+}
+
 func WaitForClusterInstInfo(ctx context.Context, key *ClusterInstKey, store ClusterInstStore, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
 	var lastMsgCnt int
 	var err error
@@ -4865,7 +5125,11 @@ func WaitForClusterInstInfo(ctx context.Context, key *ClusterInstKey, store Clus
 			switch info.State {
 			case errorState:
 				errs := strings.Join(info.Errors, ", ")
-				err = fmt.Errorf("Encountered failures: %s", errs)
+				if len(info.Errors) == 1 {
+					err = fmt.Errorf("%s", errs)
+				} else {
+					err = fmt.Errorf("Encountered failures: %s", errs)
+				}
 				return err
 			case targetState:
 				handleTargetState()
@@ -5338,6 +5602,10 @@ func (m *ClusterInst) Size() (n int) {
 	}
 	if m.EnableIpv6 {
 		n += 3
+	}
+	l = len(m.ObjId)
+	if l > 0 {
+		n += 2 + l + sovClusterinst(uint64(l))
 	}
 	return n
 }
@@ -6604,6 +6872,38 @@ func (m *ClusterInst) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.EnableIpv6 = bool(v != 0)
+		case 38:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ObjId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowClusterinst
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthClusterinst
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthClusterinst
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ObjId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipClusterinst(dAtA[iNdEx:])

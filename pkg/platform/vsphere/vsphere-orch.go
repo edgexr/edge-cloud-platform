@@ -610,7 +610,7 @@ func (v *VSpherePlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOr
 	return nil
 }
 
-func (v *VSpherePlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
+func (v *VSpherePlatform) DeleteVMs(ctx context.Context, vmGroupName, ownerID string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs", "vmGroupName", vmGroupName)
 	return v.DeleteResourcesForGroup(ctx, vmGroupName)
 }

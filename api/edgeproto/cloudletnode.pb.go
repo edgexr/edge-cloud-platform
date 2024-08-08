@@ -828,7 +828,7 @@ var CloudletNodeAllFields = []string{
 	CloudletNodeFieldAttributesValue,
 }
 
-var CloudletNodeAllFieldsMap = map[string]struct{}{
+var CloudletNodeAllFieldsMap = NewFieldMap(map[string]struct{}{
 	CloudletNodeFieldKeyName:                             struct{}{},
 	CloudletNodeFieldKeyCloudletKeyOrganization:          struct{}{},
 	CloudletNodeFieldKeyCloudletKeyName:                  struct{}{},
@@ -842,7 +842,7 @@ var CloudletNodeAllFieldsMap = map[string]struct{}{
 	CloudletNodeFieldOwnerTagsValue:                      struct{}{},
 	CloudletNodeFieldAttributesKey:                       struct{}{},
 	CloudletNodeFieldAttributesValue:                     struct{}{},
-}
+})
 
 var CloudletNodeAllFieldsStringMap = map[string]string{
 	CloudletNodeFieldKeyName:                             "Key Name",
@@ -864,82 +864,88 @@ func (m *CloudletNode) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, CloudletNodeFieldKey+".") || s == CloudletNodeFieldKey
 }
 
-func (m *CloudletNode) DiffFields(o *CloudletNode, fields map[string]struct{}) {
+func (m *CloudletNode) DiffFields(o *CloudletNode, fields *FieldMap) {
 	if m.Key.Name != o.Key.Name {
-		fields[CloudletNodeFieldKeyName] = struct{}{}
-		fields[CloudletNodeFieldKey] = struct{}{}
+		fields.Set(CloudletNodeFieldKeyName)
+		fields.Set(CloudletNodeFieldKey)
 	}
 	if m.Key.CloudletKey.Organization != o.Key.CloudletKey.Organization {
-		fields[CloudletNodeFieldKeyCloudletKeyOrganization] = struct{}{}
-		fields[CloudletNodeFieldKeyCloudletKey] = struct{}{}
-		fields[CloudletNodeFieldKey] = struct{}{}
+		fields.Set(CloudletNodeFieldKeyCloudletKeyOrganization)
+		fields.Set(CloudletNodeFieldKeyCloudletKey)
+		fields.Set(CloudletNodeFieldKey)
 	}
 	if m.Key.CloudletKey.Name != o.Key.CloudletKey.Name {
-		fields[CloudletNodeFieldKeyCloudletKeyName] = struct{}{}
-		fields[CloudletNodeFieldKeyCloudletKey] = struct{}{}
-		fields[CloudletNodeFieldKey] = struct{}{}
+		fields.Set(CloudletNodeFieldKeyCloudletKeyName)
+		fields.Set(CloudletNodeFieldKeyCloudletKey)
+		fields.Set(CloudletNodeFieldKey)
 	}
 	if m.Key.CloudletKey.FederatedOrganization != o.Key.CloudletKey.FederatedOrganization {
-		fields[CloudletNodeFieldKeyCloudletKeyFederatedOrganization] = struct{}{}
-		fields[CloudletNodeFieldKeyCloudletKey] = struct{}{}
-		fields[CloudletNodeFieldKey] = struct{}{}
+		fields.Set(CloudletNodeFieldKeyCloudletKeyFederatedOrganization)
+		fields.Set(CloudletNodeFieldKeyCloudletKey)
+		fields.Set(CloudletNodeFieldKey)
 	}
 	if m.NodeType != o.NodeType {
-		fields[CloudletNodeFieldNodeType] = struct{}{}
+		fields.Set(CloudletNodeFieldNodeType)
 	}
 	if m.NodeRole != o.NodeRole {
-		fields[CloudletNodeFieldNodeRole] = struct{}{}
+		fields.Set(CloudletNodeFieldNodeRole)
 	}
 	if m.PasswordHash != o.PasswordHash {
-		fields[CloudletNodeFieldPasswordHash] = struct{}{}
+		fields.Set(CloudletNodeFieldPasswordHash)
 	}
 	if m.Salt != o.Salt {
-		fields[CloudletNodeFieldSalt] = struct{}{}
+		fields.Set(CloudletNodeFieldSalt)
 	}
 	if m.Iter != o.Iter {
-		fields[CloudletNodeFieldIter] = struct{}{}
+		fields.Set(CloudletNodeFieldIter)
 	}
 	if m.OwnerTags != nil && o.OwnerTags != nil {
 		if len(m.OwnerTags) != len(o.OwnerTags) {
-			fields[CloudletNodeFieldOwnerTags] = struct{}{}
+			fields.Set(CloudletNodeFieldOwnerTags)
 		} else {
 			for k0, _ := range m.OwnerTags {
 				_, vok0 := o.OwnerTags[k0]
 				if !vok0 {
-					fields[CloudletNodeFieldOwnerTags] = struct{}{}
+					fields.Set(CloudletNodeFieldOwnerTags)
 				} else {
 					if m.OwnerTags[k0] != o.OwnerTags[k0] {
-						fields[CloudletNodeFieldOwnerTags] = struct{}{}
+						fields.Set(CloudletNodeFieldOwnerTags)
 						break
 					}
 				}
 			}
 		}
 	} else if (m.OwnerTags != nil && o.OwnerTags == nil) || (m.OwnerTags == nil && o.OwnerTags != nil) {
-		fields[CloudletNodeFieldOwnerTags] = struct{}{}
+		fields.Set(CloudletNodeFieldOwnerTags)
 	}
 	if m.Attributes != nil && o.Attributes != nil {
 		if len(m.Attributes) != len(o.Attributes) {
-			fields[CloudletNodeFieldAttributes] = struct{}{}
+			fields.Set(CloudletNodeFieldAttributes)
 		} else {
 			for k0, _ := range m.Attributes {
 				_, vok0 := o.Attributes[k0]
 				if !vok0 {
-					fields[CloudletNodeFieldAttributes] = struct{}{}
+					fields.Set(CloudletNodeFieldAttributes)
 				} else {
 					if m.Attributes[k0] != o.Attributes[k0] {
-						fields[CloudletNodeFieldAttributes] = struct{}{}
+						fields.Set(CloudletNodeFieldAttributes)
 						break
 					}
 				}
 			}
 		}
 	} else if (m.Attributes != nil && o.Attributes == nil) || (m.Attributes == nil && o.Attributes != nil) {
-		fields[CloudletNodeFieldAttributes] = struct{}{}
+		fields.Set(CloudletNodeFieldAttributes)
 	}
 }
 
-var UpdateCloudletNodeFieldsMap = map[string]struct{}{
+func (m *CloudletNode) GetDiffFields(o *CloudletNode) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateCloudletNodeFieldsMap = NewFieldMap(map[string]struct{}{
 	CloudletNodeFieldNodeType:        struct{}{},
 	CloudletNodeFieldNodeRole:        struct{}{},
 	CloudletNodeFieldOwnerTags:       struct{}{},
@@ -948,7 +954,7 @@ var UpdateCloudletNodeFieldsMap = map[string]struct{}{
 	CloudletNodeFieldAttributes:      struct{}{},
 	CloudletNodeFieldAttributesKey:   struct{}{},
 	CloudletNodeFieldAttributesValue: struct{}{},
-}
+})
 
 func (m *CloudletNode) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -956,11 +962,11 @@ func (m *CloudletNode) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateCloudletNodeFieldsMap[field]; !ok {
+		if !UpdateCloudletNodeFieldsMap.Has(field) {
 			if _, ok := CloudletNodeAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -983,27 +989,27 @@ func (m *CloudletNode) CopyInFields(src *CloudletNode) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
-			if _, set := fmap["2.2.1"]; set {
+		if fmap.HasOrHasChild("2.2") {
+			if fmap.Has("2.2.1") {
 				if m.Key.CloudletKey.Organization != src.Key.CloudletKey.Organization {
 					m.Key.CloudletKey.Organization = src.Key.CloudletKey.Organization
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.2"]; set {
+			if fmap.Has("2.2.2") {
 				if m.Key.CloudletKey.Name != src.Key.CloudletKey.Name {
 					m.Key.CloudletKey.Name = src.Key.CloudletKey.Name
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.3"]; set {
+			if fmap.Has("2.2.3") {
 				if m.Key.CloudletKey.FederatedOrganization != src.Key.CloudletKey.FederatedOrganization {
 					m.Key.CloudletKey.FederatedOrganization = src.Key.CloudletKey.FederatedOrganization
 					changed++
@@ -1011,37 +1017,37 @@ func (m *CloudletNode) CopyInFields(src *CloudletNode) int {
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.NodeType != src.NodeType {
 			m.NodeType = src.NodeType
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.NodeRole != src.NodeRole {
 			m.NodeRole = src.NodeRole
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.PasswordHash != src.PasswordHash {
 			m.PasswordHash = src.PasswordHash
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if m.Salt != src.Salt {
 			m.Salt = src.Salt
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.Iter != src.Iter {
 			m.Iter = src.Iter
 			changed++
 		}
 	}
-	if _, set := fmap["8"]; set {
+	if fmap.HasOrHasChild("8") {
 		if src.OwnerTags != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.OwnerTags {
@@ -1067,7 +1073,7 @@ func (m *CloudletNode) CopyInFields(src *CloudletNode) int {
 			changed++
 		}
 	}
-	if _, set := fmap["9"]; set {
+	if fmap.HasOrHasChild("9") {
 		if src.Attributes != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.Attributes {
@@ -1336,6 +1342,7 @@ type CloudletNodeCache struct {
 	KeyWatchers   map[CloudletNodeKey][]*CloudletNodeKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *CloudletNodeKey)
 	DeletedKeyCbs []func(ctx context.Context, key *CloudletNodeKey)
+	Store         CloudletNodeStore
 }
 
 func NewCloudletNodeCache() *CloudletNodeCache {
@@ -1698,6 +1705,18 @@ func (c *CloudletNodeCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *CloudletNodeCache) InitCacheWithSync(sync DataSync) {
+	InitCloudletNodeCache(s)
+	s.InitSync(sync)
+}
+
+func (s *CloudletNodeCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewCloudletNodeStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

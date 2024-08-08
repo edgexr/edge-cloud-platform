@@ -184,7 +184,7 @@ func (g *GenCmd) Generate(file *generator.FileDescriptor) {
 }
 
 func (g *GenCmd) generateServiceVars(file *descriptor.FileDescriptorProto, service *descriptor.ServiceDescriptorProto) {
-	if gensupport.GetRedisApi(service) {
+	if gensupport.GetInternalApi(service) {
 		return
 	}
 	writeService := false
@@ -207,7 +207,7 @@ func (g *GenCmd) generateServiceCmd(file *descriptor.FileDescriptorProto, servic
 	if len(service.Method) == 0 {
 		return
 	}
-	if gensupport.GetRedisApi(service) {
+	if gensupport.GetInternalApi(service) {
 		return
 	}
 	count := 0

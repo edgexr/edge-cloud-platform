@@ -263,6 +263,7 @@ func GetCommonResourceQuotaProps(additionalResources ...string) []edgeproto.Infr
 }
 
 func ValidateCloudletResourceQuotas(ctx context.Context, quotaProps []edgeproto.InfraResource, curRes map[string]edgeproto.InfraResource, resourceQuotas []edgeproto.ResourceQuota) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "validate cloudlet resource quotas", "curResources", curRes, "quotas", resourceQuotas)
 	resPropsMap := make(map[string]struct{})
 	resPropsNames := []string{}
 	for _, prop := range quotaProps {
@@ -289,7 +290,7 @@ func ValidateCloudletResourceQuotas(ctx context.Context, quotaProps []edgeproto.
 			return fmt.Errorf("Resource quota %s exceeded max supported value: %d", resQuota.Name, infraRes.InfraMaxValue)
 		}
 		if resQuota.Value > 0 && resQuota.Value < infraRes.Value {
-			return fmt.Errorf("Resource quota value for %s is less than currently used value. Should be atleast %d", resQuota.Name, infraRes.Value)
+			return fmt.Errorf("Resource quota value for %s is less than currently used value. Should be at least %d", resQuota.Name, infraRes.Value)
 		}
 	}
 	return nil

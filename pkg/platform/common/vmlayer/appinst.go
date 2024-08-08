@@ -61,7 +61,7 @@ type vmAppOrchValues struct {
 	newSubnetNames     SubnetNames
 }
 
-var imageLock sync.Mutex
+var imageLock sync.Mutex // serializes changes to local disk
 var imageDownloadsInProgress map[string]bool
 
 func init() {
@@ -136,7 +136,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	orchVals.newSubnetNames = v.GetVMAppSubnetNames(appVmName)
 	nets := make(map[string]NetworkType)
 	routes := make(map[string][]edgeproto.Route)
-	lbVm, err := v.GetVMSpecForRootLB(ctx, orchVals.lbName, orchVals.newSubnetNames, &appInst.Key, nets, routes, updateCallback)
+	lbVm, err := v.GetVMSpecForRootLB(ctx, orchVals.lbName, orchVals.newSubnetNames, &appInst.Key, nets, routes, NoAccessKey, cloudcommon.NodeRoleBase, updateCallback)
 	if err != nil {
 		return &orchVals, err
 	}
@@ -164,6 +164,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	updateCallback(edgeproto.UpdateTask, "Deploying App")
 	vmgp, err := v.OrchestrateVMsFromVMSpec(ctx,
 		groupName,
+		appInst.ObjId,
 		vms,
 		action,
 		updateCallback,
@@ -409,8 +410,8 @@ func (v *VMPlatform) setupDnsForAppInst(ctx context.Context, clusterInst *edgepr
 	return v.VMProperties.CommonPf.AddProxySecurityRulesAndPatchDNS(ctx, client, names, app, appInst, getDnsAction, v.VMProvider.WhitelistSecurityRules, &wlParams, proxyConfig, ops, proxyOps...)
 }
 
-func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
-
+func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, appFlavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
+	updateCallback := updateSender.SendStatusIgnoreErr
 	var err error
 	var result OperationInitResult
 	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
@@ -721,7 +722,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 	case cloudcommon.DeploymentTypeVM:
 		objName := appInst.UniqueId
 		log.SpanLog(ctx, log.DebugLevelInfra, "Deleting VM", "stackName", objName)
-		err := v.VMProvider.DeleteVMs(ctx, objName)
+		err := v.VMProvider.DeleteVMs(ctx, objName, clusterInst.ObjId)
 		if err != nil && err.Error() != ServerDoesNotExistError {
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
 		}
@@ -1069,3 +1070,5 @@ func waitForImageDownloadInProgress(ctx context.Context, imageName string) error
 		}
 	}
 }
+
+func (*VMPlatform) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {}

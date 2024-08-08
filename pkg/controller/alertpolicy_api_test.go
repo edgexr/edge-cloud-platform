@@ -46,8 +46,9 @@ func TestAlertPolicyApi(t *testing.T) {
 
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 	reduceInfoTimeouts(t, ctx, apis)
 	// create supporting data
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())

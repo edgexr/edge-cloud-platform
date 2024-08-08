@@ -81,7 +81,7 @@ func (s *K8sOperator) InitCommon(ctx context.Context, platformConfig *platform.P
 	return nil
 }
 
-func (s *K8sOperator) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *K8sOperator) InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
 

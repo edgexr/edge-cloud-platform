@@ -65,7 +65,7 @@ func (t *TestCud) Init(g *generator.Generator) {
 			continue
 		}
 		for _, service := range file.Service {
-			if gensupport.GetRedisApi(service) {
+			if gensupport.GetInternalApi(service) {
 				continue
 			}
 			groups := gensupport.GetMethodGroups(g, service)
@@ -553,7 +553,7 @@ func (t *TestCud) Generate(file *generator.FileDescriptor) {
 	hasMethod := false
 	if len(file.FileDescriptorProto.Service) > 0 {
 		for _, service := range file.FileDescriptorProto.Service {
-			if gensupport.GetRedisApi(service) {
+			if gensupport.GetInternalApi(service) {
 				continue
 			}
 			if hasSupportedMethod(service) {
@@ -587,7 +587,7 @@ func (t *TestCud) Generate(file *generator.FileDescriptor) {
 		if len(service.Method) == 0 {
 			continue
 		}
-		if gensupport.GetRedisApi(service) {
+		if gensupport.GetInternalApi(service) {
 			continue
 		}
 		if !hasSupportedMethod(service) {
@@ -602,7 +602,7 @@ func (t *TestCud) Generate(file *generator.FileDescriptor) {
 		if len(service.Method) == 0 {
 			continue
 		}
-		if gensupport.GetRedisApi(service) {
+		if gensupport.GetInternalApi(service) {
 			continue
 		}
 		t.genClientInterface(service)
@@ -870,7 +870,7 @@ func (s *DummyServer) {{.Method}}(in *{{.Pkg}}.{{.InName}}, server {{.Pkg}}.{{.S
 	s.{{.InName}}Cache.{{.CacheFunc}}(server.Context(), in, 0)
 {{- end}}
 {{- if and .OutList .HasCache}}
-	err = s.{{.InName}}Cache.Show(in, func(obj *{{.Pkg}}.{{.InName}}) error {
+	err = s.{{.InName}}Cache.Show(in, func(obj *{{.Pkg}}.{{.OutName}}) error {
 		err := server.Send(obj)
 		return err
 	})
@@ -998,7 +998,7 @@ func (t *TestCud) genDummyServer() {
 			if len(service.Method) == 0 {
 				continue
 			}
-			if gensupport.GetRedisApi(service) {
+			if gensupport.GetInternalApi(service) {
 				continue
 			}
 			if !GetDummyServer(service) {
@@ -1092,7 +1092,7 @@ func (t *TestCud) genClientInterface(service *descriptor.ServiceDescriptorProto)
 	if len(service.Method) == 0 {
 		return
 	}
-	if gensupport.GetRedisApi(service) {
+	if gensupport.GetInternalApi(service) {
 		return
 	}
 
@@ -1149,7 +1149,7 @@ func (t *TestCud) genClient() {
 			continue
 		}
 		for _, service := range file.Service {
-			if gensupport.GetRedisApi(service) {
+			if gensupport.GetInternalApi(service) {
 				continue
 			}
 			if hasSupportedMethod(service) {

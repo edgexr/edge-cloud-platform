@@ -6,6 +6,7 @@ package gencmd
 import (
 	"context"
 	fmt "fmt"
+	_ "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
@@ -343,6 +344,80 @@ var TrustPolicyExceptionComments = map[string]string{
 var TrustPolicyExceptionSpecialArgs = map[string]string{
 	"fields": "StringArray",
 }
+var TPEInstanceKeyRequiredArgs = []string{}
+var TPEInstanceKeyOptionalArgs = []string{
+	"tpekey.appkey.organization",
+	"tpekey.appkey.name",
+	"tpekey.appkey.version",
+	"tpekey.cloudletpoolkey.organization",
+	"tpekey.cloudletpoolkey.name",
+	"tpekey.name",
+	"appinstkey.name",
+	"appinstkey.organization",
+	"appinstkey.cloudletkey.organization",
+	"appinstkey.cloudletkey.name",
+	"appinstkey.cloudletkey.federatedorganization",
+	"clusterkey.name",
+	"clusterkey.organization",
+}
+var TPEInstanceKeyAliasArgs = []string{}
+var TPEInstanceKeyComments = map[string]string{
+	"tpekey.appkey.organization":                   "App developer organization",
+	"tpekey.appkey.name":                           "App name",
+	"tpekey.appkey.version":                        "App version",
+	"tpekey.cloudletpoolkey.organization":          "Name of the organization this pool belongs to",
+	"tpekey.cloudletpoolkey.name":                  "CloudletPool Name",
+	"tpekey.name":                                  "TrustPolicyExceptionKey name",
+	"appinstkey.name":                              "App Instance name",
+	"appinstkey.organization":                      "App Instance organization",
+	"appinstkey.cloudletkey.organization":          "Organization of the cloudlet site",
+	"appinstkey.cloudletkey.name":                  "Name of the cloudlet",
+	"appinstkey.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"clusterkey.name":                              "Cluster name",
+	"clusterkey.organization":                      "Name of the organization that this cluster belongs to",
+}
+var TPEInstanceKeySpecialArgs = map[string]string{}
+var TPEInstanceStateRequiredArgs = []string{
+	"key.tpekey.appkey.organization",
+	"key.tpekey.appkey.name",
+	"key.tpekey.appkey.version",
+	"key.tpekey.cloudletpoolkey.organization",
+	"key.tpekey.cloudletpoolkey.name",
+	"key.tpekey.name",
+	"key.appinstkey.name",
+	"key.appinstkey.organization",
+	"key.appinstkey.cloudletkey.organization",
+	"key.appinstkey.cloudletkey.name",
+	"key.appinstkey.cloudletkey.federatedorganization",
+	"key.clusterkey.name",
+	"key.clusterkey.organization",
+}
+var TPEInstanceStateOptionalArgs = []string{
+	"owner",
+	"runrequested",
+	"runcount",
+	"tpeenable",
+	"disablereason",
+	"error",
+	"startedat",
+}
+var TPEInstanceStateAliasArgs = []string{}
+var TPEInstanceStateComments = map[string]string{
+	"key.tpekey.appkey.organization":                   "App developer organization",
+	"key.tpekey.appkey.name":                           "App name",
+	"key.tpekey.appkey.version":                        "App version",
+	"key.tpekey.cloudletpoolkey.organization":          "Name of the organization this pool belongs to",
+	"key.tpekey.cloudletpoolkey.name":                  "CloudletPool Name",
+	"key.tpekey.name":                                  "TrustPolicyExceptionKey name",
+	"key.appinstkey.name":                              "App Instance name",
+	"key.appinstkey.organization":                      "App Instance organization",
+	"key.appinstkey.cloudletkey.organization":          "Organization of the cloudlet site",
+	"key.appinstkey.cloudletkey.name":                  "Name of the cloudlet",
+	"key.appinstkey.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"key.clusterkey.name":                              "Cluster name",
+	"key.clusterkey.organization":                      "Name of the organization that this cluster belongs to",
+}
+var TPEInstanceStateSpecialArgs = map[string]string{}
 var CreateTrustPolicyExceptionRequiredArgs = []string{
 	"apporg",
 	"appname",

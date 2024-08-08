@@ -29,19 +29,15 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 )
 
-func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
+func (k *K8sBareMetalPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, flavor *edgeproto.Flavor, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet", "cloudlet", cloudlet)
 
 	if pfConfig.ContainerRegistryPath == "" {
 		return false, fmt.Errorf("container registry path not specified")
 	}
 	cloudletResourcesCreated := false
-	err := k.commonPf.InitCloudletSSHKeys(ctx, accessApi)
-	if err != nil {
-		return cloudletResourcesCreated, err
-	}
 
-	k.commonPf.PlatformConfig = infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	k.commonPf.PlatformConfig = infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
 	if err := k.commonPf.InitInfraCommon(ctx, k.commonPf.PlatformConfig, k8sbmProps); err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -94,14 +90,10 @@ func (k *K8sBareMetalPlatform) DeleteTrustPolicyException(ctx context.Context, T
 	return fmt.Errorf("DeleteTrustPolicyException TODO")
 }
 
-func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
+func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudlet")
 	updateCallback(edgeproto.UpdateTask, "Deleting cloudlet")
-	err := k.commonPf.InitCloudletSSHKeys(ctx, accessApi)
-	if err != nil {
-		return err
-	}
-	k.commonPf.PlatformConfig = infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	k.commonPf.PlatformConfig = infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
 	if err := k.commonPf.InitInfraCommon(ctx, k.commonPf.PlatformConfig, k8sbmProps); err != nil {
 		return err
 	}

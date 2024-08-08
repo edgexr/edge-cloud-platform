@@ -136,6 +136,8 @@ message ClusterInst {
   string fqdn = 36 [(protogen.backend) = true];
   // Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting
   bool enable_ipv6 = 37;
+  // Universally unique object ID
+  string obj_id = 38 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;

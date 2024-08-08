@@ -47,13 +47,9 @@ func (o *OpenstackPlatform) GetCloudletManifest(ctx context.Context, name string
 	var manifest infracommon.CloudletManifest
 
 	o.InitResourceReservations(ctx)
-	resources, err := o.populateParams(ctx, vmgp, heatCreate)
+	err := o.populateParams(ctx, vmgp, heatCreate)
 	if err != nil {
 		return "", err
-	}
-	err = o.ReleaseReservations(ctx, resources)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "ReleaseReservations error", "err", err)
 	}
 
 	if len(vmgp.VMs) == 0 {

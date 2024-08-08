@@ -20,6 +20,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
@@ -46,6 +47,9 @@ func TestCloudletInfo(t *testing.T) {
 
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	// create supporting data

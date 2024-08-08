@@ -36,7 +36,7 @@ type CacheOption bool
 const UseCache CacheOption = true
 const NoCache CacheOption = false
 
-var serverCacheLock sync.Mutex
+var serverCacheLock sync.Mutex // optimization only to reduce API calls
 
 // map of group name to server name to ip
 var serverExternalIpCache map[string]*ServerIP

@@ -254,9 +254,8 @@ func autoScalePolicyCb(ctx context.Context, old *edgeproto.AutoScalePolicy, new 
 		// or new policy, won't be on any clusterinsts yet
 		return
 	}
-	fields := make(map[string]struct{})
-	new.DiffFields(old, fields)
-	if len(fields) == 0 {
+	fields := new.GetDiffFields(old)
+	if fields.Count() == 0 {
 		return
 	}
 	// update all prometheus AppInsts on ClusterInsts using the policy
@@ -779,17 +778,16 @@ func getAppFromClusterSvc(appkey *edgeproto.AppKey) (*edgeproto.App, error) {
 }
 
 func setAppDiffFields(src *edgeproto.App, dst *edgeproto.App) {
-	fields := make(map[string]struct{})
-	src.DiffFields(dst, fields)
+	fmap := src.GetDiffFields(dst)
 
-	if _, found := fields[edgeproto.AppFieldImagePath]; found {
+	if fmap.Has(edgeproto.AppFieldImagePath) {
 		dst.Fields = append(dst.Fields, edgeproto.AppFieldImagePath)
 	}
-	if _, found := fields[edgeproto.AppFieldConfigs]; found {
+	if fmap.HasOrHasChild(edgeproto.AppFieldConfigs) {
 		dst.Fields = append(dst.Fields, edgeproto.AppFieldConfigs,
 			edgeproto.AppFieldConfigsKind, edgeproto.AppFieldConfigsConfig)
 	}
-	if _, found := fields[edgeproto.AppFieldAnnotations]; found {
+	if fmap.Has(edgeproto.AppFieldAnnotations) {
 		dst.Fields = append(dst.Fields, edgeproto.AppFieldAnnotations)
 	}
 }
@@ -842,12 +840,8 @@ func updateExistingAppInst(ctx context.Context, apiClient edgeproto.AppInstApiCl
 		log.SpanLog(ctx, log.DebugLevelApi, "update check: AppInst not found", "key", appInst.Key)
 		return
 	}
-	fields := make(map[string]struct{})
-	appInst.DiffFields(existing, fields)
-	hasKey := func(field string) bool {
-		_, found := fields[field]
-		return found
-	}
+	fmap := appInst.GetDiffFields(existing)
+	hasKey := fmap.Has
 	newFields := []string{}
 	if hasKey(edgeproto.AppInstFieldConfigs) ||
 		hasKey(edgeproto.AppInstFieldConfigsKind) ||

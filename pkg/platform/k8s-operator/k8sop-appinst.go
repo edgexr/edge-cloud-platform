@@ -28,8 +28,9 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func (s *K8sOperator) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *K8sOperator) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst", "appInst", appInst)
+	updateCallback := updateSender.SendStatusIgnoreErr
 	updateCallback(edgeproto.UpdateTask, "Creating AppInst")
 	if app.Deployment != cloudcommon.DeploymentTypeKubernetes && app.Deployment != cloudcommon.DeploymentTypeHelm {
 		return fmt.Errorf("unsupported deployment type %s", app.Deployment)
@@ -187,3 +188,5 @@ func (s *K8sOperator) GetConsoleUrl(ctx context.Context, app *edgeproto.App, app
 func (s *K8sOperator) SetPowerState(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Unsupported command for platform")
 }
+
+func (s *K8sOperator) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {}

@@ -29,34 +29,52 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/cloudletssh"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
 type PlatformConfig struct {
-	CloudletKey         *edgeproto.CloudletKey
-	PhysicalName        string
-	Region              string
-	TestMode            bool
-	CloudletVMImagePath string
-	EnvoyWithCurlImage  string
-	NginxWithCurlImage  string
-	PackageVersion      string
-	EnvVars             map[string]string
-	NodeMgr             *node.NodeMgr
-	AppDNSRoot          string
-	RootLBFQDN          string
-	AnsiblePublicAddr   string
-	DeploymentTag       string
-	Upgrade             bool
-	AccessApi           AccessApi
-	TrustPolicy         string
-	CacheDir            string
-	GPUConfig           *edgeproto.GPUConfig
-	FedExternalAddr     string
-	CommerialCerts      bool
+	CloudletKey           *edgeproto.CloudletKey
+	CloudletObjID         string
+	PhysicalName          string
+	Region                string
+	TestMode              bool
+	CloudletVMImagePath   string
+	EnvoyWithCurlImage    string
+	NginxWithCurlImage    string
+	EnvVars               map[string]string
+	NodeMgr               *node.NodeMgr
+	AppDNSRoot            string
+	RootLBFQDN            string
+	RootLBAccessKey       string // set if Shepherd runs on rootLB
+	AnsiblePublicAddr     string
+	DeploymentTag         string
+	TrustPolicy           string
+	CacheDir              string
+	GPUConfig             *edgeproto.GPUConfig
+	FedExternalAddr       string
+	ContainerRegistryPath string
+	CommercialCerts       bool
+	CrmOnEdge             bool
+	PlatformInitConfig
+}
+
+// PlatformInitConfig is init data passed with edgeproto.PlatformConfig to
+// certain platform functions that currently do not require init via InitCommon().
+// TODO: Ideally this should be part of PlatformConfig (above) and all platform
+// functions taking edgeproto.PlatformConfig as a parameter should instead take
+// platform.PlatformConfig. However, that requires a lot of rework in the
+// platform code, so shall be taken up later.
+type PlatformInitConfig struct {
+	AccessApi       AccessApi
+	SyncFactory     syncdata.SyncFactory
+	CloudletSSHKey  *cloudletssh.SSHKey
+	ProxyCertsCache *certscache.ProxyCertsCache
 }
 
 type Caches struct {
@@ -64,11 +82,8 @@ type Caches struct {
 	FlavorCache               *edgeproto.FlavorCache
 	TrustPolicyCache          *edgeproto.TrustPolicyCache
 	TrustPolicyExceptionCache *edgeproto.TrustPolicyExceptionCache
-	CloudletPoolCache         *edgeproto.CloudletPoolCache
 	ClusterInstCache          *edgeproto.ClusterInstCache
-	ClusterInstInfoCache      *edgeproto.ClusterInstInfoCache
 	AppInstCache              *edgeproto.AppInstCache
-	AppInstInfoCache          *edgeproto.AppInstInfoCache
 	AppCache                  *edgeproto.AppCache
 	ResTagTableCache          *edgeproto.ResTagTableCache
 	CloudletCache             *edgeproto.CloudletCache
@@ -77,7 +92,6 @@ type Caches struct {
 	VMPoolInfoCache           *edgeproto.VMPoolInfoCache
 	GPUDriverCache            *edgeproto.GPUDriverCache
 	NetworkCache              *edgeproto.NetworkCache
-	CloudletInfoCache         *edgeproto.CloudletInfoCache
 	// VMPool object managed by CRM
 	VMPool    *edgeproto.VMPool
 	VMPoolMux *sync.Mutex
@@ -86,7 +100,11 @@ type Caches struct {
 // Used by federation to redirect FRM to finish CreateAppInst via the controller
 var ErrContinueViaController = errors.New("continue operation via controller")
 
-// Platform abstracts the underlying cloudlet platform.
+// Platform abstracts the underlying cloudlet platform, and serves
+// as a translation layer from platform-independent code to a platform-specific
+// API. The platform object should not maintain any state, except via the passed-in
+// SyncFactory, as the platform object may be created and deleted dynamically as needed
+// on a set of horizontally scaled instances.
 type Platform interface {
 	// GetVersionProperties returns properties related to the platform version
 	GetVersionProperties(ctx context.Context) map[string]string
@@ -94,11 +112,16 @@ type Platform interface {
 	// properties of the platform.
 	GetFeatures() *edgeproto.PlatformFeatures
 	// InitCommon is called once during CRM startup to do steps needed for both active or standby. If the platform does not support
-	// H/A and does not need separate steps for the active unit, then just this func can be implemented and InitHAConditional can be left empty
+	// H/A and does not need separate steps for the active unit, then just this func can be implemented and InitHAConditional can be left empty.
+	// This should be a simple and quick function to initialize the platform
+	// structure and API credentials, and not attempt to interact with the
+	// underlying infrastructure.
 	InitCommon(ctx context.Context, platformConfig *PlatformConfig, caches *Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error
-	// InitHAConditional is only needed for platforms which support H/A. It is called in the following cases: 1) when platform initially starts in a non-switchover case
+	// InitHAConditional is used to finish setup of the cloudlet for the active CRM.
+	// It is called in the following cases:
+	// 1) when platform initially starts in a non-switchover case
 	// 2) in a switchover case if the previouly-active unit is running a different version as specified by GetInitHAConditionalCompatibilityVersion
-	InitHAConditional(ctx context.Context, platformConfig *PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error
+	InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error
 	// GetInitializationCompatibilityVersion returns a version as a string. When doing switchovers, if the new version matches the previous version, then InitHAConditional
 	// is not called again. If there is a mismatch, then InitHAConditional will be called again.
 	GetInitHAConditionalCompatibilityVersion(ctx context.Context) string
@@ -121,7 +144,7 @@ type Platform interface {
 	// Get resources used by the cluster
 	GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error)
 	// Create an AppInst on a Cluster
-	CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error
+	CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error
 	// Delete an AppInst on a Cluster
 	DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error
 	// Update an AppInst
@@ -141,14 +164,14 @@ type Platform interface {
 	// Set power state of the AppInst
 	SetPowerState(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error
 	// Create Cloudlet returns cloudletResourcesCreated, error
-	CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *Caches, accessApi AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error)
+	CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *PlatformInitConfig, flavor *edgeproto.Flavor, caches *Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error)
 	UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error
 	// Delete Cloudlet
-	DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *Caches, accessApi AccessApi, updateCallback edgeproto.CacheUpdateCallback) error
+	DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *PlatformInitConfig, caches *Caches, updateCallback edgeproto.CacheUpdateCallback) error
 	// Performs Upgrades for things like k8s config
 	PerformUpgrades(ctx context.Context, caches *Caches, cloudletState dme.CloudletState) error
 	// Get Cloudlet Manifest Config
-	GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi AccessApi, flavor *edgeproto.Flavor, caches *Caches) (*edgeproto.CloudletManifest, error)
+	GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *PlatformInitConfig, accessApi AccessApi, flavor *edgeproto.Flavor, caches *Caches) (*edgeproto.CloudletManifest, error)
 	// Verify VM
 	VerifyVMs(ctx context.Context, vms []edgeproto.VM) error
 	// Update the cloudlet's Trust Policy
@@ -167,6 +190,9 @@ type Platform interface {
 	ActiveChanged(ctx context.Context, platformActive bool) error
 	// Sanitizes the name to make it conform to platform requirements.
 	NameSanitize(name string) string
+	// HandleFedAppInstCb handles callbacks from federation partners after we
+	// create an AppInst on the partner federation. Callbacks update the status of the AppInst change.
+	HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent)
 }
 
 type ClusterSvc interface {

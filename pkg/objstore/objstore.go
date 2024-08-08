@@ -90,9 +90,10 @@ var ErrKVStoreNotInitialized = errors.New("Object Storage not initialized")
 type Obj interface {
 	// Validate checks all object fields to make sure they do not
 	// contain invalid data. Primarily used to validate data passed
-	// in by a user. Fields is an array of specified fields for
-	// update. It will be nil for create.
-	Validate(fields map[string]struct{}) error
+	// in by a user. FieldMap specifies fields for update, allowing
+	// to distinguish between the zero value and "not set".
+	// It will be nil for create.
+	Validate(fmap FieldMap) error
 	// CopyInFields copies in modified fields for an Update.
 	//CopyInFields(src Obj)
 	// GetObjKey returns the ObjKey that uniquely identifies the object.
@@ -115,6 +116,16 @@ type ObjKey interface {
 	ExistsError() error
 	// Get key tags for logging and tagging
 	GetTags() map[string]string
+}
+
+// FieldMap is used to check if a member field of an object was specified.
+// This is used to distinguish between a zero value vs a "not set" value
+// for updates.
+type FieldMap interface {
+	// Has returns true if the fieldKey is specified.
+	Has(fieldKey string) bool
+	// Fields returns all the specified fields.
+	Fields() []string
 }
 
 type KVOptions struct {

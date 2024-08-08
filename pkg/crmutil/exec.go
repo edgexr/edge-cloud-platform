@@ -28,123 +28,17 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/kballard/go-shellquote"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/xtaci/smux"
 )
 
-const ExecRequestIgnoredPlatformInactive = "ExecRequestIgnoredPlatformInactive"
-
-// ExecReqHandler just satisfies the Recv() function for the
-// ExecRequest receive notify interface, and calls into the
-// controller data which has all the cached information about the
-// ClusterInst, AppInst, etc.
-type ExecReqHandler struct {
-	cd *ControllerData
-}
-
-func NewExecReqHandler(cd *ControllerData) *ExecReqHandler {
-	return &ExecReqHandler{cd: cd}
-}
-
-func (s *ExecReqHandler) RecvExecRequest(ctx context.Context, msg *edgeproto.ExecRequest) {
-	// spawn go process so we don't stall notify messages
-	go func() {
-		cspan := log.StartSpan(log.DebugLevelApi, "process exec req", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
-		defer cspan.Finish()
-		err := s.cd.ProcessExecReq(ctx, msg)
-		if err != nil {
-			if err.Error() == ExecRequestIgnoredPlatformInactive {
-				// send nothing in response as the controller only looks for one response
-				return
-			}
-			msg.Err = err.Error()
-		}
-		s.cd.ExecReqSend.Update(ctx, msg)
-	}()
-}
-
-type EnvoyContainerVersion struct {
-	ContainerName string
-	EnvoyVersion  string
-	Error         string
-}
-
-type RootLBEnvoyVersion struct {
-	NodeType        string
-	NodeName        string
-	EnvoyContainers []EnvoyContainerVersion
-}
-
-func (cd *ControllerData) GetClusterEnvoyVersion(ctx context.Context, req *edgeproto.DebugRequest) string {
-	clusterInsts := []edgeproto.ClusterInst{}
-	cd.ClusterInstCache.Mux.Lock()
-	for _, v := range cd.ClusterInstCache.Objs {
-		clusterInsts = append(clusterInsts, *v.Obj)
-	}
-	cd.ClusterInstCache.Mux.Unlock()
-	nodes, err := cd.platform.ListCloudletMgmtNodes(ctx, clusterInsts, nil)
-	if err != nil {
-		return fmt.Sprintf("unable to get list of cluster nodes, %v", err)
-	}
-	if len(nodes) == 0 {
-		return fmt.Sprintf("no nodes found")
-	}
-	nodeVersions := []RootLBEnvoyVersion{}
-	for _, node := range nodes {
-		if !strings.Contains(node.Type, "rootlb") {
-			continue
-		}
-		client, err := cd.platform.GetNodePlatformClient(ctx, &node)
-		if err != nil {
-			return fmt.Sprintf("failed to get ssh client for node %s, %v", node.Name, err)
-		}
-		out, err := client.Output(`docker ps --format "{{.Names}}" --filter name="^envoy"`)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "failed to find envoy containers on rootlb", "rootlb", node, "err", err, "out", out)
-			return fmt.Sprintf("failed to find envoy containers on rootlb %s, %v", node.Name, err)
-		}
-		nodeVersion := RootLBEnvoyVersion{
-			NodeType: node.Type,
-			NodeName: node.Name,
-		}
-		for _, name := range strings.Split(out, "\n") {
-			name = strings.TrimSpace(name)
-			if name == "" {
-				continue
-			}
-			envoyContainerVers := EnvoyContainerVersion{
-				ContainerName: name,
-			}
-			out, err := client.Output(fmt.Sprintf("docker exec %s envoy --version", name))
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "failed to find envoy container version on rootlb", "rootlb", node, "container", name, "err", err, "out", out)
-				envoyContainerVers.Error = err.Error()
-				nodeVersion.EnvoyContainers = append(nodeVersion.EnvoyContainers, envoyContainerVers)
-				continue
-			}
-			version := strings.TrimSpace(out)
-			envoyContainerVers.EnvoyVersion = version
-			nodeVersion.EnvoyContainers = append(nodeVersion.EnvoyContainers, envoyContainerVers)
-		}
-		nodeVersions = append(nodeVersions, nodeVersion)
-	}
-	out, err := json.Marshal(nodeVersions)
-	if err != nil {
-		return fmt.Sprintf("Failed to marshal node versions: %s, %v", string(out), err)
-	}
-	return string(out)
-}
-
-func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.ExecRequest) (reterr error) {
+func (cd *CRMHandler) ProcessExecReq(ctx context.Context, pf platform.Platform, req *edgeproto.ExecRequest, sendReply func(msg *edgeproto.ExecRequest)) (reterr error) {
 	var err error
-	log.SpanLog(ctx, log.DebugLevelApi, "ProcessExecReq", "req", req, "PlatformInstanceActive", cd.highAvailabilityManager.PlatformInstanceActive)
+	log.SpanLog(ctx, log.DebugLevelApi, "ProcessExecReq", "req", req)
 
-	if !cd.highAvailabilityManager.PlatformInstanceActive {
-		return fmt.Errorf(ExecRequestIgnoredPlatformInactive)
-	}
 	run := &RunExec{
 		req: req,
 	}
@@ -167,7 +61,7 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 	var execReqType cloudcommon.ExecReqType
 	var initURL *url.URL
 	if req.Console != nil {
-		req.Console.Url, err = cd.platform.GetConsoleUrl(ctx, &app, &appInst)
+		req.Console.Url, err = pf.GetConsoleUrl(ctx, &app, &appInst)
 		if err != nil {
 			return err
 		}
@@ -194,7 +88,7 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 			}
 		}
 		cd.AppInstCache.Mux.Unlock()
-		nodes, err := cd.platform.ListCloudletMgmtNodes(ctx, clusterInsts, vmAppInsts)
+		nodes, err := pf.ListCloudletMgmtNodes(ctx, clusterInsts, vmAppInsts)
 		if err != nil {
 			return fmt.Errorf("unable to get list of cloudlet mgmt nodes, %v", err)
 		}
@@ -225,7 +119,7 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 		if req.Cmd.Command != "" {
 			run.contcmd = req.Cmd.Command
 		}
-		run.client, err = cd.platform.GetNodePlatformClient(ctx, accessNode)
+		run.client, err = pf.GetNodePlatformClient(ctx, accessNode)
 		if err != nil {
 			return err
 		}
@@ -239,13 +133,13 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 				appInst.ClusterInstKey().GetKeyString())
 		}
 
-		run.contcmd, err = cd.platform.GetContainerCommand(ctx, &clusterInst, &app, &appInst, req)
+		run.contcmd, err = pf.GetContainerCommand(ctx, &clusterInst, &app, &appInst, req)
 		if err != nil {
 			return err
 		}
 
 		clientType := cloudcommon.GetAppClientType(&app)
-		run.client, err = cd.platform.GetClusterPlatformClient(ctx, &clusterInst, clientType)
+		run.client, err = pf.GetClusterPlatformClient(ctx, &clusterInst, clientType)
 		if err != nil {
 			return err
 		}
@@ -339,7 +233,7 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 		// Notify controller that connection is setup
 		proxyAddr := "https://" + req.EdgeTurnProxyAddr + "/edgeconsole?edgetoken=" + sessInfo.Token
 		req.AccessUrl = proxyAddr
-		cd.ExecReqSend.Update(ctx, req)
+		sendReply(req)
 		replySent = true
 		for {
 			stream, err := sess.AcceptStream()
@@ -390,7 +284,7 @@ func (cd *ControllerData) ProcessExecReq(ctx context.Context, req *edgeproto.Exe
 	} else {
 		proxyAddr := "wss://" + req.EdgeTurnProxyAddr + "/edgeshell?edgetoken=" + sessInfo.Token
 		req.AccessUrl = proxyAddr
-		cd.ExecReqSend.Update(ctx, req)
+		sendReply(req)
 		replySent = true
 		err = run.proxyRawConn(turnConn)
 		if err != nil {

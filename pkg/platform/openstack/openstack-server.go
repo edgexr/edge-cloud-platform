@@ -194,8 +194,20 @@ func (o *OpenstackPlatform) UpdateVMs(ctx context.Context, VMGroupOrchestrationP
 	return o.HeatUpdateVMs(ctx, VMGroupOrchestrationParams, updateCallback)
 }
 
-func (o *OpenstackPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
-	return o.deleteHeatStack(ctx, vmGroupName)
+func (o *OpenstackPlatform) DeleteVMs(ctx context.Context, vmGroupName, ownerID string) error {
+	err := o.deleteHeatStack(ctx, vmGroupName)
+	if err != nil {
+		return err
+	}
+	err = o.reservedSubnets.ReleaseForOwner(ctx, ownerID)
+	if err != nil {
+		return err
+	}
+	err = o.reservedFloatingIPs.ReleaseForOwner(ctx, ownerID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Helper function to asynchronously get the metric from openstack
@@ -295,7 +307,7 @@ func (o *OpenstackPlatform) VmAppChangedCallback(ctx context.Context, appInst *e
 
 // Given pool ranges return total number of available ip addresses
 // Example: 10.10.10.1-10.10.10.20,10.10.10.30-10.10.10.40
-//  Returns 20+11 = 31
+// Returns 20+11 = 31
 func getIpCountFromPools(ipPools []OSAllocationPool) (uint64, error) {
 	var total uint64
 	total = 0

@@ -590,19 +590,20 @@ type VMOrchestrationParams struct {
 	// TODO - Volumes should be just a reference here and
 	// and the volume definition should be in VMGroupOrchestrationParams
 	// similar how ports and handled.
-	Volumes                 []VolumeOrchestrationParams
-	Ports                   []PortResourceReference      // depending on the orchestrator, IPs may be assigned to ports or
-	FixedIPs                []FixedIPOrchestrationParams // to VMs directly
-	AttachExternalDisk      bool
-	CloudConfigParams       VMCloudConfigParams
-	VmAppOsType             edgeproto.VmAppOsType
-	Routes                  map[string][]edgeproto.Route // map of network name to routes
-	ExistingVm              bool
-	ExistingData            interface{}
+	Volumes            []VolumeOrchestrationParams
+	Ports              []PortResourceReference      // depending on the orchestrator, IPs may be assigned to ports or
+	FixedIPs           []FixedIPOrchestrationParams // to VMs directly
+	AttachExternalDisk bool
+	CloudConfigParams  VMCloudConfigParams
+	VmAppOsType        edgeproto.VmAppOsType
+	Routes             map[string][]edgeproto.Route // map of network name to routes
+	ExistingVm         bool
+	ExistingData       interface{}
 }
 
 // VMGroupOrchestrationParams contains all the details used by the orchestator to create a set of associated VMs
 type VMGroupOrchestrationParams struct {
+	OwnerID                       string
 	GroupName                     string
 	Subnets                       []SubnetOrchestrationParams
 	Ports                         []PortOrchestrationParams
@@ -685,7 +686,7 @@ func GetVMGroupOrchestrationParamsFromTrustPolicy(ctx context.Context, name stri
 	return &vmgp, nil
 }
 
-func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context, name string, vms []*VMRequestSpec, opts ...VMGroupReqOp) (*VMGroupOrchestrationParams, error) {
+func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context, name, ownerID string, vms []*VMRequestSpec, opts ...VMGroupReqOp) (*VMGroupOrchestrationParams, error) {
 	spec, err := v.getVMGroupRequestSpec(ctx, name, vms, opts...)
 	if err != nil {
 		return nil, err
@@ -694,6 +695,7 @@ func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context
 	enableIPV6 := spec.EnableIPV6
 
 	vmgp := VMGroupOrchestrationParams{
+		OwnerID:               ownerID,
 		GroupName:             spec.GroupName,
 		InitOrchestrator:      spec.InitOrchestrator,
 		SkipCleanupOnFailure:  spec.SkipCleanupOnFailure,
@@ -873,7 +875,7 @@ func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context
 	}
 
 	var vaultSSHCert string
-	if v.VMProperties.CommonPf.PlatformConfig.TestMode {
+	if v.VMProperties.UseTestCACert {
 		vaultSSHCert = TestCACert
 	} else {
 		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
@@ -1266,9 +1268,9 @@ func (v *VMPlatform) GetVMGroupOrchestrationParamsFromVMSpec(ctx context.Context
 }
 
 // OrchestrateVMsFromVMSpec calls the provider function to do the orchestation of the VMs.  It returns the updated VM group spec
-func (v *VMPlatform) OrchestrateVMsFromVMSpec(ctx context.Context, name string, vms []*VMRequestSpec, action ActionType, updateCallback edgeproto.CacheUpdateCallback, opts ...VMGroupReqOp) (*VMGroupOrchestrationParams, error) {
+func (v *VMPlatform) OrchestrateVMsFromVMSpec(ctx context.Context, name, ownerID string, vms []*VMRequestSpec, action ActionType, updateCallback edgeproto.CacheUpdateCallback, opts ...VMGroupReqOp) (*VMGroupOrchestrationParams, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "OrchestrateVMsFromVMSpec", "name", name)
-	gp, err := v.GetVMGroupOrchestrationParamsFromVMSpec(ctx, name, vms, opts...)
+	gp, err := v.GetVMGroupOrchestrationParamsFromVMSpec(ctx, name, ownerID, vms, opts...)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMGroupOrchestrationParamsFromVMSpec failed", "error", err)
 		return gp, err

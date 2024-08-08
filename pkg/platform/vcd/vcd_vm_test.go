@@ -615,6 +615,6 @@ func TestDeleteVMs(t *testing.T) {
 		t.Fail()
 		return
 	}
-	err = tv.DeleteVMs(ctx, *grpName)
+	err = tv.DeleteVMs(ctx, *grpName, "1")
 	require.Nil(t, err)
 }

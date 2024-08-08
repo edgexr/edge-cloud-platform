@@ -2683,7 +2683,7 @@ var AppAllFields = []string{
 	AppFieldUpdateListAction,
 }
 
-var AppAllFieldsMap = map[string]struct{}{
+var AppAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AppFieldKeyOrganization:                         struct{}{},
 	AppFieldKeyName:                                 struct{}{},
 	AppFieldKeyVersion:                              struct{}{},
@@ -2741,7 +2741,7 @@ var AppAllFieldsMap = map[string]struct{}{
 	AppFieldSecretEnvVarsKey:                        struct{}{},
 	AppFieldSecretEnvVarsValue:                      struct{}{},
 	AppFieldUpdateListAction:                        struct{}{},
-}
+})
 
 var AppAllFieldsStringMap = map[string]string{
 	AppFieldKeyOrganization:                         "Key Organization",
@@ -2807,276 +2807,282 @@ func (m *App) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AppFieldKey+".") || s == AppFieldKey
 }
 
-func (m *App) DiffFields(o *App, fields map[string]struct{}) {
+func (m *App) DiffFields(o *App, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {
-		fields[AppFieldKeyOrganization] = struct{}{}
-		fields[AppFieldKey] = struct{}{}
+		fields.Set(AppFieldKeyOrganization)
+		fields.Set(AppFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[AppFieldKeyName] = struct{}{}
-		fields[AppFieldKey] = struct{}{}
+		fields.Set(AppFieldKeyName)
+		fields.Set(AppFieldKey)
 	}
 	if m.Key.Version != o.Key.Version {
-		fields[AppFieldKeyVersion] = struct{}{}
-		fields[AppFieldKey] = struct{}{}
+		fields.Set(AppFieldKeyVersion)
+		fields.Set(AppFieldKey)
 	}
 	if m.ImagePath != o.ImagePath {
-		fields[AppFieldImagePath] = struct{}{}
+		fields.Set(AppFieldImagePath)
 	}
 	if m.ImageType != o.ImageType {
-		fields[AppFieldImageType] = struct{}{}
+		fields.Set(AppFieldImageType)
 	}
 	if m.AccessPorts != o.AccessPorts {
-		fields[AppFieldAccessPorts] = struct{}{}
+		fields.Set(AppFieldAccessPorts)
 	}
 	if m.DefaultFlavor.Name != o.DefaultFlavor.Name {
-		fields[AppFieldDefaultFlavorName] = struct{}{}
-		fields[AppFieldDefaultFlavor] = struct{}{}
+		fields.Set(AppFieldDefaultFlavorName)
+		fields.Set(AppFieldDefaultFlavor)
 	}
 	if m.AuthPublicKey != o.AuthPublicKey {
-		fields[AppFieldAuthPublicKey] = struct{}{}
+		fields.Set(AppFieldAuthPublicKey)
 	}
 	if m.Command != o.Command {
-		fields[AppFieldCommand] = struct{}{}
+		fields.Set(AppFieldCommand)
 	}
 	if m.Annotations != o.Annotations {
-		fields[AppFieldAnnotations] = struct{}{}
+		fields.Set(AppFieldAnnotations)
 	}
 	if m.Deployment != o.Deployment {
-		fields[AppFieldDeployment] = struct{}{}
+		fields.Set(AppFieldDeployment)
 	}
 	if m.DeploymentManifest != o.DeploymentManifest {
-		fields[AppFieldDeploymentManifest] = struct{}{}
+		fields.Set(AppFieldDeploymentManifest)
 	}
 	if m.DeploymentGenerator != o.DeploymentGenerator {
-		fields[AppFieldDeploymentGenerator] = struct{}{}
+		fields.Set(AppFieldDeploymentGenerator)
 	}
 	if m.AndroidPackageName != o.AndroidPackageName {
-		fields[AppFieldAndroidPackageName] = struct{}{}
+		fields.Set(AppFieldAndroidPackageName)
 	}
 	if m.DelOpt != o.DelOpt {
-		fields[AppFieldDelOpt] = struct{}{}
+		fields.Set(AppFieldDelOpt)
 	}
 	if m.Configs != nil && o.Configs != nil {
 		if len(m.Configs) != len(o.Configs) {
-			fields[AppFieldConfigs] = struct{}{}
+			fields.Set(AppFieldConfigs)
 		} else {
 			for i0 := 0; i0 < len(m.Configs); i0++ {
 				if m.Configs[i0].Kind != o.Configs[i0].Kind {
-					fields[AppFieldConfigsKind] = struct{}{}
-					fields[AppFieldConfigs] = struct{}{}
+					fields.Set(AppFieldConfigsKind)
+					fields.Set(AppFieldConfigs)
 				}
 				if m.Configs[i0].Config != o.Configs[i0].Config {
-					fields[AppFieldConfigsConfig] = struct{}{}
-					fields[AppFieldConfigs] = struct{}{}
+					fields.Set(AppFieldConfigsConfig)
+					fields.Set(AppFieldConfigs)
 				}
 			}
 		}
 	} else if (m.Configs != nil && o.Configs == nil) || (m.Configs == nil && o.Configs != nil) {
-		fields[AppFieldConfigs] = struct{}{}
+		fields.Set(AppFieldConfigs)
 	}
 	if m.ScaleWithCluster != o.ScaleWithCluster {
-		fields[AppFieldScaleWithCluster] = struct{}{}
+		fields.Set(AppFieldScaleWithCluster)
 	}
 	if m.InternalPorts != o.InternalPorts {
-		fields[AppFieldInternalPorts] = struct{}{}
+		fields.Set(AppFieldInternalPorts)
 	}
 	if m.Revision != o.Revision {
-		fields[AppFieldRevision] = struct{}{}
+		fields.Set(AppFieldRevision)
 	}
 	if m.OfficialFqdn != o.OfficialFqdn {
-		fields[AppFieldOfficialFqdn] = struct{}{}
+		fields.Set(AppFieldOfficialFqdn)
 	}
 	if m.Md5Sum != o.Md5Sum {
-		fields[AppFieldMd5Sum] = struct{}{}
+		fields.Set(AppFieldMd5Sum)
 	}
 	if m.AutoProvPolicy != o.AutoProvPolicy {
-		fields[AppFieldAutoProvPolicy] = struct{}{}
+		fields.Set(AppFieldAutoProvPolicy)
 	}
 	if m.AccessType != o.AccessType {
-		fields[AppFieldAccessType] = struct{}{}
+		fields.Set(AppFieldAccessType)
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[AppFieldDeletePrepare] = struct{}{}
+		fields.Set(AppFieldDeletePrepare)
 	}
 	if len(m.AutoProvPolicies) != len(o.AutoProvPolicies) {
-		fields[AppFieldAutoProvPolicies] = struct{}{}
+		fields.Set(AppFieldAutoProvPolicies)
 	} else {
 		for i0 := 0; i0 < len(m.AutoProvPolicies); i0++ {
 			if m.AutoProvPolicies[i0] != o.AutoProvPolicies[i0] {
-				fields[AppFieldAutoProvPolicies] = struct{}{}
+				fields.Set(AppFieldAutoProvPolicies)
 				break
 			}
 		}
 	}
 	if m.TemplateDelimiter != o.TemplateDelimiter {
-		fields[AppFieldTemplateDelimiter] = struct{}{}
+		fields.Set(AppFieldTemplateDelimiter)
 	}
 	if m.SkipHcPorts != o.SkipHcPorts {
-		fields[AppFieldSkipHcPorts] = struct{}{}
+		fields.Set(AppFieldSkipHcPorts)
 	}
 	if m.CreatedAt.Seconds != o.CreatedAt.Seconds {
-		fields[AppFieldCreatedAtSeconds] = struct{}{}
-		fields[AppFieldCreatedAt] = struct{}{}
+		fields.Set(AppFieldCreatedAtSeconds)
+		fields.Set(AppFieldCreatedAt)
 	}
 	if m.CreatedAt.Nanos != o.CreatedAt.Nanos {
-		fields[AppFieldCreatedAtNanos] = struct{}{}
-		fields[AppFieldCreatedAt] = struct{}{}
+		fields.Set(AppFieldCreatedAtNanos)
+		fields.Set(AppFieldCreatedAt)
 	}
 	if m.UpdatedAt.Seconds != o.UpdatedAt.Seconds {
-		fields[AppFieldUpdatedAtSeconds] = struct{}{}
-		fields[AppFieldUpdatedAt] = struct{}{}
+		fields.Set(AppFieldUpdatedAtSeconds)
+		fields.Set(AppFieldUpdatedAt)
 	}
 	if m.UpdatedAt.Nanos != o.UpdatedAt.Nanos {
-		fields[AppFieldUpdatedAtNanos] = struct{}{}
-		fields[AppFieldUpdatedAt] = struct{}{}
+		fields.Set(AppFieldUpdatedAtNanos)
+		fields.Set(AppFieldUpdatedAt)
 	}
 	if m.Trusted != o.Trusted {
-		fields[AppFieldTrusted] = struct{}{}
+		fields.Set(AppFieldTrusted)
 	}
 	if len(m.RequiredOutboundConnections) != len(o.RequiredOutboundConnections) {
-		fields[AppFieldRequiredOutboundConnections] = struct{}{}
+		fields.Set(AppFieldRequiredOutboundConnections)
 	} else {
 		for i0 := 0; i0 < len(m.RequiredOutboundConnections); i0++ {
 			if m.RequiredOutboundConnections[i0].Protocol != o.RequiredOutboundConnections[i0].Protocol {
-				fields[AppFieldRequiredOutboundConnectionsProtocol] = struct{}{}
-				fields[AppFieldRequiredOutboundConnections] = struct{}{}
+				fields.Set(AppFieldRequiredOutboundConnectionsProtocol)
+				fields.Set(AppFieldRequiredOutboundConnections)
 			}
 			if m.RequiredOutboundConnections[i0].PortRangeMin != o.RequiredOutboundConnections[i0].PortRangeMin {
-				fields[AppFieldRequiredOutboundConnectionsPortRangeMin] = struct{}{}
-				fields[AppFieldRequiredOutboundConnections] = struct{}{}
+				fields.Set(AppFieldRequiredOutboundConnectionsPortRangeMin)
+				fields.Set(AppFieldRequiredOutboundConnections)
 			}
 			if m.RequiredOutboundConnections[i0].PortRangeMax != o.RequiredOutboundConnections[i0].PortRangeMax {
-				fields[AppFieldRequiredOutboundConnectionsPortRangeMax] = struct{}{}
-				fields[AppFieldRequiredOutboundConnections] = struct{}{}
+				fields.Set(AppFieldRequiredOutboundConnectionsPortRangeMax)
+				fields.Set(AppFieldRequiredOutboundConnections)
 			}
 			if m.RequiredOutboundConnections[i0].RemoteCidr != o.RequiredOutboundConnections[i0].RemoteCidr {
-				fields[AppFieldRequiredOutboundConnectionsRemoteCidr] = struct{}{}
-				fields[AppFieldRequiredOutboundConnections] = struct{}{}
+				fields.Set(AppFieldRequiredOutboundConnectionsRemoteCidr)
+				fields.Set(AppFieldRequiredOutboundConnections)
 			}
 		}
 	}
 	if m.AllowServerless != o.AllowServerless {
-		fields[AppFieldAllowServerless] = struct{}{}
+		fields.Set(AppFieldAllowServerless)
 	}
 	if m.ServerlessConfig != nil && o.ServerlessConfig != nil {
 		if m.ServerlessConfig.Vcpus.Whole != o.ServerlessConfig.Vcpus.Whole {
-			fields[AppFieldServerlessConfigVcpusWhole] = struct{}{}
-			fields[AppFieldServerlessConfigVcpus] = struct{}{}
-			fields[AppFieldServerlessConfig] = struct{}{}
+			fields.Set(AppFieldServerlessConfigVcpusWhole)
+			fields.Set(AppFieldServerlessConfigVcpus)
+			fields.Set(AppFieldServerlessConfig)
 		}
 		if m.ServerlessConfig.Vcpus.Nanos != o.ServerlessConfig.Vcpus.Nanos {
-			fields[AppFieldServerlessConfigVcpusNanos] = struct{}{}
-			fields[AppFieldServerlessConfigVcpus] = struct{}{}
-			fields[AppFieldServerlessConfig] = struct{}{}
+			fields.Set(AppFieldServerlessConfigVcpusNanos)
+			fields.Set(AppFieldServerlessConfigVcpus)
+			fields.Set(AppFieldServerlessConfig)
 		}
 		if m.ServerlessConfig.Ram != o.ServerlessConfig.Ram {
-			fields[AppFieldServerlessConfigRam] = struct{}{}
-			fields[AppFieldServerlessConfig] = struct{}{}
+			fields.Set(AppFieldServerlessConfigRam)
+			fields.Set(AppFieldServerlessConfig)
 		}
 		if m.ServerlessConfig.MinReplicas != o.ServerlessConfig.MinReplicas {
-			fields[AppFieldServerlessConfigMinReplicas] = struct{}{}
-			fields[AppFieldServerlessConfig] = struct{}{}
+			fields.Set(AppFieldServerlessConfigMinReplicas)
+			fields.Set(AppFieldServerlessConfig)
 		}
 		if m.ServerlessConfig.GpuConfig.Type != o.ServerlessConfig.GpuConfig.Type {
-			fields[AppFieldServerlessConfigGpuConfigType] = struct{}{}
-			fields[AppFieldServerlessConfigGpuConfig] = struct{}{}
-			fields[AppFieldServerlessConfig] = struct{}{}
+			fields.Set(AppFieldServerlessConfigGpuConfigType)
+			fields.Set(AppFieldServerlessConfigGpuConfig)
+			fields.Set(AppFieldServerlessConfig)
 		}
 		if m.ServerlessConfig.GpuConfig.Model != o.ServerlessConfig.GpuConfig.Model {
-			fields[AppFieldServerlessConfigGpuConfigModel] = struct{}{}
-			fields[AppFieldServerlessConfigGpuConfig] = struct{}{}
-			fields[AppFieldServerlessConfig] = struct{}{}
+			fields.Set(AppFieldServerlessConfigGpuConfigModel)
+			fields.Set(AppFieldServerlessConfigGpuConfig)
+			fields.Set(AppFieldServerlessConfig)
 		}
 		if m.ServerlessConfig.GpuConfig.NumGpu != o.ServerlessConfig.GpuConfig.NumGpu {
-			fields[AppFieldServerlessConfigGpuConfigNumGpu] = struct{}{}
-			fields[AppFieldServerlessConfigGpuConfig] = struct{}{}
-			fields[AppFieldServerlessConfig] = struct{}{}
+			fields.Set(AppFieldServerlessConfigGpuConfigNumGpu)
+			fields.Set(AppFieldServerlessConfigGpuConfig)
+			fields.Set(AppFieldServerlessConfig)
 		}
 		if m.ServerlessConfig.GpuConfig.Ram != o.ServerlessConfig.GpuConfig.Ram {
-			fields[AppFieldServerlessConfigGpuConfigRam] = struct{}{}
-			fields[AppFieldServerlessConfigGpuConfig] = struct{}{}
-			fields[AppFieldServerlessConfig] = struct{}{}
+			fields.Set(AppFieldServerlessConfigGpuConfigRam)
+			fields.Set(AppFieldServerlessConfigGpuConfig)
+			fields.Set(AppFieldServerlessConfig)
 		}
 	} else if (m.ServerlessConfig != nil && o.ServerlessConfig == nil) || (m.ServerlessConfig == nil && o.ServerlessConfig != nil) {
-		fields[AppFieldServerlessConfig] = struct{}{}
+		fields.Set(AppFieldServerlessConfig)
 	}
 	if m.VmAppOsType != o.VmAppOsType {
-		fields[AppFieldVmAppOsType] = struct{}{}
+		fields.Set(AppFieldVmAppOsType)
 	}
 	if len(m.AlertPolicies) != len(o.AlertPolicies) {
-		fields[AppFieldAlertPolicies] = struct{}{}
+		fields.Set(AppFieldAlertPolicies)
 	} else {
 		for i0 := 0; i0 < len(m.AlertPolicies); i0++ {
 			if m.AlertPolicies[i0] != o.AlertPolicies[i0] {
-				fields[AppFieldAlertPolicies] = struct{}{}
+				fields.Set(AppFieldAlertPolicies)
 				break
 			}
 		}
 	}
 	if m.QosSessionProfile != o.QosSessionProfile {
-		fields[AppFieldQosSessionProfile] = struct{}{}
+		fields.Set(AppFieldQosSessionProfile)
 	}
 	if m.QosSessionDuration != o.QosSessionDuration {
-		fields[AppFieldQosSessionDuration] = struct{}{}
+		fields.Set(AppFieldQosSessionDuration)
 	}
 	if m.GlobalId != o.GlobalId {
-		fields[AppFieldGlobalId] = struct{}{}
+		fields.Set(AppFieldGlobalId)
 	}
 	if len(m.CommandArgs) != len(o.CommandArgs) {
-		fields[AppFieldCommandArgs] = struct{}{}
+		fields.Set(AppFieldCommandArgs)
 	} else {
 		for i0 := 0; i0 < len(m.CommandArgs); i0++ {
 			if m.CommandArgs[i0] != o.CommandArgs[i0] {
-				fields[AppFieldCommandArgs] = struct{}{}
+				fields.Set(AppFieldCommandArgs)
 				break
 			}
 		}
 	}
 	if m.EnvVars != nil && o.EnvVars != nil {
 		if len(m.EnvVars) != len(o.EnvVars) {
-			fields[AppFieldEnvVars] = struct{}{}
+			fields.Set(AppFieldEnvVars)
 		} else {
 			for k0, _ := range m.EnvVars {
 				_, vok0 := o.EnvVars[k0]
 				if !vok0 {
-					fields[AppFieldEnvVars] = struct{}{}
+					fields.Set(AppFieldEnvVars)
 				} else {
 					if m.EnvVars[k0] != o.EnvVars[k0] {
-						fields[AppFieldEnvVars] = struct{}{}
+						fields.Set(AppFieldEnvVars)
 						break
 					}
 				}
 			}
 		}
 	} else if (m.EnvVars != nil && o.EnvVars == nil) || (m.EnvVars == nil && o.EnvVars != nil) {
-		fields[AppFieldEnvVars] = struct{}{}
+		fields.Set(AppFieldEnvVars)
 	}
 	if m.SecretEnvVars != nil && o.SecretEnvVars != nil {
 		if len(m.SecretEnvVars) != len(o.SecretEnvVars) {
-			fields[AppFieldSecretEnvVars] = struct{}{}
+			fields.Set(AppFieldSecretEnvVars)
 		} else {
 			for k0, _ := range m.SecretEnvVars {
 				_, vok0 := o.SecretEnvVars[k0]
 				if !vok0 {
-					fields[AppFieldSecretEnvVars] = struct{}{}
+					fields.Set(AppFieldSecretEnvVars)
 				} else {
 					if m.SecretEnvVars[k0] != o.SecretEnvVars[k0] {
-						fields[AppFieldSecretEnvVars] = struct{}{}
+						fields.Set(AppFieldSecretEnvVars)
 						break
 					}
 				}
 			}
 		}
 	} else if (m.SecretEnvVars != nil && o.SecretEnvVars == nil) || (m.SecretEnvVars == nil && o.SecretEnvVars != nil) {
-		fields[AppFieldSecretEnvVars] = struct{}{}
+		fields.Set(AppFieldSecretEnvVars)
 	}
 	if m.UpdateListAction != o.UpdateListAction {
-		fields[AppFieldUpdateListAction] = struct{}{}
+		fields.Set(AppFieldUpdateListAction)
 	}
 }
 
-var UpdateAppFieldsMap = map[string]struct{}{
+func (m *App) GetDiffFields(o *App) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateAppFieldsMap = NewFieldMap(map[string]struct{}{
 	AppFieldImagePath:                               struct{}{},
 	AppFieldImageType:                               struct{}{},
 	AppFieldAccessPorts:                             struct{}{},
@@ -3132,7 +3138,7 @@ var UpdateAppFieldsMap = map[string]struct{}{
 	AppFieldSecretEnvVarsKey:                        struct{}{},
 	AppFieldSecretEnvVarsValue:                      struct{}{},
 	AppFieldUpdateListAction:                        struct{}{},
-}
+})
 
 func (m *App) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -3140,11 +3146,11 @@ func (m *App) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateAppFieldsMap[field]; !ok {
+		if !UpdateAppFieldsMap.Has(field) {
 			if _, ok := AppAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -3322,101 +3328,101 @@ func (m *App) CopyInFields(src *App) int {
 	updateListAction := src.UpdateListAction
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
-		if _, set := fmap["2.3"]; set {
+		if fmap.Has("2.3") {
 			if m.Key.Version != src.Key.Version {
 				m.Key.Version = src.Key.Version
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.ImagePath != src.ImagePath {
 			m.ImagePath = src.ImagePath
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.ImageType != src.ImageType {
 			m.ImageType = src.ImageType
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.AccessPorts != src.AccessPorts {
 			m.AccessPorts = src.AccessPorts
 			changed++
 		}
 	}
-	if _, set := fmap["9"]; set {
-		if _, set := fmap["9.1"]; set {
+	if fmap.HasOrHasChild("9") {
+		if fmap.Has("9.1") {
 			if m.DefaultFlavor.Name != src.DefaultFlavor.Name {
 				m.DefaultFlavor.Name = src.DefaultFlavor.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["12"]; set {
+	if fmap.Has("12") {
 		if m.AuthPublicKey != src.AuthPublicKey {
 			m.AuthPublicKey = src.AuthPublicKey
 			changed++
 		}
 	}
-	if _, set := fmap["13"]; set {
+	if fmap.Has("13") {
 		if m.Command != src.Command {
 			m.Command = src.Command
 			changed++
 		}
 	}
-	if _, set := fmap["14"]; set {
+	if fmap.Has("14") {
 		if m.Annotations != src.Annotations {
 			m.Annotations = src.Annotations
 			changed++
 		}
 	}
-	if _, set := fmap["15"]; set {
+	if fmap.Has("15") {
 		if m.Deployment != src.Deployment {
 			m.Deployment = src.Deployment
 			changed++
 		}
 	}
-	if _, set := fmap["16"]; set {
+	if fmap.Has("16") {
 		if m.DeploymentManifest != src.DeploymentManifest {
 			m.DeploymentManifest = src.DeploymentManifest
 			changed++
 		}
 	}
-	if _, set := fmap["17"]; set {
+	if fmap.Has("17") {
 		if m.DeploymentGenerator != src.DeploymentGenerator {
 			m.DeploymentGenerator = src.DeploymentGenerator
 			changed++
 		}
 	}
-	if _, set := fmap["18"]; set {
+	if fmap.Has("18") {
 		if m.AndroidPackageName != src.AndroidPackageName {
 			m.AndroidPackageName = src.AndroidPackageName
 			changed++
 		}
 	}
-	if _, set := fmap["20"]; set {
+	if fmap.Has("20") {
 		if m.DelOpt != src.DelOpt {
 			m.DelOpt = src.DelOpt
 			changed++
 		}
 	}
-	if _, set := fmap["21"]; set {
+	if fmap.HasOrHasChild("21") {
 		if src.Configs != nil {
 			if updateListAction == "add" {
 				changed += m.AddConfigs(src.Configs...)
@@ -3434,55 +3440,55 @@ func (m *App) CopyInFields(src *App) int {
 			changed++
 		}
 	}
-	if _, set := fmap["22"]; set {
+	if fmap.Has("22") {
 		if m.ScaleWithCluster != src.ScaleWithCluster {
 			m.ScaleWithCluster = src.ScaleWithCluster
 			changed++
 		}
 	}
-	if _, set := fmap["23"]; set {
+	if fmap.Has("23") {
 		if m.InternalPorts != src.InternalPorts {
 			m.InternalPorts = src.InternalPorts
 			changed++
 		}
 	}
-	if _, set := fmap["24"]; set {
+	if fmap.Has("24") {
 		if m.Revision != src.Revision {
 			m.Revision = src.Revision
 			changed++
 		}
 	}
-	if _, set := fmap["25"]; set {
+	if fmap.Has("25") {
 		if m.OfficialFqdn != src.OfficialFqdn {
 			m.OfficialFqdn = src.OfficialFqdn
 			changed++
 		}
 	}
-	if _, set := fmap["26"]; set {
+	if fmap.Has("26") {
 		if m.Md5Sum != src.Md5Sum {
 			m.Md5Sum = src.Md5Sum
 			changed++
 		}
 	}
-	if _, set := fmap["28"]; set {
+	if fmap.Has("28") {
 		if m.AutoProvPolicy != src.AutoProvPolicy {
 			m.AutoProvPolicy = src.AutoProvPolicy
 			changed++
 		}
 	}
-	if _, set := fmap["29"]; set {
+	if fmap.Has("29") {
 		if m.AccessType != src.AccessType {
 			m.AccessType = src.AccessType
 			changed++
 		}
 	}
-	if _, set := fmap["31"]; set {
+	if fmap.Has("31") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
 		}
 	}
-	if _, set := fmap["32"]; set {
+	if fmap.Has("32") {
 		if src.AutoProvPolicies != nil {
 			if updateListAction == "add" {
 				changed += m.AddAutoProvPolicies(src.AutoProvPolicies...)
@@ -3498,53 +3504,53 @@ func (m *App) CopyInFields(src *App) int {
 			changed++
 		}
 	}
-	if _, set := fmap["33"]; set {
+	if fmap.Has("33") {
 		if m.TemplateDelimiter != src.TemplateDelimiter {
 			m.TemplateDelimiter = src.TemplateDelimiter
 			changed++
 		}
 	}
-	if _, set := fmap["34"]; set {
+	if fmap.Has("34") {
 		if m.SkipHcPorts != src.SkipHcPorts {
 			m.SkipHcPorts = src.SkipHcPorts
 			changed++
 		}
 	}
-	if _, set := fmap["35"]; set {
-		if _, set := fmap["35.1"]; set {
+	if fmap.HasOrHasChild("35") {
+		if fmap.Has("35.1") {
 			if m.CreatedAt.Seconds != src.CreatedAt.Seconds {
 				m.CreatedAt.Seconds = src.CreatedAt.Seconds
 				changed++
 			}
 		}
-		if _, set := fmap["35.2"]; set {
+		if fmap.Has("35.2") {
 			if m.CreatedAt.Nanos != src.CreatedAt.Nanos {
 				m.CreatedAt.Nanos = src.CreatedAt.Nanos
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["36"]; set {
-		if _, set := fmap["36.1"]; set {
+	if fmap.HasOrHasChild("36") {
+		if fmap.Has("36.1") {
 			if m.UpdatedAt.Seconds != src.UpdatedAt.Seconds {
 				m.UpdatedAt.Seconds = src.UpdatedAt.Seconds
 				changed++
 			}
 		}
-		if _, set := fmap["36.2"]; set {
+		if fmap.Has("36.2") {
 			if m.UpdatedAt.Nanos != src.UpdatedAt.Nanos {
 				m.UpdatedAt.Nanos = src.UpdatedAt.Nanos
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["37"]; set {
+	if fmap.Has("37") {
 		if m.Trusted != src.Trusted {
 			m.Trusted = src.Trusted
 			changed++
 		}
 	}
-	if _, set := fmap["38"]; set {
+	if fmap.HasOrHasChild("38") {
 		if src.RequiredOutboundConnections != nil {
 			if updateListAction == "add" {
 				changed += m.AddRequiredOutboundConnections(src.RequiredOutboundConnections...)
@@ -3562,18 +3568,18 @@ func (m *App) CopyInFields(src *App) int {
 			changed++
 		}
 	}
-	if _, set := fmap["39"]; set {
+	if fmap.Has("39") {
 		if m.AllowServerless != src.AllowServerless {
 			m.AllowServerless = src.AllowServerless
 			changed++
 		}
 	}
-	if _, set := fmap["40"]; set {
+	if fmap.HasOrHasChild("40") {
 		if src.ServerlessConfig != nil {
 			if m.ServerlessConfig == nil {
 				m.ServerlessConfig = &ServerlessConfig{}
 			}
-			if _, set := fmap["40.1"]; set {
+			if fmap.HasOrHasChild("40.1") {
 				if m.ServerlessConfig.Vcpus.Whole != src.ServerlessConfig.Vcpus.Whole {
 					m.ServerlessConfig.Vcpus.Whole = src.ServerlessConfig.Vcpus.Whole
 					changed++
@@ -3583,38 +3589,38 @@ func (m *App) CopyInFields(src *App) int {
 					changed++
 				}
 			}
-			if _, set := fmap["40.2"]; set {
+			if fmap.Has("40.2") {
 				if m.ServerlessConfig.Ram != src.ServerlessConfig.Ram {
 					m.ServerlessConfig.Ram = src.ServerlessConfig.Ram
 					changed++
 				}
 			}
-			if _, set := fmap["40.3"]; set {
+			if fmap.Has("40.3") {
 				if m.ServerlessConfig.MinReplicas != src.ServerlessConfig.MinReplicas {
 					m.ServerlessConfig.MinReplicas = src.ServerlessConfig.MinReplicas
 					changed++
 				}
 			}
-			if _, set := fmap["40.4"]; set {
-				if _, set := fmap["40.4.1"]; set {
+			if fmap.HasOrHasChild("40.4") {
+				if fmap.Has("40.4.1") {
 					if m.ServerlessConfig.GpuConfig.Type != src.ServerlessConfig.GpuConfig.Type {
 						m.ServerlessConfig.GpuConfig.Type = src.ServerlessConfig.GpuConfig.Type
 						changed++
 					}
 				}
-				if _, set := fmap["40.4.2"]; set {
+				if fmap.Has("40.4.2") {
 					if m.ServerlessConfig.GpuConfig.Model != src.ServerlessConfig.GpuConfig.Model {
 						m.ServerlessConfig.GpuConfig.Model = src.ServerlessConfig.GpuConfig.Model
 						changed++
 					}
 				}
-				if _, set := fmap["40.4.3"]; set {
+				if fmap.Has("40.4.3") {
 					if m.ServerlessConfig.GpuConfig.NumGpu != src.ServerlessConfig.GpuConfig.NumGpu {
 						m.ServerlessConfig.GpuConfig.NumGpu = src.ServerlessConfig.GpuConfig.NumGpu
 						changed++
 					}
 				}
-				if _, set := fmap["40.4.4"]; set {
+				if fmap.Has("40.4.4") {
 					if m.ServerlessConfig.GpuConfig.Ram != src.ServerlessConfig.GpuConfig.Ram {
 						m.ServerlessConfig.GpuConfig.Ram = src.ServerlessConfig.GpuConfig.Ram
 						changed++
@@ -3626,13 +3632,13 @@ func (m *App) CopyInFields(src *App) int {
 			changed++
 		}
 	}
-	if _, set := fmap["41"]; set {
+	if fmap.Has("41") {
 		if m.VmAppOsType != src.VmAppOsType {
 			m.VmAppOsType = src.VmAppOsType
 			changed++
 		}
 	}
-	if _, set := fmap["42"]; set {
+	if fmap.Has("42") {
 		if src.AlertPolicies != nil {
 			if updateListAction == "add" {
 				changed += m.AddAlertPolicies(src.AlertPolicies...)
@@ -3648,25 +3654,25 @@ func (m *App) CopyInFields(src *App) int {
 			changed++
 		}
 	}
-	if _, set := fmap["43"]; set {
+	if fmap.Has("43") {
 		if m.QosSessionProfile != src.QosSessionProfile {
 			m.QosSessionProfile = src.QosSessionProfile
 			changed++
 		}
 	}
-	if _, set := fmap["44"]; set {
+	if fmap.Has("44") {
 		if m.QosSessionDuration != src.QosSessionDuration {
 			m.QosSessionDuration = src.QosSessionDuration
 			changed++
 		}
 	}
-	if _, set := fmap["45"]; set {
+	if fmap.Has("45") {
 		if m.GlobalId != src.GlobalId {
 			m.GlobalId = src.GlobalId
 			changed++
 		}
 	}
-	if _, set := fmap["46"]; set {
+	if fmap.Has("46") {
 		if src.CommandArgs != nil {
 			if updateListAction == "add" {
 				changed += m.AddCommandArgs(src.CommandArgs...)
@@ -3682,7 +3688,7 @@ func (m *App) CopyInFields(src *App) int {
 			changed++
 		}
 	}
-	if _, set := fmap["47"]; set {
+	if fmap.HasOrHasChild("47") {
 		if src.EnvVars != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.EnvVars {
@@ -3708,7 +3714,7 @@ func (m *App) CopyInFields(src *App) int {
 			changed++
 		}
 	}
-	if _, set := fmap["48"]; set {
+	if fmap.HasOrHasChild("48") {
 		if src.SecretEnvVars != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.SecretEnvVars {
@@ -3734,7 +3740,7 @@ func (m *App) CopyInFields(src *App) int {
 			changed++
 		}
 	}
-	if _, set := fmap["49"]; set {
+	if fmap.Has("49") {
 		if m.UpdateListAction != src.UpdateListAction {
 			m.UpdateListAction = src.UpdateListAction
 			changed++
@@ -4058,6 +4064,7 @@ type AppCache struct {
 	KeyWatchers   map[AppKey][]*AppKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *AppKey)
 	DeletedKeyCbs []func(ctx context.Context, key *AppKey)
+	Store         AppStore
 }
 
 func NewAppCache() *AppCache {
@@ -4420,6 +4427,18 @@ func (c *AppCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *AppCache) InitCacheWithSync(sync DataSync) {
+	InitAppCache(s)
+	s.InitSync(sync)
+}
+
+func (s *AppCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewAppStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

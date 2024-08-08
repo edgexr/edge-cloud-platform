@@ -21,6 +21,7 @@ import (
 	"unicode"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -29,10 +30,13 @@ import (
 )
 
 type OpenstackPlatform struct {
-	openRCVars   map[string]string
-	VMProperties *vmlayer.VMProperties
-	caches       *platform.Caches
-	apiStats     APIStats
+	openRCVars             map[string]string
+	VMProperties           *vmlayer.VMProperties
+	caches                 *platform.Caches
+	apiStats               APIStats
+	reservedFloatingIPs    syncdata.SyncReservations
+	reservedSubnets        syncdata.SyncReservations
+	useFakeSecurityGroupID bool
 }
 
 func NewPlatform() platform.Platform {
@@ -60,6 +64,7 @@ func (o *OpenstackPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsAdditionalNetworks:            true,
 		SupportsPlatformHighAvailabilityOnK8S: true,
 		SupportsIpv6:                          true,
+		RequiresCrmOnEdge:                     true, // vmprovider sharedRootLBPortLock needs to be removed
 		AccessVars:                            AccessVarProps,
 		Properties:                            OpenstackProps,
 		ResourceQuotaProperties:               QuotaProps,
@@ -123,7 +128,7 @@ func (o *OpenstackPlatform) GetResourceID(ctx context.Context, resourceType vmla
 	switch resourceType {
 	case vmlayer.ResourceTypeSecurityGroup:
 		// for testing mode, don't try to run APIs just fake a value
-		if o.VMProperties.CommonPf.PlatformConfig.TestMode {
+		if o.useFakeSecurityGroupID {
 			return resourceName + "-testingID", nil
 		}
 		return o.GetSecurityGroupIDForName(ctx, resourceName)

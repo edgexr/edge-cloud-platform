@@ -452,7 +452,7 @@ func (o *VMPoolPlatform) deleteVMsInternal(ctx context.Context, markedVMs map[st
 	return nil
 }
 
-func (o *VMPoolPlatform) DeleteVMs(ctx context.Context, vmGroupName string) error {
+func (o *VMPoolPlatform) DeleteVMs(ctx context.Context, vmGroupName, ownerID string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs", "vmGroup", vmGroupName)
 
 	markedVMs, err := o.markVMsForAction(ctx, ActionRelease, vmGroupName, []edgeproto.VMSpec{})

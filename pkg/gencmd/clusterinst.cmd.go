@@ -56,6 +56,9 @@ func ClusterInstHideTags(in *edgeproto.ClusterInst) {
 	if _, found := tags["timestamp"]; found {
 		in.ReservationEndedAt = distributed_match_engine.Timestamp{}
 	}
+	if _, found := tags["nocmp"]; found {
+		in.ObjId = ""
+	}
 }
 
 func ClusterInstInfoHideTags(in *edgeproto.ClusterInstInfo) {
@@ -601,6 +604,7 @@ var ClusterInstOptionalArgs = []string{
 	"multitenant",
 	"networks",
 	"enableipv6",
+	"objid",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=key.clusterkey.name",
@@ -662,6 +666,7 @@ var ClusterInstComments = map[string]string{
 	"dnslabel":                                 "DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts",
 	"fqdn":                                     "FQDN is a globally unique DNS id for the ClusterInst",
 	"enableipv6":                               "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting",
+	"objid":                                    "Universally unique object ID",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"errors":   "StringArray",
@@ -753,4 +758,5 @@ var UpdateClusterInstOptionalArgs = []string{
 	"autoscalepolicy",
 	"skipcrmcleanuponfailure",
 	"enableipv6",
+	"objid",
 }

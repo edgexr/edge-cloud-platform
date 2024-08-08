@@ -592,6 +592,7 @@ type OperatorCodeCache struct {
 	KeyWatchers   map[OperatorCodeKey][]*OperatorCodeKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *OperatorCodeKey)
 	DeletedKeyCbs []func(ctx context.Context, key *OperatorCodeKey)
+	Store         OperatorCodeStore
 }
 
 func NewOperatorCodeCache() *OperatorCodeCache {
@@ -954,6 +955,18 @@ func (c *OperatorCodeCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *OperatorCodeCache) InitCacheWithSync(sync DataSync) {
+	InitOperatorCodeCache(s)
+	s.InitSync(sync)
+}
+
+func (s *OperatorCodeCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewOperatorCodeStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

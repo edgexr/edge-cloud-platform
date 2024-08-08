@@ -36,6 +36,7 @@ func NewClusterInstInfoApi(sync *regiondata.Sync, all *AllApis) *ClusterInstInfo
 }
 
 func (s *ClusterInstInfoApi) Update(ctx context.Context, in *edgeproto.ClusterInstInfo, rev int64) {
+	in.Fields = edgeproto.ClusterInstInfoAllFields
 	s.all.clusterInstApi.UpdateFromInfo(ctx, in)
 }
 

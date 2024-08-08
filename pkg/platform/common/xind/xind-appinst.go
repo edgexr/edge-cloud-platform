@@ -33,7 +33,7 @@ type ClusterManager interface {
 	GetDockerNetworkName(ctx context.Context, names *k8smgmt.KubeNames) (string, error)
 }
 
-func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
+func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) (reterr error) {
 	client, err := s.GetClient(ctx)
 	if err != nil {
 		return err
@@ -123,10 +123,11 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 	return nil
 }
 
-func (s *Xind) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
+func (s *Xind) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) (reterr error) {
+	updateCallback := updateSender.SendStatusIgnoreErr
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst")
 
-	err := s.CreateAppInstNoPatch(ctx, clusterInst, app, appInst, flavor, updateCallback)
+	err := s.CreateAppInstNoPatch(ctx, clusterInst, app, appInst, flavor, updateSender)
 	if err != nil {
 		return err
 	}
@@ -291,3 +292,5 @@ func (s *Xind) patchServiceIp(ctx context.Context, clusterInst *edgeproto.Cluste
 	}
 	return nil
 }
+
+func (s *Xind) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {}

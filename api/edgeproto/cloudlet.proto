@@ -187,6 +187,12 @@ message PlatformFeatures {
   bool is_edgebox = 21;
   // Supports IPv6
   bool supports_ipv6 = 27;
+  // Requires on-edge-site CRM
+  bool requires_crm_on_edge = 28;
+  // Requires off-edge-site CRM, i.e. CCRM
+  bool requires_crm_off_edge = 29;
+  // Requires certificate refresh
+  bool requires_cert_refresh = 30;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties
@@ -493,12 +499,12 @@ message Cloudlet {
   // StatusInfo (11) (Deprecated) status is used to reflect progress of creation or other events
 
   // Onboarding state of the cloudlet
-  TrackedState onboarding_state = 60 [(protogen.backend) = true];
+  reserved 60; // was Onboarding state
   // Current state of the crm
   TrackedState state = 12 [(protogen.backend) = true];
   // Override actions to CRM
   CRMOverride crm_override = 13 [(protogen.backend) = true];
-  // Deploy cloudlet services locally
+  // Deploy cloudlet services locally for testing purposes
   bool deployment_local = 14 [(protogen.backend) = true];
   // Platform type
   string platform_type = 15 [(protogen.refers_to) = "PlatformFeatures"];
@@ -516,8 +522,8 @@ message Cloudlet {
   PlatformConfig config = 21 [(gogoproto.nullable) = false, (protogen.backend) = true];
   // Optional resource to restagtbl key map key values = [gpu, nas, nic]
   map<string, edgeproto.ResTagTableKey> res_tag_map = 22 [(protogen.backend) = true, (protogen.refers_to) = "ResTagTable"];
-  // Secrets required to access cloudlet, will be saved in encrypted storage
-  map<string, string> access_vars = 23;
+  // Secrets required to access cloudlet, will be saved in encrypted storage, and cleared on the cloudlet object
+  map<string, string> access_vars = 23 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // EdgeCloud baseimage version where CRM services reside
   string vm_image_version = 24;
   // Deployment type to bring up CRM services (docker, kubernetes)
@@ -586,6 +592,10 @@ message Cloudlet {
   repeated FlavorInfo infra_flavors = 58 [(protogen.backend) = true];
   // Edgebox only cloudlets allow for developers to set up cloudlets anywhere (laptop, etc) but can only use public images and do not support DNS mapping.
   bool edgebox_only = 59;
+  // CRM shall run on the edge site if true (required for restricted cloudlets), otherwise runs centrally (default)
+  bool crm_on_edge = 61;
+  // Universally unique object ID
+  string obj_id = 62 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;
@@ -884,19 +894,6 @@ message OSImage {
   string properties = 3;
   // format qcow2, img, etc
   string disk_format = 4;
-}
-
-// CloudletOnboardingInfo messages are sent from CCRM to the Controller.
-message CloudletOnboardingInfo {
-  // Unique identifier key
-  CloudletKey key = 1 [(gogoproto.nullable) = false];
-  // Onboarding state of the cloudlet
-  TrackedState onboarding_state = 2;
-  // status is used to reflect progress of creation or other events
-  StatusInfo status = 3 [(gogoproto.nullable) = false];
-  // Any errors encountered while making changes to the Cloudlet
-  repeated string errors = 4;
-  option (protogen.notify_message) = true;
 }
 
 // CloudletInfo provides information from the Cloudlet Resource Manager about the state of the Cloudlet.

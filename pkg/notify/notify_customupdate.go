@@ -184,6 +184,24 @@ func (s *TrustPolicyExceptionSend) UpdateOk(ctx context.Context, tpe *edgeproto.
 	return true
 }
 
+func (s *TPEInstanceStateSend) UpdateOk(ctx context.Context, tpe *edgeproto.TPEInstanceState) bool {
+	if s.sendrecv.filterCloudletKeys {
+		if !s.sendrecv.cloudletReady {
+			return false
+		}
+		if !s.sendrecv.hasCloudletKey(&tpe.Key.AppInstKey.CloudletKey) {
+			return false
+		}
+	}
+	if s.sendrecv.filterFederatedCloudlet {
+		// Federated cloudlets are ignored by CRMs and are handled by FRMs
+		if tpe.Key.AppInstKey.CloudletKey.FederatedOrganization == "" {
+			return false
+		}
+	}
+	return true
+}
+
 func (s *AppSend) UpdateAllOkLocked(app *edgeproto.App) bool {
 	return true
 }
@@ -233,6 +251,10 @@ func (s *GPUDriverSend) UpdateAllOkLocked(gpuDriver *edgeproto.GPUDriver) bool {
 }
 
 func (s *TrustPolicyExceptionSend) UpdateAllOkLocked(tpe *edgeproto.TrustPolicyException) bool {
+	return !s.sendrecv.filterCloudletKeys
+}
+
+func (s *TPEInstanceStateSend) UpdateAllOkLocked(tpe *edgeproto.TPEInstanceState) bool {
 	return !s.sendrecv.filterCloudletKeys
 }
 

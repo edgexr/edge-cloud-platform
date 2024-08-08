@@ -27,7 +27,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
@@ -55,6 +54,9 @@ func TestAlertApi(t *testing.T) {
 
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	testCloudletName := "testcloudlet"
@@ -128,8 +130,9 @@ func TestAppInstDownAlert(t *testing.T) {
 	defer sync.Done()
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	// create supporting data
@@ -207,7 +210,6 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 		op(&options)
 	}
 	svcs := &testServices{}
-	objstore.InitRegion(1)
 	tMode := true
 	testMode = &tMode
 	dockerRegistry := "docker.example.ut"
@@ -270,4 +272,12 @@ func testfinish(s *testServices) {
 		s.DummyVault = nil
 	}
 	services = Services{}
+}
+
+func registerDummyCCRMConn(t *testing.T, ccrm *ccrmdummy.CCRMDummy) {
+	services.platformServiceConnCache = cloudcommon.NewGRPCConnCache(map[string]string{})
+	conn, err := ccrm.GRPCClient()
+	require.Nil(t, err)
+	// all testutil platform features use node type "ccrm"
+	services.platformServiceConnCache.SetConn("ccrm", conn)
 }

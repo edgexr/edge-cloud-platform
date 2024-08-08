@@ -95,7 +95,7 @@ func (ip *InfraProperties) GetPlatformStatsMaxCacheTime() (uint64, error) {
 
 type InfraProperties struct {
 	Properties map[string]*edgeproto.PropertyInfo
-	Mux        sync.Mutex
+	Mux        sync.Mutex // protects local properties cache which only changes on init
 }
 
 func (p *InfraProperties) Init() {

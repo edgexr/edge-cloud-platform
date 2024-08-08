@@ -956,7 +956,7 @@ var NetworkAllFields = []string{
 	NetworkFieldDeletePrepare,
 }
 
-var NetworkAllFieldsMap = map[string]struct{}{
+var NetworkAllFieldsMap = NewFieldMap(map[string]struct{}{
 	NetworkFieldKeyCloudletKeyOrganization:          struct{}{},
 	NetworkFieldKeyCloudletKeyName:                  struct{}{},
 	NetworkFieldKeyCloudletKeyFederatedOrganization: struct{}{},
@@ -965,7 +965,7 @@ var NetworkAllFieldsMap = map[string]struct{}{
 	NetworkFieldRoutesNextHopIp:                     struct{}{},
 	NetworkFieldConnectionType:                      struct{}{},
 	NetworkFieldDeletePrepare:                       struct{}{},
-}
+})
 
 var NetworkAllFieldsStringMap = map[string]string{
 	NetworkFieldKeyCloudletKeyOrganization:          "Key Cloudlet Key Organization",
@@ -982,54 +982,60 @@ func (m *Network) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, NetworkFieldKey+".") || s == NetworkFieldKey
 }
 
-func (m *Network) DiffFields(o *Network, fields map[string]struct{}) {
+func (m *Network) DiffFields(o *Network, fields *FieldMap) {
 	if m.Key.CloudletKey.Organization != o.Key.CloudletKey.Organization {
-		fields[NetworkFieldKeyCloudletKeyOrganization] = struct{}{}
-		fields[NetworkFieldKeyCloudletKey] = struct{}{}
-		fields[NetworkFieldKey] = struct{}{}
+		fields.Set(NetworkFieldKeyCloudletKeyOrganization)
+		fields.Set(NetworkFieldKeyCloudletKey)
+		fields.Set(NetworkFieldKey)
 	}
 	if m.Key.CloudletKey.Name != o.Key.CloudletKey.Name {
-		fields[NetworkFieldKeyCloudletKeyName] = struct{}{}
-		fields[NetworkFieldKeyCloudletKey] = struct{}{}
-		fields[NetworkFieldKey] = struct{}{}
+		fields.Set(NetworkFieldKeyCloudletKeyName)
+		fields.Set(NetworkFieldKeyCloudletKey)
+		fields.Set(NetworkFieldKey)
 	}
 	if m.Key.CloudletKey.FederatedOrganization != o.Key.CloudletKey.FederatedOrganization {
-		fields[NetworkFieldKeyCloudletKeyFederatedOrganization] = struct{}{}
-		fields[NetworkFieldKeyCloudletKey] = struct{}{}
-		fields[NetworkFieldKey] = struct{}{}
+		fields.Set(NetworkFieldKeyCloudletKeyFederatedOrganization)
+		fields.Set(NetworkFieldKeyCloudletKey)
+		fields.Set(NetworkFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[NetworkFieldKeyName] = struct{}{}
-		fields[NetworkFieldKey] = struct{}{}
+		fields.Set(NetworkFieldKeyName)
+		fields.Set(NetworkFieldKey)
 	}
 	if len(m.Routes) != len(o.Routes) {
-		fields[NetworkFieldRoutes] = struct{}{}
+		fields.Set(NetworkFieldRoutes)
 	} else {
 		for i0 := 0; i0 < len(m.Routes); i0++ {
 			if m.Routes[i0].DestinationCidr != o.Routes[i0].DestinationCidr {
-				fields[NetworkFieldRoutesDestinationCidr] = struct{}{}
-				fields[NetworkFieldRoutes] = struct{}{}
+				fields.Set(NetworkFieldRoutesDestinationCidr)
+				fields.Set(NetworkFieldRoutes)
 			}
 			if m.Routes[i0].NextHopIp != o.Routes[i0].NextHopIp {
-				fields[NetworkFieldRoutesNextHopIp] = struct{}{}
-				fields[NetworkFieldRoutes] = struct{}{}
+				fields.Set(NetworkFieldRoutesNextHopIp)
+				fields.Set(NetworkFieldRoutes)
 			}
 		}
 	}
 	if m.ConnectionType != o.ConnectionType {
-		fields[NetworkFieldConnectionType] = struct{}{}
+		fields.Set(NetworkFieldConnectionType)
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[NetworkFieldDeletePrepare] = struct{}{}
+		fields.Set(NetworkFieldDeletePrepare)
 	}
 }
 
-var UpdateNetworkFieldsMap = map[string]struct{}{
+func (m *Network) GetDiffFields(o *Network) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateNetworkFieldsMap = NewFieldMap(map[string]struct{}{
 	NetworkFieldRoutes:                struct{}{},
 	NetworkFieldRoutesDestinationCidr: struct{}{},
 	NetworkFieldRoutesNextHopIp:       struct{}{},
 	NetworkFieldConnectionType:        struct{}{},
-}
+})
 
 func (m *Network) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -1037,11 +1043,11 @@ func (m *Network) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateNetworkFieldsMap[field]; !ok {
+		if !UpdateNetworkFieldsMap.Has(field) {
 			if _, ok := NetworkAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -1095,35 +1101,35 @@ func (m *Network) CopyInFields(src *Network) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
-			if _, set := fmap["2.1.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.HasOrHasChild("2.1") {
+			if fmap.Has("2.1.1") {
 				if m.Key.CloudletKey.Organization != src.Key.CloudletKey.Organization {
 					m.Key.CloudletKey.Organization = src.Key.CloudletKey.Organization
 					changed++
 				}
 			}
-			if _, set := fmap["2.1.2"]; set {
+			if fmap.Has("2.1.2") {
 				if m.Key.CloudletKey.Name != src.Key.CloudletKey.Name {
 					m.Key.CloudletKey.Name = src.Key.CloudletKey.Name
 					changed++
 				}
 			}
-			if _, set := fmap["2.1.3"]; set {
+			if fmap.Has("2.1.3") {
 				if m.Key.CloudletKey.FederatedOrganization != src.Key.CloudletKey.FederatedOrganization {
 					m.Key.CloudletKey.FederatedOrganization = src.Key.CloudletKey.FederatedOrganization
 					changed++
 				}
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.HasOrHasChild("3") {
 		if src.Routes != nil {
 			if updateListAction == "add" {
 				changed += m.AddRoutes(src.Routes...)
@@ -1141,13 +1147,13 @@ func (m *Network) CopyInFields(src *Network) int {
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.ConnectionType != src.ConnectionType {
 			m.ConnectionType = src.ConnectionType
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
@@ -1385,6 +1391,7 @@ type NetworkCache struct {
 	KeyWatchers   map[NetworkKey][]*NetworkKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *NetworkKey)
 	DeletedKeyCbs []func(ctx context.Context, key *NetworkKey)
+	Store         NetworkStore
 }
 
 func NewNetworkCache() *NetworkCache {
@@ -1747,6 +1754,18 @@ func (c *NetworkCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *NetworkCache) InitCacheWithSync(sync DataSync) {
+	InitNetworkCache(s)
+	s.InitSync(sync)
+}
+
+func (s *NetworkCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewNetworkStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

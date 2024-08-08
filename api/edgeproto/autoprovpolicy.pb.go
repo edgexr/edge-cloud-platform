@@ -1196,7 +1196,7 @@ var AutoProvPolicyAllFields = []string{
 	AutoProvPolicyFieldDeletePrepare,
 }
 
-var AutoProvPolicyAllFieldsMap = map[string]struct{}{
+var AutoProvPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AutoProvPolicyFieldKeyOrganization:                   struct{}{},
 	AutoProvPolicyFieldKeyName:                           struct{}{},
 	AutoProvPolicyFieldDeployClientCount:                 struct{}{},
@@ -1218,7 +1218,7 @@ var AutoProvPolicyAllFieldsMap = map[string]struct{}{
 	AutoProvPolicyFieldUndeployClientCount:               struct{}{},
 	AutoProvPolicyFieldUndeployIntervalCount:             struct{}{},
 	AutoProvPolicyFieldDeletePrepare:                     struct{}{},
-}
+})
 
 var AutoProvPolicyAllFieldsStringMap = map[string]string{
 	AutoProvPolicyFieldKeyOrganization:                   "Key Organization",
@@ -1248,117 +1248,123 @@ func (m *AutoProvPolicy) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AutoProvPolicyFieldKey+".") || s == AutoProvPolicyFieldKey
 }
 
-func (m *AutoProvPolicy) DiffFields(o *AutoProvPolicy, fields map[string]struct{}) {
+func (m *AutoProvPolicy) DiffFields(o *AutoProvPolicy, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {
-		fields[AutoProvPolicyFieldKeyOrganization] = struct{}{}
-		fields[AutoProvPolicyFieldKey] = struct{}{}
+		fields.Set(AutoProvPolicyFieldKeyOrganization)
+		fields.Set(AutoProvPolicyFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[AutoProvPolicyFieldKeyName] = struct{}{}
-		fields[AutoProvPolicyFieldKey] = struct{}{}
+		fields.Set(AutoProvPolicyFieldKeyName)
+		fields.Set(AutoProvPolicyFieldKey)
 	}
 	if m.DeployClientCount != o.DeployClientCount {
-		fields[AutoProvPolicyFieldDeployClientCount] = struct{}{}
+		fields.Set(AutoProvPolicyFieldDeployClientCount)
 	}
 	if m.DeployIntervalCount != o.DeployIntervalCount {
-		fields[AutoProvPolicyFieldDeployIntervalCount] = struct{}{}
+		fields.Set(AutoProvPolicyFieldDeployIntervalCount)
 	}
 	if m.Cloudlets != nil && o.Cloudlets != nil {
 		if len(m.Cloudlets) != len(o.Cloudlets) {
-			fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+			fields.Set(AutoProvPolicyFieldCloudlets)
 		} else {
 			for i0 := 0; i0 < len(m.Cloudlets); i0++ {
 				if m.Cloudlets[i0].Key.Organization != o.Cloudlets[i0].Key.Organization {
-					fields[AutoProvPolicyFieldCloudletsKeyOrganization] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsKey] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsKeyOrganization)
+					fields.Set(AutoProvPolicyFieldCloudletsKey)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Key.Name != o.Cloudlets[i0].Key.Name {
-					fields[AutoProvPolicyFieldCloudletsKeyName] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsKey] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsKeyName)
+					fields.Set(AutoProvPolicyFieldCloudletsKey)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Key.FederatedOrganization != o.Cloudlets[i0].Key.FederatedOrganization {
-					fields[AutoProvPolicyFieldCloudletsKeyFederatedOrganization] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsKey] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsKeyFederatedOrganization)
+					fields.Set(AutoProvPolicyFieldCloudletsKey)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Loc.Latitude != o.Cloudlets[i0].Loc.Latitude {
-					fields[AutoProvPolicyFieldCloudletsLocLatitude] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsLocLatitude)
+					fields.Set(AutoProvPolicyFieldCloudletsLoc)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Loc.Longitude != o.Cloudlets[i0].Loc.Longitude {
-					fields[AutoProvPolicyFieldCloudletsLocLongitude] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsLocLongitude)
+					fields.Set(AutoProvPolicyFieldCloudletsLoc)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Loc.HorizontalAccuracy != o.Cloudlets[i0].Loc.HorizontalAccuracy {
-					fields[AutoProvPolicyFieldCloudletsLocHorizontalAccuracy] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsLocHorizontalAccuracy)
+					fields.Set(AutoProvPolicyFieldCloudletsLoc)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Loc.VerticalAccuracy != o.Cloudlets[i0].Loc.VerticalAccuracy {
-					fields[AutoProvPolicyFieldCloudletsLocVerticalAccuracy] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsLocVerticalAccuracy)
+					fields.Set(AutoProvPolicyFieldCloudletsLoc)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Loc.Altitude != o.Cloudlets[i0].Loc.Altitude {
-					fields[AutoProvPolicyFieldCloudletsLocAltitude] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsLocAltitude)
+					fields.Set(AutoProvPolicyFieldCloudletsLoc)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Loc.Course != o.Cloudlets[i0].Loc.Course {
-					fields[AutoProvPolicyFieldCloudletsLocCourse] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsLocCourse)
+					fields.Set(AutoProvPolicyFieldCloudletsLoc)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Loc.Speed != o.Cloudlets[i0].Loc.Speed {
-					fields[AutoProvPolicyFieldCloudletsLocSpeed] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsLocSpeed)
+					fields.Set(AutoProvPolicyFieldCloudletsLoc)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 				if m.Cloudlets[i0].Loc.Timestamp != nil && o.Cloudlets[i0].Loc.Timestamp != nil {
 					if m.Cloudlets[i0].Loc.Timestamp.Seconds != o.Cloudlets[i0].Loc.Timestamp.Seconds {
-						fields[AutoProvPolicyFieldCloudletsLocTimestampSeconds] = struct{}{}
-						fields[AutoProvPolicyFieldCloudletsLocTimestamp] = struct{}{}
-						fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-						fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+						fields.Set(AutoProvPolicyFieldCloudletsLocTimestampSeconds)
+						fields.Set(AutoProvPolicyFieldCloudletsLocTimestamp)
+						fields.Set(AutoProvPolicyFieldCloudletsLoc)
+						fields.Set(AutoProvPolicyFieldCloudlets)
 					}
 					if m.Cloudlets[i0].Loc.Timestamp.Nanos != o.Cloudlets[i0].Loc.Timestamp.Nanos {
-						fields[AutoProvPolicyFieldCloudletsLocTimestampNanos] = struct{}{}
-						fields[AutoProvPolicyFieldCloudletsLocTimestamp] = struct{}{}
-						fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-						fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+						fields.Set(AutoProvPolicyFieldCloudletsLocTimestampNanos)
+						fields.Set(AutoProvPolicyFieldCloudletsLocTimestamp)
+						fields.Set(AutoProvPolicyFieldCloudletsLoc)
+						fields.Set(AutoProvPolicyFieldCloudlets)
 					}
 				} else if (m.Cloudlets[i0].Loc.Timestamp != nil && o.Cloudlets[i0].Loc.Timestamp == nil) || (m.Cloudlets[i0].Loc.Timestamp == nil && o.Cloudlets[i0].Loc.Timestamp != nil) {
-					fields[AutoProvPolicyFieldCloudletsLocTimestamp] = struct{}{}
-					fields[AutoProvPolicyFieldCloudletsLoc] = struct{}{}
-					fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+					fields.Set(AutoProvPolicyFieldCloudletsLocTimestamp)
+					fields.Set(AutoProvPolicyFieldCloudletsLoc)
+					fields.Set(AutoProvPolicyFieldCloudlets)
 				}
 			}
 		}
 	} else if (m.Cloudlets != nil && o.Cloudlets == nil) || (m.Cloudlets == nil && o.Cloudlets != nil) {
-		fields[AutoProvPolicyFieldCloudlets] = struct{}{}
+		fields.Set(AutoProvPolicyFieldCloudlets)
 	}
 	if m.MinActiveInstances != o.MinActiveInstances {
-		fields[AutoProvPolicyFieldMinActiveInstances] = struct{}{}
+		fields.Set(AutoProvPolicyFieldMinActiveInstances)
 	}
 	if m.MaxInstances != o.MaxInstances {
-		fields[AutoProvPolicyFieldMaxInstances] = struct{}{}
+		fields.Set(AutoProvPolicyFieldMaxInstances)
 	}
 	if m.UndeployClientCount != o.UndeployClientCount {
-		fields[AutoProvPolicyFieldUndeployClientCount] = struct{}{}
+		fields.Set(AutoProvPolicyFieldUndeployClientCount)
 	}
 	if m.UndeployIntervalCount != o.UndeployIntervalCount {
-		fields[AutoProvPolicyFieldUndeployIntervalCount] = struct{}{}
+		fields.Set(AutoProvPolicyFieldUndeployIntervalCount)
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[AutoProvPolicyFieldDeletePrepare] = struct{}{}
+		fields.Set(AutoProvPolicyFieldDeletePrepare)
 	}
 }
 
-var UpdateAutoProvPolicyFieldsMap = map[string]struct{}{
+func (m *AutoProvPolicy) GetDiffFields(o *AutoProvPolicy) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateAutoProvPolicyFieldsMap = NewFieldMap(map[string]struct{}{
 	AutoProvPolicyFieldDeployClientCount:                 struct{}{},
 	AutoProvPolicyFieldDeployIntervalCount:               struct{}{},
 	AutoProvPolicyFieldCloudlets:                         struct{}{},
@@ -1381,7 +1387,7 @@ var UpdateAutoProvPolicyFieldsMap = map[string]struct{}{
 	AutoProvPolicyFieldMaxInstances:                      struct{}{},
 	AutoProvPolicyFieldUndeployClientCount:               struct{}{},
 	AutoProvPolicyFieldUndeployIntervalCount:             struct{}{},
-}
+})
 
 func (m *AutoProvPolicy) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -1389,11 +1395,11 @@ func (m *AutoProvPolicy) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateAutoProvPolicyFieldsMap[field]; !ok {
+		if !UpdateAutoProvPolicyFieldsMap.Has(field) {
 			if _, ok := AutoProvPolicyAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -1447,33 +1453,33 @@ func (m *AutoProvPolicy) CopyInFields(src *AutoProvPolicy) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.DeployClientCount != src.DeployClientCount {
 			m.DeployClientCount = src.DeployClientCount
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.DeployIntervalCount != src.DeployIntervalCount {
 			m.DeployIntervalCount = src.DeployIntervalCount
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.HasOrHasChild("5") {
 		if src.Cloudlets != nil {
 			if updateListAction == "add" {
 				changed += m.AddCloudlets(src.Cloudlets...)
@@ -1491,31 +1497,31 @@ func (m *AutoProvPolicy) CopyInFields(src *AutoProvPolicy) int {
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if m.MinActiveInstances != src.MinActiveInstances {
 			m.MinActiveInstances = src.MinActiveInstances
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.MaxInstances != src.MaxInstances {
 			m.MaxInstances = src.MaxInstances
 			changed++
 		}
 	}
-	if _, set := fmap["8"]; set {
+	if fmap.Has("8") {
 		if m.UndeployClientCount != src.UndeployClientCount {
 			m.UndeployClientCount = src.UndeployClientCount
 			changed++
 		}
 	}
-	if _, set := fmap["9"]; set {
+	if fmap.Has("9") {
 		if m.UndeployIntervalCount != src.UndeployIntervalCount {
 			m.UndeployIntervalCount = src.UndeployIntervalCount
 			changed++
 		}
 	}
-	if _, set := fmap["10"]; set {
+	if fmap.Has("10") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
@@ -1760,6 +1766,7 @@ type AutoProvPolicyCache struct {
 	KeyWatchers   map[PolicyKey][]*AutoProvPolicyKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *PolicyKey)
 	DeletedKeyCbs []func(ctx context.Context, key *PolicyKey)
+	Store         AutoProvPolicyStore
 }
 
 func NewAutoProvPolicyCache() *AutoProvPolicyCache {
@@ -2122,6 +2129,18 @@ func (c *AutoProvPolicyCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *AutoProvPolicyCache) InitCacheWithSync(sync DataSync) {
+	InitAutoProvPolicyCache(s)
+	s.InitSync(sync)
+}
+
+func (s *AutoProvPolicyCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewAutoProvPolicyStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 
@@ -2722,7 +2741,7 @@ var AutoProvInfoAllFields = []string{
 	AutoProvInfoFieldErrors,
 }
 
-var AutoProvInfoAllFieldsMap = map[string]struct{}{
+var AutoProvInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AutoProvInfoFieldKeyOrganization:          struct{}{},
 	AutoProvInfoFieldKeyName:                  struct{}{},
 	AutoProvInfoFieldKeyFederatedOrganization: struct{}{},
@@ -2730,7 +2749,7 @@ var AutoProvInfoAllFieldsMap = map[string]struct{}{
 	AutoProvInfoFieldMaintenanceState:         struct{}{},
 	AutoProvInfoFieldCompleted:                struct{}{},
 	AutoProvInfoFieldErrors:                   struct{}{},
-}
+})
 
 var AutoProvInfoAllFieldsStringMap = map[string]string{
 	AutoProvInfoFieldKeyOrganization:          "Key Organization",
@@ -2746,45 +2765,51 @@ func (m *AutoProvInfo) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AutoProvInfoFieldKey+".") || s == AutoProvInfoFieldKey
 }
 
-func (m *AutoProvInfo) DiffFields(o *AutoProvInfo, fields map[string]struct{}) {
+func (m *AutoProvInfo) DiffFields(o *AutoProvInfo, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {
-		fields[AutoProvInfoFieldKeyOrganization] = struct{}{}
-		fields[AutoProvInfoFieldKey] = struct{}{}
+		fields.Set(AutoProvInfoFieldKeyOrganization)
+		fields.Set(AutoProvInfoFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[AutoProvInfoFieldKeyName] = struct{}{}
-		fields[AutoProvInfoFieldKey] = struct{}{}
+		fields.Set(AutoProvInfoFieldKeyName)
+		fields.Set(AutoProvInfoFieldKey)
 	}
 	if m.Key.FederatedOrganization != o.Key.FederatedOrganization {
-		fields[AutoProvInfoFieldKeyFederatedOrganization] = struct{}{}
-		fields[AutoProvInfoFieldKey] = struct{}{}
+		fields.Set(AutoProvInfoFieldKeyFederatedOrganization)
+		fields.Set(AutoProvInfoFieldKey)
 	}
 	if m.NotifyId != o.NotifyId {
-		fields[AutoProvInfoFieldNotifyId] = struct{}{}
+		fields.Set(AutoProvInfoFieldNotifyId)
 	}
 	if m.MaintenanceState != o.MaintenanceState {
-		fields[AutoProvInfoFieldMaintenanceState] = struct{}{}
+		fields.Set(AutoProvInfoFieldMaintenanceState)
 	}
 	if len(m.Completed) != len(o.Completed) {
-		fields[AutoProvInfoFieldCompleted] = struct{}{}
+		fields.Set(AutoProvInfoFieldCompleted)
 	} else {
 		for i0 := 0; i0 < len(m.Completed); i0++ {
 			if m.Completed[i0] != o.Completed[i0] {
-				fields[AutoProvInfoFieldCompleted] = struct{}{}
+				fields.Set(AutoProvInfoFieldCompleted)
 				break
 			}
 		}
 	}
 	if len(m.Errors) != len(o.Errors) {
-		fields[AutoProvInfoFieldErrors] = struct{}{}
+		fields.Set(AutoProvInfoFieldErrors)
 	} else {
 		for i0 := 0; i0 < len(m.Errors); i0++ {
 			if m.Errors[i0] != o.Errors[i0] {
-				fields[AutoProvInfoFieldErrors] = struct{}{}
+				fields.Set(AutoProvInfoFieldErrors)
 				break
 			}
 		}
 	}
+}
+
+func (m *AutoProvInfo) GetDiffFields(o *AutoProvInfo) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
 }
 
 func (m *AutoProvInfo) Clone() *AutoProvInfo {
@@ -2859,39 +2884,39 @@ func (m *AutoProvInfo) CopyInFields(src *AutoProvInfo) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
-		if _, set := fmap["2.3"]; set {
+		if fmap.Has("2.3") {
 			if m.Key.FederatedOrganization != src.Key.FederatedOrganization {
 				m.Key.FederatedOrganization = src.Key.FederatedOrganization
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.NotifyId != src.NotifyId {
 			m.NotifyId = src.NotifyId
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.MaintenanceState != src.MaintenanceState {
 			m.MaintenanceState = src.MaintenanceState
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if src.Completed != nil {
 			if updateListAction == "add" {
 				changed += m.AddCompleted(src.Completed...)
@@ -2907,7 +2932,7 @@ func (m *AutoProvInfo) CopyInFields(src *AutoProvInfo) int {
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if src.Errors != nil {
 			if updateListAction == "add" {
 				changed += m.AddErrors(src.Errors...)
@@ -3163,6 +3188,7 @@ type AutoProvInfoCache struct {
 	KeyWatchers   map[CloudletKey][]*AutoProvInfoKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *CloudletKey)
 	DeletedKeyCbs []func(ctx context.Context, key *CloudletKey)
+	Store         AutoProvInfoStore
 }
 
 func NewAutoProvInfoCache() *AutoProvInfoCache {
@@ -3560,6 +3586,18 @@ func (c *AutoProvInfoCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *AutoProvInfoCache) InitCacheWithSync(sync DataSync) {
+	InitAutoProvInfoCache(s)
+	s.InitSync(sync)
+}
+
+func (s *AutoProvInfoCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewAutoProvInfoStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

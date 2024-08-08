@@ -24,6 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/stretchr/testify/require"
@@ -75,15 +76,16 @@ func TestProxyCerts(t *testing.T) {
 	AtomicCertsUpdater = "certifications_test.go"
 
 	// create new ProxyCerts
+	cache := certscache.NewProxyCertsCache(&publicCertAPI)
 	envoyImage := "ghcr.io/edgexr/envoy-with-curl@some-tag"
-	proxyCerts := NewProxyCerts(ctx, &cloudletKey, &rootLBAPI, &publicCertAPI, &nodeMgr, haMgr, &features, true, envoyImage)
+	proxyCerts := NewProxyCerts(ctx, &cloudletKey, &rootLBAPI, &nodeMgr, haMgr, &features, true, envoyImage, cache)
 
 	testClient := &pc.TestClient{}
 
 	// start refresh with no rootLBs defined, should do nothing
-	err := proxyCerts.refreshCerts(ctx)
+	err := proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
-	require.Equal(t, 0, len(proxyCerts.certs))
+	require.Equal(t, 0, cache.Count(&cloudletKey))
 	require.Equal(t, 0, publicCertAPI.count)
 	require.Equal(t, 0, len(testClient.Cmds))
 
@@ -100,8 +102,8 @@ func TestProxyCerts(t *testing.T) {
 	err = proxyCerts.SetupTLSCerts(ctx, fqdn, lbName, testClient)
 	require.Nil(t, err)
 	require.Equal(t, 1, publicCertAPI.count)
-	require.Equal(t, 1, len(proxyCerts.certs))
-	_, ok := proxyCerts.certs[wcFqdn]
+	require.Equal(t, 1, cache.Count(&cloudletKey))
+	ok := cache.Has(&cloudletKey, wcFqdn)
 	require.True(t, ok)
 	require.True(t, len(testClient.Cmds) > 0)
 	testClient.Cmds = []string{}
@@ -110,12 +112,12 @@ func TestProxyCerts(t *testing.T) {
 	err = proxyCerts.SetupTLSCerts(ctx, fqdn, lbName, testClient)
 	require.Nil(t, err)
 	require.Equal(t, 1, publicCertAPI.count)
-	require.Equal(t, 1, len(proxyCerts.certs))
+	require.Equal(t, 1, cache.Count(&cloudletKey))
 
 	// check that wildcard picks same cert from cache
 	fqdn2 := "test-fqdn2.edgecloud.ut"
 	lbName2 := "test-lbname2"
-	require.Equal(t, wcFqdn, getWildcardName(fqdn2))
+	require.Equal(t, wcFqdn, certscache.GetWildcardName(fqdn2))
 	lbClient2 := platform.RootLBClient{
 		Client: testClient,
 		FQDN:   fqdn2,
@@ -125,8 +127,8 @@ func TestProxyCerts(t *testing.T) {
 	err = proxyCerts.SetupTLSCerts(ctx, fqdn2, lbName2, testClient)
 	require.Nil(t, err)
 	require.Equal(t, 1, publicCertAPI.count)
-	require.Equal(t, 1, len(proxyCerts.certs))
-	_, ok = proxyCerts.certs[wcFqdn]
+	require.Equal(t, 1, cache.Count(&cloudletKey))
+	ok = cache.Has(&cloudletKey, wcFqdn)
 	require.True(t, ok)
 	require.True(t, len(testClient.Cmds) > 0)
 
@@ -143,14 +145,14 @@ func TestProxyCerts(t *testing.T) {
 	err = proxyCerts.SetupTLSCerts(ctx, fqdn3, lbName3, testClient)
 	require.Nil(t, err)
 	require.Equal(t, 2, publicCertAPI.count)
-	require.Equal(t, 2, len(proxyCerts.certs))
-	_, ok = proxyCerts.certs[wcFqdn3]
+	require.Equal(t, 2, cache.Count(&cloudletKey))
+	ok = cache.Has(&cloudletKey, wcFqdn3)
 	require.True(t, ok)
 	require.True(t, len(testClient.Cmds) > 0)
 	testClient.Cmds = []string{}
 
 	// Test refresh not needed
-	refreshThreshold = time.Second
+	cache.SetRefreshThreshold(time.Millisecond)
 	publicCertAPI.count = 0
 	testClient.Cmds = []string{}
 	rootLBAPI.clients = map[string]platform.RootLBClient{
@@ -158,18 +160,18 @@ func TestProxyCerts(t *testing.T) {
 		lbName2: lbClient2,
 		lbName3: lbClient3,
 	}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 0, publicCertAPI.count)
 	require.Equal(t, 0, len(testClient.Cmds))
 
 	// Test refresh for expired certs (cert TTL is 60min)
-	refreshThreshold = 24 * time.Hour
+	cache.SetRefreshThreshold(24 * time.Hour)
 	publicCertAPI.count = 0
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 2, publicCertAPI.count)
-	require.Equal(t, 2, len(proxyCerts.certs))
+	require.Equal(t, 2, cache.Count(&cloudletKey))
 	require.True(t, len(testClient.Cmds) > 0)
 
 	// remove LB2, refresh again (same effect)
@@ -178,10 +180,10 @@ func TestProxyCerts(t *testing.T) {
 		lbName:  lbClient,
 		lbName3: lbClient3,
 	}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 2, publicCertAPI.count)
-	require.Equal(t, 2, len(proxyCerts.certs))
+	require.Equal(t, 2, cache.Count(&cloudletKey))
 	require.True(t, len(testClient.Cmds) > 0)
 
 	// remove other LB3, cert should be removed
@@ -189,20 +191,20 @@ func TestProxyCerts(t *testing.T) {
 	rootLBAPI.clients = map[string]platform.RootLBClient{
 		lbName: lbClient,
 	}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 1, publicCertAPI.count)
-	require.Equal(t, 1, len(proxyCerts.certs))
+	require.Equal(t, 1, cache.Count(&cloudletKey))
 	require.True(t, len(testClient.Cmds) > 0)
 
 	// remove other LB1, all certs now removed
 	publicCertAPI.count = 0
 	testClient.Cmds = []string{}
 	rootLBAPI.clients = map[string]platform.RootLBClient{}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 0, publicCertAPI.count)
-	require.Equal(t, 0, len(proxyCerts.certs))
+	require.Equal(t, 0, cache.Count(&cloudletKey))
 	require.Equal(t, 0, len(testClient.Cmds))
 
 	// test start-up condition: no certs in cache, but LBs found
@@ -213,10 +215,10 @@ func TestProxyCerts(t *testing.T) {
 		lbName2: lbClient2,
 		lbName3: lbClient3,
 	}
-	err = proxyCerts.refreshCerts(ctx)
+	err = proxyCerts.RefreshCerts(ctx)
 	require.Nil(t, err)
 	require.Equal(t, 2, publicCertAPI.count)
-	require.Equal(t, 2, len(proxyCerts.certs))
+	require.Equal(t, 2, cache.Count(&cloudletKey))
 	require.True(t, len(testClient.Cmds) > 0)
 
 	// check that we can get cert from cache after start-up condition

@@ -341,11 +341,12 @@ type DummyServer struct {
 	ClusterInstInfoCache          edgeproto.ClusterInstInfoCache
 	AutoProvPolicyCache           edgeproto.AutoProvPolicyCache
 	AutoProvInfoCache             edgeproto.AutoProvInfoCache
-	TrustPolicyExceptionCache     edgeproto.TrustPolicyExceptionCache
-	NetworkCache                  edgeproto.NetworkCache
 	AppInstCache                  edgeproto.AppInstCache
 	AppInstInfoCache              edgeproto.AppInstInfoCache
 	FedAppInstCache               edgeproto.FedAppInstCache
+	TrustPolicyExceptionCache     edgeproto.TrustPolicyExceptionCache
+	TPEInstanceStateCache         edgeproto.TPEInstanceStateCache
+	NetworkCache                  edgeproto.NetworkCache
 	CloudletRefsCache             edgeproto.CloudletRefsCache
 	ClusterRefsCache              edgeproto.ClusterRefsCache
 	AppInstRefsCache              edgeproto.AppInstRefsCache
@@ -385,11 +386,12 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitClusterInstInfoCache(&d.ClusterInstInfoCache)
 	edgeproto.InitAutoProvPolicyCache(&d.AutoProvPolicyCache)
 	edgeproto.InitAutoProvInfoCache(&d.AutoProvInfoCache)
-	edgeproto.InitTrustPolicyExceptionCache(&d.TrustPolicyExceptionCache)
-	edgeproto.InitNetworkCache(&d.NetworkCache)
 	edgeproto.InitAppInstCache(&d.AppInstCache)
 	edgeproto.InitAppInstInfoCache(&d.AppInstInfoCache)
 	edgeproto.InitFedAppInstCache(&d.FedAppInstCache)
+	edgeproto.InitTrustPolicyExceptionCache(&d.TrustPolicyExceptionCache)
+	edgeproto.InitTPEInstanceStateCache(&d.TPEInstanceStateCache)
+	edgeproto.InitNetworkCache(&d.NetworkCache)
 	edgeproto.InitCloudletRefsCache(&d.CloudletRefsCache)
 	edgeproto.InitClusterRefsCache(&d.ClusterRefsCache)
 	edgeproto.InitAppInstRefsCache(&d.AppInstRefsCache)
@@ -418,10 +420,10 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterClusterInstApiServer(server, d)
 	edgeproto.RegisterClusterInstInfoApiServer(server, d)
 	edgeproto.RegisterAutoProvPolicyApiServer(server, d)
-	edgeproto.RegisterTrustPolicyExceptionApiServer(server, d)
-	edgeproto.RegisterNetworkApiServer(server, d)
 	edgeproto.RegisterAppInstApiServer(server, d)
 	edgeproto.RegisterAppInstInfoApiServer(server, d)
+	edgeproto.RegisterTrustPolicyExceptionApiServer(server, d)
+	edgeproto.RegisterNetworkApiServer(server, d)
 	edgeproto.RegisterCloudletRefsApiServer(server, d)
 	edgeproto.RegisterClusterRefsApiServer(server, d)
 	edgeproto.RegisterAppInstRefsApiServer(server, d)
@@ -472,23 +474,23 @@ type Client interface {
 	ClusterInstApiClient
 	ClusterInstInfoApiClient
 	AutoProvPolicyApiClient
-	TrustPolicyExceptionApiClient
-	NetworkApiClient
 	AppInstApiClient
 	AppInstInfoApiClient
 	AppInstMetricsApiClient
 	AppInstLatencyApiClient
+	TrustPolicyExceptionApiClient
+	NetworkApiClient
 	CloudletRefsApiClient
 	ClusterRefsApiClient
 	AppInstRefsApiClient
 	RateLimitSettingsApiClient
 	AppInstClientApiClient
+	ExecApiClient
 	CloudletAccessApiClient
 	CloudletNodeApiClient
 	ControllerApiClient
 	NodeApiClient
 	DebugApiClient
 	DeviceApiClient
-	ExecApiClient
 	StreamObjApiClient
 }

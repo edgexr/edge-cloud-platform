@@ -18,9 +18,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
@@ -28,9 +30,10 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	"github.com/go-redis/redis/v8"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/labstack/echo/v4"
 	"google.golang.org/grpc"
 )
@@ -47,10 +50,12 @@ type CCRM struct {
 	caches           CCRMCaches
 	handler          CCRMHandler
 	redisCfg         rediscache.RedisConfig
-	redisClient      *redis.Client
 	echoServ         *echo.Echo
 	ctrlConn         *grpc.ClientConn
-	registryAuth     *cloudcommon.RegistryAuth
+	registryAuthAPI  cloudcommon.RegistryAuthApi
+	listeners        []net.Listener
+	grpcServer       *grpc.Server
+	sync             *regiondata.Sync
 }
 
 type Flags struct {
@@ -59,6 +64,8 @@ type Flags struct {
 	DnsZone                       string
 	CloudletRegistryPath          string
 	CloudletVMImagePath           string
+	APIAddr                       string
+	EtcdURLs                      string
 	EnvoyWithCurlImage            string
 	NginxWithCurlImage            string
 	VersionTag                    string
@@ -70,6 +77,7 @@ type Flags struct {
 	AnsibleListenAddr             string
 	AnsiblePublicAddr             string
 	ThanosRecvAddr                string
+	FederationExternalAddr        string
 	DebugLevels                   string
 	TestMode                      bool
 }
@@ -77,6 +85,7 @@ type Flags struct {
 // NewCCRM creates a new CCRM. The nodeType identifies the service
 // if there are other 3rd party CCRMs present, allowing requests
 // for certain platforms to be directed to the correct CCRM type.
+// New implementations must use their own unique node type.
 // PlatformBuilders provide the platforms supported by the CCRM.
 func NewCCRM(nodeType string, platformBuilders map[string]platform.PlatformBuilder) *CCRM {
 	ccrm := &CCRM{
@@ -117,6 +126,8 @@ func (s *Flags) Init() {
 	flag.StringVar(&s.DnsZone, "dnsZone", "", "comma separated list of allowed dns zones for DNS update requests")
 	flag.StringVar(&s.CloudletRegistryPath, "cloudletRegistryPath", "", "edge-cloud image registry path for deploying cloudlet services")
 	flag.StringVar(&s.CloudletVMImagePath, "cloudletVMImagePath", "", "VM image for deploying cloudlet services")
+	flag.StringVar(&s.APIAddr, "apiAddr", "127.0.0.1:19001", "GRPC API listener address")
+	flag.StringVar(&s.EtcdURLs, "etcdUrls", "http://127.0.0.1:2380", "etcd client listener URLs")
 	flag.StringVar(&s.EnvoyWithCurlImage, "envoyWithCurlImage", "", "docker image for envoy with curl to use on LB as reverse proxy")
 	flag.StringVar(&s.NginxWithCurlImage, "nginxWithCurlImage", "", "docker image for nginx with curl to use on LB as reverse proxy")
 	flag.StringVar(&s.VersionTag, "versionTag", "", "edge-cloud image tag indicating controller version")
@@ -128,9 +139,14 @@ func (s *Flags) Init() {
 	flag.StringVar(&s.ThanosRecvAddr, "thanosRecvAddr", "", "Address of thanos receive API endpoint including port")
 	flag.StringVar(&s.AnsibleListenAddr, "ansibleListenAddr", "127.0.0.1:48880", "Address and port to serve ansible files from")
 	flag.StringVar(&s.AnsiblePublicAddr, "ansiblePublicAddr", "http://127.0.0.1:48880", "Scheme, address, and port to pass to the CRM to reach the ansible server externally")
+	flag.StringVar(&s.FederationExternalAddr, "federationExternalAddr", "", "Federation EWBI API endpoint for clients")
 
 	flag.StringVar(&s.DebugLevels, "d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
 	flag.BoolVar(&s.TestMode, "testMode", false, "Run CCRM in test mode")
+}
+
+func (s *Flags) GetPlatformRegistryPath() string {
+	return s.CloudletRegistryPath + ":" + strings.TrimSpace(s.VersionTag)
 }
 
 // Start requires that flag.Parse() was called.
@@ -143,7 +159,7 @@ func (s *CCRM) Start() error {
 	if len(s.flags.AppDNSRoot) > cloudcommon.DnsDomainLabelMaxLen {
 		return fmt.Errorf("appDNSRoot %q must be less than %d characters", s.flags.AppDNSRoot, cloudcommon.DnsDomainLabelMaxLen)
 	}
-	ctx, span, err := s.nodeMgr.Init(s.nodeType, node.CertIssuerRegional, node.WithContainerVersion(s.flags.VersionTag), node.WithRegion(s.flags.Region))
+	ctx, span, err := s.nodeMgr.Init(s.nodeType, node.CertIssuerRegional, node.WithContainerVersion(s.flags.VersionTag), node.WithRegion(s.flags.Region), node.WithCachesLinkToKVStore())
 	if err != nil {
 		return err
 	}
@@ -152,15 +168,24 @@ func (s *CCRM) Start() error {
 	if err := s.validateRegistries(ctx); err != nil {
 		return err
 	}
+	regAuthMgr := cloudcommon.NewRegistryAuthMgr(s.nodeMgr.VaultConfig, s.nodeMgr.ValidDomains)
+	s.registryAuthAPI = &cloudcommon.VaultRegistryAuthApi{
+		RegAuthMgr: regAuthMgr,
+	}
 
 	// initialize caches and handlers
-	s.caches.Init(ctx, s.nodeType, &s.nodeMgr, s.platformBuilders)
+	s.caches.Init(ctx)
+	s.handler.Init(ctx, &s.nodeMgr, &s.caches, s.platformBuilders, &s.flags, s.registryAuthAPI)
 
-	// init redis client
-	s.redisClient, err = rediscache.NewClient(ctx, &s.redisCfg)
+	objStore, err := regiondata.GetEtcdClientBasic(s.flags.EtcdURLs)
 	if err != nil {
-		return err
+		return fmt.Errorf("Failed to initialize Object Store, %v", err)
 	}
+	err = objStore.CheckConnected(50, 20*time.Millisecond)
+	if err != nil {
+		return fmt.Errorf("Failed to connect to etcd servers, %v", err)
+	}
+	sync := regiondata.InitSync(objStore)
 
 	// set up notify TLS
 	clientTlsConfig, err := s.nodeMgr.InternalPki.GetClientTlsConfig(ctx, s.nodeMgr.CommonNamePrefix(), node.CertIssuerRegional, []node.MatchCA{node.SameRegionalMatchCA()})
@@ -177,34 +202,60 @@ func (s *CCRM) Start() error {
 	}
 	s.ctrlConn = clientConn
 
-	// initialize and start the notify client
-	s.caches.InitNotify(notifyClient, &s.nodeMgr)
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(cloudcommon.AuditUnaryInterceptor)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(cloudcommon.AuditStreamInterceptor)),
+		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}))
 
-	s.handler.Init(ctx, s.nodeType, &s.nodeMgr, &s.caches, s.redisClient, s.ctrlConn, &s.flags, s.registryAuth)
+	s.handler.InitConnectivity(notifyClient, objStore, &s.nodeMgr, grpcServer, sync)
 
 	echoServ := s.initAnsibleServer(ctx)
 
+	sync.Start()
+	s.sync = sync
+	s.handler.Start(ctx, s.ctrlConn)
 	notifyClient.Start()
 	s.notifyClient = notifyClient
 
 	s.startAnsibleServer(ctx, echoServ)
 
+	lis, err := net.Listen("tcp", s.flags.APIAddr)
+	if err != nil {
+		return fmt.Errorf("failed to listen on address %s, %s", s.flags.APIAddr, err)
+	}
+	s.listeners = append(s.listeners, lis)
+	s.grpcServer = grpcServer
+	go func() {
+		if err := s.grpcServer.Serve(lis); err != nil {
+			log.FatalLog("failed to serve", "err", err)
+		}
+	}()
+
 	return nil
 }
 
 func (s *CCRM) Stop() {
+	if s.grpcServer != nil {
+		s.grpcServer.Stop()
+		s.grpcServer = nil
+	}
 	if s.notifyClient != nil {
 		s.notifyClient.Stop()
 		s.notifyClient = nil
 	}
-	if s.handler.CancelHandlers != nil {
-		s.handler.CancelHandlers()
-		s.handler.CancelHandlers = nil
-	}
+	s.handler.Stop()
 	s.stopAnsibleServer()
 	if s.ctrlConn != nil {
 		s.ctrlConn.Close()
 		s.ctrlConn = nil
+	}
+	for _, lis := range s.listeners {
+		lis.Close()
+	}
+	s.listeners = nil
+	if s.sync != nil {
+		s.sync.Done()
+		s.sync = nil
 	}
 	s.nodeMgr.Finish()
 }
@@ -233,7 +284,7 @@ func (s *CCRM) validateRegistries(ctx context.Context) error {
 		} else if len(out) != 1 {
 			return fmt.Errorf("Invalid registry path")
 		}
-		platformRegistryPath := s.flags.CloudletRegistryPath + ":" + strings.TrimSpace(s.flags.VersionTag)
+		platformRegistryPath := s.flags.GetPlatformRegistryPath()
 		authApi := &cloudcommon.VaultRegistryAuthApi{
 			RegAuthMgr: cloudcommon.NewRegistryAuthMgr(s.nodeMgr.VaultConfig, s.nodeMgr.ValidDomains),
 		}
@@ -241,11 +292,11 @@ func (s *CCRM) validateRegistries(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		auth, err := authApi.GetRegistryAuth(ctx, platformRegistryPath)
+		s.registryAuthAPI = authApi
+		_, err = authApi.GetRegistryAuth(ctx, platformRegistryPath)
 		if err != nil {
 			return err
 		}
-		s.registryAuth = auth
 	}
 	return nil
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package crmutil
+package crm
 
 import (
 	"context"
@@ -23,31 +23,39 @@ import (
 )
 
 type CrmHAProcess struct {
-	controllerData                 *ControllerData
-	FinishUpdateCloudletInfoThread chan struct{}
+	crmData     *CRMData
+	cloudletKey *edgeproto.CloudletKey
 }
 
-func (s *CrmHAProcess) ActiveChangedPreSwitch(ctx context.Context, platformActive bool) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChangedPreSwitch", "platformActive", platformActive)
+func (s *CrmHAProcess) ActiveChangedPreSwitch(ctx context.Context, haRole string, platformActive bool) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChangedPreSwitch", "role", haRole, "platformActive", platformActive)
 	if !platformActive {
 		// not supported, CRM should have been killed within HA manager
 		log.SpanFromContext(ctx).Finish()
-		log.FatalLog("Error: Unexpected CRM transition to inactive", "cloudletKey", s.controllerData.cloudletKey)
+		log.FatalLog("Error: Unexpected CRM transition to inactive", "cloudletKey", s.cloudletKey)
 	}
 	return nil
 }
 
-func (s *CrmHAProcess) ActiveChangedPostSwitch(ctx context.Context, platformActive bool) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChangedPostSwitch", "platformActive", platformActive)
+func (s *CrmHAProcess) ActiveChangedPostSwitch(ctx context.Context, haRole string, platformActive bool) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChangedPostSwitch", "role", haRole, "platformActive", platformActive)
 	var cloudletInfo edgeproto.CloudletInfo
-	if !s.controllerData.CloudletInfoCache.Get(&s.controllerData.cloudletKey, &cloudletInfo) {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to find cloudlet info in cache", "cloudletKey", s.controllerData.cloudletKey)
-		return fmt.Errorf("cannot find in cloudlet info in cache for key %s", s.controllerData.cloudletKey.String())
+	if !s.crmData.CloudletInfoCache.Get(s.cloudletKey, &cloudletInfo) {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to find cloudlet info in cache", "cloudletKey", s.cloudletKey)
+		return fmt.Errorf("cannot find in cloudlet info in cache for key %s", s.cloudletKey.String())
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChangedPostSwitch", "PlatformCommonInitDone", s.controllerData.PlatformCommonInitDone)
+	if platformActive {
+		cloudletInfo.ActiveCrmInstance = haRole
+		cloudletInfo.StandbyCrm = false
+	} else {
+		cloudletInfo.StandbyCrm = true
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChangedPostSwitch", "PlatformCommonInitDone", s.crmData.PlatformCommonInitDone)
+
+	s.crmData.CloudletInfoCache.Update(ctx, &cloudletInfo, 0)
 
 	select {
-	case s.controllerData.WaitPlatformActive <- true:
+	case s.crmData.WaitPlatformActive <- true:
 	default:
 		// this is not expected because the channel should be filled either by transitioning from
 		// standby to active, or starting out active. But as there is no transition for the CRM to go
@@ -55,13 +63,20 @@ func (s *CrmHAProcess) ActiveChangedPostSwitch(ctx context.Context, platformActi
 		log.SpanFromContext(ctx).Finish()
 		log.FatalLog("WaitPlatformActive channel already full")
 	}
+
+	if platformActive {
+		err := s.crmData.UpdateCloudletInfoAndVersionHACache(ctx, &cloudletInfo)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "UpdateCloudletInfoCache fail", "err", err)
+		}
+	}
 	return nil
 }
 
 func (s *CrmHAProcess) PlatformActiveOnStartup(ctx context.Context) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PlatformActiveOnStartup")
 	select {
-	case s.controllerData.WaitPlatformActive <- true:
+	case s.crmData.WaitPlatformActive <- true:
 	default:
 		// this is not expected because the channel should be filled either by transitioning from
 		// standby to active, or starting out active. But as there is no transition for the CRM to go
@@ -74,8 +89,8 @@ func (s *CrmHAProcess) PlatformActiveOnStartup(ctx context.Context) {
 func (s *CrmHAProcess) DumpWatcherFields(ctx context.Context) map[string]interface{} {
 	watcherStatus := make(map[string]interface{})
 	watcherStatus["Type"] = "CrmHAProcess"
-	watcherStatus["PlatformCommonInitDone"] = s.controllerData.PlatformCommonInitDone
-	watcherStatus["UpdateHACompatibilityVersion"] = s.controllerData.UpdateHACompatibilityVersion
-	watcherStatus["ControllerSyncInProgress"] = s.controllerData.ControllerSyncInProgress
+	watcherStatus["PlatformCommonInitDone"] = s.crmData.PlatformCommonInitDone
+	watcherStatus["UpdateHACompatibilityVersion"] = s.crmData.UpdateHACompatibilityVersion
+	watcherStatus["ControllerSyncInProgress"] = s.crmData.ControllerSyncInProgress
 	return watcherStatus
 }

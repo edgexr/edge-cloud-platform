@@ -2,20 +2,6 @@
 heat_template_version: 2016-10-14
 description: Create a group of VMs
 
-parameters:
-  floatingIpId4:
-    type: string
-    description: ID of the floating ip address
-  floatingIpId3:
-    type: string
-    description: ID of the floating ip address
-  floatingIpId2:
-    type: string
-    description: ID of the floating ip address
-  floatingIpId1:
-    type: string
-    description: ID of the floating ip address
-
 resources:
     subnet-test:
         type: OS::Neutron::Subnet
@@ -919,20 +905,20 @@ resources:
     master-xyz-external-network-shared-ipv6-port-fip:
         type: OS::Neutron::FloatingIPAssociation
         properties:
-            floatingip_id: { get_param: floatingIpId4 }
+            floatingip_id: test-fip-id-floatingIpId4
             port_id: { get_resource: master-xyz-external-network-shared-ipv6-port }
     master-xyz-external-network-shared-port-fip:
         type: OS::Neutron::FloatingIPAssociation
         properties:
-            floatingip_id: { get_param: floatingIpId3 }
+            floatingip_id: test-fip-id-floatingIpId3
             port_id: { get_resource: master-xyz-external-network-shared-port }
     rootlb-xyz-external-network-shared-ipv6-port-fip:
         type: OS::Neutron::FloatingIPAssociation
         properties:
-            floatingip_id: { get_param: floatingIpId2 }
+            floatingip_id: test-fip-id-floatingIpId2
             port_id: { get_resource: rootlb-xyz-external-network-shared-ipv6-port }
     rootlb-xyz-external-network-shared-port-fip:
         type: OS::Neutron::FloatingIPAssociation
         properties:
-            floatingip_id: { get_param: floatingIpId1 }
+            floatingip_id: test-fip-id-floatingIpId1
             port_id: { get_resource: rootlb-xyz-external-network-shared-port }

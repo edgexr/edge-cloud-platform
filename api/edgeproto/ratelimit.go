@@ -16,6 +16,8 @@ package edgeproto
 
 import (
 	fmt "fmt"
+
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 )
 
 var GlobalApiName = "Global"
@@ -59,7 +61,7 @@ func (m *MaxReqsSettings) Validate() error {
 	return nil
 }
 
-func (r *RateLimitSettings) Validate(fields map[string]struct{}) error {
+func (r *RateLimitSettings) Validate(fmap objstore.FieldMap) error {
 	for _, fsettings := range r.FlowSettings {
 		if err := fsettings.Validate(); err != nil {
 			return err
@@ -74,11 +76,11 @@ func (r *RateLimitSettings) Validate(fields map[string]struct{}) error {
 	return nil
 }
 
-func (f *FlowRateLimitSettings) Validate(fields map[string]struct{}) error {
+func (f *FlowRateLimitSettings) Validate(fmap objstore.FieldMap) error {
 	return f.Settings.Validate()
 }
 
-func (m *MaxReqsRateLimitSettings) Validate(fields map[string]struct{}) error {
+func (m *MaxReqsRateLimitSettings) Validate(fmap objstore.FieldMap) error {
 	return m.Settings.Validate()
 }
 

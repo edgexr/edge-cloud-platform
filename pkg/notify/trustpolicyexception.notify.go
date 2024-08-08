@@ -6,6 +6,7 @@ package notify
 import (
 	"context"
 	fmt "fmt"
+	_ "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
@@ -387,5 +388,370 @@ func (s *Client) RegisterSendTrustPolicyExceptionCache(cache TrustPolicyExceptio
 
 func (s *Client) RegisterRecvTrustPolicyExceptionCache(cache TrustPolicyExceptionCacheHandler) {
 	recv := NewTrustPolicyExceptionRecv(cache)
+	s.RegisterRecv(recv)
+}
+
+type SendTPEInstanceStateHandler interface {
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.TPEInstanceState, modRev int64))
+	GetWithRev(key *edgeproto.TPEInstanceKey, buf *edgeproto.TPEInstanceState, modRev *int64) bool
+	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(data *edgeproto.TPEInstanceStateCacheData))
+}
+
+type RecvTPEInstanceStateHandler interface {
+	Update(ctx context.Context, in *edgeproto.TPEInstanceState, rev int64)
+	Delete(ctx context.Context, in *edgeproto.TPEInstanceState, rev int64)
+	Prune(ctx context.Context, keys map[edgeproto.TPEInstanceKey]struct{})
+	Flush(ctx context.Context, notifyId int64)
+}
+
+type TPEInstanceStateCacheHandler interface {
+	SendTPEInstanceStateHandler
+	RecvTPEInstanceStateHandler
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.TPEInstanceState, modRev int64))
+}
+
+type TPEInstanceStateSend struct {
+	Name        string
+	MessageName string
+	handler     SendTPEInstanceStateHandler
+	Keys        map[edgeproto.TPEInstanceKey]TPEInstanceStateSendContext
+	keysToSend  map[edgeproto.TPEInstanceKey]TPEInstanceStateSendContext
+	notifyId    int64
+	Mux         sync.Mutex
+	buf         edgeproto.TPEInstanceState
+	SendCount   uint64
+	sendrecv    *SendRecv
+}
+
+type TPEInstanceStateSendContext struct {
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
+}
+
+func NewTPEInstanceStateSend(handler SendTPEInstanceStateHandler) *TPEInstanceStateSend {
+	send := &TPEInstanceStateSend{}
+	send.Name = "TPEInstanceState"
+	send.MessageName = proto.MessageName((*edgeproto.TPEInstanceState)(nil))
+	send.handler = handler
+	send.Keys = make(map[edgeproto.TPEInstanceKey]TPEInstanceStateSendContext)
+	return send
+}
+
+func (s *TPEInstanceStateSend) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *TPEInstanceStateSend) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *TPEInstanceStateSend) GetName() string {
+	return s.Name
+}
+
+func (s *TPEInstanceStateSend) GetSendCount() uint64 {
+	return s.SendCount
+}
+
+func (s *TPEInstanceStateSend) GetNotifyId() int64 {
+	return s.notifyId
+}
+func (s *TPEInstanceStateSend) UpdateAll(ctx context.Context) {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return
+	}
+	s.Mux.Lock()
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.TPEInstanceState, modRev int64) {
+		if !s.UpdateAllOkLocked(obj) { // to be implemented by hand
+			return
+		}
+		s.Keys[*obj.GetKey()] = TPEInstanceStateSendContext{
+			ctx:    ctx,
+			modRev: modRev,
+		}
+	})
+	s.Mux.Unlock()
+}
+
+func (s *TPEInstanceStateSend) Update(ctx context.Context, obj *edgeproto.TPEInstanceState, modRev int64) {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return
+	}
+	if !s.UpdateOk(ctx, obj) { // to be implemented by hand
+		return
+	}
+	forceDelete := false
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
+}
+
+func (s *TPEInstanceStateSend) ForceDelete(ctx context.Context, key *edgeproto.TPEInstanceKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *TPEInstanceStateSend) updateInternal(ctx context.Context, key *edgeproto.TPEInstanceKey, modRev int64, forceDelete bool) {
+	s.Mux.Lock()
+	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal TPEInstanceState", "key", key, "modRev", modRev)
+	s.Keys[*key] = TPEInstanceStateSendContext{
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
+	}
+	s.Mux.Unlock()
+	s.sendrecv.wakeup()
+}
+
+func (s *TPEInstanceStateSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+	keys := make(map[edgeproto.TPEInstanceKey]*edgeproto.TPEInstanceStateCacheData)
+	s.handler.GetForCloudlet(cloudlet, func(data *edgeproto.TPEInstanceStateCacheData) {
+		if data.Obj == nil {
+			return
+		}
+		keys[*data.Obj.GetKey()] = data
+	})
+	for k, data := range keys {
+		if action == edgeproto.NoticeAction_UPDATE {
+			s.Update(ctx, data.Obj, data.ModRev)
+		} else if action == edgeproto.NoticeAction_DELETE {
+			s.ForceDelete(ctx, &k, data.ModRev)
+		}
+	}
+}
+
+func (s *TPEInstanceStateSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
+	s.Mux.Lock()
+	keys := s.keysToSend
+	s.keysToSend = nil
+	s.Mux.Unlock()
+	for key, sendContext := range keys {
+		ctx := sendContext.ctx
+		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
+		if found && !sendContext.forceDelete {
+			notice.Action = edgeproto.NoticeAction_UPDATE
+		} else {
+			notice.Action = edgeproto.NoticeAction_DELETE
+			notice.ModRev = sendContext.modRev
+			s.buf.Reset()
+			s.buf.SetKey(&key)
+		}
+		any, err := types.MarshalAny(&s.buf)
+		if err != nil {
+			s.sendrecv.stats.MarshalErrors++
+			err = nil
+			continue
+		}
+		notice.Any = *any
+		notice.Span = log.SpanToString(ctx)
+		log.SpanLog(ctx, log.DebugLevelNotify,
+			fmt.Sprintf("%s send TPEInstanceState", s.sendrecv.cliserv),
+			"peerAddr", peer,
+			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
+			"action", notice.Action,
+			"key", key,
+			"modRev", notice.ModRev)
+		err = stream.Send(notice)
+		if err != nil {
+			s.sendrecv.stats.SendErrors++
+			return err
+		}
+		s.sendrecv.stats.Send++
+		// object specific counter
+		s.SendCount++
+	}
+	return nil
+}
+
+func (s *TPEInstanceStateSend) PrepData() bool {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	if len(s.Keys) > 0 {
+		s.keysToSend = s.Keys
+		s.Keys = make(map[edgeproto.TPEInstanceKey]TPEInstanceStateSendContext)
+		return true
+	}
+	return false
+}
+
+// Server accepts multiple clients so needs to track multiple
+// peers to send to.
+type TPEInstanceStateSendMany struct {
+	handler SendTPEInstanceStateHandler
+	Mux     sync.Mutex
+	sends   map[string]*TPEInstanceStateSend
+}
+
+func NewTPEInstanceStateSendMany(handler SendTPEInstanceStateHandler) *TPEInstanceStateSendMany {
+	s := &TPEInstanceStateSendMany{}
+	s.handler = handler
+	s.sends = make(map[string]*TPEInstanceStateSend)
+	return s
+}
+
+func (s *TPEInstanceStateSendMany) NewSend(peerAddr string, notifyId int64) NotifySend {
+	send := NewTPEInstanceStateSend(s.handler)
+	send.notifyId = notifyId
+	s.Mux.Lock()
+	s.sends[peerAddr] = send
+	s.Mux.Unlock()
+	return send
+}
+
+func (s *TPEInstanceStateSendMany) DoneSend(peerAddr string, send NotifySend) {
+	asend, ok := send.(*TPEInstanceStateSend)
+	if !ok {
+		return
+	}
+	// another connection may come from the same client so remove
+	// only if it matches
+	s.Mux.Lock()
+	if remove, _ := s.sends[peerAddr]; remove == asend {
+		delete(s.sends, peerAddr)
+	}
+	s.Mux.Unlock()
+}
+func (s *TPEInstanceStateSendMany) Update(ctx context.Context, obj *edgeproto.TPEInstanceState, modRev int64) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for _, send := range s.sends {
+		send.Update(ctx, obj, modRev)
+	}
+}
+
+func (s *TPEInstanceStateSendMany) GetTypeString() string {
+	return "TPEInstanceState"
+}
+
+type TPEInstanceStateRecv struct {
+	Name        string
+	MessageName string
+	handler     RecvTPEInstanceStateHandler
+	sendAllKeys map[edgeproto.TPEInstanceKey]struct{}
+	Mux         sync.Mutex
+	buf         edgeproto.TPEInstanceState
+	RecvCount   uint64
+	sendrecv    *SendRecv
+}
+
+func NewTPEInstanceStateRecv(handler RecvTPEInstanceStateHandler) *TPEInstanceStateRecv {
+	recv := &TPEInstanceStateRecv{}
+	recv.Name = "TPEInstanceState"
+	recv.MessageName = proto.MessageName((*edgeproto.TPEInstanceState)(nil))
+	recv.handler = handler
+	return recv
+}
+
+func (s *TPEInstanceStateRecv) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *TPEInstanceStateRecv) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *TPEInstanceStateRecv) GetName() string {
+	return s.Name
+}
+
+func (s *TPEInstanceStateRecv) GetRecvCount() uint64 {
+	return s.RecvCount
+}
+
+func (s *TPEInstanceStateRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyId int64, peerAddr string) {
+	span := opentracing.SpanFromContext(ctx)
+	if span != nil {
+		span.SetTag("objtype", "TPEInstanceState")
+	}
+
+	buf := &edgeproto.TPEInstanceState{}
+	err := types.UnmarshalAny(&notice.Any, buf)
+	if err != nil {
+		s.sendrecv.stats.UnmarshalErrors++
+		log.SpanLog(ctx, log.DebugLevelNotify, "Unmarshal Error", "err", err)
+		return
+	}
+	if span != nil {
+		log.SetTags(span, buf.GetKey().GetTags())
+	}
+	log.SpanLog(ctx, log.DebugLevelNotify,
+		fmt.Sprintf("%s recv TPEInstanceState", s.sendrecv.cliserv),
+		"peerAddr", peerAddr,
+		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
+		"action", notice.Action,
+		"key", buf.GetKeyVal(),
+		"modRev", notice.ModRev)
+	if notice.Action == edgeproto.NoticeAction_UPDATE {
+		s.handler.Update(ctx, buf, notice.ModRev)
+		s.Mux.Lock()
+		if s.sendAllKeys != nil {
+			s.sendAllKeys[buf.GetKeyVal()] = struct{}{}
+		}
+		s.Mux.Unlock()
+	} else if notice.Action == edgeproto.NoticeAction_DELETE {
+		s.handler.Delete(ctx, buf, notice.ModRev)
+	}
+	s.sendrecv.stats.Recv++
+	// object specific counter
+	s.RecvCount++
+}
+
+func (s *TPEInstanceStateRecv) RecvAllStart() {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	s.sendAllKeys = make(map[edgeproto.TPEInstanceKey]struct{})
+}
+
+func (s *TPEInstanceStateRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {
+	s.Mux.Lock()
+	validKeys := s.sendAllKeys
+	s.sendAllKeys = nil
+	s.Mux.Unlock()
+	if cleanup == CleanupPrune {
+		s.handler.Prune(ctx, validKeys)
+	}
+}
+func (s *TPEInstanceStateRecv) Flush(ctx context.Context, notifyId int64) {
+	s.handler.Flush(ctx, notifyId)
+}
+
+type TPEInstanceStateRecvMany struct {
+	handler RecvTPEInstanceStateHandler
+}
+
+func NewTPEInstanceStateRecvMany(handler RecvTPEInstanceStateHandler) *TPEInstanceStateRecvMany {
+	s := &TPEInstanceStateRecvMany{}
+	s.handler = handler
+	return s
+}
+
+func (s *TPEInstanceStateRecvMany) NewRecv() NotifyRecv {
+	recv := NewTPEInstanceStateRecv(s.handler)
+	return recv
+}
+
+func (s *TPEInstanceStateRecvMany) Flush(ctx context.Context, notifyId int64) {
+	s.handler.Flush(ctx, notifyId)
+}
+func (mgr *ServerMgr) RegisterSendTPEInstanceStateCache(cache TPEInstanceStateCacheHandler) {
+	send := NewTPEInstanceStateSendMany(cache)
+	mgr.RegisterSend(send)
+	cache.AddNotifyCb(send.Update)
+}
+
+func (mgr *ServerMgr) RegisterRecvTPEInstanceStateCache(cache TPEInstanceStateCacheHandler) {
+	recv := NewTPEInstanceStateRecvMany(cache)
+	mgr.RegisterRecv(recv)
+}
+
+func (s *Client) RegisterSendTPEInstanceStateCache(cache TPEInstanceStateCacheHandler) {
+	send := NewTPEInstanceStateSend(cache)
+	s.RegisterSend(send)
+	cache.AddNotifyCb(send.Update)
+}
+
+func (s *Client) RegisterRecvTPEInstanceStateCache(cache TPEInstanceStateCacheHandler) {
+	recv := NewTPEInstanceStateRecv(cache)
 	s.RegisterRecv(recv)
 }

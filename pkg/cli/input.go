@@ -362,8 +362,23 @@ func MapJsonNamesT(dat, js map[string]interface{}, t reflect.Type, inputNS Field
 			}
 			// sub struct
 			kind := sf.Type.Kind()
+			subType := sf.Type
 			if kind == reflect.Ptr {
 				kind = sf.Type.Elem().Kind()
+				subType = sf.Type.Elem()
+			}
+			if kind == reflect.Map && subType.Key().Kind() == reflect.String && subType.Elem().Kind() == reflect.String {
+				// handle map[string]string
+				mapss := map[string]string{}
+				for k, v := range subargs {
+					val, ok := v.(string)
+					if !ok {
+						return fmt.Errorf("key %s[%s] (%s) value %s expected string value for map[string]string, but is %T", key, k, inputNS.String(), v, v)
+					}
+					mapss[k] = val
+				}
+				js[jsonName] = mapss
+				continue
 			}
 			if kind != reflect.Struct {
 				return fmt.Errorf("key %s (%s) value %v is a map (struct) but expected %v", key, inputNS.String(), val, sf.Type)

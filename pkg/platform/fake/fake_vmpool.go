@@ -31,5 +31,6 @@ func (s *PlatformVMPool) GetFeatures() *edgeproto.PlatformFeatures {
 	features := s.Platform.GetFeatures()
 	features.PlatformType = platform.PlatformTypeFakeVMPool
 	features.IsVmPool = true
+	features.RequiresCrmOnEdge = true
 	return features
 }

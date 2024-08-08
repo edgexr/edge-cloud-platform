@@ -41,6 +41,7 @@ type KeyWorkers struct {
 	waitWorkers sync.WaitGroup
 	pause       sync.WaitGroup
 	paused      bool
+	doneCb      func(key interface{})
 }
 
 func (s *KeyWorkers) Init(name string, workFunc WorkFunc) {
@@ -53,9 +54,10 @@ type keyWorker struct {
 	key       interface{}
 	needsWork bool
 	ctx       context.Context
+	doneCb    chan (struct{})
 }
 
-func (s *KeyWorkers) NeedsWork(ctx context.Context, key interface{}) {
+func (s *KeyWorkers) NeedsWork(ctx context.Context, key interface{}) chan struct{} {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -66,6 +68,7 @@ func (s *KeyWorkers) NeedsWork(ctx context.Context, key interface{}) {
 		worker.key = key
 		worker.needsWork = true
 		worker.ctx = ctx
+		worker.doneCb = make(chan struct{})
 		s.workers[key] = worker
 		s.waitWorkers.Add(1)
 		go s.runWorker(worker)
@@ -73,6 +76,7 @@ func (s *KeyWorkers) NeedsWork(ctx context.Context, key interface{}) {
 		worker.needsWork = true
 		worker.ctx = ctx
 	}
+	return worker.doneCb
 }
 
 func (s *KeyWorkers) runWorker(worker *keyWorker) {
@@ -83,6 +87,7 @@ func (s *KeyWorkers) runWorker(worker *keyWorker) {
 			// we're done
 			delete(s.workers, worker.key)
 			s.mux.Unlock()
+			close(worker.doneCb)
 			break
 		}
 		span, ctx := log.ChildSpan(worker.ctx, log.DebugLevelApi, s.name+" KeyWorker")

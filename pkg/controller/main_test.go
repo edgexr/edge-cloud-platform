@@ -122,19 +122,27 @@ func testC(t *testing.T) {
 	crmClient := notify.NewClient("crm", notifyAddrs, nil)
 	crmNotify.RegisterCRMClient(crmClient)
 	dummyResponder := DummyInfoResponder{
-		CloudletCache:              &crmNotify.CloudletCache,
-		AppInstCache:               &crmNotify.AppInstCache,
-		ClusterInstCache:           &crmNotify.ClusterInstCache,
-		RecvAppInstInfo:            &crmNotify.AppInstInfoCache,
-		RecvClusterInstInfo:        &crmNotify.ClusterInstInfoCache,
-		RecvCloudletOnboardingInfo: apis.cloudletInfoApi,
+		CloudletCache:       &crmNotify.CloudletCache,
+		AppInstCache:        &crmNotify.AppInstCache,
+		ClusterInstCache:    &crmNotify.ClusterInstCache,
+		RecvAppInstInfo:     &crmNotify.AppInstInfoCache,
+		RecvClusterInstInfo: &crmNotify.ClusterInstInfoCache,
 	}
 	dummyResponder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
+	cloudletData := testutil.CloudletData()
+	crmsOnEdge := map[edgeproto.CloudletKey]struct{}{}
 	for ii, _ := range testutil.CloudletInfoData() {
-		crmNotify.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData()[ii], 0)
+		if cloudletData[ii].CrmOnEdge {
+			crmNotify.CloudletInfoCache.Update(ctx, &testutil.CloudletInfoData()[ii], 0)
+			crmsOnEdge[cloudletData[ii].Key] = struct{}{}
+		}
 	}
+	etcdStore, err := regiondata.GetEtcdClientBasic(*etcdUrls)
+	require.Nil(t, err)
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, etcdStore)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
+
 	go crmClient.Start()
 	defer crmClient.Stop()
 	dmeNotify := notify.NewDummyHandler()
@@ -157,12 +165,14 @@ func testC(t *testing.T) {
 	require.Nil(t, crmClient.WaitForConnect(1))
 	require.Nil(t, dmeClient.WaitForConnect(1))
 	for ii, _ := range testutil.CloudletInfoData() {
+		if !cloudletData[ii].CrmOnEdge {
+			continue
+		}
 		err := apis.cloudletInfoApi.cache.WaitForCloudletState(ctx, &testutil.CloudletInfoData()[ii].Key, dme.CloudletState_CLOUDLET_STATE_READY, time.Second)
-		require.Nil(t, err)
+		require.Nil(t, err, cloudletData[ii].Key)
 	}
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 
-	cloudletData := testutil.CloudletData()
 	testutil.ClientFlavorTest(t, "cud", flavorClient, testutil.FlavorData())
 	testutil.ClientAutoProvPolicyTest(t, "cud", autoProvPolicyClient, testutil.AutoProvPolicyData())
 	testutil.ClientAutoScalePolicyTest(t, "cud", autoScalePolicyClient, testutil.AutoScalePolicyData())
@@ -178,14 +188,26 @@ func testC(t *testing.T) {
 
 	require.Equal(t, len(testutil.AppInstData()), len(dmeNotify.AppInstCache.Objs), "num appinsts")
 	require.Equal(t, len(testutil.FlavorData()), len(crmNotify.FlavorCache.Objs), "num flavors")
-	require.Equal(t, len(testutil.ClusterInstData())+len(testutil.ClusterInstAutoData()), len(crmNotify.ClusterInstInfoCache.Objs), "crm cluster inst infos")
-	require.Equal(t, len(testutil.AppInstData()), len(crmNotify.AppInstInfoCache.Objs), "crm cluster inst infos")
+	crmClusterInstCount := 0
+	crmAppInstCount := 0
+	for _, ci := range append(testutil.ClusterInstData(), testutil.ClusterInstAutoData()...) {
+		if _, found := crmsOnEdge[ci.Key.CloudletKey]; found {
+			crmClusterInstCount++
+		}
+	}
+	for _, ai := range testutil.AppInstData() {
+		if _, found := crmsOnEdge[ai.Key.CloudletKey]; found {
+			crmAppInstCount++
+		}
+	}
+	require.Equal(t, crmClusterInstCount, len(crmNotify.ClusterInstInfoCache.Objs), "crm cluster inst infos")
+	require.Equal(t, crmAppInstCount, len(crmNotify.AppInstInfoCache.Objs), "crm app inst infos")
 
 	ClientAppInstCachedFieldsTest(t, ctx, appClient, cloudletClient, appInstClient)
 
 	WaitForCloudletInfo(apis, len(testutil.CloudletInfoData()))
 	require.Equal(t, len(testutil.CloudletInfoData()), len(apis.cloudletInfoApi.cache.Objs))
-	require.Equal(t, len(crmNotify.CloudletInfoCache.Objs), len(apis.cloudletInfoApi.cache.Objs))
+	require.Equal(t, len(crmsOnEdge), len(crmNotify.CloudletInfoCache.Objs))
 
 	// test show api for info structs
 	// XXX These checks won't work until we move notifyId out of struct

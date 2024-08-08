@@ -347,7 +347,7 @@ func (s *GPUDriverApi) UpdateGPUDriver(in *edgeproto.GPUDriver, cb edgeproto.GPU
 	}()
 
 	// Step-2: Validate license-config
-	if _, found := fmap[edgeproto.GPUDriverFieldLicenseConfig]; found {
+	if fmap.HasOrHasChild(edgeproto.GPUDriverFieldLicenseConfig) {
 		if err := s.validateGPUDriverLicense(ctx, in); err != nil {
 			return err
 		}

@@ -286,7 +286,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 			}
 		}
 	}
-	err = v.VMProvider.DeleteVMs(ctx, name)
+	err = v.VMProvider.DeleteVMs(ctx, name, clusterInst.ObjId)
 	if err != nil && err.Error() != ServerDoesNotExistError {
 		log.SpanLog(ctx, log.DebugLevelInfra, "DeleteVMs failed", "name", name, "err", err)
 		return err
@@ -386,9 +386,13 @@ func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgepro
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
+	flavors, err := v.GetCachedFlavorList(ctx)
+	if err != nil {
+		return err
+	}
 
 	//find the flavor and check the disk size
-	for _, flavor := range v.FlavorList {
+	for _, flavor := range flavors {
 		if flavor.Name == clusterInst.NodeFlavor && flavor.Disk < MINIMUM_DISK_SIZE && clusterInst.ExternalVolumeSize < MINIMUM_DISK_SIZE {
 			log.SpanLog(ctx, log.DebugLevelInfra, "flavor disk size too small", "flavor", flavor, "ExternalVolumeSize", clusterInst.ExternalVolumeSize)
 			return fmt.Errorf("Insufficient disk size, please specify a flavor with at least %dgb", MINIMUM_DISK_SIZE)
@@ -773,7 +777,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 	newSubnetName := v.GetClusterSubnetName(ctx, clusterInst)
 
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		rootlb, err := v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, &clusterInst.Key, lbNets, lbRoutes, updateCallback)
+		rootlb, err := v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, &clusterInst.Key, lbNets, lbRoutes, NoAccessKey, cloudcommon.NodeRoleBase, updateCallback)
 		if err != nil {
 			return vms, newSubnetName, newSecgrpName, err
 		}
@@ -862,7 +866,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		var rootlb *VMRequestSpec
 		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 			// dedicated for docker means the docker VM acts as its own rootLB
-			rootlb, err = v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, &clusterInst.Key, lbNets, lbRoutes, updateCallback)
+			rootlb, err = v.GetVMSpecForRootLB(ctx, v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst), newSubnetName, &clusterInst.Key, lbNets, lbRoutes, NoAccessKey, cloudcommon.NodeRoleBase, updateCallback)
 			if err != nil {
 				return nil, err
 			}
@@ -925,6 +929,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 	}
 	return v.OrchestrateVMsFromVMSpec(ctx,
 		vmgroupName,
+		clusterInst.ObjId,
 		vms,
 		action,
 		updateCallback,

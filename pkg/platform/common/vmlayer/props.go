@@ -46,6 +46,7 @@ type VMProperties struct {
 	NumCleanupRetries                 int
 	UsesCommonSharedInternalLBNetwork bool
 	PlatformExternalNetwork           string
+	UseTestCACert                     bool
 }
 
 const MEX_ROOTLB_FLAVOR_NAME = "mex-rootlb-flavor"

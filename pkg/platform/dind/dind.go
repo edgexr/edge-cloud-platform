@@ -37,8 +37,8 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 	return s.Xind.InitCommon(ctx, platformConfig, caches, s, updateCallback)
 }
 
-func (s *Platform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
-	return s.Xind.InitHAConditional(ctx, platformConfig, updateCallback)
+func (s *Platform) InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
+	return s.Xind.InitHAConditional(ctx, updateCallback)
 }
 
 func (s *Platform) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {

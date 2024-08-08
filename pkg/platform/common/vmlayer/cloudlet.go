@@ -64,8 +64,8 @@ func (v *VMPlatform) GetPlatformVMName(key *edgeproto.CloudletKey) string {
 
 func (v *VMPlatform) GetPlatformSubnetName(key *edgeproto.CloudletKey) SubnetNames {
 	names := SubnetNames{}
-	names[infracommon.IndexIPV4] = "mex-k8s-subnet-" + v.GetPlatformVMName(key)
-	names[infracommon.IndexIPV6] = "mex-k8s-subnet-" + v.GetPlatformVMName(key) + "-ipv6"
+	names[infracommon.IndexIPV4] = MexSubnetPrefix + v.GetPlatformVMName(key)
+	names[infracommon.IndexIPV6] = MexSubnetPrefix + v.GetPlatformVMName(key) + "-ipv6"
 	return names
 }
 
@@ -164,6 +164,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 		_, err = v.OrchestrateVMsFromVMSpec(
 			ctx,
 			platformVmGroupName,
+			cloudlet.ObjId,
 			vms,
 			ActionCreate,
 			updateCallback,
@@ -186,6 +187,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 		_, err = v.OrchestrateVMsFromVMSpec(
 			ctx,
 			platformVmGroupName,
+			cloudlet.ObjId,
 			vms,
 			ActionCreate,
 			updateCallback,
@@ -209,7 +211,7 @@ func (v *VMPlatform) SetupPlatformVM(ctx context.Context, accessApi platform.Acc
 	return nil
 }
 
-func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfFlavor *edgeproto.Flavor, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
+func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *pf.PlatformInitConfig, pfFlavor *edgeproto.Flavor, caches *pf.Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	var err error
 	cloudletResourcesCreated := false
 	log.SpanLog(ctx, log.DebugLevelInfra, "Creating cloudlet", "cloudletName", cloudlet.Key.Name)
@@ -218,14 +220,8 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return false, fmt.Errorf("container registry path not specified")
 	}
 
-	if !pfConfig.TestMode {
-		err = v.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, accessApi)
-		if err != nil {
-			return cloudletResourcesCreated, err
-		}
-	}
 	v.VMProperties.Domain = VMDomainPlatform
-	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
 	err = v.InitProps(ctx, pc)
 	if err != nil {
 		return cloudletResourcesCreated, err
@@ -241,7 +237,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	// Source OpenRC file to access openstack API endpoint
 	updateCallback(edgeproto.UpdateTask, "Sourcing access variables")
 	log.SpanLog(ctx, log.DebugLevelInfra, "Sourcing access variables", "region", pfConfig.Region, "cloudletKey", cloudlet.Key, "PhysicalName", cloudlet.PhysicalName)
-	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
+	err = v.VMProvider.InitApiAccessProperties(ctx, pc.AccessApi, cloudlet.EnvVar)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -283,7 +279,7 @@ func (v *VMPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		return cloudletResourcesCreated, nil
 	}
 
-	err = v.SetupPlatformVM(ctx, accessApi, cloudlet, pfConfig, pfFlavor, updateCallback)
+	err = v.SetupPlatformVM(ctx, pc.AccessApi, cloudlet, pfConfig, pfFlavor, updateCallback)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -351,20 +347,13 @@ func (v *VMPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicy
 	return v.VMProvider.ConfigureTrustPolicyExceptionSecurityRules(ctx, &TrustPolicyException, rootlbClients, ActionDelete, edgeproto.DummyUpdateCallback)
 }
 
-func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *pf.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *pf.PlatformInitConfig, caches *pf.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Deleting cloudlet", "cloudletName", cloudlet.Key.Name)
 
 	updateCallback(edgeproto.UpdateTask, "Deleting cloudlet")
 
-	if !pfConfig.TestMode {
-		err := v.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, accessApi)
-		if err != nil {
-			return err
-		}
-	}
-
 	v.VMProperties.Domain = VMDomainPlatform
-	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
 	err := v.InitProps(ctx, pc)
 	if err != nil {
 		// ignore this error, as no creation would've happened on infra, so nothing to delete
@@ -375,7 +364,7 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	v.VMProvider.InitData(ctx, caches)
 
 	// Source OpenRC file to access openstack API endpoint
-	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
+	err = v.VMProvider.InitApiAccessProperties(ctx, pc.AccessApi, cloudlet.EnvVar)
 	if err != nil {
 		// ignore this error, as no creation would've happened on infra, so nothing to delete
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to source platform variables", "cloudletName", cloudlet.Key.Name, "err", err)
@@ -398,12 +387,12 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	if cloudlet.InfraApiAccess == edgeproto.InfraApiAccess_DIRECT_ACCESS {
 		vmGroupName := v.GetPlatformVMName(&cloudlet.Key)
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting RootLB %s", rootLBName))
-		err = v.VMProvider.DeleteVMs(ctx, rootLBName)
+		err = v.VMProvider.DeleteVMs(ctx, rootLBName, cloudlet.ObjId)
 		if err != nil && err.Error() != ServerDoesNotExistError {
 			return fmt.Errorf("DeleteCloudlet error: %v", err)
 		}
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Deleting Platform VMs %s", vmGroupName))
-		err = v.VMProvider.DeleteVMs(ctx, vmGroupName)
+		err = v.VMProvider.DeleteVMs(ctx, vmGroupName, cloudlet.ObjId)
 		if err != nil && err.Error() != ServerDoesNotExistError {
 			return fmt.Errorf("DeleteCloudlet error: %v", err)
 		}
@@ -429,7 +418,7 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 			Name:        node.NodeName,
 			CloudletKey: cloudlet.Key,
 		}
-		err = accessApi.DeleteCloudletNode(ctx, nodeKey)
+		err = pc.AccessApi.DeleteCloudletNode(ctx, nodeKey)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete CloudletNode registration", "cloudlet", cloudlet.Key, "name", node.NodeName, "err", err)
 		}
@@ -440,7 +429,7 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 		Name:        rootLBName,
 		CloudletKey: cloudlet.Key,
 	}
-	err = accessApi.DeleteCloudletNode(ctx, nodeKey)
+	err = pc.AccessApi.DeleteCloudletNode(ctx, nodeKey)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete CloudletNode registration", "cloudlet", cloudlet.Key, "rootLBName", rootLBName, "err", err)
 	}
@@ -462,6 +451,7 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 func (v *VMPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	features := v.VMProvider.GetFeatures()
+	features.RequiresCertRefresh = true
 	// add in vmprovider common properties
 	for k, v := range VMProviderProps {
 		features.Properties[k] = v
@@ -637,10 +627,10 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 	return vms, nil
 }
 
-func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, pfFlavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
+func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *pf.PlatformInitConfig, accessApi platform.AccessApi, pfFlavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
 	v.VMProperties.Domain = VMDomainPlatform
-	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	pc := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
 	err := v.InitProps(ctx, pc)
 	if err != nil {
 		return nil, err
@@ -648,11 +638,11 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 
 	v.VMProvider.InitData(ctx, caches)
 
-	err = v.VMProvider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
+	err = v.VMProvider.InitApiAccessProperties(ctx, pc.AccessApi, cloudlet.EnvVar)
 	if err != nil {
 		return nil, err
 	}
-	platvms, err := v.getCloudletVMsSpec(ctx, accessApi, cloudlet, pfConfig, pfFlavor, edgeproto.DummyUpdateCallback)
+	platvms, err := v.getCloudletVMsSpec(ctx, pc.AccessApi, cloudlet, pfConfig, pfFlavor, edgeproto.DummyUpdateCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -671,6 +661,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 		gp, err = v.GetVMGroupOrchestrationParamsFromVMSpec(
 			ctx,
 			platformVmName,
+			cloudlet.ObjId,
 			platvms,
 			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmName)),
 			WithAccessPorts("tcp:22"),
@@ -683,6 +674,7 @@ func (v *VMPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeprot
 		gp, err = v.GetVMGroupOrchestrationParamsFromVMSpec(
 			ctx,
 			platformVmName,
+			cloudlet.ObjId,
 			platvms,
 			WithNewSecurityGroup(infracommon.GetServerSecurityGroupName(platformVmName)),
 			WithAccessPorts("tcp:22"),

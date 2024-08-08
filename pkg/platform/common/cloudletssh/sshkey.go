@@ -18,7 +18,9 @@ package cloudletssh
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -68,7 +70,19 @@ func (s *SSHKey) getSignedKey(ctx context.Context) (string, time.Time, error) {
 		return "", time.Time{}, fmt.Errorf("failed to sign cloudlet ssh key, %s", err)
 	}
 	// determine expiration time
-	pk, err := xssh.ParsePublicKey([]byte(signedKey))
+	certData := signedKey
+	keyParts := strings.Split(certData, " ")
+	if len(keyParts) > 1 {
+		// Vault sends signed key as ssh.MarshalAuthorizedKey(certificate),
+		// which is the key type followed by a space followed by a base64
+		// encoding of the certificate.
+		certData = keyParts[1]
+	}
+	decodedKey, err := base64.StdEncoding.DecodeString(certData)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("failed to base64 decode signed public cert, %s", err)
+	}
+	pk, err := xssh.ParsePublicKey([]byte(decodedKey))
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to parse signed cloudlet key, %s", err)
 	}

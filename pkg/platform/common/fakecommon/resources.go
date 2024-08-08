@@ -84,14 +84,20 @@ func (s *Resources) SetMaxResources(ramMax, vcpusMax, diskMax, externalIpsMax ui
 	s.externalIpsMax = externalIpsMax
 }
 
+func (s *Resources) GetMaxResources() (uint64, uint64, uint64, uint64) {
+	return s.ramMax, s.vcpusMax, s.diskMax, s.externalIpsMax
+}
+
 // SetUserResources sets the count of user (cluster, appInst) resources
-func (s *Resources) SetUserResources(ctx context.Context, caches *platform.Caches) error {
+func (s *Resources) SetUserResources(ctx context.Context, cloudletKey *edgeproto.CloudletKey, caches *platform.Caches) error {
 	if caches == nil {
 		return fmt.Errorf("caches is nil")
 	}
 	clusterInstKeys := []edgeproto.ClusterInstKey{}
 	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
-		clusterInstKeys = append(clusterInstKeys, *k)
+		if k.CloudletKey.Matches(cloudletKey) {
+			clusterInstKeys = append(clusterInstKeys, *k)
+		}
 	})
 	for _, k := range clusterInstKeys {
 		var clusterInst edgeproto.ClusterInst
@@ -102,7 +108,9 @@ func (s *Resources) SetUserResources(ctx context.Context, caches *platform.Cache
 
 	appInstKeys := []edgeproto.AppInstKey{}
 	caches.AppInstCache.GetAllKeys(ctx, func(k *edgeproto.AppInstKey, modRev int64) {
-		appInstKeys = append(appInstKeys, *k)
+		if k.CloudletKey.Matches(cloudletKey) {
+			appInstKeys = append(appInstKeys, *k)
+		}
 	})
 	for _, k := range appInstKeys {
 		var appInst edgeproto.AppInst

@@ -548,13 +548,13 @@ var ControllerAllFields = []string{
 	ControllerFieldHostname,
 }
 
-var ControllerAllFieldsMap = map[string]struct{}{
+var ControllerAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ControllerFieldKeyAddr:     struct{}{},
 	ControllerFieldBuildMaster: struct{}{},
 	ControllerFieldBuildHead:   struct{}{},
 	ControllerFieldBuildAuthor: struct{}{},
 	ControllerFieldHostname:    struct{}{},
-}
+})
 
 var ControllerAllFieldsStringMap = map[string]string{
 	ControllerFieldKeyAddr:     "Key Addr",
@@ -568,23 +568,29 @@ func (m *Controller) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, ControllerFieldKey+".") || s == ControllerFieldKey
 }
 
-func (m *Controller) DiffFields(o *Controller, fields map[string]struct{}) {
+func (m *Controller) DiffFields(o *Controller, fields *FieldMap) {
 	if m.Key.Addr != o.Key.Addr {
-		fields[ControllerFieldKeyAddr] = struct{}{}
-		fields[ControllerFieldKey] = struct{}{}
+		fields.Set(ControllerFieldKeyAddr)
+		fields.Set(ControllerFieldKey)
 	}
 	if m.BuildMaster != o.BuildMaster {
-		fields[ControllerFieldBuildMaster] = struct{}{}
+		fields.Set(ControllerFieldBuildMaster)
 	}
 	if m.BuildHead != o.BuildHead {
-		fields[ControllerFieldBuildHead] = struct{}{}
+		fields.Set(ControllerFieldBuildHead)
 	}
 	if m.BuildAuthor != o.BuildAuthor {
-		fields[ControllerFieldBuildAuthor] = struct{}{}
+		fields.Set(ControllerFieldBuildAuthor)
 	}
 	if m.Hostname != o.Hostname {
-		fields[ControllerFieldHostname] = struct{}{}
+		fields.Set(ControllerFieldHostname)
 	}
+}
+
+func (m *Controller) GetDiffFields(o *Controller) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
 }
 
 func (m *Controller) Clone() *Controller {
@@ -596,33 +602,33 @@ func (m *Controller) Clone() *Controller {
 func (m *Controller) CopyInFields(src *Controller) int {
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Addr != src.Key.Addr {
 				m.Key.Addr = src.Key.Addr
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.BuildMaster != src.BuildMaster {
 			m.BuildMaster = src.BuildMaster
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.BuildHead != src.BuildHead {
 			m.BuildHead = src.BuildHead
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if m.BuildAuthor != src.BuildAuthor {
 			m.BuildAuthor = src.BuildAuthor
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.Hostname != src.Hostname {
 			m.Hostname = src.Hostname
 			changed++
@@ -854,6 +860,7 @@ type ControllerCache struct {
 	KeyWatchers   map[ControllerKey][]*ControllerKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *ControllerKey)
 	DeletedKeyCbs []func(ctx context.Context, key *ControllerKey)
+	Store         ControllerStore
 }
 
 func NewControllerCache() *ControllerCache {
@@ -1216,6 +1223,18 @@ func (c *ControllerCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *ControllerCache) InitCacheWithSync(sync DataSync) {
+	InitControllerCache(s)
+	s.InitSync(sync)
+}
+
+func (s *ControllerCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewControllerStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 
