@@ -391,7 +391,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 		WithAdditionalNetworks(addNets),
 		WithRoutes(addRoutes),
 	}
-	if accessKey != "" {
+	if accessKey != NoAccessKey {
 		ops = append(ops, WithAccessKey(accessKey))
 	}
 	return v.GetVMRequestSpec(ctx,

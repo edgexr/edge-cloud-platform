@@ -127,8 +127,8 @@ func (s *CCRMHandler) InitConnectivity(client *notify.Client, kvstore objstore.K
 	s.caches.CloudletInfoCache.InitSync(sync)
 	s.caches.ClusterInstInfoCache.InitSync(sync)
 	s.caches.AppInstInfoCache.InitSync(sync)
-	nodeMgr.CloudletLookup.GetCloudletCache(node.NoRegion).InitSync(sync)
-	nodeMgr.CloudletPoolLookup.GetCloudletPoolCache(node.NoRegion).InitSync(sync)
+	nodeMgr.CloudletLookup.GetCloudletCache(nodeMgr.Region).InitSync(sync)
+	nodeMgr.CloudletPoolLookup.GetCloudletPoolCache(nodeMgr.Region).InitSync(sync)
 
 	// notify handlers
 	if client != nil {
@@ -150,7 +150,7 @@ func (s *CCRMHandler) Start(ctx context.Context, ctrlConn *grpc.ClientConn) {
 	for _, builder := range s.platformBuilders {
 		plat := builder()
 		features := plat.GetFeatures()
-		features.NodeType = s.nodeMgr.MyNode.Key.Type
+		features.NodeType = s.nodeType
 		_, err := s.caches.PlatformFeaturesCache.Store.Put(ctx, features, nil)
 		if err != nil {
 			log.FatalLog("failed to write platform features to store", "err", err)

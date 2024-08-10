@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Tests for TPEInstancState
+// Tests for TPEInstanceState
 // TODO: add test that checks that changes to dependent objects via API calls
 // trigger calls to runTPEChange
 

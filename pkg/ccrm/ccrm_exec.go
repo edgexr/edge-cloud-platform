@@ -29,6 +29,14 @@ func (s *CCRMHandler) ProcessExecRequest(ctx context.Context, in *edgeproto.Clou
 	}
 	resp := make(chan *edgeproto.ExecRequest, 1)
 
+	// Spawn a go func in case we're running an interactive shell, in which
+	// case ProcessExecReq will block while the shell is open. However,
+	// before it blocks it needs to send back the ExecReq response with the
+	// info the client needs to connect to the EdgeTurn server.
+	// It was designed this way for the CRM which cannot be directly connected
+	// to from outside. Here in the CCRM we could allow an incoming connection
+	// and avoid having to use EdgeTurn, but to keep a single implementation
+	// the CCRM uses the same approach as the CRM.
 	go func() {
 		cspan := log.StartSpan(log.DebugLevelApi, "process exec req", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
 		defer cspan.Finish()

@@ -1049,7 +1049,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 	if err != nil {
 		return err
 	}
-	if len(accessVars) > 0 {
+	if fmap.HasOrHasChild(edgeproto.CloudletFieldAccessVars) {
 		err = accessvars.UpdateCloudletAccessVars(ctx, *region, in, nodeMgr.VaultConfig, accessVars, features.AccessVars)
 		if err != nil {
 			return err

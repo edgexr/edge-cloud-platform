@@ -455,7 +455,7 @@ func (s *ClusterInstApi) GetRootLBFlavorInfo(ctx context.Context, stm concurrenc
 }
 
 // getAllCloudletResources
-// Returns (1) All the VM resources on the cloudlet
+// Returns all the VM resources on the cloudlet
 func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletRefs *edgeproto.CloudletRefs) ([]edgeproto.VMResource, error) {
 	allVmResources := []edgeproto.VMResource{}
 
