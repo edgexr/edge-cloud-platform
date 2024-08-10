@@ -24,6 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 )
 
 type AwsEc2Platform struct {
@@ -33,6 +34,7 @@ type AwsEc2Platform struct {
 	AmiIamAccountId string
 	caches          *platform.Caches
 	VpcCidr         string
+	reservedSubnets syncdata.SyncReservations
 }
 
 func NewPlatform() platform.Platform {
@@ -45,6 +47,7 @@ func (o *AwsEc2Platform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
 		PlatformType:               platform.PlatformTypeAWSEC2,
 		SupportsMultiTenantCluster: true,
+		RequiresCrmOnEdge:          true, // need to make sure orchVmLock is not needed
 		Properties:                 awsgen.AWSProps,
 		ResourceQuotaProperties:    cloudcommon.CommonResourceQuotaProps,
 	}

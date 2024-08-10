@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 
+	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -27,6 +28,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	"gopkg.in/yaml.v2"
 )
 
@@ -40,65 +43,40 @@ var (
 	}
 )
 
-func (s *CCRMHandler) cloudletChanged(ctx context.Context, old *edgeproto.Cloudlet, in *edgeproto.Cloudlet) {
-	log.SpanLog(ctx, log.DebugLevelApi, "cloudletChanged", "cloudlet", in)
+// ApplyCloudlet implements a GRPC CloudletPlatform server method
+func (s *CCRMHandler) ApplyCloudlet(in *edgeproto.Cloudlet, stream edgeproto.CloudletPlatformAPI_ApplyCloudletServer) error {
+	ctx := stream.Context()
+	log.SpanLog(ctx, log.DebugLevelApi, "ApplyCloudlet", "cloudlet", in)
 
 	s.updateCloudletNodes(ctx, in)
 
-	var ackState edgeproto.TrackedState
-	var errState edgeproto.TrackedState
-	var successState edgeproto.TrackedState
-	var workFunc func(context.Context, *edgeproto.Cloudlet, platform.Platform, edgeproto.CacheUpdateCallback) error
+	responseSender := edgeproto.NewCloudletInfoSendUpdater(ctx, stream, in.Key)
 
-	if in.OnboardingState == edgeproto.TrackedState_CREATE_REQUESTED {
-		ackState = edgeproto.TrackedState_CREATING
-		errState = edgeproto.TrackedState_CREATE_ERROR
-		successState = edgeproto.TrackedState_READY
+	var workFunc func(context.Context, *edgeproto.Cloudlet, platform.Platform, *edgeproto.CloudletInfoSendUpdater) error
+
+	if in.State == edgeproto.TrackedState_CREATE_REQUESTED {
 		workFunc = s.createCloudlet
-	} else if in.OnboardingState == edgeproto.TrackedState_DELETE_REQUESTED {
-		ackState = edgeproto.TrackedState_DELETING
-		errState = edgeproto.TrackedState_DELETE_ERROR
-		successState = edgeproto.TrackedState_DELETE_DONE
+	} else if in.State == edgeproto.TrackedState_DELETE_REQUESTED {
 		workFunc = s.deleteCloudlet
 	} else {
-		// not for us to handle
-		return
-	}
-
-	cloudletPlatform, found := s.caches.getPlatform(in.PlatformType)
-	if !found {
-		// ignore, some other CCRM should handle it
-		log.SpanLog(ctx, log.DebugLevelApi, "cloudletChanged ignoring unknown platform", "platform", in.PlatformType)
-		return
-	}
-
-	// Acknowledge request
-	msg := edgeproto.CloudletOnboardingInfo{
-		Key:             in.Key,
-		OnboardingState: ackState,
-	}
-	s.caches.CloudletOnboardingInfoSend.Update(ctx, &msg)
-
-	// do the work in a separate thread to not block the notify thread
-	go func() {
-		cspan, cctx := log.ChildSpan(ctx, log.DebugLevelApi, "ccrm-cloudletChanged")
-		defer cspan.Finish()
-		cb := s.getCloudletOnboardingInfoCallback(cctx, msg)
-
-		err := workFunc(cctx, in, cloudletPlatform, cb)
-		msg.Status = edgeproto.StatusInfo{}
-		if err != nil {
-			msg.OnboardingState = errState
-			msg.Errors = []string{err.Error()}
-		} else {
-			msg.OnboardingState = successState
+		if in.CrmOnEdge {
+			// CRM will handle it
+			return nil
 		}
-		log.SpanLog(cctx, log.DebugLevelApi, "ccrm cloudletChanged done", "cloudlet", in, "result", msg)
-		s.caches.CloudletOnboardingInfoSend.Update(ctx, &msg)
-	}()
+		return s.crmHandler.CloudletChanged(ctx, &in.Key, in, responseSender)
+	}
+
+	cloudletPlatform, found := s.newPlatform(in.PlatformType)
+	if !found {
+		return fmt.Errorf("ccrm %s got request for unknown platform %s for cloudlet %s", s.nodeMgr.MyNode.Key.Type, in.PlatformType, in.Key.GetKeyString())
+	}
+	err := workFunc(ctx, in, cloudletPlatform, responseSender)
+	log.SpanLog(ctx, log.DebugLevelApi, "ccrm ApplyCloudlet done", "cloudlet", in, "err", err)
+	return err
 }
 
-func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet, cloudletPlatform platform.Platform, cb edgeproto.CacheUpdateCallback) (reterr error) {
+func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet, cloudletPlatform platform.Platform, sender *edgeproto.CloudletInfoSendUpdater) (reterr error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "create cloudlet", "cloudlet", in)
 	accessKeys, err := accessvars.GetCRMAccessKeys(ctx, s.flags.Region, in, s.nodeMgr.VaultConfig)
 	if err != nil {
 		return err
@@ -109,11 +87,9 @@ func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 	}
 
 	if in.DeploymentLocal {
-		// TODO: rather than starting up a CRM service per cloudlet
-		// when platforms do not want on-site CRMs, we should instead
-		// allow the CCRM to become a regional CRM that can handle
-		// requests for different cloudlets.
-		cb(edgeproto.UpdateTask, "Starting CRMServer")
+		if err := sender.SendStatus(edgeproto.UpdateTask, "Starting CRMServer"); err != nil {
+			return err
+		}
 		return process.StartCRMService(ctx, in, pfConfig, process.HARolePrimary, nil)
 	}
 
@@ -121,20 +97,20 @@ func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 	if in.Flavor.Name == cloudcommon.DefaultPlatformFlavorKey.Name {
 		pfFlavor = DefaultPlatformFlavor
 	} else {
-		if !s.caches.FlavorCache.Get(&in.Flavor, &pfFlavor) {
+		if !s.crmHandler.FlavorCache.Get(&in.Flavor, &pfFlavor) {
 			return in.Flavor.NotFoundError()
 		}
 	}
+	pfInitConfig := s.getPlatformInitConfig(in)
 
-	caches := s.caches.getPlatformCaches()
-	accessApi := s.vaultClient.CloudletContext(in)
-	cloudletResourcesCreated, err := cloudletPlatform.CreateCloudlet(ctx, in, pfConfig, &pfFlavor, caches, accessApi, cb)
+	caches := s.crmHandler.GetCaches()
+	cloudletResourcesCreated, err := cloudletPlatform.CreateCloudlet(ctx, in, pfConfig, pfInitConfig, &pfFlavor, caches, sender.SendStatusIgnoreErr)
 	defer func() {
 		if reterr == nil {
 			return
 		}
 		if cloudletResourcesCreated {
-			undoErr := s.deleteCloudlet(ctx, in, cloudletPlatform, cb)
+			undoErr := s.deleteCloudlet(ctx, in, cloudletPlatform, sender)
 			if undoErr != nil {
 				log.SpanLog(ctx, log.DebugLevelApi, "Undo cloudlet create failed", "cloudlet", in, "undoerr", undoErr)
 			}
@@ -143,36 +119,67 @@ func (s *CCRMHandler) createCloudlet(ctx context.Context, in *edgeproto.Cloudlet
 	if err != nil {
 		return err
 	}
-	return nil
+	if in.CrmOnEdge {
+		// CRM will set up rootLB and capture resources
+		return nil
+	}
+
+	log.SpanLog(ctx, log.DebugLevelApi, "ccrm setup new cloudlet", "cloudlet", in)
+	// replicate here what CRM would have done to set up initial cloudlet state
+	// Note that "cloudletPlatform" is initialized in CreateCloudlet, similar to
+	// but not the same as platform.InitCommon(), so we need to get a different
+	// copy of the platform object that has been initialized with InitCommon.
+	pf, err := s.getCRMCloudletPlatform(ctx, &in.Key)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "unexpected error getting platform for cloudlet", "key", in.Key, "platformType", in.PlatformType, "err", err)
+		return err
+	}
+
+	if err := pf.InitHAConditional(ctx, sender.SendStatusIgnoreErr); err != nil {
+		return err
+	}
+
+	return sender.SendUpdate(func(info *edgeproto.CloudletInfo) error {
+		info.CompatibilityVersion = cloudcommon.GetCRMCompatibilityVersion()
+		info.ContainerVersion = in.ContainerVersion
+		info.ControllerCacheReceived = true
+		if cv, err := cloudcommon.GetDockerBaseImageVersion(); err == nil {
+			info.ContainerVersion = cv
+		}
+		if err := s.crmHandler.GatherInitialCloudletInfo(ctx, in, pf, info, sender.SendStatusIgnoreErr); err != nil {
+			return err
+		}
+		info.State = dme.CloudletState_CLOUDLET_STATE_READY
+		if in.TrustPolicy == "" {
+			info.TrustPolicyState = edgeproto.TrackedState_NOT_PRESENT
+		} else {
+			info.TrustPolicyState = edgeproto.TrackedState_READY
+		}
+		info.Fields = edgeproto.CloudletInfoAllFields
+		return nil
+	})
 }
 
-func (s *CCRMHandler) deleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet, cloudletPlatform platform.Platform, cb edgeproto.CacheUpdateCallback) error {
-
-	if in.DeploymentLocal {
-		cb(edgeproto.UpdateTask, "Stopping CRMServer")
-		return process.StopCRMService(ctx, in, process.HARoleAll)
-	}
+func (s *CCRMHandler) deleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet, cloudletPlatform platform.Platform, sender *edgeproto.CloudletInfoSendUpdater) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "delete cloudlet", "cloudlet", in)
 	accessKeys := &accessvars.CRMAccessKeys{}
 	pfConfig, err := s.getPlatformConfig(ctx, in, accessKeys)
 	if err != nil {
 		return err
 	}
-	caches := s.caches.getPlatformCaches()
-	accessApi := s.vaultClient.CloudletContext(in)
+	caches := s.crmHandler.GetCaches()
+	pfInitConfig := s.getPlatformInitConfig(in)
 
-	return cloudletPlatform.DeleteCloudlet(ctx, in, pfConfig, caches, accessApi, cb)
-}
-
-func (s *CCRMHandler) getCloudletOnboardingInfoCallback(ctx context.Context, msg edgeproto.CloudletOnboardingInfo) func(updateType edgeproto.CacheUpdateType, value string) {
-	return func(updateType edgeproto.CacheUpdateType, value string) {
-		switch updateType {
-		case edgeproto.UpdateTask:
-			msg.Status.SetTask(value)
-		case edgeproto.UpdateStep:
-			msg.Status.SetStep(value)
-		}
-		s.caches.CloudletOnboardingInfoSend.Update(ctx, &msg)
+	if in.DeploymentLocal {
+		sender.SendStatus(edgeproto.UpdateTask, "Stopping CRM server")
+		return process.StopCRMService(ctx, in, process.HARoleAll)
 	}
+
+	err = cloudletPlatform.DeleteCloudlet(ctx, in, pfConfig, pfInitConfig, caches, sender.SendStatusIgnoreErr)
+	if err == nil {
+		s.crmPlatforms.Delete(&in.Key)
+	}
+	return err
 }
 
 func (s *CCRMHandler) getPlatformConfig(ctx context.Context, cloudlet *edgeproto.Cloudlet, accessKeys *accessvars.CRMAccessKeys) (*edgeproto.PlatformConfig, error) {
@@ -209,6 +216,15 @@ func (s *CCRMHandler) getPlatformConfig(ctx context.Context, cloudlet *edgeproto
 	return &pfConfig, nil
 }
 
+func (s *CCRMHandler) getPlatformInitConfig(cloudlet *edgeproto.Cloudlet) *platform.PlatformInitConfig {
+	return &platform.PlatformInitConfig{
+		AccessApi:       s.vaultClient.CloudletContext(cloudlet),
+		CloudletSSHKey:  s.cloudletSSHKey,
+		SyncFactory:     regiondata.NewKVStoreSyncFactory(s.sync.GetKVStore(), s.nodeType, cloudlet.Key.GetKeyString()),
+		ProxyCertsCache: s.proxyCertsCache,
+	}
+}
+
 func getCrmEnv(vars map[string]string) {
 	for _, key := range []string{
 		"JAEGER_ENDPOINT",
@@ -234,6 +250,9 @@ func getCrmEnv(vars map[string]string) {
 }
 
 func (s *CCRMHandler) CreateCloudletNodeReq(ctx context.Context, node *edgeproto.CloudletNode) (string, error) {
+	if s.ctrlConn == nil {
+		return "", fmt.Errorf("create cloudlet node req, client not initialized yet")
+	}
 	client := edgeproto.NewCloudletNodeApiClient(s.ctrlConn)
 	res, err := client.CreateCloudletNode(ctx, node)
 	log.SpanLog(ctx, log.DebugLevelApi, "create cloudlet node req", "node", node, "err", err)
@@ -245,6 +264,9 @@ func (s *CCRMHandler) CreateCloudletNodeReq(ctx context.Context, node *edgeproto
 }
 
 func (s *CCRMHandler) DeleteCloudletNodeReq(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error {
+	if s.ctrlConn == nil {
+		return fmt.Errorf("delete cloudlet node req, client not initialized yet")
+	}
 	client := edgeproto.NewCloudletNodeApiClient(s.ctrlConn)
 	node := edgeproto.CloudletNode{
 		Key: *nodeKey,
@@ -259,7 +281,7 @@ func (s *CCRMHandler) cloudletNodeChanged(ctx context.Context, old *edgeproto.Cl
 	baseAttributes := make(map[string]interface{})
 	if in.NodeRole != cloudcommon.NodeRoleBase.String() {
 		cloudlet := edgeproto.Cloudlet{}
-		if !s.caches.CloudletCache.Get(&in.Key.CloudletKey, &cloudlet) {
+		if !s.crmHandler.CloudletCache.Get(&in.Key.CloudletKey, &cloudlet) {
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to get cloudlet to update cloudlet node", "node", in.Key)
 			return
 		}
@@ -303,7 +325,11 @@ func (s *CCRMHandler) getCloudletPlatformAttributes(ctx context.Context, in *edg
 		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "getPlatformConfig", "pfConfig", *pfConfig)
-	return confignode.GetCloudletAttributes(ctx, in, pfConfig, s.registryAuth)
+	auth, err := s.registryAuthAPI.GetRegistryAuth(ctx, s.flags.GetPlatformRegistryPath())
+	if err != nil {
+		return nil, err
+	}
+	return confignode.GetCloudletAttributes(ctx, in, pfConfig, auth)
 }
 
 func (s *CCRMHandler) updateNodeAttributes(ctx context.Context, baseAttributes map[string]interface{}, node *edgeproto.CloudletNode) {
@@ -326,4 +352,55 @@ func (s *CCRMHandler) updateNodeAttributes(ctx context.Context, baseAttributes m
 	checksum := fmt.Sprintf("%x", md5.Sum(data))
 	log.SpanLog(ctx, log.DebugLevelApi, "computed node attributes checksum", "node", node.Key, "checksum", checksum)
 	s.nodeAttributesCache.Update(node.Key, data, checksum)
+}
+
+func (s *CCRMHandler) vmResourceActionEnd(ctx context.Context, cloudletKey *edgeproto.CloudletKey) {
+	// This is the equivalent to CRM's vmResourceActionEnd.
+	// Unlike the CRM, multiple CCRM processes could spawn these in parallel.
+	// We use a transaction to detect if another process wrote to the info,
+	// we'll need to re-capture the snapshot to avoid a case where our
+	// snapshot data is stale.
+	// There's a bunch of drawbacks with just spawning a go thread:
+	// - unrelated changes to info that aren't updating the resources will
+	// trigger a rerun
+	// - multiple threads/processes running in parallel may duplicate work
+	// that could have been condensed into a single call to capture resources.
+	//
+	// Unfortunately, the alternative is to sync across multiple processes
+	// which requires (essentially) a distributed lock, with a timeout in case
+	// the holding process unexpectedly dies. Here we're being conservative
+	// and choosing to be safer but less efficient.
+	go func() {
+		span, ctx := log.ChildSpan(ctx, log.DebugLevelApi, "capture cloudlet resource snapshot")
+		defer span.Finish()
+
+		var snapshot *edgeproto.InfraResourcesSnapshot
+		var err error
+		_, err = s.sync.GetKVStore().ApplySTM(ctx, func(stm concurrency.STM) error {
+			info := edgeproto.CloudletInfo{}
+			if !s.caches.CloudletInfoCache.Store.STMGet(stm, cloudletKey, &info) {
+				return nil
+			}
+			pf, err := s.getCRMCloudletPlatform(ctx, cloudletKey)
+			if err != nil {
+				return err
+			}
+			snapshot, err = s.crmHandler.CaptureResourcesSnapshot(ctx, pf, cloudletKey)
+			if err != nil {
+				return err
+			}
+			if snapshot == nil {
+				return nil
+			}
+			info.ResourcesSnapshot = *snapshot
+			s.caches.CloudletInfoCache.Store.STMPut(stm, &info)
+			return nil
+		})
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to capture cloudlet resources", "cloudlet", cloudletKey, "err", err)
+		}
+		if snapshot != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "updated cloudlet resources", "cloudlet", cloudletKey, "snapshot", snapshot)
+		}
+	}()
 }

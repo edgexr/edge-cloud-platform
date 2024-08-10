@@ -26,6 +26,7 @@ import (
 	math "math"
 	math_bits "math/bits"
 	reflect "reflect"
+	"sort"
 	strings "strings"
 )
 
@@ -732,6 +733,7 @@ type AlertCache struct {
 	KeyWatchers   map[AlertKey][]*AlertKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *AlertKey)
 	DeletedKeyCbs []func(ctx context.Context, key *AlertKey)
+	Store         AlertStore
 }
 
 func NewAlertCache() *AlertCache {
@@ -1132,6 +1134,18 @@ func (c *AlertCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
+func (s *AlertCache) InitCacheWithSync(sync DataSync) {
+	InitAlertCache(s)
+	s.InitSync(sync)
+}
+
+func (s *AlertCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewAlertStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
 func (c *AlertCache) UsesOrg(org string) bool {
 	return false
 }
@@ -1207,6 +1221,85 @@ func applyMatchOptions(opts *MatchOptions, args ...MatchOpt) {
 	}
 }
 
+type FieldMap struct {
+	fields map[string]struct{}
+}
+
+func MakeFieldMap(fields []string) *FieldMap {
+	fmap := &FieldMap{}
+	fmap.fields = map[string]struct{}{}
+	if fields == nil {
+		return fmap
+	}
+	for _, set := range fields {
+		fmap.fields[set] = struct{}{}
+	}
+	return fmap
+}
+
+func NewFieldMap(fields map[string]struct{}) *FieldMap {
+	if fields == nil {
+		fields = map[string]struct{}{}
+	}
+	return &FieldMap{
+		fields: fields,
+	}
+}
+
+// Has checks if the key is set. Note that setting
+// a parent key implies that all child keys are also set.
+func (s *FieldMap) Has(key string) bool {
+	// key or parent is specified
+	for {
+		if _, ok := s.fields[key]; ok {
+			return true
+		}
+		idx := strings.LastIndex(key, ".")
+		if idx == -1 {
+			break
+		}
+		key = key[:idx]
+	}
+	return false
+}
+
+// HasOrHasChild checks if the key, or any child
+// of the key is set. Note that as with Has(), if
+// a parent of the key is set, this returns true.
+func (s *FieldMap) HasOrHasChild(key string) bool {
+	if s.Has(key) {
+		return true
+	}
+	prefix := key + "."
+	for k := range s.fields {
+		if strings.HasPrefix(k, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *FieldMap) Set(key string) {
+	s.fields[key] = struct{}{}
+}
+
+func (s *FieldMap) Clear(key string) {
+	delete(s.fields, key)
+}
+
+func (s *FieldMap) Fields() []string {
+	fields := []string{}
+	for k := range s.fields {
+		fields = append(fields, k)
+	}
+	sort.Strings(fields)
+	return fields
+}
+
+func (s *FieldMap) Count() int {
+	return len(s.fields)
+}
+
 // DecodeHook for use with the mapstructure package.
 // Allows decoding to handle protobuf enums that are
 // represented as strings.
@@ -1246,12 +1339,12 @@ func EnumDecodeHook(from, to reflect.Type, data interface{}) (interface{}, error
 		return ParseVMState(data)
 	case reflect.TypeOf(VMAction(0)):
 		return ParseVMAction(data)
+	case reflect.TypeOf(PowerState(0)):
+		return ParsePowerState(data)
 	case reflect.TypeOf(TrustPolicyExceptionState(0)):
 		return ParseTrustPolicyExceptionState(data)
 	case reflect.TypeOf(NetworkConnectionType(0)):
 		return ParseNetworkConnectionType(data)
-	case reflect.TypeOf(PowerState(0)):
-		return ParsePowerState(data)
 	case reflect.TypeOf(ApiEndpointType(0)):
 		return ParseApiEndpointType(data)
 	case reflect.TypeOf(RateLimitTarget(0)):
@@ -1310,12 +1403,12 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 		return "VMState", ", valid values are one of Free, InProgress, InUse, Add, Remove, Update, ForceFree, or 0, 1, 2, 3, 4, 5, 6", true
 	case reflect.TypeOf(VMAction(0)):
 		return "VMAction", ", valid values are one of Done, Allocate, Release, or 0, 1, 2", true
+	case reflect.TypeOf(PowerState(0)):
+		return "PowerState", ", valid values are one of PowerStateUnknown, PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff, PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10", true
 	case reflect.TypeOf(TrustPolicyExceptionState(0)):
 		return "TrustPolicyExceptionState", ", valid values are one of Unknown, ApprovalRequested, Active, Rejected, or 0, 1, 2, 3", true
 	case reflect.TypeOf(NetworkConnectionType(0)):
 		return "NetworkConnectionType", ", valid values are one of Undefined, ConnectToLoadBalancer, ConnectToClusterNodes, ConnectToAll, or 0, 1, 2, 3", true
-	case reflect.TypeOf(PowerState(0)):
-		return "PowerState", ", valid values are one of PowerStateUnknown, PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff, PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10", true
 	case reflect.TypeOf(ApiEndpointType(0)):
 		return "ApiEndpointType", ", valid values are one of UnknownApiEndpointType, Dme, or 0, 1", true
 	case reflect.TypeOf(RateLimitTarget(0)):
@@ -1329,7 +1422,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, 1304C4Ec69343Ced28Fd3Ebc85F4A3A9, 601Fa4F6A8109F39E46Adf1Ea3B89197, A61A29Cd41F6B7459B05B6F7Be6Be4Ce, C2D882033B0C14F28Cece41Cf4010060, or 0, 47, 48, 49, 50, 51, 52", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, 1304C4Ec69343Ced28Fd3Ebc85F4A3A9, 601Fa4F6A8109F39E46Adf1Ea3B89197, A61A29Cd41F6B7459B05B6F7Be6Be4Ce, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, or 0, 47, 48, 49, 50, 51, 52, 53", true
 	}
 	return "", "", false
 }
@@ -1355,11 +1448,11 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowClusterInst":               struct{}{},
 	"ShowClusterInstInfo":           struct{}{},
 	"ShowAutoProvPolicy":            struct{}{},
-	"ShowTrustPolicyException":      struct{}{},
-	"ShowNetwork":                   struct{}{},
 	"ShowAppInst":                   struct{}{},
 	"ShowAppInstInfo":               struct{}{},
 	"ShowAppInstMetrics":            struct{}{},
+	"ShowTrustPolicyException":      struct{}{},
+	"ShowNetwork":                   struct{}{},
 	"ShowCloudletRefs":              struct{}{},
 	"ShowClusterRefs":               struct{}{},
 	"ShowAppInstRefs":               struct{}{},
@@ -1484,6 +1577,7 @@ func GetReferencesMap() map[string][]string {
 	refs["AutoProvPolicy"] = []string{"Cloudlet"}
 	refs["AutoProvPolicyCloudlet"] = []string{"AutoProvPolicy", "Cloudlet"}
 	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
+	refs["CloudletExecReq"] = []string{"Cloudlet"}
 	refs["CloudletPool"] = []string{"Cloudlet"}
 	refs["CloudletPoolMember"] = []string{"Cloudlet", "CloudletPool"}
 	refs["CloudletRefs"] = []string{"AppInst", "ClusterInst"}
@@ -1499,6 +1593,7 @@ func GetReferencesMap() map[string][]string {
 	refs["GPUConfig"] = []string{"GPUDriver"}
 	refs["Network"] = []string{"Cloudlet"}
 	refs["NetworkKey"] = []string{"Cloudlet"}
+	refs["TPEInstanceKey"] = []string{"App", "Cloudlet", "CloudletPool"}
 	refs["TrustPolicyException"] = []string{"App", "CloudletPool"}
 	refs["TrustPolicyExceptionKey"] = []string{"App", "CloudletPool"}
 	refs["VMResource"] = []string{"Cloudlet"}

@@ -793,7 +793,7 @@ var FlavorAllFields = []string{
 	FlavorFieldDeletePrepare,
 }
 
-var FlavorAllFieldsMap = map[string]struct{}{
+var FlavorAllFieldsMap = NewFieldMap(map[string]struct{}{
 	FlavorFieldKeyName:        struct{}{},
 	FlavorFieldRam:            struct{}{},
 	FlavorFieldVcpus:          struct{}{},
@@ -801,7 +801,7 @@ var FlavorAllFieldsMap = map[string]struct{}{
 	FlavorFieldOptResMapKey:   struct{}{},
 	FlavorFieldOptResMapValue: struct{}{},
 	FlavorFieldDeletePrepare:  struct{}{},
-}
+})
 
 var FlavorAllFieldsStringMap = map[string]string{
 	FlavorFieldKeyName:        "Key Name",
@@ -817,52 +817,58 @@ func (m *Flavor) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, FlavorFieldKey+".") || s == FlavorFieldKey
 }
 
-func (m *Flavor) DiffFields(o *Flavor, fields map[string]struct{}) {
+func (m *Flavor) DiffFields(o *Flavor, fields *FieldMap) {
 	if m.Key.Name != o.Key.Name {
-		fields[FlavorFieldKeyName] = struct{}{}
-		fields[FlavorFieldKey] = struct{}{}
+		fields.Set(FlavorFieldKeyName)
+		fields.Set(FlavorFieldKey)
 	}
 	if m.Ram != o.Ram {
-		fields[FlavorFieldRam] = struct{}{}
+		fields.Set(FlavorFieldRam)
 	}
 	if m.Vcpus != o.Vcpus {
-		fields[FlavorFieldVcpus] = struct{}{}
+		fields.Set(FlavorFieldVcpus)
 	}
 	if m.Disk != o.Disk {
-		fields[FlavorFieldDisk] = struct{}{}
+		fields.Set(FlavorFieldDisk)
 	}
 	if m.OptResMap != nil && o.OptResMap != nil {
 		if len(m.OptResMap) != len(o.OptResMap) {
-			fields[FlavorFieldOptResMap] = struct{}{}
+			fields.Set(FlavorFieldOptResMap)
 		} else {
 			for k0, _ := range m.OptResMap {
 				_, vok0 := o.OptResMap[k0]
 				if !vok0 {
-					fields[FlavorFieldOptResMap] = struct{}{}
+					fields.Set(FlavorFieldOptResMap)
 				} else {
 					if m.OptResMap[k0] != o.OptResMap[k0] {
-						fields[FlavorFieldOptResMap] = struct{}{}
+						fields.Set(FlavorFieldOptResMap)
 						break
 					}
 				}
 			}
 		}
 	} else if (m.OptResMap != nil && o.OptResMap == nil) || (m.OptResMap == nil && o.OptResMap != nil) {
-		fields[FlavorFieldOptResMap] = struct{}{}
+		fields.Set(FlavorFieldOptResMap)
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[FlavorFieldDeletePrepare] = struct{}{}
+		fields.Set(FlavorFieldDeletePrepare)
 	}
 }
 
-var UpdateFlavorFieldsMap = map[string]struct{}{
+func (m *Flavor) GetDiffFields(o *Flavor) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateFlavorFieldsMap = NewFieldMap(map[string]struct{}{
 	FlavorFieldRam:            struct{}{},
 	FlavorFieldVcpus:          struct{}{},
 	FlavorFieldDisk:           struct{}{},
 	FlavorFieldOptResMap:      struct{}{},
 	FlavorFieldOptResMapKey:   struct{}{},
 	FlavorFieldOptResMapValue: struct{}{},
-}
+})
 
 func (m *Flavor) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -870,11 +876,11 @@ func (m *Flavor) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateFlavorFieldsMap[field]; !ok {
+		if !UpdateFlavorFieldsMap.Has(field) {
 			if _, ok := FlavorAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -897,33 +903,33 @@ func (m *Flavor) CopyInFields(src *Flavor) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.Ram != src.Ram {
 			m.Ram = src.Ram
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.Vcpus != src.Vcpus {
 			m.Vcpus = src.Vcpus
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.Disk != src.Disk {
 			m.Disk = src.Disk
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.HasOrHasChild("6") {
 		if src.OptResMap != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.OptResMap {
@@ -949,7 +955,7 @@ func (m *Flavor) CopyInFields(src *Flavor) int {
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
@@ -1189,6 +1195,7 @@ type FlavorCache struct {
 	KeyWatchers   map[FlavorKey][]*FlavorKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *FlavorKey)
 	DeletedKeyCbs []func(ctx context.Context, key *FlavorKey)
+	Store         FlavorStore
 }
 
 func NewFlavorCache() *FlavorCache {
@@ -1551,6 +1558,18 @@ func (c *FlavorCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *FlavorCache) InitCacheWithSync(sync DataSync) {
+	InitFlavorCache(s)
+	s.InitSync(sync)
+}
+
+func (s *FlavorCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewFlavorStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

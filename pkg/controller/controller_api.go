@@ -79,7 +79,7 @@ func (s *ControllerApi) ShowController(in *edgeproto.Controller, cb edgeproto.Co
 
 // RunJobs spawns a thread per controller to run the passed in
 // function. RunJobs blocks until all threads are done.
-func (s *ControllerApi) RunJobs(run func(arg interface{}, addr string) error, arg interface{}) error {
+func (s *ControllerApi) RunJobs(ctx context.Context, run func(ctx context.Context, arg interface{}, addr string) error, arg interface{}) error {
 	var joberr error
 	var mux sync.Mutex
 
@@ -89,14 +89,14 @@ func (s *ControllerApi) RunJobs(run func(arg interface{}, addr string) error, ar
 		ctrl := data.Obj
 		wg.Add(1)
 		go func(ctrlAddr string) {
-			err := run(arg, ctrlAddr)
+			err := run(ctx, arg, ctrlAddr)
 			if err != nil {
 				mux.Lock()
 				if err != nil {
 					joberr = err
 				}
 				mux.Unlock()
-				log.DebugLog(log.DebugLevelApi, "run job failed", "addr", ctrlAddr, "err", err)
+				log.SpanLog(ctx, log.DebugLevelApi, "run job failed", "addr", ctrlAddr, "err", err)
 			}
 			wg.Done()
 		}(ctrl.Key.Addr)

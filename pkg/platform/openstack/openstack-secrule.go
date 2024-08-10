@@ -33,7 +33,7 @@ import (
 // CloudletSecurityGroupIDMap is a cache of cloudlet to security group id
 var CloudletSecurityGroupIDMap = make(map[string]string)
 
-var cloudetSecurityGroupIDLock sync.Mutex
+var cloudetSecurityGroupIDLock sync.Mutex // optimization cache to reduce API calls
 
 const SecgrpDoesNotExist string = "Security group does not exist"
 const SecgrpRuleAlreadyExists string = "Security group rule already exists"
@@ -55,7 +55,7 @@ func setCachedCloudletSecgrpID(ctx context.Context, keyString, groupID string) {
 	CloudletSecurityGroupIDMap[keyString] = groupID
 }
 
-//ListSecurityGroups returns a list of security groups
+// ListSecurityGroups returns a list of security groups
 func (s *OpenstackPlatform) ListSecurityGroups(ctx context.Context) ([]OSSecurityGroup, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "security", "group", "list", "-f", "json")
 	if err != nil {
@@ -72,7 +72,7 @@ func (s *OpenstackPlatform) ListSecurityGroups(ctx context.Context) ([]OSSecurit
 	return secgrps, nil
 }
 
-//ListSecurityGroups returns a list of security groups
+// ListSecurityGroups returns a list of security groups
 func (s *OpenstackPlatform) ListSecurityGroupRules(ctx context.Context, secGrp string) ([]OSSecurityGroupRule, error) {
 	out, err := s.TimedOpenStackCommand(ctx, "openstack", "security", "group", "rule", "list", secGrp, "-f", "json")
 	if err != nil {

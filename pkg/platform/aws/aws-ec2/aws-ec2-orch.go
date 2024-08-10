@@ -26,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 )
 
 var orchVmLock sync.Mutex
@@ -83,10 +84,6 @@ func (a *AwsEc2Platform) getVmGroupResources(ctx context.Context, vmgp *vmlayer.
 			return nil, err
 		}
 	}
-
-	// lock around the rest of this function which gets and creates subnets, secgrps
-	orchVmLock.Lock()
-	defer orchVmLock.Unlock()
 
 	err = a.populateOrchestrationParams(ctx, vmgp, action)
 	if err != nil {
@@ -159,73 +156,87 @@ func (a *AwsEc2Platform) getVmGroupResources(ctx context.Context, vmgp *vmlayer.
 
 func (a *AwsEc2Platform) populateOrchestrationParams(ctx context.Context, vmgp *vmlayer.VMGroupOrchestrationParams, action vmlayer.ActionType) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateOrchestrationParams", "action", action)
-	usedCidrs := make(map[string]string)
-	if !vmgp.SkipInfraSpecificCheck {
-		subs, err := a.GetSubnets(ctx)
-		if err != nil {
-			return nil
+
+	masterIP := ""
+	err := a.reservedSubnets.ReserveValues(ctx, func(ctx context.Context, reservations syncdata.Reservations) error {
+		// remove any stale or old reservations for the owner
+		reservations.RemoveForOwner(vmgp.OwnerID)
+		usedCidrs := make(map[string]string)
+		if !vmgp.SkipInfraSpecificCheck {
+			subs, err := a.GetSubnets(ctx)
+			if err != nil {
+				return nil
+			}
+			for _, s := range subs {
+				usedCidrs[s.CidrBlock] = s.Name
+			}
 		}
-		for _, s := range subs {
-			usedCidrs[s.CidrBlock] = s.Name
+
+		masterIP = ""
+		currentSubnetName := ""
+		if action != vmlayer.ActionCreate {
+			currentSubnetName = vmlayer.MexSubnetPrefix + vmgp.GroupName
 		}
-	}
-	var flavors []*edgeproto.FlavorInfo
-	var err error
-	flavors, err = a.GetFlavorList(ctx)
+
+		// find an available subnet or the current subnet for update and delete
+		for i, s := range vmgp.Subnets {
+			if s.CIDR != vmlayer.NextAvailableResource || vmgp.SkipInfraSpecificCheck {
+				// no need to compute the CIDR
+				continue
+			}
+			if s.IPVersion == infracommon.IPV6 {
+				log.SpanLog(ctx, log.DebugLevelInfra, "ipv6 subnets not supported yet", "subnet", s)
+				continue
+			}
+			found := false
+			for octet := 0; octet <= 255; octet++ {
+				subnet := fmt.Sprintf("%s.%s.%d.%d/%s", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 0, vmgp.Netspec.NetmaskBits)
+				// either look for an unused one (create) or the current one (update)
+				newSubnet := action == vmlayer.ActionCreate
+				match := false
+
+				if _, ok := reservations.Has(subnet); ok {
+					continue
+				}
+				if a.awsGenPf.IsAwsOutpost() {
+					_, ok := usedCidrs[subnet]
+					if !ok {
+						continue
+					}
+					// find a free one rather than creating one
+					if (strings.Contains(usedCidrs[subnet], FreeInternalSubnetType)) || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
+						vmgp.Subnets[i].ReservedName = usedCidrs[subnet]
+						match = true
+					}
+				} else {
+					if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
+						match = true
+					}
+				}
+				if match {
+					found = true
+					vmgp.Subnets[i].CIDR = subnet
+					vmgp.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 1)
+					vmgp.Subnets[i].NodeIPPrefix = fmt.Sprintf("%s.%s.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet)
+					masterIP = fmt.Sprintf("%s.%s.%d.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 10)
+					reservations.Add(subnet, vmgp.OwnerID)
+					break
+				}
+			}
+			if !found {
+				return fmt.Errorf("cannot find subnet cidr")
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return err
 	}
 
-	masterIP := ""
-	currentSubnetName := ""
-	if action != vmlayer.ActionCreate {
-		currentSubnetName = vmlayer.MexSubnetPrefix + vmgp.GroupName
-	}
-
-	// find an available subnet or the current subnet for update and delete
-	for i, s := range vmgp.Subnets {
-		if s.CIDR != vmlayer.NextAvailableResource || vmgp.SkipInfraSpecificCheck {
-			// no need to compute the CIDR
-			continue
-		}
-		if s.IPVersion == infracommon.IPV6 {
-			log.SpanLog(ctx, log.DebugLevelInfra, "ipv6 subnets not supported yet", "subnet", s)
-			continue
-		}
-		found := false
-		for octet := 0; octet <= 255; octet++ {
-			subnet := fmt.Sprintf("%s.%s.%d.%d/%s", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 0, vmgp.Netspec.NetmaskBits)
-			// either look for an unused one (create) or the current one (update)
-			newSubnet := action == vmlayer.ActionCreate
-			match := false
-
-			if a.awsGenPf.IsAwsOutpost() {
-				_, ok := usedCidrs[subnet]
-				if !ok {
-					continue
-				}
-				// find a free one rather than creating one
-				if (strings.Contains(usedCidrs[subnet], FreeInternalSubnetType)) || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
-					vmgp.Subnets[i].ReservedName = usedCidrs[subnet]
-					match = true
-				}
-			} else {
-				if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
-					match = true
-				}
-			}
-			if match {
-				found = true
-				vmgp.Subnets[i].CIDR = subnet
-				vmgp.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 1)
-				vmgp.Subnets[i].NodeIPPrefix = fmt.Sprintf("%s.%s.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet)
-				masterIP = fmt.Sprintf("%s.%s.%d.%d", vmgp.Netspec.Octets[0], vmgp.Netspec.Octets[1], octet, 10)
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf("cannot find subnet cidr")
-		}
+	var flavors []*edgeproto.FlavorInfo
+	flavors, err = a.GetFlavorList(ctx)
+	if err != nil {
+		return err
 	}
 	metaDir := "/mnt/mobiledgex-config/openstack/latest/"
 	for vmidx, vm := range vmgp.VMs {
@@ -330,7 +341,7 @@ func (a *AwsEc2Platform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrc
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "CreateVM failed", "err", err)
 			if !vmgp.SkipCleanupOnFailure {
-				a.DeleteVMs(ctx, vmgp.GroupName)
+				a.DeleteVMs(ctx, vmgp.GroupName, vmgp.OwnerID)
 			}
 			return err
 		}
@@ -340,15 +351,15 @@ func (a *AwsEc2Platform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrc
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Waiting for VMs to run failed", "err", err, "GroupName", vmgp.GroupName)
 		if !vmgp.SkipCleanupOnFailure {
-			a.DeleteVMs(ctx, vmgp.GroupName)
+			a.DeleteVMs(ctx, vmgp.GroupName, vmgp.OwnerID)
 		}
 		return err
 	}
 	return nil
 }
 
-func (a *AwsEc2Platform) DeleteVMs(ctx context.Context, vmGroupName string) error {
-	return a.DeleteAllResourcesForGroup(ctx, vmGroupName)
+func (a *AwsEc2Platform) DeleteVMs(ctx context.Context, vmGroupName, ownerID string) error {
+	return a.DeleteAllResourcesForGroup(ctx, vmGroupName, ownerID)
 }
 
 // UpdateVMs calculates which VMs need to be added or removed from the given group and then does so.
@@ -391,7 +402,7 @@ func (a *AwsEc2Platform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrc
 	return nil
 }
 
-func (a *AwsEc2Platform) DeleteAllResourcesForGroup(ctx context.Context, vmGroupName string) error {
+func (a *AwsEc2Platform) DeleteAllResourcesForGroup(ctx context.Context, vmGroupName, ownerID string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAllResourcesForGroup", "vmGroupName", vmGroupName)
 	ec2Instances, err := a.getEc2Instances(ctx, MatchAnyVmName, vmGroupName)
 	if err != nil {
@@ -472,6 +483,8 @@ func (a *AwsEc2Platform) DeleteAllResourcesForGroup(ctx context.Context, vmGroup
 			}
 		}
 	}
+	a.reservedSubnets.ReleaseForOwner(ctx, ownerID)
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "Delete security groups for VM group", "vmGroupName", vmGroupName)
 
 	sgMap, err := a.GetSecurityGroups(ctx, vpc.VpcId)

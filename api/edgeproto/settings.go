@@ -69,10 +69,10 @@ func (s *Settings) SetKey(key *SettingsKey) {}
 
 func SettingsKeyStringParse(str string, obj *Settings) {}
 
-func (s *Settings) Validate(fields map[string]struct{}) error {
+func (s *Settings) Validate(fmap objstore.FieldMap) error {
 	dur0 := Duration(0)
 	v := NewFieldValidator(SettingsAllFieldsStringMap)
-	for f, _ := range fields {
+	for _, f := range fmap.Fields() {
 		switch f {
 		case SettingsFieldShepherdMetricsCollectionInterval:
 			v.CheckGT(f, s.ShepherdMetricsCollectionInterval, dur0)
@@ -161,12 +161,12 @@ func (s *Settings) Validate(fields map[string]struct{}) error {
 			v.CheckGTE(f, s.PlatformHaInstanceActiveExpireTime, Duration(500*time.Millisecond))
 		case SettingsFieldPlatformHaInstancePollInterval:
 			v.CheckGT(f, s.PlatformHaInstancePollInterval, Duration(10*time.Millisecond))
-		case SettingsFieldCcrmRedisapiTimeout:
-			v.CheckGT(f, s.CcrmRedisapiTimeout, dur0)
+		case SettingsFieldCcrmApiTimeout:
+			v.CheckGT(f, s.CcrmApiTimeout, dur0)
 		default:
 			// If this is a setting field (and not "fields"), ensure there is an entry in the switch
 			// above.  If no validation is to be done for a field, make an empty case entry
-			_, ok := SettingsAllFieldsMap[f]
+			ok := SettingsAllFieldsMap.Has(f)
 			if ok {
 				return fmt.Errorf("No validation set for settings field: %s - %s", v.fieldDesc[f], f)
 			}
@@ -227,10 +227,10 @@ func GetDefaultSettings() *Settings {
 	s.AlertPolicyMinTriggerTime = Duration(30 * time.Second)
 	s.DisableRateLimit = false
 	s.RateLimitMaxTrackedIps = 10000
-	s.ResourceSnapshotThreadInterval = Duration(10 * time.Minute)
+	s.ResourceSnapshotThreadInterval = Duration(60 * time.Minute)
 	s.PlatformHaInstanceActiveExpireTime = Duration(1 * time.Second)
 	s.PlatformHaInstancePollInterval = Duration(300 * time.Millisecond)
-	s.CcrmRedisapiTimeout = Duration(30 * time.Second)
+	s.CcrmApiTimeout = Duration(30 * time.Second)
 
 	return &s
 }

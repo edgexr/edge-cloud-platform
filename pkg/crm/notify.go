@@ -12,21 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package crmutil
+package crm
 
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 )
 
 var sendMetric *notify.MetricSend
 var sendAlert *notify.AlertSend
 
-// NewNotifyHandler instantiates new notify handler
-func InitClientNotify(client *notify.Client, nodeMgr *node.NodeMgr, cd *ControllerData) {
+// InitClientNotify initiates the notify send/recv
+func InitClientNotify(client *notify.Client, nodeMgr *node.NodeMgr, crmd *CRMData, cd *crmutil.CRMHandler) {
 	client.RegisterRecvSettingsCache(&cd.SettingsCache)
 	client.RegisterRecvFlavorCache(&cd.FlavorCache)
 	client.RegisterRecvAppCache(&cd.AppCache)
@@ -34,28 +35,29 @@ func InitClientNotify(client *notify.Client, nodeMgr *node.NodeMgr, cd *Controll
 	client.RegisterRecvCloudletCache(cd.CloudletCache)
 	client.RegisterRecvVMPoolCache(&cd.VMPoolCache)
 	client.RegisterRecvClusterInstCache(&cd.ClusterInstCache)
-	client.RegisterRecv(notify.NewExecRequestRecv(cd.ExecReqHandler))
+	client.RegisterRecv(notify.NewExecRequestRecv(crmd.ExecReqHandler))
 	client.RegisterRecvResTagTableCache(&cd.ResTagTableCache)
 	client.RegisterRecvGPUDriverCache(&cd.GPUDriverCache)
 	client.RegisterRecvNetworkCache(&cd.NetworkCache)
-	client.RegisterSendCloudletInfoCache(&cd.CloudletInfoCache)
+	client.RegisterSendCloudletInfoCache(&crmd.CloudletInfoCache)
 	client.RegisterSendVMPoolInfoCache(&cd.VMPoolInfoCache)
-	client.RegisterSendAppInstInfoCache(&cd.AppInstInfoCache)
-	client.RegisterSendClusterInstInfoCache(&cd.ClusterInstInfoCache)
-	client.RegisterSend(cd.ExecReqSend)
+	client.RegisterSendAppInstInfoCache(&crmd.AppInstInfoCache)
+	client.RegisterSendClusterInstInfoCache(&crmd.ClusterInstInfoCache)
+	client.RegisterSend(crmd.ExecReqSend)
 	sendMetric = notify.NewMetricSend()
 	client.RegisterSend(sendMetric)
 	client.RegisterSendAlertCache(&cd.AlertCache)
 	client.RegisterRecvTrustPolicyCache(&cd.TrustPolicyCache)
 	client.RegisterRecvTrustPolicyExceptionCache(&cd.TrustPolicyExceptionCache)
+	client.RegisterRecvTPEInstanceStateCache(&cd.TPEInstanceStateCache)
 	client.RegisterRecvAutoProvPolicyCache(&cd.AutoProvPolicyCache)
 	client.RegisterRecvAutoScalePolicyCache(&cd.AutoScalePolicyCache)
 	client.RegisterRecvAlertPolicyCache(&cd.AlertPolicyCache)
-	client.RegisterSendAllRecv(cd)
+	client.RegisterSendAllRecv(crmd)
 	nodeMgr.RegisterClient(client)
 }
 
-func InitSrvNotify(notifyServer *notify.ServerMgr, nodeMgr *node.NodeMgr, controllerData *ControllerData) {
+func InitSrvNotify(notifyServer *notify.ServerMgr, nodeMgr *node.NodeMgr, controllerData *crmutil.CRMHandler) {
 	notifyServer.RegisterSendSettingsCache(&controllerData.SettingsCache)
 	notifyServer.RegisterSendFlavorCache(&controllerData.FlavorCache)
 	notifyServer.RegisterSendVMPoolCache(&controllerData.VMPoolCache)

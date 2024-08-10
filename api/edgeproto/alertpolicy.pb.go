@@ -853,7 +853,7 @@ var AlertPolicyAllFields = []string{
 	AlertPolicyFieldDeletePrepare,
 }
 
-var AlertPolicyAllFieldsMap = map[string]struct{}{
+var AlertPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AlertPolicyFieldKeyOrganization:      struct{}{},
 	AlertPolicyFieldKeyName:              struct{}{},
 	AlertPolicyFieldCpuUtilizationLimit:  struct{}{},
@@ -868,7 +868,7 @@ var AlertPolicyAllFieldsMap = map[string]struct{}{
 	AlertPolicyFieldAnnotationsValue:     struct{}{},
 	AlertPolicyFieldDescription:          struct{}{},
 	AlertPolicyFieldDeletePrepare:        struct{}{},
-}
+})
 
 var AlertPolicyAllFieldsStringMap = map[string]string{
 	AlertPolicyFieldKeyOrganization:      "Key Organization",
@@ -891,80 +891,86 @@ func (m *AlertPolicy) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AlertPolicyFieldKey+".") || s == AlertPolicyFieldKey
 }
 
-func (m *AlertPolicy) DiffFields(o *AlertPolicy, fields map[string]struct{}) {
+func (m *AlertPolicy) DiffFields(o *AlertPolicy, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {
-		fields[AlertPolicyFieldKeyOrganization] = struct{}{}
-		fields[AlertPolicyFieldKey] = struct{}{}
+		fields.Set(AlertPolicyFieldKeyOrganization)
+		fields.Set(AlertPolicyFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[AlertPolicyFieldKeyName] = struct{}{}
-		fields[AlertPolicyFieldKey] = struct{}{}
+		fields.Set(AlertPolicyFieldKeyName)
+		fields.Set(AlertPolicyFieldKey)
 	}
 	if m.CpuUtilizationLimit != o.CpuUtilizationLimit {
-		fields[AlertPolicyFieldCpuUtilizationLimit] = struct{}{}
+		fields.Set(AlertPolicyFieldCpuUtilizationLimit)
 	}
 	if m.MemUtilizationLimit != o.MemUtilizationLimit {
-		fields[AlertPolicyFieldMemUtilizationLimit] = struct{}{}
+		fields.Set(AlertPolicyFieldMemUtilizationLimit)
 	}
 	if m.DiskUtilizationLimit != o.DiskUtilizationLimit {
-		fields[AlertPolicyFieldDiskUtilizationLimit] = struct{}{}
+		fields.Set(AlertPolicyFieldDiskUtilizationLimit)
 	}
 	if m.ActiveConnLimit != o.ActiveConnLimit {
-		fields[AlertPolicyFieldActiveConnLimit] = struct{}{}
+		fields.Set(AlertPolicyFieldActiveConnLimit)
 	}
 	if m.Severity != o.Severity {
-		fields[AlertPolicyFieldSeverity] = struct{}{}
+		fields.Set(AlertPolicyFieldSeverity)
 	}
 	if m.TriggerTime != o.TriggerTime {
-		fields[AlertPolicyFieldTriggerTime] = struct{}{}
+		fields.Set(AlertPolicyFieldTriggerTime)
 	}
 	if m.Labels != nil && o.Labels != nil {
 		if len(m.Labels) != len(o.Labels) {
-			fields[AlertPolicyFieldLabels] = struct{}{}
+			fields.Set(AlertPolicyFieldLabels)
 		} else {
 			for k0, _ := range m.Labels {
 				_, vok0 := o.Labels[k0]
 				if !vok0 {
-					fields[AlertPolicyFieldLabels] = struct{}{}
+					fields.Set(AlertPolicyFieldLabels)
 				} else {
 					if m.Labels[k0] != o.Labels[k0] {
-						fields[AlertPolicyFieldLabels] = struct{}{}
+						fields.Set(AlertPolicyFieldLabels)
 						break
 					}
 				}
 			}
 		}
 	} else if (m.Labels != nil && o.Labels == nil) || (m.Labels == nil && o.Labels != nil) {
-		fields[AlertPolicyFieldLabels] = struct{}{}
+		fields.Set(AlertPolicyFieldLabels)
 	}
 	if m.Annotations != nil && o.Annotations != nil {
 		if len(m.Annotations) != len(o.Annotations) {
-			fields[AlertPolicyFieldAnnotations] = struct{}{}
+			fields.Set(AlertPolicyFieldAnnotations)
 		} else {
 			for k0, _ := range m.Annotations {
 				_, vok0 := o.Annotations[k0]
 				if !vok0 {
-					fields[AlertPolicyFieldAnnotations] = struct{}{}
+					fields.Set(AlertPolicyFieldAnnotations)
 				} else {
 					if m.Annotations[k0] != o.Annotations[k0] {
-						fields[AlertPolicyFieldAnnotations] = struct{}{}
+						fields.Set(AlertPolicyFieldAnnotations)
 						break
 					}
 				}
 			}
 		}
 	} else if (m.Annotations != nil && o.Annotations == nil) || (m.Annotations == nil && o.Annotations != nil) {
-		fields[AlertPolicyFieldAnnotations] = struct{}{}
+		fields.Set(AlertPolicyFieldAnnotations)
 	}
 	if m.Description != o.Description {
-		fields[AlertPolicyFieldDescription] = struct{}{}
+		fields.Set(AlertPolicyFieldDescription)
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[AlertPolicyFieldDeletePrepare] = struct{}{}
+		fields.Set(AlertPolicyFieldDeletePrepare)
 	}
 }
 
-var UpdateAlertPolicyFieldsMap = map[string]struct{}{
+func (m *AlertPolicy) GetDiffFields(o *AlertPolicy) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateAlertPolicyFieldsMap = NewFieldMap(map[string]struct{}{
 	AlertPolicyFieldCpuUtilizationLimit:  struct{}{},
 	AlertPolicyFieldMemUtilizationLimit:  struct{}{},
 	AlertPolicyFieldDiskUtilizationLimit: struct{}{},
@@ -978,7 +984,7 @@ var UpdateAlertPolicyFieldsMap = map[string]struct{}{
 	AlertPolicyFieldAnnotationsKey:       struct{}{},
 	AlertPolicyFieldAnnotationsValue:     struct{}{},
 	AlertPolicyFieldDescription:          struct{}{},
-}
+})
 
 func (m *AlertPolicy) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -986,11 +992,11 @@ func (m *AlertPolicy) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateAlertPolicyFieldsMap[field]; !ok {
+		if !UpdateAlertPolicyFieldsMap.Has(field) {
 			if _, ok := AlertPolicyAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -1013,57 +1019,57 @@ func (m *AlertPolicy) CopyInFields(src *AlertPolicy) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.CpuUtilizationLimit != src.CpuUtilizationLimit {
 			m.CpuUtilizationLimit = src.CpuUtilizationLimit
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.MemUtilizationLimit != src.MemUtilizationLimit {
 			m.MemUtilizationLimit = src.MemUtilizationLimit
 			changed++
 		}
 	}
-	if _, set := fmap["5"]; set {
+	if fmap.Has("5") {
 		if m.DiskUtilizationLimit != src.DiskUtilizationLimit {
 			m.DiskUtilizationLimit = src.DiskUtilizationLimit
 			changed++
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if m.ActiveConnLimit != src.ActiveConnLimit {
 			m.ActiveConnLimit = src.ActiveConnLimit
 			changed++
 		}
 	}
-	if _, set := fmap["7"]; set {
+	if fmap.Has("7") {
 		if m.Severity != src.Severity {
 			m.Severity = src.Severity
 			changed++
 		}
 	}
-	if _, set := fmap["8"]; set {
+	if fmap.Has("8") {
 		if m.TriggerTime != src.TriggerTime {
 			m.TriggerTime = src.TriggerTime
 			changed++
 		}
 	}
-	if _, set := fmap["9"]; set {
+	if fmap.HasOrHasChild("9") {
 		if src.Labels != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.Labels {
@@ -1089,7 +1095,7 @@ func (m *AlertPolicy) CopyInFields(src *AlertPolicy) int {
 			changed++
 		}
 	}
-	if _, set := fmap["10"]; set {
+	if fmap.HasOrHasChild("10") {
 		if src.Annotations != nil {
 			if updateListAction == "add" {
 				for k0, v := range src.Annotations {
@@ -1115,13 +1121,13 @@ func (m *AlertPolicy) CopyInFields(src *AlertPolicy) int {
 			changed++
 		}
 	}
-	if _, set := fmap["11"]; set {
+	if fmap.Has("11") {
 		if m.Description != src.Description {
 			m.Description = src.Description
 			changed++
 		}
 	}
-	if _, set := fmap["12"]; set {
+	if fmap.Has("12") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
@@ -1373,6 +1379,7 @@ type AlertPolicyCache struct {
 	KeyWatchers   map[AlertPolicyKey][]*AlertPolicyKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *AlertPolicyKey)
 	DeletedKeyCbs []func(ctx context.Context, key *AlertPolicyKey)
+	Store         AlertPolicyStore
 }
 
 func NewAlertPolicyCache() *AlertPolicyCache {
@@ -1735,6 +1742,18 @@ func (c *AlertPolicyCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *AlertPolicyCache) InitCacheWithSync(sync DataSync) {
+	InitAlertPolicyCache(s)
+	s.InitSync(sync)
+}
+
+func (s *AlertPolicyCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewAlertPolicyStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

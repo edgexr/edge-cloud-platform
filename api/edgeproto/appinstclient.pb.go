@@ -794,6 +794,7 @@ type AppInstClientKeyCache struct {
 	KeyWatchers   map[AppInstClientKey][]*AppInstClientKeyKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *AppInstClientKey)
 	DeletedKeyCbs []func(ctx context.Context, key *AppInstClientKey)
+	Store         AppInstClientKeyStore
 }
 
 func NewAppInstClientKeyCache() *AppInstClientKeyCache {
@@ -1159,6 +1160,18 @@ func (c *AppInstClientKeyCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
+func (s *AppInstClientKeyCache) InitCacheWithSync(sync DataSync) {
+	InitAppInstClientKeyCache(s)
+	s.InitSync(sync)
+}
+
+func (s *AppInstClientKeyCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewAppInstClientKeyStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
 func (c *AppInstClientKeyCache) UsesOrg(org string) bool {
 	return false
 }
@@ -1313,7 +1326,7 @@ var AppInstClientAllFields = []string{
 	AppInstClientFieldNotifyId,
 }
 
-var AppInstClientAllFieldsMap = map[string]struct{}{
+var AppInstClientAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AppInstClientFieldClientKeyAppInstKeyName:                             struct{}{},
 	AppInstClientFieldClientKeyAppInstKeyOrganization:                     struct{}{},
 	AppInstClientFieldClientKeyAppInstKeyCloudletKeyOrganization:          struct{}{},
@@ -1334,7 +1347,7 @@ var AppInstClientAllFieldsMap = map[string]struct{}{
 	AppInstClientFieldLocationTimestampSeconds:                            struct{}{},
 	AppInstClientFieldLocationTimestampNanos:                              struct{}{},
 	AppInstClientFieldNotifyId:                                            struct{}{},
-}
+})
 
 var AppInstClientAllFieldsStringMap = map[string]string{
 	AppInstClientFieldClientKeyAppInstKeyName:                             "Client Key App Inst Key Name",
@@ -1363,104 +1376,110 @@ func (m *AppInstClient) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AppInstClientFieldClientKey+".") || s == AppInstClientFieldClientKey
 }
 
-func (m *AppInstClient) DiffFields(o *AppInstClient, fields map[string]struct{}) {
+func (m *AppInstClient) DiffFields(o *AppInstClient, fields *FieldMap) {
 	if m.ClientKey.AppInstKey.Name != o.ClientKey.AppInstKey.Name {
-		fields[AppInstClientFieldClientKeyAppInstKeyName] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppInstKey] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyAppInstKeyName)
+		fields.Set(AppInstClientFieldClientKeyAppInstKey)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.ClientKey.AppInstKey.Organization != o.ClientKey.AppInstKey.Organization {
-		fields[AppInstClientFieldClientKeyAppInstKeyOrganization] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppInstKey] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyAppInstKeyOrganization)
+		fields.Set(AppInstClientFieldClientKeyAppInstKey)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.ClientKey.AppInstKey.CloudletKey.Organization != o.ClientKey.AppInstKey.CloudletKey.Organization {
-		fields[AppInstClientFieldClientKeyAppInstKeyCloudletKeyOrganization] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppInstKeyCloudletKey] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppInstKey] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKeyOrganization)
+		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKey)
+		fields.Set(AppInstClientFieldClientKeyAppInstKey)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.ClientKey.AppInstKey.CloudletKey.Name != o.ClientKey.AppInstKey.CloudletKey.Name {
-		fields[AppInstClientFieldClientKeyAppInstKeyCloudletKeyName] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppInstKeyCloudletKey] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppInstKey] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKeyName)
+		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKey)
+		fields.Set(AppInstClientFieldClientKeyAppInstKey)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.ClientKey.AppInstKey.CloudletKey.FederatedOrganization != o.ClientKey.AppInstKey.CloudletKey.FederatedOrganization {
-		fields[AppInstClientFieldClientKeyAppInstKeyCloudletKeyFederatedOrganization] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppInstKeyCloudletKey] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppInstKey] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKeyFederatedOrganization)
+		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKey)
+		fields.Set(AppInstClientFieldClientKeyAppInstKey)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.ClientKey.UniqueId != o.ClientKey.UniqueId {
-		fields[AppInstClientFieldClientKeyUniqueId] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyUniqueId)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.ClientKey.UniqueIdType != o.ClientKey.UniqueIdType {
-		fields[AppInstClientFieldClientKeyUniqueIdType] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyUniqueIdType)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.ClientKey.AppKey.Organization != o.ClientKey.AppKey.Organization {
-		fields[AppInstClientFieldClientKeyAppKeyOrganization] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppKey] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyAppKeyOrganization)
+		fields.Set(AppInstClientFieldClientKeyAppKey)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.ClientKey.AppKey.Name != o.ClientKey.AppKey.Name {
-		fields[AppInstClientFieldClientKeyAppKeyName] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppKey] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyAppKeyName)
+		fields.Set(AppInstClientFieldClientKeyAppKey)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.ClientKey.AppKey.Version != o.ClientKey.AppKey.Version {
-		fields[AppInstClientFieldClientKeyAppKeyVersion] = struct{}{}
-		fields[AppInstClientFieldClientKeyAppKey] = struct{}{}
-		fields[AppInstClientFieldClientKey] = struct{}{}
+		fields.Set(AppInstClientFieldClientKeyAppKeyVersion)
+		fields.Set(AppInstClientFieldClientKeyAppKey)
+		fields.Set(AppInstClientFieldClientKey)
 	}
 	if m.Location.Latitude != o.Location.Latitude {
-		fields[AppInstClientFieldLocationLatitude] = struct{}{}
-		fields[AppInstClientFieldLocation] = struct{}{}
+		fields.Set(AppInstClientFieldLocationLatitude)
+		fields.Set(AppInstClientFieldLocation)
 	}
 	if m.Location.Longitude != o.Location.Longitude {
-		fields[AppInstClientFieldLocationLongitude] = struct{}{}
-		fields[AppInstClientFieldLocation] = struct{}{}
+		fields.Set(AppInstClientFieldLocationLongitude)
+		fields.Set(AppInstClientFieldLocation)
 	}
 	if m.Location.HorizontalAccuracy != o.Location.HorizontalAccuracy {
-		fields[AppInstClientFieldLocationHorizontalAccuracy] = struct{}{}
-		fields[AppInstClientFieldLocation] = struct{}{}
+		fields.Set(AppInstClientFieldLocationHorizontalAccuracy)
+		fields.Set(AppInstClientFieldLocation)
 	}
 	if m.Location.VerticalAccuracy != o.Location.VerticalAccuracy {
-		fields[AppInstClientFieldLocationVerticalAccuracy] = struct{}{}
-		fields[AppInstClientFieldLocation] = struct{}{}
+		fields.Set(AppInstClientFieldLocationVerticalAccuracy)
+		fields.Set(AppInstClientFieldLocation)
 	}
 	if m.Location.Altitude != o.Location.Altitude {
-		fields[AppInstClientFieldLocationAltitude] = struct{}{}
-		fields[AppInstClientFieldLocation] = struct{}{}
+		fields.Set(AppInstClientFieldLocationAltitude)
+		fields.Set(AppInstClientFieldLocation)
 	}
 	if m.Location.Course != o.Location.Course {
-		fields[AppInstClientFieldLocationCourse] = struct{}{}
-		fields[AppInstClientFieldLocation] = struct{}{}
+		fields.Set(AppInstClientFieldLocationCourse)
+		fields.Set(AppInstClientFieldLocation)
 	}
 	if m.Location.Speed != o.Location.Speed {
-		fields[AppInstClientFieldLocationSpeed] = struct{}{}
-		fields[AppInstClientFieldLocation] = struct{}{}
+		fields.Set(AppInstClientFieldLocationSpeed)
+		fields.Set(AppInstClientFieldLocation)
 	}
 	if m.Location.Timestamp != nil && o.Location.Timestamp != nil {
 		if m.Location.Timestamp.Seconds != o.Location.Timestamp.Seconds {
-			fields[AppInstClientFieldLocationTimestampSeconds] = struct{}{}
-			fields[AppInstClientFieldLocationTimestamp] = struct{}{}
-			fields[AppInstClientFieldLocation] = struct{}{}
+			fields.Set(AppInstClientFieldLocationTimestampSeconds)
+			fields.Set(AppInstClientFieldLocationTimestamp)
+			fields.Set(AppInstClientFieldLocation)
 		}
 		if m.Location.Timestamp.Nanos != o.Location.Timestamp.Nanos {
-			fields[AppInstClientFieldLocationTimestampNanos] = struct{}{}
-			fields[AppInstClientFieldLocationTimestamp] = struct{}{}
-			fields[AppInstClientFieldLocation] = struct{}{}
+			fields.Set(AppInstClientFieldLocationTimestampNanos)
+			fields.Set(AppInstClientFieldLocationTimestamp)
+			fields.Set(AppInstClientFieldLocation)
 		}
 	} else if (m.Location.Timestamp != nil && o.Location.Timestamp == nil) || (m.Location.Timestamp == nil && o.Location.Timestamp != nil) {
-		fields[AppInstClientFieldLocationTimestamp] = struct{}{}
-		fields[AppInstClientFieldLocation] = struct{}{}
+		fields.Set(AppInstClientFieldLocationTimestamp)
+		fields.Set(AppInstClientFieldLocation)
 	}
 	if m.NotifyId != o.NotifyId {
-		fields[AppInstClientFieldNotifyId] = struct{}{}
+		fields.Set(AppInstClientFieldNotifyId)
 	}
+}
+
+func (m *AppInstClient) GetDiffFields(o *AppInstClient) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
 }
 
 func (m *AppInstClient) Clone() *AppInstClient {
@@ -1472,34 +1491,34 @@ func (m *AppInstClient) Clone() *AppInstClient {
 func (m *AppInstClient) CopyInFields(src *AppInstClient) int {
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
-			if _, set := fmap["2.1.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.HasOrHasChild("2.1") {
+			if fmap.Has("2.1.1") {
 				if m.ClientKey.AppInstKey.Name != src.ClientKey.AppInstKey.Name {
 					m.ClientKey.AppInstKey.Name = src.ClientKey.AppInstKey.Name
 					changed++
 				}
 			}
-			if _, set := fmap["2.1.2"]; set {
+			if fmap.Has("2.1.2") {
 				if m.ClientKey.AppInstKey.Organization != src.ClientKey.AppInstKey.Organization {
 					m.ClientKey.AppInstKey.Organization = src.ClientKey.AppInstKey.Organization
 					changed++
 				}
 			}
-			if _, set := fmap["2.1.3"]; set {
-				if _, set := fmap["2.1.3.1"]; set {
+			if fmap.HasOrHasChild("2.1.3") {
+				if fmap.Has("2.1.3.1") {
 					if m.ClientKey.AppInstKey.CloudletKey.Organization != src.ClientKey.AppInstKey.CloudletKey.Organization {
 						m.ClientKey.AppInstKey.CloudletKey.Organization = src.ClientKey.AppInstKey.CloudletKey.Organization
 						changed++
 					}
 				}
-				if _, set := fmap["2.1.3.2"]; set {
+				if fmap.Has("2.1.3.2") {
 					if m.ClientKey.AppInstKey.CloudletKey.Name != src.ClientKey.AppInstKey.CloudletKey.Name {
 						m.ClientKey.AppInstKey.CloudletKey.Name = src.ClientKey.AppInstKey.CloudletKey.Name
 						changed++
 					}
 				}
-				if _, set := fmap["2.1.3.3"]; set {
+				if fmap.Has("2.1.3.3") {
 					if m.ClientKey.AppInstKey.CloudletKey.FederatedOrganization != src.ClientKey.AppInstKey.CloudletKey.FederatedOrganization {
 						m.ClientKey.AppInstKey.CloudletKey.FederatedOrganization = src.ClientKey.AppInstKey.CloudletKey.FederatedOrganization
 						changed++
@@ -1507,32 +1526,32 @@ func (m *AppInstClient) CopyInFields(src *AppInstClient) int {
 				}
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.ClientKey.UniqueId != src.ClientKey.UniqueId {
 				m.ClientKey.UniqueId = src.ClientKey.UniqueId
 				changed++
 			}
 		}
-		if _, set := fmap["2.3"]; set {
+		if fmap.Has("2.3") {
 			if m.ClientKey.UniqueIdType != src.ClientKey.UniqueIdType {
 				m.ClientKey.UniqueIdType = src.ClientKey.UniqueIdType
 				changed++
 			}
 		}
-		if _, set := fmap["2.4"]; set {
-			if _, set := fmap["2.4.1"]; set {
+		if fmap.HasOrHasChild("2.4") {
+			if fmap.Has("2.4.1") {
 				if m.ClientKey.AppKey.Organization != src.ClientKey.AppKey.Organization {
 					m.ClientKey.AppKey.Organization = src.ClientKey.AppKey.Organization
 					changed++
 				}
 			}
-			if _, set := fmap["2.4.2"]; set {
+			if fmap.Has("2.4.2") {
 				if m.ClientKey.AppKey.Name != src.ClientKey.AppKey.Name {
 					m.ClientKey.AppKey.Name = src.ClientKey.AppKey.Name
 					changed++
 				}
 			}
-			if _, set := fmap["2.4.3"]; set {
+			if fmap.Has("2.4.3") {
 				if m.ClientKey.AppKey.Version != src.ClientKey.AppKey.Version {
 					m.ClientKey.AppKey.Version = src.ClientKey.AppKey.Version
 					changed++
@@ -1540,61 +1559,61 @@ func (m *AppInstClient) CopyInFields(src *AppInstClient) int {
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
-		if _, set := fmap["3.1"]; set {
+	if fmap.HasOrHasChild("3") {
+		if fmap.Has("3.1") {
 			if m.Location.Latitude != src.Location.Latitude {
 				m.Location.Latitude = src.Location.Latitude
 				changed++
 			}
 		}
-		if _, set := fmap["3.2"]; set {
+		if fmap.Has("3.2") {
 			if m.Location.Longitude != src.Location.Longitude {
 				m.Location.Longitude = src.Location.Longitude
 				changed++
 			}
 		}
-		if _, set := fmap["3.3"]; set {
+		if fmap.Has("3.3") {
 			if m.Location.HorizontalAccuracy != src.Location.HorizontalAccuracy {
 				m.Location.HorizontalAccuracy = src.Location.HorizontalAccuracy
 				changed++
 			}
 		}
-		if _, set := fmap["3.4"]; set {
+		if fmap.Has("3.4") {
 			if m.Location.VerticalAccuracy != src.Location.VerticalAccuracy {
 				m.Location.VerticalAccuracy = src.Location.VerticalAccuracy
 				changed++
 			}
 		}
-		if _, set := fmap["3.5"]; set {
+		if fmap.Has("3.5") {
 			if m.Location.Altitude != src.Location.Altitude {
 				m.Location.Altitude = src.Location.Altitude
 				changed++
 			}
 		}
-		if _, set := fmap["3.6"]; set {
+		if fmap.Has("3.6") {
 			if m.Location.Course != src.Location.Course {
 				m.Location.Course = src.Location.Course
 				changed++
 			}
 		}
-		if _, set := fmap["3.7"]; set {
+		if fmap.Has("3.7") {
 			if m.Location.Speed != src.Location.Speed {
 				m.Location.Speed = src.Location.Speed
 				changed++
 			}
 		}
-		if _, set := fmap["3.8"]; set {
+		if fmap.HasOrHasChild("3.8") {
 			if src.Location.Timestamp != nil {
 				if m.Location.Timestamp == nil {
 					m.Location.Timestamp = &distributed_match_engine.Timestamp{}
 				}
-				if _, set := fmap["3.8.1"]; set {
+				if fmap.Has("3.8.1") {
 					if m.Location.Timestamp.Seconds != src.Location.Timestamp.Seconds {
 						m.Location.Timestamp.Seconds = src.Location.Timestamp.Seconds
 						changed++
 					}
 				}
-				if _, set := fmap["3.8.2"]; set {
+				if fmap.Has("3.8.2") {
 					if m.Location.Timestamp.Nanos != src.Location.Timestamp.Nanos {
 						m.Location.Timestamp.Nanos = src.Location.Timestamp.Nanos
 						changed++
@@ -1606,7 +1625,7 @@ func (m *AppInstClient) CopyInFields(src *AppInstClient) int {
 			}
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.NotifyId != src.NotifyId {
 			m.NotifyId = src.NotifyId
 			changed++

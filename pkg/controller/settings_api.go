@@ -158,8 +158,8 @@ func (s *SettingsApi) initDefaults(ctx context.Context) error {
 			cur.PlatformHaInstancePollInterval = edgeproto.GetDefaultSettings().PlatformHaInstancePollInterval
 			modified = true
 		}
-		if cur.CcrmRedisapiTimeout == 0 {
-			cur.CcrmRedisapiTimeout = edgeproto.GetDefaultSettings().CcrmRedisapiTimeout
+		if cur.CcrmApiTimeout == 0 {
+			cur.CcrmApiTimeout = edgeproto.GetDefaultSettings().CcrmApiTimeout
 			modified = true
 		}
 		if modified {

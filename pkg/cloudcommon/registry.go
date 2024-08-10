@@ -772,8 +772,10 @@ func (s *VaultRegistryAuthApi) GetRegistryAuth(ctx context.Context, imgUrl strin
 }
 
 // For unit tests
-type DummyRegistryAuthApi struct{}
+type DummyRegistryAuthApi struct {
+	DummyAuth RegistryAuth
+}
 
 func (s *DummyRegistryAuthApi) GetRegistryAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error) {
-	return &RegistryAuth{}, nil
+	return &s.DummyAuth, nil
 }

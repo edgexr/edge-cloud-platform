@@ -34,6 +34,7 @@ func NewAppInstInfoApi(sync *regiondata.Sync, all *AllApis) *AppInstInfoApi {
 }
 
 func (s *AppInstInfoApi) Update(ctx context.Context, in *edgeproto.AppInstInfo, rev int64) {
+	in.Fields = edgeproto.AppInstInfoAllFields
 	s.all.appInstApi.UpdateFromInfo(ctx, in)
 }
 

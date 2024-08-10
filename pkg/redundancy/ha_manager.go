@@ -36,9 +36,9 @@ const CheckActiveLogInterval = time.Second * 10
 const MaxRedisUnreachableRetries = 3
 
 type HAWatcher interface {
-	ActiveChangedPreSwitch(ctx context.Context, platformActive bool) error  // actions before setting PlatformInstanceActive
-	ActiveChangedPostSwitch(ctx context.Context, platformActive bool) error // actions after setting PlatformInstanceActive
-	PlatformActiveOnStartup(ctx context.Context)                            // actions if the platform is active on first
+	ActiveChangedPreSwitch(ctx context.Context, haRole string, platformActive bool) error  // actions before setting PlatformInstanceActive
+	ActiveChangedPostSwitch(ctx context.Context, haRole string, platformActive bool) error // actions after setting PlatformInstanceActive
+	PlatformActiveOnStartup(ctx context.Context)                                           // actions if the platform is active on first
 	DumpWatcherFields(ctx context.Context) map[string]interface{}
 }
 
@@ -184,6 +184,10 @@ func (s *HighAvailabilityManager) GetValue(ctx context.Context, key string) (str
 	return val, nil
 }
 
+func (s *HighAvailabilityManager) IsActive() bool {
+	return s.PlatformInstanceActive
+}
+
 func (s *HighAvailabilityManager) CheckActive(ctx context.Context) (bool, error) {
 
 	v, err := s.redisClient.Get(ctx, s.nodeGroupKey).Result()
@@ -297,14 +301,14 @@ func (s *HighAvailabilityManager) CheckActiveLoop(ctx context.Context) {
 				// switchover is handled in a separate thread so we do not miss polling redis
 				s.ActiveTransitionInProgress = true
 				switchoverStartTime := time.Now()
-				err := s.haWatcher.ActiveChangedPreSwitch(ctx, true)
+				err := s.haWatcher.ActiveChangedPreSwitch(ctx, s.HARole, true)
 				if err != nil {
 					log.SpanFromContext(ctx).Finish()
 					log.FatalLog("ActiveChangedPreSwitch failed", "err", err)
 				}
 				s.PlatformInstanceActive = true
 				s.ActiveTransitionInProgress = false
-				s.haWatcher.ActiveChangedPostSwitch(ctx, true)
+				s.haWatcher.ActiveChangedPostSwitch(ctx, s.HARole, true)
 				if err != nil {
 					log.SpanFromContext(ctx).Finish()
 					log.FatalLog("ActiveChangedPostSwitch failed", "err", err)

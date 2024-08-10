@@ -21,11 +21,20 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/cloudletssh"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
-	ssh "github.com/edgexr/golang-ssh"
 	"github.com/test-go/testify/require"
 )
+
+type vaultSigner struct {
+	vaultConfig *vault.Config
+}
+
+func (s *vaultSigner) SignSSHKey(ctx context.Context, publicKey string) (string, error) {
+	return vault.SignSSHKey(s.vaultConfig, publicKey)
+}
 
 // Test vault signed ssh
 func TestVaultSSH(t *testing.T) {
@@ -41,23 +50,22 @@ func TestVaultSSH(t *testing.T) {
 
 	addr := os.Getenv("ADDR")
 
-	pub, priv, err := ssh.GenKeyPair()
-	require.Nil(t, err)
-
-	spub, err := vault.SignSSHKey(vaultConfig, string(pub))
-	require.Nil(t, err)
+	signer := &vaultSigner{
+		vaultConfig: vaultConfig,
+	}
 
 	cp := CommonPlatform{
-		SshKey: CloudletSSHKey{
-			PrivateKey:      string(priv),
-			SignedPublicKey: string(spub),
+		PlatformConfig: &platform.PlatformConfig{
+			PlatformInitConfig: platform.PlatformInitConfig{
+				CloudletSSHKey: cloudletssh.NewSSHKey(signer),
+			},
 		},
 	}
 	client, err := cp.GetSSHClientFromIPAddr(ctx, addr, pc.WithUser(SSHUser))
 	require.Nil(t, err)
 	out, err := client.Output("sudo grep 'Finished edgecloud init' /var/log/edgecloud.log")
 	if err != nil {
-		out, err = client.Output("sudo grep 'Finished mobiledgex init' /var/log/mobiledgex.log")
+		out, err = client.Output("sudo grep 'Finished edgecloud init' /var/log/edgecloud.log")
 	}
 	require.Nil(t, err)
 	fmt.Printf("%s\n", out)

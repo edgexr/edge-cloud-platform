@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	fmt "fmt"
+	distributed_match_engine "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
@@ -159,70 +160,176 @@ func (m *TrustPolicyException) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_TrustPolicyException proto.InternalMessageInfo
 
+type TPEInstanceKey struct {
+	TpeKey     TrustPolicyExceptionKey `protobuf:"bytes,1,opt,name=tpe_key,json=tpeKey,proto3" json:"tpe_key"`
+	AppInstKey AppInstKey              `protobuf:"bytes,2,opt,name=app_inst_key,json=appInstKey,proto3" json:"app_inst_key"`
+	ClusterKey ClusterKey              `protobuf:"bytes,3,opt,name=cluster_key,json=clusterKey,proto3" json:"cluster_key"`
+}
+
+func (m *TPEInstanceKey) Reset()         { *m = TPEInstanceKey{} }
+func (m *TPEInstanceKey) String() string { return proto.CompactTextString(m) }
+func (*TPEInstanceKey) ProtoMessage()    {}
+func (*TPEInstanceKey) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3880f2ee88dcf17f, []int{2}
+}
+func (m *TPEInstanceKey) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TPEInstanceKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TPEInstanceKey.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TPEInstanceKey) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TPEInstanceKey.Merge(m, src)
+}
+func (m *TPEInstanceKey) XXX_Size() int {
+	return m.Size()
+}
+func (m *TPEInstanceKey) XXX_DiscardUnknown() {
+	xxx_messageInfo_TPEInstanceKey.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TPEInstanceKey proto.InternalMessageInfo
+
+// TPEState shows the state of an applied TPE instance
+type TPEInstanceState struct {
+	Key           TPEInstanceKey                     `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
+	Owner         string                             `protobuf:"bytes,2,opt,name=owner,proto3" json:"owner,omitempty"`
+	RunRequested  bool                               `protobuf:"varint,3,opt,name=run_requested,json=runRequested,proto3" json:"run_requested,omitempty"`
+	RunCount      int32                              `protobuf:"varint,4,opt,name=run_count,json=runCount,proto3" json:"run_count,omitempty"`
+	TpeEnable     bool                               `protobuf:"varint,5,opt,name=tpe_enable,json=tpeEnable,proto3" json:"tpe_enable,omitempty"`
+	DisableReason string                             `protobuf:"bytes,6,opt,name=disable_reason,json=disableReason,proto3" json:"disable_reason,omitempty"`
+	Error         string                             `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
+	StartedAt     distributed_match_engine.Timestamp `protobuf:"bytes,99,opt,name=started_at,json=startedAt,proto3" json:"started_at"`
+}
+
+func (m *TPEInstanceState) Reset()         { *m = TPEInstanceState{} }
+func (m *TPEInstanceState) String() string { return proto.CompactTextString(m) }
+func (*TPEInstanceState) ProtoMessage()    {}
+func (*TPEInstanceState) Descriptor() ([]byte, []int) {
+	return fileDescriptor_3880f2ee88dcf17f, []int{3}
+}
+func (m *TPEInstanceState) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TPEInstanceState) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TPEInstanceState.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TPEInstanceState) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TPEInstanceState.Merge(m, src)
+}
+func (m *TPEInstanceState) XXX_Size() int {
+	return m.Size()
+}
+func (m *TPEInstanceState) XXX_DiscardUnknown() {
+	xxx_messageInfo_TPEInstanceState.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TPEInstanceState proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterEnum("edgeproto.TrustPolicyExceptionState", TrustPolicyExceptionState_name, TrustPolicyExceptionState_value)
 	proto.RegisterType((*TrustPolicyExceptionKey)(nil), "edgeproto.TrustPolicyExceptionKey")
 	proto.RegisterType((*TrustPolicyException)(nil), "edgeproto.TrustPolicyException")
+	proto.RegisterType((*TPEInstanceKey)(nil), "edgeproto.TPEInstanceKey")
+	proto.RegisterType((*TPEInstanceState)(nil), "edgeproto.TPEInstanceState")
 }
 
 func init() { proto.RegisterFile("trustpolicyexception.proto", fileDescriptor_3880f2ee88dcf17f) }
 
 var fileDescriptor_3880f2ee88dcf17f = []byte{
-	// 852 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0xcf, 0x6f, 0x1b, 0x45,
-	0x14, 0xc7, 0x3d, 0x71, 0x1a, 0xc8, 0x34, 0x82, 0x64, 0xd5, 0xe2, 0x61, 0x15, 0x1c, 0x63, 0x8a,
-	0x6a, 0xaa, 0x28, 0x0b, 0xee, 0xcd, 0x52, 0x0f, 0x6b, 0x77, 0x0f, 0xc1, 0xc5, 0x36, 0xeb, 0xb5,
-	0x01, 0x09, 0x69, 0xb5, 0xb5, 0x87, 0xed, 0x2a, 0xdb, 0x9d, 0xd1, 0xfe, 0x20, 0x2c, 0xa7, 0x8a,
-	0xbf, 0xa0, 0x12, 0x12, 0x42, 0x9c, 0x38, 0xf7, 0x84, 0xb8, 0x20, 0x59, 0xfc, 0x01, 0x3e, 0xa1,
-	0x48, 0xe5, 0x50, 0x71, 0x40, 0x90, 0x70, 0x80, 0x9c, 0x90, 0xe2, 0xac, 0xe0, 0x86, 0x66, 0xbc,
-	0x5e, 0x96, 0xca, 0x6b, 0x4b, 0x34, 0x17, 0x6b, 0xe6, 0xcd, 0xf7, 0x3d, 0x7f, 0xbe, 0x6f, 0xde,
-	0x0e, 0x14, 0x7d, 0x37, 0xf0, 0x7c, 0x4a, 0x6c, 0x6b, 0x10, 0xe2, 0x4f, 0x06, 0x98, 0xfa, 0x16,
-	0x71, 0xf6, 0xa8, 0x4b, 0x7c, 0x22, 0xac, 0xe3, 0xa1, 0x89, 0xf9, 0x52, 0xdc, 0x36, 0x09, 0x31,
-	0x6d, 0x2c, 0x19, 0xd4, 0x92, 0x0c, 0xc7, 0x21, 0xbe, 0xc1, 0x74, 0xde, 0x54, 0x28, 0x6e, 0xb8,
-	0xd8, 0x0b, 0x6c, 0x3f, 0xde, 0xbd, 0xe2, 0x13, 0x62, 0x7b, 0x12, 0xdf, 0x98, 0xd8, 0x49, 0x16,
-	0xf1, 0xf1, 0x15, 0x93, 0x98, 0x84, 0x2f, 0x25, 0xb6, 0x8a, 0xa3, 0xeb, 0x06, 0xa5, 0xf1, 0x52,
-	0x18, 0xd8, 0x24, 0x18, 0xda, 0xd8, 0xa7, 0x84, 0xd8, 0x71, 0x6c, 0x2b, 0x85, 0x39, 0x0d, 0x95,
-	0xff, 0x06, 0xb0, 0xa0, 0xb1, 0x68, 0x87, 0x47, 0x95, 0x19, 0x7c, 0x13, 0x87, 0x82, 0x0c, 0x9f,
-	0x33, 0x28, 0xd5, 0x0f, 0x70, 0x88, 0x40, 0x09, 0x54, 0x2e, 0x57, 0xb7, 0xf6, 0x12, 0x2f, 0x7b,
-	0x32, 0xa5, 0x4d, 0x1c, 0xd6, 0xaf, 0x8e, 0x22, 0xb4, 0x66, 0x50, 0x7a, 0x80, 0xc3, 0xd3, 0x08,
-	0xe5, 0x65, 0x4a, 0xc7, 0x3f, 0xef, 0xe4, 0x54, 0x16, 0x62, 0x25, 0x08, 0xdc, 0x9a, 0x71, 0xe8,
-	0x0c, 0x84, 0x17, 0x5b, 0xe1, 0xc5, 0xc4, 0x54, 0xb1, 0x46, 0xac, 0xe9, 0x10, 0x62, 0xb3, 0xaa,
-	0xd7, 0x47, 0x11, 0x7a, 0x31, 0x6d, 0x60, 0x5a, 0x7e, 0x23, 0xad, 0xe3, 0xff, 0x93, 0x88, 0xe2,
-	0x4c, 0x61, 0x1b, 0xae, 0x3a, 0xc6, 0x7d, 0x8c, 0xf2, 0x25, 0x50, 0x59, 0xaf, 0x3f, 0x3f, 0x8a,
-	0x10, 0xdf, 0xab, 0xfc, 0xb7, 0xb6, 0xf1, 0xfb, 0x19, 0x02, 0x7f, 0x9d, 0x21, 0xf0, 0xcd, 0xd7,
-	0x3b, 0xa0, 0x1c, 0xe5, 0xe1, 0x95, 0x79, 0xde, 0x85, 0x97, 0xe0, 0xda, 0x47, 0x16, 0xb6, 0x87,
-	0x1e, 0x02, 0xa5, 0x7c, 0x65, 0x5d, 0x8d, 0x77, 0x42, 0x0d, 0xe6, 0xff, 0xe5, 0x2f, 0xa7, 0xf8,
-	0x33, 0x3a, 0x58, 0x5f, 0xe5, 0x90, 0x2c, 0x49, 0xa8, 0xc1, 0x4b, 0x9e, 0x6f, 0xf8, 0x53, 0xb2,
-	0x17, 0xaa, 0xd7, 0x96, 0x64, 0x77, 0x99, 0x56, 0x9d, 0xa6, 0x08, 0x3d, 0x58, 0x20, 0x81, 0x7f,
-	0x97, 0x04, 0xce, 0x50, 0xf7, 0xf0, 0x20, 0x70, 0x2d, 0x3f, 0xd4, 0xdd, 0xc0, 0xc6, 0x1e, 0x5a,
-	0x2d, 0xe5, 0x2b, 0x97, 0xab, 0x85, 0x54, 0xb5, 0x6e, 0x2c, 0x50, 0x03, 0x1b, 0xc7, 0x00, 0x57,
-	0x67, 0xd9, 0xe9, 0x33, 0xaf, 0x16, 0x01, 0xd6, 0x8e, 0x3f, 0xcf, 0x10, 0x78, 0x30, 0x41, 0xe0,
-	0xe1, 0x04, 0x81, 0x2f, 0x27, 0x08, 0x8c, 0x27, 0x08, 0x3c, 0x99, 0x20, 0xf0, 0xd5, 0x39, 0x1a,
-	0x01, 0xd6, 0xb5, 0x5b, 0x4d, 0x1c, 0xee, 0xb5, 0x8c, 0xfb, 0x78, 0xd7, 0xa0, 0x34, 0x09, 0x4c,
-	0xef, 0x3f, 0x89, 0x13, 0xd7, 0x4c, 0x87, 0xdb, 0xae, 0x69, 0x38, 0xd6, 0xa7, 0x7c, 0xbe, 0xd9,
-	0xf1, 0xc7, 0xd8, 0xf5, 0xd2, 0xe7, 0x7d, 0xec, 0x7a, 0xec, 0x28, 0x7d, 0xc7, 0xb3, 0x12, 0x4f,
-	0x0d, 0xc3, 0x7f, 0x6b, 0xa5, 0x13, 0x12, 0x96, 0xa7, 0x33, 0x18, 0xd4, 0xb7, 0x11, 0x2a, 0x1c,
-	0xe0, 0xf0, 0xd6, 0x1c, 0xa0, 0x1b, 0x3f, 0x00, 0xf8, 0x72, 0x66, 0xd3, 0x85, 0x0a, 0xbc, 0xa6,
-	0xa9, 0xbd, 0xae, 0xa6, 0x77, 0xda, 0x77, 0xf6, 0x1b, 0x1f, 0xe8, 0xca, 0xfb, 0x0d, 0xa5, 0xa3,
-	0xed, 0xb7, 0x5b, 0x7a, 0x57, 0x93, 0x35, 0x45, 0xef, 0xb5, 0x9a, 0xad, 0xf6, 0x7b, 0xad, 0xcd,
-	0x9c, 0x70, 0x13, 0x4a, 0x0b, 0x95, 0x72, 0xa7, 0xa3, 0xb6, 0xfb, 0xf2, 0x1d, 0x5d, 0x55, 0xde,
-	0xed, 0x29, 0x5d, 0x4d, 0xb9, 0xbd, 0x09, 0x84, 0xeb, 0xf0, 0xb5, 0xc5, 0x49, 0x0d, 0x6d, 0xbf,
-	0xaf, 0x6c, 0xae, 0x08, 0x6f, 0xc0, 0xd7, 0x17, 0x0a, 0x55, 0xe5, 0x6d, 0xa5, 0xc1, 0x6a, 0xe6,
-	0xab, 0x3f, 0xae, 0xcd, 0xff, 0x8a, 0x65, 0x6a, 0x09, 0x8f, 0x01, 0x14, 0x1b, 0x2e, 0x36, 0x7c,
-	0x3c, 0x77, 0xd6, 0x77, 0x96, 0x0c, 0xa2, 0x98, 0xfe, 0xe8, 0x55, 0xfe, 0x42, 0x95, 0x1f, 0x80,
-	0xd3, 0x09, 0x7a, 0x4b, 0xc5, 0x1e, 0x09, 0xdc, 0x01, 0x96, 0x29, 0xf5, 0x76, 0xe5, 0x01, 0x13,
-	0xbf, 0x63, 0x38, 0x86, 0x89, 0x77, 0x33, 0x06, 0xe1, 0xa7, 0x73, 0x74, 0x89, 0xb7, 0xf8, 0x51,
-	0x84, 0x0a, 0x19, 0x9a, 0xcf, 0x1e, 0xff, 0xf6, 0xf9, 0xca, 0xab, 0xe5, 0x6d, 0x69, 0xc0, 0x91,
-	0xa5, 0x79, 0x0f, 0x6b, 0x0d, 0xdc, 0x10, 0xfe, 0x00, 0x50, 0xec, 0xd1, 0xe1, 0x45, 0xba, 0xfa,
-	0x82, 0xb9, 0x6a, 0xcc, 0x5c, 0xa5, 0x67, 0x6a, 0x8e, 0xbd, 0x45, 0x43, 0x7a, 0x74, 0x8e, 0xc0,
-	0xa3, 0x08, 0x95, 0x96, 0xe9, 0x12, 0xaf, 0x01, 0x37, 0x92, 0xe9, 0xf5, 0x3b, 0x00, 0xc5, 0xdb,
-	0xd8, 0xc6, 0x17, 0xe8, 0x15, 0x3f, 0xdb, 0x05, 0x26, 0xe4, 0x43, 0x8e, 0x95, 0x49, 0xfe, 0x3d,
-	0x80, 0xa8, 0x7b, 0x8f, 0x1c, 0xfe, 0x3f, 0xee, 0x65, 0x82, 0xf2, 0x87, 0xa7, 0x13, 0x24, 0xcd,
-	0x71, 0xd1, 0xb7, 0xf0, 0x61, 0x96, 0x07, 0x76, 0x39, 0x1c, 0x7f, 0xa7, 0x2c, 0x4a, 0xde, 0x3d,
-	0x72, 0x98, 0x05, 0xff, 0x26, 0xa8, 0x6f, 0x8f, 0x7f, 0x2d, 0xe6, 0xc6, 0xc7, 0x45, 0x70, 0x74,
-	0x5c, 0x04, 0xbf, 0x1c, 0x17, 0xc1, 0xc3, 0x93, 0x62, 0xee, 0xe8, 0xa4, 0x98, 0x7b, 0x72, 0x52,
-	0xcc, 0xdd, 0x5d, 0xe3, 0x64, 0x37, 0xff, 0x09, 0x00, 0x00, 0xff, 0xff, 0x56, 0x49, 0x2b, 0xe2,
-	0xfd, 0x07, 0x00, 0x00,
+	// 1178 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0xcf, 0x6f, 0x1b, 0x45,
+	0x14, 0xf6, 0xc4, 0x49, 0x5a, 0x4f, 0x93, 0x90, 0xae, 0x9a, 0x66, 0x6a, 0x82, 0xe3, 0x3a, 0x45,
+	0x75, 0x4b, 0x64, 0xd3, 0xf4, 0x66, 0xd4, 0x83, 0xe3, 0xae, 0x44, 0x48, 0x49, 0xcc, 0xda, 0x09,
+	0x20, 0x21, 0xad, 0x36, 0xeb, 0x87, 0xb3, 0xca, 0x7a, 0x67, 0xd8, 0x9d, 0x25, 0x98, 0x53, 0xc5,
+	0x5f, 0x50, 0x09, 0x09, 0x21, 0xc4, 0x81, 0x03, 0x07, 0xd4, 0x13, 0xea, 0x05, 0xc9, 0xe2, 0x0f,
+	0xc8, 0x09, 0x45, 0x2a, 0x87, 0x8a, 0x03, 0x82, 0x84, 0x03, 0xe4, 0x54, 0x29, 0xce, 0x0a, 0x6e,
+	0x68, 0xc6, 0x6b, 0xb3, 0x49, 0xed, 0x04, 0x41, 0x2f, 0xd1, 0xcc, 0x7b, 0xdf, 0xfb, 0xfc, 0xbd,
+	0x5f, 0xb3, 0xc1, 0x49, 0xee, 0xfa, 0x1e, 0x67, 0xd4, 0xb6, 0xcc, 0x26, 0x7c, 0x64, 0x02, 0xe3,
+	0x16, 0x75, 0x72, 0xcc, 0xa5, 0x9c, 0x2a, 0x09, 0xa8, 0xd5, 0x41, 0x1e, 0x93, 0x33, 0x75, 0x4a,
+	0xeb, 0x36, 0xe4, 0x0d, 0x66, 0xe5, 0x0d, 0xc7, 0xa1, 0xdc, 0x10, 0x38, 0xaf, 0x03, 0x4c, 0x8e,
+	0xb9, 0xe0, 0xf9, 0x36, 0x0f, 0x6f, 0x2f, 0x71, 0x4a, 0x6d, 0x2f, 0x2f, 0x2f, 0x75, 0x70, 0x7a,
+	0x87, 0xd0, 0x7d, 0xa9, 0x4e, 0xeb, 0x54, 0x1e, 0xf3, 0xe2, 0x14, 0x5a, 0x13, 0x06, 0x63, 0xe1,
+	0x51, 0x31, 0x6d, 0xea, 0xd7, 0x6c, 0xe0, 0x8c, 0x52, 0x3b, 0xb4, 0x5d, 0x8c, 0xc8, 0x0c, 0x4d,
+	0xe3, 0x06, 0x63, 0x96, 0xe3, 0x75, 0x7f, 0x75, 0xdc, 0xb4, 0x7d, 0x8f, 0x83, 0xdb, 0xbd, 0xd6,
+	0x1a, 0x90, 0xb7, 0xa9, 0xd9, 0xb9, 0x66, 0xfe, 0x42, 0x78, 0xba, 0x2a, 0x28, 0xca, 0x92, 0x42,
+	0xed, 0x66, 0xba, 0x0c, 0x4d, 0xa5, 0x88, 0xcf, 0x19, 0x8c, 0xe9, 0x5b, 0xd0, 0x24, 0x28, 0x8d,
+	0xb2, 0x17, 0x16, 0x2e, 0xe6, 0x7a, 0x89, 0xe7, 0x8a, 0x8c, 0x2d, 0x43, 0x73, 0x71, 0xaa, 0x15,
+	0x90, 0x51, 0x83, 0xb1, 0x2d, 0x68, 0x1e, 0x04, 0x24, 0x5e, 0x64, 0x6c, 0xe7, 0xe7, 0xd9, 0x98,
+	0x26, 0x4c, 0x82, 0x82, 0xe2, 0x8b, 0x5d, 0xd1, 0xba, 0x50, 0x2d, 0xc9, 0x86, 0x24, 0x59, 0x32,
+	0x42, 0x56, 0x0a, 0x31, 0x65, 0x4a, 0x6d, 0xc1, 0x7a, 0xbd, 0x15, 0x90, 0x17, 0xa2, 0xd9, 0x76,
+	0xe8, 0xc7, 0xa2, 0x38, 0xf9, 0x3b, 0x3d, 0x50, 0x18, 0xa9, 0xcc, 0xe0, 0x61, 0xc7, 0x68, 0x00,
+	0x89, 0xa7, 0x51, 0x36, 0xb1, 0x78, 0xbe, 0x15, 0x10, 0x79, 0xd7, 0xe4, 0xdf, 0xc2, 0xd8, 0xef,
+	0x87, 0x04, 0xfd, 0x79, 0x48, 0xd0, 0xb7, 0x5f, 0xcd, 0xa2, 0x4c, 0x10, 0xc7, 0x97, 0xfa, 0xe5,
+	0xae, 0x5c, 0xc6, 0xa3, 0xef, 0x5b, 0x60, 0xd7, 0x3c, 0x82, 0xd2, 0xf1, 0x6c, 0x42, 0x0b, 0x6f,
+	0x4a, 0x01, 0xc7, 0xff, 0xd1, 0x9f, 0x89, 0xe8, 0x1f, 0x50, 0xc1, 0xc5, 0x61, 0x29, 0x52, 0x04,
+	0x29, 0x05, 0x3c, 0xe2, 0x71, 0x83, 0x77, 0x94, 0x4d, 0x2c, 0x5c, 0x3b, 0x23, 0xba, 0x22, 0xb0,
+	0x5a, 0x27, 0x44, 0x59, 0xc3, 0xd3, 0xd4, 0xe7, 0x1b, 0xd4, 0x77, 0x6a, 0xba, 0x07, 0xa6, 0xef,
+	0x5a, 0xbc, 0xa9, 0xbb, 0xbe, 0x0d, 0x1e, 0x19, 0x4e, 0xc7, 0xb3, 0x17, 0x16, 0xa6, 0x23, 0x6c,
+	0x95, 0x10, 0xa0, 0xf9, 0x36, 0x84, 0x02, 0xa6, 0xba, 0xd1, 0x51, 0x9f, 0x57, 0x08, 0x90, 0x28,
+	0xc7, 0xd3, 0x43, 0x82, 0xee, 0xb7, 0x09, 0x7a, 0xd0, 0x26, 0xe8, 0xf3, 0x36, 0x41, 0x3b, 0x6d,
+	0x82, 0x9e, 0xb4, 0x09, 0xfa, 0xe2, 0x88, 0xb4, 0x90, 0xa8, 0xda, 0x9d, 0x65, 0x68, 0xe6, 0x56,
+	0x8c, 0x06, 0xcc, 0x1b, 0x8c, 0xf5, 0x0c, 0x9d, 0xfe, 0xf7, 0xec, 0xd4, 0xad, 0x47, 0xcd, 0xab,
+	0x6e, 0xdd, 0x70, 0xac, 0x8f, 0xe5, 0x32, 0x08, 0xf7, 0x87, 0xe0, 0x7a, 0x51, 0xff, 0x3a, 0xb8,
+	0x9e, 0x70, 0x45, 0x7b, 0xdc, 0xa5, 0x38, 0x31, 0x0c, 0xc7, 0xb9, 0xa2, 0x01, 0x3d, 0x2d, 0x27,
+	0x23, 0x84, 0xa8, 0x47, 0x01, 0x99, 0xde, 0x82, 0xe6, 0x9d, 0x3e, 0x82, 0x32, 0x5f, 0x0e, 0xe1,
+	0x89, 0x6a, 0x59, 0x5d, 0x72, 0x3c, 0x6e, 0x38, 0x26, 0x88, 0xb9, 0xa9, 0xe0, 0x73, 0x9c, 0x41,
+	0x64, 0xd6, 0xff, 0x4d, 0x7b, 0x2f, 0xb7, 0x02, 0x32, 0xc1, 0x19, 0xc8, 0x2e, 0x71, 0x06, 0x5b,
+	0xd0, 0xec, 0x4c, 0x3f, 0x67, 0x21, 0xe9, 0x98, 0x58, 0x20, 0xb1, 0x8c, 0x91, 0xc1, 0x9f, 0x3a,
+	0xbe, 0x45, 0x42, 0x85, 0x20, 0x4b, 0xb6, 0x02, 0xa2, 0x74, 0xc9, 0xc2, 0x15, 0xee, 0x12, 0x62,
+	0xa3, 0x87, 0x53, 0x34, 0x7c, 0x21, 0xdc, 0x68, 0xc9, 0x19, 0x7f, 0x86, 0xb3, 0xd4, 0xf1, 0x3e,
+	0xc3, 0x19, 0x46, 0xf5, 0x38, 0xcd, 0x1e, 0xee, 0xc4, 0x5e, 0x7c, 0x1d, 0xc7, 0x93, 0x91, 0xf2,
+	0xc8, 0x51, 0x54, 0x6e, 0x75, 0x66, 0xbf, 0x53, 0x9c, 0x2b, 0xd1, 0xe2, 0x1c, 0x2b, 0x64, 0x74,
+	0xe4, 0x93, 0x78, 0x84, 0x6e, 0x3b, 0xe0, 0xca, 0xbc, 0x13, 0x8b, 0xc3, 0xdf, 0xb4, 0x09, 0xd2,
+	0x3a, 0x26, 0xe5, 0x06, 0x1e, 0x77, 0x7d, 0x47, 0x77, 0xe1, 0x03, 0x1f, 0x3c, 0x0e, 0x35, 0x99,
+	0xc7, 0xf9, 0x10, 0x33, 0xe6, 0xfa, 0x8e, 0xd6, 0xf5, 0x28, 0x57, 0x71, 0x42, 0x40, 0x4d, 0xea,
+	0x3b, 0x9c, 0x0c, 0xa7, 0x51, 0x76, 0x24, 0x84, 0x9d, 0x77, 0x7d, 0xa7, 0x24, 0xac, 0xca, 0x1c,
+	0xc6, 0xa2, 0x7b, 0xe0, 0x18, 0x1b, 0x36, 0x90, 0x91, 0x08, 0x55, 0x82, 0x33, 0x50, 0xa5, 0x59,
+	0x79, 0x05, 0x4f, 0xd4, 0x2c, 0x4f, 0x1c, 0x75, 0x17, 0x0c, 0x8f, 0x3a, 0x64, 0x34, 0xa2, 0x6b,
+	0x3c, 0xf4, 0x69, 0xd2, 0x25, 0xb4, 0x83, 0xeb, 0x52, 0x97, 0x9c, 0x8b, 0x6a, 0x97, 0x26, 0xe5,
+	0x75, 0x8c, 0x3d, 0x6e, 0xb8, 0x1c, 0x6a, 0xba, 0xc1, 0x89, 0x29, 0x2b, 0x32, 0x97, 0xab, 0x59,
+	0x1e, 0x77, 0xad, 0x0d, 0x5f, 0x98, 0x1b, 0x06, 0x37, 0x37, 0x75, 0x70, 0xea, 0x96, 0x03, 0xb9,
+	0xaa, 0xd5, 0x10, 0x0d, 0x68, 0xb0, 0xb0, 0x36, 0x89, 0x30, 0xb8, 0xc8, 0x0b, 0xaf, 0x9d, 0x5c,
+	0xc0, 0xee, 0xf2, 0x3d, 0x0a, 0xc8, 0x8b, 0xe1, 0xf4, 0x86, 0x7d, 0x3f, 0x36, 0xc1, 0x4f, 0x03,
+	0x82, 0x6e, 0xfe, 0x80, 0xf0, 0x95, 0x81, 0x4f, 0x87, 0x92, 0xc5, 0xd7, 0xaa, 0xda, 0x5a, 0xa5,
+	0xaa, 0x97, 0x57, 0xef, 0x2d, 0x95, 0xde, 0xd5, 0xd5, 0x77, 0x4a, 0x6a, 0xb9, 0xba, 0xb4, 0xba,
+	0xa2, 0x57, 0xaa, 0xc5, 0xaa, 0xaa, 0xaf, 0xad, 0x2c, 0xaf, 0xac, 0xbe, 0xbd, 0x32, 0x19, 0x53,
+	0x6e, 0xe3, 0xfc, 0xa9, 0xc8, 0x62, 0xb9, 0xac, 0xad, 0xae, 0x17, 0xef, 0xe9, 0x9a, 0xfa, 0xd6,
+	0x9a, 0x5a, 0xa9, 0xaa, 0x77, 0x27, 0x91, 0x72, 0x1d, 0xcf, 0x9d, 0x1e, 0x54, 0xaa, 0x2e, 0xad,
+	0xab, 0x93, 0x43, 0xca, 0x0d, 0xfc, 0xf2, 0xa9, 0x40, 0x4d, 0x7d, 0x43, 0x2d, 0x09, 0xce, 0xf8,
+	0xc2, 0x8f, 0xa3, 0xfd, 0xbf, 0x45, 0x45, 0x66, 0x29, 0x8f, 0x11, 0x4e, 0x96, 0x5c, 0x30, 0x38,
+	0xf4, 0x7d, 0xb1, 0x67, 0xcf, 0xd8, 0xd6, 0x64, 0xf4, 0xd3, 0xa5, 0xc9, 0x8f, 0x72, 0xe6, 0x3e,
+	0x3a, 0x68, 0x93, 0x5b, 0x1a, 0x78, 0xd4, 0x77, 0x4d, 0x28, 0x32, 0xe6, 0xcd, 0x17, 0x4d, 0x01,
+	0x7e, 0xd3, 0x70, 0x8c, 0x3a, 0xcc, 0x0f, 0x78, 0xce, 0x7e, 0x3a, 0x22, 0x23, 0xb2, 0xc4, 0x0f,
+	0x03, 0x32, 0x3d, 0x00, 0xf3, 0xc9, 0xe3, 0xdf, 0x3e, 0x1d, 0xba, 0x9a, 0x99, 0xc9, 0x9b, 0x52,
+	0x72, 0xbe, 0xdf, 0xff, 0x12, 0x05, 0x74, 0x53, 0xf9, 0x03, 0xe1, 0xe4, 0x1a, 0xab, 0x3d, 0xcf,
+	0xac, 0x3e, 0x13, 0x59, 0x95, 0xba, 0x59, 0x45, 0x5f, 0xc6, 0x3e, 0xe9, 0x9d, 0xf6, 0xd4, 0xee,
+	0x1e, 0x11, 0xf4, 0x30, 0x20, 0xe9, 0xb3, 0x70, 0xbd, 0x5c, 0x7d, 0x99, 0xc8, 0xc0, 0x5c, 0xbf,
+	0x43, 0x38, 0x79, 0x17, 0x6c, 0x78, 0x8e, 0xb9, 0xc2, 0xff, 0x6b, 0x60, 0x4f, 0x79, 0x4d, 0xca,
+	0x1a, 0xa8, 0xfc, 0x7b, 0x84, 0x49, 0x65, 0x93, 0x6e, 0xff, 0x37, 0xdd, 0x67, 0x01, 0x32, 0xef,
+	0x1d, 0xb4, 0x49, 0xbe, 0x4f, 0x16, 0xeb, 0x16, 0x6c, 0x0f, 0xca, 0x41, 0x34, 0x47, 0xca, 0x9f,
+	0xcd, 0x24, 0xf3, 0xde, 0x26, 0xdd, 0x1e, 0x24, 0xfe, 0x55, 0xb4, 0x38, 0xb3, 0xf3, 0x6b, 0x2a,
+	0xb6, 0xb3, 0x97, 0x42, 0xbb, 0x7b, 0x29, 0xf4, 0xcb, 0x5e, 0x0a, 0x3d, 0xd8, 0x4f, 0xc5, 0x76,
+	0xf7, 0x53, 0xb1, 0x27, 0xfb, 0xa9, 0xd8, 0xc6, 0xa8, 0x54, 0x76, 0xfb, 0xef, 0x00, 0x00, 0x00,
+	0xff, 0xff, 0x08, 0x49, 0x72, 0x1f, 0xf0, 0x0a, 0x00, 0x00,
 }
 
 func (this *TrustPolicyExceptionKey) GoString() string {
@@ -234,6 +341,18 @@ func (this *TrustPolicyExceptionKey) GoString() string {
 	s = append(s, "AppKey: "+strings.Replace(this.AppKey.GoString(), `&`, ``, 1)+",\n")
 	s = append(s, "CloudletPoolKey: "+strings.Replace(this.CloudletPoolKey.GoString(), `&`, ``, 1)+",\n")
 	s = append(s, "Name: "+fmt.Sprintf("%#v", this.Name)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func (this *TPEInstanceKey) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 7)
+	s = append(s, "&edgeproto.TPEInstanceKey{")
+	s = append(s, "TpeKey: "+strings.Replace(this.TpeKey.GoString(), `&`, ``, 1)+",\n")
+	s = append(s, "AppInstKey: "+strings.Replace(this.AppInstKey.GoString(), `&`, ``, 1)+",\n")
+	s = append(s, "ClusterKey: "+strings.Replace(this.ClusterKey.GoString(), `&`, ``, 1)+",\n")
 	s = append(s, "}")
 	return strings.Join(s, "")
 }
@@ -581,6 +700,150 @@ func (m *TrustPolicyException) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *TPEInstanceKey) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TPEInstanceKey) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TPEInstanceKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.ClusterKey.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTrustpolicyexception(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x1a
+	{
+		size, err := m.AppInstKey.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTrustpolicyexception(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x12
+	{
+		size, err := m.TpeKey.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTrustpolicyexception(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *TPEInstanceState) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TPEInstanceState) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TPEInstanceState) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	{
+		size, err := m.StartedAt.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTrustpolicyexception(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0x6
+	i--
+	dAtA[i] = 0x9a
+	if len(m.Error) > 0 {
+		i -= len(m.Error)
+		copy(dAtA[i:], m.Error)
+		i = encodeVarintTrustpolicyexception(dAtA, i, uint64(len(m.Error)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.DisableReason) > 0 {
+		i -= len(m.DisableReason)
+		copy(dAtA[i:], m.DisableReason)
+		i = encodeVarintTrustpolicyexception(dAtA, i, uint64(len(m.DisableReason)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.TpeEnable {
+		i--
+		if m.TpeEnable {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.RunCount != 0 {
+		i = encodeVarintTrustpolicyexception(dAtA, i, uint64(m.RunCount))
+		i--
+		dAtA[i] = 0x20
+	}
+	if m.RunRequested {
+		i--
+		if m.RunRequested {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Owner) > 0 {
+		i -= len(m.Owner)
+		copy(dAtA[i:], m.Owner)
+		i = encodeVarintTrustpolicyexception(dAtA, i, uint64(len(m.Owner)))
+		i--
+		dAtA[i] = 0x12
+	}
+	{
+		size, err := m.Key.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTrustpolicyexception(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTrustpolicyexception(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTrustpolicyexception(v)
 	base := offset
@@ -780,7 +1043,7 @@ var TrustPolicyExceptionAllFields = []string{
 	TrustPolicyExceptionFieldOutboundSecurityRulesRemoteCidr,
 }
 
-var TrustPolicyExceptionAllFieldsMap = map[string]struct{}{
+var TrustPolicyExceptionAllFieldsMap = NewFieldMap(map[string]struct{}{
 	TrustPolicyExceptionFieldKeyAppKeyOrganization:             struct{}{},
 	TrustPolicyExceptionFieldKeyAppKeyName:                     struct{}{},
 	TrustPolicyExceptionFieldKeyAppKeyVersion:                  struct{}{},
@@ -792,7 +1055,7 @@ var TrustPolicyExceptionAllFieldsMap = map[string]struct{}{
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMin: struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMax: struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesRemoteCidr:   struct{}{},
-}
+})
 
 var TrustPolicyExceptionAllFieldsStringMap = map[string]string{
 	TrustPolicyExceptionFieldKeyAppKeyOrganization:             "Key App Key Organization",
@@ -812,71 +1075,77 @@ func (m *TrustPolicyException) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, TrustPolicyExceptionFieldKey+".") || s == TrustPolicyExceptionFieldKey
 }
 
-func (m *TrustPolicyException) DiffFields(o *TrustPolicyException, fields map[string]struct{}) {
+func (m *TrustPolicyException) DiffFields(o *TrustPolicyException, fields *FieldMap) {
 	if m.Key.AppKey.Organization != o.Key.AppKey.Organization {
-		fields[TrustPolicyExceptionFieldKeyAppKeyOrganization] = struct{}{}
-		fields[TrustPolicyExceptionFieldKeyAppKey] = struct{}{}
-		fields[TrustPolicyExceptionFieldKey] = struct{}{}
+		fields.Set(TrustPolicyExceptionFieldKeyAppKeyOrganization)
+		fields.Set(TrustPolicyExceptionFieldKeyAppKey)
+		fields.Set(TrustPolicyExceptionFieldKey)
 	}
 	if m.Key.AppKey.Name != o.Key.AppKey.Name {
-		fields[TrustPolicyExceptionFieldKeyAppKeyName] = struct{}{}
-		fields[TrustPolicyExceptionFieldKeyAppKey] = struct{}{}
-		fields[TrustPolicyExceptionFieldKey] = struct{}{}
+		fields.Set(TrustPolicyExceptionFieldKeyAppKeyName)
+		fields.Set(TrustPolicyExceptionFieldKeyAppKey)
+		fields.Set(TrustPolicyExceptionFieldKey)
 	}
 	if m.Key.AppKey.Version != o.Key.AppKey.Version {
-		fields[TrustPolicyExceptionFieldKeyAppKeyVersion] = struct{}{}
-		fields[TrustPolicyExceptionFieldKeyAppKey] = struct{}{}
-		fields[TrustPolicyExceptionFieldKey] = struct{}{}
+		fields.Set(TrustPolicyExceptionFieldKeyAppKeyVersion)
+		fields.Set(TrustPolicyExceptionFieldKeyAppKey)
+		fields.Set(TrustPolicyExceptionFieldKey)
 	}
 	if m.Key.CloudletPoolKey.Organization != o.Key.CloudletPoolKey.Organization {
-		fields[TrustPolicyExceptionFieldKeyCloudletPoolKeyOrganization] = struct{}{}
-		fields[TrustPolicyExceptionFieldKeyCloudletPoolKey] = struct{}{}
-		fields[TrustPolicyExceptionFieldKey] = struct{}{}
+		fields.Set(TrustPolicyExceptionFieldKeyCloudletPoolKeyOrganization)
+		fields.Set(TrustPolicyExceptionFieldKeyCloudletPoolKey)
+		fields.Set(TrustPolicyExceptionFieldKey)
 	}
 	if m.Key.CloudletPoolKey.Name != o.Key.CloudletPoolKey.Name {
-		fields[TrustPolicyExceptionFieldKeyCloudletPoolKeyName] = struct{}{}
-		fields[TrustPolicyExceptionFieldKeyCloudletPoolKey] = struct{}{}
-		fields[TrustPolicyExceptionFieldKey] = struct{}{}
+		fields.Set(TrustPolicyExceptionFieldKeyCloudletPoolKeyName)
+		fields.Set(TrustPolicyExceptionFieldKeyCloudletPoolKey)
+		fields.Set(TrustPolicyExceptionFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[TrustPolicyExceptionFieldKeyName] = struct{}{}
-		fields[TrustPolicyExceptionFieldKey] = struct{}{}
+		fields.Set(TrustPolicyExceptionFieldKeyName)
+		fields.Set(TrustPolicyExceptionFieldKey)
 	}
 	if m.State != o.State {
-		fields[TrustPolicyExceptionFieldState] = struct{}{}
+		fields.Set(TrustPolicyExceptionFieldState)
 	}
 	if len(m.OutboundSecurityRules) != len(o.OutboundSecurityRules) {
-		fields[TrustPolicyExceptionFieldOutboundSecurityRules] = struct{}{}
+		fields.Set(TrustPolicyExceptionFieldOutboundSecurityRules)
 	} else {
 		for i0 := 0; i0 < len(m.OutboundSecurityRules); i0++ {
 			if m.OutboundSecurityRules[i0].Protocol != o.OutboundSecurityRules[i0].Protocol {
-				fields[TrustPolicyExceptionFieldOutboundSecurityRulesProtocol] = struct{}{}
-				fields[TrustPolicyExceptionFieldOutboundSecurityRules] = struct{}{}
+				fields.Set(TrustPolicyExceptionFieldOutboundSecurityRulesProtocol)
+				fields.Set(TrustPolicyExceptionFieldOutboundSecurityRules)
 			}
 			if m.OutboundSecurityRules[i0].PortRangeMin != o.OutboundSecurityRules[i0].PortRangeMin {
-				fields[TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMin] = struct{}{}
-				fields[TrustPolicyExceptionFieldOutboundSecurityRules] = struct{}{}
+				fields.Set(TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMin)
+				fields.Set(TrustPolicyExceptionFieldOutboundSecurityRules)
 			}
 			if m.OutboundSecurityRules[i0].PortRangeMax != o.OutboundSecurityRules[i0].PortRangeMax {
-				fields[TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMax] = struct{}{}
-				fields[TrustPolicyExceptionFieldOutboundSecurityRules] = struct{}{}
+				fields.Set(TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMax)
+				fields.Set(TrustPolicyExceptionFieldOutboundSecurityRules)
 			}
 			if m.OutboundSecurityRules[i0].RemoteCidr != o.OutboundSecurityRules[i0].RemoteCidr {
-				fields[TrustPolicyExceptionFieldOutboundSecurityRulesRemoteCidr] = struct{}{}
-				fields[TrustPolicyExceptionFieldOutboundSecurityRules] = struct{}{}
+				fields.Set(TrustPolicyExceptionFieldOutboundSecurityRulesRemoteCidr)
+				fields.Set(TrustPolicyExceptionFieldOutboundSecurityRules)
 			}
 		}
 	}
 }
 
-var UpdateTrustPolicyExceptionFieldsMap = map[string]struct{}{
+func (m *TrustPolicyException) GetDiffFields(o *TrustPolicyException) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateTrustPolicyExceptionFieldsMap = NewFieldMap(map[string]struct{}{
 	TrustPolicyExceptionFieldState:                             struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRules:             struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesProtocol:     struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMin: struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMax: struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesRemoteCidr:   struct{}{},
-}
+})
 
 func (m *TrustPolicyException) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -884,11 +1153,11 @@ func (m *TrustPolicyException) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateTrustPolicyExceptionFieldsMap[field]; !ok {
+		if !UpdateTrustPolicyExceptionFieldsMap.Has(field) {
 			if _, ok := TrustPolicyExceptionAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -942,55 +1211,55 @@ func (m *TrustPolicyException) CopyInFields(src *TrustPolicyException) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
-			if _, set := fmap["2.1.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.HasOrHasChild("2.1") {
+			if fmap.Has("2.1.1") {
 				if m.Key.AppKey.Organization != src.Key.AppKey.Organization {
 					m.Key.AppKey.Organization = src.Key.AppKey.Organization
 					changed++
 				}
 			}
-			if _, set := fmap["2.1.2"]; set {
+			if fmap.Has("2.1.2") {
 				if m.Key.AppKey.Name != src.Key.AppKey.Name {
 					m.Key.AppKey.Name = src.Key.AppKey.Name
 					changed++
 				}
 			}
-			if _, set := fmap["2.1.3"]; set {
+			if fmap.Has("2.1.3") {
 				if m.Key.AppKey.Version != src.Key.AppKey.Version {
 					m.Key.AppKey.Version = src.Key.AppKey.Version
 					changed++
 				}
 			}
 		}
-		if _, set := fmap["2.2"]; set {
-			if _, set := fmap["2.2.1"]; set {
+		if fmap.HasOrHasChild("2.2") {
+			if fmap.Has("2.2.1") {
 				if m.Key.CloudletPoolKey.Organization != src.Key.CloudletPoolKey.Organization {
 					m.Key.CloudletPoolKey.Organization = src.Key.CloudletPoolKey.Organization
 					changed++
 				}
 			}
-			if _, set := fmap["2.2.2"]; set {
+			if fmap.Has("2.2.2") {
 				if m.Key.CloudletPoolKey.Name != src.Key.CloudletPoolKey.Name {
 					m.Key.CloudletPoolKey.Name = src.Key.CloudletPoolKey.Name
 					changed++
 				}
 			}
 		}
-		if _, set := fmap["2.3"]; set {
+		if fmap.Has("2.3") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.Has("3") {
 		if m.State != src.State {
 			m.State = src.State
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.HasOrHasChild("4") {
 		if src.OutboundSecurityRules != nil {
 			if updateListAction == "add" {
 				changed += m.AddOutboundSecurityRules(src.OutboundSecurityRules...)
@@ -1239,6 +1508,7 @@ type TrustPolicyExceptionCache struct {
 	KeyWatchers   map[TrustPolicyExceptionKey][]*TrustPolicyExceptionKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *TrustPolicyExceptionKey)
 	DeletedKeyCbs []func(ctx context.Context, key *TrustPolicyExceptionKey)
+	Store         TrustPolicyExceptionStore
 }
 
 func NewTrustPolicyExceptionCache() *TrustPolicyExceptionCache {
@@ -1604,6 +1874,18 @@ func (c *TrustPolicyExceptionCache) SyncListEnd(ctx context.Context) {
 	}
 }
 
+func (s *TrustPolicyExceptionCache) InitCacheWithSync(sync DataSync) {
+	InitTrustPolicyExceptionCache(s)
+	s.InitSync(sync)
+}
+
+func (s *TrustPolicyExceptionCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewTrustPolicyExceptionStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
 func (c *TrustPolicyExceptionCache) UsesOrg(org string) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1659,6 +1941,955 @@ func (s *TrustPolicyException) ClearTagged(tags map[string]struct{}) {
 			s.OutboundSecurityRules[ii].ClearTagged(tags)
 		}
 	}
+}
+
+func (m *TPEInstanceKey) Matches(o *TPEInstanceKey, fopts ...MatchOpt) bool {
+	opts := MatchOptions{}
+	applyMatchOptions(&opts, fopts...)
+	if o == nil {
+		if opts.Filter {
+			return true
+		}
+		return false
+	}
+	if !m.TpeKey.Matches(&o.TpeKey, fopts...) {
+		return false
+	}
+	if !m.AppInstKey.Matches(&o.AppInstKey, fopts...) {
+		return false
+	}
+	if !m.ClusterKey.Matches(&o.ClusterKey, fopts...) {
+		return false
+	}
+	return true
+}
+
+func (m *TPEInstanceKey) Clone() *TPEInstanceKey {
+	cp := &TPEInstanceKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *TPEInstanceKey) CopyInFields(src *TPEInstanceKey) int {
+	changed := 0
+	if m.TpeKey.AppKey.Organization != src.TpeKey.AppKey.Organization {
+		m.TpeKey.AppKey.Organization = src.TpeKey.AppKey.Organization
+		changed++
+	}
+	if m.TpeKey.AppKey.Name != src.TpeKey.AppKey.Name {
+		m.TpeKey.AppKey.Name = src.TpeKey.AppKey.Name
+		changed++
+	}
+	if m.TpeKey.AppKey.Version != src.TpeKey.AppKey.Version {
+		m.TpeKey.AppKey.Version = src.TpeKey.AppKey.Version
+		changed++
+	}
+	if m.TpeKey.CloudletPoolKey.Organization != src.TpeKey.CloudletPoolKey.Organization {
+		m.TpeKey.CloudletPoolKey.Organization = src.TpeKey.CloudletPoolKey.Organization
+		changed++
+	}
+	if m.TpeKey.CloudletPoolKey.Name != src.TpeKey.CloudletPoolKey.Name {
+		m.TpeKey.CloudletPoolKey.Name = src.TpeKey.CloudletPoolKey.Name
+		changed++
+	}
+	if m.TpeKey.Name != src.TpeKey.Name {
+		m.TpeKey.Name = src.TpeKey.Name
+		changed++
+	}
+	if m.AppInstKey.Name != src.AppInstKey.Name {
+		m.AppInstKey.Name = src.AppInstKey.Name
+		changed++
+	}
+	if m.AppInstKey.Organization != src.AppInstKey.Organization {
+		m.AppInstKey.Organization = src.AppInstKey.Organization
+		changed++
+	}
+	if m.AppInstKey.CloudletKey.Organization != src.AppInstKey.CloudletKey.Organization {
+		m.AppInstKey.CloudletKey.Organization = src.AppInstKey.CloudletKey.Organization
+		changed++
+	}
+	if m.AppInstKey.CloudletKey.Name != src.AppInstKey.CloudletKey.Name {
+		m.AppInstKey.CloudletKey.Name = src.AppInstKey.CloudletKey.Name
+		changed++
+	}
+	if m.AppInstKey.CloudletKey.FederatedOrganization != src.AppInstKey.CloudletKey.FederatedOrganization {
+		m.AppInstKey.CloudletKey.FederatedOrganization = src.AppInstKey.CloudletKey.FederatedOrganization
+		changed++
+	}
+	if m.ClusterKey.Name != src.ClusterKey.Name {
+		m.ClusterKey.Name = src.ClusterKey.Name
+		changed++
+	}
+	if m.ClusterKey.Organization != src.ClusterKey.Organization {
+		m.ClusterKey.Organization = src.ClusterKey.Organization
+		changed++
+	}
+	return changed
+}
+
+func (m *TPEInstanceKey) DeepCopyIn(src *TPEInstanceKey) {
+	m.TpeKey.DeepCopyIn(&src.TpeKey)
+	m.AppInstKey.DeepCopyIn(&src.AppInstKey)
+	m.ClusterKey.DeepCopyIn(&src.ClusterKey)
+}
+
+func (m *TPEInstanceKey) GetKeyString() string {
+	key, err := json.Marshal(m)
+	if err != nil {
+		log.FatalLog("Failed to marshal TPEInstanceKey key string", "obj", m)
+	}
+	return string(key)
+}
+
+func TPEInstanceKeyStringParse(str string, key *TPEInstanceKey) {
+	err := json.Unmarshal([]byte(str), key)
+	if err != nil {
+		log.FatalLog("Failed to unmarshal TPEInstanceKey key string", "str", str)
+	}
+}
+
+func (m *TPEInstanceKey) NotFoundError() error {
+	return fmt.Errorf("TPEInstance key %s not found", m.GetKeyString())
+}
+
+func (m *TPEInstanceKey) ExistsError() error {
+	return fmt.Errorf("TPEInstance key %s already exists", m.GetKeyString())
+}
+
+func (m *TPEInstanceKey) BeingDeletedError() error {
+	return fmt.Errorf("TPEInstance %s is being deleted", m.GetKeyString())
+}
+
+func (m *TPEInstanceKey) GetTags() map[string]string {
+	tags := make(map[string]string)
+	m.AddTags(tags)
+	return tags
+}
+
+func (m *TPEInstanceKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("apporg", m.TpeKey.AppKey.Organization)
+	addTag("app", m.TpeKey.AppKey.Name)
+	addTag("appver", m.TpeKey.AppKey.Version)
+	addTag("cloudletpoolorg", m.TpeKey.CloudletPoolKey.Organization)
+	addTag("cloudletpool", m.TpeKey.CloudletPoolKey.Name)
+	addTag("name", m.TpeKey.Name)
+	addTag("appinst", m.AppInstKey.Name)
+	addTag("appinstorg", m.AppInstKey.Organization)
+	addTag("cloudletorg", m.AppInstKey.CloudletKey.Organization)
+	addTag("cloudlet", m.AppInstKey.CloudletKey.Name)
+	addTag("cloudletfedorg", m.AppInstKey.CloudletKey.FederatedOrganization)
+	addTag("cluster", m.ClusterKey.Name)
+	addTag("clusterorg", m.ClusterKey.Organization)
+}
+
+func (m *TPEInstanceKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
+}
+
+// Helper method to check that enums have valid values
+func (m *TPEInstanceKey) ValidateEnums() error {
+	if err := m.TpeKey.ValidateEnums(); err != nil {
+		return err
+	}
+	if err := m.AppInstKey.ValidateEnums(); err != nil {
+		return err
+	}
+	if err := m.ClusterKey.ValidateEnums(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TPEInstanceKey) ClearTagged(tags map[string]struct{}) {
+	s.TpeKey.ClearTagged(tags)
+	s.AppInstKey.ClearTagged(tags)
+	s.ClusterKey.ClearTagged(tags)
+}
+
+func (m *TPEInstanceState) Matches(o *TPEInstanceState, fopts ...MatchOpt) bool {
+	opts := MatchOptions{}
+	applyMatchOptions(&opts, fopts...)
+	if o == nil {
+		if opts.Filter {
+			return true
+		}
+		return false
+	}
+	if !m.Key.Matches(&o.Key, fopts...) {
+		return false
+	}
+	if !opts.IgnoreBackend {
+		if !opts.Filter || o.Owner != "" {
+			if o.Owner != m.Owner {
+				return false
+			}
+		}
+	}
+	if !opts.IgnoreBackend {
+		if !opts.Filter || o.RunRequested != false {
+			if o.RunRequested != m.RunRequested {
+				return false
+			}
+		}
+	}
+	if !opts.IgnoreBackend {
+		if !opts.Filter || o.RunCount != 0 {
+			if o.RunCount != m.RunCount {
+				return false
+			}
+		}
+	}
+	if !opts.IgnoreBackend {
+		if !opts.Filter || o.TpeEnable != false {
+			if o.TpeEnable != m.TpeEnable {
+				return false
+			}
+		}
+	}
+	if !opts.IgnoreBackend {
+		if !opts.Filter || o.DisableReason != "" {
+			if o.DisableReason != m.DisableReason {
+				return false
+			}
+		}
+	}
+	if !opts.IgnoreBackend {
+		if !opts.Filter || o.Error != "" {
+			if o.Error != m.Error {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (m *TPEInstanceState) Clone() *TPEInstanceState {
+	cp := &TPEInstanceState{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *TPEInstanceState) CopyInFields(src *TPEInstanceState) int {
+	changed := 0
+	if m.Key.TpeKey.AppKey.Organization != src.Key.TpeKey.AppKey.Organization {
+		m.Key.TpeKey.AppKey.Organization = src.Key.TpeKey.AppKey.Organization
+		changed++
+	}
+	if m.Key.TpeKey.AppKey.Name != src.Key.TpeKey.AppKey.Name {
+		m.Key.TpeKey.AppKey.Name = src.Key.TpeKey.AppKey.Name
+		changed++
+	}
+	if m.Key.TpeKey.AppKey.Version != src.Key.TpeKey.AppKey.Version {
+		m.Key.TpeKey.AppKey.Version = src.Key.TpeKey.AppKey.Version
+		changed++
+	}
+	if m.Key.TpeKey.CloudletPoolKey.Organization != src.Key.TpeKey.CloudletPoolKey.Organization {
+		m.Key.TpeKey.CloudletPoolKey.Organization = src.Key.TpeKey.CloudletPoolKey.Organization
+		changed++
+	}
+	if m.Key.TpeKey.CloudletPoolKey.Name != src.Key.TpeKey.CloudletPoolKey.Name {
+		m.Key.TpeKey.CloudletPoolKey.Name = src.Key.TpeKey.CloudletPoolKey.Name
+		changed++
+	}
+	if m.Key.TpeKey.Name != src.Key.TpeKey.Name {
+		m.Key.TpeKey.Name = src.Key.TpeKey.Name
+		changed++
+	}
+	if m.Key.AppInstKey.Name != src.Key.AppInstKey.Name {
+		m.Key.AppInstKey.Name = src.Key.AppInstKey.Name
+		changed++
+	}
+	if m.Key.AppInstKey.Organization != src.Key.AppInstKey.Organization {
+		m.Key.AppInstKey.Organization = src.Key.AppInstKey.Organization
+		changed++
+	}
+	if m.Key.AppInstKey.CloudletKey.Organization != src.Key.AppInstKey.CloudletKey.Organization {
+		m.Key.AppInstKey.CloudletKey.Organization = src.Key.AppInstKey.CloudletKey.Organization
+		changed++
+	}
+	if m.Key.AppInstKey.CloudletKey.Name != src.Key.AppInstKey.CloudletKey.Name {
+		m.Key.AppInstKey.CloudletKey.Name = src.Key.AppInstKey.CloudletKey.Name
+		changed++
+	}
+	if m.Key.AppInstKey.CloudletKey.FederatedOrganization != src.Key.AppInstKey.CloudletKey.FederatedOrganization {
+		m.Key.AppInstKey.CloudletKey.FederatedOrganization = src.Key.AppInstKey.CloudletKey.FederatedOrganization
+		changed++
+	}
+	if m.Key.ClusterKey.Name != src.Key.ClusterKey.Name {
+		m.Key.ClusterKey.Name = src.Key.ClusterKey.Name
+		changed++
+	}
+	if m.Key.ClusterKey.Organization != src.Key.ClusterKey.Organization {
+		m.Key.ClusterKey.Organization = src.Key.ClusterKey.Organization
+		changed++
+	}
+	if m.Owner != src.Owner {
+		m.Owner = src.Owner
+		changed++
+	}
+	if m.RunRequested != src.RunRequested {
+		m.RunRequested = src.RunRequested
+		changed++
+	}
+	if m.RunCount != src.RunCount {
+		m.RunCount = src.RunCount
+		changed++
+	}
+	if m.TpeEnable != src.TpeEnable {
+		m.TpeEnable = src.TpeEnable
+		changed++
+	}
+	if m.DisableReason != src.DisableReason {
+		m.DisableReason = src.DisableReason
+		changed++
+	}
+	if m.Error != src.Error {
+		m.Error = src.Error
+		changed++
+	}
+	if m.StartedAt.Seconds != src.StartedAt.Seconds {
+		m.StartedAt.Seconds = src.StartedAt.Seconds
+		changed++
+	}
+	if m.StartedAt.Nanos != src.StartedAt.Nanos {
+		m.StartedAt.Nanos = src.StartedAt.Nanos
+		changed++
+	}
+	return changed
+}
+
+func (m *TPEInstanceState) DeepCopyIn(src *TPEInstanceState) {
+	m.Key.DeepCopyIn(&src.Key)
+	m.Owner = src.Owner
+	m.RunRequested = src.RunRequested
+	m.RunCount = src.RunCount
+	m.TpeEnable = src.TpeEnable
+	m.DisableReason = src.DisableReason
+	m.Error = src.Error
+	m.StartedAt = src.StartedAt
+}
+
+func (s *TPEInstanceState) HasFields() bool {
+	return false
+}
+
+type TPEInstanceStateStore interface {
+	Create(ctx context.Context, m *TPEInstanceState, wait func(int64)) (*Result, error)
+	Update(ctx context.Context, m *TPEInstanceState, wait func(int64)) (*Result, error)
+	Delete(ctx context.Context, m *TPEInstanceState, wait func(int64)) (*Result, error)
+	Put(ctx context.Context, m *TPEInstanceState, wait func(int64), ops ...objstore.KVOp) (*Result, error)
+	LoadOne(key string) (*TPEInstanceState, int64, error)
+	Get(ctx context.Context, key *TPEInstanceKey, buf *TPEInstanceState) bool
+	STMGet(stm concurrency.STM, key *TPEInstanceKey, buf *TPEInstanceState) bool
+	STMPut(stm concurrency.STM, obj *TPEInstanceState, ops ...objstore.KVOp)
+	STMDel(stm concurrency.STM, key *TPEInstanceKey)
+	STMHas(stm concurrency.STM, key *TPEInstanceKey) bool
+}
+
+type TPEInstanceStateStoreImpl struct {
+	kvstore objstore.KVStore
+}
+
+func NewTPEInstanceStateStore(kvstore objstore.KVStore) *TPEInstanceStateStoreImpl {
+	return &TPEInstanceStateStoreImpl{kvstore: kvstore}
+}
+
+func (s *TPEInstanceStateStoreImpl) Create(ctx context.Context, m *TPEInstanceState, wait func(int64)) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("TPEInstanceState", m.GetKey())
+	val, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Create(ctx, key, string(val))
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *TPEInstanceStateStoreImpl) Update(ctx context.Context, m *TPEInstanceState, wait func(int64)) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("TPEInstanceState", m.GetKey())
+	var vers int64 = 0
+	val, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Update(ctx, key, string(val), vers)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *TPEInstanceStateStoreImpl) Put(ctx context.Context, m *TPEInstanceState, wait func(int64), ops ...objstore.KVOp) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("TPEInstanceState", m.GetKey())
+	var val []byte
+	val, err = json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Put(ctx, key, string(val), ops...)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *TPEInstanceStateStoreImpl) Delete(ctx context.Context, m *TPEInstanceState, wait func(int64)) (*Result, error) {
+	err := m.GetKey().ValidateKey()
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("TPEInstanceState", m.GetKey())
+	rev, err := s.kvstore.Delete(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *TPEInstanceStateStoreImpl) LoadOne(key string) (*TPEInstanceState, int64, error) {
+	val, rev, _, err := s.kvstore.Get(key)
+	if err != nil {
+		return nil, 0, err
+	}
+	var obj TPEInstanceState
+	err = json.Unmarshal(val, &obj)
+	if err != nil {
+		log.DebugLog(log.DebugLevelApi, "Failed to parse TPEInstanceState data", "val", string(val), "err", err)
+		return nil, 0, err
+	}
+	return &obj, rev, nil
+}
+
+func (s *TPEInstanceStateStoreImpl) Get(ctx context.Context, key *TPEInstanceKey, buf *TPEInstanceState) bool {
+	keystr := objstore.DbKeyString("TPEInstanceState", key)
+	val, _, _, err := s.kvstore.Get(keystr)
+	if err != nil {
+		return false
+	}
+	return s.parseGetData(val, buf)
+}
+
+func (s *TPEInstanceStateStoreImpl) STMGet(stm concurrency.STM, key *TPEInstanceKey, buf *TPEInstanceState) bool {
+	keystr := objstore.DbKeyString("TPEInstanceState", key)
+	valstr := stm.Get(keystr)
+	return s.parseGetData([]byte(valstr), buf)
+}
+
+func (s *TPEInstanceStateStoreImpl) STMHas(stm concurrency.STM, key *TPEInstanceKey) bool {
+	keystr := objstore.DbKeyString("TPEInstanceState", key)
+	return stm.Get(keystr) != ""
+}
+
+func (s *TPEInstanceStateStoreImpl) parseGetData(val []byte, buf *TPEInstanceState) bool {
+	if len(val) == 0 {
+		return false
+	}
+	if buf != nil {
+		// clear buf, because empty values in val won't
+		// overwrite non-empty values in buf.
+		*buf = TPEInstanceState{}
+		err := json.Unmarshal(val, buf)
+		if err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *TPEInstanceStateStoreImpl) STMPut(stm concurrency.STM, obj *TPEInstanceState, ops ...objstore.KVOp) {
+	keystr := objstore.DbKeyString("TPEInstanceState", obj.GetKey())
+
+	val, err := json.Marshal(obj)
+	if err != nil {
+		log.InfoLog("TPEInstanceState json marshal failed", "obj", obj, "err", err)
+	}
+	v3opts := GetSTMOpts(ops...)
+	stm.Put(keystr, string(val), v3opts...)
+}
+
+func (s *TPEInstanceStateStoreImpl) STMDel(stm concurrency.STM, key *TPEInstanceKey) {
+	keystr := objstore.DbKeyString("TPEInstanceState", key)
+	stm.Del(keystr)
+}
+
+type TPEInstanceStateKeyWatcher struct {
+	cb func(ctx context.Context)
+}
+
+type TPEInstanceStateCacheData struct {
+	Obj    *TPEInstanceState
+	ModRev int64
+}
+
+func (s *TPEInstanceStateCacheData) Clone() *TPEInstanceStateCacheData {
+	cp := TPEInstanceStateCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &TPEInstanceState{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
+// TPEInstanceStateCache caches TPEInstanceState objects in memory in a hash table
+// and keeps them in sync with the database.
+type TPEInstanceStateCache struct {
+	Objs          map[TPEInstanceKey]*TPEInstanceStateCacheData
+	Mux           util.Mutex
+	List          map[TPEInstanceKey]struct{}
+	FlushAll      bool
+	NotifyCbs     []func(ctx context.Context, obj *TPEInstanceState, modRev int64)
+	UpdatedCbs    []func(ctx context.Context, old *TPEInstanceState, new *TPEInstanceState)
+	DeletedCbs    []func(ctx context.Context, old *TPEInstanceState)
+	KeyWatchers   map[TPEInstanceKey][]*TPEInstanceStateKeyWatcher
+	UpdatedKeyCbs []func(ctx context.Context, key *TPEInstanceKey)
+	DeletedKeyCbs []func(ctx context.Context, key *TPEInstanceKey)
+	Store         TPEInstanceStateStore
+}
+
+func NewTPEInstanceStateCache() *TPEInstanceStateCache {
+	cache := TPEInstanceStateCache{}
+	InitTPEInstanceStateCache(&cache)
+	return &cache
+}
+
+func InitTPEInstanceStateCache(cache *TPEInstanceStateCache) {
+	cache.Objs = make(map[TPEInstanceKey]*TPEInstanceStateCacheData)
+	cache.KeyWatchers = make(map[TPEInstanceKey][]*TPEInstanceStateKeyWatcher)
+	cache.NotifyCbs = nil
+	cache.UpdatedCbs = nil
+	cache.DeletedCbs = nil
+	cache.UpdatedKeyCbs = nil
+	cache.DeletedKeyCbs = nil
+}
+
+func (c *TPEInstanceStateCache) GetTypeString() string {
+	return "TPEInstanceState"
+}
+
+func (c *TPEInstanceStateCache) Get(key *TPEInstanceKey, valbuf *TPEInstanceState) bool {
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
+func (c *TPEInstanceStateCache) GetWithRev(key *TPEInstanceKey, valbuf *TPEInstanceState, modRev *int64) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	inst, found := c.Objs[*key]
+	if found {
+		valbuf.DeepCopyIn(inst.Obj)
+		*modRev = inst.ModRev
+	}
+	return found
+}
+
+func (c *TPEInstanceStateCache) HasKey(key *TPEInstanceKey) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	_, found := c.Objs[*key]
+	return found
+}
+
+func (c *TPEInstanceStateCache) GetAllKeys(ctx context.Context, cb func(key *TPEInstanceKey, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for key, data := range c.Objs {
+		cb(&key, data.ModRev)
+	}
+}
+
+func (c *TPEInstanceStateCache) GetAllLocked(ctx context.Context, cb func(obj *TPEInstanceState, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
+func (c *TPEInstanceStateCache) Update(ctx context.Context, in *TPEInstanceState, modRev int64) {
+	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *TPEInstanceState) (*TPEInstanceState, bool) {
+		return in, true
+	})
+}
+
+func (c *TPEInstanceStateCache) UpdateModFunc(ctx context.Context, key *TPEInstanceKey, modRev int64, modFunc func(old *TPEInstanceState) (new *TPEInstanceState, changed bool)) {
+	c.Mux.Lock()
+	var old *TPEInstanceState
+	if oldData, found := c.Objs[*key]; found {
+		old = oldData.Obj
+	}
+	new, changed := modFunc(old)
+	if !changed {
+		c.Mux.Unlock()
+		return
+	}
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
+		newCopy := &TPEInstanceState{}
+		newCopy.DeepCopyIn(new)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
+		}
+	}
+	for _, cb := range c.UpdatedKeyCbs {
+		defer cb(ctx, key)
+	}
+	store := &TPEInstanceState{}
+	store.DeepCopyIn(new)
+	c.Objs[new.GetKeyVal()] = &TPEInstanceStateCacheData{
+		Obj:    store,
+		ModRev: modRev,
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "cache update", "new", store)
+	c.Mux.Unlock()
+	c.TriggerKeyWatchers(ctx, new.GetKey())
+}
+
+func (c *TPEInstanceStateCache) Delete(ctx context.Context, in *TPEInstanceState, modRev int64) {
+	c.DeleteCondFunc(ctx, in, modRev, func(old *TPEInstanceState) bool {
+		return true
+	})
+}
+
+func (c *TPEInstanceStateCache) DeleteCondFunc(ctx context.Context, in *TPEInstanceState, modRev int64, condFunc func(old *TPEInstanceState) bool) {
+	c.Mux.Lock()
+	var old *TPEInstanceState
+	oldData, found := c.Objs[in.GetKeyVal()]
+	if found {
+		old = oldData.Obj
+		if !condFunc(old) {
+			c.Mux.Unlock()
+			return
+		}
+	}
+	delete(c.Objs, in.GetKeyVal())
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
+	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
+	for _, cb := range c.NotifyCbs {
+		if cb != nil {
+			cb(ctx, obj, modRev)
+		}
+	}
+	if old != nil {
+		for _, cb := range c.DeletedCbs {
+			cb(ctx, old)
+		}
+	}
+	for _, cb := range c.DeletedKeyCbs {
+		cb(ctx, in.GetKey())
+	}
+	c.TriggerKeyWatchers(ctx, in.GetKey())
+}
+
+func (c *TPEInstanceStateCache) Prune(ctx context.Context, validKeys map[TPEInstanceKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune TPEInstanceState", "numValidKeys", len(validKeys))
+	notify := make(map[TPEInstanceKey]*TPEInstanceStateCacheData)
+	c.Mux.Lock()
+	for key, _ := range c.Objs {
+		if _, ok := validKeys[key]; !ok {
+			if len(c.NotifyCbs) > 0 || len(c.DeletedKeyCbs) > 0 || len(c.DeletedCbs) > 0 {
+				notify[key] = c.Objs[key]
+			}
+			delete(c.Objs, key)
+		}
+	}
+	c.Mux.Unlock()
+	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &TPEInstanceState{}
+			obj.SetKey(&key)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				cb(ctx, obj, old.ModRev)
+			}
+		}
+		for _, cb := range c.DeletedKeyCbs {
+			cb(ctx, &key)
+		}
+		if old.Obj != nil {
+			for _, cb := range c.DeletedCbs {
+				cb(ctx, old.Obj)
+			}
+		}
+		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (c *TPEInstanceStateCache) GetCount() int {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	return len(c.Objs)
+}
+
+func (c *TPEInstanceStateCache) Flush(ctx context.Context, notifyId int64) {
+}
+
+func (c *TPEInstanceStateCache) Show(filter *TPEInstanceState, cb func(ret *TPEInstanceState) error) error {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		if !data.Obj.Matches(filter, MatchFilter()) {
+			continue
+		}
+		err := cb(data.Obj)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func TPEInstanceStateGenericNotifyCb(fn func(key *TPEInstanceKey, old *TPEInstanceState)) func(objstore.ObjKey, objstore.Obj) {
+	return func(objkey objstore.ObjKey, obj objstore.Obj) {
+		fn(objkey.(*TPEInstanceKey), obj.(*TPEInstanceState))
+	}
+}
+
+func (c *TPEInstanceStateCache) SetNotifyCb(fn func(ctx context.Context, obj *TPEInstanceState, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *TPEInstanceState, modRev int64){fn}
+}
+
+func (c *TPEInstanceStateCache) SetUpdatedCb(fn func(ctx context.Context, old *TPEInstanceState, new *TPEInstanceState)) {
+	c.UpdatedCbs = []func(ctx context.Context, old *TPEInstanceState, new *TPEInstanceState){fn}
+}
+
+func (c *TPEInstanceStateCache) SetDeletedCb(fn func(ctx context.Context, old *TPEInstanceState)) {
+	c.DeletedCbs = []func(ctx context.Context, old *TPEInstanceState){fn}
+}
+
+func (c *TPEInstanceStateCache) SetUpdatedKeyCb(fn func(ctx context.Context, key *TPEInstanceKey)) {
+	c.UpdatedKeyCbs = []func(ctx context.Context, key *TPEInstanceKey){fn}
+}
+
+func (c *TPEInstanceStateCache) SetDeletedKeyCb(fn func(ctx context.Context, key *TPEInstanceKey)) {
+	c.DeletedKeyCbs = []func(ctx context.Context, key *TPEInstanceKey){fn}
+}
+
+func (c *TPEInstanceStateCache) AddUpdatedCb(fn func(ctx context.Context, old *TPEInstanceState, new *TPEInstanceState)) {
+	c.UpdatedCbs = append(c.UpdatedCbs, fn)
+}
+
+func (c *TPEInstanceStateCache) AddDeletedCb(fn func(ctx context.Context, old *TPEInstanceState)) {
+	c.DeletedCbs = append(c.DeletedCbs, fn)
+}
+
+func (c *TPEInstanceStateCache) AddNotifyCb(fn func(ctx context.Context, obj *TPEInstanceState, modRev int64)) {
+	c.NotifyCbs = append(c.NotifyCbs, fn)
+}
+
+func (c *TPEInstanceStateCache) AddUpdatedKeyCb(fn func(ctx context.Context, key *TPEInstanceKey)) {
+	c.UpdatedKeyCbs = append(c.UpdatedKeyCbs, fn)
+}
+
+func (c *TPEInstanceStateCache) AddDeletedKeyCb(fn func(ctx context.Context, key *TPEInstanceKey)) {
+	c.DeletedKeyCbs = append(c.DeletedKeyCbs, fn)
+}
+
+func (c *TPEInstanceStateCache) SetFlushAll() {
+	c.FlushAll = true
+}
+
+func (c *TPEInstanceStateCache) WatchKey(key *TPEInstanceKey, cb func(ctx context.Context)) context.CancelFunc {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	list, ok := c.KeyWatchers[*key]
+	if !ok {
+		list = make([]*TPEInstanceStateKeyWatcher, 0)
+	}
+	watcher := TPEInstanceStateKeyWatcher{cb: cb}
+	c.KeyWatchers[*key] = append(list, &watcher)
+	log.DebugLog(log.DebugLevelApi, "Watching TPEInstanceState", "key", key)
+	return func() {
+		c.Mux.Lock()
+		defer c.Mux.Unlock()
+		list, ok := c.KeyWatchers[*key]
+		if !ok {
+			return
+		}
+		for ii, _ := range list {
+			if list[ii] != &watcher {
+				continue
+			}
+			if len(list) == 1 {
+				delete(c.KeyWatchers, *key)
+				return
+			}
+			list[ii] = list[len(list)-1]
+			list[len(list)-1] = nil
+			c.KeyWatchers[*key] = list[:len(list)-1]
+			return
+		}
+	}
+}
+
+func (c *TPEInstanceStateCache) TriggerKeyWatchers(ctx context.Context, key *TPEInstanceKey) {
+	watchers := make([]*TPEInstanceStateKeyWatcher, 0)
+	c.Mux.Lock()
+	if list, ok := c.KeyWatchers[*key]; ok {
+		watchers = append(watchers, list...)
+	}
+	c.Mux.Unlock()
+	for ii, _ := range watchers {
+		watchers[ii].cb(ctx)
+	}
+}
+
+// Note that we explicitly ignore the global revision number, because of the way
+// the notify framework sends updates (by hashing keys and doing lookups, instead
+// of sequentially through a history buffer), updates may be done out-of-order
+// or multiple updates compressed into one update, so the state of the cache at
+// any point in time may not by in sync with a particular database revision number.
+
+func (c *TPEInstanceStateCache) SyncUpdate(ctx context.Context, key, val []byte, rev, modRev int64) {
+	obj := TPEInstanceState{}
+	err := json.Unmarshal(val, &obj)
+	if err != nil {
+		log.WarnLog("Failed to parse TPEInstanceState data", "val", string(val), "err", err)
+		return
+	}
+	c.Update(ctx, &obj, modRev)
+	c.Mux.Lock()
+	if c.List != nil {
+		c.List[obj.GetKeyVal()] = struct{}{}
+	}
+	c.Mux.Unlock()
+}
+
+func (c *TPEInstanceStateCache) SyncDelete(ctx context.Context, key []byte, rev, modRev int64) {
+	obj := TPEInstanceState{}
+	keystr := objstore.DbKeyPrefixRemove(string(key))
+	TPEInstanceKeyStringParse(keystr, obj.GetKey())
+	c.Delete(ctx, &obj, modRev)
+}
+
+func (c *TPEInstanceStateCache) SyncListStart(ctx context.Context) {
+	c.List = make(map[TPEInstanceKey]struct{})
+}
+
+func (c *TPEInstanceStateCache) SyncListEnd(ctx context.Context) {
+	deleted := make(map[TPEInstanceKey]*TPEInstanceStateCacheData)
+	c.Mux.Lock()
+	for key, val := range c.Objs {
+		if _, found := c.List[key]; !found {
+			deleted[key] = val
+			delete(c.Objs, key)
+		}
+	}
+	c.List = nil
+	c.Mux.Unlock()
+	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &TPEInstanceState{}
+			obj.SetKey(&key)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				cb(ctx, obj, val.ModRev)
+			}
+		}
+		for _, cb := range c.DeletedKeyCbs {
+			cb(ctx, &key)
+		}
+		if val.Obj != nil {
+			for _, cb := range c.DeletedCbs {
+				cb(ctx, val.Obj)
+			}
+		}
+		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *TPEInstanceStateCache) InitCacheWithSync(sync DataSync) {
+	InitTPEInstanceStateCache(s)
+	s.InitSync(sync)
+}
+
+func (s *TPEInstanceStateCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewTPEInstanceStateStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
+func (c *TPEInstanceStateCache) UsesOrg(org string) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for key, _ := range c.Objs {
+		if key.AppInstKey.Organization == org {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *TPEInstanceState) GetObjKey() objstore.ObjKey {
+	return m.GetKey()
+}
+
+func (m *TPEInstanceState) GetKey() *TPEInstanceKey {
+	return &m.Key
+}
+
+func (m *TPEInstanceState) GetKeyVal() TPEInstanceKey {
+	return m.Key
+}
+
+func (m *TPEInstanceState) SetKey(key *TPEInstanceKey) {
+	m.Key = *key
+}
+
+func CmpSortTPEInstanceState(a TPEInstanceState, b TPEInstanceState) bool {
+	return a.Key.GetKeyString() < b.Key.GetKeyString()
+}
+
+// Helper method to check that enums have valid values
+func (m *TPEInstanceState) ValidateEnums() error {
+	if err := m.Key.ValidateEnums(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TPEInstanceState) ClearTagged(tags map[string]struct{}) {
+	s.Key.ClearTagged(tags)
 }
 
 var TrustPolicyExceptionStateStrings = []string{
@@ -1839,6 +3070,55 @@ func (m *TrustPolicyException) Size() (n int) {
 			n += 1 + l + sovTrustpolicyexception(uint64(l))
 		}
 	}
+	return n
+}
+
+func (m *TPEInstanceKey) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.TpeKey.Size()
+	n += 1 + l + sovTrustpolicyexception(uint64(l))
+	l = m.AppInstKey.Size()
+	n += 1 + l + sovTrustpolicyexception(uint64(l))
+	l = m.ClusterKey.Size()
+	n += 1 + l + sovTrustpolicyexception(uint64(l))
+	return n
+}
+
+func (m *TPEInstanceState) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Key.Size()
+	n += 1 + l + sovTrustpolicyexception(uint64(l))
+	l = len(m.Owner)
+	if l > 0 {
+		n += 1 + l + sovTrustpolicyexception(uint64(l))
+	}
+	if m.RunRequested {
+		n += 2
+	}
+	if m.RunCount != 0 {
+		n += 1 + sovTrustpolicyexception(uint64(m.RunCount))
+	}
+	if m.TpeEnable {
+		n += 2
+	}
+	l = len(m.DisableReason)
+	if l > 0 {
+		n += 1 + l + sovTrustpolicyexception(uint64(l))
+	}
+	l = len(m.Error)
+	if l > 0 {
+		n += 1 + l + sovTrustpolicyexception(uint64(l))
+	}
+	l = m.StartedAt.Size()
+	n += 2 + l + sovTrustpolicyexception(uint64(l))
 	return n
 }
 
@@ -2140,6 +3420,426 @@ func (m *TrustPolicyException) Unmarshal(dAtA []byte) error {
 			}
 			m.OutboundSecurityRules = append(m.OutboundSecurityRules, SecurityRule{})
 			if err := m.OutboundSecurityRules[len(m.OutboundSecurityRules)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTrustpolicyexception(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TPEInstanceKey) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTrustpolicyexception
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TPEInstanceKey: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TPEInstanceKey: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TpeKey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.TpeKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppInstKey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.AppInstKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterKey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.ClusterKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTrustpolicyexception(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TPEInstanceState) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTrustpolicyexception
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TPEInstanceState: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TPEInstanceState: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Key.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Owner", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Owner = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RunRequested", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.RunRequested = bool(v != 0)
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RunCount", wireType)
+			}
+			m.RunCount = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.RunCount |= int32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TpeEnable", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.TpeEnable = bool(v != 0)
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DisableReason", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DisableReason = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Error", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Error = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 99:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StartedAt", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTrustpolicyexception
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTrustpolicyexception
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.StartedAt.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

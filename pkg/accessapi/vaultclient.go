@@ -17,6 +17,7 @@ package accessapi
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -148,6 +149,9 @@ func (s *VaultClient) GetSessionTokens(ctx context.Context, secretName string) (
 }
 
 func (s *VaultClient) GetPublicCert(ctx context.Context, commonName string) (*vault.PublicCert, error) {
+	if val := os.Getenv("E2ETEST_CLOUDLET_SELF_SIGNED_PUBLIC_CERTS"); val == "true" {
+		return cloudcommon.GetCloudletE2EPublicCert(ctx, commonName)
+	}
 	publicCert, err := vault.GetPublicCert(s.vaultConfig, commonName)
 	if err != nil {
 		return nil, err

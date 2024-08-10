@@ -242,9 +242,6 @@ func TestAppApi(t *testing.T) {
 	app.Fields = []string{
 		edgeproto.AppFieldAllowServerless,
 		edgeproto.AppFieldServerlessConfig,
-		edgeproto.AppFieldServerlessConfigVcpus,
-		edgeproto.AppFieldServerlessConfigRam,
-		edgeproto.AppFieldServerlessConfigMinReplicas,
 	}
 	_, err = apis.appApi.UpdateApp(ctx, &app)
 	require.Nil(t, err)
@@ -254,7 +251,6 @@ func TestAppApi(t *testing.T) {
 	app.ServerlessConfig.MinReplicas = 0
 	app.Fields = []string{
 		edgeproto.AppFieldAllowServerless,
-		edgeproto.AppFieldServerlessConfig,
 		edgeproto.AppFieldServerlessConfigVcpus,
 	}
 	_, err = apis.appApi.UpdateApp(ctx, &app)

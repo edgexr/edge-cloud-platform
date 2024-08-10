@@ -66,7 +66,7 @@ type VMProvider interface {
 	GetRouterDetail(ctx context.Context, routerName string) (*RouterDetail, error)
 	CreateVMs(ctx context.Context, vmGroupOrchestrationParams *VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error
 	UpdateVMs(ctx context.Context, vmGroupOrchestrationParams *VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error
-	DeleteVMs(ctx context.Context, vmGroupName string) error
+	DeleteVMs(ctx context.Context, vmGroupName, ownerID string) error
 	GetVMStats(ctx context.Context, appInst *edgeproto.AppInst) (*VMMetrics, error)
 	GetPlatformResourceInfo(ctx context.Context) (*PlatformResources, error)
 	VerifyVMs(ctx context.Context, vms []edgeproto.VM) error
@@ -90,7 +90,7 @@ type VMPlatform struct {
 	Type         string
 	VMProvider   VMProvider
 	VMProperties VMProperties
-	FlavorList   []*edgeproto.FlavorInfo
+	flavorList   []*edgeproto.FlavorInfo
 	Caches       *platform.Caches
 	GPUConfig    edgeproto.GPUConfig
 	CacheDir     string
@@ -368,37 +368,29 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 }
 
 func (v *VMPlatform) initDebug(nodeMgr *node.NodeMgr) {
-	nodeMgr.Debug.AddDebugFunc("crmrefreshsshkeys",
-		func(ctx context.Context, req *edgeproto.DebugRequest) string {
-			infracommon.TriggerRefreshCloudletSSHKeys(&v.VMProperties.CommonPf.SshKey)
-			return "triggered refresh"
-		})
 	nodeMgr.Debug.AddDebugFunc("refresh-rootlb-certs", func(ctx context.Context, req *edgeproto.DebugRequest) string {
 		v.proxyCerts.TriggerRootLBCertsRefresh()
 		return "triggered refresh of rootlb certs"
 	})
-	nodeMgr.Debug.AddDebugFunc("crmupgradecmd", v.crmUpgradeCmd)
-}
-
-func (v *VMPlatform) crmUpgradeCmd(ctx context.Context, req *edgeproto.DebugRequest) string {
-	results, err := v.UpgradeFuncHandleSSHKeys(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, v.Caches)
-	if err != nil {
-		return fmt.Sprintf("failed to upgrade vms to vault ssh keys: %v", err)
-	}
-	return fmt.Sprintf("%v", results)
 }
 
 func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitCommon", "physicalName", platformConfig.PhysicalName, "type", v.Type)
-	// setup the internal cloudlet cache which does not come from the controller
-	cloudletInternal := edgeproto.CloudletInternal{
-		Key:   *platformConfig.CloudletKey,
-		Props: make(map[string]string),
+	if platformConfig.CrmOnEdge && haMgr != nil {
+		// setup the internal cloudlet cache which does not come from the controller
+		cloudletInternal := edgeproto.CloudletInternal{
+			Key:   *platformConfig.CloudletKey,
+			Props: make(map[string]string),
+		}
+		cloudletInternal.Props[infracommon.CloudletPlatformActive] = fmt.Sprintf("%t", haMgr.PlatformInstanceActive)
+		caches.CloudletInternalCache.Update(ctx, &cloudletInternal, 0)
 	}
-	cloudletInternal.Props[infracommon.CloudletPlatformActive] = fmt.Sprintf("%t", haMgr.PlatformInstanceActive)
-	caches.CloudletInternalCache.Update(ctx, &cloudletInternal, 0)
 	v.Caches = caches
-	v.VMProperties.Domain = VMDomainCompute
+	if platformConfig.CrmOnEdge {
+		v.VMProperties.Domain = VMDomainCompute
+	} else {
+		v.VMProperties.Domain = VMDomainPlatform
+	}
 	if platformConfig.GPUConfig != nil {
 		v.GPUConfig = *platformConfig.GPUConfig
 	}
@@ -408,38 +400,30 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 	}
 	v.HAManager = haMgr
 
-	if !platformConfig.TestMode {
-		err := v.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, platformConfig.AccessApi)
-		if err != nil {
-			return err
-		}
-		go v.VMProperties.CommonPf.RefreshCloudletSSHKeys(platformConfig.AccessApi)
-	}
-
 	var err error
 	if err = v.InitProps(ctx, platformConfig); err != nil {
 		return err
 	}
-	v.initDebug(v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
-
+	if platformConfig.CrmOnEdge {
+		v.initDebug(v.VMProperties.CommonPf.PlatformConfig.NodeMgr)
+	}
 	v.VMProvider.InitData(ctx, caches)
 
 	updateCallback(edgeproto.UpdateTask, "Fetching API access credentials")
 	if err = v.VMProvider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars); err != nil {
 		return err
 	}
-	v.FlavorList, err = v.VMProvider.GetFlavorList(ctx)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList failed", "err", err)
-		return err
-	}
 	var cloudlet edgeproto.Cloudlet
 	if !v.Caches.CloudletCache.Get(v.VMProperties.CommonPf.PlatformConfig.CloudletKey, &cloudlet) {
 		return fmt.Errorf("unable to find cloudlet key in cache")
 	}
+	// TODO: resolve why there are two ways to store/use the external network name
 	v.VMProperties.PlatformExternalNetwork = cloudlet.InfraConfig.ExternalNetworkName
+	if cloudlet.InfraConfig.ExternalNetworkName != "" {
+		v.VMProperties.SetCloudletExternalNetwork(cloudlet.InfraConfig.ExternalNetworkName)
+	}
 
-	v.proxyCerts = certs.NewProxyCerts(ctx, platformConfig.CloudletKey, v, platformConfig.AccessApi, platformConfig.NodeMgr, haMgr, v.GetFeatures(), platformConfig.CommerialCerts, platformConfig.EnvoyWithCurlImage)
+	v.proxyCerts = certs.NewProxyCerts(ctx, platformConfig.CloudletKey, v, platformConfig.NodeMgr, haMgr, v.GetFeatures(), platformConfig.CommercialCerts, platformConfig.EnvoyWithCurlImage, platformConfig.ProxyCertsCache)
 	v.proxyCerts.Start(ctx)
 
 	if err = v.VMProvider.InitProvider(ctx, caches, ProviderInitPlatformStartCrmCommon, updateCallback); err != nil {
@@ -449,8 +433,10 @@ func (v *VMPlatform) InitCommon(ctx context.Context, platformConfig *platform.Pl
 
 }
 
-func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPlatform) InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InitHAConditional")
+
+	platformConfig := v.VMProperties.CommonPf.PlatformConfig
 	if err := v.VMProvider.InitProvider(ctx, v.Caches, ProviderInitPlatformStartCrmConditional, updateCallback); err != nil {
 		return err
 	}
@@ -497,51 +483,32 @@ func (v *VMPlatform) InitHAConditional(ctx context.Context, platformConfig *plat
 	return nil
 }
 
+func (v *VMPlatform) GetCachedFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
+	if v.flavorList == nil {
+		flavorList, err := v.VMProvider.GetFlavorList(ctx)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "GetFlavorList failed", "err", err)
+			return nil, fmt.Errorf("get cached flavor list failed, %s", err)
+		}
+		v.flavorList = flavorList
+	}
+	return v.flavorList, nil
+}
+
 func (v *VMPlatform) initRootLB(ctx context.Context, platformConfig *platform.PlatformConfig, action ActionType, updateCallback edgeproto.CacheUpdateCallback) error {
-	err := v.CreateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, action, updateCallback)
+	var rootLBNodeRole cloudcommon.NodeRole
+	if platformConfig.CrmOnEdge {
+		// Shepherd runs on platform VM with CRM
+		rootLBNodeRole = cloudcommon.NodeRoleBase
+	} else {
+		// No platform VM, Shepherd runs on rootLB
+		rootLBNodeRole = cloudcommon.NodeRoleDockerShepherdLB
+	}
+	err := v.CreateRootLB(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.CommonPf.PlatformConfig.CloudletKey, action, platformConfig.RootLBAccessKey, rootLBNodeRole, updateCallback)
 	if err != nil {
 		return fmt.Errorf("Error creating rootLB: %v", err)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "created rootLB", "name", v.VMProperties.SharedRootLBName)
-
-	if platformConfig.Upgrade {
-		v.VMProperties.Upgrade = true
-		// Pull private key from Vault
-		log.SpanLog(ctx, log.DebugLevelInfra, "Fetch private key from vault")
-		mexKey, err := platformConfig.AccessApi.GetOldSSHKey(ctx)
-		if err != nil {
-			return err
-		}
-		v.VMProperties.CommonPf.SshKey.MEXPrivateKey = mexKey.PrivateKey
-
-		log.SpanLog(ctx, log.DebugLevelInfra, "Upgrade shared rootlb to use vault SSH")
-
-		// Upgrade Shared RootLB to use Vault SSH
-		// Set SSH client to use mex private key
-		v.VMProperties.CommonPf.SshKey.UseMEXPrivateKey = true
-		sharedRootLBClient, err := v.GetSSHClientForServer(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
-		if err != nil {
-			return err
-		}
-		publicSSHKey, err := platformConfig.AccessApi.GetSSHPublicKey(ctx)
-		if err != nil {
-			return err
-		}
-		upgradeScript := GetVaultCAScript(publicSSHKey)
-		ExecuteUpgradeScript(ctx, v.VMProperties.SharedRootLBName, sharedRootLBClient, upgradeScript)
-		// Verify if shared rootlb is reachable using vault SSH
-		// Set SSH client to use vault signed Keys
-		v.VMProperties.CommonPf.SshKey.UseMEXPrivateKey = false
-		sharedRootLBClient, err = v.GetSSHClientForServer(ctx, v.VMProperties.SharedRootLBName, v.VMProperties.GetCloudletExternalNetwork())
-		if err != nil {
-			return err
-		}
-		_, err = sharedRootLBClient.Output("hostname")
-		if err != nil {
-			return fmt.Errorf("failed to access shared rootlb: %v", err)
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "successfully upgraded shared rootlb to use Vault SSH")
-	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "calling SetupRootLB")
 	updateCallback(edgeproto.UpdateTask, "Setting up RootLB")
@@ -668,13 +635,6 @@ func (v *VMPlatform) GetInitHAConditionalCompatibilityVersion(ctx context.Contex
 
 func (v *VMPlatform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "PerformUpgrades", "cloudletState", cloudletState)
-
-	if v.VMProperties.Upgrade {
-		_, err := v.UpgradeFuncHandleSSHKeys(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, caches)
-		if err != nil {
-			return err
-		}
-	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Upgrade CRM Config")
 	// upgrade k8s config on each rootLB

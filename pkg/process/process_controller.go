@@ -31,25 +31,27 @@ import (
 )
 
 type Controller struct {
-	Common             `yaml:",inline"`
-	NodeCommon         `yaml:",inline"`
-	RedisClientCommon  `yaml:",inline"`
-	EtcdAddrs          string
-	ApiAddr            string
-	HttpAddr           string
-	NotifyAddr         string
-	NotifyRootAddrs    string
-	NotifyParentAddrs  string
-	EdgeTurnAddr       string
-	InfluxAddr         string
-	Region             string
-	cmd                *exec.Cmd
-	TestMode           bool
-	RegistryFQDN       string
-	ArtifactoryFQDN    string
-	VersionTag         string
-	CheckpointInterval string
-	AppDNSRoot         string
+	Common               `yaml:",inline"`
+	NodeCommon           `yaml:",inline"`
+	RedisClientCommon    `yaml:",inline"`
+	EtcdAddrs            string
+	ApiAddr              string
+	HttpAddr             string
+	NotifyAddr           string
+	NotifyRootAddrs      string
+	NotifyParentAddrs    string
+	EdgeTurnAddr         string
+	InfluxAddr           string
+	Region               string
+	cmd                  *exec.Cmd
+	TestMode             bool
+	RegistryFQDN         string
+	ArtifactoryFQDN      string
+	VersionTag           string
+	CheckpointInterval   string
+	AppDNSRoot           string
+	DNSZone              string
+	PlatformServiceAddrs []string
 }
 
 func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
@@ -99,6 +101,9 @@ func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
 		args = append(args, "--appDNSRoot")
 		args = append(args, p.AppDNSRoot)
 	}
+	for _, addr := range p.PlatformServiceAddrs {
+		args = append(args, "--platformServiceAddr", addr)
+	}
 	options := StartOptions{}
 	options.ApplyStartOptions(opts...)
 	if options.Debug != "" {
@@ -115,6 +120,9 @@ func (p *Controller) StartLocal(logfile string, opts ...StartOp) error {
 	if p.CheckpointInterval != "" {
 		args = append(args, "--checkpointInterval")
 		args = append(args, p.CheckpointInterval)
+	}
+	if p.DNSZone != "" {
+		args = append(args, "--dnsZone", p.DNSZone)
 	}
 
 	envs := p.GetEnv()

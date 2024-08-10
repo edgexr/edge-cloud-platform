@@ -21,12 +21,12 @@ import (
 	"net/netip"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 	"github.com/vmware/go-vcloud-director/v2/govcd"
 	"github.com/vmware/go-vcloud-director/v2/types/v56"
 )
@@ -270,15 +270,10 @@ func (v *VcdPlatform) GetInternalPortPolicy() vmlayer.InternalPortAttachPolicy {
 	return vmlayer.AttachPortDuringCreate
 }
 
-var netLock sync.Mutex
-
 func (v *VcdPlatform) createCommonSharedLBSubnet(ctx context.Context, vapp *govcd.VApp, port vmlayer.PortOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback, vcdClient *govcd.VCDClient) error {
 	// shared lbs need individual orgvcd isolated networks, must be unique.
 	// take the lock that is released after the network has been added to the sharedLB's VApp
 	log.SpanLog(ctx, log.DebugLevelInfra, "createCommonSharedLBSubnet", "vapp", vapp.VApp.Name)
-
-	netLock.Lock()
-	defer netLock.Unlock()
 
 	subnetName := v.vmProperties.GetSharedCommonSubnetName()
 
@@ -1090,7 +1085,7 @@ func (v *VcdPlatform) GetSubnetFromLegacyIsoMetadata(ctx context.Context, isonet
 	return "", nil
 }
 
-func (v *VcdPlatform) GetFreeSharedCommonIpRange(ctx context.Context, subnetName string, vcdClient *govcd.VCDClient, vdc *govcd.Vdc) (string, error) {
+func (v *VcdPlatform) GetFreeSharedCommonIpRange(ctx context.Context, subnetName, ownerID string, vcdClient *govcd.VCDClient, vdc *govcd.Vdc) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetFreeSharedCommonIpRange", "subnetName", subnetName)
 
 	shrName := v.getSharedVappName()
@@ -1098,43 +1093,77 @@ func (v *VcdPlatform) GetFreeSharedCommonIpRange(ctx context.Context, subnetName
 	if err != nil {
 		return "", fmt.Errorf("unable to find shared vapp %s - %v", shrName, err)
 	}
-
-	netLock.Lock()
-	defer netLock.Unlock()
-	meta, err := shrVapp.GetMetadata()
-	if err != nil {
-		return "", fmt.Errorf("unable to get shared vapp metadata %s - %v", shrName, err)
-	}
-	for _, me := range meta.MetadataEntry {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Shared LB Metadata entry", "key", me.Key, "val", me.TypedValue.Value)
-	}
-	fixed, err := v.getInternalSharedCommonFixedPortion(ctx)
-	if err != nil {
-		return "", err
-	}
 	commonMetadataKey := v.getSharedCommonMetadataKey(subnetName)
-	ipRange := ""
-	for octet3 := 0; octet3 <= 255; octet3++ {
-		addr := fmt.Sprintf("%s.%d.0", fixed, octet3)
-		addressFree := true
+
+	var ipRange string
+	var foundExisting bool
+
+	// In order to synchronize write-after-read of the meta data, we wrap
+	// the metadata read under a reservation which synchronizes the chosen
+	// ipRange. No other thread/process can then choose this ipRange.
+	// The write to the metadata can then take place later, since the reservation
+	// already prevents anyone else from using that value.
+	// Reservations are released when the object is deleted.
+	err = v.reservedCommonIpRange.ReserveValues(ctx, func(ctx context.Context, reservations syncdata.Reservations) error {
+		// Note this function may be rerun on conflict,
+		// reset any dynamic values
+		ipRange = ""
+		foundExisting = false
+		reservations.RemoveForOwner(ownerID)
+
+		meta, err := shrVapp.GetMetadata()
+		if err != nil {
+			return fmt.Errorf("unable to get shared vapp metadata %s - %v", shrName, err)
+		}
 		for _, me := range meta.MetadataEntry {
-			if me.Key == commonMetadataKey {
-				// found existing entry for this subnet
-				log.SpanLog(ctx, log.DebugLevelInfra, "found existing metadata entry", "key", me.Key, "val", me.TypedValue.Value)
-				return me.TypedValue.Value, nil
-			}
-			if me.TypedValue.Value == addr {
-				log.SpanLog(ctx, log.DebugLevelInfra, "address already in use", "key", me.Key, "addr", addr)
-				addressFree = false
+			log.SpanLog(ctx, log.DebugLevelInfra, "Shared LB Metadata entry", "key", me.Key, "val", me.TypedValue.Value)
+		}
+		fixed, err := v.getInternalSharedCommonFixedPortion(ctx)
+		if err != nil {
+			return err
+		}
+		for octet3 := 0; octet3 <= 255; octet3++ {
+			addr := fmt.Sprintf("%s.%d.0", fixed, octet3)
+			if _, found := reservations[addr]; found {
+				// reserved by another thread/process
+				log.SpanLog(ctx, log.DebugLevelInfra, "address reserved by syncdata", "addr", addr)
 				continue
 			}
+			addressFree := true
+			for _, me := range meta.MetadataEntry {
+				if me.Key == commonMetadataKey {
+					// found existing entry for this subnet
+					log.SpanLog(ctx, log.DebugLevelInfra, "found existing metadata entry", "key", me.Key, "val", me.TypedValue.Value)
+					foundExisting = true
+					ipRange = me.TypedValue.Value
+					reservations.Add(ipRange, ownerID)
+					return nil
+				}
+				if me.TypedValue.Value == addr {
+					log.SpanLog(ctx, log.DebugLevelInfra, "address already in use", "key", me.Key, "addr", addr)
+					addressFree = false
+					reservations.AddIfMissing(addr)
+					continue
+				}
+			}
+			if addressFree {
+				log.SpanLog(ctx, log.DebugLevelInfra, "found free shared ip range", "addr", addr)
+				ipRange = addr
+				reservations.Add(ipRange, ownerID)
+				return nil
+			}
 		}
-		if addressFree {
-			log.SpanLog(ctx, log.DebugLevelInfra, "found free shared ip range", "addr", addr)
-			ipRange = addr
-			break
-		}
+		// nothing free which probably means there's problem releasing the entries
+		log.SpanLog(ctx, log.DebugLevelInfra, "could not find free shared ip address range")
+		return fmt.Errorf("could not find free shared ip address range")
+	})
+	if err != nil {
+		return "", fmt.Errorf("failed to reserve free common ip range, %s", err)
 	}
+	if foundExisting {
+		return ipRange, nil
+	}
+
 	if ipRange == "" {
 		// nothing free which probably means there's problem releasing the entries
 		log.SpanLog(ctx, log.DebugLevelInfra, "could not find free shared ip address range")
@@ -1284,82 +1313,6 @@ func (v *VcdPlatform) AddCommonSharedNetToVapp(ctx context.Context, vapp *govcd.
 	return nil
 }
 
-func (v *VcdPlatform) updateMetadataForLegacyIsoNets(ctx context.Context, vcdClient *govcd.VCDClient, vdc *govcd.Vdc, subnetToIsoNet map[string]string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "updateMetadataForVappNets", "subnetToIsoNet", subnetToIsoNet)
-	shrName := v.getSharedVappName()
-	shrVapp, err := v.FindVApp(ctx, shrName, vcdClient, vdc)
-	if err != nil {
-		// this can happen on first startup
-		log.SpanLog(ctx, log.DebugLevelInfra, "no shared vapp")
-		return nil
-	}
-
-	netLock.Lock()
-	defer netLock.Unlock()
-
-	meta, err := shrVapp.GetMetadata()
-	if err != nil {
-		return fmt.Errorf("unable to get shared vapp metadata %s - %v", shrName, err)
-	}
-	for subnetName, netName := range subnetToIsoNet {
-		key := v.getLegacyPerClusterMetadataKey(subnetName)
-		foundKey := false
-		for _, me := range meta.MetadataEntry {
-			if me.Key == key {
-				foundKey = true
-				break
-			}
-		}
-		if foundKey {
-			log.SpanLog(ctx, log.DebugLevelInfra, "orgnet already in metadata", "key", key, "val", netName)
-		} else {
-			log.SpanLog(ctx, log.DebugLevelInfra, "need to add orgnet to metadata", "key", key, "val", netName)
-			task, err := shrVapp.AddMetadata(key, netName)
-			err = task.WaitTaskCompletion()
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "wait addmetadata to shared vapp failed", "error", err)
-				return err
-			}
-		}
-	}
-	return nil
-
-}
-
-// on (re)start attempt ensure legacy (prior to common shared lb) ISO nets are in metadata
-func (v *VcdPlatform) UpdateLegacyIsoNetMetaData(ctx context.Context) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateLegacyIsoNetMetaData")
-	var err error
-
-	ctx, result, err := v.InitOperationContext(ctx, vmlayer.OperationInitStart)
-	if err != nil {
-		return err
-	}
-	if result == vmlayer.OperationNewlyInitialized {
-		defer v.InitOperationContext(ctx, vmlayer.OperationInitComplete)
-	}
-	vcdClient := v.GetVcdClientFromContext(ctx)
-	if vcdClient == nil {
-		return fmt.Errorf(NoVCDClientInContext)
-	}
-
-	vdc, err := v.GetVdc(ctx, vcdClient)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "DetachPortFromServer unable to retrieve current vdc", "err", err)
-		return err
-	}
-	subnetMap, err := v.getSubnetLegacyIsoMap(ctx, vdc, vcdClient)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "error in getVappToSubnetMap", "err", err)
-		return err
-	}
-	err = v.updateMetadataForLegacyIsoNets(ctx, vcdClient, vdc, subnetMap)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (v *VcdPlatform) vappNameToInternalSubnet(ctx context.Context, vappName string) string {
 	netName := strings.TrimSuffix(vappName, "-vapp")
 	netName = vmlayer.MexSubnetPrefix + netName
@@ -1369,50 +1322,4 @@ func (v *VcdPlatform) vappNameToInternalSubnet(ctx context.Context, vappName str
 
 func (v *VcdPlatform) getSharedVappName() string {
 	return v.vmProperties.SharedRootLBName + "-vapp"
-}
-
-func (v *VcdPlatform) getSubnetLegacyIsoMap(ctx context.Context, vdc *govcd.Vdc, vcdClient *govcd.VCDClient) (map[string]string, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "getSubnetLegacyIsoMap", "SharedRootLBName", v.vmProperties.SharedRootLBName)
-	subnetMap := make(map[string]string)
-	sharedLbVappName := v.getSharedVappName()
-	commonNetNames := v.vmProperties.GetSharedCommonSubnetName()
-	commonNetName := commonNetNames.IPV4()
-	// For all vapps in vdc
-	for _, r := range vdc.Vdc.ResourceEntities {
-		for _, res := range r.ResourceEntity {
-			if res.Name == sharedLbVappName {
-				// don't want this one
-				continue
-			}
-			if res.Type == VappResourceXmlType {
-				vapp, err := vdc.GetVAppByName(res.Name, false)
-				if err != nil {
-					return nil, err
-				}
-				log.SpanLog(ctx, log.DebugLevelInfra, "Found Vapp Networks", "vappname", vapp.VApp.Name, "nets", vapp.VApp.NetworkConfigSection.NetworkNames())
-				for _, n := range vapp.VApp.NetworkConfigSection.NetworkNames() {
-					if n == "none" {
-						continue
-					}
-					if n == commonNetName {
-						log.SpanLog(ctx, log.DebugLevelInfra, "Skipping shared common net", "netname", n)
-					}
-					if !strings.HasPrefix(n, mexInternalNetRange) {
-						log.SpanLog(ctx, log.DebugLevelInfra, "Skipping network not in internal range", "netname", n)
-						continue
-					}
-					net, err := vdc.GetOrgVdcNetworkByName(n, false)
-					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "Cannot get net by name", "netname", n, "err", err)
-						continue
-					}
-					mexSubnetName := v.vappNameToInternalSubnet(ctx, vapp.VApp.Name)
-					log.SpanLog(ctx, log.DebugLevelInfra, "mapping vapp net to subnet", "mexSubnetName", mexSubnetName, "netname", net.OrgVDCNetwork.Name)
-					subnetMap[mexSubnetName] = n
-				}
-			}
-		}
-	}
-	return subnetMap, nil
-
 }

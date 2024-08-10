@@ -2,11 +2,13 @@ module github.com/edgexr/edge-cloud-platform
 
 go 1.21
 
+toolchain go1.21.6
+
 require (
 	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
 	github.com/Bose/minisentinel v0.0.0-20200130220412-917c5a9223bb
 	github.com/Shopify/sarama v1.38.1
-	github.com/alicebob/miniredis/v2 v2.31.1
+	github.com/alicebob/miniredis/v2 v2.33.0
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/cloudflare/cloudflare-go v0.13.4 // indirect
@@ -78,6 +80,7 @@ require (
 	github.com/hashicorp/vault/sdk v0.10.2
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/matoous/go-nanoid/v2 v2.0.0
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/opensearch-project/opensearch-go/v2 v2.3.0
 	github.com/sethvargo/go-password v0.2.0
 	github.com/xdg-go/pbkdf2 v1.0.0

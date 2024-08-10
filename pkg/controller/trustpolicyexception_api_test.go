@@ -44,8 +44,9 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	// create supporting data
@@ -144,6 +145,15 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	_, err = apis.trustPolicyExceptionApi.CreateTrustPolicyException(ctx, &tpeData)
 	require.Nil(t, err)
 
+	// test that TPE update to set no security rules fails (not allowed)
+	savedSecurityRules := tpeData.OutboundSecurityRules
+	tpeData.OutboundSecurityRules = []edgeproto.SecurityRule{}
+	tpeData.Fields = []string{edgeproto.TrustPolicyExceptionFieldOutboundSecurityRules}
+	_, err = apis.trustPolicyExceptionApi.UpdateTrustPolicyException(ctx, &tpeData)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "rules must be specified")
+	tpeData.OutboundSecurityRules = savedSecurityRules
+
 	// State related tests - begin
 	tpeData.Fields = []string{edgeproto.TrustPolicyExceptionFieldState}
 
@@ -162,14 +172,6 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	_, err = apis.trustPolicyExceptionApi.UpdateTrustPolicyException(ctx, &tpeData)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "New state must be either Active or Rejected")
-
-	// test that TPE update with no security rules, does not give any error
-	savedSecurityRules := tpeData.OutboundSecurityRules
-	tpeData.OutboundSecurityRules = []edgeproto.SecurityRule{}
-	tpeData.Fields = []string{edgeproto.TrustPolicyExceptionFieldOutboundSecurityRules}
-	_, err = apis.trustPolicyExceptionApi.UpdateTrustPolicyException(ctx, &tpeData)
-	require.Nil(t, err)
-	tpeData.OutboundSecurityRules = savedSecurityRules
 
 	// test that TPE update with non-existent CloudletPoolKey Organization, fails
 	tpeData.Fields = []string{

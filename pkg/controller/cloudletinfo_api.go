@@ -25,7 +25,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
@@ -68,7 +67,22 @@ func (s *CloudletInfoApi) ShowCloudletInfo(in *edgeproto.CloudletInfo, cb edgepr
 	return err
 }
 
+func (s *CloudletInfoApi) UpdateRPC(ctx context.Context, in *edgeproto.CloudletInfo) {
+	// CCRM handles Cloudlet Create/Delete calls via GRPC,
+	// even though CRM is the source of truth of the CloudletInfo
+	// for CRM on edge.
+	// So make sure to only update the specified fields.
+	s.UpdateFields(ctx, in, 0)
+}
+
 func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo, rev int64) {
+	// CRM notify is the owner so it updates all fields
+	// This path should never get called for CrmOnEdge=false.
+	in.Fields = edgeproto.CloudletInfoAllFields
+	s.UpdateFields(ctx, in, rev)
+}
+
+func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.CloudletInfo, rev int64) {
 	var err error
 	log.SpanLog(ctx, log.DebugLevelNotify, "Cloudlet Info Update", "in", in)
 	// for now assume all fields have been specified
@@ -76,35 +90,47 @@ func (s *CloudletInfoApi) Update(ctx context.Context, in *edgeproto.CloudletInfo
 		log.SpanLog(ctx, log.DebugLevelNotify, "skipping due to info from standby CRM")
 		return
 	}
+	fmap := edgeproto.MakeFieldMap(in.Fields)
 
 	inCopy := *in // save Status to publish to Redis
-	in.Fields = edgeproto.CloudletInfoAllFields
 	in.Controller = ControllerId
 	changedToOnline := false
+	info := edgeproto.CloudletInfo{}
 	s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		info := edgeproto.CloudletInfo{}
+		info = edgeproto.CloudletInfo{
+			Key: in.Key,
+		}
+		oldState := in.State
 		if s.store.STMGet(stm, &in.Key, &info) {
+			oldState = info.State
+		}
+		if fmap.Has(edgeproto.CloudletInfoFieldState) {
 			if in.State == dme.CloudletState_CLOUDLET_STATE_READY &&
-				info.State != dme.CloudletState_CLOUDLET_STATE_READY {
+				oldState != dme.CloudletState_CLOUDLET_STATE_READY {
 				changedToOnline = true
 			}
 		}
 		// Clear fields that are cached in Redis as they should not be stored in DB
 		in.ClearRedisOnlyFields()
+		info.ClearRedisOnlyFields()
 
 		// For federated cloudlets, flavors come from MC using
 		// InjectCloudletInfo. Don't let FRM overwrite them.
-		if in.Key.FederatedOrganization != "" {
+		if fmap.Has(edgeproto.CloudletInfoFieldKeyFederatedOrganization) && in.Key.FederatedOrganization != "" {
 			in.Flavors = info.Flavors
 		}
 
-		fields := make(map[string]struct{})
-		info.DiffFields(in, fields)
-		if len(fields) > 0 {
-			s.store.STMPut(stm, in)
+		diffFields := info.GetDiffFields(in)
+		if diffFields.Count() > 0 {
+			info.CopyInFields(in)
+			log.SpanLog(ctx, log.DebugLevelApi, "CloudletInfo updating fields", "fields", diffFields.Fields())
+			s.store.STMPut(stm, &info)
 		}
 		return nil
 	})
+
+	// info is the updated state
+	in = &info
 
 	// publish the received info object on redis
 	// must be done after updating etcd, see AppInst UpdateFromInfo comment
@@ -452,7 +478,7 @@ func (s *CloudletInfoApi) checkCloudletReady(cctx *CallContext, stm concurrency.
 func (s *CloudletInfoApi) cleanupCloudletInfo(ctx context.Context, in *edgeproto.Cloudlet) {
 	var delErr error
 	info := edgeproto.CloudletInfo{}
-	if in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS || in.Key.FederatedOrganization != "" {
+	if !in.CrmOnEdge || in.InfraApiAccess == edgeproto.InfraApiAccess_RESTRICTED_ACCESS || in.Key.FederatedOrganization != "" {
 		// no way for the controller to shutdown the crm,
 		// so just clean up the CloudletInfo
 		delErr = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
@@ -549,56 +575,4 @@ func getCloudletPropertyBool(info *edgeproto.CloudletInfo, prop string, def bool
 		return def
 	}
 	return val
-}
-
-var recvCloudletOnboardingInfoAcceptedStates = map[edgeproto.TrackedState]struct{}{
-	edgeproto.TrackedState_CREATING:     {},
-	edgeproto.TrackedState_CREATE_ERROR: {},
-	edgeproto.TrackedState_READY:        {},
-	edgeproto.TrackedState_DELETING:     {},
-	edgeproto.TrackedState_DELETE_ERROR: {},
-	edgeproto.TrackedState_DELETE_DONE:  {},
-}
-
-func (s *CloudletInfoApi) RecvCloudletOnboardingInfo(ctx context.Context, msg *edgeproto.CloudletOnboardingInfo) {
-	log.SpanLog(ctx, log.DebugLevelNotify, "CloudletOnboardingInfo Update", "msg", msg)
-
-	if _, ok := recvCloudletOnboardingInfoAcceptedStates[msg.OnboardingState]; !ok {
-		log.SpanLog(ctx, log.DebugLevelNotify, "CloudletOnboardingInfo unexpected state", "msg", msg)
-		return
-	}
-
-	info := edgeproto.CloudletInfo{
-		Key: msg.Key,
-	}
-	// Write state to Etcd. This is just for user visibility,
-	// as functionally the Controller waits on the redis message,
-	// not the Etcd state change.
-	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		cloudlet := edgeproto.Cloudlet{}
-		if !s.all.cloudletApi.store.STMGet(stm, &msg.Key, &cloudlet) {
-			return nil
-		}
-		// ignore error, blank info is ok, just want to get state
-		// if it already has it set
-		s.all.cloudletInfoApi.store.STMGet(stm, &msg.Key, &info)
-
-		if cloudlet.OnboardingState == msg.OnboardingState {
-			return nil
-		}
-		cloudlet.OnboardingState = msg.OnboardingState
-		if len(msg.Errors) > 0 && len(cloudlet.Errors) == 0 {
-			// Errors may also be set by CRM.
-			cloudlet.Errors = msg.Errors
-		}
-		s.all.cloudletApi.store.STMPut(stm, &cloudlet)
-		return nil
-	})
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelNotify, "CloudletOnboardingInfo update cloudlet state failed", "msg", msg, "err", err)
-		// continue to send message
-	}
-
-	// Send to any processes waiting for a state change.
-	rediscache.SendMessage(ctx, redisClient, msg)
 }

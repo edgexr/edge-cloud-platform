@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -312,10 +311,6 @@ func WithNoResetStream() StreamOp {
 	return func(op *StreamOptions) { op.NoResetStream = true }
 }
 
-func getRedisTxBackoff(ii int) time.Duration {
-	return time.Millisecond * time.Duration((ii+1)*rand.Intn(10))
-}
-
 // newStream buffers messages until the first Etcd transaction
 // is done and we can actually start the stream.
 func (s *StreamObjApi) newStream(ctx context.Context, cctx *CallContext, streamKey string, inCb GenericCb, opts ...StreamOp) (*CbWrapper, GenericCb) {
@@ -421,7 +416,7 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 		}
 		if err == redis.TxFailedErr {
 			// Optimistic lock lost. Retry.
-			time.Sleep(getRedisTxBackoff(i))
+			time.Sleep(rediscache.GetRedisTxBackoff(i))
 			continue
 		}
 		// Return any other error.
@@ -562,7 +557,7 @@ func (s *StreamObjApi) stopStream(ctx context.Context, cctx *CallContext, stream
 			err = redisClient.Watch(ctx, txf, streamKey)
 			if err == redis.TxFailedErr {
 				// retry
-				time.Sleep(getRedisTxBackoff(i))
+				time.Sleep(rediscache.GetRedisTxBackoff(i))
 				continue
 			}
 			break

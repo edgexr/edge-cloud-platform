@@ -21,6 +21,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
@@ -36,6 +37,9 @@ func TestDeleteChecks(t *testing.T) {
 
 	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 
 	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
