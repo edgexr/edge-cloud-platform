@@ -59,6 +59,9 @@ func ClusterInstHideTags(in *edgeproto.ClusterInst) {
 	if _, found := tags["nocmp"]; found {
 		in.ObjId = ""
 	}
+	if _, found := tags["nocmp"]; found {
+		in.CompatibilityVersion = 0
+	}
 }
 
 func ClusterInstInfoHideTags(in *edgeproto.ClusterInstInfo) {
@@ -667,6 +670,7 @@ var ClusterInstComments = map[string]string{
 	"fqdn":                                     "FQDN is a globally unique DNS id for the ClusterInst",
 	"enableipv6":                               "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting",
 	"objid":                                    "Universally unique object ID",
+	"compatibilityversion":                     "internal compatibility version",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"errors":   "StringArray",

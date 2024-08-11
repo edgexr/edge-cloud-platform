@@ -54,10 +54,26 @@ type KubeNames struct {
 
 type KubeNamesOp func(k *KubeNames) error
 
-func GetKconfName(clusterInst *edgeproto.ClusterInst) string {
+func GetKconfNameDeprecated(clusterInst *edgeproto.ClusterInst) string {
+	// This has a bug, it should have used the Cluster's Org
+	// instead of the Cloudlet's Org. This means if two different
+	// developers choose the same cluster name on the same cloudlet,
+	// the kubeconfigs will overwrite each other.
 	return fmt.Sprintf("%s.%s.kubeconfig",
 		clusterInst.Key.ClusterKey.Name,
 		clusterInst.Key.CloudletKey.Organization)
+}
+
+func GetKconfName(clusterInst *edgeproto.ClusterInst) string {
+	if clusterInst.CompatibilityVersion < cloudcommon.ClusterInstCompatibilityUniqueKubeconfig {
+		// backwards compatibility for older clusters
+		return GetKconfNameDeprecated(clusterInst)
+	}
+	// In the near future, kubeconfigs may be written locally
+	// to CCRMs which may manage multiple cloudlets. To ensure
+	// kubeconfig names are unique across the entire region,
+	// use the cluster object ID.
+	return clusterInst.ObjId + ".kubeconfig"
 }
 
 func GetKconfArg(clusterInst *edgeproto.ClusterInst) string {

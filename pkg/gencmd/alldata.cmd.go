@@ -184,6 +184,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		if _, found := tags["nocmp"]; found {
 			in.ClusterInsts[i0].ObjId = ""
 		}
+		if _, found := tags["nocmp"]; found {
+			in.ClusterInsts[i0].CompatibilityVersion = 0
+		}
 	}
 	for i0 := 0; i0 < len(in.Apps); i0++ {
 		if _, found := tags["nocmp"]; found {
@@ -660,6 +663,7 @@ var AllDataOptionalArgs = []string{
 	"clusterinsts:#.fqdn",
 	"clusterinsts:#.enableipv6",
 	"clusterinsts:#.objid",
+	"clusterinsts:#.compatibilityversion",
 	"apps:#.fields",
 	"apps:#.key.organization",
 	"apps:#.key.name",
@@ -1241,6 +1245,7 @@ var AllDataComments = map[string]string{
 	"clusterinsts:#.fqdn":                                                        "FQDN is a globally unique DNS id for the ClusterInst",
 	"clusterinsts:#.enableipv6":                                                  "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting",
 	"clusterinsts:#.objid":                                                       "Universally unique object ID",
+	"clusterinsts:#.compatibilityversion":                                        "internal compatibility version",
 	"apps:#.fields":                                                              "Fields are used for the Update API to specify which fields to apply",
 	"apps:#.key.organization":                                                    "App developer organization",
 	"apps:#.key.name":                                                            "App name",

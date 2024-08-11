@@ -852,6 +852,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	if in.IpAccess == 2 {
 		in.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
 	}
+	in.CompatibilityVersion = cloudcommon.GetClusterInstCompatibilityVersion()
 
 	nodeType := ""
 	crmOnEdge := false
