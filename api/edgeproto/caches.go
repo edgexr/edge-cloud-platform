@@ -15,10 +15,11 @@
 package edgeproto
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	context "golang.org/x/net/context"
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 )
 
 // Common extra support code for caches
@@ -33,6 +34,20 @@ const (
 	NoResetStatus bool = false
 )
 
+type ObjCache interface {
+	SyncUpdate(ctx context.Context, key, val []byte, rev, modRev int64)
+	SyncDelete(ctx context.Context, key []byte, rev, modRev int64)
+	SyncListStart(ctx context.Context)
+	SyncListEnd(ctx context.Context)
+	GetTypeString() string
+	UsesOrg(org string) bool
+}
+
+type DataSync interface {
+	RegisterCache(cache ObjCache)
+	GetKVStore() objstore.KVStore
+}
+
 type ClusterInstCacheUpdateParms struct {
 	cache      *ClusterInstInfoCache
 	updateType CacheUpdateType
@@ -44,6 +59,34 @@ type CacheUpdateCallback func(updateType CacheUpdateType, value string)
 
 // DummyUpdateCallback is used when we don't want any cache status updates
 func DummyUpdateCallback(updateType CacheUpdateType, value string) {}
+
+type SenderOptions struct {
+	resetStatus bool
+	stateErr    error
+}
+
+type SenderOp func(opts *SenderOptions)
+
+func GetSenderOptions(ops ...SenderOp) *SenderOptions {
+	opts := &SenderOptions{}
+	for _, op := range ops {
+		op(opts)
+	}
+	return opts
+}
+
+func WithSenderResetStatus() SenderOp {
+	return func(opts *SenderOptions) {
+		opts.resetStatus = true
+	}
+}
+
+// WithStateError can only be used with SendState.
+func WithStateError(err error) SenderOp {
+	return func(opts *SenderOptions) {
+		opts.stateErr = err
+	}
+}
 
 // GetForCloudlet gets all cloudlet nodes associated with the given cloudlet
 func (s *CloudletNodeCache) GetForCloudlet(cloudlet *Cloudlet, cb func(cloudletNodeData *CloudletNodeCacheData)) {
@@ -367,31 +410,11 @@ func (s *AppInstInfoCache) SetUri(ctx context.Context, key *AppInstKey, uri stri
 	return
 }
 
-func (s *AppInstInfoCache) SetFedAppInstKey(ctx context.Context, key *AppInstKey, fedKey FedAppInstKey) {
-	if fedKey.FederationName == "" {
-		return
-	}
-	s.UpdateModFunc(ctx, key, 0, func(old *AppInstInfo) (newObj *AppInstInfo, changed bool) {
-		info := &AppInstInfo{}
-		if old == nil {
-			info.Key = *key
-		} else {
-			*info = *old
-		}
-		info.FedKey = fedKey
-		return info, true
-	})
-	return
-}
-
-func (s *AppInstInfoCache) SetStateRuntime(ctx context.Context, key *AppInstKey, state TrackedState, rt *AppInstRuntime) {
+func (s *AppInstInfoCache) SetRuntime(ctx context.Context, key *AppInstKey, rt *AppInstRuntime) {
 	info := AppInstInfo{}
 	if !s.Get(key, &info) {
 		info.Key = *key
-		info.Status = StatusInfo{}
 	}
-	info.Errors = nil
-	info.State = state
 	info.RuntimeInfo = *rt
 	s.Update(ctx, &info, 0)
 }
@@ -487,7 +510,7 @@ func (s *CloudletInfoCache) SetStatusStep(ctx context.Context, key *CloudletKey,
 	s.Update(ctx, &info, 0)
 }
 
-func (s *CloudletPoolCache) GetPoolsForCloudletKey(in *CloudletKey) ([]CloudletPoolKey, error) {
+func (s *CloudletPoolCache) GetPoolsForCloudletKey(in *CloudletKey) []CloudletPoolKey {
 	var cloudletPoolKeys []CloudletPoolKey
 
 	log.DebugLog(log.DebugLevelApi, "GetPoolsForCloudletKey()", "len(CloudletPoolCache.Objs):", len(s.Objs), "CloudletKey:", in)
@@ -508,7 +531,7 @@ func (s *CloudletPoolCache) GetPoolsForCloudletKey(in *CloudletKey) ([]CloudletP
 	if len(cloudletPoolKeys) == 0 {
 		log.DebugLog(log.DebugLevelApi, "GetPoolsForCloudletKey() not found ", "CloudletKey:", in)
 	}
-	return cloudletPoolKeys, nil
+	return cloudletPoolKeys
 }
 
 func (s *VMPoolInfoCache) SetState(ctx context.Context, key *VMPoolKey, state TrackedState) error {
@@ -577,6 +600,48 @@ func (s *TrustPolicyExceptionCache) GetForCloudlet(cloudlet *Cloudlet, cb func(d
 	}
 }
 
+func (s *TrustPolicyExceptionCache) GetForCloudletPool(key *CloudletPoolKey) []*TrustPolicyException {
+	tpeArray := []*TrustPolicyException{}
+	filter := TrustPolicyException{
+		Key: TrustPolicyExceptionKey{
+			CloudletPoolKey: *key,
+		},
+	}
+	s.Show(&filter, func(tpe *TrustPolicyException) error {
+		buf := TrustPolicyException{}
+		buf.DeepCopyIn(tpe)
+		tpeArray = append(tpeArray, &buf)
+		return nil
+	})
+	return tpeArray
+}
+
+func (s *TrustPolicyExceptionCache) GetForApp(key *AppKey) []*TrustPolicyException {
+	tpeArray := []*TrustPolicyException{}
+	filter := TrustPolicyException{
+		Key: TrustPolicyExceptionKey{
+			AppKey: *key,
+		},
+	}
+	s.Show(&filter, func(tpe *TrustPolicyException) error {
+		buf := TrustPolicyException{}
+		buf.DeepCopyIn(tpe)
+		tpeArray = append(tpeArray, &buf)
+		return nil
+	})
+	return tpeArray
+}
+
+func (s *TPEInstanceStateCache) GetForCloudlet(cloudlet *Cloudlet, cb func(data *TPEInstanceStateCacheData)) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for _, v := range s.Objs {
+		if v.Obj.Key.AppInstKey.CloudletKey.Matches(&cloudlet.Key) {
+			cb(v.Clone())
+		}
+	}
+}
+
 // GetCloudletTrustPolicy finds the policy from the cache.  If a blank policy name is specified, an empty policy is returned
 func GetCloudletTrustPolicy(ctx context.Context, name string, cloudletOrg string, privPolCache *TrustPolicyCache) (*TrustPolicy, error) {
 	log.SpanLog(ctx, log.DebugLevelInfo, "GetCloudletTrustPolicy")
@@ -617,4 +682,16 @@ func GetNetworksForClusterInst(ctx context.Context, clusterInst *ClusterInst, ne
 		networks = append(networks, &net)
 	}
 	return networks, nil
+}
+
+func (s *AppInstInfo) GetStatus() *StatusInfo {
+	return &s.Status
+}
+
+func (s *ClusterInstInfo) GetStatus() *StatusInfo {
+	return &s.Status
+}
+
+func (s *CloudletInfo) GetStatus() *StatusInfo {
+	return &s.Status
 }

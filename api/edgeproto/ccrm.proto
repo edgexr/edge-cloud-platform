@@ -23,6 +23,10 @@ import "flavor.proto";
 import "refs.proto";
 import "metric.proto";
 import "result.proto";
+import "exec.proto";
+import "clusterinst.proto";
+import "appinst.proto";
+import "trustpolicyexception.proto";
 import "infraresources.proto";
 import "gogoproto/gogo.proto";
 
@@ -41,7 +45,7 @@ message StreamStatus {
   
 message InfraResourceMap {
     // Infra resources map
-    map<string, InfraResource> infra_resources = 1;
+    map<string, InfraResource> infra_resources = 1 [(gogoproto.nullable) = false];
 }
 
 message ClusterResourcesReq {
@@ -50,7 +54,7 @@ message ClusterResourcesReq {
     // VM Resources
     repeated VMResource vm_resources = 2 [(gogoproto.nullable) = false];
     // Infra Resources Map
-    map<string, InfraResource> infra_resources = 3;
+    map<string, InfraResource> infra_resources = 3 [(gogoproto.nullable) = false];
 }
 
 message ClusterResourceMetricReq {
@@ -69,12 +73,36 @@ message NameSanitizeReq {
     string message = 2;
 }
 
-service CCRMAPI {
+message CloudletExecReq {
+    // Cloudlet
+    CloudletKey cloudlet_key = 1;
+    // ExecRequest
+    ExecRequest exec_req = 2;
+}
+
+service CloudletPlatformAPI {
     rpc GetCloudletManifest(CloudletKey) returns (CloudletManifest) {}
     rpc GetClusterAdditionalResources(ClusterResourcesReq) returns (InfraResourceMap) {}
     rpc GetClusterAdditionalResourceMetric(ClusterResourceMetricReq) returns (Metric) {}
     rpc GetRestrictedCloudletStatus(CloudletKey) returns (stream StreamStatus) {}
     rpc GetRootLbFlavor(CloudletKey) returns (Flavor) {}
-    option (protogen.redis_api) = true;
+    rpc ProcessExecRequest(CloudletExecReq) returns (ExecRequest) {}
     rpc NameSanitize(NameSanitizeReq) returns(Result) {}
+    rpc ApplyCloudlet(Cloudlet) returns (stream CloudletInfo) {}
+    rpc RefreshCerts(Cloudlet) returns (Result) {}
+    rpc GetCloudletResources(Cloudlet) returns (InfraResourceMap) {}
+    option (protogen.internal_api) = true;
+}
+
+service ClusterPlatformAPI {
+    rpc ApplyClusterInst(ClusterInst) returns (stream ClusterInstInfo) {}
+    rpc NameSanitize(NameSanitizeReq) returns(Result) {}
+    option (protogen.internal_api) = true;
+}
+
+service AppInstPlatformAPI {
+    rpc ApplyAppInst(AppInst) returns (stream AppInstInfo) {}
+    rpc ApplyTrustPolicyException(TPEInstanceState) returns (Result) {}
+    rpc NameSanitize(NameSanitizeReq) returns(Result) {}
+    option (protogen.internal_api) = true;
 }

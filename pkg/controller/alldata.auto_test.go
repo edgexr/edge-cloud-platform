@@ -26,190 +26,190 @@ type testSupportData edgeproto.AllData
 
 func (s *testSupportData) put(t *testing.T, ctx context.Context, all *AllApis) {
 	for _, obj := range s.Flavors {
-		_, err := all.flavorApi.store.Put(ctx, &obj, all.flavorApi.sync.syncWait)
+		_, err := all.flavorApi.store.Put(ctx, &obj, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	if s.Settings != nil {
-		_, err := all.settingsApi.store.Put(ctx, s.Settings, all.settingsApi.sync.syncWait)
+		_, err := all.settingsApi.store.Put(ctx, s.Settings, all.settingsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.OperatorCodes {
-		_, err := all.operatorCodeApi.store.Put(ctx, &obj, all.operatorCodeApi.sync.syncWait)
+		_, err := all.operatorCodeApi.store.Put(ctx, &obj, all.operatorCodeApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.ResTagTables {
-		_, err := all.resTagTableApi.store.Put(ctx, &obj, all.resTagTableApi.sync.syncWait)
+		_, err := all.resTagTableApi.store.Put(ctx, &obj, all.resTagTableApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.TrustPolicies {
-		_, err := all.trustPolicyApi.store.Put(ctx, &obj, all.trustPolicyApi.sync.syncWait)
+		_, err := all.trustPolicyApi.store.Put(ctx, &obj, all.trustPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.GpuDrivers {
-		_, err := all.gpuDriverApi.store.Put(ctx, &obj, all.gpuDriverApi.sync.syncWait)
+		_, err := all.gpuDriverApi.store.Put(ctx, &obj, all.gpuDriverApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.PlatformFeatures {
-		_, err := all.platformFeaturesApi.store.Put(ctx, &obj, all.platformFeaturesApi.sync.syncWait)
+		_, err := all.platformFeaturesApi.store.Put(ctx, &obj, all.platformFeaturesApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.Cloudlets {
-		_, err := all.cloudletApi.store.Put(ctx, &obj, all.cloudletApi.sync.syncWait)
+		_, err := all.cloudletApi.store.Put(ctx, &obj, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.CloudletInfos {
-		_, err := all.cloudletInfoApi.store.Put(ctx, &obj, all.cloudletInfoApi.sync.syncWait)
+		_, err := all.cloudletInfoApi.store.Put(ctx, &obj, all.cloudletInfoApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.CloudletPools {
-		_, err := all.cloudletPoolApi.store.Put(ctx, &obj, all.cloudletPoolApi.sync.syncWait)
+		_, err := all.cloudletPoolApi.store.Put(ctx, &obj, all.cloudletPoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.Networks {
-		_, err := all.networkApi.store.Put(ctx, &obj, all.networkApi.sync.syncWait)
+		_, err := all.networkApi.store.Put(ctx, &obj, all.networkApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AutoProvPolicies {
-		_, err := all.autoProvPolicyApi.store.Put(ctx, &obj, all.autoProvPolicyApi.sync.syncWait)
+		_, err := all.autoProvPolicyApi.store.Put(ctx, &obj, all.autoProvPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AutoScalePolicies {
-		_, err := all.autoScalePolicyApi.store.Put(ctx, &obj, all.autoScalePolicyApi.sync.syncWait)
+		_, err := all.autoScalePolicyApi.store.Put(ctx, &obj, all.autoScalePolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.ClusterInsts {
-		_, err := all.clusterInstApi.store.Put(ctx, &obj, all.clusterInstApi.sync.syncWait)
+		_, err := all.clusterInstApi.store.Put(ctx, &obj, all.clusterInstApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.Apps {
-		_, err := all.appApi.store.Put(ctx, &obj, all.appApi.sync.syncWait)
+		_, err := all.appApi.store.Put(ctx, &obj, all.appApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AppInstances {
-		_, err := all.appInstApi.store.Put(ctx, &obj, all.appInstApi.sync.syncWait)
+		_, err := all.appInstApi.store.Put(ctx, &obj, all.appInstApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AppInstRefs {
-		_, err := all.appInstRefsApi.store.Put(ctx, &obj, all.appInstRefsApi.sync.syncWait)
+		_, err := all.appInstRefsApi.store.Put(ctx, &obj, all.appInstRefsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.ClusterRefs {
-		_, err := all.clusterRefsApi.store.Put(ctx, &obj, all.clusterRefsApi.sync.syncWait)
+		_, err := all.clusterRefsApi.store.Put(ctx, &obj, all.clusterRefsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.VmPools {
-		_, err := all.vmPoolApi.store.Put(ctx, &obj, all.vmPoolApi.sync.syncWait)
+		_, err := all.vmPoolApi.store.Put(ctx, &obj, all.vmPoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AlertPolicies {
-		_, err := all.alertPolicyApi.store.Put(ctx, &obj, all.alertPolicyApi.sync.syncWait)
+		_, err := all.alertPolicyApi.store.Put(ctx, &obj, all.alertPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.FlowRateLimitSettings {
-		_, err := all.flowRateLimitSettingsApi.store.Put(ctx, &obj, all.flowRateLimitSettingsApi.sync.syncWait)
+		_, err := all.flowRateLimitSettingsApi.store.Put(ctx, &obj, all.flowRateLimitSettingsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.MaxReqsRateLimitSettings {
-		_, err := all.maxReqsRateLimitSettingsApi.store.Put(ctx, &obj, all.maxReqsRateLimitSettingsApi.sync.syncWait)
+		_, err := all.maxReqsRateLimitSettingsApi.store.Put(ctx, &obj, all.maxReqsRateLimitSettingsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.TrustPolicyExceptions {
-		_, err := all.trustPolicyExceptionApi.store.Put(ctx, &obj, all.trustPolicyExceptionApi.sync.syncWait)
+		_, err := all.trustPolicyExceptionApi.store.Put(ctx, &obj, all.trustPolicyExceptionApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 }
 
 func (s *testSupportData) delete(t *testing.T, ctx context.Context, all *AllApis) {
 	for _, obj := range s.TrustPolicyExceptions {
-		_, err := all.trustPolicyExceptionApi.store.Delete(ctx, &obj, all.trustPolicyExceptionApi.sync.syncWait)
+		_, err := all.trustPolicyExceptionApi.store.Delete(ctx, &obj, all.trustPolicyExceptionApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.MaxReqsRateLimitSettings {
-		_, err := all.maxReqsRateLimitSettingsApi.store.Delete(ctx, &obj, all.maxReqsRateLimitSettingsApi.sync.syncWait)
+		_, err := all.maxReqsRateLimitSettingsApi.store.Delete(ctx, &obj, all.maxReqsRateLimitSettingsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.FlowRateLimitSettings {
-		_, err := all.flowRateLimitSettingsApi.store.Delete(ctx, &obj, all.flowRateLimitSettingsApi.sync.syncWait)
+		_, err := all.flowRateLimitSettingsApi.store.Delete(ctx, &obj, all.flowRateLimitSettingsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AlertPolicies {
-		_, err := all.alertPolicyApi.store.Delete(ctx, &obj, all.alertPolicyApi.sync.syncWait)
+		_, err := all.alertPolicyApi.store.Delete(ctx, &obj, all.alertPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.VmPools {
-		_, err := all.vmPoolApi.store.Delete(ctx, &obj, all.vmPoolApi.sync.syncWait)
+		_, err := all.vmPoolApi.store.Delete(ctx, &obj, all.vmPoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.ClusterRefs {
-		_, err := all.clusterRefsApi.store.Delete(ctx, &obj, all.clusterRefsApi.sync.syncWait)
+		_, err := all.clusterRefsApi.store.Delete(ctx, &obj, all.clusterRefsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AppInstRefs {
-		_, err := all.appInstRefsApi.store.Delete(ctx, &obj, all.appInstRefsApi.sync.syncWait)
+		_, err := all.appInstRefsApi.store.Delete(ctx, &obj, all.appInstRefsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AppInstances {
-		_, err := all.appInstApi.store.Delete(ctx, &obj, all.appInstApi.sync.syncWait)
+		_, err := all.appInstApi.store.Delete(ctx, &obj, all.appInstApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.Apps {
-		_, err := all.appApi.store.Delete(ctx, &obj, all.appApi.sync.syncWait)
+		_, err := all.appApi.store.Delete(ctx, &obj, all.appApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.ClusterInsts {
-		_, err := all.clusterInstApi.store.Delete(ctx, &obj, all.clusterInstApi.sync.syncWait)
+		_, err := all.clusterInstApi.store.Delete(ctx, &obj, all.clusterInstApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AutoScalePolicies {
-		_, err := all.autoScalePolicyApi.store.Delete(ctx, &obj, all.autoScalePolicyApi.sync.syncWait)
+		_, err := all.autoScalePolicyApi.store.Delete(ctx, &obj, all.autoScalePolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.AutoProvPolicies {
-		_, err := all.autoProvPolicyApi.store.Delete(ctx, &obj, all.autoProvPolicyApi.sync.syncWait)
+		_, err := all.autoProvPolicyApi.store.Delete(ctx, &obj, all.autoProvPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.Networks {
-		_, err := all.networkApi.store.Delete(ctx, &obj, all.networkApi.sync.syncWait)
+		_, err := all.networkApi.store.Delete(ctx, &obj, all.networkApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.CloudletPools {
-		_, err := all.cloudletPoolApi.store.Delete(ctx, &obj, all.cloudletPoolApi.sync.syncWait)
+		_, err := all.cloudletPoolApi.store.Delete(ctx, &obj, all.cloudletPoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.CloudletInfos {
-		_, err := all.cloudletInfoApi.store.Delete(ctx, &obj, all.cloudletInfoApi.sync.syncWait)
+		_, err := all.cloudletInfoApi.store.Delete(ctx, &obj, all.cloudletInfoApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.Cloudlets {
-		_, err := all.cloudletApi.store.Delete(ctx, &obj, all.cloudletApi.sync.syncWait)
+		_, err := all.cloudletApi.store.Delete(ctx, &obj, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.PlatformFeatures {
-		_, err := all.platformFeaturesApi.store.Delete(ctx, &obj, all.platformFeaturesApi.sync.syncWait)
+		_, err := all.platformFeaturesApi.store.Delete(ctx, &obj, all.platformFeaturesApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.GpuDrivers {
-		_, err := all.gpuDriverApi.store.Delete(ctx, &obj, all.gpuDriverApi.sync.syncWait)
+		_, err := all.gpuDriverApi.store.Delete(ctx, &obj, all.gpuDriverApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.TrustPolicies {
-		_, err := all.trustPolicyApi.store.Delete(ctx, &obj, all.trustPolicyApi.sync.syncWait)
+		_, err := all.trustPolicyApi.store.Delete(ctx, &obj, all.trustPolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.ResTagTables {
-		_, err := all.resTagTableApi.store.Delete(ctx, &obj, all.resTagTableApi.sync.syncWait)
+		_, err := all.resTagTableApi.store.Delete(ctx, &obj, all.resTagTableApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.OperatorCodes {
-		_, err := all.operatorCodeApi.store.Delete(ctx, &obj, all.operatorCodeApi.sync.syncWait)
+		_, err := all.operatorCodeApi.store.Delete(ctx, &obj, all.operatorCodeApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	if s.Settings != nil {
-		_, err := all.settingsApi.store.Delete(ctx, s.Settings, all.settingsApi.sync.syncWait)
+		_, err := all.settingsApi.store.Delete(ctx, s.Settings, all.settingsApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.Flavors {
-		_, err := all.flavorApi.store.Delete(ctx, &obj, all.flavorApi.sync.syncWait)
+		_, err := all.flavorApi.store.Delete(ctx, &obj, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 }

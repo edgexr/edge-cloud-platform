@@ -16,6 +16,7 @@ package controller
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -26,9 +27,9 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
@@ -43,16 +44,19 @@ func TestAlertApi(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
 
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	testCloudletName := "testcloudlet"
@@ -117,17 +121,18 @@ func TestAppInstDownAlert(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	// create supporting data
@@ -205,7 +210,6 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 		op(&options)
 	}
 	svcs := &testServices{}
-	objstore.InitRegion(1)
 	tMode := true
 	testMode = &tMode
 	dockerRegistry := "docker.example.ut"
@@ -224,6 +228,7 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
+	os.Setenv("E2ETEST_SKIPREGISTRY", "true")
 	if options.LocalRedis {
 		// Since it is a single node, config file is not required
 		procOpts := []process.StartOp{process.WithNoConfig(), process.WithCleanStartup()}
@@ -267,4 +272,12 @@ func testfinish(s *testServices) {
 		s.DummyVault = nil
 	}
 	services = Services{}
+}
+
+func registerDummyCCRMConn(t *testing.T, ccrm *ccrmdummy.CCRMDummy) {
+	services.platformServiceConnCache = cloudcommon.NewGRPCConnCache(map[string]string{})
+	conn, err := ccrm.GRPCClient()
+	require.Nil(t, err)
+	// all testutil platform features use node type "ccrm"
+	services.platformServiceConnCache.SetConn("ccrm", conn)
 }

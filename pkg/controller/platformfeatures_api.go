@@ -21,21 +21,22 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type PlatformFeaturesApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.PlatformFeaturesStore
 	cache edgeproto.PlatformFeaturesCache
 }
 
-func NewPlatformFeaturesApi(sync *Sync, all *AllApis) *PlatformFeaturesApi {
+func NewPlatformFeaturesApi(sync *regiondata.Sync, all *AllApis) *PlatformFeaturesApi {
 	platformFeaturesApi := PlatformFeaturesApi{}
 	platformFeaturesApi.all = all
 	platformFeaturesApi.sync = sync
-	platformFeaturesApi.store = edgeproto.NewPlatformFeaturesStore(sync.store)
+	platformFeaturesApi.store = edgeproto.NewPlatformFeaturesStore(sync.GetKVStore())
 	edgeproto.InitPlatformFeaturesCache(&platformFeaturesApi.cache)
 	sync.RegisterCache(&platformFeaturesApi.cache)
 	return &platformFeaturesApi
@@ -97,7 +98,7 @@ func (s *PlatformFeaturesApi) DeletePlatformFeatures(ctx context.Context, in *ed
 	if inuse, keys := s.all.cloudletApi.UsesPlatformFeatures(in.GetKey()); inuse {
 		return &edgeproto.Result{}, fmt.Errorf("PlatformType in use by Cloudlets %s", strings.Join(keys, ", "))
 	}
-	return s.store.Delete(ctx, in, s.sync.syncWait)
+	return s.store.Delete(ctx, in, s.sync.SyncWait)
 }
 
 func (s *PlatformFeaturesApi) GetCloudletFeatures(ctx context.Context, platformType string) (*edgeproto.PlatformFeatures, error) {
@@ -114,7 +115,7 @@ func (s *PlatformFeaturesApi) Update(ctx context.Context, in *edgeproto.Platform
 	// Write to Etcd the features sent by the CCRM so it will persist
 	// even it the CCRM goes offline in case there are cloudlets still
 	// using it.
-	res, err := s.store.Put(ctx, in, s.sync.syncWait)
+	res, err := s.store.Put(ctx, in, s.sync.SyncWait)
 	log.SpanLog(ctx, log.DebugLevelApi, "put platform features", "platformType", in.PlatformType, "nodeType", in.NodeType, "res", res, "err", err)
 }
 
@@ -128,4 +129,13 @@ func (s *PlatformFeaturesApi) Prune(ctx context.Context, keys map[edgeproto.Plat
 
 func (s *PlatformFeaturesApi) Flush(ctx context.Context, notifyId int64) {
 	// require admin to remove platforms
+}
+
+func (s *PlatformFeaturesApi) FeaturesByPlatform() map[string]edgeproto.PlatformFeatures {
+	ptof := map[string]edgeproto.PlatformFeatures{}
+	s.cache.Show(&edgeproto.PlatformFeatures{}, func(features *edgeproto.PlatformFeatures) error {
+		ptof[features.PlatformType] = *features
+		return nil
+	})
+	return ptof
 }

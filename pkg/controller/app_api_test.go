@@ -22,6 +22,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
@@ -39,10 +40,10 @@ func TestAppApi(t *testing.T) {
 	cplookup.Init()
 	nodeMgr.CloudletPoolLookup = cplookup
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
@@ -241,9 +242,6 @@ func TestAppApi(t *testing.T) {
 	app.Fields = []string{
 		edgeproto.AppFieldAllowServerless,
 		edgeproto.AppFieldServerlessConfig,
-		edgeproto.AppFieldServerlessConfigVcpus,
-		edgeproto.AppFieldServerlessConfigRam,
-		edgeproto.AppFieldServerlessConfigMinReplicas,
 	}
 	_, err = apis.appApi.UpdateApp(ctx, &app)
 	require.Nil(t, err)
@@ -253,7 +251,6 @@ func TestAppApi(t *testing.T) {
 	app.ServerlessConfig.MinReplicas = 0
 	app.Fields = []string{
 		edgeproto.AppFieldAllowServerless,
-		edgeproto.AppFieldServerlessConfig,
 		edgeproto.AppFieldServerlessConfigVcpus,
 	}
 	_, err = apis.appApi.UpdateApp(ctx, &app)

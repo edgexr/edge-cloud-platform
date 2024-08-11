@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/google/go-cmp/cmp"
@@ -155,6 +156,9 @@ func compareJson(funcName, key, expected, actual string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("Unmarshal failed, %v, %s\n", err, actual)
 	}
+	randomValKeys := []string{"obj_id"}
+	normalizeRandomFields(expectedMap, randomValKeys...)
+	normalizeRandomFields(actualMap, randomValKeys...)
 	if !cmp.Equal(expectedMap, actualMap) {
 		fmt.Printf("[%s] comparsion fail for key: %s\n", funcName, key)
 		fmt.Printf("expected vs actual:\n")
@@ -172,6 +176,22 @@ func compareString(funcName, key, expected, actual string) error {
 		return fmt.Errorf("Values don't match for the key, upgradeFunc: %s", funcName)
 	}
 	return nil
+}
+
+// comparison fails for fields with random values (UUIDs, etc)
+func normalizeRandomFields(m map[string]interface{}, keys ...string) {
+	for _, key := range keys {
+		val, ok := m[key]
+		if !ok {
+			continue
+		}
+		switch v := val.(type) {
+		case string:
+			if len(v) > 0 {
+				m[key] = "normalizedStringVal"
+			}
+		}
+	}
 }
 
 type VaultUpgradeData struct {
@@ -276,8 +296,7 @@ func getTestFileName(funcName, suffix string) string {
 // Verify that the resulting content in etcd matches expected
 func TestAllUpgradeFuncs(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelUpgrade | log.DebugLevelApi)
-	objStore := dummyEtcd{}
-	objstore.InitRegion(1)
+	objStore := regiondata.InMemoryStore{}
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 
@@ -297,7 +316,7 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	// because the appinst_api_test sets it to something else.
 	*appDNSRoot = "appdnsroot.net"
 
-	sync := InitSync(&objStore)
+	sync := regiondata.InitSync(&objStore)
 	apis := NewAllApis(sync)
 
 	// Start in-memory Vault for upgrade funcs that upgrade Vault data

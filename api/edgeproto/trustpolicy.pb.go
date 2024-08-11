@@ -697,7 +697,7 @@ var TrustPolicyAllFields = []string{
 	TrustPolicyFieldDeletePrepare,
 }
 
-var TrustPolicyAllFieldsMap = map[string]struct{}{
+var TrustPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 	TrustPolicyFieldKeyOrganization:                   struct{}{},
 	TrustPolicyFieldKeyName:                           struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesProtocol:     struct{}{},
@@ -705,7 +705,7 @@ var TrustPolicyAllFieldsMap = map[string]struct{}{
 	TrustPolicyFieldOutboundSecurityRulesPortRangeMax: struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesRemoteCidr:   struct{}{},
 	TrustPolicyFieldDeletePrepare:                     struct{}{},
-}
+})
 
 var TrustPolicyAllFieldsStringMap = map[string]string{
 	TrustPolicyFieldKeyOrganization:                   "Key Organization",
@@ -721,49 +721,55 @@ func (m *TrustPolicy) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, TrustPolicyFieldKey+".") || s == TrustPolicyFieldKey
 }
 
-func (m *TrustPolicy) DiffFields(o *TrustPolicy, fields map[string]struct{}) {
+func (m *TrustPolicy) DiffFields(o *TrustPolicy, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {
-		fields[TrustPolicyFieldKeyOrganization] = struct{}{}
-		fields[TrustPolicyFieldKey] = struct{}{}
+		fields.Set(TrustPolicyFieldKeyOrganization)
+		fields.Set(TrustPolicyFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[TrustPolicyFieldKeyName] = struct{}{}
-		fields[TrustPolicyFieldKey] = struct{}{}
+		fields.Set(TrustPolicyFieldKeyName)
+		fields.Set(TrustPolicyFieldKey)
 	}
 	if len(m.OutboundSecurityRules) != len(o.OutboundSecurityRules) {
-		fields[TrustPolicyFieldOutboundSecurityRules] = struct{}{}
+		fields.Set(TrustPolicyFieldOutboundSecurityRules)
 	} else {
 		for i0 := 0; i0 < len(m.OutboundSecurityRules); i0++ {
 			if m.OutboundSecurityRules[i0].Protocol != o.OutboundSecurityRules[i0].Protocol {
-				fields[TrustPolicyFieldOutboundSecurityRulesProtocol] = struct{}{}
-				fields[TrustPolicyFieldOutboundSecurityRules] = struct{}{}
+				fields.Set(TrustPolicyFieldOutboundSecurityRulesProtocol)
+				fields.Set(TrustPolicyFieldOutboundSecurityRules)
 			}
 			if m.OutboundSecurityRules[i0].PortRangeMin != o.OutboundSecurityRules[i0].PortRangeMin {
-				fields[TrustPolicyFieldOutboundSecurityRulesPortRangeMin] = struct{}{}
-				fields[TrustPolicyFieldOutboundSecurityRules] = struct{}{}
+				fields.Set(TrustPolicyFieldOutboundSecurityRulesPortRangeMin)
+				fields.Set(TrustPolicyFieldOutboundSecurityRules)
 			}
 			if m.OutboundSecurityRules[i0].PortRangeMax != o.OutboundSecurityRules[i0].PortRangeMax {
-				fields[TrustPolicyFieldOutboundSecurityRulesPortRangeMax] = struct{}{}
-				fields[TrustPolicyFieldOutboundSecurityRules] = struct{}{}
+				fields.Set(TrustPolicyFieldOutboundSecurityRulesPortRangeMax)
+				fields.Set(TrustPolicyFieldOutboundSecurityRules)
 			}
 			if m.OutboundSecurityRules[i0].RemoteCidr != o.OutboundSecurityRules[i0].RemoteCidr {
-				fields[TrustPolicyFieldOutboundSecurityRulesRemoteCidr] = struct{}{}
-				fields[TrustPolicyFieldOutboundSecurityRules] = struct{}{}
+				fields.Set(TrustPolicyFieldOutboundSecurityRulesRemoteCidr)
+				fields.Set(TrustPolicyFieldOutboundSecurityRules)
 			}
 		}
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[TrustPolicyFieldDeletePrepare] = struct{}{}
+		fields.Set(TrustPolicyFieldDeletePrepare)
 	}
 }
 
-var UpdateTrustPolicyFieldsMap = map[string]struct{}{
+func (m *TrustPolicy) GetDiffFields(o *TrustPolicy) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateTrustPolicyFieldsMap = NewFieldMap(map[string]struct{}{
 	TrustPolicyFieldOutboundSecurityRules:             struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesProtocol:     struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesPortRangeMin: struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesPortRangeMax: struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesRemoteCidr:   struct{}{},
-}
+})
 
 func (m *TrustPolicy) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -771,11 +777,11 @@ func (m *TrustPolicy) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateTrustPolicyFieldsMap[field]; !ok {
+		if !UpdateTrustPolicyFieldsMap.Has(field) {
 			if _, ok := TrustPolicyAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -829,21 +835,21 @@ func (m *TrustPolicy) CopyInFields(src *TrustPolicy) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.HasOrHasChild("3") {
 		if src.OutboundSecurityRules != nil {
 			if updateListAction == "add" {
 				changed += m.AddOutboundSecurityRules(src.OutboundSecurityRules...)
@@ -861,7 +867,7 @@ func (m *TrustPolicy) CopyInFields(src *TrustPolicy) int {
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
+	if fmap.Has("4") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
@@ -1098,6 +1104,7 @@ type TrustPolicyCache struct {
 	KeyWatchers   map[PolicyKey][]*TrustPolicyKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *PolicyKey)
 	DeletedKeyCbs []func(ctx context.Context, key *PolicyKey)
+	Store         TrustPolicyStore
 }
 
 func NewTrustPolicyCache() *TrustPolicyCache {
@@ -1460,6 +1467,18 @@ func (c *TrustPolicyCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *TrustPolicyCache) InitCacheWithSync(sync DataSync) {
+	InitTrustPolicyCache(s)
+	s.InitSync(sync)
+}
+
+func (s *TrustPolicyCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewTrustPolicyStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

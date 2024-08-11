@@ -29,6 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	appsv1 "k8s.io/api/apps/v1"
@@ -37,17 +38,17 @@ import (
 // Should only be one of these instantiated in main
 type AppApi struct {
 	all           *AllApis
-	sync          *Sync
+	sync          *regiondata.Sync
 	store         edgeproto.AppStore
 	cache         edgeproto.AppCache
 	globalIdStore edgeproto.AppGlobalIdStore
 }
 
-func NewAppApi(sync *Sync, all *AllApis) *AppApi {
+func NewAppApi(sync *regiondata.Sync, all *AllApis) *AppApi {
 	appApi := AppApi{}
 	appApi.all = all
 	appApi.sync = sync
-	appApi.store = edgeproto.NewAppStore(sync.store)
+	appApi.store = edgeproto.NewAppStore(sync.GetKVStore())
 	edgeproto.InitAppCache(&appApi.cache)
 	sync.RegisterCache(&appApi.cache)
 	return &appApi
@@ -88,16 +89,12 @@ func (s *AppApi) CheckAppCompatibleWithTrustPolicy(ctx context.Context, ckey *ed
 	}
 
 	allowedRules := []*edgeproto.SecurityRule{}
-	list, err := s.all.cloudletPoolApi.GetCloudletPoolKeysForCloudletKey(ckey)
-	if err == nil {
-		for _, cloudletPoolKey := range list {
-			rules := s.all.trustPolicyExceptionApi.GetTrustPolicyExceptionRules(&cloudletPoolKey, &app.Key)
-			log.SpanLog(ctx, log.DebugLevelApi, "CheckAppCompatibleWithTrustPolicy() GetTrustPolicyExceptionRules returned", "rules", rules)
+	list := s.all.cloudletPoolApi.GetCloudletPoolKeysForCloudletKey(ckey)
+	for _, cloudletPoolKey := range list {
+		rules := s.all.trustPolicyExceptionApi.GetTrustPolicyExceptionRules(&cloudletPoolKey, &app.Key)
+		log.SpanLog(ctx, log.DebugLevelApi, "CheckAppCompatibleWithTrustPolicy() GetTrustPolicyExceptionRules returned", "rules", rules)
 
-			allowedRules = append(allowedRules, rules...)
-		}
-	} else {
-		log.SpanLog(ctx, log.DebugLevelApi, "CheckAppCompatibleWithTrustPolicy() returned", "err", err)
+		allowedRules = append(allowedRules, rules...)
 	}
 	// Combine the trustPolicy rules with the trustPolicyException rules.
 	for i, r := range trustPolicy.OutboundSecurityRules {
@@ -596,12 +593,12 @@ func (s *AppApi) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 		edgeproto.AppFieldVmAppOsType: true, // will not affect current AppInsts, but needed to launch existing apps on VCD
 	}
 
-	fields := edgeproto.MakeFieldMap(in.Fields)
-	if err := in.Validate(fields); err != nil {
+	fmap := edgeproto.MakeFieldMap(in.Fields)
+	if err := in.Validate(fmap); err != nil {
 		return &edgeproto.Result{}, err
 	}
 
-	if _, ok := fields[edgeproto.AppFieldSecretEnvVars]; ok {
+	if fmap.HasOrHasChild(edgeproto.AppFieldSecretEnvVars) {
 		_, err := cloudcommon.UpdateAppSecretVars(ctx, *region, &in.Key, nodeMgr.VaultConfig, in.SecretEnvVars, in.UpdateListAction)
 		if err != nil {
 			return &edgeproto.Result{}, err
@@ -621,7 +618,7 @@ func (s *AppApi) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 			if cur.Deployment != cloudcommon.DeploymentTypeKubernetes &&
 				cur.Deployment != cloudcommon.DeploymentTypeDocker &&
 				cur.Deployment != cloudcommon.DeploymentTypeHelm {
-				for f := range fields {
+				for _, f := range fmap.Fields() {
 					if in.IsKeyField(f) {
 						continue
 					}
@@ -631,7 +628,7 @@ func (s *AppApi) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 				}
 			}
 			for _, field := range inUseCannotUpdate {
-				if _, found := fields[field]; found {
+				if fmap.Has(field) {
 					return fmt.Errorf("Cannot update %s when AppInst exists", edgeproto.AppAllFieldsStringMap[field])
 				}
 			}
@@ -644,7 +641,7 @@ func (s *AppApi) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 				}
 			}
 		}
-		_, deploymentSpecified := fields[edgeproto.AppFieldDeployment]
+		deploymentSpecified := fmap.Has(edgeproto.AppFieldDeployment)
 		if deploymentSpecified {
 			// likely any existing manifest is no longer valid,
 			// reset it in case a new manifest was not specified
@@ -653,10 +650,10 @@ func (s *AppApi) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 			// will overwrite this blank setting.
 			cur.DeploymentManifest = ""
 		}
-		_, deploymentManifestSpecified := fields[edgeproto.AppFieldDeploymentManifest]
-		_, accessPortSpecified := fields[edgeproto.AppFieldAccessPorts]
-		_, TrustedSpecified := fields[edgeproto.AppFieldTrusted]
-		_, requiredOutboundSpecified := fields[edgeproto.AppFieldRequiredOutboundConnections]
+		deploymentManifestSpecified := fmap.Has(edgeproto.AppFieldDeploymentManifest)
+		accessPortSpecified := fmap.HasOrHasChild(edgeproto.AppFieldAccessPorts)
+		TrustedSpecified := fmap.Has(edgeproto.AppFieldTrusted)
+		requiredOutboundSpecified := fmap.HasOrHasChild(edgeproto.AppFieldRequiredOutboundConnections)
 
 		if deploymentManifestSpecified {
 			// reset the deployment generator
@@ -718,7 +715,7 @@ func (s *AppApi) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 			cur.DeploymentManifest = ""
 		}
 		newRevision := in.Revision
-		if newRevision == "" && revisionUpdateNeeded(fields) {
+		if newRevision == "" && revisionUpdateNeeded(fmap) {
 			newRevision = time.Now().Format("2006-01-02T150405")
 			log.SpanLog(ctx, log.DebugLevelApi, "Setting new revision to current timestamp", "Revision", in.Revision)
 		}
@@ -732,9 +729,9 @@ func (s *AppApi) UpdateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.R
 	return &edgeproto.Result{}, err
 }
 
-func revisionUpdateNeeded(fields map[string]struct{}) bool {
-	_, alertPoliciesSpecified := fields[edgeproto.AppFieldAlertPolicies]
-	if alertPoliciesSpecified && len(fields) == 1 {
+func revisionUpdateNeeded(fmap *edgeproto.FieldMap) bool {
+	alertPoliciesSpecified := fmap.Has(edgeproto.AppFieldAlertPolicies)
+	if alertPoliciesSpecified && fmap.Count() == 1 {
 		return false
 	}
 	return true

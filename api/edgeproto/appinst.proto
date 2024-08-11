@@ -135,7 +135,7 @@ message AppInst {
   // Base FQDN (not really URI) for the App. See Service FQDN for endpoint access.
   string uri = 4 [(protogen.backend) = true];
   // Static startup FQDN gets set when the object is created and cannot be changed
-  string static_uri = 49 [(protogen.backend) = true];
+  string static_uri = 50 [(protogen.backend) = true];
   // Liveness of instance (see Liveness)
   Liveness liveness = 6 [(protogen.backend) = true];
   // For instances accessible via a shared load balancer, defines the external
@@ -205,6 +205,8 @@ message AppInst {
   ClusterKey virtual_cluster_key = 47 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting for VM Apps and auto-clusters, otherwise defaults to target cluster instance setting.
   bool enable_ipv6 = 48;
+  // Universally unique object ID
+  string obj_id = 49 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;

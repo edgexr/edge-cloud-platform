@@ -40,6 +40,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
@@ -84,9 +85,29 @@ var checkpointInterval = flag.String("checkpointInterval", "MONTH", "Interval at
 var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name root")
 var requireNotifyAccessKey = flag.Bool("requireNotifyAccessKey", false, "Require AccessKey authentication on notify API")
 var dnsZone = flag.String("dnsZone", "", "comma separated list of allowed dns zones for DNS update requests")
+var platformServiceAddrs arrayFlags
+
+func init() {
+	// CCRM address, if CCRM gets split into Cloudlet/Cluster/AppInst
+	// specific services, we can split this flag into 3 different flags
+	// for each API type. Node type allows adding additional CCRMs to
+	// support additional platforms.
+	flag.Var(&platformServiceAddrs, "platformServiceAddr", "platform service address per node type, i.e. nodeType:https://127.0.0.1:5901")
+}
 
 var ControllerId = ""
 var InfluxDBName = cloudcommon.DeveloperMetricsDbName
+
+type arrayFlags []string
+
+func (f *arrayFlags) String() string {
+	return strings.Join(*f, ",")
+}
+
+func (f *arrayFlags) Set(value string) error {
+	*f = append(*f, value)
+	return nil
+}
 
 func GetRootDir() string {
 	return *rootDir
@@ -94,6 +115,8 @@ func GetRootDir() string {
 
 var ErrCtrlAlreadyInProgress = errors.New("Change already in progress")
 var ErrCtrlUpgradeRequired = errors.New("data mode upgrade required")
+
+const NotifyChangeMaxLen = int64(200)
 
 var sigChan chan os.Signal
 var services Services
@@ -103,27 +126,29 @@ var redisCfg rediscache.RedisConfig
 var redisClient *redis.Client
 
 type Services struct {
-	etcdLocal                  *process.Etcd
-	objStore                   *EtcdClient
-	sync                       *Sync
-	influxQ                    *influxq.InfluxQ
-	events                     *influxq.InfluxQ
-	edgeEventsInfluxQ          *influxq.InfluxQ
-	cloudletResourcesInfluxQ   *influxq.InfluxQ
-	downsampledMetricsInfluxQ  *influxq.InfluxQ
-	notifyServerMgr            bool
-	grpcServer                 *grpc.Server
-	httpServer                 *http.Server
-	notifyClient               *notify.Client
-	accessKeyGrpcServer        node.AccessKeyGrpcServer
-	listeners                  []net.Listener
-	publicCertManager          *node.PublicCertManager
-	stopInitCC                 chan bool
-	waitGroup                  sync.WaitGroup
-	allApis                    *AllApis
-	periodicClusterInstCleanup *tasks.PeriodicTask
-	checkpointer               *Checkpointer
-	regAuthMgr                 *cloudcommon.RegistryAuthMgr
+	etcdLocal                   *process.Etcd
+	objStore                    *regiondata.EtcdClient
+	sync                        *regiondata.Sync
+	influxQ                     *influxq.InfluxQ
+	events                      *influxq.InfluxQ
+	edgeEventsInfluxQ           *influxq.InfluxQ
+	cloudletResourcesInfluxQ    *influxq.InfluxQ
+	downsampledMetricsInfluxQ   *influxq.InfluxQ
+	notifyServerMgr             bool
+	grpcServer                  *grpc.Server
+	httpServer                  *http.Server
+	notifyClient                *notify.Client
+	accessKeyGrpcServer         node.AccessKeyGrpcServer
+	listeners                   []net.Listener
+	publicCertManager           *node.PublicCertManager
+	stopInitCC                  chan bool
+	waitGroup                   sync.WaitGroup
+	allApis                     *AllApis
+	periodicClusterInstCleanup  *tasks.PeriodicTask
+	periodicCloudletCertRefresh *tasks.PeriodicTask
+	checkpointer                *Checkpointer
+	regAuthMgr                  *cloudcommon.RegistryAuthMgr
+	platformServiceConnCache    *cloudcommon.GRPCConnCache
 }
 
 type UpgradeSupport struct {
@@ -169,9 +194,6 @@ func startServices() error {
 	}
 	ControllerId = hostname + "@" + *externalApiAddr
 
-	// region number for etcd is a deprecated concept since we decided
-	// etcd is per-region.
-	objstore.InitRegion(uint32(1))
 	if !util.ValidRegion(*region) {
 		return fmt.Errorf("invalid region name")
 	}
@@ -179,7 +201,7 @@ func startServices() error {
 		return fmt.Errorf("appDNSRoot %q must be less than %d characters", *appDNSRoot, cloudcommon.DnsDomainLabelMaxLen)
 	}
 
-	ctx, span, err := nodeMgr.Init(node.NodeTypeController, node.CertIssuerRegional, node.WithName(ControllerId), node.WithRegion(*region))
+	ctx, span, err := nodeMgr.Init(node.NodeTypeController, node.CertIssuerRegional, node.WithName(ControllerId), node.WithRegion(*region), node.WithCachesLinkToKVStore())
 	if err != nil {
 		return err
 	}
@@ -195,14 +217,14 @@ func startServices() error {
 		if *initLocalEtcd {
 			opts = append(opts, process.WithCleanStartup())
 		}
-		etcdLocal, err := StartLocalEtcdServer(opts...)
+		etcdLocal, err := regiondata.StartLocalEtcdServer(opts...)
 		if err != nil {
 			return fmt.Errorf("starting local etcd server failed: %v", err)
 		}
 		services.etcdLocal = etcdLocal
 		etcdUrls = &etcdLocal.ClientAddrs
 	}
-	objStore, err := GetEtcdClientBasic(*etcdUrls)
+	objStore, err := regiondata.GetEtcdClientBasic(*etcdUrls)
 	if err != nil {
 		return fmt.Errorf("Failed to initialize Object Store, %v", err)
 	}
@@ -211,6 +233,17 @@ func startServices() error {
 	if err != nil {
 		return fmt.Errorf("Failed to connect to etcd servers, %v", err)
 	}
+
+	platformAddrs := make(map[string]string)
+	for _, str := range platformServiceAddrs {
+		parts := strings.SplitN(str, ":", 2)
+		if len(parts) != 2 {
+			return fmt.Errorf("failed to split platformServiceAddr argument %s into nodeType and address, expected format of nodeType:addr", str)
+		}
+		platformAddrs[parts[0]] = parts[1]
+	}
+	services.platformServiceConnCache = cloudcommon.NewGRPCConnCache(platformAddrs)
+	services.platformServiceConnCache.Start()
 
 	redisClient, err = rediscache.NewClient(ctx, &redisCfg)
 	if err != nil {
@@ -221,7 +254,7 @@ func startServices() error {
 		return err
 	}
 
-	sync := InitSync(objStore)
+	sync := regiondata.InitSync(objStore)
 	allApis := NewAllApis(sync)
 	services.allApis = allApis
 
@@ -274,6 +307,8 @@ func startServices() error {
 	}
 	services.periodicClusterInstCleanup = tasks.NewPeriodicTask(clusterInstCleanupTaskable)
 	services.periodicClusterInstCleanup.Start()
+	services.periodicCloudletCertRefresh = tasks.NewPeriodicTask(NewCloudletCertRefreshTaskable(allApis))
+	services.periodicCloudletCertRefresh.Start()
 
 	err = allApis.flowRateLimitSettingsApi.initDefaultRateLimitSettings(ctx)
 	if err != nil {
@@ -565,6 +600,9 @@ func stopServices() {
 	if services.periodicClusterInstCleanup != nil {
 		services.periodicClusterInstCleanup.Stop()
 	}
+	if services.periodicCloudletCertRefresh != nil {
+		services.periodicCloudletCertRefresh.Stop()
+	}
 	if services.httpServer != nil {
 		services.httpServer.Shutdown(context.Background())
 	}
@@ -580,6 +618,9 @@ func stopServices() {
 	}
 	if services.notifyClient != nil {
 		services.notifyClient.Stop()
+	}
+	if services.platformServiceConnCache != nil {
+		services.platformServiceConnCache.Stop()
 	}
 	if services.stopInitCC != nil {
 		close(services.stopInitCC)
@@ -692,7 +733,7 @@ type AllApis struct {
 	syncLeaseData               *SyncLeaseData
 }
 
-func NewAllApis(sync *Sync) *AllApis {
+func NewAllApis(sync *regiondata.Sync) *AllApis {
 	all := &AllApis{}
 	all.appApi = NewAppApi(sync, all)
 	all.operatorCodeApi = NewOperatorCodeApi(sync, all)
@@ -775,6 +816,7 @@ func InitNotify(metricsInflux *influxq.InfluxQ, edgeEventsInflux *influxq.Influx
 	notify.ServerMgrOne.RegisterSendAppInstClientKeyCache(&allApis.appInstClientKeyApi.cache)
 	// TrustPolicyExceptions depend on App and Cloudlet so must be sent after them.
 	notify.ServerMgrOne.RegisterSendTrustPolicyExceptionCache(&allApis.trustPolicyExceptionApi.cache)
+	notify.ServerMgrOne.RegisterSendTPEInstanceStateCache(&allApis.trustPolicyExceptionApi.instCache)
 	notify.ServerMgrOne.RegisterSend(execRequestSendMany)
 	notify.ServerMgrOne.RegisterSend(allApis.appInstApi.fedAppInstEventSendMany)
 
@@ -792,7 +834,6 @@ func InitNotify(metricsInflux *influxq.InfluxQ, edgeEventsInflux *influxq.Influx
 	notify.ServerMgrOne.RegisterRecv(notify.NewDeviceRecvMany(allApis.deviceApi))
 	notify.ServerMgrOne.RegisterRecv(notify.NewAutoProvInfoRecvMany(allApis.autoProvInfoApi))
 	notify.ServerMgrOne.RegisterRecv(notify.NewMetricRecvMany(NewControllerMetricsReceiver(metricsInflux, edgeEventsInflux)))
-	notify.ServerMgrOne.RegisterRecv(notify.NewCloudletOnboardingInfoRecvMany(allApis.cloudletInfoApi))
 }
 
 type ControllerMetricsReceiver struct {

@@ -24,6 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
+	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 	yaml "github.com/mobiledgex/yaml/v2"
 )
 
@@ -404,37 +405,58 @@ func IsUserDataSame(ctx context.Context, userdata1, userdata2 string) bool {
 }
 
 // populateParams fills in some details which cannot be done outside of heat
-func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, action string) (*ReservedResources, error) {
+func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, action string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "populateParams", "VMGroupOrchestrationParams", VMGroupOrchestrationParams.GroupName, "action", action)
 
-	// lock the resource reservations
-	resourceLock.Lock()
-	defer resourceLock.Unlock()
-	var reserved ReservedResources
-
-	usedCidrs := make(map[string]string)
 	if VMGroupOrchestrationParams.Netspec == nil {
-		return nil, fmt.Errorf("Netspec is nil")
+		return fmt.Errorf("Netspec is nil")
 	}
 	masterIP := ""
 	masterIPv6 := ""
 
-	if len(VMGroupOrchestrationParams.Subnets) > 0 {
+	ownerID := VMGroupOrchestrationParams.OwnerID
+	// reserve function may run several times if there are conflicts,
+	// so track which CIDRs need to be updated so they can be re-assigned
+	// on subsequent runs.
+	subnetNeedsResource := make(map[int]struct{})
+	for i, s := range VMGroupOrchestrationParams.Subnets {
+		if s.CIDR == vmlayer.NextAvailableResource {
+			subnetNeedsResource[i] = struct{}{}
+		}
+	}
+
+	err := o.reservedSubnets.ReserveValues(ctx, func(ctx context.Context, reservations syncdata.Reservations) error {
+		// note this function may run multiple times if there are conflicts,
+		// so reset any data that the function sets.
+		masterIP = ""
+		masterIPv6 = ""
+		usedCidrs := make(map[string]string)
+
+		if len(VMGroupOrchestrationParams.Subnets) == 0 {
+			return nil
+		}
+
 		subnetsByName := make(map[string]OSSubnet)
 		if action != heatTest && !VMGroupOrchestrationParams.SkipInfraSpecificCheck {
 			sns, snserr := o.ListSubnets(ctx, o.VMProperties.GetCloudletMexNetwork())
 			if snserr != nil {
-				return nil, fmt.Errorf("can't get list of subnets for %s, %v", o.VMProperties.GetCloudletMexNetwork(), snserr)
+				return fmt.Errorf("can't get list of subnets for %s, %v", o.VMProperties.GetCloudletMexNetwork(), snserr)
 			}
 			for _, s := range sns {
 				usedCidrs[s.Subnet] = s.Name
 				subnetsByName[s.Name] = s
+				reservations.AddIfMissing(s.Subnet)
 			}
 		}
+		// if this is an update, remove all current reservations
+		// if we're continuing to use the same subnet, the reservation will
+		// get added back when we find it in usedCidrs and it matches the
+		// currentSubnetName
+		reservations.RemoveForOwner(ownerID)
 
 		// find an available subnet or the current subnet for update and delete
 		for i, s := range VMGroupOrchestrationParams.Subnets {
-			if s.CIDR != vmlayer.NextAvailableResource {
+			if _, found := subnetNeedsResource[i]; !found {
 				// no need to compute the CIDR
 				continue
 			}
@@ -464,13 +486,13 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 					subnet := fmt.Sprintf("%s.%s.%d.%d/%s", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 0, VMGroupOrchestrationParams.Netspec.NetmaskBits)
 					// either look for an unused one (create) or the current one (update)
 					if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
-						resby, alreadyReserved := ReservedSubnets[subnet]
+						resby, alreadyReserved := reservations.Has(subnet)
 						if alreadyReserved {
 							log.SpanLog(ctx, log.DebugLevelInfra, "subnet already reserved", "subnet", subnet, "resby", resby)
 							continue
 						}
 						found = true
-						reserved.Subnets = append(reserved.Subnets, subnet)
+						reservations.Add(subnet, ownerID)
 						VMGroupOrchestrationParams.Subnets[i].CIDR = subnet
 						if !VMGroupOrchestrationParams.Subnets[i].SkipGateway {
 							VMGroupOrchestrationParams.Subnets[i].GatewayIP = fmt.Sprintf("%s.%s.%d.%d", VMGroupOrchestrationParams.Netspec.Octets[0], VMGroupOrchestrationParams.Netspec.Octets[1], octet, 1)
@@ -490,13 +512,13 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 					subnet := fmt.Sprintf("%s:%x::/64", VMGroupOrchestrationParams.Netspec.IPV6RoutingPrefix, hextet)
 					// either look for an unused one (create) or the current one (update)
 					if (newSubnet && usedCidrs[subnet] == "") || (!newSubnet && usedCidrs[subnet] == currentSubnetName) {
-						resby, alreadyReserved := ReservedSubnets[subnet]
+						resby, alreadyReserved := reservations.Has(subnet)
 						if alreadyReserved {
 							log.SpanLog(ctx, log.DebugLevelInfra, "subnet already reserved", "subnet", subnet, "resby", resby)
 							continue
 						}
 						found = true
-						reserved.Subnets = append(reserved.Subnets, subnet)
+						reservations.Add(subnet, ownerID)
 						VMGroupOrchestrationParams.Subnets[i].CIDR = subnet
 						if !VMGroupOrchestrationParams.Subnets[i].SkipGateway {
 							VMGroupOrchestrationParams.Subnets[i].GatewayIP = fmt.Sprintf("%s:%x::1", VMGroupOrchestrationParams.Netspec.IPV6RoutingPrefix, hextet)
@@ -510,11 +532,17 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 				}
 			}
 			if !found {
-				return nil, fmt.Errorf("cannot find subnet cidr for %s", s.Name)
+				return fmt.Errorf("cannot find subnet cidr for %s", s.Name)
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "populated subnet params", "subnet", s)
 		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to reserve subnets, %s", err)
+	}
 
+	if len(VMGroupOrchestrationParams.Subnets) > 0 {
 		// if there are last octets specified and not full IPs, build the full address
 		for i, p := range VMGroupOrchestrationParams.Ports {
 			if p.IsAdditionalExternalNetwork {
@@ -550,7 +578,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 						}
 					}
 					if !found {
-						return nil, fmt.Errorf("cannot find subnet %s for port: %s", f.Subnet.Name, p.Name)
+						return fmt.Errorf("cannot find subnet %s for port: %s", f.Subnet.Name, p.Name)
 					}
 				}
 			}
@@ -562,7 +590,7 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 	if action == heatUpdate {
 		stackTemplate, err := o.getHeatStackTemplateDetail(ctx, VMGroupOrchestrationParams.GroupName)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch heat stack template for %s: %v", VMGroupOrchestrationParams.GroupName, err)
+			return fmt.Errorf("failed to fetch heat stack template for %s: %v", VMGroupOrchestrationParams.GroupName, err)
 		}
 		existingVMs, err = GetUserDataFromOSResource(ctx, stackTemplate)
 		if err != nil {
@@ -583,70 +611,80 @@ func (o *OpenstackPlatform) populateParams(ctx context.Context, VMGroupOrchestra
 		VMGroupOrchestrationParams.VMs[i].MetaData = vmlayer.GetVMMetaData(v.Role, masterIP, masterIPv6, reindent16)
 		ud, err := vmlayer.GetVMUserData(v.Name, v.SharedVolume, v.DeploymentManifest, v.Command, &v.CloudConfigParams, reindent16)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		VMGroupOrchestrationParams.VMs[i].UserData = ud
 	}
 
-	// populate the floating ips
+	// reserve function may run several times if there are conflicts,
+	// so track which floating IPs need to be updated so they can be re-assigned
+	// on subsequent runs.
+	ipNeedsResource := make(map[int]struct{})
 	for i, f := range VMGroupOrchestrationParams.FloatingIPs {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Floating ip specified", "fip", f)
-		if VMGroupOrchestrationParams.SkipInfraSpecificCheck {
-			// skip, as fip id will be taken as part of stack params
-			break
-		}
 		if f.FloatingIpId == vmlayer.NextAvailableResource {
-			var fipid string
-			var err error
-			if action == heatTest {
-				fipid = "test-fip-id"
-			} else {
-				fipid, err = o.getFreeFloatingIpid(ctx, VMGroupOrchestrationParams.Netspec.FloatingIPExternalNet)
-				if err != nil {
-					return nil, err
+			ipNeedsResource[i] = struct{}{}
+		}
+	}
+
+	err = o.reservedFloatingIPs.ReserveValues(ctx, func(ctx context.Context, reservations syncdata.Reservations) error {
+		reservations.RemoveForOwner(ownerID)
+		// populate the floating ips
+		for i, f := range VMGroupOrchestrationParams.FloatingIPs {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Floating ip specified", "fip", f)
+			if VMGroupOrchestrationParams.SkipInfraSpecificCheck {
+				// skip, as fip id will be taken as part of stack params
+				break
+			}
+			_, needsResource := ipNeedsResource[i]
+			if needsResource {
+				var fipid string
+				var err error
+				if action == heatTest {
+					fipid = "test-fip-id-" + f.ParamName
+				} else {
+					// TODO: this should handle an update where we need
+					// to choose the same floating IP we're already using.
+					// Right now I believe it will choose a new floating IP,
+					// and then release the old floating IP. This breaks if
+					// there aren't any free floating IPs left.
+					fipid, err = o.getFreeFloatingIpid(ctx, VMGroupOrchestrationParams.Netspec.FloatingIPExternalNet)
+					if err != nil {
+						return err
+					}
 				}
-				resby, alreadyReserved := ReservedFloatingIPs[fipid]
+				resby, alreadyReserved := reservations.Has(fipid)
 				if alreadyReserved {
 					log.SpanLog(ctx, log.DebugLevelInfra, "floating ip aleady reserved", "fipid", fipid, "resby", resby)
 					continue
 				}
-				reserved.FloatingIpIds = append(reserved.FloatingIpIds, fipid)
+				reservations.Add(fipid, ownerID)
+				VMGroupOrchestrationParams.FloatingIPs[i].FloatingIpId = fipid
 			}
-			VMGroupOrchestrationParams.FloatingIPs[i].FloatingIpId = fipid
 		}
-	}
-	err := o.ReserveResourcesLocked(ctx, &reserved, VMGroupOrchestrationParams.GroupName)
+		return nil
+	})
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("failed to reserve floating IPs, %s", err)
 	}
-	return &reserved, nil
+	return nil
 }
 
 func (o *OpenstackPlatform) HeatCreateVMs(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "HeatCreateVMs", "VMGroupOrchestrationParams", VMGroupOrchestrationParams)
-	reservations, err := o.populateParams(ctx, VMGroupOrchestrationParams, heatCreate)
+	err := o.populateParams(ctx, VMGroupOrchestrationParams, heatCreate)
 	if err != nil {
 		return err
 	}
 	err = o.CreateHeatStackFromTemplate(ctx, VMGroupOrchestrationParams, VMGroupOrchestrationParams.GroupName, VmGroupTemplate, updateCallback)
-	releaseErr := o.ReleaseReservations(ctx, reservations)
-	if releaseErr != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "ReleaseReservations error", "reservations", reservations, "releaseErr", releaseErr)
-	}
 	return err
-
 }
 
 func (o *OpenstackPlatform) HeatUpdateVMs(ctx context.Context, VMGroupOrchestrationParams *vmlayer.VMGroupOrchestrationParams, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "HeatUpdateVMs", "VMGroupOrchestrationParams", VMGroupOrchestrationParams)
-	reservations, err := o.populateParams(ctx, VMGroupOrchestrationParams, heatUpdate)
+	err := o.populateParams(ctx, VMGroupOrchestrationParams, heatUpdate)
 	if err != nil {
 		return err
 	}
 	err = o.UpdateHeatStackFromTemplate(ctx, VMGroupOrchestrationParams, VMGroupOrchestrationParams.GroupName, VmGroupTemplate, updateCallback)
-	releaseErr := o.ReleaseReservations(ctx, reservations)
-	if releaseErr != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "ReleaseReservations error", "reservations", reservations, "releaseErr", releaseErr)
-	}
 	return err
 }

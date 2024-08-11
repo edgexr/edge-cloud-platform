@@ -16,6 +16,9 @@ package log
 
 import (
 	"context"
+	"io"
+	strings "strings"
+	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	grpc "google.golang.org/grpc"
@@ -29,7 +32,20 @@ func UnaryClientTraceGrpc(ctx context.Context, method string, req, resp interfac
 	if val != "" {
 		ctx = metadata.AppendToOutgoingContext(ctx, spanKey, val)
 	}
-	return invoker(ctx, method, req, resp, cc, opts...)
+	start := time.Now()
+	SpanLog(ctx, DebugLevelApi, "grpc client unary start", "method", method, "req", req)
+	err := invoker(ctx, method, req, resp, cc, opts...)
+	logResp := resp
+	if strings.Contains(method, "/edgeproto.CloudletAccessApi/") {
+		// some of these APIs deliver certificates and private keys, do not log response
+		logResp = "***redacted***"
+	}
+	if err == nil {
+		SpanLog(ctx, DebugLevelApi, "grpc client unary done", "method", method, "resp", logResp, "dur", time.Since(start))
+	} else {
+		SpanLog(ctx, DebugLevelApi, "grpc client unary failed", "method", method, "resp", logResp, "dur", time.Since(start), "err", err)
+	}
+	return err
 }
 
 func StreamClientTraceGrpc(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
@@ -37,7 +53,16 @@ func StreamClientTraceGrpc(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.
 	if val != "" {
 		ctx = metadata.AppendToOutgoingContext(ctx, spanKey, val)
 	}
-	return streamer(ctx, desc, cc, method, opts...)
+	clientStream, err := streamer(ctx, desc, cc, method, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &loggedClientStream{
+		ClientStream: clientStream,
+		ctx:          ctx,
+		startTime:    time.Now(),
+		method:       desc.StreamName,
+	}, nil
 }
 
 // NewSpanFromGrpc is used on server-side in controller/audit.go to extract span
@@ -49,4 +74,30 @@ func NewSpanFromGrpc(ctx context.Context, lvl uint64, spanName string) opentraci
 		}
 	}
 	return NewSpanFromString(lvl, val, spanName)
+}
+
+type loggedClientStream struct {
+	grpc.ClientStream
+	ctx       context.Context
+	startTime time.Time
+	method    string
+}
+
+func (s *loggedClientStream) SendMsg(m any) error {
+	SpanLog(s.ctx, DebugLevelApi, "grpc client stream send", "method", s.method, "obj", m)
+	return s.ClientStream.SendMsg(m)
+}
+
+func (s *loggedClientStream) RecvMsg(m any) error {
+	err := s.ClientStream.RecvMsg(m)
+	SpanLog(s.ctx, DebugLevelApi, "grpc client stream recv", "method", s.method, "obj", m, "err", err)
+	if err == nil {
+		return nil
+	}
+	if err == io.EOF {
+		SpanLog(s.ctx, DebugLevelApi, "grpc client stream done", "method", s.method, "dur", time.Since(s.startTime))
+	} else {
+		SpanLog(s.ctx, DebugLevelApi, "grpc client stream failed", "method", s.method, "dur", time.Since(s.startTime), "err", err)
+	}
+	return err
 }

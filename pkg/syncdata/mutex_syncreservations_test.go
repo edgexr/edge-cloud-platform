@@ -1,10 +1,10 @@
-// Copyright 2022 MobiledgeX, Inc
+// Copyright 2024 EdgeXR, Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -12,10 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testgen
+package syncdata
 
-import "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+import (
+	"context"
+	"testing"
 
-func MakeFieldMap(fields []string) map[string]struct{} {
-	return edgeproto.MakeFieldMap(fields)
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
+)
+
+func TestMutexSyncReservations(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelInfo | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	factory := NewMutexSyncFactory()
+	SyncReservationsTest(ctx, factory)
 }

@@ -24,21 +24,22 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type SettingsApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.SettingsStore
 	cache edgeproto.SettingsCache
 }
 
-func NewSettingsApi(sync *Sync, all *AllApis) *SettingsApi {
+func NewSettingsApi(sync *regiondata.Sync, all *AllApis) *SettingsApi {
 	settingsApi := SettingsApi{}
 	settingsApi.all = all
 	settingsApi.sync = sync
-	settingsApi.store = edgeproto.NewSettingsStore(sync.store)
+	settingsApi.store = edgeproto.NewSettingsStore(sync.GetKVStore())
 	edgeproto.InitSettingsCache(&settingsApi.cache)
 	sync.RegisterCache(&settingsApi.cache)
 	return &settingsApi
@@ -157,8 +158,8 @@ func (s *SettingsApi) initDefaults(ctx context.Context) error {
 			cur.PlatformHaInstancePollInterval = edgeproto.GetDefaultSettings().PlatformHaInstancePollInterval
 			modified = true
 		}
-		if cur.CcrmRedisapiTimeout == 0 {
-			cur.CcrmRedisapiTimeout = edgeproto.GetDefaultSettings().CcrmRedisapiTimeout
+		if cur.CcrmApiTimeout == 0 {
+			cur.CcrmApiTimeout = edgeproto.GetDefaultSettings().CcrmApiTimeout
 			modified = true
 		}
 		if modified {

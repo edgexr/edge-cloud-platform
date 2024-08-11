@@ -31,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	gonanoid "github.com/matoous/go-nanoid/v2"
+	"github.com/oklog/ulid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	context "golang.org/x/net/context"
 )
@@ -611,6 +612,99 @@ func AddStaticFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllA
 				appInst.StaticUri = appInst.Uri
 				allApis.appInstApi.store.STMPut(stm, &appInst)
 			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func UpgradeCrmOnEdge(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "CrmOnEdge")
+
+	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
+	if err != nil {
+		return err
+	}
+	for cloudletKey := range cloudletKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			cloudletStr := stm.Get(cloudletKey)
+			if cloudletStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			cloudlet := edgeproto.Cloudlet{}
+			if err2 := unmarshalUpgradeObj(ctx, cloudletStr, &cloudlet); err2 != nil {
+				return err2
+			}
+			if cloudlet.ObjId != "" {
+				// already upgraded
+				return nil
+			}
+			// all cloudlets before upgrade were designed for
+			// CRM on the edge site
+			cloudlet.CrmOnEdge = true
+			cloudlet.ObjId = ulid.Make().String()
+			allApis.cloudletApi.store.STMPut(stm, &cloudlet)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Upgrade AppInst keys
+	appInstKeys, err := getDbObjectKeys(objStore, "AppInst")
+	if err != nil {
+		return err
+	}
+	for appInstKey := range appInstKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			appInstStr := stm.Get(appInstKey)
+			if appInstStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			var appInst edgeproto.AppInst
+			if err2 := unmarshalUpgradeObj(ctx, appInstStr, &appInst); err2 != nil {
+				return err2
+			}
+			if appInst.ObjId == "" {
+				// already upgraded
+				return nil
+			}
+			appInst.ObjId = ulid.Make().String()
+			allApis.appInstApi.store.STMPut(stm, &appInst)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Upgrade ClusterInst keys
+	clusterInstKeys, err := getDbObjectKeys(objStore, "ClusterInst")
+	if err != nil {
+		return err
+	}
+	for key, _ := range clusterInstKeys {
+		_, err = objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			clusterInstStr := stm.Get(key)
+			if clusterInstStr == "" {
+				return nil // was deleted
+			}
+			clusterInst := edgeproto.ClusterInst{}
+			if err2 := unmarshalUpgradeObj(ctx, clusterInstStr, &clusterInst); err2 != nil {
+				return err2
+			}
+			if clusterInst.ObjId == "" {
+				// already upgraded
+				return nil
+			}
+			clusterInst.ObjId = ulid.Make().String()
+			allApis.clusterInstApi.store.STMPut(stm, &clusterInst)
 			return nil
 		})
 		if err != nil {

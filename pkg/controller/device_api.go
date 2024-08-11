@@ -18,23 +18,24 @@ import (
 	"context"
 	"fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type DeviceApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.DeviceStore
 	cache edgeproto.DeviceCache
 }
 
-func NewDeviceApi(sync *Sync, all *AllApis) *DeviceApi {
+func NewDeviceApi(sync *regiondata.Sync, all *AllApis) *DeviceApi {
 	deviceApi := DeviceApi{}
 	deviceApi.all = all
 	deviceApi.sync = sync
-	deviceApi.store = edgeproto.NewDeviceStore(sync.store)
+	deviceApi.store = edgeproto.NewDeviceStore(sync.GetKVStore())
 	edgeproto.InitDeviceCache(&deviceApi.cache)
 	sync.RegisterCache(&deviceApi.cache)
 	return &deviceApi
@@ -69,7 +70,7 @@ func (s *DeviceApi) InjectDevice(ctx context.Context, in *edgeproto.Device) (*ed
 
 // This api deletes the device from the controller cache
 func (s *DeviceApi) EvictDevice(ctx context.Context, in *edgeproto.Device) (*edgeproto.Result, error) {
-	return s.store.Delete(ctx, in, s.sync.syncWait)
+	return s.store.Delete(ctx, in, s.sync.SyncWait)
 }
 
 // Show devices that showed up in this timestamp

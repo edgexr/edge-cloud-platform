@@ -20,25 +20,26 @@ import (
 	"strings"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type CloudletPoolApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.CloudletPoolStore
 	cache *edgeproto.CloudletPoolCache
 }
 
-func NewCloudletPoolApi(sync *Sync, all *AllApis) *CloudletPoolApi {
+func NewCloudletPoolApi(sync *regiondata.Sync, all *AllApis) *CloudletPoolApi {
 	cloudletPoolApi := CloudletPoolApi{}
 	cloudletPoolApi.all = all
 	cloudletPoolApi.sync = sync
-	cloudletPoolApi.store = edgeproto.NewCloudletPoolStore(sync.store)
+	cloudletPoolApi.store = edgeproto.NewCloudletPoolStore(sync.GetKVStore())
 	cloudletPoolApi.cache = nodeMgr.CloudletPoolLookup.GetCloudletPoolCache(node.NoRegion)
 	sync.RegisterCache(cloudletPoolApi.cache)
 	return &cloudletPoolApi
@@ -116,8 +117,9 @@ func (s *CloudletPoolApi) DeleteCloudletPool(ctx context.Context, in *edgeproto.
 }
 
 func (s *CloudletPoolApi) UpdateCloudletPool(ctx context.Context, in *edgeproto.CloudletPool) (*edgeproto.Result, error) {
+	cur := edgeproto.CloudletPool{}
 	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		cur := edgeproto.CloudletPool{}
+		cur = edgeproto.CloudletPool{}
 		if !s.store.STMGet(stm, &in.Key, &cur) {
 			return in.Key.NotFoundError()
 		}
@@ -189,12 +191,17 @@ func (s *CloudletPoolApi) AddCloudletPoolMember(ctx context.Context, in *edgepro
 		s.store.STMPut(stm, &cur)
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+	s.all.trustPolicyExceptionApi.applyAllTPEsForCloudlet(ctx, in.Cloudlet)
 	return &edgeproto.Result{}, err
 }
 
 func (s *CloudletPoolApi) RemoveCloudletPoolMember(ctx context.Context, in *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
+	cur := edgeproto.CloudletPool{}
 	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		cur := edgeproto.CloudletPool{}
+		cur = edgeproto.CloudletPool{}
 		if !s.store.STMGet(stm, &in.Key, &cur) {
 			return in.Key.NotFoundError()
 		}
@@ -213,10 +220,14 @@ func (s *CloudletPoolApi) RemoveCloudletPoolMember(ctx context.Context, in *edge
 		s.store.STMPut(stm, &cur)
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
+	s.all.trustPolicyExceptionApi.applyAllTPEsForCloudlet(ctx, in.Cloudlet)
 	return &edgeproto.Result{}, err
 }
 
-func (s *CloudletPoolApi) GetCloudletPoolKeysForCloudletKey(in *edgeproto.CloudletKey) ([]edgeproto.CloudletPoolKey, error) {
+func (s *CloudletPoolApi) GetCloudletPoolKeysForCloudletKey(in *edgeproto.CloudletKey) []edgeproto.CloudletPoolKey {
 	return s.cache.GetPoolsForCloudletKey(in)
 }
 

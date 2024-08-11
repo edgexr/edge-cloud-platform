@@ -49,6 +49,7 @@ var udevRulesFile = "/etc/udev/rules.d/70-persistent-net.rules"
 var sharedRootLBPortLock sync.Mutex
 
 var RootLBPorts = []dme.AppPort{}
+var NoAccessKey string
 
 // creates entries in the 70-persistent-net.rules files to ensure the interface names are consistent after reboot
 func persistInterfaceName(ctx context.Context, client ssh.Client, ifName, mac string, action *infracommon.InterfaceActionsOp) error {
@@ -306,7 +307,6 @@ func (v *VMPlatform) DetachAndDisableRootLBInterface(ctx context.Context, client
 	return err
 }
 
-var rootLBLock sync.Mutex
 var MaxRootLBWait = 5 * time.Minute
 
 // used by cloudlet.go currently
@@ -332,7 +332,7 @@ func (v *VMPlatform) GetDefaultRootLBFlavor(ctx context.Context) (*edgeproto.Fla
 
 // GetVMSpecForRootLB gets the VM spec for the rootLB when it is not specified within a cluster. This is
 // used for Shared RootLb and for VM app based RootLb
-func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, subnetConnect SubnetNames, ownerKey objstore.ObjKey, addNets map[string]NetworkType, addRoutes map[string][]edgeproto.Route, updateCallback edgeproto.CacheUpdateCallback) (*VMRequestSpec, error) {
+func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, subnetConnect SubnetNames, ownerKey objstore.ObjKey, addNets map[string]NetworkType, addRoutes map[string][]edgeproto.Route, accessKey string, nodeRole cloudcommon.NodeRole, updateCallback edgeproto.CacheUpdateCallback) (*VMRequestSpec, error) {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetVMSpecForRootLB", "rootLbName", rootLbName)
 
@@ -344,7 +344,11 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 
 	cli := edgeproto.CloudletInfo{}
 	cli.Key = *v.VMProperties.CommonPf.PlatformConfig.CloudletKey
-	cli.Flavors = v.FlavorList
+	flavors, err := v.GetCachedFlavorList(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cli.Flavors = flavors
 
 	spec := &vmspec.VMCreationSpec{}
 	if len(cli.Flavors) == 0 {
@@ -356,7 +360,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 		restbls := v.GetResTablesForCloudlet(ctx, &cli.Key)
 		spec, err = vmspec.GetVMSpec(ctx, rootlbFlavor, cli, restbls)
 		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "RootLB GetVMSpec error", "v.FlavorList", v.FlavorList, "rootlbFlavor", rootlbFlavor, "err", err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "RootLB GetVMSpec error", "v.FlavorList", flavors, "rootlbFlavor", rootlbFlavor, "err", err)
 			return nil, fmt.Errorf("unable to find VM spec for RootLB: %v", err)
 		}
 	}
@@ -380,17 +384,23 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	if rootLbName == v.VMProperties.SharedRootLBName {
 		nodeType = cloudcommon.NodeTypeSharedRootLB
 	}
+	ops := []VMReqOp{
+		WithExternalVolume(spec.ExternalVolumeSize),
+		WithSubnetConnection(subnetConnect),
+		WithConfigureNodeVars(v, nodeRole, &cli.Key, ownerKey),
+		WithAdditionalNetworks(addNets),
+		WithRoutes(addRoutes),
+	}
+	if accessKey != NoAccessKey {
+		ops = append(ops, WithAccessKey(accessKey))
+	}
 	return v.GetVMRequestSpec(ctx,
 		nodeType,
 		rootLbName,
 		spec.FlavorName,
 		imageName,
 		true,
-		WithExternalVolume(spec.ExternalVolumeSize),
-		WithSubnetConnection(subnetConnect),
-		WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &cli.Key, ownerKey),
-		WithAdditionalNetworks(addNets),
-		WithRoutes(addRoutes))
+		ops...)
 }
 
 // GetVMSpecForSharedRootLBPorts get a vmspec for the purpose of creating new ports to the specified subnet
@@ -413,13 +423,15 @@ func (v *VMPlatform) CreateRootLB(
 	ctx context.Context, rootLBName string,
 	cloudletKey *edgeproto.CloudletKey,
 	action ActionType,
+	accessKey string, // accessKey is set if LB hosts Shepherd
+	nodeRole cloudcommon.NodeRole,
 	updateCallback edgeproto.CacheUpdateCallback,
 ) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "create or update rootlb", "name", rootLBName, "action", action)
 
 	nets := make(map[string]NetworkType)
 	routes := make(map[string][]edgeproto.Route)
-	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLBName, NoSubnets, cloudletKey, nets, routes, updateCallback)
+	vmreq, err := v.GetVMSpecForRootLB(ctx, rootLBName, NoSubnets, cloudletKey, nets, routes, accessKey, nodeRole, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -427,6 +439,7 @@ func (v *VMPlatform) CreateRootLB(
 	vms = append(vms, vmreq)
 	gp, err := v.OrchestrateVMsFromVMSpec(ctx,
 		rootLBName,
+		v.VMProperties.CommonPf.PlatformConfig.CloudletObjID,
 		vms,
 		action,
 		updateCallback,

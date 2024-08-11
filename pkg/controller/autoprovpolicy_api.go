@@ -20,9 +20,10 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	"google.golang.org/grpc"
@@ -31,7 +32,7 @@ import (
 
 type AutoProvPolicyApi struct {
 	all              *AllApis
-	sync             *Sync
+	sync             *regiondata.Sync
 	store            edgeproto.AutoProvPolicyStore
 	cache            edgeproto.AutoProvPolicyCache
 	influxQ          *influxq.InfluxQ
@@ -43,11 +44,11 @@ type deployNowKey struct {
 	CloudletKey edgeproto.CloudletKey
 }
 
-func NewAutoProvPolicyApi(sync *Sync, all *AllApis) *AutoProvPolicyApi {
+func NewAutoProvPolicyApi(sync *regiondata.Sync, all *AllApis) *AutoProvPolicyApi {
 	autoProvPolicyApi := AutoProvPolicyApi{}
 	autoProvPolicyApi.all = all
 	autoProvPolicyApi.sync = sync
-	autoProvPolicyApi.store = edgeproto.NewAutoProvPolicyStore(sync.store)
+	autoProvPolicyApi.store = edgeproto.NewAutoProvPolicyStore(sync.GetKVStore())
 	edgeproto.InitAutoProvPolicyCache(&autoProvPolicyApi.cache)
 	sync.RegisterCache(&autoProvPolicyApi.cache)
 	autoProvPolicyApi.deployImmWorkers.Init("AutoProvDeployImmediate", autoProvPolicyApi.deployImmediate)
@@ -140,7 +141,7 @@ func (s *AutoProvPolicyApi) DeleteAutoProvPolicy(ctx context.Context, in *edgepr
 	if appKey := s.all.appApi.UsesAutoProvPolicy(&in.Key); appKey != nil {
 		return &edgeproto.Result{}, fmt.Errorf("Policy in use by App %s", appKey.GetKeyString())
 	}
-	return s.store.Delete(ctx, in, s.sync.syncWait)
+	return s.store.Delete(ctx, in, s.sync.SyncWait)
 }
 
 func (s *AutoProvPolicyApi) ShowAutoProvPolicy(in *edgeproto.AutoProvPolicy, cb edgeproto.AutoProvPolicyApi_ShowAutoProvPolicyServer) error {

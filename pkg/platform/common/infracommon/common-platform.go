@@ -35,7 +35,6 @@ type CommonPlatform struct {
 	PlatformConfig    *pf.PlatformConfig
 	MappedExternalIPs map[string]string
 	DeploymentTag     string
-	SshKey            CloudletSSHKey
 }
 
 // Package level test mode variable
@@ -140,10 +139,12 @@ func (c *CommonPlatform) GetMappedExternalIP(ip string) string {
 }
 
 // GetPlatformConfig builds a platform.PlatformConfig from a cloudlet and an edgeproto.PlatformConfig
-func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi pf.AccessApi) *pf.PlatformConfig {
+func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *pf.PlatformInitConfig) *pf.PlatformConfig {
 	platCfg := pf.PlatformConfig{
 		CloudletKey:         &cloudlet.Key,
+		CloudletObjID:       cloudlet.ObjId,
 		PhysicalName:        cloudlet.PhysicalName,
+		CrmOnEdge:           cloudlet.CrmOnEdge,
 		Region:              pfConfig.Region,
 		TestMode:            pfConfig.TestMode,
 		CloudletVMImagePath: pfConfig.CloudletVmImagePath,
@@ -151,9 +152,11 @@ func GetPlatformConfig(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.Platfor
 		NginxWithCurlImage:  pfConfig.NginxWithCurlImage,
 		EnvVars:             pfConfig.EnvVar,
 		AppDNSRoot:          pfConfig.AppDnsRoot,
+		RootLBFQDN:          cloudlet.RootLbFqdn,
 		DeploymentTag:       pfConfig.DeploymentTag,
-		AccessApi:           accessApi,
 		AnsiblePublicAddr:   pfConfig.AnsiblePublicAddr,
+		TrustPolicy:         cloudlet.TrustPolicy,
+		PlatformInitConfig:  *pfInitConfig,
 	}
 	return &platCfg
 }

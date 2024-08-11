@@ -918,7 +918,7 @@ var CloudletPoolAllFields = []string{
 	CloudletPoolFieldDeletePrepare,
 }
 
-var CloudletPoolAllFieldsMap = map[string]struct{}{
+var CloudletPoolAllFieldsMap = NewFieldMap(map[string]struct{}{
 	CloudletPoolFieldKeyOrganization:                struct{}{},
 	CloudletPoolFieldKeyName:                        struct{}{},
 	CloudletPoolFieldCloudletsOrganization:          struct{}{},
@@ -929,7 +929,7 @@ var CloudletPoolAllFieldsMap = map[string]struct{}{
 	CloudletPoolFieldUpdatedAtSeconds:               struct{}{},
 	CloudletPoolFieldUpdatedAtNanos:                 struct{}{},
 	CloudletPoolFieldDeletePrepare:                  struct{}{},
-}
+})
 
 var CloudletPoolAllFieldsStringMap = map[string]string{
 	CloudletPoolFieldKeyOrganization:                "Key Organization",
@@ -948,60 +948,66 @@ func (m *CloudletPool) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, CloudletPoolFieldKey+".") || s == CloudletPoolFieldKey
 }
 
-func (m *CloudletPool) DiffFields(o *CloudletPool, fields map[string]struct{}) {
+func (m *CloudletPool) DiffFields(o *CloudletPool, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {
-		fields[CloudletPoolFieldKeyOrganization] = struct{}{}
-		fields[CloudletPoolFieldKey] = struct{}{}
+		fields.Set(CloudletPoolFieldKeyOrganization)
+		fields.Set(CloudletPoolFieldKey)
 	}
 	if m.Key.Name != o.Key.Name {
-		fields[CloudletPoolFieldKeyName] = struct{}{}
-		fields[CloudletPoolFieldKey] = struct{}{}
+		fields.Set(CloudletPoolFieldKeyName)
+		fields.Set(CloudletPoolFieldKey)
 	}
 	if len(m.Cloudlets) != len(o.Cloudlets) {
-		fields[CloudletPoolFieldCloudlets] = struct{}{}
+		fields.Set(CloudletPoolFieldCloudlets)
 	} else {
 		for i0 := 0; i0 < len(m.Cloudlets); i0++ {
 			if m.Cloudlets[i0].Organization != o.Cloudlets[i0].Organization {
-				fields[CloudletPoolFieldCloudletsOrganization] = struct{}{}
-				fields[CloudletPoolFieldCloudlets] = struct{}{}
+				fields.Set(CloudletPoolFieldCloudletsOrganization)
+				fields.Set(CloudletPoolFieldCloudlets)
 			}
 			if m.Cloudlets[i0].Name != o.Cloudlets[i0].Name {
-				fields[CloudletPoolFieldCloudletsName] = struct{}{}
-				fields[CloudletPoolFieldCloudlets] = struct{}{}
+				fields.Set(CloudletPoolFieldCloudletsName)
+				fields.Set(CloudletPoolFieldCloudlets)
 			}
 			if m.Cloudlets[i0].FederatedOrganization != o.Cloudlets[i0].FederatedOrganization {
-				fields[CloudletPoolFieldCloudletsFederatedOrganization] = struct{}{}
-				fields[CloudletPoolFieldCloudlets] = struct{}{}
+				fields.Set(CloudletPoolFieldCloudletsFederatedOrganization)
+				fields.Set(CloudletPoolFieldCloudlets)
 			}
 		}
 	}
 	if m.CreatedAt.Seconds != o.CreatedAt.Seconds {
-		fields[CloudletPoolFieldCreatedAtSeconds] = struct{}{}
-		fields[CloudletPoolFieldCreatedAt] = struct{}{}
+		fields.Set(CloudletPoolFieldCreatedAtSeconds)
+		fields.Set(CloudletPoolFieldCreatedAt)
 	}
 	if m.CreatedAt.Nanos != o.CreatedAt.Nanos {
-		fields[CloudletPoolFieldCreatedAtNanos] = struct{}{}
-		fields[CloudletPoolFieldCreatedAt] = struct{}{}
+		fields.Set(CloudletPoolFieldCreatedAtNanos)
+		fields.Set(CloudletPoolFieldCreatedAt)
 	}
 	if m.UpdatedAt.Seconds != o.UpdatedAt.Seconds {
-		fields[CloudletPoolFieldUpdatedAtSeconds] = struct{}{}
-		fields[CloudletPoolFieldUpdatedAt] = struct{}{}
+		fields.Set(CloudletPoolFieldUpdatedAtSeconds)
+		fields.Set(CloudletPoolFieldUpdatedAt)
 	}
 	if m.UpdatedAt.Nanos != o.UpdatedAt.Nanos {
-		fields[CloudletPoolFieldUpdatedAtNanos] = struct{}{}
-		fields[CloudletPoolFieldUpdatedAt] = struct{}{}
+		fields.Set(CloudletPoolFieldUpdatedAtNanos)
+		fields.Set(CloudletPoolFieldUpdatedAt)
 	}
 	if m.DeletePrepare != o.DeletePrepare {
-		fields[CloudletPoolFieldDeletePrepare] = struct{}{}
+		fields.Set(CloudletPoolFieldDeletePrepare)
 	}
 }
 
-var UpdateCloudletPoolFieldsMap = map[string]struct{}{
+func (m *CloudletPool) GetDiffFields(o *CloudletPool) *FieldMap {
+	diffFields := NewFieldMap(nil)
+	m.DiffFields(o, diffFields)
+	return diffFields
+}
+
+var UpdateCloudletPoolFieldsMap = NewFieldMap(map[string]struct{}{
 	CloudletPoolFieldCloudlets:                      struct{}{},
 	CloudletPoolFieldCloudletsOrganization:          struct{}{},
 	CloudletPoolFieldCloudletsName:                  struct{}{},
 	CloudletPoolFieldCloudletsFederatedOrganization: struct{}{},
-}
+})
 
 func (m *CloudletPool) ValidateUpdateFields() error {
 	if m.Fields == nil {
@@ -1009,11 +1015,11 @@ func (m *CloudletPool) ValidateUpdateFields() error {
 	}
 	fmap := MakeFieldMap(m.Fields)
 	badFieldStrs := []string{}
-	for field, _ := range fmap {
+	for _, field := range fmap.Fields() {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if _, ok := UpdateCloudletPoolFieldsMap[field]; !ok {
+		if !UpdateCloudletPoolFieldsMap.Has(field) {
 			if _, ok := CloudletPoolAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -1067,21 +1073,21 @@ func (m *CloudletPool) CopyInFields(src *CloudletPool) int {
 	updateListAction := "replace"
 	changed := 0
 	fmap := MakeFieldMap(src.Fields)
-	if _, set := fmap["2"]; set {
-		if _, set := fmap["2.1"]; set {
+	if fmap.HasOrHasChild("2") {
+		if fmap.Has("2.1") {
 			if m.Key.Organization != src.Key.Organization {
 				m.Key.Organization = src.Key.Organization
 				changed++
 			}
 		}
-		if _, set := fmap["2.2"]; set {
+		if fmap.Has("2.2") {
 			if m.Key.Name != src.Key.Name {
 				m.Key.Name = src.Key.Name
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["3"]; set {
+	if fmap.HasOrHasChild("3") {
 		if src.Cloudlets != nil {
 			if updateListAction == "add" {
 				changed += m.AddCloudlets(src.Cloudlets...)
@@ -1099,35 +1105,35 @@ func (m *CloudletPool) CopyInFields(src *CloudletPool) int {
 			changed++
 		}
 	}
-	if _, set := fmap["4"]; set {
-		if _, set := fmap["4.1"]; set {
+	if fmap.HasOrHasChild("4") {
+		if fmap.Has("4.1") {
 			if m.CreatedAt.Seconds != src.CreatedAt.Seconds {
 				m.CreatedAt.Seconds = src.CreatedAt.Seconds
 				changed++
 			}
 		}
-		if _, set := fmap["4.2"]; set {
+		if fmap.Has("4.2") {
 			if m.CreatedAt.Nanos != src.CreatedAt.Nanos {
 				m.CreatedAt.Nanos = src.CreatedAt.Nanos
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["5"]; set {
-		if _, set := fmap["5.1"]; set {
+	if fmap.HasOrHasChild("5") {
+		if fmap.Has("5.1") {
 			if m.UpdatedAt.Seconds != src.UpdatedAt.Seconds {
 				m.UpdatedAt.Seconds = src.UpdatedAt.Seconds
 				changed++
 			}
 		}
-		if _, set := fmap["5.2"]; set {
+		if fmap.Has("5.2") {
 			if m.UpdatedAt.Nanos != src.UpdatedAt.Nanos {
 				m.UpdatedAt.Nanos = src.UpdatedAt.Nanos
 				changed++
 			}
 		}
 	}
-	if _, set := fmap["6"]; set {
+	if fmap.Has("6") {
 		if m.DeletePrepare != src.DeletePrepare {
 			m.DeletePrepare = src.DeletePrepare
 			changed++
@@ -1366,6 +1372,7 @@ type CloudletPoolCache struct {
 	KeyWatchers   map[CloudletPoolKey][]*CloudletPoolKeyWatcher
 	UpdatedKeyCbs []func(ctx context.Context, key *CloudletPoolKey)
 	DeletedKeyCbs []func(ctx context.Context, key *CloudletPoolKey)
+	Store         CloudletPoolStore
 }
 
 func NewCloudletPoolCache() *CloudletPoolCache {
@@ -1728,6 +1735,18 @@ func (c *CloudletPoolCache) SyncListEnd(ctx context.Context) {
 			}
 		}
 		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *CloudletPoolCache) InitCacheWithSync(sync DataSync) {
+	InitCloudletPoolCache(s)
+	s.InitSync(sync)
+}
+
+func (s *CloudletPoolCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewCloudletPoolStore(sync.GetKVStore())
+		sync.RegisterCache(s)
 	}
 }
 

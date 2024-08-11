@@ -18,16 +18,17 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 type AppInstLatencyApi struct {
 	all  *AllApis
-	sync *Sync
+	sync *regiondata.Sync
 }
 
-func NewAppInstLatencyApi(sync *Sync, all *AllApis) *AppInstLatencyApi {
+func NewAppInstLatencyApi(sync *regiondata.Sync, all *AllApis) *AppInstLatencyApi {
 	appInstLatencyApi := AppInstLatencyApi{}
 	appInstLatencyApi.all = all
 	appInstLatencyApi.sync = sync

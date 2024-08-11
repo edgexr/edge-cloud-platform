@@ -18,20 +18,21 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 )
 
 type CloudletRefsApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.CloudletRefsStore
 	cache edgeproto.CloudletRefsCache
 }
 
-func NewCloudletRefsApi(sync *Sync, all *AllApis) *CloudletRefsApi {
+func NewCloudletRefsApi(sync *regiondata.Sync, all *AllApis) *CloudletRefsApi {
 	cloudletRefsApi := CloudletRefsApi{}
 	cloudletRefsApi.all = all
 	cloudletRefsApi.sync = sync
-	cloudletRefsApi.store = edgeproto.NewCloudletRefsStore(sync.store)
+	cloudletRefsApi.store = edgeproto.NewCloudletRefsStore(sync.GetKVStore())
 	edgeproto.InitCloudletRefsCache(&cloudletRefsApi.cache)
 	sync.RegisterCache(&cloudletRefsApi.cache)
 	return &cloudletRefsApi

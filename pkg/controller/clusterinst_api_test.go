@@ -16,19 +16,21 @@ package controller
 
 import (
 	"context"
-	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
-	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
+	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -42,18 +44,19 @@ func TestClusterInstApi(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
 
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 
 	reduceInfoTimeouts(t, ctx, apis)
 
@@ -78,13 +81,15 @@ func TestClusterInstApi(t *testing.T) {
 	// the fake crm returns a failure. If it doesn't, the next test to
 	// create all the cluster insts will fail.
 	responder.SetSimulateClusterCreateFailure(true)
+	ccrm.SetSimulateClusterCreateFailure(true)
 	for _, obj := range testutil.ClusterInstData() {
 		err := apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 		require.NotNil(t, err, "Create ClusterInst responder failures")
 		// make sure error matches responder
-		require.Equal(t, "Encountered failures: crm create ClusterInst failed", err.Error())
+		require.Contains(t, err.Error(), "create ClusterInst failed")
 	}
 	responder.SetSimulateClusterCreateFailure(false)
+	ccrm.SetSimulateClusterCreateFailure(false)
 	require.Equal(t, 0, len(apis.clusterInstApi.cache.Objs))
 
 	testutil.InternalClusterInstTest(t, "cud", apis.clusterInstApi, testutil.ClusterInstData())
@@ -95,10 +100,12 @@ func TestClusterInstApi(t *testing.T) {
 
 	// Set responder to fail delete.
 	responder.SetSimulateClusterDeleteFailure(true)
+	ccrm.SetSimulateClusterDeleteFailure(true)
 	obj := testutil.ClusterInstData()[0]
 	err := apis.clusterInstApi.DeleteClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err, "Delete ClusterInst responder failure")
 	responder.SetSimulateClusterDeleteFailure(false)
+	ccrm.SetSimulateClusterDeleteFailure(false)
 	checkClusterInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_READY)
 
 	// check override of error DELETE_ERROR
@@ -153,6 +160,8 @@ func TestClusterInstApi(t *testing.T) {
 	// override CRM error
 	responder.SetSimulateClusterCreateFailure(true)
 	responder.SetSimulateClusterDeleteFailure(true)
+	ccrm.SetSimulateClusterCreateFailure(true)
+	ccrm.SetSimulateClusterDeleteFailure(true)
 	obj = testutil.ClusterInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM_ERRORS
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
@@ -224,11 +233,13 @@ func TestClusterInstApi(t *testing.T) {
 
 	responder.SetSimulateClusterCreateFailure(false)
 	responder.SetSimulateClusterDeleteFailure(false)
+	ccrm.SetSimulateClusterCreateFailure(false)
+	ccrm.SetSimulateClusterDeleteFailure(false)
 
 	testReservableClusterInst(t, ctx, commonApi, apis)
-	testClusterInstOverrideTransientDelete(t, ctx, commonApi, responder, apis)
+	testClusterInstOverrideTransientDelete(t, ctx, commonApi, responder, ccrm, apis)
 
-	testClusterInstResourceUsage(t, ctx, apis)
+	testClusterInstResourceUsage(t, ctx, apis, ccrm)
 	testClusterInstGPUFlavor(t, ctx, apis)
 
 	dummy.Stop()
@@ -249,7 +260,7 @@ func reduceInfoTimeouts(t *testing.T, ctx context.Context, apis *AllApis) {
 	settings.DeleteAppInstTimeout = edgeproto.Duration(3 * time.Second)
 	settings.CloudletMaintenanceTimeout = edgeproto.Duration(2 * time.Second)
 	settings.UpdateVmPoolTimeout = edgeproto.Duration(1 * time.Second)
-	settings.CcrmRedisapiTimeout = edgeproto.Duration(3 * time.Second)
+	settings.CcrmApiTimeout = edgeproto.Duration(3 * time.Second)
 
 	settings.Fields = []string{
 		edgeproto.SettingsFieldCreateCloudletTimeout,
@@ -261,7 +272,7 @@ func reduceInfoTimeouts(t *testing.T, ctx context.Context, apis *AllApis) {
 		edgeproto.SettingsFieldDeleteClusterInstTimeout,
 		edgeproto.SettingsFieldCloudletMaintenanceTimeout,
 		edgeproto.SettingsFieldUpdateVmPoolTimeout,
-		edgeproto.SettingsFieldCcrmRedisapiTimeout,
+		edgeproto.SettingsFieldCcrmApiTimeout,
 	}
 	_, err = apis.settingsApi.UpdateSettings(ctx, settings)
 	require.Nil(t, err)
@@ -402,7 +413,7 @@ func checkReservedBy(t *testing.T, ctx context.Context, api *testutil.ClusterIns
 
 // Test that Crm Override for Delete ClusterInst overrides any failures
 // on side-car auto-apps.
-func testClusterInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *testutil.ClusterInstCommonApi, responder *DummyInfoResponder, apis *AllApis) {
+func testClusterInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *testutil.ClusterInstCommonApi, responder *DummyInfoResponder, ccrm *ccrmdummy.CCRMDummy, apis *AllApis) {
 	clust := testutil.ClusterInstData()[0]
 	clust.Key.ClusterKey.Name = "crmoverride"
 
@@ -428,6 +439,8 @@ func testClusterInstOverrideTransientDelete(t *testing.T, ctx context.Context, a
 
 	responder.SetSimulateClusterDeleteFailure(true)
 	responder.SetSimulateAppDeleteFailure(true)
+	ccrm.SetSimulateClusterDeleteFailure(true)
+	ccrm.SetSimulateAppDeleteFailure(true)
 	for val, stateName := range edgeproto.TrackedState_name {
 		state := edgeproto.TrackedState(val)
 		if !edgeproto.IsTransientState(state) {
@@ -457,6 +470,8 @@ func testClusterInstOverrideTransientDelete(t *testing.T, ctx context.Context, a
 	}
 	responder.SetSimulateClusterDeleteFailure(false)
 	responder.SetSimulateAppDeleteFailure(false)
+	ccrm.SetSimulateClusterDeleteFailure(false)
+	ccrm.SetSimulateAppDeleteFailure(false)
 
 	_, err = apis.appApi.DeleteApp(ctx, &app)
 	require.Nil(t, err, "delete App")
@@ -657,7 +672,23 @@ func validateClusterInstMetrics(t *testing.T, ctx context.Context, cloudlet *edg
 	}
 }
 
-func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) {
+func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllApis, ccrm *ccrmdummy.CCRMDummy) {
+	// set the correct resource limits and flavors that these tests expect
+	// for the target cloudlet, cloudlet[0]. Max Values come from the
+	// resource snapshot of CloudletInfoData[0], which for some reason is
+	// different than the OS max values.
+	cloudletInfos := testutil.CloudletInfoData()
+	ci := cloudletInfos[0]
+	platformResources, ok := ccrm.GetFakePlatformResources(&ci.Key)
+	require.True(t, ok)
+	platformResources.Init()
+	platformResources.SetMaxResources(102400, 109, 5000, 10)
+	for _, vm := range fake.GetPlatformVMs() {
+		platformResources.AddPlatformVM(vm)
+	}
+	ccrm.SetFakePlatformFlavors(&ci.Key, ci.Flavors)
+	log.SpanLog(ctx, log.DebugLevelApi, "platform resources are", "res", platformResources.GetSnapshot())
+
 	obj := testutil.ClusterInstData()[0]
 	obj.NumNodes = 10
 	obj.Flavor = testutil.FlavorData()[3].Key
@@ -748,9 +779,8 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		found = apis.cloudletRefsApi.store.STMGet(stm, &cloudletKey, &cloudletRefs)
 		require.True(t, found, "cloudlet refs exists")
 
-		allRes, diffRes, _, err := apis.clusterInstApi.getAllCloudletResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletRefs)
+		allRes, err := apis.clusterInstApi.getAllCloudletResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletRefs)
 		require.Nil(t, err, "get all cloudlet resources")
-		require.Equal(t, len(allRes), len(diffRes), "should match as crm resource snapshot doesn't have any tracked resources")
 		clusters := make(map[edgeproto.ClusterInstKey]struct{})
 		resTypeVMAppCount := 0
 		for ii, res := range allRes {
@@ -777,6 +807,26 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		}
 		require.Equal(t, len(cloudletRefs.VmAppInsts), 1, "1 vm appinsts exists")
 
+		// calculate total used resources
+		infraResInfo := make(map[string]edgeproto.InfraResource)
+		for _, resInfo := range cloudletInfo.ResourcesSnapshot.Info {
+			infraResInfo[resInfo.Name] = resInfo
+		}
+		allResInfo, err := apis.cloudletApi.GetCloudletResourceInfo(ctx, stm, &cloudlet, allRes, infraResInfo)
+		require.Nil(t, err)
+		// set quotas to what is currently being used
+		// so creating anything should trigger both quota warnings and
+		// available resource failures.
+		quotas := []edgeproto.ResourceQuota{}
+		for _, infraRes := range allResInfo {
+			quotas = append(quotas, edgeproto.ResourceQuota{
+				Name:           infraRes.Name,
+				Value:          infraRes.Value,
+				AlertThreshold: 30,
+			})
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "set fake quotas", "quotas", quotas)
+		cloudlet.ResourceQuotas = quotas
 		// test cluster inst vm requirements
 		quotaMap := make(map[string]edgeproto.ResourceQuota)
 		for _, quota := range cloudlet.ResourceQuotas {
@@ -822,26 +872,31 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		// number of vm resources = num_nodes
 		require.Equal(t, numNodes, len(ciResources), "matches number of vm resources")
 
-		skipInfraCheck := false
-		warnings, err := apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo.ResourcesSnapshot, allRes, ciResources, diffRes, skipInfraCheck)
+		warnings, err := apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo.ResourcesSnapshot, allRes, ciResources)
 		require.NotNil(t, err, "not enough resource available error")
-		require.Greater(t, len(warnings), 0, "warnings for resources", "warnings", warnings)
-		for _, warning := range warnings {
-			if strings.Contains(warning, "RAM") {
-				quota, found := quotaMap["RAM"]
-				require.True(t, found, "quota for RAM is set")
-				require.Contains(t, warning, fmt.Sprintf("%d%%", quota.AlertThreshold))
-			} else if strings.Contains(warning, "vCPUs") {
-				quota, found := quotaMap["vCPUs"]
-				require.True(t, found, "quota for vCPUs is set")
-				require.Contains(t, warning, fmt.Sprintf("%d%%", quota.AlertThreshold))
-			} else if strings.Contains(warning, "GPUs") {
-				quota, found := quotaMap["GPUs"]
-				require.True(t, found, "quota for GPUs is set")
-				require.Contains(t, warning, fmt.Sprintf("%d%%", quota.AlertThreshold))
-			} else {
-				require.Contains(t, warning, fmt.Sprintf("%d%%", cloudlet.DefaultResourceAlertThreshold))
-			}
+		for _, resName := range []string{
+			cloudcommon.ResourceRamMb,
+			cloudcommon.ResourceVcpus,
+			cloudcommon.ResourceDiskGb,
+			cloudcommon.ResourceGpus,
+			cloudcommon.ResourceInstances,
+		} {
+			rx := "required " + resName + " is .*? but only .*? is available"
+			require.Regexp(t, regexp.MustCompile(rx), err.Error())
+		}
+		// Note that the clusterInst did not require an externalIP, but the
+		// current usage is over the quota alert threshold, so it generates
+		// a warning.
+		allWarnings := strings.Join(warnings, ", ")
+		for _, resName := range []string{
+			cloudcommon.ResourceRamMb,
+			cloudcommon.ResourceVcpus,
+			cloudcommon.ResourceDiskGb,
+			cloudcommon.ResourceGpus,
+			cloudcommon.ResourceInstances,
+			cloudcommon.ResourceExternalIPs,
+		} {
+			require.Contains(t, allWarnings, "More than 30% of "+resName+" is used by the cloudlet")
 		}
 
 		// test vm app inst resource requirements
@@ -864,28 +919,28 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		require.True(t, foundVMRes, "resource type app vm found")
 		require.True(t, foundVMRootLBRes, "resource type vm rootlb found")
 
-		warnings, err = apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo.ResourcesSnapshot, allRes, vmAppResources, diffRes, skipInfraCheck)
-		require.Nil(t, err, "enough resource available")
-		require.Greater(t, len(warnings), 0, "warnings for resources", "warnings", warnings)
-
-		for _, warning := range warnings {
-			if strings.HasPrefix(warning, "[Quota]") {
-				continue
-			} else if strings.Contains(warning, "RAM") {
-				quota, found := quotaMap["RAM"]
-				require.True(t, found, "quota for RAM is set")
-				require.Contains(t, warning, fmt.Sprintf("%d%%", quota.AlertThreshold))
-			} else if strings.Contains(warning, "vCPUs") {
-				quota, found := quotaMap["vCPUs"]
-				require.True(t, found, "quota for vCPUs is set")
-				require.Contains(t, warning, fmt.Sprintf("%d%%", quota.AlertThreshold))
-			} else if strings.Contains(warning, "GPUs") {
-				quota, found := quotaMap["GPUs"]
-				require.True(t, found, "quota for GPUs is set")
-				require.Contains(t, warning, fmt.Sprintf("%d%%", quota.AlertThreshold))
-			} else {
-				require.Contains(t, warning, fmt.Sprintf("%d%%", cloudlet.DefaultResourceAlertThreshold))
-			}
+		warnings, err = apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo.ResourcesSnapshot, allRes, vmAppResources)
+		require.NotNil(t, err, "not enough resource available")
+		for _, resName := range []string{
+			cloudcommon.ResourceRamMb,
+			cloudcommon.ResourceVcpus,
+			cloudcommon.ResourceDiskGb,
+			cloudcommon.ResourceGpus,
+			cloudcommon.ResourceInstances,
+		} {
+			rx := "required " + resName + " is .*? but only .*? is available"
+			require.Regexp(t, regexp.MustCompile(rx), err.Error())
+		}
+		allWarnings = strings.Join(warnings, ", ")
+		for _, resName := range []string{
+			cloudcommon.ResourceRamMb,
+			cloudcommon.ResourceVcpus,
+			cloudcommon.ResourceDiskGb,
+			cloudcommon.ResourceGpus,
+			cloudcommon.ResourceInstances,
+			cloudcommon.ResourceExternalIPs,
+		} {
+			require.Contains(t, allWarnings, "More than 30% of "+resName+" is used by the cloudlet")
 		}
 		return nil
 	})
@@ -928,18 +983,19 @@ func TestDefaultMTCluster(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
 
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())

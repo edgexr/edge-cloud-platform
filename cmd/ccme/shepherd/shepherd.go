@@ -34,6 +34,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsec2 "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-ec2"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/cloudletssh"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
 	k8sbm "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-baremetal"
@@ -631,13 +632,17 @@ func start() {
 
 	pc := pf.PlatformConfig{
 		CloudletKey:   &cloudletKey,
+		CloudletObjID: cloudlet.ObjId,
 		Region:        *region,
 		EnvVars:       cloudlet.EnvVar,
 		DeploymentTag: nodeMgr.DeploymentTag,
 		PhysicalName:  *physicalName,
 		AppDNSRoot:    *appDNSRoot,
-		AccessApi:     accessApi,
 		NodeMgr:       &nodeMgr,
+		PlatformInitConfig: pf.PlatformInitConfig{
+			AccessApi:      accessApi,
+			CloudletSSHKey: cloudletssh.NewSSHKey(accessApi),
+		},
 	}
 
 	caches := pf.Caches{

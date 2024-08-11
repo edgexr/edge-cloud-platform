@@ -19,8 +19,10 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -33,13 +35,17 @@ func TestVMPoolApi(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
+
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 
@@ -182,10 +188,9 @@ func testAddRemoveVM(t *testing.T, ctx context.Context, apis *AllApis) {
 
 func testUpdateVMPool(t *testing.T, ctx context.Context, apis *AllApis) {
 	dummyResponder := DummyInfoResponder{
-		CloudletCache:              apis.cloudletApi.cache,
-		VMPoolCache:                &apis.vmPoolApi.cache,
-		RecvVMPoolInfo:             apis.vmPoolInfoApi,
-		RecvCloudletOnboardingInfo: apis.cloudletInfoApi,
+		CloudletCache:  apis.cloudletApi.cache,
+		VMPoolCache:    &apis.vmPoolApi.cache,
+		RecvVMPoolInfo: apis.vmPoolInfoApi,
 	}
 	dummyResponder.InitDummyInfoResponder()
 	reduceInfoTimeouts(t, ctx, apis)
@@ -194,6 +199,7 @@ func testUpdateVMPool(t *testing.T, ctx context.Context, apis *AllApis) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 
 	cl := testutil.CloudletData()[1]
+	cl.CrmOnEdge = true
 	vmp := testutil.VMPoolData()[0]
 	cl.VmPool = vmp.Key.Name
 	cl.PlatformType = platform.PlatformTypeFakeVMPool

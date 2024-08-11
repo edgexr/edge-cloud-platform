@@ -152,7 +152,7 @@ func deleteCloudletPoolChecks(t *testing.T, ctx context.Context, all *AllApis, d
 	testObj, supportData := dataGen.GetCloudletPoolTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -164,7 +164,7 @@ func deleteCloudletPoolChecks(t *testing.T, ctx context.Context, all *AllApis, d
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetCloudletPoolTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetCloudletPoolTestObj()
 	_, err = api.DeleteCloudletPool(ctx, testObj)
@@ -175,7 +175,7 @@ func deleteCloudletPoolChecks(t *testing.T, ctx context.Context, all *AllApis, d
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetCloudletPoolTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, TrustPolicyException refers to CloudletPool.
@@ -183,7 +183,7 @@ func deleteCloudletPoolChecks(t *testing.T, ctx context.Context, all *AllApis, d
 		refBy, supportData := dataGen.GetTrustPolicyExceptionKeyCloudletPoolKeyRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.trustPolicyExceptionApi.store.Put(ctx, refBy, all.trustPolicyExceptionApi.sync.syncWait)
+			all.trustPolicyExceptionApi.store.Put(ctx, refBy, all.trustPolicyExceptionApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetCloudletPoolTestObj()
 		_, err = api.DeleteCloudletPool(ctx, testObj)
@@ -192,7 +192,7 @@ func deleteCloudletPoolChecks(t *testing.T, ctx context.Context, all *AllApis, d
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove TrustPolicyException obj
-		_, err = all.trustPolicyExceptionApi.store.Delete(ctx, refBy, all.trustPolicyExceptionApi.sync.syncWait)
+		_, err = all.trustPolicyExceptionApi.store.Delete(ctx, refBy, all.trustPolicyExceptionApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from TrustPolicyException must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -214,7 +214,7 @@ func CreateCloudletPoolAddRefsChecks(t *testing.T, ctx context.Context, all *All
 		ref := supportData.getOneCloudlet()
 		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
 		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateCloudletPoolTestObj()
@@ -223,7 +223,7 @@ func CreateCloudletPoolAddRefsChecks(t *testing.T, ctx context.Context, all *All
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Cloudlet
 		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -261,7 +261,7 @@ func UpdateCloudletPoolAddRefsChecks(t *testing.T, ctx context.Context, all *All
 		ref := supportData.getOneCloudlet()
 		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
 		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetUpdateCloudletPoolTestObj()
@@ -270,7 +270,7 @@ func UpdateCloudletPoolAddRefsChecks(t *testing.T, ctx context.Context, all *All
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Cloudlet
 		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -304,7 +304,7 @@ func AddCloudletPoolMemberAddRefsChecks(t *testing.T, ctx context.Context, all *
 		ref := supportData.getOneCloudlet()
 		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
 		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetAddCloudletPoolMemberTestObj()
@@ -313,7 +313,7 @@ func AddCloudletPoolMemberAddRefsChecks(t *testing.T, ctx context.Context, all *
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Cloudlet
 		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 

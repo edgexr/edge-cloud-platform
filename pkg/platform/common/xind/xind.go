@@ -41,7 +41,7 @@ func (s *Xind) InitCommon(ctx context.Context, platformConfig *platform.Platform
 	s.platformConfig = platformConfig
 	return nil
 }
-func (s *Xind) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Xind) InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
 

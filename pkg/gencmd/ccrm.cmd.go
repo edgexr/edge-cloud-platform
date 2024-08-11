@@ -5,11 +5,14 @@ package gencmd
 
 import (
 	fmt "fmt"
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cli"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	math "math"
+	"strings"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -18,6 +21,25 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
+func CloudletExecReqHideTags(in *edgeproto.CloudletExecReq) {
+	if cli.HideTags == "" {
+		return
+	}
+	tags := make(map[string]struct{})
+	for _, tag := range strings.Split(cli.HideTags, ",") {
+		tags[tag] = struct{}{}
+	}
+	if _, found := tags["nocmp"]; found {
+		in.ExecReq.Offer = ""
+	}
+	if _, found := tags["nocmp"]; found {
+		in.ExecReq.Answer = ""
+	}
+	if _, found := tags["nocmp"]; found {
+		in.ExecReq.Console.Url = ""
+	}
+}
+
 var StreamStatusRequiredArgs = []string{}
 var StreamStatusOptionalArgs = []string{
 	"cacheupdatetype",
@@ -139,3 +161,58 @@ var NameSanitizeReqComments = map[string]string{
 	"message":                           "String value",
 }
 var NameSanitizeReqSpecialArgs = map[string]string{}
+var CloudletExecReqRequiredArgs = []string{}
+var CloudletExecReqOptionalArgs = []string{
+	"cloudletkey.organization",
+	"cloudletkey.name",
+	"cloudletkey.federatedorganization",
+	"execreq.appinstkey.name",
+	"execreq.appinstkey.organization",
+	"execreq.appinstkey.cloudletkey.organization",
+	"execreq.appinstkey.cloudletkey.name",
+	"execreq.appinstkey.cloudletkey.federatedorganization",
+	"execreq.containerid",
+	"execreq.offer",
+	"execreq.answer",
+	"execreq.err",
+	"execreq.cmd.command",
+	"execreq.cmd.cloudletmgmtnode.type",
+	"execreq.cmd.cloudletmgmtnode.name",
+	"execreq.log.since",
+	"execreq.log.tail",
+	"execreq.log.timestamps",
+	"execreq.log.follow",
+	"execreq.console.url",
+	"execreq.timeout",
+	"execreq.accessurl",
+	"execreq.edgeturnaddr",
+	"execreq.edgeturnproxyaddr",
+}
+var CloudletExecReqAliasArgs = []string{}
+var CloudletExecReqComments = map[string]string{
+	"cloudletkey.organization":                             "Organization of the cloudlet site",
+	"cloudletkey.name":                                     "Name of the cloudlet",
+	"cloudletkey.federatedorganization":                    "Federated operator organization who shared this cloudlet",
+	"execreq.appinstkey.name":                              "App Instance name",
+	"execreq.appinstkey.organization":                      "App Instance organization",
+	"execreq.appinstkey.cloudletkey.organization":          "Organization of the cloudlet site",
+	"execreq.appinstkey.cloudletkey.name":                  "Name of the cloudlet",
+	"execreq.appinstkey.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"execreq.containerid":                                  "ContainerId is the name or ID of the target container, if applicable",
+	"execreq.offer":                                        "Offer",
+	"execreq.answer":                                       "Answer",
+	"execreq.err":                                          "Any error message",
+	"execreq.cmd.command":                                  "Command or Shell",
+	"execreq.cmd.cloudletmgmtnode.type":                    "Type of Cloudlet Mgmt Node",
+	"execreq.cmd.cloudletmgmtnode.name":                    "Name of Cloudlet Mgmt Node",
+	"execreq.log.since":                                    "Show logs since either a duration ago (5s, 2m, 3h) or a timestamp (RFC3339)",
+	"execreq.log.tail":                                     "Show only a recent number of lines",
+	"execreq.log.timestamps":                               "Show timestamps",
+	"execreq.log.follow":                                   "Stream data",
+	"execreq.console.url":                                  "VM Console URL",
+	"execreq.timeout":                                      "Timeout",
+	"execreq.accessurl":                                    "Access URL",
+	"execreq.edgeturnaddr":                                 "EdgeTurn Server Address",
+	"execreq.edgeturnproxyaddr":                            "EdgeTurn Proxy Address",
+}
+var CloudletExecReqSpecialArgs = map[string]string{}

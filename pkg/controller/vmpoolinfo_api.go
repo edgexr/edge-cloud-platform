@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 )
 
 type VMPoolInfoApi struct {
@@ -25,7 +26,7 @@ type VMPoolInfoApi struct {
 	cache edgeproto.VMPoolInfoCache
 }
 
-func NewVMPoolInfoApi(sync *Sync, all *AllApis) *VMPoolInfoApi {
+func NewVMPoolInfoApi(sync *regiondata.Sync, all *AllApis) *VMPoolInfoApi {
 	vmPoolInfoApi := VMPoolInfoApi{}
 	vmPoolInfoApi.all = all
 	edgeproto.InitVMPoolInfoCache(&vmPoolInfoApi.cache)

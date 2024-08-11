@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 )
 
 type DebugApi struct{}

@@ -27,9 +27,10 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/gogo/protobuf/types"
+	"github.com/oklog/ulid/v2"
 	"github.com/opentracing/opentracing-go"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	"google.golang.org/grpc"
@@ -37,7 +38,7 @@ import (
 
 type ClusterInstApi struct {
 	all            *AllApis
-	sync           *Sync
+	sync           *regiondata.Sync
 	store          edgeproto.ClusterInstStore
 	dnsLabelStore  *edgeproto.CloudletObjectDnsLabelStore
 	cache          edgeproto.ClusterInstCache
@@ -65,11 +66,11 @@ const (
 	GenResourceAlerts   = 1
 )
 
-func NewClusterInstApi(sync *Sync, all *AllApis) *ClusterInstApi {
+func NewClusterInstApi(sync *regiondata.Sync, all *AllApis) *ClusterInstApi {
 	clusterInstApi := ClusterInstApi{}
 	clusterInstApi.all = all
 	clusterInstApi.sync = sync
-	clusterInstApi.store = edgeproto.NewClusterInstStore(sync.store)
+	clusterInstApi.store = edgeproto.NewClusterInstStore(sync.GetKVStore())
 	clusterInstApi.dnsLabelStore = &all.cloudletApi.objectDnsLabelStore
 	edgeproto.InitClusterInstCache(&clusterInstApi.cache)
 	sync.RegisterCache(&clusterInstApi.cache)
@@ -257,26 +258,26 @@ func (s *ClusterInstApi) CreateClusterInst(in *edgeproto.ClusterInst, cb edgepro
 }
 
 // Validate resource requirements for the VMs on the cloudlet
-func (s *ClusterInstApi) validateCloudletInfraResources(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, infraResources *edgeproto.InfraResourcesSnapshot, allClusterResources, reqdVmResources, diffVmResources []edgeproto.VMResource, skipInfraCheck bool) ([]string, error) {
+func (s *ClusterInstApi) validateCloudletInfraResources(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, infraResources *edgeproto.InfraResourcesSnapshot, allClusterResources, reqdVmResources []edgeproto.VMResource) ([]string, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "Validate cloudlet resources", "vm resources", reqdVmResources, "cloudlet resources", infraResources)
 
 	infraResInfo := make(map[string]edgeproto.InfraResource)
 	for _, resInfo := range infraResources.Info {
 		infraResInfo[resInfo.Name] = resInfo
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "infra reported resources", "resources", infraResInfo)
 
 	reqdResInfo, err := s.all.cloudletApi.GetCloudletResourceInfo(ctx, stm, cloudlet, reqdVmResources, infraResInfo)
 	if err != nil {
 		return nil, err
 	}
+	log.SpanLog(ctx, log.DebugLevelApi, "calculated required resources", "resources", reqdResInfo)
+
 	allResInfo, err := s.all.cloudletApi.GetCloudletResourceInfo(ctx, stm, cloudlet, allClusterResources, infraResInfo)
 	if err != nil {
 		return nil, err
 	}
-	diffResInfo, err := s.all.cloudletApi.GetCloudletResourceInfo(ctx, stm, cloudlet, diffVmResources, infraResInfo)
-	if err != nil {
-		return nil, err
-	}
+	log.SpanLog(ctx, log.DebugLevelApi, "calculated all resources", "resources", allResInfo)
 
 	warnings := []string{}
 
@@ -320,7 +321,7 @@ func (s *ClusterInstApi) validateCloudletInfraResources(ctx context.Context, stm
 		errsOut := strings.Join(errsStr, ", ")
 		err = fmt.Errorf("Not enough resources available: %s", errsOut)
 	}
-	if err != nil || skipInfraCheck {
+	if err != nil {
 		return warnings, err
 	}
 
@@ -334,15 +335,6 @@ func (s *ClusterInstApi) validateCloudletInfraResources(ctx context.Context, stm
 	}
 
 	// Infra based validation
-	for resName, _ := range infraResInfo {
-		if resInfo, ok := diffResInfo[resName]; ok {
-			outInfo, ok := infraResInfo[resName]
-			if ok {
-				outInfo.Value += resInfo.Value
-				infraResInfo[resName] = outInfo
-			}
-		}
-	}
 	errsStr = []string{}
 	for resName, resInfo := range infraResInfo {
 		if resInfo.InfraMaxValue == 0 {
@@ -440,12 +432,16 @@ func (s *ClusterInstApi) GetRootLBFlavorInfo(ctx context.Context, stm concurrenc
 		return nil, err
 	}
 
-	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmRedisapiTimeout.TimeDuration())
+	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmApiTimeout.TimeDuration())
 	defer cancel()
-	client := rediscache.GetCCRMAPIClient(redisClient, features.NodeType)
-	rootlbFlavor, err := client.GetRootLbFlavor(reqCtx, &cloudlet.Key)
+	conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
 	if err != nil {
 		return nil, err
+	}
+	api := edgeproto.NewCloudletPlatformAPIClient(conn)
+	rootlbFlavor, err := api.GetRootLbFlavor(reqCtx, &cloudlet.Key)
+	if err != nil {
+		return nil, cloudcommon.GRPCErrorUnwrap(err)
 	}
 	lbFlavor := &edgeproto.FlavorInfo{}
 	if rootlbFlavor != nil {
@@ -459,41 +455,35 @@ func (s *ClusterInstApi) GetRootLBFlavorInfo(ctx context.Context, stm concurrenc
 }
 
 // getAllCloudletResources
-// Returns (1) All the VM resources on the cloudlet (2) Diff of VM resources reported by CRM and seen by controller
-func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletRefs *edgeproto.CloudletRefs) ([]edgeproto.VMResource, []edgeproto.VMResource, bool, error) {
+// Returns all the VM resources on the cloudlet
+func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletRefs *edgeproto.CloudletRefs) ([]edgeproto.VMResource, error) {
 	allVmResources := []edgeproto.VMResource{}
-	diffVmResources := []edgeproto.VMResource{}
 
-	// Perform Infra based resource validations only if they are in sync
-	// with controller i.e. there are no objects on Infra captured by
-	// ResourceSnapshot that are not present on controller (etcd)
-	skipInfraCheck := false
+	// Historical note: We removed the diff calculation between etcd reported
+	// AppInsts/ClusterInsts vs CRM reported AppInsts/ClusterInsts
+	// (from CRM's info caches). It did not seem useful, given:
+	// 1. What's in the CRM info cache doesn't necessarily equate to what's
+	// on the infra. What's in the controller etcd db is just as accurate a
+	// measure. In any case the info caches are supposed to be in sync
+	// with the object db in etcd.
+	// 2. The info caches on the CRM are ephemeral - if the CRM restarts, all
+	// that data is cleared until a request for an appInst/clusterInst comes
+	// in from the controller.
+	// 3. This resource calculation becomes wrong if old data from the
+	// CRM's info caches, or old data in the cloudletInfo.ResourcesSnapshot
+	// is not removed in a timely manner. It then over calculates the used
+	// resources.
 
 	// get all cloudlet resources (platformVM, sharedRootLB, etc)
 	cloudletRes, err := GetPlatformVMsResources(ctx, cloudletInfo)
 	if err != nil {
-		return nil, nil, skipInfraCheck, err
+		return nil, err
 	}
 	allVmResources = append(allVmResources, cloudletRes...)
 
-	snapshotClusters := make(map[edgeproto.ClusterKey]struct{})
-	for _, clKey := range cloudletInfo.ResourcesSnapshot.ClusterInsts {
-		snapshotClusters[clKey] = struct{}{}
-	}
-
-	snapshotVmAppInsts := make(map[edgeproto.AppInstRefKey]struct{})
-	for _, aiKey := range cloudletInfo.ResourcesSnapshot.VmAppInsts {
-		snapshotVmAppInsts[aiKey] = struct{}{}
-	}
-
-	snapshotK8sAppInsts := make(map[edgeproto.AppInstRefKey]struct{})
-	for _, aiKey := range cloudletInfo.ResourcesSnapshot.K8SAppInsts {
-		snapshotK8sAppInsts[aiKey] = struct{}{}
-	}
-
 	lbFlavor, err := s.GetRootLBFlavorInfo(ctx, stm, cloudlet, cloudletInfo)
 	if err != nil {
-		return nil, nil, skipInfraCheck, err
+		return nil, err
 	}
 
 	// get all cluster resources (clusterVM, dedicatedRootLB, etc)
@@ -515,11 +505,11 @@ func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concur
 		// or may not actually be able to free up resources yet (DeleteRequested, etc)
 		nodeFlavorInfo, masterFlavorInfo, err := s.getClusterFlavorInfo(ctx, stm, cloudletInfo.Flavors, &ci)
 		if err != nil {
-			return nil, nil, skipInfraCheck, err
+			return nil, err
 		}
 		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err != nil {
-			return nil, nil, skipInfraCheck, fmt.Errorf("Failed to get features for platform: %s", err)
+			return nil, fmt.Errorf("Failed to get features for platform: %s", err)
 		}
 		isManagedK8s := false
 		if features.KubernetesRequiresWorkerNodes {
@@ -527,26 +517,9 @@ func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concur
 		}
 		ciRes, err := cloudcommon.GetClusterInstVMRequirements(ctx, &ci, nodeFlavorInfo, masterFlavorInfo, lbFlavor, isManagedK8s)
 		if err != nil {
-			return nil, nil, skipInfraCheck, err
+			return nil, err
 		}
 		allVmResources = append(allVmResources, ciRes...)
-
-		// maintain a diff of clusterinsts reported by CRM and what is present in controller,
-		// this is done to get accurate resource information
-		if _, ok := snapshotClusters[clusterKey]; ok {
-			continue
-		}
-		diffVmResources = append(diffVmResources, ciRes...)
-	}
-	// check infra resource usage as long as the infra instances set is
-	// equal to or a subset of the controller instances set
-	// use `skipInfraCheck` flag to skip infra resource usage
-	for clusterInstRefKey, _ := range snapshotClusters {
-		if _, ok := ctrlClusters[clusterInstRefKey]; ok {
-			continue
-		}
-		skipInfraCheck = true
-		break
 	}
 	// get all VM app inst resources
 	ctrlVmAppInsts := make(map[edgeproto.AppInstRefKey]struct{})
@@ -564,11 +537,11 @@ func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concur
 		// or may not actually be able to free up resources yet (DeleteRequested, etc)
 		app := edgeproto.App{}
 		if !s.all.appApi.store.STMGet(stm, &appInst.AppKey, &app) {
-			return nil, nil, skipInfraCheck, fmt.Errorf("App not found: %v", appInst.AppKey)
+			return nil, fmt.Errorf("App not found: %v", appInst.AppKey)
 		}
 		vmRes, err := cloudcommon.GetVMAppRequirements(ctx, &app, &appInst, cloudletInfo.Flavors, lbFlavor)
 		if err != nil {
-			return nil, nil, skipInfraCheck, err
+			return nil, err
 		}
 		allVmResources = append(allVmResources, vmRes...)
 
@@ -576,22 +549,6 @@ func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concur
 		// this is done to get accurate resource information
 		aiRefKey := &edgeproto.AppInstRefKey{}
 		aiRefKey.FromAppInstKey(&appInstKey)
-		if _, ok := snapshotVmAppInsts[*aiRefKey]; ok {
-			continue
-		}
-		diffVmResources = append(diffVmResources, vmRes...)
-	}
-	if !skipInfraCheck {
-		// check infra resource usage as long as the infra instances set is
-		// equal to or a subset of the controller instances set
-		// use `skipInfraCheck` flag to skip infra resource usage
-		for appInstRefKey, _ := range snapshotVmAppInsts {
-			if _, ok := ctrlVmAppInsts[appInstRefKey]; ok {
-				continue
-			}
-			skipInfraCheck = true
-			break
-		}
 	}
 	// get all K8s app inst resources
 	ctrlK8sAppInsts := make(map[edgeproto.AppInstRefKey]struct{})
@@ -609,11 +566,11 @@ func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concur
 		// or may not actually be able to free up resources yet (DeleteRequested, etc)
 		app := edgeproto.App{}
 		if !s.all.appApi.store.STMGet(stm, &appInst.AppKey, &app) {
-			return nil, nil, skipInfraCheck, fmt.Errorf("App not found: %v", appInst.AppKey)
+			return nil, fmt.Errorf("App not found: %v", appInst.AppKey)
 		}
 		k8sRes, err := cloudcommon.GetK8sAppRequirements(ctx, &app)
 		if err != nil {
-			return nil, nil, skipInfraCheck, err
+			return nil, err
 		}
 		allVmResources = append(allVmResources, k8sRes...)
 
@@ -621,27 +578,10 @@ func (s *ClusterInstApi) getAllCloudletResources(ctx context.Context, stm concur
 		// this is done to get accurate resource information
 		aiRefKey := &edgeproto.AppInstRefKey{}
 		aiRefKey.FromAppInstKey(&appInstKey)
-		if _, ok := snapshotK8sAppInsts[*aiRefKey]; ok {
-			continue
-		}
-		diffVmResources = append(diffVmResources, k8sRes...)
-	}
-	if !skipInfraCheck {
-		// check infra resource usage as long as the infra instances set is
-		// equal to or a subset of the controller instances set
-		// use `skipInfraCheck` flag to skip infra resource usage
-		for appInstRefKey, _ := range snapshotK8sAppInsts {
-			if _, ok := ctrlK8sAppInsts[appInstRefKey]; ok {
-				continue
-			}
-			skipInfraCheck = true
-			break
-		}
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "GetAllCloudletResources", "key", cloudlet.Key,
-		"allVMResources", allVmResources, "diffVMResources", diffVmResources,
-		"SkipInfraCheck", skipInfraCheck)
-	return allVmResources, diffVmResources, skipInfraCheck, nil
+		"allVMResources", allVmResources)
+	return allVmResources, nil
 }
 
 func (s *ClusterInstApi) handleResourceUsageAlerts(ctx context.Context, stm concurrency.STM, key *edgeproto.CloudletKey, warnings []string) {
@@ -723,12 +663,12 @@ func (s *ClusterInstApi) validateResources(ctx context.Context, stm concurrency.
 	}
 
 	// get all cloudlet resources (platformVM, sharedRootLB, clusterVms, AppVMs, etc)
-	allVmResources, diffVmResources, skipInfraCheck, err := s.getAllCloudletResources(ctx, stm, cloudlet, cloudletInfo, cloudletRefs)
+	allVmResources, err := s.getAllCloudletResources(ctx, stm, cloudlet, cloudletInfo, cloudletRefs)
 	if err != nil {
 		return err
 	}
 
-	warnings, err := s.validateCloudletInfraResources(ctx, stm, cloudlet, &cloudletInfo.ResourcesSnapshot, allVmResources, reqdVmResources, diffVmResources, skipInfraCheck)
+	warnings, err := s.validateCloudletInfraResources(ctx, stm, cloudlet, &cloudletInfo.ResourcesSnapshot, allVmResources, reqdVmResources)
 	if err != nil {
 		return err
 	}
@@ -758,7 +698,7 @@ func (s *ClusterInstApi) getCloudletResourceMetric(ctx context.Context, stm conc
 	pfType := cloudlet.PlatformType
 
 	// get all cloudlet resources (platformVM, sharedRootLB, clusterVms, AppVMs, etc)
-	allResources, _, _, err := s.all.clusterInstApi.getAllCloudletResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletRefs)
+	allResources, err := s.all.clusterInstApi.getAllCloudletResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletRefs)
 	if err != nil {
 		return nil, err
 	}
@@ -798,17 +738,21 @@ func (s *ClusterInstApi) getCloudletResourceMetric(ctx context.Context, stm conc
 	resMetric.AddIntVal(cloudcommon.ResourceMetricExternalIPs, externalIPsUsed)
 
 	// get additional infra specific metric
-	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmRedisapiTimeout.TimeDuration())
+	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmApiTimeout.TimeDuration())
 	defer cancel()
-	client := rediscache.GetCCRMAPIClient(redisClient, features.NodeType)
+	conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
+	if err != nil {
+		return nil, err
+	}
+	api := edgeproto.NewCloudletPlatformAPIClient(conn)
 	req := edgeproto.ClusterResourceMetricReq{
 		CloudletKey: &cloudlet.Key,
 		ResMetric:   &resMetric,
 		VmResources: allResources,
 	}
-	resMetricOut, err := client.GetClusterAdditionalResourceMetric(reqCtx, &req)
+	resMetricOut, err := api.GetClusterAdditionalResourceMetric(reqCtx, &req)
 	if err != nil {
-		return nil, err
+		return nil, cloudcommon.GRPCErrorUnwrap(err)
 	}
 	resMetric = *resMetricOut
 
@@ -909,6 +853,8 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		in.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
 	}
 
+	nodeType := ""
+	crmOnEdge := false
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		if err := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &in.Key.CloudletKey, cloudcommon.Create); err != nil {
 			return err
@@ -942,6 +888,8 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
+		nodeType = features.NodeType
+		crmOnEdge = cloudlet.CrmOnEdge
 		if features.IsSingleKubernetesCluster {
 			return fmt.Errorf("Single kubernetes cluster platform %s only supports AppInst creates", cloudlet.PlatformType)
 		}
@@ -1094,6 +1042,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		in.StaticFqdn = in.Fqdn
 
 		in.CreatedAt = dme.TimeToTimestamp(time.Now())
+		in.ObjId = ulid.Make().String()
 
 		if ignoreCRM(cctx) {
 			in.State = edgeproto.TrackedState_READY
@@ -1132,10 +1081,34 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CreateClusterInstTimeout.TimeDuration())
 	defer reqCancel()
 
-	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_READY, CreateClusterInstTransitions,
-		edgeproto.TrackedState_CREATE_ERROR,
-		"Created ClusterInst successfully", cb.Send,
-		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+	conn, err := services.platformServiceConnCache.GetConn(ctx, nodeType)
+	if err != nil {
+		return err
+	}
+	successMsg := "Created ClusterInst successfully"
+	if crmOnEdge {
+		err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_READY, CreateClusterInstTransitions,
+			edgeproto.TrackedState_CREATE_ERROR,
+			successMsg, cb.Send,
+			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+	} else {
+		api := edgeproto.NewClusterPlatformAPIClient(conn)
+		var outStream edgeproto.ClusterPlatformAPI_ApplyClusterInstClient
+		in.Fields = edgeproto.ClusterInstAllFields
+		outStream, err = api.ApplyClusterInst(reqCtx, in)
+		if err == nil {
+			err = cloudcommon.StreamRecvWithStatus(ctx, outStream, cb.Send, func(info *edgeproto.ClusterInstInfo) error {
+				s.all.clusterInstApi.UpdateFromInfo(ctx, info)
+				return nil
+			})
+			if err == nil {
+				cb.Send(&edgeproto.Result{
+					Message: successMsg,
+				})
+			}
+		}
+		err = cloudcommon.GRPCErrorUnwrap(err)
+	}
 	if err != nil && cctx.Override == edgeproto.CRMOverride_IGNORE_CRM_ERRORS {
 		cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Create ClusterInst ignoring CRM failure: %s", err.Error())})
 		s.ReplaceErrorState(ctx, in, edgeproto.TrackedState_READY)
@@ -1182,7 +1155,7 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	cctx.SetOverride(&in.CrmOverride)
 	fmap := edgeproto.MakeFieldMap(in.Fields)
 
-	if _, found := fmap[edgeproto.ClusterInstFieldEnableIpv6]; found && !in.EnableIpv6 {
+	if fmap.Has(edgeproto.ClusterInstFieldEnableIpv6) && !in.EnableIpv6 {
 		err := s.checkDisableDisableIPV6(ctx, &in.Key)
 		if err != nil {
 			return err
@@ -1195,19 +1168,25 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	var inbuf edgeproto.ClusterInst
 	var changeCount int
 	retry := false
+	nodeType := ""
+	crmOnEdge := false
+	var diffFields *edgeproto.FieldMap
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		changeCount = 0
+		inbuf = edgeproto.ClusterInst{}
 		if !s.store.STMGet(stm, &in.Key, &inbuf) {
 			return in.Key.NotFoundError()
 		}
+		old := edgeproto.ClusterInst{}
+		old.DeepCopyIn(&inbuf)
 		if inbuf.Deployment != cloudcommon.DeploymentTypeKubernetes {
 			if inbuf.AutoScalePolicy == "" && in.AutoScalePolicy != "" {
 				return fmt.Errorf("Cannot add auto scale policy to non-kubernetes ClusterInst")
 			}
-			if _, found := fmap[edgeproto.ClusterInstFieldNumMasters]; found && in.NumMasters != 0 {
+			if fmap.Has(edgeproto.ClusterInstFieldNumMasters) && in.NumMasters != 0 {
 				return fmt.Errorf("Cannot update number of master nodes in non-kubernetes cluster")
 			}
-			if _, found := fmap[edgeproto.ClusterInstFieldNumNodes]; found && in.NumNodes != 0 {
+			if fmap.Has(edgeproto.ClusterInstFieldNumNodes) && in.NumNodes != 0 {
 				return fmt.Errorf("Cannot update number of nodes in non-kubernetes cluster")
 			}
 		}
@@ -1233,7 +1212,9 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
-		if _, found := fmap[edgeproto.ClusterInstFieldEnableIpv6]; found {
+		crmOnEdge = cloudlet.CrmOnEdge
+		nodeType = features.NodeType
+		if fmap.Has(edgeproto.ClusterInstFieldEnableIpv6) {
 			if in.EnableIpv6 && !features.SupportsIpv6 {
 				return fmt.Errorf("cloudlet platform does not support IPv6")
 			}
@@ -1295,6 +1276,7 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 		inbuf.UpdatedAt = dme.TimeToTimestamp(time.Now())
 		s.store.STMPut(stm, &inbuf)
+		diffFields = old.GetDiffFields(&inbuf)
 		return nil
 	})
 	if err != nil {
@@ -1327,11 +1309,37 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateClusterInstTimeout.TimeDuration())
 	defer reqCancel()
 
-	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_READY,
-		UpdateClusterInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
-		"Updated ClusterInst successfully", cb.Send,
-		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
-	)
+	successMsg := "Updated ClusterInst successfully"
+	if crmOnEdge {
+		err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_READY,
+			UpdateClusterInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
+			successMsg, cb.Send,
+			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+		)
+	} else {
+		conn, err := services.platformServiceConnCache.GetConn(ctx, nodeType)
+		if err != nil {
+			return err
+		}
+		api := edgeproto.NewClusterPlatformAPIClient(conn)
+		inbuf.Fields = diffFields.Fields()
+		outStream, err := api.ApplyClusterInst(reqCtx, &inbuf)
+		if err != nil {
+			return cloudcommon.GRPCErrorUnwrap(err)
+		}
+		err = cloudcommon.StreamRecvWithStatus(ctx, outStream, cb.Send, func(info *edgeproto.ClusterInstInfo) error {
+			s.all.clusterInstApi.UpdateFromInfo(ctx, info)
+			return nil
+		})
+		if err == nil {
+			cb.Send(&edgeproto.Result{
+				Message: successMsg,
+			})
+		}
+		if err != nil {
+			return err
+		}
+	}
 	return err
 }
 
@@ -1530,6 +1538,8 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 		return err
 	}
 
+	crmOnEdge := false
+	platformType := ""
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		if !s.store.STMGet(stm, &in.Key, in) {
 			return in.Key.NotFoundError()
@@ -1548,6 +1558,8 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 			log.WarnLog("Delete ClusterInst: cloudlet not found",
 				"cloudlet", in.Key.CloudletKey)
 		}
+		crmOnEdge = cloudlet.CrmOnEdge
+		platformType = cloudlet.PlatformType
 		refs := edgeproto.CloudletRefs{}
 		if s.all.cloudletRefsApi.store.STMGet(stm, &in.Key.CloudletKey, &refs) {
 			ii := 0
@@ -1603,11 +1615,42 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().DeleteClusterInstTimeout.TimeDuration())
 	defer reqCancel()
 
-	err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_NOT_PRESENT,
-		DeleteClusterInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
-		"Deleted ClusterInst successfully", cb.Send,
-		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
-	)
+	crmAction := func() error {
+		successMsg := "Deleted ClusterInst successfully"
+		if crmOnEdge {
+			return edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_NOT_PRESENT,
+				DeleteClusterInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
+				successMsg, cb.Send,
+				edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+			)
+		} else {
+			features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, platformType)
+			if err != nil {
+				return err
+			}
+			conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
+			if err != nil {
+				return err
+			}
+			api := edgeproto.NewClusterPlatformAPIClient(conn)
+			in.Fields = []string{edgeproto.ClusterInstFieldState}
+			outStream, err := api.ApplyClusterInst(reqCtx, in)
+			if err != nil {
+				return cloudcommon.GRPCErrorUnwrap(err)
+			}
+			err = cloudcommon.StreamRecvWithStatus(ctx, outStream, cb.Send, func(info *edgeproto.ClusterInstInfo) error {
+				s.UpdateFromInfo(ctx, info)
+				return nil
+			})
+			if err == nil {
+				cb.Send(&edgeproto.Result{
+					Message: successMsg,
+				})
+			}
+			return err
+		}
+	}
+	err = crmAction()
 	if err != nil && cctx.Override == edgeproto.CRMOverride_IGNORE_CRM_ERRORS {
 		cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Delete ClusterInst ignoring CRM failure: %s", err.Error())})
 		s.ReplaceErrorState(ctx, in, edgeproto.TrackedState_NOT_PRESENT)
@@ -1699,6 +1742,8 @@ func ignoreCRMTransient(cctx *CallContext) bool {
 func (s *ClusterInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.ClusterInstInfo) {
 	log.SpanLog(ctx, log.DebugLevelApi, "update ClusterInst", "key", in.Key, "state", in.State, "status", in.Status, "resources", in.Resources)
 
+	fmap := edgeproto.MakeFieldMap(in.Fields)
+
 	s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		saveInst := false
 		inst := edgeproto.ClusterInst{}
@@ -1706,23 +1751,27 @@ func (s *ClusterInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.Clust
 			// got deleted in the meantime
 			return nil
 		}
-		if inst.Resources.UpdateResources(&in.Resources) {
-			inst.Resources = in.Resources
-			saveInst = true
-		}
-		if inst.State != in.State {
-			saveInst = true
-			// please see state_transitions.md
-			if !crmTransitionOk(inst.State, in.State) {
-				log.SpanLog(ctx, log.DebugLevelApi, "invalid state transition", "cur", inst.State, "next", in.State)
-				return nil
+		if fmap.HasOrHasChild(edgeproto.ClusterInstInfoFieldResources) {
+			if inst.Resources.UpdateResources(&in.Resources) {
+				inst.Resources = in.Resources
+				saveInst = true
 			}
 		}
-		inst.State = in.State
-		if in.State == edgeproto.TrackedState_CREATE_ERROR || in.State == edgeproto.TrackedState_DELETE_ERROR || in.State == edgeproto.TrackedState_UPDATE_ERROR {
-			inst.Errors = in.Errors
-		} else {
-			inst.Errors = nil
+		if fmap.HasOrHasChild(edgeproto.ClusterInstInfoFieldState) {
+			if inst.State != in.State {
+				saveInst = true
+				// please see state_transitions.md
+				if !crmTransitionOk(inst.State, in.State) {
+					log.SpanLog(ctx, log.DebugLevelApi, "invalid state transition", "cur", inst.State, "next", in.State)
+					return nil
+				}
+			}
+			inst.State = in.State
+			if in.State == edgeproto.TrackedState_CREATE_ERROR || in.State == edgeproto.TrackedState_DELETE_ERROR || in.State == edgeproto.TrackedState_UPDATE_ERROR {
+				inst.Errors = in.Errors
+			} else {
+				inst.Errors = nil
+			}
 		}
 		if saveInst {
 			s.store.STMPut(stm, &inst)

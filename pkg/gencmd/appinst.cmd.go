@@ -60,6 +60,9 @@ func AppInstHideTags(in *edgeproto.AppInst) {
 	if _, found := tags["nocmp"]; found {
 		in.VirtualClusterKey = edgeproto.ClusterKey{}
 	}
+	if _, found := tags["nocmp"]; found {
+		in.ObjId = ""
+	}
 }
 
 func AppInstInfoHideTags(in *edgeproto.AppInstInfo) {
@@ -857,6 +860,7 @@ var AppInstOptionalArgs = []string{
 	"realclustername",
 	"dedicatedip",
 	"enableipv6",
+	"objid",
 }
 var AppInstAliasArgs = []string{
 	"appinstname=key.name",
@@ -934,6 +938,7 @@ var AppInstComments = map[string]string{
 	"virtualclusterkey.name":         "Cluster name",
 	"virtualclusterkey.organization": "Name of the organization that this cluster belongs to",
 	"enableipv6":                     "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting for VM Apps and auto-clusters, otherwise defaults to target cluster instance setting.",
+	"objid":                          "Universally unique object ID",
 }
 var AppInstSpecialArgs = map[string]string{
 	"errors":                   "StringArray",
@@ -1186,6 +1191,7 @@ var CreateAppInstOptionalArgs = []string{
 	"realclustername",
 	"dedicatedip",
 	"enableipv6",
+	"objid",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1210,6 +1216,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"realclustername",
 	"dedicatedip",
 	"enableipv6",
+	"objid",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1230,6 +1237,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"realclustername",
 	"dedicatedip",
 	"enableipv6",
+	"objid",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1248,4 +1256,5 @@ var UpdateAppInstOptionalArgs = []string{
 	"realclustername",
 	"dedicatedip",
 	"enableipv6",
+	"objid",
 }

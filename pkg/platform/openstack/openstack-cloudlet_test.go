@@ -29,6 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"github.com/stretchr/testify/require"
 )
@@ -90,26 +91,34 @@ func TestOpenstackLive(t *testing.T) {
 	caches.CloudletCache.Update(ctx, cloudlet, 0)
 	haMgr := &redundancy.HighAvailabilityManager{}
 
+	store := regiondata.InMemoryStore{}
+	store.Start()
+	defer store.Stop()
+
 	pfConfig := &platform.PlatformConfig{
 		CloudletKey:         &cloudlet.Key,
 		CacheDir:            "/var/tmp", // must exist locally
 		TestMode:            false,
 		NodeMgr:             nodeMgr,
-		AccessApi:           accessAPI,
 		CloudletVMImagePath: cloudletVMImagePath,
 		DeploymentTag:       "main",
 		AppDNSRoot:          "app.functest.ut",
 		RootLBFQDN:          "shared.functest.ut",
+		PlatformInitConfig: platform.PlatformInitConfig{
+			AccessApi:   accessAPI,
+			SyncFactory: regiondata.NewKVStoreSyncFactory(&store, "ccrm", "cloudlet1"),
+		},
 	}
 
 	plat := NewPlatform()
 	cb := func(updateType edgeproto.CacheUpdateType, value string) {
 		fmt.Println(value)
 	}
+	appInstSender := edgeproto.NewAppInstInfoPrintUpdater()
 	err := plat.InitCommon(ctx, pfConfig, caches, haMgr, cb)
 	require.Nil(t, err)
 
-	err = plat.InitHAConditional(ctx, pfConfig, cb)
+	err = plat.InitHAConditional(ctx, cb)
 	require.Nil(t, err)
 
 	if false {
@@ -306,7 +315,7 @@ runcmd:
 		}
 		vmClusterInst := edgeproto.ClusterInst{}
 		//err = plat.DeleteAppInst(ctx, &vmClusterInst, &vmApp, &appInst, cb)
-		err = plat.CreateAppInst(ctx, &vmClusterInst, &vmApp, &appInst, &edgeproto.Flavor{}, cb)
+		err = plat.CreateAppInst(ctx, &vmClusterInst, &vmApp, &appInst, &edgeproto.Flavor{}, appInstSender)
 		//err = plat.UpdateAppInst(ctx, &vmClusterInst, &vmApp, &appInst, &edgeproto.Flavor{}, cb)
 		if err != nil {
 			fmt.Println(err.Error())

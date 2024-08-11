@@ -33,7 +33,7 @@ func (m *ManagedK8sPlatform) PerformUpgrades(ctx context.Context, caches *platfo
 	return nil
 }
 
-func (m *ManagedK8sPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, flavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
+func (m *ManagedK8sPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, accessApi platform.AccessApi, flavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest not supported", "cloudletName", cloudlet.Key.Name)
 	return nil, fmt.Errorf("GetCloudletManifest not supported for managed k8s provider")
 }
@@ -47,15 +47,15 @@ func (m *ManagedK8sPlatform) getCloudletClusterName(cloudlet *edgeproto.Cloudlet
 	return m.Provider.NameSanitize(cloudlet.Key.Name + "-pf")
 }
 
-func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, flavor *edgeproto.Flavor, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
+func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, flavor *edgeproto.Flavor, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet", "cloudlet", cloudlet)
 	cloudletResourcesCreated := false
 	if cloudlet.Deployment != cloudcommon.DeploymentTypeKubernetes {
 		return cloudletResourcesCreated, fmt.Errorf("Only kubernetes deployment supported for cloudlet platform: %s", m.Type)
 	}
-	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
 	props := m.Provider.GetFeatures().Properties
-	err := m.Provider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
+	err := m.Provider.InitApiAccessProperties(ctx, platCfg.AccessApi, cloudlet.EnvVar)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -95,7 +95,7 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		return cloudletResourcesCreated, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet success")
-	return cloudletResourcesCreated, m.CreatePlatformApp(ctx, "crm-"+cloudletClusterName, kconf, accessApi, pfConfig)
+	return cloudletResourcesCreated, m.CreatePlatformApp(ctx, "crm-"+cloudletClusterName, kconf, platCfg.AccessApi, pfConfig)
 }
 
 func (m *ManagedK8sPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -114,11 +114,11 @@ func (m *ManagedK8sPlatform) DeleteTrustPolicyException(ctx context.Context, Tru
 	return fmt.Errorf("DeleteTrustPolicyException TODO")
 }
 
-func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, caches *platform.Caches, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudlet", "cloudlet", cloudlet)
-	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, accessApi)
+	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
 	props := m.Provider.GetFeatures().Properties
-	err := m.Provider.InitApiAccessProperties(ctx, accessApi, cloudlet.EnvVar)
+	err := m.Provider.InitApiAccessProperties(ctx, platCfg.AccessApi, cloudlet.EnvVar)
 	if err != nil {
 		return err
 	}

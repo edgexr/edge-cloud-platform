@@ -34,7 +34,6 @@ const DummyInfoDelay = 10 * time.Millisecond
 
 type DummyInfoResponder struct {
 	CloudletCache                *edgeproto.CloudletCache
-	RecvCloudletOnboardingInfo   notify.RecvCloudletOnboardingInfoHandler
 	AppInstCache                 *edgeproto.AppInstCache
 	AppInstInfoCache             edgeproto.AppInstInfoCache
 	ClusterInstCache             *edgeproto.ClusterInstCache
@@ -53,20 +52,21 @@ type DummyInfoResponder struct {
 	simulateVMPoolUpdateFailure  bool
 	enable                       bool
 	pause                        sync.WaitGroup
+	crmsOnEdge                   map[edgeproto.CloudletKey]struct{}
 }
 
 func DefaultDummyInfoResponder(apis *AllApis) *DummyInfoResponder {
 	return &DummyInfoResponder{
-		CloudletCache:              apis.cloudletApi.cache,
-		AppInstCache:               &apis.appInstApi.cache,
-		ClusterInstCache:           &apis.clusterInstApi.cache,
-		RecvCloudletOnboardingInfo: apis.cloudletInfoApi,
-		RecvAppInstInfo:            apis.appInstInfoApi,
-		RecvClusterInstInfo:        apis.clusterInstInfoApi,
+		CloudletCache:       apis.cloudletApi.cache,
+		AppInstCache:        &apis.appInstApi.cache,
+		ClusterInstCache:    &apis.clusterInstApi.cache,
+		RecvAppInstInfo:     apis.appInstInfoApi,
+		RecvClusterInstInfo: apis.clusterInstInfoApi,
 	}
 }
 
 func (d *DummyInfoResponder) InitDummyInfoResponder() {
+	d.crmsOnEdge = map[edgeproto.CloudletKey]struct{}{}
 	d.enable = true
 	// cloudlet onboarding
 	if d.CloudletCache != nil {
@@ -127,26 +127,19 @@ func (d *DummyInfoResponder) SetPause(enable bool) {
 
 // This mocks the CCRM response to platform-specific Create/DeleteCloudlet.
 func (d *DummyInfoResponder) runCloudletChanged(ctx context.Context, in *edgeproto.Cloudlet, modRev int64) {
+	if in.CrmOnEdge {
+		d.crmsOnEdge[in.Key] = struct{}{}
+	}
 	if !d.enable {
 		return
 	}
-	var newState edgeproto.TrackedState
-	if in.OnboardingState == edgeproto.TrackedState_CREATE_REQUESTED {
-		newState = edgeproto.TrackedState_READY
-	} else if in.OnboardingState == edgeproto.TrackedState_DELETE_REQUESTED {
-		newState = edgeproto.TrackedState_DELETE_DONE
-	} else {
-		return
-	}
-	info := edgeproto.CloudletOnboardingInfo{
-		Key:             in.Key,
-		OnboardingState: newState,
-	}
-	go d.RecvCloudletOnboardingInfo.RecvCloudletOnboardingInfo(ctx, &info)
 }
 
 func (d *DummyInfoResponder) runClusterInstChanged(ctx context.Context, obj *edgeproto.ClusterInst, modRev int64) {
 	if !d.enable {
+		return
+	}
+	if _, ok := d.crmsOnEdge[obj.Key.CloudletKey]; !ok {
 		return
 	}
 	// copy out from cache since data may change while thread runs
@@ -162,6 +155,9 @@ func (d *DummyInfoResponder) runClusterInstDeleted(ctx context.Context, old *edg
 	if !d.enable {
 		return
 	}
+	if _, ok := d.crmsOnEdge[old.Key.CloudletKey]; !ok {
+		return
+	}
 	copy := &edgeproto.ClusterInst{}
 	copy.DeepCopyIn(old)
 	go d.clusterInstDeleted(ctx, copy)
@@ -169,6 +165,9 @@ func (d *DummyInfoResponder) runClusterInstDeleted(ctx context.Context, old *edg
 
 func (d *DummyInfoResponder) runAppInstChanged(ctx context.Context, obj *edgeproto.AppInst, modRev int64) {
 	if !d.enable {
+		return
+	}
+	if _, ok := d.crmsOnEdge[obj.Key.CloudletKey]; !ok {
 		return
 	}
 	// copy out from cache since data may change while thread runs
@@ -182,6 +181,9 @@ func (d *DummyInfoResponder) runAppInstChanged(ctx context.Context, obj *edgepro
 
 func (d *DummyInfoResponder) runAppInstDeleted(ctx context.Context, old *edgeproto.AppInst) {
 	if !d.enable {
+		return
+	}
+	if _, ok := d.crmsOnEdge[old.Key.CloudletKey]; !ok {
 		return
 	}
 	copy := &edgeproto.AppInst{}
@@ -274,6 +276,7 @@ func (d *DummyInfoResponder) appInstChanged(ctx context.Context, inst *edgeproto
 			d.AppInstInfoCache.SetError(ctx, key, edgeproto.TrackedState_UPDATE_ERROR, "crm update app inst failed")
 		} else {
 			d.AppInstInfoCache.SetState(ctx, key, edgeproto.TrackedState_READY)
+			d.AppInstInfoCache.SetPowerState(ctx, key, edgeproto.PowerState_POWER_ON)
 		}
 	} else if inst.State == edgeproto.TrackedState_CREATE_REQUESTED {
 		// create

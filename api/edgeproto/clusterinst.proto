@@ -135,9 +135,11 @@ message ClusterInst {
   // FQDN is a globally unique DNS id for the ClusterInst
   string fqdn = 36 [(protogen.backend) = true];
   // Static startup FQDN is an immutable globally unique name, set when object is created
-  string static_fqdn = 38 [(protogen.backend) = true];
+  string static_fqdn = 39 [(protogen.backend) = true];
   // Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting
   bool enable_ipv6 = 37;
+  // Universally unique object ID
+  string obj_id = 38 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;

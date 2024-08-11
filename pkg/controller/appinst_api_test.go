@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
@@ -110,18 +111,19 @@ func TestAppInstApi(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 	defer dummy.Stop()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 
 	reduceInfoTimeouts(t, ctx, apis)
 
@@ -153,6 +155,7 @@ func TestAppInstApi(t *testing.T) {
 	// the fake crm returns a failure. If it doesn't, the next test to
 	// create all the app insts will fail.
 	responder.SetSimulateAppCreateFailure(true)
+	ccrm.SetSimulateAppCreateFailure(true)
 	// clean up on failure may find ports inconsistent
 	RequireAppInstPortConsistency = false
 	for ii, data := range testutil.AppInstData() {
@@ -161,13 +164,13 @@ func TestAppInstApi(t *testing.T) {
 			continue
 		}
 		err := apis.appInstApi.CreateAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
-		require.NotNil(t, err, "Create app inst responder failures")
+		require.NotNil(t, err, "Create app inst responder failures for AppInst[%d]", ii)
 		// make sure error matches responder
 		// if app-inst triggers auto-cluster, the error will be for a cluster
 		if strings.Contains(err.Error(), "cluster inst") {
-			require.Equal(t, "Encountered failures: crm create cluster inst failed", err.Error(), "AppInst[%d]: %v", ii, obj.Key)
+			require.Contains(t, err.Error(), "create cluster inst failed", err.Error(), "AppInst[%d]: %v", ii, obj.Key)
 		} else {
-			require.Equal(t, "Encountered failures: crm create app inst failed", err.Error(), "AppInst[%d]: %v", ii, obj.Key)
+			require.Contains(t, err.Error(), "create app inst failed", err.Error(), "AppInst[%d]: %v", ii, obj.Key)
 		}
 		// Verify that on error, undo deleted the appInst object from etcd
 		show := testutil.ShowAppInst{}
@@ -179,6 +182,7 @@ func TestAppInstApi(t *testing.T) {
 		GetAppInstStreamMsgs(t, ctx, &obj.Key, apis, Fail)
 	}
 	responder.SetSimulateAppCreateFailure(false)
+	ccrm.SetSimulateAppCreateFailure(false)
 	RequireAppInstPortConsistency = true
 	require.Equal(t, 0, len(apis.appInstApi.cache.Objs))
 	require.Equal(t, clusterInstCnt, len(apis.clusterInstApi.cache.Objs))
@@ -204,16 +208,18 @@ func TestAppInstApi(t *testing.T) {
 	require.Contains(t, err.Error(), "cannot deploy another instance of App")
 
 	// Test for being created and being deleted errors.
-	testBeingErrors(t, ctx, responder, apis)
+	testBeingErrors(t, ctx, responder, ccrm, apis)
 
 	commonApi := testutil.NewInternalAppInstApi(apis.appInstApi)
 
 	// Set responder to fail delete.
 	responder.SetSimulateAppDeleteFailure(true)
+	ccrm.SetSimulateAppDeleteFailure(true)
 	obj := testutil.AppInstData()[0]
 	err = apis.appInstApi.DeleteAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err, "Delete AppInst responder failure")
 	responder.SetSimulateAppDeleteFailure(false)
+	ccrm.SetSimulateAppDeleteFailure(false)
 	checkAppInstState(t, ctx, commonApi, &obj, edgeproto.TrackedState_READY)
 	testutil.InternalAppInstRefsTest(t, "show", apis.appInstRefsApi, testutil.GetAppInstRefsData())
 	// As there was some progress, there should be some messages in stream
@@ -274,6 +280,8 @@ func TestAppInstApi(t *testing.T) {
 	// override CRM error
 	responder.SetSimulateAppCreateFailure(true)
 	responder.SetSimulateAppDeleteFailure(true)
+	ccrm.SetSimulateAppCreateFailure(true)
+	ccrm.SetSimulateAppDeleteFailure(true)
 	obj = testutil.AppInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM_ERRORS
 	err = apis.appInstApi.CreateAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
@@ -294,9 +302,12 @@ func TestAppInstApi(t *testing.T) {
 	require.Nil(t, err, "ignore crm")
 	responder.SetSimulateAppCreateFailure(false)
 	responder.SetSimulateAppDeleteFailure(false)
+	ccrm.SetSimulateAppCreateFailure(false)
+	ccrm.SetSimulateAppDeleteFailure(false)
 
 	// ignore CRM and transient state on delete of AppInst
 	responder.SetSimulateAppDeleteFailure(true)
+	ccrm.SetSimulateAppDeleteFailure(true)
 	for val, stateName := range edgeproto.TrackedState_name {
 		state := edgeproto.TrackedState(val)
 		if !edgeproto.IsTransientState(state) {
@@ -314,8 +325,9 @@ func TestAppInstApi(t *testing.T) {
 		require.Nil(t, err, "override crm and transient state %s", stateName)
 	}
 	responder.SetSimulateAppDeleteFailure(false)
+	ccrm.SetSimulateAppDeleteFailure(false)
 
-	testAppInstOverrideTransientDelete(t, ctx, commonApi, responder, apis)
+	testAppInstOverrideTransientDelete(t, ctx, commonApi, responder, ccrm, apis)
 
 	// Test Fqdn prefix
 	for _, data := range apis.appInstApi.cache.Objs {
@@ -451,17 +463,18 @@ func TestAutoClusterInst(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
 	dummyResponder := DefaultDummyInfoResponder(apis)
 	dummyResponder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 
 	reduceInfoTimeouts(t, ctx, apis)
 
@@ -658,7 +671,7 @@ func testAppFlavorRequest(t *testing.T, ctx context.Context, api *testutil.AppIn
 
 // Test that Crm Override for Delete App overrides any failures
 // on both side-car auto-apps and an underlying auto-cluster.
-func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *testutil.AppInstCommonApi, responder *DummyInfoResponder, apis *AllApis) {
+func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *testutil.AppInstCommonApi, responder *DummyInfoResponder, ccrm *ccrmdummy.CCRMDummy, apis *AllApis) {
 	// autocluster app
 	appKey := testutil.AppData()[0].Key
 	ai := edgeproto.AppInst{
@@ -687,6 +700,8 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 
 	responder.SetSimulateAppDeleteFailure(true)
 	responder.SetSimulateClusterDeleteFailure(true)
+	ccrm.SetSimulateAppDeleteFailure(true)
+	ccrm.SetSimulateClusterDeleteFailure(true)
 	for val, stateName := range edgeproto.TrackedState_name {
 		state := edgeproto.TrackedState(val)
 		if !edgeproto.IsTransientState(state) {
@@ -738,7 +753,8 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 
 	responder.SetSimulateAppDeleteFailure(false)
 	responder.SetSimulateClusterDeleteFailure(false)
-
+	ccrm.SetSimulateAppDeleteFailure(false)
+	ccrm.SetSimulateClusterDeleteFailure(false)
 }
 
 func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllApis, appDnsRoot string) {
@@ -1049,15 +1065,15 @@ func testAppInstId(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	// func to check if ids are present in database
 	hasIds := func(hasId0, hasId1 bool) {
-		found0 := testHasAppInstId(apis.appInstApi.sync.store, expId0)
+		found0 := testHasAppInstId(apis.appInstApi.sync.GetKVStore(), expId0)
 		require.Equal(t, hasId0, found0, "has id %s", expId0)
-		found1 := testHasAppInstId(apis.appInstApi.sync.store, expId1)
+		found1 := testHasAppInstId(apis.appInstApi.sync.GetKVStore(), expId1)
 		require.Equal(t, hasId1, found1, "has id %s", expId1)
 	}
 	hasDnsLabels := func(hasIds bool, ids ...string) {
 		for _, id := range ids {
 			// note that all objects are on the same cloudlet
-			found := testHasAppInstDnsLabel(apis.appInstApi.sync.store, &appInst0.Key.CloudletKey, id)
+			found := testHasAppInstDnsLabel(apis.appInstApi.sync.GetKVStore(), &appInst0.Key.CloudletKey, id)
 			require.Equal(t, hasIds, found, "has id %s", id)
 		}
 	}
@@ -1204,7 +1220,7 @@ func waitForAppInstState(t *testing.T, ctx context.Context, apis *AllApis, key *
 
 // Autoprov relies on being able to detect AppInst being created
 // or AppInst being deleted errors.
-func testBeingErrors(t *testing.T, ctx context.Context, responder *DummyInfoResponder, apis *AllApis) {
+func testBeingErrors(t *testing.T, ctx context.Context, responder *DummyInfoResponder, ccrm *ccrmdummy.CCRMDummy, apis *AllApis) {
 	var wg sync.WaitGroup
 
 	testedAutoCluster := false
@@ -1218,6 +1234,7 @@ func testBeingErrors(t *testing.T, ctx context.Context, responder *DummyInfoResp
 		// start delete of appinst
 		wg.Add(1)
 		responder.SetPause(true)
+		ccrm.SetPause(true)
 		go func() {
 			err := apis.appInstApi.DeleteAppInst(&ai, testutil.NewCudStreamoutAppInst(ctx))
 			require.Nil(t, err, "AppInstData[%d]", ii)
@@ -1230,12 +1247,14 @@ func testBeingErrors(t *testing.T, ctx context.Context, responder *DummyInfoResp
 		require.True(t, cloudcommon.IsAppInstBeingDeletedError(checkErr), "AppInstData[%d]: %s", ii, checkErr)
 		// let delete finish
 		responder.SetPause(false)
+		ccrm.SetPause(false)
 		wg.Wait()
 
 		// start create of appinst
 		ai = testutil.AppInstData()[ii]
 		wg.Add(1)
 		responder.SetPause(true)
+		ccrm.SetPause(true)
 		go func() {
 			err := apis.appInstApi.CreateAppInst(&ai, testutil.NewCudStreamoutAppInst(ctx))
 			require.Nil(t, err, "AppInstData[%d]", ii)
@@ -1248,6 +1267,7 @@ func testBeingErrors(t *testing.T, ctx context.Context, responder *DummyInfoResp
 		require.True(t, cloudcommon.IsAppInstBeingCreatedError(checkErr), "AppInstData[%d]: %s", ii, checkErr)
 		// let delete finish
 		responder.SetPause(false)
+		ccrm.SetPause(false)
 		wg.Wait()
 	}
 	require.True(t, testedAutoCluster, "tested autocluster")

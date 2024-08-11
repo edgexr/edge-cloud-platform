@@ -155,7 +155,7 @@ func deleteClusterInstChecks(t *testing.T, ctx context.Context, all *AllApis, da
 	testObj, supportData := dataGen.GetClusterInstTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -177,7 +177,7 @@ func deleteClusterInstChecks(t *testing.T, ctx context.Context, all *AllApis, da
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetClusterInstTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetClusterInstTestObj()
 	err = api.DeleteClusterInst(testObj, testutil.NewCudStreamoutClusterInst(ctx))
@@ -188,14 +188,14 @@ func deleteClusterInstChecks(t *testing.T, ctx context.Context, all *AllApis, da
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetClusterInstTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, ClusterRefs refers to ClusterInst via refs object.
 		// Inject the refs object to trigger an "in use" error.
 		refBy, supportData := dataGen.GetClusterInstAppInstAppsRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
-		_, err = all.clusterRefsApi.store.Put(ctx, refBy, all.clusterRefsApi.sync.syncWait)
+		_, err = all.clusterRefsApi.store.Put(ctx, refBy, all.clusterRefsApi.sync.SyncWait)
 		require.Nil(t, err)
 		testObj, _ = dataGen.GetClusterInstTestObj()
 		err = api.DeleteClusterInst(testObj, testutil.NewCudStreamoutClusterInst(ctx))
@@ -204,7 +204,7 @@ func deleteClusterInstChecks(t *testing.T, ctx context.Context, all *AllApis, da
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove ClusterRefs obj
-		_, err = all.clusterRefsApi.store.Delete(ctx, refBy, all.clusterRefsApi.sync.syncWait)
+		_, err = all.clusterRefsApi.store.Delete(ctx, refBy, all.clusterRefsApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from ClusterRefs must succeed")
 		supportData.delete(t, ctx, all)
 	}
@@ -225,7 +225,7 @@ func CreateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		ref := supportData.getOneCloudlet()
 		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
 		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateClusterInstTestObj()
@@ -234,7 +234,7 @@ func CreateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Cloudlet
 		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -242,7 +242,7 @@ func CreateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		ref := supportData.getOneFlavor()
 		require.NotNil(t, ref, "support data must include one referenced Flavor")
 		ref.DeletePrepare = true
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateClusterInstTestObj()
@@ -251,7 +251,7 @@ func CreateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Flavor
 		ref.DeletePrepare = false
-		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.syncWait)
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -259,7 +259,7 @@ func CreateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		ref := supportData.getOneAutoScalePolicy()
 		require.NotNil(t, ref, "support data must include one referenced AutoScalePolicy")
 		ref.DeletePrepare = true
-		_, err = all.autoScalePolicyApi.store.Put(ctx, ref, all.autoScalePolicyApi.sync.syncWait)
+		_, err = all.autoScalePolicyApi.store.Put(ctx, ref, all.autoScalePolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateClusterInstTestObj()
@@ -268,7 +268,7 @@ func CreateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced AutoScalePolicy
 		ref.DeletePrepare = false
-		_, err = all.autoScalePolicyApi.store.Put(ctx, ref, all.autoScalePolicyApi.sync.syncWait)
+		_, err = all.autoScalePolicyApi.store.Put(ctx, ref, all.autoScalePolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	{
@@ -276,7 +276,7 @@ func CreateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		ref := supportData.getOneNetwork()
 		require.NotNil(t, ref, "support data must include one referenced Network")
 		ref.DeletePrepare = true
-		_, err = all.networkApi.store.Put(ctx, ref, all.networkApi.sync.syncWait)
+		_, err = all.networkApi.store.Put(ctx, ref, all.networkApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateClusterInstTestObj()
@@ -285,7 +285,7 @@ func CreateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced Network
 		ref.DeletePrepare = false
-		_, err = all.networkApi.store.Put(ctx, ref, all.networkApi.sync.syncWait)
+		_, err = all.networkApi.store.Put(ctx, ref, all.networkApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -335,7 +335,7 @@ func UpdateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		ref := supportData.getOneAutoScalePolicy()
 		require.NotNil(t, ref, "support data must include one referenced AutoScalePolicy")
 		ref.DeletePrepare = true
-		_, err = all.autoScalePolicyApi.store.Put(ctx, ref, all.autoScalePolicyApi.sync.syncWait)
+		_, err = all.autoScalePolicyApi.store.Put(ctx, ref, all.autoScalePolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetUpdateClusterInstTestObj()
@@ -344,7 +344,7 @@ func UpdateClusterInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllA
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
 		// reset delete_prepare on referenced AutoScalePolicy
 		ref.DeletePrepare = false
-		_, err = all.autoScalePolicyApi.store.Put(ctx, ref, all.autoScalePolicyApi.sync.syncWait)
+		_, err = all.autoScalePolicyApi.store.Put(ctx, ref, all.autoScalePolicyApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 

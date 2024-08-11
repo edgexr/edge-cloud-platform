@@ -23,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"google.golang.org/grpc"
 )
 
@@ -186,9 +187,10 @@ func (s *AppInstClientApi) ShowAppInstClient(in *edgeproto.AppInstClientKey, cb 
 		return fmt.Errorf("Organization must be specified")
 	}
 
+	ctx := cb.Context()
 	ctrlConns = make([]*grpc.ClientConn, 0)
 	done := false
-	err := s.all.controllerApi.RunJobs(func(arg interface{}, addr string) error {
+	err := s.all.controllerApi.RunJobs(ctx, func(fctx context.Context, arg interface{}, addr string) error {
 		if addr == *externalApiAddr {
 			// local node
 			err := s.StreamAppInstClientsLocal(in, cb)
@@ -202,7 +204,7 @@ func (s *AppInstClientApi) ShowAppInstClient(in *edgeproto.AppInstClientKey, cb 
 			return err
 		} else { // This will get clients from the remote controllers and proxy them as well
 			// connect to remote node
-			conn, err := ControllerConnect(cb.Context(), addr)
+			conn, err := ControllerConnect(fctx, addr)
 			if err != nil {
 				return err
 			}
@@ -219,9 +221,9 @@ func (s *AppInstClientApi) ShowAppInstClient(in *edgeproto.AppInstClientKey, cb 
 
 			appInstClient := edgeproto.NewAppInstClientApiClient(conn)
 			// Recv forever - when the local API call terminates, it will close the connection
-			stream, err := appInstClient.StreamAppInstClientsLocal(context.Background(), in)
+			stream, err := appInstClient.StreamAppInstClientsLocal(fctx, in)
 			if err != nil {
-				log.SpanLog(cb.Context(), log.DebugLevelApi, "Failed to dispatch Show to controller", "controller", addr,
+				log.SpanLog(fctx, log.DebugLevelApi, "Failed to dispatch Show to controller", "controller", addr,
 					"key", in, "err", err)
 				return err
 			}
@@ -235,7 +237,7 @@ func (s *AppInstClientApi) ShowAppInstClient(in *edgeproto.AppInstClientKey, cb 
 				}
 				err = cb.Send(client)
 				if err != nil {
-					log.SpanLog(cb.Context(), log.DebugLevelApi, "Failed to print a client", "client", client)
+					log.SpanLog(fctx, log.DebugLevelApi, "Failed to print a client", "client", client)
 					break
 				}
 			}
@@ -253,11 +255,11 @@ func (s *AppInstClientApi) Flush(ctx context.Context, notifyId int64) {}
 
 type AppInstClientKeyApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	cache edgeproto.AppInstClientKeyCache
 }
 
-func NewAppInstClientKeyApi(sync *Sync, all *AllApis) *AppInstClientKeyApi {
+func NewAppInstClientKeyApi(sync *regiondata.Sync, all *AllApis) *AppInstClientKeyApi {
 	appInstClientKeyApi := AppInstClientKeyApi{}
 	appInstClientKeyApi.all = all
 	appInstClientKeyApi.sync = sync

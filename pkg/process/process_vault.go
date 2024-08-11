@@ -45,6 +45,8 @@ type Vault struct {
 	cmd               *exec.Cmd
 	setupScript       string
 	setupRegionScript string
+	DNSZone           string
+	CloudflareAPIKey  string
 }
 
 type VaultData struct {
@@ -340,6 +342,13 @@ func (p *Vault) RunWithInput(bin, args string, input io.Reader, err *error) stri
 	if p.PKIDomain != "" {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("PKI_DOMAIN=%s", p.PKIDomain))
 	}
+	if p.DNSZone != "" {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("DNSZONE=%s", p.DNSZone))
+	}
+	if p.CloudflareAPIKey != "" {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("CLOUDFLARE_APIKEY=%s", p.CloudflareAPIKey))
+	}
+
 	if input != nil {
 		cmd.Stdin = input
 	}

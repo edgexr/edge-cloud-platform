@@ -18,6 +18,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -127,4 +128,8 @@ func IsServerReady(ctx context.Context, client *redis.Client, timeout time.Durat
 		time.Sleep(200 * time.Millisecond)
 	}
 	return fmt.Errorf("Failed to ping redis - %v", err)
+}
+
+func GetRedisTxBackoff(ii int) time.Duration {
+	return time.Millisecond * time.Duration((ii+1)*rand.Intn(10))
 }

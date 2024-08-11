@@ -10,12 +10,15 @@ import (
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+	strings "strings"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -71,7 +74,7 @@ var xxx_messageInfo_StreamStatus proto.InternalMessageInfo
 
 type InfraResourceMap struct {
 	// Infra resources map
-	InfraResources map[string]*InfraResource `protobuf:"bytes,1,rep,name=infra_resources,json=infraResources,proto3" json:"infra_resources,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	InfraResources map[string]InfraResource `protobuf:"bytes,1,rep,name=infra_resources,json=infraResources,proto3" json:"infra_resources" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (m *InfraResourceMap) Reset()         { *m = InfraResourceMap{} }
@@ -113,7 +116,7 @@ type ClusterResourcesReq struct {
 	// VM Resources
 	VmResources []VMResource `protobuf:"bytes,2,rep,name=vm_resources,json=vmResources,proto3" json:"vm_resources"`
 	// Infra Resources Map
-	InfraResources map[string]*InfraResource `protobuf:"bytes,3,rep,name=infra_resources,json=infraResources,proto3" json:"infra_resources,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	InfraResources map[string]InfraResource `protobuf:"bytes,3,rep,name=infra_resources,json=infraResources,proto3" json:"infra_resources" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (m *ClusterResourcesReq) Reset()         { *m = ClusterResourcesReq{} }
@@ -231,62 +234,118 @@ func (m *NameSanitizeReq) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NameSanitizeReq proto.InternalMessageInfo
 
+type CloudletExecReq struct {
+	// Cloudlet
+	CloudletKey *CloudletKey `protobuf:"bytes,1,opt,name=cloudlet_key,json=cloudletKey,proto3" json:"cloudlet_key,omitempty"`
+	// ExecRequest
+	ExecReq *ExecRequest `protobuf:"bytes,2,opt,name=exec_req,json=execReq,proto3" json:"exec_req,omitempty"`
+}
+
+func (m *CloudletExecReq) Reset()         { *m = CloudletExecReq{} }
+func (m *CloudletExecReq) String() string { return proto.CompactTextString(m) }
+func (*CloudletExecReq) ProtoMessage()    {}
+func (*CloudletExecReq) Descriptor() ([]byte, []int) {
+	return fileDescriptor_0502422f6eb3ccb5, []int{5}
+}
+func (m *CloudletExecReq) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloudletExecReq) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloudletExecReq.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloudletExecReq) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloudletExecReq.Merge(m, src)
+}
+func (m *CloudletExecReq) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloudletExecReq) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloudletExecReq.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloudletExecReq proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*StreamStatus)(nil), "edgeproto.StreamStatus")
 	proto.RegisterType((*InfraResourceMap)(nil), "edgeproto.InfraResourceMap")
-	proto.RegisterMapType((map[string]*InfraResource)(nil), "edgeproto.InfraResourceMap.InfraResourcesEntry")
+	proto.RegisterMapType((map[string]InfraResource)(nil), "edgeproto.InfraResourceMap.InfraResourcesEntry")
 	proto.RegisterType((*ClusterResourcesReq)(nil), "edgeproto.ClusterResourcesReq")
-	proto.RegisterMapType((map[string]*InfraResource)(nil), "edgeproto.ClusterResourcesReq.InfraResourcesEntry")
+	proto.RegisterMapType((map[string]InfraResource)(nil), "edgeproto.ClusterResourcesReq.InfraResourcesEntry")
 	proto.RegisterType((*ClusterResourceMetricReq)(nil), "edgeproto.ClusterResourceMetricReq")
 	proto.RegisterType((*NameSanitizeReq)(nil), "edgeproto.NameSanitizeReq")
+	proto.RegisterType((*CloudletExecReq)(nil), "edgeproto.CloudletExecReq")
 }
 
 func init() { proto.RegisterFile("ccrm.proto", fileDescriptor_0502422f6eb3ccb5) }
 
 var fileDescriptor_0502422f6eb3ccb5 = []byte{
-	// 666 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x54, 0xc1, 0x6e, 0xd3, 0x40,
-	0x10, 0xf5, 0x26, 0x69, 0xab, 0x6c, 0xa2, 0xa6, 0xdd, 0x96, 0x62, 0xa5, 0xad, 0x89, 0xcc, 0x25,
-	0xe2, 0x90, 0x54, 0xe1, 0x02, 0x3d, 0x14, 0xb5, 0x11, 0x54, 0x15, 0x0d, 0x42, 0x2e, 0xa0, 0x4a,
-	0x95, 0x88, 0xb6, 0xce, 0x24, 0x58, 0xb5, 0xbd, 0x61, 0x77, 0x1d, 0x29, 0x7c, 0x05, 0x9f, 0xc4,
-	0x8d, 0xc0, 0xa9, 0x47, 0x4e, 0x08, 0xda, 0x3f, 0x40, 0x48, 0x5c, 0x51, 0xd6, 0x76, 0xea, 0x24,
-	0x4d, 0x25, 0xd4, 0x03, 0xb7, 0x99, 0xd9, 0x99, 0x37, 0xcf, 0x6f, 0xc6, 0x83, 0xb1, 0x6d, 0x73,
-	0xaf, 0xd2, 0xe5, 0x4c, 0x32, 0x92, 0x85, 0x56, 0x07, 0x94, 0x59, 0xdc, 0xe8, 0x30, 0xd6, 0x71,
-	0xa1, 0x4a, 0xbb, 0x4e, 0x95, 0xfa, 0x3e, 0x93, 0x54, 0x3a, 0xcc, 0x17, 0x61, 0x62, 0x71, 0x53,
-	0x32, 0xe6, 0x8a, 0xaa, 0x72, 0x3a, 0xe0, 0x8f, 0x8c, 0xe8, 0x79, 0xd9, 0x76, 0x59, 0xd0, 0x72,
-	0x41, 0x9e, 0x41, 0x3f, 0x0a, 0x2d, 0xc6, 0xa1, 0xc8, 0xcf, 0xb7, 0x5d, 0xda, 0x63, 0x3c, 0xf2,
-	0x30, 0x87, 0x76, 0x8c, 0x9d, 0xf7, 0x40, 0x72, 0xc7, 0x8e, 0x3d, 0x0e, 0x22, 0x70, 0xe3, 0xaa,
-	0x55, 0xc7, 0x6f, 0x73, 0xca, 0x41, 0xb0, 0x80, 0xdb, 0x10, 0x57, 0xac, 0x76, 0x58, 0x87, 0x29,
-	0xb3, 0x3a, 0xb4, 0xc2, 0xa8, 0x79, 0x8c, 0xf3, 0x47, 0x92, 0x03, 0xf5, 0x8e, 0x24, 0x95, 0x81,
-	0x20, 0x0f, 0xf0, 0xb2, 0x4d, 0xed, 0x77, 0xd0, 0x0c, 0xba, 0x2d, 0x2a, 0xa1, 0x29, 0xfb, 0x5d,
-	0xd0, 0xd3, 0x25, 0x54, 0x9e, 0xb3, 0x0a, 0xea, 0xe1, 0xb5, 0x8a, 0xbf, 0xea, 0x77, 0x81, 0xac,
-	0xe1, 0x79, 0xa1, 0xaa, 0xf4, 0x4c, 0x09, 0x95, 0xb3, 0x56, 0xe4, 0x6d, 0x67, 0x3e, 0xfd, 0xd6,
-	0x91, 0xf9, 0x05, 0xe1, 0xa5, 0x83, 0x21, 0x11, 0x2b, 0x22, 0xd2, 0xa0, 0x5d, 0x72, 0x8c, 0x0b,
-	0x8a, 0x5c, 0x73, 0xc4, 0x4e, 0x47, 0xa5, 0x74, 0x39, 0x57, 0xab, 0x56, 0x46, 0xaa, 0x56, 0x26,
-	0xab, 0xc6, 0x03, 0xe2, 0xa9, 0x2f, 0x79, 0xdf, 0x5a, 0x74, 0xc6, 0x82, 0xc5, 0x13, 0xbc, 0x72,
-	0x4d, 0x1a, 0x59, 0xc2, 0xe9, 0x33, 0xe8, 0xeb, 0x48, 0x11, 0x1c, 0x9a, 0xa4, 0x82, 0xe7, 0x7a,
-	0xd4, 0x0d, 0x40, 0x4f, 0x95, 0x50, 0x39, 0x57, 0xd3, 0x67, 0x35, 0xb6, 0xc2, 0xb4, 0xed, 0xd4,
-	0x23, 0x64, 0x7e, 0x4d, 0xe1, 0x95, 0xba, 0x1b, 0x08, 0x09, 0x7c, 0x84, 0x6f, 0xc1, 0x7b, 0xf2,
-	0x18, 0xe7, 0xe3, 0x89, 0x35, 0xe3, 0x36, 0xb9, 0xda, 0x5a, 0x02, 0xb2, 0x1e, 0x3d, 0x3f, 0x87,
-	0xbe, 0x95, 0xb3, 0xaf, 0x1c, 0xb2, 0x83, 0xf3, 0x3d, 0x2f, 0x21, 0x43, 0x4a, 0xc9, 0x70, 0x27,
-	0x51, 0xfa, 0xa6, 0x11, 0xf7, 0xda, 0xcb, 0x0c, 0xbe, 0xdf, 0xd3, 0xac, 0x5c, 0xcf, 0x1b, 0x75,
-	0x27, 0x27, 0xd3, 0x4a, 0xa6, 0x15, 0x44, 0x6d, 0xac, 0xfb, 0x14, 0xe7, 0xff, 0x2f, 0xe6, 0x67,
-	0x84, 0xf5, 0x09, 0x62, 0x0d, 0xb5, 0xcc, 0xb7, 0x54, 0x74, 0x0b, 0x63, 0x0e, 0xa2, 0x19, 0xfe,
-	0x18, 0x11, 0xa1, 0xe5, 0x44, 0x61, 0xd4, 0x24, 0xcb, 0x41, 0x84, 0xe6, 0xd4, 0x0c, 0xd2, 0xff,
-	0x36, 0x03, 0xb3, 0x8d, 0x0b, 0x2f, 0xa8, 0x07, 0x47, 0xd4, 0x77, 0xa4, 0xf3, 0x01, 0x6e, 0xc9,
-	0x5f, 0xc7, 0x0b, 0x1e, 0x08, 0x41, 0x3b, 0xa1, 0x9a, 0x59, 0x2b, 0x76, 0x6b, 0xbf, 0xd2, 0x78,
-	0xa1, 0x5e, 0xb7, 0x1a, 0xbb, 0x2f, 0x0f, 0xc8, 0x21, 0x5e, 0xd9, 0x07, 0x19, 0x83, 0x34, 0xa8,
-	0xef, 0xb4, 0x41, 0x48, 0x32, 0xa3, 0x43, 0x71, 0xfd, 0x9a, 0x78, 0x5c, 0x64, 0x6a, 0xe4, 0x2d,
-	0xde, 0x54, 0x68, 0x6a, 0x1a, 0xbb, 0xad, 0x96, 0x33, 0xbc, 0x5f, 0xd4, 0xbd, 0x5a, 0x33, 0xe3,
-	0xe6, 0x6d, 0x1a, 0xc3, 0x9f, 0xfc, 0x6f, 0x15, 0xbe, 0x79, 0x13, 0x7e, 0x34, 0x87, 0xfb, 0xb3,
-	0x9b, 0x8c, 0x36, 0xa3, 0x38, 0x3d, 0x4a, 0x53, 0x23, 0x16, 0x5e, 0xdf, 0x07, 0x69, 0x81, 0x18,
-	0xfa, 0x12, 0x5a, 0xf1, 0x27, 0x46, 0xd7, 0x6c, 0x96, 0x2a, 0x77, 0x13, 0xf1, 0xe4, 0xf9, 0x33,
-	0xb5, 0x2d, 0x44, 0x76, 0x70, 0x61, 0x88, 0xc9, 0x98, 0x3c, 0x3c, 0x7d, 0xa6, 0xee, 0xef, 0x4c,
-	0x9c, 0x24, 0xa7, 0x30, 0xd5, 0xd4, 0xc8, 0x13, 0x9c, 0x4f, 0x6e, 0x05, 0x29, 0x26, 0x92, 0x26,
-	0xd6, 0x65, 0x0c, 0xc0, 0x52, 0x37, 0xdc, 0xd4, 0x8a, 0x99, 0xc1, 0x1f, 0x1d, 0xed, 0x6d, 0x0c,
-	0x7e, 0x1a, 0xda, 0xe0, 0xc2, 0x40, 0xe7, 0x17, 0x06, 0xfa, 0x71, 0x61, 0xa0, 0x8f, 0x97, 0x86,
-	0x76, 0x7e, 0x69, 0x68, 0xdf, 0x2e, 0x0d, 0xed, 0x74, 0x5e, 0xd5, 0x3c, 0xfc, 0x1b, 0x00, 0x00,
-	0xff, 0xff, 0x1f, 0xbb, 0x49, 0xc7, 0x99, 0x06, 0x00, 0x00,
+	// 908 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x56, 0x41, 0x6f, 0xdc, 0x44,
+	0x14, 0xb6, 0x93, 0x34, 0x25, 0x6f, 0xb7, 0xdd, 0x64, 0x12, 0x8a, 0x71, 0xdb, 0x25, 0x32, 0x97,
+	0x88, 0x43, 0xb6, 0x2c, 0x97, 0xd2, 0x43, 0xd0, 0x36, 0x0a, 0x55, 0x42, 0x17, 0xad, 0x9c, 0x80,
+	0x90, 0x90, 0xba, 0x9a, 0x7a, 0xdf, 0x6e, 0xad, 0x7a, 0x3d, 0xee, 0xcc, 0x38, 0xca, 0x72, 0xe1,
+	0x2f, 0x20, 0xf1, 0x23, 0xf8, 0x1b, 0xdc, 0xc8, 0x8d, 0x1c, 0x39, 0x21, 0x48, 0x6e, 0x9c, 0x91,
+	0xb8, 0x22, 0x8f, 0x67, 0x1c, 0x6f, 0xd6, 0x1b, 0x09, 0x85, 0x43, 0x6f, 0xf3, 0xde, 0x9b, 0xf7,
+	0xbd, 0x6f, 0xde, 0x7c, 0x6f, 0x6c, 0x80, 0x20, 0xe0, 0xe3, 0xed, 0x84, 0x33, 0xc9, 0xc8, 0x0a,
+	0x0e, 0x46, 0xa8, 0x96, 0xee, 0x83, 0x11, 0x63, 0xa3, 0x08, 0x5b, 0x34, 0x09, 0x5b, 0x34, 0x8e,
+	0x99, 0xa4, 0x32, 0x64, 0xb1, 0xc8, 0x37, 0xba, 0x0f, 0x25, 0x63, 0x91, 0x68, 0x29, 0x63, 0x84,
+	0x71, 0xb1, 0xd0, 0xe1, 0xb5, 0x20, 0x62, 0xe9, 0x20, 0x42, 0xf9, 0x1a, 0x27, 0xda, 0x75, 0xd7,
+	0xb8, 0xb4, 0x5d, 0x1f, 0x46, 0xf4, 0x98, 0x71, 0x6d, 0x01, 0xc7, 0xa1, 0xc1, 0xae, 0x8f, 0x51,
+	0xf2, 0x30, 0x30, 0x16, 0x47, 0x91, 0x46, 0x26, 0x0b, 0xf0, 0x04, 0x83, 0xcb, 0x22, 0xa9, 0x90,
+	0xc8, 0xc3, 0x58, 0x98, 0xf0, 0x1d, 0x9a, 0x24, 0x25, 0xd3, 0x95, 0x3c, 0x15, 0x32, 0x61, 0x51,
+	0x18, 0x4c, 0xf0, 0x24, 0xc0, 0x24, 0x3b, 0x82, 0x8e, 0x6d, 0x84, 0xf1, 0x90, 0x53, 0x8e, 0x82,
+	0xa5, 0x3c, 0x40, 0x53, 0x7b, 0x63, 0xc4, 0x46, 0x4c, 0x2d, 0x5b, 0xd9, 0x2a, 0xf7, 0x7a, 0xdf,
+	0x40, 0xfd, 0x50, 0x72, 0xa4, 0xe3, 0x43, 0x49, 0x65, 0x2a, 0xc8, 0x47, 0xb0, 0x16, 0xd0, 0xe0,
+	0x15, 0xf6, 0xd3, 0x64, 0x40, 0x25, 0xf6, 0xe5, 0x24, 0x41, 0x67, 0x71, 0xd3, 0xde, 0xba, 0xe5,
+	0x37, 0x54, 0xe0, 0x2b, 0xe5, 0x3f, 0x9a, 0x24, 0x48, 0xee, 0xc1, 0xb2, 0x50, 0x59, 0xce, 0xd2,
+	0xa6, 0xbd, 0xb5, 0xe2, 0x6b, 0xeb, 0xc9, 0xd2, 0xcf, 0x7f, 0x3b, 0xb6, 0xf7, 0xab, 0x0d, 0xab,
+	0xfb, 0x19, 0x11, 0x5f, 0x13, 0xe9, 0xd2, 0x84, 0xbc, 0x80, 0x86, 0x22, 0xd7, 0x2f, 0xd8, 0x39,
+	0xf6, 0xe6, 0xe2, 0x56, 0xad, 0xdd, 0xda, 0x2e, 0xee, 0x67, 0xfb, 0x6a, 0xd6, 0xb4, 0x43, 0xec,
+	0xc5, 0x92, 0x4f, 0x9e, 0x2e, 0x9d, 0xfe, 0xfe, 0x81, 0xe5, 0xdf, 0x0d, 0xa7, 0x42, 0xee, 0xb7,
+	0xb0, 0x5e, 0xb1, 0x99, 0xac, 0xc2, 0xe2, 0x6b, 0x9c, 0x38, 0xb6, 0xa2, 0x99, 0x2d, 0xc9, 0x36,
+	0xdc, 0x3a, 0xa6, 0x51, 0x8a, 0xce, 0xc2, 0xa6, 0xbd, 0x55, 0x6b, 0x3b, 0xf3, 0xca, 0xfb, 0xf9,
+	0xb6, 0x27, 0x0b, 0x8f, 0x6d, 0xef, 0x6c, 0x01, 0xd6, 0x77, 0xf3, 0x8b, 0x29, 0xf0, 0x7d, 0x7c,
+	0x43, 0x3e, 0x85, 0xba, 0x51, 0x40, 0xdf, 0x94, 0xa9, 0xb5, 0xef, 0x95, 0x20, 0x77, 0x75, 0xf8,
+	0x0b, 0x9c, 0xf8, 0xb5, 0xe0, 0xd2, 0x20, 0x3b, 0x50, 0x3f, 0x1e, 0x97, 0x9a, 0xb1, 0xa0, 0x9a,
+	0xf1, 0x6e, 0x29, 0xf5, 0xeb, 0xae, 0xa9, 0xa5, 0x8f, 0x5c, 0x3b, 0x1e, 0x17, 0xd5, 0x09, 0x9d,
+	0xed, 0xe7, 0xa2, 0x82, 0x68, 0x4f, 0x55, 0x9f, 0xe1, 0xfc, 0xb6, 0xb4, 0xf4, 0x17, 0x1b, 0x9c,
+	0x2b, 0xf4, 0xba, 0x6a, 0x44, 0x6e, 0xd8, 0xd7, 0x47, 0x00, 0x1c, 0x45, 0x3f, 0x1f, 0x37, 0x4d,
+	0x68, 0xad, 0x94, 0xa8, 0x8b, 0xac, 0x70, 0x14, 0xf9, 0x72, 0xe6, 0x26, 0x16, 0xff, 0xdb, 0x4d,
+	0x78, 0x43, 0x68, 0x7c, 0x49, 0xc7, 0x78, 0x48, 0xe3, 0x50, 0x86, 0xdf, 0xe1, 0x0d, 0xf9, 0x3b,
+	0x70, 0x7b, 0x8c, 0x42, 0xd0, 0x51, 0xde, 0xcd, 0x15, 0xdf, 0x98, 0xde, 0xf7, 0xd0, 0x30, 0x59,
+	0x7b, 0x27, 0x78, 0xd3, 0x3e, 0x7d, 0x0c, 0xef, 0x64, 0xcf, 0x4e, 0x9f, 0xe3, 0x1b, 0xdd, 0xa5,
+	0x72, 0x9a, 0x2e, 0x90, 0xa2, 0x90, 0xfe, 0x6d, 0xcc, 0x8d, 0xf6, 0x8f, 0xcb, 0xd9, 0x14, 0xe4,
+	0x10, 0xbd, 0x88, 0xca, 0x21, 0xe3, 0xe3, 0x4e, 0x6f, 0x9f, 0x3c, 0x87, 0xf5, 0x67, 0x28, 0x4d,
+	0xa4, 0x4b, 0xe3, 0x70, 0x88, 0x42, 0x92, 0x39, 0x34, 0xdc, 0xfb, 0x15, 0x7e, 0x93, 0xe4, 0x59,
+	0xe4, 0x05, 0x3c, 0x54, 0x68, 0x4a, 0x1a, 0x9d, 0xc1, 0x20, 0xcc, 0xde, 0x37, 0x1a, 0x5d, 0x2a,
+	0xbf, 0x79, 0xbd, 0xc0, 0xa7, 0xf0, 0xaf, 0x3e, 0x28, 0x0a, 0xdf, 0xbb, 0x0e, 0x5f, 0x8b, 0xe2,
+	0xc3, 0xf9, 0x45, 0x0a, 0x99, 0xba, 0xb3, 0xba, 0xf2, 0x2c, 0xe2, 0xc3, 0xfd, 0x67, 0x28, 0x7d,
+	0x14, 0x99, 0x2d, 0x71, 0x60, 0x8e, 0xa8, 0x9f, 0xd9, 0x79, 0x5d, 0x79, 0xaf, 0xe4, 0x2f, 0xbf,
+	0xcb, 0x9e, 0xf5, 0xc8, 0x26, 0x3b, 0xd0, 0xc8, 0x30, 0x19, 0x93, 0xcf, 0x5f, 0x7e, 0xae, 0x3e,
+	0x31, 0x73, 0x71, 0xca, 0x9c, 0xf2, 0xad, 0x9e, 0x45, 0x0e, 0x80, 0xf4, 0x38, 0x0b, 0x50, 0x88,
+	0xd2, 0xc5, 0x12, 0xb7, 0x02, 0x42, 0xc7, 0xdd, 0x39, 0x62, 0xf0, 0x2c, 0xf2, 0x19, 0xd4, 0xcb,
+	0x72, 0x9f, 0x42, 0xb9, 0x32, 0x07, 0x53, 0x64, 0x7c, 0xf5, 0xc9, 0xf3, 0x2c, 0xd2, 0x81, 0x3b,
+	0x9d, 0x24, 0x89, 0x26, 0xa6, 0x24, 0x59, 0xaf, 0xe0, 0x31, 0xd5, 0x0f, 0xe3, 0xdc, 0x8f, 0x87,
+	0x4c, 0xf5, 0xe3, 0x31, 0xd4, 0x7d, 0x1c, 0x72, 0x14, 0xaf, 0x76, 0x91, 0x4b, 0x51, 0x8d, 0x50,
+	0x59, 0xfc, 0x00, 0x36, 0x4a, 0x5a, 0xbd, 0x14, 0x55, 0x25, 0xc2, 0xf5, 0x4a, 0x72, 0x97, 0x4e,
+	0xff, 0x71, 0xec, 0xf6, 0x4f, 0x36, 0x10, 0xad, 0x90, 0xf2, 0x50, 0x1c, 0xc0, 0xaa, 0x3e, 0xa5,
+	0x0a, 0xed, 0xc7, 0x33, 0x13, 0x51, 0xf8, 0x5d, 0xb7, 0xda, 0x5f, 0x1c, 0xf7, 0xa6, 0x2d, 0xd7,
+	0x4c, 0xff, 0xb2, 0x81, 0x74, 0x92, 0x24, 0x83, 0x2e, 0x33, 0xdd, 0x81, 0xba, 0x62, 0xaa, 0x43,
+	0x84, 0x94, 0x10, 0xb4, 0x6f, 0x4a, 0x0e, 0xda, 0x57, 0xb0, 0xeb, 0xc2, 0xfb, 0x2a, 0xff, 0x28,
+	0xfb, 0x2f, 0xe9, 0xa9, 0xff, 0x92, 0x3d, 0xf3, 0x5f, 0x42, 0xca, 0x2d, 0x3c, 0xea, 0xed, 0x65,
+	0x89, 0x34, 0x0e, 0x30, 0xd3, 0x36, 0x56, 0xdf, 0xd0, 0xff, 0x73, 0xd8, 0xa7, 0x0f, 0x4e, 0xff,
+	0x6c, 0x5a, 0xa7, 0xe7, 0x4d, 0xfb, 0xec, 0xbc, 0x69, 0xff, 0x71, 0xde, 0xb4, 0x7f, 0xb8, 0x68,
+	0x5a, 0x67, 0x17, 0x4d, 0xeb, 0xb7, 0x8b, 0xa6, 0xf5, 0x72, 0x59, 0xe5, 0x7c, 0xf2, 0x6f, 0x00,
+	0x00, 0x00, 0xff, 0xff, 0x4f, 0x7b, 0x8c, 0xea, 0x28, 0x0a, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -297,59 +356,63 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// CCRMAPIClient is the client API for CCRMAPI service.
+// CloudletPlatformAPIClient is the client API for CloudletPlatformAPI service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type CCRMAPIClient interface {
+type CloudletPlatformAPIClient interface {
 	GetCloudletManifest(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (*CloudletManifest, error)
 	GetClusterAdditionalResources(ctx context.Context, in *ClusterResourcesReq, opts ...grpc.CallOption) (*InfraResourceMap, error)
 	GetClusterAdditionalResourceMetric(ctx context.Context, in *ClusterResourceMetricReq, opts ...grpc.CallOption) (*Metric, error)
-	GetRestrictedCloudletStatus(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (CCRMAPI_GetRestrictedCloudletStatusClient, error)
+	GetRestrictedCloudletStatus(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (CloudletPlatformAPI_GetRestrictedCloudletStatusClient, error)
 	GetRootLbFlavor(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (*Flavor, error)
+	ProcessExecRequest(ctx context.Context, in *CloudletExecReq, opts ...grpc.CallOption) (*ExecRequest, error)
 	NameSanitize(ctx context.Context, in *NameSanitizeReq, opts ...grpc.CallOption) (*Result, error)
+	ApplyCloudlet(ctx context.Context, in *Cloudlet, opts ...grpc.CallOption) (CloudletPlatformAPI_ApplyCloudletClient, error)
+	RefreshCerts(ctx context.Context, in *Cloudlet, opts ...grpc.CallOption) (*Result, error)
+	GetCloudletResources(ctx context.Context, in *Cloudlet, opts ...grpc.CallOption) (*InfraResourceMap, error)
 }
 
-type cCRMAPIClient struct {
+type cloudletPlatformAPIClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewCCRMAPIClient(cc *grpc.ClientConn) CCRMAPIClient {
-	return &cCRMAPIClient{cc}
+func NewCloudletPlatformAPIClient(cc *grpc.ClientConn) CloudletPlatformAPIClient {
+	return &cloudletPlatformAPIClient{cc}
 }
 
-func (c *cCRMAPIClient) GetCloudletManifest(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (*CloudletManifest, error) {
+func (c *cloudletPlatformAPIClient) GetCloudletManifest(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (*CloudletManifest, error) {
 	out := new(CloudletManifest)
-	err := c.cc.Invoke(ctx, "/edgeproto.CCRMAPI/GetCloudletManifest", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/edgeproto.CloudletPlatformAPI/GetCloudletManifest", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *cCRMAPIClient) GetClusterAdditionalResources(ctx context.Context, in *ClusterResourcesReq, opts ...grpc.CallOption) (*InfraResourceMap, error) {
+func (c *cloudletPlatformAPIClient) GetClusterAdditionalResources(ctx context.Context, in *ClusterResourcesReq, opts ...grpc.CallOption) (*InfraResourceMap, error) {
 	out := new(InfraResourceMap)
-	err := c.cc.Invoke(ctx, "/edgeproto.CCRMAPI/GetClusterAdditionalResources", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/edgeproto.CloudletPlatformAPI/GetClusterAdditionalResources", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *cCRMAPIClient) GetClusterAdditionalResourceMetric(ctx context.Context, in *ClusterResourceMetricReq, opts ...grpc.CallOption) (*Metric, error) {
+func (c *cloudletPlatformAPIClient) GetClusterAdditionalResourceMetric(ctx context.Context, in *ClusterResourceMetricReq, opts ...grpc.CallOption) (*Metric, error) {
 	out := new(Metric)
-	err := c.cc.Invoke(ctx, "/edgeproto.CCRMAPI/GetClusterAdditionalResourceMetric", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/edgeproto.CloudletPlatformAPI/GetClusterAdditionalResourceMetric", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *cCRMAPIClient) GetRestrictedCloudletStatus(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (CCRMAPI_GetRestrictedCloudletStatusClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_CCRMAPI_serviceDesc.Streams[0], "/edgeproto.CCRMAPI/GetRestrictedCloudletStatus", opts...)
+func (c *cloudletPlatformAPIClient) GetRestrictedCloudletStatus(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (CloudletPlatformAPI_GetRestrictedCloudletStatusClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_CloudletPlatformAPI_serviceDesc.Streams[0], "/edgeproto.CloudletPlatformAPI/GetRestrictedCloudletStatus", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &cCRMAPIGetRestrictedCloudletStatusClient{stream}
+	x := &cloudletPlatformAPIGetRestrictedCloudletStatusClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -359,16 +422,16 @@ func (c *cCRMAPIClient) GetRestrictedCloudletStatus(ctx context.Context, in *Clo
 	return x, nil
 }
 
-type CCRMAPI_GetRestrictedCloudletStatusClient interface {
+type CloudletPlatformAPI_GetRestrictedCloudletStatusClient interface {
 	Recv() (*StreamStatus, error)
 	grpc.ClientStream
 }
 
-type cCRMAPIGetRestrictedCloudletStatusClient struct {
+type cloudletPlatformAPIGetRestrictedCloudletStatusClient struct {
 	grpc.ClientStream
 }
 
-func (x *cCRMAPIGetRestrictedCloudletStatusClient) Recv() (*StreamStatus, error) {
+func (x *cloudletPlatformAPIGetRestrictedCloudletStatusClient) Recv() (*StreamStatus, error) {
 	m := new(StreamStatus)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -376,201 +439,676 @@ func (x *cCRMAPIGetRestrictedCloudletStatusClient) Recv() (*StreamStatus, error)
 	return m, nil
 }
 
-func (c *cCRMAPIClient) GetRootLbFlavor(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (*Flavor, error) {
+func (c *cloudletPlatformAPIClient) GetRootLbFlavor(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (*Flavor, error) {
 	out := new(Flavor)
-	err := c.cc.Invoke(ctx, "/edgeproto.CCRMAPI/GetRootLbFlavor", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/edgeproto.CloudletPlatformAPI/GetRootLbFlavor", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *cCRMAPIClient) NameSanitize(ctx context.Context, in *NameSanitizeReq, opts ...grpc.CallOption) (*Result, error) {
+func (c *cloudletPlatformAPIClient) ProcessExecRequest(ctx context.Context, in *CloudletExecReq, opts ...grpc.CallOption) (*ExecRequest, error) {
+	out := new(ExecRequest)
+	err := c.cc.Invoke(ctx, "/edgeproto.CloudletPlatformAPI/ProcessExecRequest", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cloudletPlatformAPIClient) NameSanitize(ctx context.Context, in *NameSanitizeReq, opts ...grpc.CallOption) (*Result, error) {
 	out := new(Result)
-	err := c.cc.Invoke(ctx, "/edgeproto.CCRMAPI/NameSanitize", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/edgeproto.CloudletPlatformAPI/NameSanitize", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// CCRMAPIServer is the server API for CCRMAPI service.
-type CCRMAPIServer interface {
+func (c *cloudletPlatformAPIClient) ApplyCloudlet(ctx context.Context, in *Cloudlet, opts ...grpc.CallOption) (CloudletPlatformAPI_ApplyCloudletClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_CloudletPlatformAPI_serviceDesc.Streams[1], "/edgeproto.CloudletPlatformAPI/ApplyCloudlet", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &cloudletPlatformAPIApplyCloudletClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type CloudletPlatformAPI_ApplyCloudletClient interface {
+	Recv() (*CloudletInfo, error)
+	grpc.ClientStream
+}
+
+type cloudletPlatformAPIApplyCloudletClient struct {
+	grpc.ClientStream
+}
+
+func (x *cloudletPlatformAPIApplyCloudletClient) Recv() (*CloudletInfo, error) {
+	m := new(CloudletInfo)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *cloudletPlatformAPIClient) RefreshCerts(ctx context.Context, in *Cloudlet, opts ...grpc.CallOption) (*Result, error) {
+	out := new(Result)
+	err := c.cc.Invoke(ctx, "/edgeproto.CloudletPlatformAPI/RefreshCerts", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cloudletPlatformAPIClient) GetCloudletResources(ctx context.Context, in *Cloudlet, opts ...grpc.CallOption) (*InfraResourceMap, error) {
+	out := new(InfraResourceMap)
+	err := c.cc.Invoke(ctx, "/edgeproto.CloudletPlatformAPI/GetCloudletResources", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// CloudletPlatformAPIServer is the server API for CloudletPlatformAPI service.
+type CloudletPlatformAPIServer interface {
 	GetCloudletManifest(context.Context, *CloudletKey) (*CloudletManifest, error)
 	GetClusterAdditionalResources(context.Context, *ClusterResourcesReq) (*InfraResourceMap, error)
 	GetClusterAdditionalResourceMetric(context.Context, *ClusterResourceMetricReq) (*Metric, error)
-	GetRestrictedCloudletStatus(*CloudletKey, CCRMAPI_GetRestrictedCloudletStatusServer) error
+	GetRestrictedCloudletStatus(*CloudletKey, CloudletPlatformAPI_GetRestrictedCloudletStatusServer) error
 	GetRootLbFlavor(context.Context, *CloudletKey) (*Flavor, error)
+	ProcessExecRequest(context.Context, *CloudletExecReq) (*ExecRequest, error)
 	NameSanitize(context.Context, *NameSanitizeReq) (*Result, error)
+	ApplyCloudlet(*Cloudlet, CloudletPlatformAPI_ApplyCloudletServer) error
+	RefreshCerts(context.Context, *Cloudlet) (*Result, error)
+	GetCloudletResources(context.Context, *Cloudlet) (*InfraResourceMap, error)
 }
 
-// UnimplementedCCRMAPIServer can be embedded to have forward compatible implementations.
-type UnimplementedCCRMAPIServer struct {
+// UnimplementedCloudletPlatformAPIServer can be embedded to have forward compatible implementations.
+type UnimplementedCloudletPlatformAPIServer struct {
 }
 
-func (*UnimplementedCCRMAPIServer) GetCloudletManifest(ctx context.Context, req *CloudletKey) (*CloudletManifest, error) {
+func (*UnimplementedCloudletPlatformAPIServer) GetCloudletManifest(ctx context.Context, req *CloudletKey) (*CloudletManifest, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCloudletManifest not implemented")
 }
-func (*UnimplementedCCRMAPIServer) GetClusterAdditionalResources(ctx context.Context, req *ClusterResourcesReq) (*InfraResourceMap, error) {
+func (*UnimplementedCloudletPlatformAPIServer) GetClusterAdditionalResources(ctx context.Context, req *ClusterResourcesReq) (*InfraResourceMap, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClusterAdditionalResources not implemented")
 }
-func (*UnimplementedCCRMAPIServer) GetClusterAdditionalResourceMetric(ctx context.Context, req *ClusterResourceMetricReq) (*Metric, error) {
+func (*UnimplementedCloudletPlatformAPIServer) GetClusterAdditionalResourceMetric(ctx context.Context, req *ClusterResourceMetricReq) (*Metric, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetClusterAdditionalResourceMetric not implemented")
 }
-func (*UnimplementedCCRMAPIServer) GetRestrictedCloudletStatus(req *CloudletKey, srv CCRMAPI_GetRestrictedCloudletStatusServer) error {
+func (*UnimplementedCloudletPlatformAPIServer) GetRestrictedCloudletStatus(req *CloudletKey, srv CloudletPlatformAPI_GetRestrictedCloudletStatusServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetRestrictedCloudletStatus not implemented")
 }
-func (*UnimplementedCCRMAPIServer) GetRootLbFlavor(ctx context.Context, req *CloudletKey) (*Flavor, error) {
+func (*UnimplementedCloudletPlatformAPIServer) GetRootLbFlavor(ctx context.Context, req *CloudletKey) (*Flavor, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRootLbFlavor not implemented")
 }
-func (*UnimplementedCCRMAPIServer) NameSanitize(ctx context.Context, req *NameSanitizeReq) (*Result, error) {
+func (*UnimplementedCloudletPlatformAPIServer) ProcessExecRequest(ctx context.Context, req *CloudletExecReq) (*ExecRequest, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessExecRequest not implemented")
+}
+func (*UnimplementedCloudletPlatformAPIServer) NameSanitize(ctx context.Context, req *NameSanitizeReq) (*Result, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method NameSanitize not implemented")
 }
-
-func RegisterCCRMAPIServer(s *grpc.Server, srv CCRMAPIServer) {
-	s.RegisterService(&_CCRMAPI_serviceDesc, srv)
+func (*UnimplementedCloudletPlatformAPIServer) ApplyCloudlet(req *Cloudlet, srv CloudletPlatformAPI_ApplyCloudletServer) error {
+	return status.Errorf(codes.Unimplemented, "method ApplyCloudlet not implemented")
+}
+func (*UnimplementedCloudletPlatformAPIServer) RefreshCerts(ctx context.Context, req *Cloudlet) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshCerts not implemented")
+}
+func (*UnimplementedCloudletPlatformAPIServer) GetCloudletResources(ctx context.Context, req *Cloudlet) (*InfraResourceMap, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCloudletResources not implemented")
 }
 
-func _CCRMAPI_GetCloudletManifest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func RegisterCloudletPlatformAPIServer(s *grpc.Server, srv CloudletPlatformAPIServer) {
+	s.RegisterService(&_CloudletPlatformAPI_serviceDesc, srv)
+}
+
+func _CloudletPlatformAPI_GetCloudletManifest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CloudletKey)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CCRMAPIServer).GetCloudletManifest(ctx, in)
+		return srv.(CloudletPlatformAPIServer).GetCloudletManifest(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/edgeproto.CCRMAPI/GetCloudletManifest",
+		FullMethod: "/edgeproto.CloudletPlatformAPI/GetCloudletManifest",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCRMAPIServer).GetCloudletManifest(ctx, req.(*CloudletKey))
+		return srv.(CloudletPlatformAPIServer).GetCloudletManifest(ctx, req.(*CloudletKey))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CCRMAPI_GetClusterAdditionalResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudletPlatformAPI_GetClusterAdditionalResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ClusterResourcesReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CCRMAPIServer).GetClusterAdditionalResources(ctx, in)
+		return srv.(CloudletPlatformAPIServer).GetClusterAdditionalResources(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/edgeproto.CCRMAPI/GetClusterAdditionalResources",
+		FullMethod: "/edgeproto.CloudletPlatformAPI/GetClusterAdditionalResources",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCRMAPIServer).GetClusterAdditionalResources(ctx, req.(*ClusterResourcesReq))
+		return srv.(CloudletPlatformAPIServer).GetClusterAdditionalResources(ctx, req.(*ClusterResourcesReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CCRMAPI_GetClusterAdditionalResourceMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudletPlatformAPI_GetClusterAdditionalResourceMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ClusterResourceMetricReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CCRMAPIServer).GetClusterAdditionalResourceMetric(ctx, in)
+		return srv.(CloudletPlatformAPIServer).GetClusterAdditionalResourceMetric(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/edgeproto.CCRMAPI/GetClusterAdditionalResourceMetric",
+		FullMethod: "/edgeproto.CloudletPlatformAPI/GetClusterAdditionalResourceMetric",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCRMAPIServer).GetClusterAdditionalResourceMetric(ctx, req.(*ClusterResourceMetricReq))
+		return srv.(CloudletPlatformAPIServer).GetClusterAdditionalResourceMetric(ctx, req.(*ClusterResourceMetricReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CCRMAPI_GetRestrictedCloudletStatus_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _CloudletPlatformAPI_GetRestrictedCloudletStatus_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(CloudletKey)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(CCRMAPIServer).GetRestrictedCloudletStatus(m, &cCRMAPIGetRestrictedCloudletStatusServer{stream})
+	return srv.(CloudletPlatformAPIServer).GetRestrictedCloudletStatus(m, &cloudletPlatformAPIGetRestrictedCloudletStatusServer{stream})
 }
 
-type CCRMAPI_GetRestrictedCloudletStatusServer interface {
+type CloudletPlatformAPI_GetRestrictedCloudletStatusServer interface {
 	Send(*StreamStatus) error
 	grpc.ServerStream
 }
 
-type cCRMAPIGetRestrictedCloudletStatusServer struct {
+type cloudletPlatformAPIGetRestrictedCloudletStatusServer struct {
 	grpc.ServerStream
 }
 
-func (x *cCRMAPIGetRestrictedCloudletStatusServer) Send(m *StreamStatus) error {
+func (x *cloudletPlatformAPIGetRestrictedCloudletStatusServer) Send(m *StreamStatus) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _CCRMAPI_GetRootLbFlavor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudletPlatformAPI_GetRootLbFlavor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CloudletKey)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CCRMAPIServer).GetRootLbFlavor(ctx, in)
+		return srv.(CloudletPlatformAPIServer).GetRootLbFlavor(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/edgeproto.CCRMAPI/GetRootLbFlavor",
+		FullMethod: "/edgeproto.CloudletPlatformAPI/GetRootLbFlavor",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCRMAPIServer).GetRootLbFlavor(ctx, req.(*CloudletKey))
+		return srv.(CloudletPlatformAPIServer).GetRootLbFlavor(ctx, req.(*CloudletKey))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CCRMAPI_NameSanitize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _CloudletPlatformAPI_ProcessExecRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CloudletExecReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CloudletPlatformAPIServer).ProcessExecRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/edgeproto.CloudletPlatformAPI/ProcessExecRequest",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CloudletPlatformAPIServer).ProcessExecRequest(ctx, req.(*CloudletExecReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CloudletPlatformAPI_NameSanitize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(NameSanitizeReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CCRMAPIServer).NameSanitize(ctx, in)
+		return srv.(CloudletPlatformAPIServer).NameSanitize(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/edgeproto.CCRMAPI/NameSanitize",
+		FullMethod: "/edgeproto.CloudletPlatformAPI/NameSanitize",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCRMAPIServer).NameSanitize(ctx, req.(*NameSanitizeReq))
+		return srv.(CloudletPlatformAPIServer).NameSanitize(ctx, req.(*NameSanitizeReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _CCRMAPI_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "edgeproto.CCRMAPI",
-	HandlerType: (*CCRMAPIServer)(nil),
+func _CloudletPlatformAPI_ApplyCloudlet_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Cloudlet)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CloudletPlatformAPIServer).ApplyCloudlet(m, &cloudletPlatformAPIApplyCloudletServer{stream})
+}
+
+type CloudletPlatformAPI_ApplyCloudletServer interface {
+	Send(*CloudletInfo) error
+	grpc.ServerStream
+}
+
+type cloudletPlatformAPIApplyCloudletServer struct {
+	grpc.ServerStream
+}
+
+func (x *cloudletPlatformAPIApplyCloudletServer) Send(m *CloudletInfo) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _CloudletPlatformAPI_RefreshCerts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Cloudlet)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CloudletPlatformAPIServer).RefreshCerts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/edgeproto.CloudletPlatformAPI/RefreshCerts",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CloudletPlatformAPIServer).RefreshCerts(ctx, req.(*Cloudlet))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CloudletPlatformAPI_GetCloudletResources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Cloudlet)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CloudletPlatformAPIServer).GetCloudletResources(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/edgeproto.CloudletPlatformAPI/GetCloudletResources",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CloudletPlatformAPIServer).GetCloudletResources(ctx, req.(*Cloudlet))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _CloudletPlatformAPI_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "edgeproto.CloudletPlatformAPI",
+	HandlerType: (*CloudletPlatformAPIServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetCloudletManifest",
-			Handler:    _CCRMAPI_GetCloudletManifest_Handler,
+			Handler:    _CloudletPlatformAPI_GetCloudletManifest_Handler,
 		},
 		{
 			MethodName: "GetClusterAdditionalResources",
-			Handler:    _CCRMAPI_GetClusterAdditionalResources_Handler,
+			Handler:    _CloudletPlatformAPI_GetClusterAdditionalResources_Handler,
 		},
 		{
 			MethodName: "GetClusterAdditionalResourceMetric",
-			Handler:    _CCRMAPI_GetClusterAdditionalResourceMetric_Handler,
+			Handler:    _CloudletPlatformAPI_GetClusterAdditionalResourceMetric_Handler,
 		},
 		{
 			MethodName: "GetRootLbFlavor",
-			Handler:    _CCRMAPI_GetRootLbFlavor_Handler,
+			Handler:    _CloudletPlatformAPI_GetRootLbFlavor_Handler,
+		},
+		{
+			MethodName: "ProcessExecRequest",
+			Handler:    _CloudletPlatformAPI_ProcessExecRequest_Handler,
 		},
 		{
 			MethodName: "NameSanitize",
-			Handler:    _CCRMAPI_NameSanitize_Handler,
+			Handler:    _CloudletPlatformAPI_NameSanitize_Handler,
+		},
+		{
+			MethodName: "RefreshCerts",
+			Handler:    _CloudletPlatformAPI_RefreshCerts_Handler,
+		},
+		{
+			MethodName: "GetCloudletResources",
+			Handler:    _CloudletPlatformAPI_GetCloudletResources_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "GetRestrictedCloudletStatus",
-			Handler:       _CCRMAPI_GetRestrictedCloudletStatus_Handler,
+			Handler:       _CloudletPlatformAPI_GetRestrictedCloudletStatus_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ApplyCloudlet",
+			Handler:       _CloudletPlatformAPI_ApplyCloudlet_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "ccrm.proto",
+}
+
+// ClusterPlatformAPIClient is the client API for ClusterPlatformAPI service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type ClusterPlatformAPIClient interface {
+	ApplyClusterInst(ctx context.Context, in *ClusterInst, opts ...grpc.CallOption) (ClusterPlatformAPI_ApplyClusterInstClient, error)
+	NameSanitize(ctx context.Context, in *NameSanitizeReq, opts ...grpc.CallOption) (*Result, error)
+}
+
+type clusterPlatformAPIClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewClusterPlatformAPIClient(cc *grpc.ClientConn) ClusterPlatformAPIClient {
+	return &clusterPlatformAPIClient{cc}
+}
+
+func (c *clusterPlatformAPIClient) ApplyClusterInst(ctx context.Context, in *ClusterInst, opts ...grpc.CallOption) (ClusterPlatformAPI_ApplyClusterInstClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_ClusterPlatformAPI_serviceDesc.Streams[0], "/edgeproto.ClusterPlatformAPI/ApplyClusterInst", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &clusterPlatformAPIApplyClusterInstClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ClusterPlatformAPI_ApplyClusterInstClient interface {
+	Recv() (*ClusterInstInfo, error)
+	grpc.ClientStream
+}
+
+type clusterPlatformAPIApplyClusterInstClient struct {
+	grpc.ClientStream
+}
+
+func (x *clusterPlatformAPIApplyClusterInstClient) Recv() (*ClusterInstInfo, error) {
+	m := new(ClusterInstInfo)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *clusterPlatformAPIClient) NameSanitize(ctx context.Context, in *NameSanitizeReq, opts ...grpc.CallOption) (*Result, error) {
+	out := new(Result)
+	err := c.cc.Invoke(ctx, "/edgeproto.ClusterPlatformAPI/NameSanitize", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ClusterPlatformAPIServer is the server API for ClusterPlatformAPI service.
+type ClusterPlatformAPIServer interface {
+	ApplyClusterInst(*ClusterInst, ClusterPlatformAPI_ApplyClusterInstServer) error
+	NameSanitize(context.Context, *NameSanitizeReq) (*Result, error)
+}
+
+// UnimplementedClusterPlatformAPIServer can be embedded to have forward compatible implementations.
+type UnimplementedClusterPlatformAPIServer struct {
+}
+
+func (*UnimplementedClusterPlatformAPIServer) ApplyClusterInst(req *ClusterInst, srv ClusterPlatformAPI_ApplyClusterInstServer) error {
+	return status.Errorf(codes.Unimplemented, "method ApplyClusterInst not implemented")
+}
+func (*UnimplementedClusterPlatformAPIServer) NameSanitize(ctx context.Context, req *NameSanitizeReq) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NameSanitize not implemented")
+}
+
+func RegisterClusterPlatformAPIServer(s *grpc.Server, srv ClusterPlatformAPIServer) {
+	s.RegisterService(&_ClusterPlatformAPI_serviceDesc, srv)
+}
+
+func _ClusterPlatformAPI_ApplyClusterInst_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ClusterInst)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ClusterPlatformAPIServer).ApplyClusterInst(m, &clusterPlatformAPIApplyClusterInstServer{stream})
+}
+
+type ClusterPlatformAPI_ApplyClusterInstServer interface {
+	Send(*ClusterInstInfo) error
+	grpc.ServerStream
+}
+
+type clusterPlatformAPIApplyClusterInstServer struct {
+	grpc.ServerStream
+}
+
+func (x *clusterPlatformAPIApplyClusterInstServer) Send(m *ClusterInstInfo) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _ClusterPlatformAPI_NameSanitize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NameSanitizeReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterPlatformAPIServer).NameSanitize(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/edgeproto.ClusterPlatformAPI/NameSanitize",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterPlatformAPIServer).NameSanitize(ctx, req.(*NameSanitizeReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _ClusterPlatformAPI_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "edgeproto.ClusterPlatformAPI",
+	HandlerType: (*ClusterPlatformAPIServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "NameSanitize",
+			Handler:    _ClusterPlatformAPI_NameSanitize_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ApplyClusterInst",
+			Handler:       _ClusterPlatformAPI_ApplyClusterInst_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "ccrm.proto",
+}
+
+// AppInstPlatformAPIClient is the client API for AppInstPlatformAPI service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type AppInstPlatformAPIClient interface {
+	ApplyAppInst(ctx context.Context, in *AppInst, opts ...grpc.CallOption) (AppInstPlatformAPI_ApplyAppInstClient, error)
+	ApplyTrustPolicyException(ctx context.Context, in *TPEInstanceState, opts ...grpc.CallOption) (*Result, error)
+	NameSanitize(ctx context.Context, in *NameSanitizeReq, opts ...grpc.CallOption) (*Result, error)
+}
+
+type appInstPlatformAPIClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewAppInstPlatformAPIClient(cc *grpc.ClientConn) AppInstPlatformAPIClient {
+	return &appInstPlatformAPIClient{cc}
+}
+
+func (c *appInstPlatformAPIClient) ApplyAppInst(ctx context.Context, in *AppInst, opts ...grpc.CallOption) (AppInstPlatformAPI_ApplyAppInstClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_AppInstPlatformAPI_serviceDesc.Streams[0], "/edgeproto.AppInstPlatformAPI/ApplyAppInst", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &appInstPlatformAPIApplyAppInstClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type AppInstPlatformAPI_ApplyAppInstClient interface {
+	Recv() (*AppInstInfo, error)
+	grpc.ClientStream
+}
+
+type appInstPlatformAPIApplyAppInstClient struct {
+	grpc.ClientStream
+}
+
+func (x *appInstPlatformAPIApplyAppInstClient) Recv() (*AppInstInfo, error) {
+	m := new(AppInstInfo)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *appInstPlatformAPIClient) ApplyTrustPolicyException(ctx context.Context, in *TPEInstanceState, opts ...grpc.CallOption) (*Result, error) {
+	out := new(Result)
+	err := c.cc.Invoke(ctx, "/edgeproto.AppInstPlatformAPI/ApplyTrustPolicyException", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appInstPlatformAPIClient) NameSanitize(ctx context.Context, in *NameSanitizeReq, opts ...grpc.CallOption) (*Result, error) {
+	out := new(Result)
+	err := c.cc.Invoke(ctx, "/edgeproto.AppInstPlatformAPI/NameSanitize", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AppInstPlatformAPIServer is the server API for AppInstPlatformAPI service.
+type AppInstPlatformAPIServer interface {
+	ApplyAppInst(*AppInst, AppInstPlatformAPI_ApplyAppInstServer) error
+	ApplyTrustPolicyException(context.Context, *TPEInstanceState) (*Result, error)
+	NameSanitize(context.Context, *NameSanitizeReq) (*Result, error)
+}
+
+// UnimplementedAppInstPlatformAPIServer can be embedded to have forward compatible implementations.
+type UnimplementedAppInstPlatformAPIServer struct {
+}
+
+func (*UnimplementedAppInstPlatformAPIServer) ApplyAppInst(req *AppInst, srv AppInstPlatformAPI_ApplyAppInstServer) error {
+	return status.Errorf(codes.Unimplemented, "method ApplyAppInst not implemented")
+}
+func (*UnimplementedAppInstPlatformAPIServer) ApplyTrustPolicyException(ctx context.Context, req *TPEInstanceState) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ApplyTrustPolicyException not implemented")
+}
+func (*UnimplementedAppInstPlatformAPIServer) NameSanitize(ctx context.Context, req *NameSanitizeReq) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method NameSanitize not implemented")
+}
+
+func RegisterAppInstPlatformAPIServer(s *grpc.Server, srv AppInstPlatformAPIServer) {
+	s.RegisterService(&_AppInstPlatformAPI_serviceDesc, srv)
+}
+
+func _AppInstPlatformAPI_ApplyAppInst_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(AppInst)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(AppInstPlatformAPIServer).ApplyAppInst(m, &appInstPlatformAPIApplyAppInstServer{stream})
+}
+
+type AppInstPlatformAPI_ApplyAppInstServer interface {
+	Send(*AppInstInfo) error
+	grpc.ServerStream
+}
+
+type appInstPlatformAPIApplyAppInstServer struct {
+	grpc.ServerStream
+}
+
+func (x *appInstPlatformAPIApplyAppInstServer) Send(m *AppInstInfo) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _AppInstPlatformAPI_ApplyTrustPolicyException_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TPEInstanceState)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppInstPlatformAPIServer).ApplyTrustPolicyException(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/edgeproto.AppInstPlatformAPI/ApplyTrustPolicyException",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppInstPlatformAPIServer).ApplyTrustPolicyException(ctx, req.(*TPEInstanceState))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AppInstPlatformAPI_NameSanitize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NameSanitizeReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppInstPlatformAPIServer).NameSanitize(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/edgeproto.AppInstPlatformAPI/NameSanitize",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppInstPlatformAPIServer).NameSanitize(ctx, req.(*NameSanitizeReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _AppInstPlatformAPI_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "edgeproto.AppInstPlatformAPI",
+	HandlerType: (*AppInstPlatformAPIServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ApplyTrustPolicyException",
+			Handler:    _AppInstPlatformAPI_ApplyTrustPolicyException_Handler,
+		},
+		{
+			MethodName: "NameSanitize",
+			Handler:    _AppInstPlatformAPI_NameSanitize_Handler,
+		},
+	},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ApplyAppInst",
+			Handler:       _AppInstPlatformAPI_ApplyAppInst_Handler,
 			ServerStreams: true,
 		},
 	},
@@ -636,18 +1174,16 @@ func (m *InfraResourceMap) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for k := range m.InfraResources {
 			v := m.InfraResources[k]
 			baseI := i
-			if v != nil {
-				{
-					size, err := v.MarshalToSizedBuffer(dAtA[:i])
-					if err != nil {
-						return 0, err
-					}
-					i -= size
-					i = encodeVarintCcrm(dAtA, i, uint64(size))
+			{
+				size, err := (&v).MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
 				}
-				i--
-				dAtA[i] = 0x12
+				i -= size
+				i = encodeVarintCcrm(dAtA, i, uint64(size))
 			}
+			i--
+			dAtA[i] = 0x12
 			i -= len(k)
 			copy(dAtA[i:], k)
 			i = encodeVarintCcrm(dAtA, i, uint64(len(k)))
@@ -685,18 +1221,16 @@ func (m *ClusterResourcesReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		for k := range m.InfraResources {
 			v := m.InfraResources[k]
 			baseI := i
-			if v != nil {
-				{
-					size, err := v.MarshalToSizedBuffer(dAtA[:i])
-					if err != nil {
-						return 0, err
-					}
-					i -= size
-					i = encodeVarintCcrm(dAtA, i, uint64(size))
+			{
+				size, err := (&v).MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
 				}
-				i--
-				dAtA[i] = 0x12
+				i -= size
+				i = encodeVarintCcrm(dAtA, i, uint64(size))
 			}
+			i--
+			dAtA[i] = 0x12
 			i -= len(k)
 			copy(dAtA[i:], k)
 			i = encodeVarintCcrm(dAtA, i, uint64(len(k)))
@@ -839,6 +1373,53 @@ func (m *NameSanitizeReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *CloudletExecReq) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloudletExecReq) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloudletExecReq) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.ExecReq != nil {
+		{
+			size, err := m.ExecReq.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCcrm(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.CloudletKey != nil {
+		{
+			size, err := m.CloudletKey.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintCcrm(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintCcrm(dAtA []byte, offset int, v uint64) int {
 	offset -= sovCcrm(v)
 	base := offset
@@ -898,7 +1479,7 @@ func (m *InfraResourceMap) CopyInFields(src *InfraResourceMap) int {
 	if src.InfraResources != nil {
 		if updateListAction == "add" {
 			for k0, v := range src.InfraResources {
-				v = v.Clone()
+				v = *v.Clone()
 				m.InfraResources[k0] = v
 				changed++
 			}
@@ -910,9 +1491,9 @@ func (m *InfraResourceMap) CopyInFields(src *InfraResourceMap) int {
 				}
 			}
 		} else {
-			m.InfraResources = make(map[string]*InfraResource)
+			m.InfraResources = make(map[string]InfraResource)
 			for k0, v := range src.InfraResources {
-				m.InfraResources[k0] = v.Clone()
+				m.InfraResources[k0] = *v.Clone()
 			}
 			changed++
 		}
@@ -925,11 +1506,11 @@ func (m *InfraResourceMap) CopyInFields(src *InfraResourceMap) int {
 
 func (m *InfraResourceMap) DeepCopyIn(src *InfraResourceMap) {
 	if src.InfraResources != nil {
-		m.InfraResources = make(map[string]*InfraResource)
+		m.InfraResources = make(map[string]InfraResource)
 		for k, v := range src.InfraResources {
 			var tmp_v InfraResource
-			tmp_v.DeepCopyIn(v)
-			m.InfraResources[k] = &tmp_v
+			tmp_v.DeepCopyIn(&v)
+			m.InfraResources[k] = tmp_v
 		}
 	} else {
 		m.InfraResources = nil
@@ -1023,7 +1604,7 @@ func (m *ClusterResourcesReq) CopyInFields(src *ClusterResourcesReq) int {
 	if src.InfraResources != nil {
 		if updateListAction == "add" {
 			for k0, v := range src.InfraResources {
-				v = v.Clone()
+				v = *v.Clone()
 				m.InfraResources[k0] = v
 				changed++
 			}
@@ -1035,9 +1616,9 @@ func (m *ClusterResourcesReq) CopyInFields(src *ClusterResourcesReq) int {
 				}
 			}
 		} else {
-			m.InfraResources = make(map[string]*InfraResource)
+			m.InfraResources = make(map[string]InfraResource)
 			for k0, v := range src.InfraResources {
-				m.InfraResources[k0] = v.Clone()
+				m.InfraResources[k0] = *v.Clone()
 			}
 			changed++
 		}
@@ -1065,11 +1646,11 @@ func (m *ClusterResourcesReq) DeepCopyIn(src *ClusterResourcesReq) {
 		m.VmResources = nil
 	}
 	if src.InfraResources != nil {
-		m.InfraResources = make(map[string]*InfraResource)
+		m.InfraResources = make(map[string]InfraResource)
 		for k, v := range src.InfraResources {
 			var tmp_v InfraResource
-			tmp_v.DeepCopyIn(v)
-			m.InfraResources[k] = &tmp_v
+			tmp_v.DeepCopyIn(&v)
+			m.InfraResources[k] = tmp_v
 		}
 	} else {
 		m.InfraResources = nil
@@ -1416,6 +1997,220 @@ func (s *NameSanitizeReq) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *CloudletExecReq) Clone() *CloudletExecReq {
+	cp := &CloudletExecReq{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletExecReq) CopyInFields(src *CloudletExecReq) int {
+	changed := 0
+	if src.CloudletKey != nil {
+		if m.CloudletKey == nil {
+			m.CloudletKey = &CloudletKey{}
+		}
+		if m.CloudletKey.Organization != src.CloudletKey.Organization {
+			m.CloudletKey.Organization = src.CloudletKey.Organization
+			changed++
+		}
+		if m.CloudletKey.Name != src.CloudletKey.Name {
+			m.CloudletKey.Name = src.CloudletKey.Name
+			changed++
+		}
+		if m.CloudletKey.FederatedOrganization != src.CloudletKey.FederatedOrganization {
+			m.CloudletKey.FederatedOrganization = src.CloudletKey.FederatedOrganization
+			changed++
+		}
+	} else if m.CloudletKey != nil {
+		m.CloudletKey = nil
+		changed++
+	}
+	if src.ExecReq != nil {
+		if m.ExecReq == nil {
+			m.ExecReq = &ExecRequest{}
+		}
+		if m.ExecReq.AppInstKey.Name != src.ExecReq.AppInstKey.Name {
+			m.ExecReq.AppInstKey.Name = src.ExecReq.AppInstKey.Name
+			changed++
+		}
+		if m.ExecReq.AppInstKey.Organization != src.ExecReq.AppInstKey.Organization {
+			m.ExecReq.AppInstKey.Organization = src.ExecReq.AppInstKey.Organization
+			changed++
+		}
+		if m.ExecReq.AppInstKey.CloudletKey.Organization != src.ExecReq.AppInstKey.CloudletKey.Organization {
+			m.ExecReq.AppInstKey.CloudletKey.Organization = src.ExecReq.AppInstKey.CloudletKey.Organization
+			changed++
+		}
+		if m.ExecReq.AppInstKey.CloudletKey.Name != src.ExecReq.AppInstKey.CloudletKey.Name {
+			m.ExecReq.AppInstKey.CloudletKey.Name = src.ExecReq.AppInstKey.CloudletKey.Name
+			changed++
+		}
+		if m.ExecReq.AppInstKey.CloudletKey.FederatedOrganization != src.ExecReq.AppInstKey.CloudletKey.FederatedOrganization {
+			m.ExecReq.AppInstKey.CloudletKey.FederatedOrganization = src.ExecReq.AppInstKey.CloudletKey.FederatedOrganization
+			changed++
+		}
+		if m.ExecReq.ContainerId != src.ExecReq.ContainerId {
+			m.ExecReq.ContainerId = src.ExecReq.ContainerId
+			changed++
+		}
+		if m.ExecReq.Offer != src.ExecReq.Offer {
+			m.ExecReq.Offer = src.ExecReq.Offer
+			changed++
+		}
+		if m.ExecReq.Answer != src.ExecReq.Answer {
+			m.ExecReq.Answer = src.ExecReq.Answer
+			changed++
+		}
+		if m.ExecReq.Err != src.ExecReq.Err {
+			m.ExecReq.Err = src.ExecReq.Err
+			changed++
+		}
+		if src.ExecReq.Cmd != nil {
+			if m.ExecReq.Cmd == nil {
+				m.ExecReq.Cmd = &RunCmd{}
+			}
+			if m.ExecReq.Cmd.Command != src.ExecReq.Cmd.Command {
+				m.ExecReq.Cmd.Command = src.ExecReq.Cmd.Command
+				changed++
+			}
+			if src.ExecReq.Cmd.CloudletMgmtNode != nil {
+				if m.ExecReq.Cmd.CloudletMgmtNode == nil {
+					m.ExecReq.Cmd.CloudletMgmtNode = &CloudletMgmtNode{}
+				}
+				if m.ExecReq.Cmd.CloudletMgmtNode.Type != src.ExecReq.Cmd.CloudletMgmtNode.Type {
+					m.ExecReq.Cmd.CloudletMgmtNode.Type = src.ExecReq.Cmd.CloudletMgmtNode.Type
+					changed++
+				}
+				if m.ExecReq.Cmd.CloudletMgmtNode.Name != src.ExecReq.Cmd.CloudletMgmtNode.Name {
+					m.ExecReq.Cmd.CloudletMgmtNode.Name = src.ExecReq.Cmd.CloudletMgmtNode.Name
+					changed++
+				}
+			} else if m.ExecReq.Cmd.CloudletMgmtNode != nil {
+				m.ExecReq.Cmd.CloudletMgmtNode = nil
+				changed++
+			}
+		} else if m.ExecReq.Cmd != nil {
+			m.ExecReq.Cmd = nil
+			changed++
+		}
+		if src.ExecReq.Log != nil {
+			if m.ExecReq.Log == nil {
+				m.ExecReq.Log = &ShowLog{}
+			}
+			if m.ExecReq.Log.Since != src.ExecReq.Log.Since {
+				m.ExecReq.Log.Since = src.ExecReq.Log.Since
+				changed++
+			}
+			if m.ExecReq.Log.Tail != src.ExecReq.Log.Tail {
+				m.ExecReq.Log.Tail = src.ExecReq.Log.Tail
+				changed++
+			}
+			if m.ExecReq.Log.Timestamps != src.ExecReq.Log.Timestamps {
+				m.ExecReq.Log.Timestamps = src.ExecReq.Log.Timestamps
+				changed++
+			}
+			if m.ExecReq.Log.Follow != src.ExecReq.Log.Follow {
+				m.ExecReq.Log.Follow = src.ExecReq.Log.Follow
+				changed++
+			}
+		} else if m.ExecReq.Log != nil {
+			m.ExecReq.Log = nil
+			changed++
+		}
+		if src.ExecReq.Console != nil {
+			if m.ExecReq.Console == nil {
+				m.ExecReq.Console = &RunVMConsole{}
+			}
+			if m.ExecReq.Console.Url != src.ExecReq.Console.Url {
+				m.ExecReq.Console.Url = src.ExecReq.Console.Url
+				changed++
+			}
+		} else if m.ExecReq.Console != nil {
+			m.ExecReq.Console = nil
+			changed++
+		}
+		if m.ExecReq.Timeout != src.ExecReq.Timeout {
+			m.ExecReq.Timeout = src.ExecReq.Timeout
+			changed++
+		}
+		if m.ExecReq.AccessUrl != src.ExecReq.AccessUrl {
+			m.ExecReq.AccessUrl = src.ExecReq.AccessUrl
+			changed++
+		}
+		if m.ExecReq.EdgeTurnAddr != src.ExecReq.EdgeTurnAddr {
+			m.ExecReq.EdgeTurnAddr = src.ExecReq.EdgeTurnAddr
+			changed++
+		}
+		if m.ExecReq.EdgeTurnProxyAddr != src.ExecReq.EdgeTurnProxyAddr {
+			m.ExecReq.EdgeTurnProxyAddr = src.ExecReq.EdgeTurnProxyAddr
+			changed++
+		}
+	} else if m.ExecReq != nil {
+		m.ExecReq = nil
+		changed++
+	}
+	return changed
+}
+
+func (m *CloudletExecReq) DeepCopyIn(src *CloudletExecReq) {
+	if src.CloudletKey != nil {
+		var tmp_CloudletKey CloudletKey
+		tmp_CloudletKey.DeepCopyIn(src.CloudletKey)
+		m.CloudletKey = &tmp_CloudletKey
+	} else {
+		m.CloudletKey = nil
+	}
+	if src.ExecReq != nil {
+		var tmp_ExecReq ExecRequest
+		tmp_ExecReq.DeepCopyIn(src.ExecReq)
+		m.ExecReq = &tmp_ExecReq
+	} else {
+		m.ExecReq = nil
+	}
+}
+
+// Helper method to check that enums have valid values
+func (m *CloudletExecReq) ValidateEnums() error {
+	if m.CloudletKey != nil {
+		if err := m.CloudletKey.ValidateEnums(); err != nil {
+			return err
+		}
+	}
+	if m.ExecReq != nil {
+		if err := m.ExecReq.ValidateEnums(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *CloudletExecReq) ClearTagged(tags map[string]struct{}) {
+	if s.CloudletKey != nil {
+		s.CloudletKey.ClearTagged(tags)
+	}
+	if s.ExecReq != nil {
+		s.ExecReq.ClearTagged(tags)
+	}
+}
+
+func IgnoreCloudletExecReqFields(taglist string) cmp.Option {
+	names := []string{}
+	tags := make(map[string]struct{})
+	for _, tag := range strings.Split(taglist, ",") {
+		tags[tag] = struct{}{}
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "ExecReq.Offer")
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "ExecReq.Answer")
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "ExecReq.Console.Url")
+	}
+	return cmpopts.IgnoreFields(CloudletExecReq{}, names...)
+}
+
 func (m *StreamStatus) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1442,12 +2237,8 @@ func (m *InfraResourceMap) Size() (n int) {
 		for k, v := range m.InfraResources {
 			_ = k
 			_ = v
-			l = 0
-			if v != nil {
-				l = v.Size()
-				l += 1 + sovCcrm(uint64(l))
-			}
-			mapEntrySize := 1 + len(k) + sovCcrm(uint64(len(k))) + l
+			l = v.Size()
+			mapEntrySize := 1 + len(k) + sovCcrm(uint64(len(k))) + 1 + l + sovCcrm(uint64(l))
 			n += mapEntrySize + 1 + sovCcrm(uint64(mapEntrySize))
 		}
 	}
@@ -1474,12 +2265,8 @@ func (m *ClusterResourcesReq) Size() (n int) {
 		for k, v := range m.InfraResources {
 			_ = k
 			_ = v
-			l = 0
-			if v != nil {
-				l = v.Size()
-				l += 1 + sovCcrm(uint64(l))
-			}
-			mapEntrySize := 1 + len(k) + sovCcrm(uint64(len(k))) + l
+			l = v.Size()
+			mapEntrySize := 1 + len(k) + sovCcrm(uint64(len(k))) + 1 + l + sovCcrm(uint64(l))
 			n += mapEntrySize + 1 + sovCcrm(uint64(mapEntrySize))
 		}
 	}
@@ -1521,6 +2308,23 @@ func (m *NameSanitizeReq) Size() (n int) {
 	}
 	l = len(m.Message)
 	if l > 0 {
+		n += 1 + l + sovCcrm(uint64(l))
+	}
+	return n
+}
+
+func (m *CloudletExecReq) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.CloudletKey != nil {
+		l = m.CloudletKey.Size()
+		n += 1 + l + sovCcrm(uint64(l))
+	}
+	if m.ExecReq != nil {
+		l = m.ExecReq.Size()
 		n += 1 + l + sovCcrm(uint64(l))
 	}
 	return n
@@ -1692,10 +2496,10 @@ func (m *InfraResourceMap) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.InfraResources == nil {
-				m.InfraResources = make(map[string]*InfraResource)
+				m.InfraResources = make(map[string]InfraResource)
 			}
 			var mapkey string
-			var mapvalue *InfraResource
+			mapvalue := &InfraResource{}
 			for iNdEx < postIndex {
 				entryPreIndex := iNdEx
 				var wire uint64
@@ -1789,7 +2593,7 @@ func (m *InfraResourceMap) Unmarshal(dAtA []byte) error {
 					iNdEx += skippy
 				}
 			}
-			m.InfraResources[mapkey] = mapvalue
+			m.InfraResources[mapkey] = *mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -1941,10 +2745,10 @@ func (m *ClusterResourcesReq) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.InfraResources == nil {
-				m.InfraResources = make(map[string]*InfraResource)
+				m.InfraResources = make(map[string]InfraResource)
 			}
 			var mapkey string
-			var mapvalue *InfraResource
+			mapvalue := &InfraResource{}
 			for iNdEx < postIndex {
 				entryPreIndex := iNdEx
 				var wire uint64
@@ -2038,7 +2842,7 @@ func (m *ClusterResourcesReq) Unmarshal(dAtA []byte) error {
 					iNdEx += skippy
 				}
 			}
-			m.InfraResources[mapkey] = mapvalue
+			m.InfraResources[mapkey] = *mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -2313,6 +3117,128 @@ func (m *NameSanitizeReq) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Message = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipCcrm(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthCcrm
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloudletExecReq) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowCcrm
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CloudletExecReq: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CloudletExecReq: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CloudletKey", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCcrm
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCcrm
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCcrm
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.CloudletKey == nil {
+				m.CloudletKey = &CloudletKey{}
+			}
+			if err := m.CloudletKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExecReq", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowCcrm
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthCcrm
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthCcrm
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ExecReq == nil {
+				m.ExecReq = &ExecRequest{}
+			}
+			if err := m.ExecReq.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

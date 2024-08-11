@@ -1,0 +1,60 @@
+# Copyright 2024 EdgeXR, Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+- name: Ensure accesskeys directory
+  ansible.builtin.file:
+    path: /root/accesskeys
+    state: directory
+    mode: "0700"
+    owner: root
+    group: root
+
+- name: Ensure crm_cache directory
+  ansible.builtin.file:
+    path: /root/crm_cache
+    state: directory
+    mode: "0700"
+    owner: root
+    group: root
+
+- name: Docker login to private registry
+  community.docker.docker_login:
+    registry_url: "{{ docker_registry }}"
+    username: "{{ docker_username }}"
+    password: "{{ docker_password }}"
+  when: docker_password is defined and docker_password | length > 0
+
+- name: Deploy shepherd docker
+  community.docker.docker_container: "{{ lookup('template', 'shepherd_docker.yml.j2') | from_yaml }}"
+  register: deploy_shepherd
+
+- name: Write prometheus config file
+  ansible.builtin.template:
+    src: templates/prometheus.yml.j2
+    dest: /var/tmp/prometheus.yml
+    mode: "0644"
+  register: write_prometheus_config
+
+- name: Deploy prometheus docker
+  community.docker.docker_container: "{{ lookup('template', 'prometheus_docker.yml.j2') | from_yaml }}"
+  register: deploy_prometheus
+
+- name: Reload prometheus config if changed and already running
+  shell: "curl -X POST http://0.0.0.0:9092/-/reload"
+  when: (write_prometheus_config.changed) and (not deploy_prometheus.changed)
+
+- name: Prune docker images if new images may have been pulled
+  shell: docker image prune -a --force --filter "until=24h"
+  when: (deploy_crm.changed) or (deploy_shepherd.changed) or (deploy_prometheus.changed)

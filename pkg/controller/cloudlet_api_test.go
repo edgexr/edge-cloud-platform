@@ -35,6 +35,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/jarcoal/httpmock"
@@ -148,18 +149,16 @@ func TestCloudletApi(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 	defer dummy.Stop()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
 
 	reduceInfoTimeouts(t, ctx, apis)
 
@@ -181,6 +180,10 @@ func TestCloudletApi(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, nodeMgr.OSClient)
 	defer nodeMgr.Finish()
+
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, nodeMgr.VaultConfig, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 
 	// create flavors
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
@@ -331,6 +334,7 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	cloudlet.Key.Name = "testcloudletstates"
 	cloudlet.NotifySrvAddr = crm_notifyaddr
 	cloudlet.CrmOverride = edgeproto.CRMOverride_NO_OVERRIDE
+	cloudlet.CrmOnEdge = true
 
 	pfConfig := &edgeproto.PlatformConfig{
 		EnvVar:          make(map[string]string),
@@ -344,7 +348,6 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	require.Nil(t, err, "create cloudlet")
 	cloudletFound := apis.cloudletApi.cache.Get(&cloudlet.Key, &cloudlet)
 	require.True(t, cloudletFound)
-	require.Equal(t, edgeproto.TrackedState_READY, cloudlet.OnboardingState)
 
 	defer apis.cloudletApi.DeleteCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	res, err := apis.cloudletApi.GenerateAccessKey(ctx, &cloudlet.Key)
@@ -359,7 +362,7 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 		apis.cloudletInfoApi.cache.KeyWatchers = ctrlHandler.CloudletInfoCache.KeyWatchers
 		// setup cloudlet stream
 		err = apis.streamObjApi.StreamCloudlet(&cloudlet.Key, streamCloudlet)
-		require.Nil(t, err, "stream cloudlet")
+		require.Nil(t, err, "stream cloudlet, %s", err)
 	}()
 
 	err = process.StartCRMService(ctx, &cloudlet, pfConfig, process.HARolePrimary, nil)
@@ -372,10 +375,6 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	err = ctrlHandler.WaitForCloudletState(&cloudlet.Key, dme.CloudletState_CLOUDLET_STATE_INIT)
 	require.Nil(t, err, "cloudlet state transition")
-
-	// For mocked responses, onboarding state must be Ready
-	// or CRM will ignore them.
-	require.Equal(t, edgeproto.TrackedState_READY, cloudlet.OnboardingState)
 
 	cloudlet.State = edgeproto.TrackedState_CRM_INITOK
 	ctrlHandler.CloudletCache.Update(ctx, &cloudlet, 0)
@@ -395,12 +394,14 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	cloudlet.State = edgeproto.TrackedState_UPDATE_REQUESTED
 	ctrlHandler.CloudletCache.Update(ctx, &cloudlet, 0)
 
-	err = ctrlHandler.WaitForCloudletState(&cloudlet.Key, dme.CloudletState_CLOUDLET_STATE_UPGRADE)
-	require.Nil(t, err, "cloudlet state transition")
-
-	cloudlet.State = edgeproto.TrackedState_UPDATING
-	ctrlHandler.CloudletCache.Update(ctx, &cloudlet, 0)
-
+	// Note: CRM sends back two state changes as it's doing work.
+	// It sets cloudletInfo.State first to dme.CLOUDLET_STATE_UPGRADE,
+	// which the controller converts to TrackedState_UPDATING.
+	// It then sets cloudletInfo.State to READY once its done.
+	// There is no wait between those two state changes, so from the
+	// controller side it's possible it never sees the UPGRADE
+	// transition (due to notify condensing updates). So we can
+	// only really wait for READY here.
 	err = ctrlHandler.WaitForCloudletState(&cloudlet.Key, dme.CloudletState_CLOUDLET_STATE_READY)
 	require.Nil(t, err, "cloudlet state transition")
 
@@ -978,16 +979,19 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
 
-	dummy := dummyEtcd{}
+	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	sync := InitSync(&dummy)
+	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
 
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
 	reduceInfoTimeouts(t, ctx, apis)
 
 	cAppApi := testutil.NewInternalAppApi(apis.appApi)
@@ -1011,14 +1015,6 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
-
-	// without a responder, clusterInst create waits forever
-	dummyResponder := DefaultDummyInfoResponder(apis)
-	dummyResponder.InitDummyInfoResponder()
-	ccrmStop := ccrmdummy.StartDummyCCRM(ctx, redisClient, nil)
-	defer ccrmStop()
-
-	reduceInfoTimeouts(t, ctx, apis)
 
 	// either create the policy expected by one of all cloudlets, or remove that bit of config, or
 	// just don't create that specific cloudlet. #1 create the policy.
@@ -1097,8 +1093,8 @@ func testCloudletDnsLabel(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	require.NotEqual(t, dnsLabel0, dnsLabel1)
 	// check that ids are present in database
-	require.True(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.store, dnsLabel0))
-	require.True(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.store, dnsLabel1))
+	require.True(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.GetKVStore(), dnsLabel0))
+	require.True(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.GetKVStore(), dnsLabel1))
 
 	// clean up
 	err = apis.cloudletApi.DeleteCloudlet(&cl0, testutil.NewCudStreamoutCloudlet(ctx))
@@ -1106,8 +1102,8 @@ func testCloudletDnsLabel(t *testing.T, ctx context.Context, apis *AllApis) {
 	err = apis.cloudletApi.DeleteCloudlet(&cl1, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
 	// check that ids are removed from database
-	require.False(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.store, dnsLabel0))
-	require.False(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.store, dnsLabel1))
+	require.False(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.GetKVStore(), dnsLabel0))
+	require.False(t, testHasCloudletDnsLabel(apis.cloudletApi.sync.GetKVStore(), dnsLabel1))
 }
 
 func testHasCloudletDnsLabel(kvstore objstore.KVStore, id string) bool {

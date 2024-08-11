@@ -21,6 +21,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 )
 
 var leaseTimeoutSec int64 = 5
@@ -35,7 +36,7 @@ var syncLeaseDataRetry = time.Minute
 // it once a new lease can be established.
 type SyncLeaseData struct {
 	allApis *AllApis
-	sync    *Sync
+	sync    *regiondata.Sync
 	leaseID int64
 	stop    chan struct{}
 	cancel  func()
@@ -43,7 +44,7 @@ type SyncLeaseData struct {
 	wg      sync.WaitGroup
 }
 
-func NewSyncLeaseData(sy *Sync, allApis *AllApis) *SyncLeaseData {
+func NewSyncLeaseData(sy *regiondata.Sync, allApis *AllApis) *SyncLeaseData {
 	syncLeaseData := SyncLeaseData{}
 	syncLeaseData.allApis = allApis
 	syncLeaseData.sync = sy
@@ -88,7 +89,7 @@ func (s *SyncLeaseData) run() {
 				// - we cancel context
 				// Note that if underlying keep alive fails,
 				// context is also marked as cancelled (Done).
-				err = s.sync.store.KeepAlive(ctx, s.leaseID)
+				err = s.sync.GetKVStore().KeepAlive(ctx, s.leaseID)
 			}
 			errc <- err
 		}(ctx)
@@ -97,9 +98,9 @@ func (s *SyncLeaseData) run() {
 		case <-s.stop:
 			done = true
 		case err := <-errc:
-			span := log.StartSpan(log.DebugLevelInfo, "Sync Lease Data recovery")
+			span := log.StartSpan(log.DebugLevelInfo, "regiondata.Sync Lease Data recovery")
 			ctx := log.ContextWithSpan(context.Background(), span)
-			log.SpanLog(ctx, log.DebugLevelInfo, "Sync Lease Data failed", "err", err, "retry-in", syncLeaseDataRetry.String())
+			log.SpanLog(ctx, log.DebugLevelInfo, "regiondata.Sync Lease Data failed", "err", err, "retry-in", syncLeaseDataRetry.String())
 			span.Finish()
 		}
 		cancel()
@@ -115,12 +116,12 @@ func (s *SyncLeaseData) run() {
 }
 
 func (s *SyncLeaseData) syncData() error {
-	span := log.StartSpan(log.DebugLevelInfo, "Sync Lease Data")
+	span := log.StartSpan(log.DebugLevelInfo, "regiondata.Sync Lease Data")
 	ctx := log.ContextWithSpan(context.Background(), span)
 	defer span.Finish()
 
 	// get lease
-	leaseID, err := s.sync.store.Grant(ctx, leaseTimeoutSec)
+	leaseID, err := s.sync.GetKVStore().Grant(ctx, leaseTimeoutSec)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "grant lease failed", "err", err)
 		return err
@@ -130,13 +131,13 @@ func (s *SyncLeaseData) syncData() error {
 	s.mux.Unlock()
 
 	go func() {
-		span := log.StartSpan(log.DebugLevelInfo, "Sync alerts")
+		span := log.StartSpan(log.DebugLevelInfo, "regiondata.Sync alerts")
 		ctx := log.ContextWithSpan(context.Background(), span)
 
 		err = s.allApis.controllerApi.registerController(ctx, leaseID)
 		log.SpanLog(ctx, log.DebugLevelInfo, "registered controller", "hostname", cloudcommon.Hostname(), "err", err)
 
-		// Sync alerts inside goroutine because if there are lots of alerts then it
+		// regiondata.Sync alerts inside goroutine because if there are lots of alerts then it
 		// might hold up keepalive and the controller lease might expire
 		err = s.allApis.alertApi.syncSourceData(ctx)
 		log.SpanLog(ctx, log.DebugLevelInfo, "synced alerts", "err", err)

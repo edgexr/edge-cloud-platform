@@ -18,14 +18,15 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 )
 
 type AppInstInfoApi struct {
 	all  *AllApis
-	sync *Sync
+	sync *regiondata.Sync
 }
 
-func NewAppInstInfoApi(sync *Sync, all *AllApis) *AppInstInfoApi {
+func NewAppInstInfoApi(sync *regiondata.Sync, all *AllApis) *AppInstInfoApi {
 	appInstInfoApi := AppInstInfoApi{}
 	appInstInfoApi.all = all
 	appInstInfoApi.sync = sync
@@ -33,6 +34,7 @@ func NewAppInstInfoApi(sync *Sync, all *AllApis) *AppInstInfoApi {
 }
 
 func (s *AppInstInfoApi) Update(ctx context.Context, in *edgeproto.AppInstInfo, rev int64) {
+	in.Fields = edgeproto.AppInstInfoAllFields
 	s.all.appInstApi.UpdateFromInfo(ctx, in)
 }
 

@@ -187,6 +187,13 @@ func StartCRMService(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig
 		}
 	}
 
+	// skip CRM service after writing accesskey file for Shepherd
+	if !cloudlet.CrmOnEdge {
+		// no CRM service
+		log.SpanLog(ctx, log.DebugLevelApi, "skip start crm service because no crm on edge", "cloudlet", cloudlet.Key)
+		return nil
+	}
+
 	// track all local crm processes
 	procKey := trackedProcessKey{
 		cloudletKey: cloudlet.Key,
@@ -227,6 +234,11 @@ func StopCRMService(ctx context.Context, cloudlet *edgeproto.Cloudlet, haRole HA
 	crmOpts := GetCrmServiceOptions(crmOps...)
 	args := ""
 	if cloudlet != nil {
+		if !cloudlet.CrmOnEdge {
+			// no CRM service
+			log.SpanLog(ctx, log.DebugLevelApi, "stop crm service skip because no crm on edge", "cloudlet", cloudlet.Key)
+			return nil
+		}
 		log.SpanLog(ctx, log.DebugLevelApi, "stop crmserver", "cloudlet", cloudlet.Key, "haRole", haRole)
 		crmProc, _, err := crmOpts.getCrmProc(cloudlet, nil, haRole)
 		if err != nil {
@@ -266,6 +278,51 @@ func StopCRMService(ctx context.Context, cloudlet *edgeproto.Cloudlet, haRole HA
 		trackedProcess = make(map[trackedProcessKey]CrmProcess)
 	}
 	trackedProcessMux.Unlock()
+	return nil
+}
+
+var maxPrimaryCrmStartupWait = 10 * time.Second
+
+func StartCRMServicesHA(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, redisCfg *rediscache.RedisConfig, crmOps ...CrmServiceOp) error {
+	if !cloudlet.CrmOnEdge {
+		return fmt.Errorf("active-standby HA is not allowed for CRM off-site")
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating 2 instances for H/A", "key", cloudlet.Key)
+
+	err := StartCRMService(ctx, cloudlet, pfConfig, HARolePrimary, redisCfg, crmOps...)
+	if err != nil {
+		return fmt.Errorf("primary CRM startup failed, %s", err)
+	}
+	procKey := trackedProcessKey{
+		cloudletKey: cloudlet.Key,
+		haRole:      HARolePrimary,
+	}
+	trackedProcessMux.Lock()
+	crmPrimary := trackedProcess[procKey]
+	trackedProcessMux.Unlock()
+
+	crmP := crmPrimary.CrmProc()
+	// Pause before starting the secondary to let the primary become active first for the sake of
+	// e2e tests that need consistent ordering. Secondary will be started up in a separate thread after
+	// cloudletInfo shows up from the primary
+	start := time.Now()
+	for {
+		time.Sleep(time.Millisecond * 200)
+		elapsed := time.Since(start)
+		if elapsed >= (maxPrimaryCrmStartupWait) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "timed out waiting for primary CRM process")
+			return fmt.Errorf("timed out waiting for primary CRM process")
+		}
+		if !EnsureProcessesByName(crmP.GetExeName(), crmP.LookupArgs()) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to detect primary CRM up, will retry", "cloudletKey", cloudlet.Key)
+		} else {
+			err = StartCRMService(ctx, cloudlet, pfConfig, HARoleSecondary, redisCfg, crmOps...)
+			if err != nil {
+				return fmt.Errorf("secondary CRM startup failed, %s", err)
+			}
+			break
+		}
+	}
 	return nil
 }
 
@@ -384,68 +441,41 @@ func getShepherdProc(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformC
 		return nil, opts, fmt.Errorf("unable to marshal cloudlet key")
 	}
 
-	envVars := make(map[string]string)
-	notifyAddr := ""
-	tlsCertFile := ""
-	tlsKeyFile := ""
-	tlsCAFile := ""
-	vaultAddr := ""
-	span := ""
-	region := ""
-	useVaultPki := false
-	appDNSRoot := ""
-	deploymentTag := ""
-	accessApiAddr := ""
-	thanosRecvAddr := ""
-	if pfConfig != nil {
-		// Same vault role-id/secret-id as CRM
-		for k, v := range pfConfig.EnvVar {
-			envVars[k] = v
-		}
-		notifyAddr = cloudlet.NotifySrvAddr
-		tlsCertFile = pfConfig.TlsCertFile
-		tlsKeyFile = pfConfig.TlsKeyFile
-		tlsCAFile = pfConfig.TlsCaFile
-		span = pfConfig.Span
-		region = pfConfig.Region
-		useVaultPki = pfConfig.UseVaultPki
-		appDNSRoot = pfConfig.AppDnsRoot
-		deploymentTag = pfConfig.DeploymentTag
-		accessApiAddr = pfConfig.AccessApiAddr
-		thanosRecvAddr = pfConfig.ThanosRecvAddr
-	}
-
-	for envKey, envVal := range cloudlet.EnvVar {
-		envVars[envKey] = envVal
-	}
-
 	opts = append(opts, WithDebug("api,infra,metrics"))
 
-	return &Shepherd{
-		NotifyAddrs: notifyAddr,
+	s := &Shepherd{
+		NotifyAddrs: cloudlet.NotifySrvAddr,
 		CloudletKey: string(cloudletKeyStr),
 		Platform:    cloudlet.PlatformType,
 		Common: Common{
 			Hostname: cloudlet.Key.Name,
-			EnvVars:  envVars,
+			EnvVars:  cloudlet.EnvVar,
 		},
-		NodeCommon: NodeCommon{
-			TLS: TLSCerts{
-				ServerCert: tlsCertFile,
-				ServerKey:  tlsKeyFile,
-				CACert:     tlsCAFile,
-			},
-			VaultAddr:     vaultAddr,
-			UseVaultPki:   useVaultPki,
-			DeploymentTag: deploymentTag,
-			AccessApiAddr: accessApiAddr,
-		},
-		PhysicalName:   cloudlet.PhysicalName,
-		Span:           span,
-		Region:         region,
-		AppDNSRoot:     appDNSRoot,
-		ThanosRecvAddr: thanosRecvAddr,
-	}, opts, nil
+		PhysicalName: cloudlet.PhysicalName,
+	}
+	if pfConfig != nil {
+		if !cloudlet.CrmOnEdge {
+			// shepherd on LB connects directly to Controller, not to CRM
+			s.NotifyAddrs = pfConfig.NotifyCtrlAddrs
+		}
+		s.NodeCommon.TLS.ServerCert = pfConfig.TlsCertFile
+		s.NodeCommon.TLS.ServerKey = pfConfig.TlsKeyFile
+		s.NodeCommon.TLS.CACert = pfConfig.TlsCaFile
+		s.Span = pfConfig.Span
+		s.Region = pfConfig.Region
+		s.NodeCommon.UseVaultPki = pfConfig.UseVaultPki
+		s.AppDNSRoot = pfConfig.AppDnsRoot
+		s.NodeCommon.DeploymentTag = pfConfig.DeploymentTag
+		s.NodeCommon.AccessApiAddr = pfConfig.AccessApiAddr
+		s.ThanosRecvAddr = pfConfig.ThanosRecvAddr
+		for k, v := range pfConfig.EnvVar {
+			if s.Common.EnvVars == nil {
+				s.Common.EnvVars = make(map[string]string)
+			}
+			s.Common.EnvVars[k] = v
+		}
+	}
+	return s, opts, nil
 }
 
 func GetShepherdCmdArgs(cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig) ([]string, *map[string]string, error) {

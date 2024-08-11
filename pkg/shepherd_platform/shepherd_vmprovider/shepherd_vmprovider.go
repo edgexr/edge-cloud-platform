@@ -79,13 +79,7 @@ func (s *ShepherdPlatform) Init(ctx context.Context, pc *platform.PlatformConfig
 	s.platformConfig = pc
 	s.appDNSRoot = pc.AppDNSRoot
 
-	err := s.VMPlatform.VMProperties.CommonPf.InitCloudletSSHKeys(ctx, pc.AccessApi)
-	if err != nil {
-		return err
-	}
-
-	go s.VMPlatform.VMProperties.CommonPf.RefreshCloudletSSHKeys(pc.AccessApi)
-
+	var err error
 	if err = s.VMPlatform.InitProps(ctx, pc); err != nil {
 		return err
 	}

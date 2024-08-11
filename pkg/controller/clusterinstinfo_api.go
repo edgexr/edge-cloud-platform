@@ -18,23 +18,25 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 )
 
 type ClusterInstInfoApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.ClusterInstInfoStore
 }
 
-func NewClusterInstInfoApi(sync *Sync, all *AllApis) *ClusterInstInfoApi {
+func NewClusterInstInfoApi(sync *regiondata.Sync, all *AllApis) *ClusterInstInfoApi {
 	clusterInstInfoApi := ClusterInstInfoApi{}
 	clusterInstInfoApi.all = all
 	clusterInstInfoApi.sync = sync
-	clusterInstInfoApi.store = edgeproto.NewClusterInstInfoStore(sync.store)
+	clusterInstInfoApi.store = edgeproto.NewClusterInstInfoStore(sync.GetKVStore())
 	return &clusterInstInfoApi
 }
 
 func (s *ClusterInstInfoApi) Update(ctx context.Context, in *edgeproto.ClusterInstInfo, rev int64) {
+	in.Fields = edgeproto.ClusterInstInfoAllFields
 	s.all.clusterInstApi.UpdateFromInfo(ctx, in)
 }
 

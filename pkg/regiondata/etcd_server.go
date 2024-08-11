@@ -15,7 +15,7 @@
 // Run Etcd as a child process.
 // May be useful for testing and initial development.
 
-package controller
+package regiondata
 
 import (
 	"fmt"

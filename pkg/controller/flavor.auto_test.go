@@ -154,7 +154,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 	testObj, supportData := dataGen.GetFlavorTestObj()
 	supportData.put(t, ctx, all)
 	defer supportData.delete(t, ctx, all)
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	// Positive test, delete should succeed without any references.
 	// The overrided store checks that delete prepare was set on the
@@ -166,7 +166,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 	// Negative test, inject testObj with delete prepare already set.
 	testObj, _ = dataGen.GetFlavorTestObj()
 	testObj.DeletePrepare = true
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 	// delete should fail with already being deleted
 	testObj, _ = dataGen.GetFlavorTestObj()
 	_, err = api.DeleteFlavor(ctx, testObj)
@@ -177,7 +177,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 
 	// inject testObj for ref tests
 	testObj, _ = dataGen.GetFlavorTestObj()
-	origStore.Put(ctx, testObj, api.sync.syncWait)
+	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
 	{
 		// Negative test, App refers to Flavor.
@@ -185,7 +185,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 		refBy, supportData := dataGen.GetAppDefaultFlavorRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.appApi.store.Put(ctx, refBy, all.appApi.sync.syncWait)
+			all.appApi.store.Put(ctx, refBy, all.appApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetFlavorTestObj()
 		_, err = api.DeleteFlavor(ctx, testObj)
@@ -194,7 +194,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove App obj
-		_, err = all.appApi.store.Delete(ctx, refBy, all.appApi.sync.syncWait)
+		_, err = all.appApi.store.Delete(ctx, refBy, all.appApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from App must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -205,7 +205,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 		refBy, supportData := dataGen.GetAppInstFlavorRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.appInstApi.store.Put(ctx, refBy, all.appInstApi.sync.syncWait)
+			all.appInstApi.store.Put(ctx, refBy, all.appInstApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetFlavorTestObj()
 		_, err = api.DeleteFlavor(ctx, testObj)
@@ -214,7 +214,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove AppInst obj
-		_, err = all.appInstApi.store.Delete(ctx, refBy, all.appInstApi.sync.syncWait)
+		_, err = all.appInstApi.store.Delete(ctx, refBy, all.appInstApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from AppInst must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -225,7 +225,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 		refBy, supportData := dataGen.GetCloudletFlavorRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.cloudletApi.store.Put(ctx, refBy, all.cloudletApi.sync.syncWait)
+			all.cloudletApi.store.Put(ctx, refBy, all.cloudletApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetFlavorTestObj()
 		_, err = api.DeleteFlavor(ctx, testObj)
@@ -234,7 +234,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove Cloudlet obj
-		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.syncWait)
+		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from Cloudlet must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
@@ -245,7 +245,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 		refBy, supportData := dataGen.GetClusterInstFlavorRef(testObj.GetKey())
 		supportData.put(t, ctx, all)
 		deleteStore.putDeletePrepareCb = func() {
-			all.clusterInstApi.store.Put(ctx, refBy, all.clusterInstApi.sync.syncWait)
+			all.clusterInstApi.store.Put(ctx, refBy, all.clusterInstApi.sync.SyncWait)
 		}
 		testObj, _ = dataGen.GetFlavorTestObj()
 		_, err = api.DeleteFlavor(ctx, testObj)
@@ -254,7 +254,7 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 		// check that delete prepare was reset
 		deleteStore.requireUndoDeletePrepare(ctx, testObj)
 		// remove ClusterInst obj
-		_, err = all.clusterInstApi.store.Delete(ctx, refBy, all.clusterInstApi.sync.syncWait)
+		_, err = all.clusterInstApi.store.Delete(ctx, refBy, all.clusterInstApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from ClusterInst must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)

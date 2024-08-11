@@ -14,7 +14,7 @@
 
 // test etcd process
 
-package controller
+package regiondata
 
 import (
 	"context"
@@ -24,10 +24,10 @@ import (
 	"testing"
 	"time"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/stretchr/testify/assert"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 func expectNewRev(t *testing.T, expRev *int64, checkRev int64) {
@@ -322,7 +322,7 @@ func testCalls(t *testing.T, objStore objstore.KVStore) {
 
 func TestEtcdDummy(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelEtcd)
-	dummy := dummyEtcd{}
+	dummy := InMemoryStore{}
 	dummy.Start()
 	testCalls(t, &dummy)
 	dummy.Stop()

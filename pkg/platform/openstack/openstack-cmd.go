@@ -1020,13 +1020,28 @@ func (s *OpenstackPlatform) OSGetAllLimits(ctx context.Context) ([]OSLimit, erro
 }
 
 func (s *OpenstackPlatform) GetFlavorInfo(ctx context.Context) ([]*edgeproto.FlavorInfo, []OSAZone, []OSImage, error) {
-
-	osflavors, err := s.ListFlavors(ctx)
+	finfo, err := s.GetFlavorList(ctx)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get flavors, %v", err.Error())
+		return nil, nil, nil, err
+	}
+	zones, err := s.ListAZones(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	images, err := s.ListImages(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return finfo, zones, images, nil
+}
+
+func (o *OpenstackPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
+	osflavors, err := o.ListFlavors(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get flavors, %v", err.Error())
 	}
 	if len(osflavors) == 0 {
-		return nil, nil, nil, fmt.Errorf("no flavors found")
+		return nil, fmt.Errorf("no flavors found")
 	}
 	var finfo []*edgeproto.FlavorInfo
 	for _, f := range osflavors {
@@ -1040,17 +1055,7 @@ func (s *OpenstackPlatform) GetFlavorInfo(ctx context.Context) ([]*edgeproto.Fla
 				PropMap: f.Properties},
 		)
 	}
-	zones, err := s.ListAZones(ctx)
-	images, err := s.ListImages(ctx)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return finfo, zones, images, nil
-}
-
-func (o *OpenstackPlatform) GetFlavorList(ctx context.Context) ([]*edgeproto.FlavorInfo, error) {
-	fl, _, _, err := o.GetFlavorInfo(ctx)
-	return fl, err
+	return finfo, nil
 }
 
 func (s *OpenstackPlatform) OSGetConsoleUrl(ctx context.Context, serverName string) (*OSConsoleUrl, error) {

@@ -121,14 +121,6 @@ func (k *K8sBareMetalPlatform) InitCommon(ctx context.Context, platformConfig *p
 	k.sharedLBName = platformConfig.RootLBFQDN
 	k.cloudletKubeConfig = k.GetCloudletKubeConfig(platformConfig.CloudletKey)
 
-	if !platformConfig.TestMode {
-		err := k.commonPf.InitCloudletSSHKeys(ctx, platformConfig.AccessApi)
-		if err != nil {
-			return err
-		}
-		go k.commonPf.RefreshCloudletSSHKeys(platformConfig.AccessApi)
-	}
-
 	client, err := k.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: platformConfig.CloudletKey.String(), Type: k8sControlHostNodeType})
 	if err != nil {
 		return err
@@ -144,7 +136,7 @@ func (k *K8sBareMetalPlatform) InitCommon(ctx context.Context, platformConfig *p
 	return nil
 }
 
-func (k *K8sBareMetalPlatform) InitHAConditional(ctx context.Context, platformConfig *platform.PlatformConfig, updateCallback edgeproto.CacheUpdateCallback) error {
+func (k *K8sBareMetalPlatform) InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
 
@@ -235,7 +227,7 @@ func (k *K8sBareMetalPlatform) PerformUpgrades(ctx context.Context, caches *plat
 	return nil
 }
 
-func (k *K8sBareMetalPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, flavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
+func (k *K8sBareMetalPlatform) GetCloudletManifest(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, accessApi platform.AccessApi, flavor *edgeproto.Flavor, caches *platform.Caches) (*edgeproto.CloudletManifest, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Get cloudlet manifest", "cloudletName", cloudlet.Key.Name)
 	return &edgeproto.CloudletManifest{Manifest: "GetCloudletManifest TODO\n" + pfConfig.CrmAccessPrivateKey}, nil
 }

@@ -42,6 +42,7 @@ type SpanConfig struct {
 	NoTracing           bool // special span that only logs to disk
 	SuppressWithoutLogs bool // ignore start, and ignore finish unless span has logs
 	HasLogs             bool
+	NoLogStartFinish    bool // don't write logs for start and finish, used when span is short and only for logging a single message
 }
 
 func (s *SpanConfig) ToOptions() []opentracing.StartSpanOption {
@@ -57,6 +58,9 @@ func (s *SpanConfig) ToOptions() []opentracing.StartSpanOption {
 	}
 	if s.HasLogs {
 		ops = append(ops, WithHasLogs{})
+	}
+	if s.NoLogStartFinish {
+		ops = append(ops, WithNoLogStartFinish{})
 	}
 	return ops
 }
@@ -85,6 +89,8 @@ func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOp
 			span.config.SuppressWithoutLogs = true
 		case WithHasLogs:
 			span.config.HasLogs = true
+		case WithNoLogStartFinish:
+			span.config.NoLogStartFinish = true
 		}
 	}
 	ospan := tracer.StartSpan(operationName, opts...)
@@ -126,7 +132,7 @@ func StartSpan(lvl uint64, operationName string, opts ...opentracing.StartSpanOp
 	}
 	span.SetTag("lineno", lineno)
 
-	if jspan.SpanContext().IsSampled() && !span.config.Suppress && !span.config.SuppressWithoutLogs {
+	if jspan.SpanContext().IsSampled() && !span.config.Suppress && !span.config.SuppressWithoutLogs && !span.config.NoLogStartFinish {
 		spanlogger.Info(getSpanMsg(span, lineno, "start "+operationName))
 	}
 
@@ -276,6 +282,10 @@ func (s *Span) Finish() {
 
 	s.Span.Finish()
 
+	if s.config.NoLogStartFinish {
+		return
+	}
+
 	jspan := s.Span
 	if !jspan.SpanContext().IsSampled() {
 		return
@@ -360,6 +370,12 @@ func (s WithSuppressWithoutLogs) Apply(options *opentracing.StartSpanOptions) {}
 type WithHasLogs struct{}
 
 func (s WithHasLogs) Apply(options *opentracing.StartSpanOptions) {}
+
+// WithNoLogStartFinish suppresses the file log for Start and Finish calls,
+// used for very short spans created just to log a single log.
+type WithNoLogStartFinish struct{}
+
+func (s WithNoLogStartFinish) Apply(options *opentracing.StartSpanOptions) {}
 
 func IgnoreSpanTag(tag string) bool {
 	if tag == "internal.span.format" ||

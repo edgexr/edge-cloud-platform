@@ -21,22 +21,23 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
+	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/sethvargo/go-password/password"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 type CloudletNodeApi struct {
 	all   *AllApis
-	sync  *Sync
+	sync  *regiondata.Sync
 	store edgeproto.CloudletNodeStore
 	cache edgeproto.CloudletNodeCache
 }
 
-func NewCloudletNodeApi(sync *Sync, all *AllApis) *CloudletNodeApi {
+func NewCloudletNodeApi(sync *regiondata.Sync, all *AllApis) *CloudletNodeApi {
 	api := CloudletNodeApi{}
 	api.all = all
 	api.sync = sync
-	api.store = edgeproto.NewCloudletNodeStore(sync.store)
+	api.store = edgeproto.NewCloudletNodeStore(sync.GetKVStore())
 	edgeproto.InitCloudletNodeCache(&api.cache)
 	sync.RegisterCache(&api.cache)
 	return &api
@@ -147,6 +148,6 @@ func (s *CloudletNodeApi) cleanupNodes(ctx context.Context, key *edgeproto.Cloud
 	}
 	s.cache.Mux.Unlock()
 	for _, val := range toDelete {
-		s.store.Delete(ctx, val, s.sync.syncWait)
+		s.store.Delete(ctx, val, s.sync.SyncWait)
 	}
 }
