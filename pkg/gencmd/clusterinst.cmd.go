@@ -665,6 +665,7 @@ var ClusterInstComments = map[string]string{
 	"deleteprepare":                            "Preparing to be deleted",
 	"dnslabel":                                 "DNS label that is unique within the cloudlet and among other AppInsts/ClusterInsts",
 	"fqdn":                                     "FQDN is a globally unique DNS id for the ClusterInst",
+	"staticfqdn":                               "Static startup FQDN is an immutable globally unique name, set when object is created",
 	"enableipv6":                               "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting",
 	"objid":                                    "Universally unique object ID",
 }

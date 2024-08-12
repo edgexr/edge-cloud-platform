@@ -768,7 +768,7 @@ func (v *VMPlatform) GetRootLBClientForClusterInstKey(ctx context.Context, clust
 	}
 	rootLBClients[lbName] = platform.RootLBClient{
 		Client: client,
-		FQDN:   clusterInst.Fqdn,
+		FQDN:   clusterInst.StaticFqdn,
 	}
 	return rootLBClients, nil
 }
@@ -804,7 +804,7 @@ func (v *VMPlatform) GetDedicatedRootLBClients(ctx context.Context) (map[string]
 				}
 				rootLBClients[lbName] = platform.RootLBClient{
 					Client: client,
-					FQDN:   clusterInst.Fqdn,
+					FQDN:   clusterInst.StaticFqdn,
 				}
 			}
 		}

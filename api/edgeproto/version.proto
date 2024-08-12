@@ -35,6 +35,7 @@ enum VersionHash {
   HASH_a61a29cd41f6b7459b05b6f7be6be4ce = 51 [(protogen.upgrade_func) = "CloudletAccessVars"];
   HASH_c2d882033b0c14f28cece41cf4010060 = 52;
   HASH_14ae4c721c1bace6e8379d0061a72a77 = 53 [(protogen.upgrade_func) = "UpgradeCrmOnEdge"];
+  HASH_eff9d3a6c74fd02840efce05d1984e8d = 54 [(protogen.upgrade_func) = "AddStaticFqdn"];
   option (protogen.version_hash) = true;
-  option (protogen.version_hash_salt) = "3";
+  option (protogen.version_hash_salt) = "0";
 }

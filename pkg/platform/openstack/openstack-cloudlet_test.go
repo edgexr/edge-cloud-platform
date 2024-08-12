@@ -241,7 +241,8 @@ func TestOpenstackLive(t *testing.T) {
 			Deployment: cloudcommon.DeploymentTypeDocker,
 			NodeFlavor: flavor,
 			IpAccess:   edgeproto.IpAccess_IP_ACCESS_DEDICATED,
-			Fqdn:       "dockerclustDLB", // becomes rootLB name
+			Fqdn:       "dockerclustDLB",
+			StaticFqdn: "dockerclustDLB", // becomes rootLB name
 			EnableIpv6: false,
 		}
 		err = plat.CreateClusterInst(ctx, dockerClusterInstD, cb, 6*time.Minute)

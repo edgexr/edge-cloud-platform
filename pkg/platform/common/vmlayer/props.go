@@ -386,7 +386,7 @@ func (vp *VMProperties) GetSubnetDNS() string {
 func (vp *VMProperties) GetRootLBNameForCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
 	lbName := vp.SharedRootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		lbName = clusterInst.Fqdn
+		lbName = clusterInst.StaticFqdn
 	}
 	return lbName
 }

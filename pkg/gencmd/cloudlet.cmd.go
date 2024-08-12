@@ -2922,6 +2922,7 @@ var CloudletComments = map[string]string{
 	"secondarynotifysrvaddr":                 "Address for the secondary CRM notify listener to run on",
 	"dnslabel":                               "DNS label that is unique within the region",
 	"rootlbfqdn":                             "Root LB FQDN which is globally unique",
+	"staticrootlbfqdn":                       "Static Root LB FQDN gets set when the object is created and cannot be changed",
 	"federationconfig.federationcontextid":   "Federation context id",
 	"federationconfig.partnerfederationaddr": "Partner federation address",
 	"federationconfig.federationdbid":        "Federation database id",

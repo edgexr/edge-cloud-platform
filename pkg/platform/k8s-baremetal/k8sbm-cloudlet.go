@@ -103,7 +103,7 @@ func (k *K8sBareMetalPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edg
 	}
 
 	updateCallback(edgeproto.UpdateTask, "Deleting Shared RootLB")
-	sharedLbName := cloudlet.RootLbFqdn
+	sharedLbName := cloudlet.StaticRootLbFqdn
 	externalDev := k.GetExternalEthernetInterface()
 	addr, err := infracommon.GetIPAddressFromNetplan(ctx, sshClient, sharedLbName)
 	if err != nil {

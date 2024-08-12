@@ -35,7 +35,7 @@ type VMAccess struct {
 func (v *VMPlatform) GetSSHClientForCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
 	rootLBName := v.VMProperties.SharedRootLBName
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-		rootLBName = clusterInst.Fqdn
+		rootLBName = clusterInst.StaticFqdn
 	}
 	return v.GetSSHClientForServer(ctx, rootLBName, v.VMProperties.GetCloudletExternalNetwork(), pc.WithCachedIp(true))
 }
