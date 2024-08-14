@@ -189,15 +189,12 @@ var (
 		Name:         "testcluster",
 		Organization: "MobiledgeX",
 	}
-	testClusterInstKey = edgeproto.ClusterInstKey{
-		ClusterKey:  testClusterKey,
-		CloudletKey: testCloudletKey,
-	}
 	testClusterInst = edgeproto.ClusterInst{
-		Key:        testClusterInstKey,
-		Deployment: cloudcommon.DeploymentTypeKubernetes,
-		Reservable: true,
-		ReservedBy: testDeveloperOrg,
+		Key:         testClusterKey,
+		Deployment:  cloudcommon.DeploymentTypeKubernetes,
+		Reservable:  true,
+		ReservedBy:  testDeveloperOrg,
+		CloudletKey: testCloudletKey,
 	}
 	testPrometheusApp = edgeproto.App{
 		Key: edgeproto.AppKey{
@@ -211,16 +208,18 @@ var (
 		Key: edgeproto.AppInstKey{
 			Name:         "testprominst",
 			Organization: testPrometheusApp.Key.Organization,
-			CloudletKey:  testClusterInstKey.CloudletKey,
 		},
-		AppKey: testPrometheusApp.Key,
+		AppKey:      testPrometheusApp.Key,
+		CloudletKey: testCloudletKey,
 	}
 	testClusterInstUnsupported = edgeproto.ClusterInst{
-		Key:        testClusterInstKey,
-		Deployment: cloudcommon.DeploymentTypeHelm,
+		Key:         testClusterKey,
+		Deployment:  cloudcommon.DeploymentTypeHelm,
+		CloudletKey: testCloudletKey,
 	}
 	testAppKey = shepherd_common.MetricAppInstKey{
-		ClusterInstKey: testClusterInstKey,
+		ClusterKey:  testClusterKey,
+		CloudletKey: testCloudletKey,
 	}
 )
 
@@ -405,39 +404,39 @@ func TestPromStats(t *testing.T) {
 		Key: edgeproto.AppInstKey{
 			Name:         "testAi1",
 			Organization: "testOrg",
-			CloudletKey:  testClusterInstKey.CloudletKey,
 		},
 		AppKey: edgeproto.AppKey{
 			Name:         "testPod1",
 			Version:      "1.0",
 			Organization: "testOrg",
 		},
+		CloudletKey: testCloudletKey,
 		// backwards compatibility test, uses old app name labels
 	}
 	appInst2 := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
 			Name:         "testAi2",
 			Organization: "testOrg",
-			CloudletKey:  testClusterInstKey.CloudletKey,
 		},
 		AppKey: edgeproto.AppKey{
 			Name:         "testApp2",
 			Version:      "1.0",
 			Organization: "testOrg",
 		},
+		CloudletKey:          testCloudletKey,
 		CompatibilityVersion: cloudcommon.AppInstCompatibilityUniqueNameKey,
 	}
 	appInst3 := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
 			Name:         "testAi3",
 			Organization: "testOrg",
-			CloudletKey:  testClusterInstKey.CloudletKey,
 		},
 		AppKey: edgeproto.AppKey{
 			Name:         "testApp3",
 			Version:      "1.0",
 			Organization: "testOrg",
 		},
+		CloudletKey:          testCloudletKey,
 		CompatibilityVersion: cloudcommon.AppInstCompatibilityUniqueNameKey,
 	}
 	AppInstCache.Update(ctx, &appInst, 0)

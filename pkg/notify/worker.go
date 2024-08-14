@@ -144,7 +144,7 @@ func (s *WorkMgr) AppInstChanged(key *edgeproto.AppInstKey, old *edgeproto.AppIn
 	s.queueWork(TypeAppInst, key, old)
 }
 
-func (s *WorkMgr) ClusterInstChanged(key *edgeproto.ClusterInstKey, old *edgeproto.ClusterInst) {
+func (s *WorkMgr) ClusterInstChanged(key *edgeproto.ClusterKey, old *edgeproto.ClusterInst) {
 	s.queueWork(TypeClusterInst, key, old)
 }
 

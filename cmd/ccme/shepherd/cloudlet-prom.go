@@ -61,9 +61,9 @@ var promTargetT = `
 		"` + edgeproto.AppKeyTagOrganization + `": "{{.AppKey.Organization}}",
 		"` + edgeproto.ClusterKeyTagName + `": "{{.ClusterKey.Name}}",
 		"` + edgeproto.ClusterKeyTagOrganization + `": "{{.ClusterKey.Organization}}",
-		"` + edgeproto.CloudletKeyTagName + `": "{{.Key.CloudletKey.Name}}",
-		"` + edgeproto.CloudletKeyTagOrganization + `": "{{.Key.CloudletKey.Organization}}",
-		"` + edgeproto.CloudletKeyTagFederatedOrganization + `": "{{.Key.CloudletKey.FederatedOrganization}}",
+		"` + edgeproto.CloudletKeyTagName + `": "{{.CloudletKey.Name}}",
+		"` + edgeproto.CloudletKeyTagOrganization + `": "{{.CloudletKey.Organization}}",
+		"` + edgeproto.CloudletKeyTagFederatedOrganization + `": "{{.CloudletKey.FederatedOrganization}}",
 		"__metrics_path__":"{{.EnvoyMetricsPath}}"
 	}
 }`
@@ -111,6 +111,7 @@ type targetData struct {
 	MetricsProxyAddr string
 	Key              edgeproto.AppInstKey
 	ClusterKey       edgeproto.ClusterKey
+	CloudletKey      edgeproto.CloudletKey
 	AppKey           edgeproto.AppKey
 	EnvoyMetricsPath string
 }
@@ -133,7 +134,8 @@ func getAppInstPrometheusTargetString(proxyScrapePoint *ProxyScrapePoint) (strin
 		MetricsProxyAddr: *promTargetAddr,
 		Key:              proxyScrapePoint.Key,
 		AppKey:           proxyScrapePoint.AppKey,
-		ClusterKey:       proxyScrapePoint.ClusterInstKey.ClusterKey,
+		ClusterKey:       proxyScrapePoint.ClusterKey,
+		CloudletKey:      proxyScrapePoint.CloudletKey,
 		EnvoyMetricsPath: "/metrics/" + shepherd_common.GetProxyKey(&proxyScrapePoint.Key),
 	}
 	buf := bytes.Buffer{}
@@ -297,6 +299,14 @@ func getAppInstRulesFileName(ai *edgeproto.AppInstKey) string {
 	return getPrometheusFileName(name)
 }
 
+func getAppInstRulesFileNameCloudletScoped(ai *edgeproto.AppInst) string {
+	// this gets the old filename used by the instance if
+	// it was renamed during upgrade.
+	name := cloudcommon.GetAppInstCloudletScopedName(ai)
+	name = k8smgmt.NormalizeName(name)
+	return getPrometheusFileName(name)
+}
+
 func getPrometheusFileName(name string) string {
 	return "/var/tmp/" + intprocess.PrometheusRulesPrefix + name + ".yml"
 }
@@ -395,6 +405,14 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 
 	log.SpanLog(ctx, log.DebugLevelMetrics, "write rules for AppInst", "AppInst", key)
 
+	if appInst.CompatibilityVersion < cloudcommon.AppInstCompatibilityRegionScopeName {
+		// for backwards compatibility, delete the old rules file.
+		// we can't delete it as part of the delete path, because on the
+		// delete path we don't have the full AppInst object.
+		oldFile := getAppInstRulesFileNameCloudletScoped(&appInst)
+		os.Remove(oldFile)
+	}
+
 	// get any rules for AppInst
 	grps := prommgmt.GroupsData{}
 
@@ -402,9 +420,9 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 		// auto-provisioned AppInst, check policy.
 		policy, found := getAutoProvPolicy(ctx, &appInst, &app)
 		if !found {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "No AutoProvPolicy found", "app", app.Key, "cloudlet", appInst.Key.CloudletKey)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "No AutoProvPolicy found", "app", app.Key, "cloudlet", appInst.CloudletKey)
 		} else {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Apply AutoProvPolicy", "app", app.Key, "cloudlet", appInst.Key.CloudletKey, "policy", policy.Key)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Apply AutoProvPolicy", "app", app.Key, "cloudlet", appInst.CloudletKey, "policy", policy.Key)
 			ruleGrp := autorules.GetAutoUndeployRules(ctx, settings, &appInst.Key, policy)
 			if ruleGrp != nil {
 				grps.Groups = append(grps.Groups, *ruleGrp)
@@ -436,7 +454,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 	}
 	if len(grps.Groups) == 0 {
 		// no rules - rulefile should not exist for this
-		fileName := getAppInstRulesFileName(&appInst.Key)
+		fileName := getAppInstRulesFileName(&key)
 		if err := deleteCloudletPrometheusAlertFile(ctx, fileName); err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to delete prometheus rules", "file", fileName, "err", err)
 		}
@@ -448,7 +466,7 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 		return
 	}
 
-	fileName := getAppInstRulesFileName(&appInst.Key)
+	fileName := getAppInstRulesFileName(&key)
 	err = writeCloudletPrometheusAlerts(ctx, fileName, byt)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to write prometheus rules", "file", fileName, "err", err)

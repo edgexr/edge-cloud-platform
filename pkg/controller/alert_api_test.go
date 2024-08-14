@@ -152,8 +152,8 @@ func TestAppInstDownAlert(t *testing.T) {
 	streamOut := testutil.NewCudStreamoutAppInst(ctx)
 	appinst := testutil.AppInstData()[0]
 	appinst.Key.Name = testutil.AlertData()[3].Labels[edgeproto.AppInstKeyTagName]
-	appinst.Key.CloudletKey = cinst.Key.CloudletKey
-	appinst.ClusterKey = cinst.Key.ClusterKey
+	appinst.CloudletKey = cinst.CloudletKey
+	appinst.ClusterKey = cinst.Key
 	err := apis.appInstApi.CreateAppInst(&appinst, streamOut)
 	require.Nil(t, err, "create AppInst")
 	// Inject AppInst info check that all appInsts are Healthy

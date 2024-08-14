@@ -23,14 +23,9 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/vault"
-	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/oklog/ulid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	context "golang.org/x/net/context"
@@ -44,6 +39,19 @@ func getDbObjectKeys(objStore objstore.KVStore, dbPrefix string) (map[string]str
 		return nil
 	})
 	return keys, err
+}
+
+func getDbObjectKeysList(objStore objstore.KVStore, dbPrefix string) ([]string, error) {
+	keys, err := getDbObjectKeys(objStore, dbPrefix)
+	if err != nil {
+		return nil, err
+	}
+	keyList := []string{}
+	for k := range keys {
+		keyList = append(keyList, k)
+	}
+	sort.Strings(keyList)
+	return keyList, nil
 }
 
 func removeKeyDbPrefix(key, dbPrefix string) string {
@@ -71,8 +79,8 @@ type ClusterInstRefKeyV1 struct {
 
 // New AppInstRefKey is the AppInst Name and Org
 type AppInstRefKeyV1 struct {
-	AppKey         edgeproto.AppKey    `json:"app_key"`
-	ClusterInstKey ClusterInstRefKeyV1 `json:"cluster_inst_key"`
+	AppKey     edgeproto.AppKey    `json:"app_key"`
+	ClusterKey ClusterInstRefKeyV1 `json:"cluster_inst_key"`
 }
 
 type CloudletRefsV1 struct {
@@ -83,461 +91,6 @@ type CloudletRefsV1 struct {
 
 type ClusterRefsV1 struct {
 	Apps []AppInstRefKeyV1 `json:"apps"`
-}
-
-func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
-	log.SpanLog(ctx, log.DebugLevelUpgrade, "AppInstKeyName")
-
-	// Track key refs so we can upgrade references
-	clusterInstKeyRefs := make(map[ClusterInstRefKeyV1]edgeproto.ClusterKey)
-	type ClusterInstV1 struct {
-		Key edgeproto.ClusterInstKeyV1 `json:"key"`
-	}
-	// Upgrade ClusterInst keys
-	clusterInstKeys, err := getDbObjectKeys(objStore, "ClusterInst")
-	if err != nil {
-		return err
-	}
-	for key, _ := range clusterInstKeys {
-		_, err = objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
-			clusterInstStr := stm.Get(key)
-			if clusterInstStr == "" {
-				return nil // was deleted
-			}
-			clusterInst := edgeproto.ClusterInst{}
-			if err2 := unmarshalUpgradeObj(ctx, clusterInstStr, &clusterInst); err2 != nil {
-				return err2
-			}
-			if clusterInst.Key.ClusterKey.Organization == "" {
-				// upgrade to new key. first load old version.
-				v1 := ClusterInstV1{}
-				if err2 := unmarshalUpgradeObj(ctx, clusterInstStr, &v1); err2 != nil {
-					return err2
-				}
-				clusterInst.Key.ClusterKey.Name = v1.Key.ClusterKey.Name
-				clusterInst.Key.ClusterKey.Organization = v1.Key.Organization
-				clusterInst.Key.CloudletKey = v1.Key.CloudletKey
-				stm.Del(key)
-				allApis.clusterInstApi.store.STMPut(stm, &clusterInst)
-			}
-			oldRef := ClusterInstRefKeyV1{}
-			oldRef.ClusterKey.Name = clusterInst.Key.ClusterKey.Name
-			oldRef.Organization = clusterInst.Key.ClusterKey.Organization
-			clusterInstKeyRefs[oldRef] = clusterInst.Key.ClusterKey
-			return nil
-		})
-	}
-
-	// Track key refs so we can upgrade references
-	appInstKeyRefsUpgrade := make(map[AppInstRefKeyV1]edgeproto.AppInstRefKey)
-	appInstKeyRefsCurrent := make(map[edgeproto.AppInstRefKey]struct{})
-	appInstKeyJsonRefsUpgrade := make(map[string]string)
-	appInstKeyJsonRefsCurrent := make(map[string]struct{})
-	type AppInstV1 struct {
-		Key             edgeproto.AppInstKeyV1 `json:"key"`
-		RealClusterName string                 `json:"real_cluster_name"`
-	}
-	// Upgrade AppInst keys
-	appInstKeys, err := getDbObjectKeys(objStore, "AppInst")
-	if err != nil {
-		return err
-	}
-	appInstKeysOrdered := []string{}
-	for appInstKey, _ := range appInstKeys {
-		// in order to have consistent results of unique name
-		// generation for unit tests, the order the instances
-		// are processed in must be consistent, so we sort them.
-		appInstKeysOrdered = append(appInstKeysOrdered, appInstKey)
-	}
-	sort.Strings(appInstKeysOrdered)
-	for _, appInstKey := range appInstKeysOrdered {
-		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
-			appInstStr := stm.Get(appInstKey)
-			if appInstStr == "" {
-				// deleted in the meantime
-				return nil
-			}
-			var appInst edgeproto.AppInst
-			if err2 := unmarshalUpgradeObj(ctx, appInstStr, &appInst); err2 != nil {
-				return err2
-			}
-			appInstKeyNoPrefix := removeKeyDbPrefix(appInstKey, "AppInst")
-			if appInst.Key.Name == "" {
-				// upgrade to new key. first load old version.
-				v1 := AppInstV1{}
-				if err2 := unmarshalUpgradeObj(ctx, appInstStr, &v1); err2 != nil {
-					return err2
-				}
-				appInst.Key.Organization = v1.Key.AppKey.Organization
-				appInst.Key.CloudletKey = v1.Key.ClusterInstKey.CloudletKey
-				appInst.AppKey = v1.Key.AppKey
-				appInst.ClusterKey.Organization = v1.Key.ClusterInstKey.Organization
-				// The "real" cluster name becomes the cluster.
-				// The "virtual" cluster name is no longer
-				// needed because uniqueness is provided by the
-				// AppInst Name. We need to keep the virtual cluster
-				// name around for backwards compatibility, however.
-				if v1.RealClusterName != "" {
-					appInst.ClusterKey.Name = v1.RealClusterName
-					appInst.VirtualClusterKey.Name = v1.Key.ClusterInstKey.ClusterKey.Name
-					appInst.VirtualClusterKey.Organization = v1.Key.ClusterInstKey.Organization
-				} else {
-					appInst.ClusterKey.Name = v1.Key.ClusterInstKey.ClusterKey.Name
-				}
-				clusterName := appInst.VirtualClusterKey.Name
-				if clusterName == "" {
-					clusterName = appInst.ClusterKey.Name
-				}
-				// generate a new name for the AppInst
-				// number of iterations must be low to avoid
-				// STM limits.
-				baseName := appInst.AppKey.Name
-				for ii := 0; ii < 10; ii++ {
-					appInst.Key.Name = baseName
-					if ii > 0 && ii < 7 {
-						appInst.Key.Name += strconv.Itoa(ii)
-					} else if ii == 7 {
-						appInst.Key.Name += "-" + clusterName
-					} else if ii > 7 {
-						// use random suffix
-						suffix := gonanoid.MustGenerate(cloudcommon.IdAlphabetLC, 3)
-						appInst.Key.Name += suffix
-					}
-					if allApis.appInstApi.store.STMHas(stm, &appInst.Key) {
-						// conflict, can't use
-						appInst.Key.Name = ""
-						continue
-					}
-					break
-				}
-				if appInst.Key.Name == "" {
-					return fmt.Errorf("Failed to compute new AppInst Name for %s", v1.Key.GetKeyString())
-				}
-				allApis.appInstApi.store.STMPut(stm, &appInst)
-				stm.Del(appInstKey)
-
-				// fix AppInstRefs, map old to new
-				oldRef := AppInstRefKeyV1{}
-				oldRef.AppKey = appInst.AppKey
-				oldRef.ClusterInstKey.ClusterKey.Name = appInst.ClusterKey.Name
-				oldRef.ClusterInstKey.Organization = appInst.ClusterKey.Organization
-				appInstKeyRefsUpgrade[oldRef] = *appInst.Key.GetRefKey()
-				appInstKeyRefsCurrent[*appInst.Key.GetRefKey()] = struct{}{}
-				// fix AppInstRefs json, map old to new
-				keyJson, err := json.Marshal(appInst.Key)
-				if err != nil {
-					return err
-				}
-				appInstKeyJsonRefsUpgrade[appInstKeyNoPrefix] = string(keyJson)
-			} else {
-				oldRef := AppInstRefKeyV1{}
-				oldRef.AppKey = appInst.AppKey
-				oldRef.ClusterInstKey.ClusterKey.Name = appInst.ClusterKey.Name
-				oldRef.ClusterInstKey.Organization = appInst.ClusterKey.Organization
-				appInstKeyRefsUpgrade[oldRef] = *appInst.Key.GetRefKey()
-				appInstKeyRefsCurrent[*appInst.Key.GetRefKey()] = struct{}{}
-
-				appInstKeyJsonRefsCurrent[appInstKeyNoPrefix] = struct{}{}
-				oldKey := edgeproto.AppInstKeyV1{}
-				oldKey.AppKey = appInst.AppKey
-				oldKey.ClusterInstKey.Organization = appInst.ClusterKey.Organization
-				oldKey.ClusterInstKey.ClusterKey.Name = appInst.VClusterKey().Name
-				oldKey.ClusterInstKey.CloudletKey = appInst.Key.CloudletKey
-				oldKeyJSON, err := json.Marshal(oldKey)
-				if err != nil {
-					return err
-				}
-				appInstKeyJsonRefsUpgrade[string(oldKeyJSON)] = appInstKeyNoPrefix
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	fixAppInstRefs := func(refKey, refType string, refs []edgeproto.AppInstRefKey, refsV1 []AppInstRefKeyV1, updated *bool) error {
-		if len(refs) != len(refsV1) {
-			return fmt.Errorf("%s unexpected %s refs count difference between parsing as new (%d) vs old (%d) format", refKey, refType, len(refs), len(refsV1))
-		}
-		for ii := 0; ii < len(refs); ii++ {
-			oldRef := refsV1[ii]
-			newRef, found := appInstKeyRefsUpgrade[oldRef]
-			if found {
-				refs[ii] = newRef
-				*updated = true
-				continue
-			}
-			curRef := refs[ii]
-			_, found = appInstKeyRefsCurrent[curRef]
-			if !found {
-				return fmt.Errorf("%s %s ref %v not found for either new or old AppInstKeyName versions", refKey, refType, curRef)
-			}
-		}
-		return nil
-	}
-
-	// Fix cloudlet refs
-	cloudletRefsKeys, err := getDbObjectKeys(objStore, "CloudletRefs")
-	if err != nil {
-		return err
-	}
-	for refsKey, _ := range cloudletRefsKeys {
-		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
-			refsStr := stm.Get(refsKey)
-			var refs edgeproto.CloudletRefs
-			if err2 := unmarshalUpgradeObj(ctx, refsStr, &refs); err2 != nil {
-				return err2
-			}
-			var refsV1 CloudletRefsV1
-			if err2 := unmarshalUpgradeObj(ctx, refsStr, &refsV1); err2 != nil {
-				return err2
-			}
-			updated := false
-			if len(refs.ClusterInsts) == len(refsV1.ClusterInsts) {
-				for ii := 0; ii < len(refs.ClusterInsts); ii++ {
-					oldRef := refsV1.ClusterInsts[ii]
-					newRef, found := clusterInstKeyRefs[oldRef]
-					if found {
-						refs.ClusterInsts[ii] = newRef
-						updated = true
-					}
-				}
-			}
-			if err2 := fixAppInstRefs(refsKey, "VmAppInsts", refs.VmAppInsts, refsV1.VmAppInsts, &updated); err != nil {
-				return err2
-			}
-			if err2 := fixAppInstRefs(refsKey, "K8SAppInsts", refs.K8SAppInsts, refsV1.K8SAppInsts, &updated); err != nil {
-				return err2
-			}
-			if updated {
-				allApis.cloudletRefsApi.store.STMPut(stm, &refs)
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	// Fix cluster refs
-	clusterRefsKeys, err := getDbObjectKeys(objStore, "ClusterRefs")
-	if err != nil {
-		return err
-	}
-	for refsKey, _ := range clusterRefsKeys {
-		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
-			refsStr := stm.Get(refsKey)
-			var refs edgeproto.ClusterRefs
-			if err2 := unmarshalUpgradeObj(ctx, refsStr, &refs); err2 != nil {
-				return err2
-			}
-			var refsV1 ClusterRefsV1
-			if err2 := unmarshalUpgradeObj(ctx, refsStr, &refsV1); err2 != nil {
-				return err2
-			}
-			updated := false
-			if err2 := fixAppInstRefs(refsKey, "Apps", refs.Apps, refsV1.Apps, &updated); err != nil {
-				return err2
-			}
-			if updated {
-				allApis.clusterRefsApi.store.STMPut(stm, &refs)
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	// Fix AppInst refs
-	appInstRefsKeys, err := getDbObjectKeys(objStore, "AppInstRefs")
-	if err != nil {
-		return err
-	}
-	fixRefs := func(refsKey string, insts map[string]uint32, updated *bool) error {
-		for k, v := range insts {
-			if _, found := appInstKeyJsonRefsCurrent[k]; found {
-				// already current
-				continue
-			}
-			if newKey, found := appInstKeyJsonRefsUpgrade[k]; found {
-				delete(insts, k)
-				insts[newKey] = v
-				*updated = true
-				continue
-			}
-			log.SpanLog(ctx, log.DebugLevelUpgrade, "appInstKeyJsonRefsCurrent", "map", appInstKeyJsonRefsCurrent)
-			log.SpanLog(ctx, log.DebugLevelUpgrade, "appInstKeyJsonRefsUpgrade", "map", appInstKeyJsonRefsUpgrade)
-			return fmt.Errorf("%s unknown AppInstRef %s", refsKey, k)
-		}
-		return nil
-	}
-	for refsKey, _ := range appInstRefsKeys {
-		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
-			refsStr := stm.Get(refsKey)
-			var refs edgeproto.AppInstRefs
-			if err2 := unmarshalUpgradeObj(ctx, refsStr, &refs); err2 != nil {
-				return err2
-			}
-			updated := false
-			err := fixRefs(refsKey, refs.Insts, &updated)
-			if err != nil {
-				return err
-			}
-			err = fixRefs(refsKey, refs.DeleteRequestedInsts, &updated)
-			if err != nil {
-				return err
-			}
-			if updated {
-				allApis.appInstRefsApi.store.STMPut(stm, &refs)
-			}
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-var validPlatformTypes = map[string]struct{}{
-	platform.PlatformTypeFake:              {},
-	platform.PlatformTypeDind:              {},
-	platform.PlatformTypeOpenstack:         {},
-	platform.PlatformTypeAzure:             {},
-	platform.PlatformTypeGCP:               {},
-	platform.PlatformTypeEdgebox:           {},
-	platform.PlatformTypeFakeInfra:         {},
-	platform.PlatformTypeVSphere:           {},
-	platform.PlatformTypeAWSEKS:            {},
-	platform.PlatformTypeVMPool:            {},
-	platform.PlatformTypeAWSEC2:            {},
-	platform.PlatformTypeVCD:               {},
-	platform.PlatformTypeK8SBareMetal:      {},
-	platform.PlatformTypeKind:              {},
-	platform.PlatformTypeKindInfra:         {},
-	platform.PlatformTypeFakeSingleCluster: {},
-	platform.PlatformTypeFederation:        {},
-	platform.PlatformTypeFakeVMPool:        {},
-	platform.PlatformTypeK8SOperator:       {},
-}
-
-func PlatformType(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
-	log.SpanLog(ctx, log.DebugLevelUpgrade, "PlatformType upgrade")
-
-	// Convert platformtype from enum to string
-	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
-	if err != nil {
-		return err
-	}
-	for cloudletKey, _ := range cloudletKeys {
-		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
-			cloudletStr := stm.Get(cloudletKey)
-			if cloudletStr == "" {
-				// deleted in the meantime
-				return nil
-			}
-			// Platform types were written as a string by the
-			// autogenerated MarshalJSON func for enums. The new
-			// names are exactly these strings, except lower case.
-			cloudlet := edgeproto.Cloudlet{}
-			if err2 := unmarshalUpgradeObj(ctx, cloudletStr, &cloudlet); err2 != nil {
-				return err2
-			}
-			if _, found := validPlatformTypes[cloudlet.PlatformType]; found {
-				// already valid
-				return nil
-			}
-			if cloudlet.PlatformType == "" {
-				// Fake was enum val 0, so was not written out
-				cloudlet.PlatformType = platform.PlatformTypeFake
-			} else {
-				cloudlet.PlatformType = strings.ToLower(cloudlet.PlatformType)
-			}
-			allApis.cloudletApi.store.STMPut(stm, &cloudlet)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func CloudletAccessVars(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
-	log.SpanLog(ctx, log.DebugLevelUpgrade, "CloudletAccessVars upgrade")
-	getOpenstackAccessVarsPath := func(key *edgeproto.CloudletKey, region, physicalName string) string {
-		return fmt.Sprintf("/secret/data/%s/cloudlet/openstack/%s/%s/openrc.json", region, key.Organization, physicalName)
-	}
-	getVCDAccessVarsPath := func(key *edgeproto.CloudletKey, region, physicalName string) string {
-		return fmt.Sprintf("/secret/data/%s/cloudlet/vcd/%s/%s/vcd.json", region, key.Organization, physicalName)
-	}
-
-	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
-	if err != nil {
-		return err
-	}
-	for cloudletKey, _ := range cloudletKeys {
-		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
-			cloudletStr := stm.Get(cloudletKey)
-			if cloudletStr == "" {
-				// deleted in the meantime
-				return nil
-			}
-			cloudlet := edgeproto.Cloudlet{}
-			if err2 := unmarshalUpgradeObj(ctx, cloudletStr, &cloudlet); err2 != nil {
-				return err2
-			}
-			// get old vars path func
-			var oldPathFunc func(key *edgeproto.CloudletKey, region, physicalName string) string
-			if cloudlet.PlatformType == platform.PlatformTypeOpenstack {
-				oldPathFunc = getOpenstackAccessVarsPath
-			} else if cloudlet.PlatformType == platform.PlatformTypeVCD {
-				oldPathFunc = getVCDAccessVarsPath
-			} else {
-				log.SpanLog(ctx, log.DebugLevelUpgrade, "CloudletAccessVars upgrade ignoring platform type", "platformType", cloudlet.PlatformType, "cloudlet", cloudlet.Key)
-				return nil
-			}
-			// check if already converted
-			vars, err2 := accessvars.GetCloudletAccessVars(ctx, sup.region, &cloudlet, sup.vaultConfig)
-			if err2 == nil && len(vars) != 0 {
-				// already converted
-				log.SpanLog(ctx, log.DebugLevelUpgrade, "CloudletAccessVars upgrade already converted", "cloudlet", cloudlet.Key)
-				return nil
-			} else if err2 != nil && !vault.IsErrNoSecretsAtPath(err2) {
-				return err2
-			}
-			// get old vars
-			oldPath := oldPathFunc(&cloudlet.Key, sup.region, cloudlet.PhysicalName)
-			vars, err2 = infracommon.GetEnvVarsFromVault(ctx, sup.vaultConfig, oldPath)
-			if vault.IsErrNoSecretsAtPath(err2) {
-				// no secrets to convert
-				log.SpanLog(ctx, log.DebugLevelUpgrade, "CloudletAccessVars upgrade no secrets to convert", "cloudlet", cloudlet.Key, "path", oldPath)
-				return nil
-			}
-			if err != nil {
-				return err2
-			}
-			if len(vars) == 0 {
-				// no vars for cloudlet, skip it
-				log.SpanLog(ctx, log.DebugLevelUpgrade, "CloudletAccessVars upgrade no vars, skipping", "cloudlet", cloudlet.Key, "path", oldPath)
-				return nil
-			}
-			// write to new path
-			err2 = accessvars.SaveCloudletAccessVars(ctx, sup.region, &cloudlet, sup.vaultConfig, vars, nil)
-			if err2 != nil {
-				return err2
-			}
-			log.SpanLog(ctx, log.DebugLevelUpgrade, "CloudletAccessVars upgraded", "cloudlet", cloudlet.Key)
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func AddStaticFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
@@ -579,14 +132,26 @@ func AddStaticFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllA
 			if clusterInstStr == "" {
 				return nil
 			}
-			cluster := edgeproto.ClusterInst{}
-			if err2 := unmarshalUpgradeObj(ctx, clusterInstStr, &cluster); err2 != nil {
-				return err2
+			// Note that we cannot use edgeproto.ClusterInst because
+			// it has changed in later versions.
+			data := map[string]any{}
+			err := json.Unmarshal([]byte(clusterInstStr), &data)
+			if err != nil {
+				return err
 			}
-			if cluster.StaticFqdn == "" {
-				cluster.StaticFqdn = cluster.Fqdn
-				allApis.clusterInstApi.store.STMPut(stm, &cluster)
+			if fqdn, ok := data["static_fqdn"]; ok && fqdn != "" {
+				// already upgraded
+				return nil
 			}
+			if _, ok := data["fqdn"]; !ok {
+				return nil // no fqdn to copy in
+			}
+			data["static_fqdn"] = data["fqdn"]
+			out, err := json.Marshal(&data)
+			if err != nil {
+				return err
+			}
+			stm.Put(clusterKey, string(out))
 			return nil
 		})
 		if err != nil {
@@ -604,14 +169,26 @@ func AddStaticFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllA
 			if appInstString == "" {
 				return nil
 			}
-			appInst := edgeproto.AppInst{}
-			if err2 := unmarshalUpgradeObj(ctx, appInstString, &appInst); err2 != nil {
-				return err2
+			// Note that we cannot use edgeproto.ClusterInst because
+			// it has changed in later versions.
+			data := map[string]any{}
+			err := json.Unmarshal([]byte(appInstString), &data)
+			if err != nil {
+				return err
 			}
-			if appInst.StaticUri == "" {
-				appInst.StaticUri = appInst.Uri
-				allApis.appInstApi.store.STMPut(stm, &appInst)
+			if uri, ok := data["static_uri"]; ok && uri != "" {
+				// already upgraded
+				return nil
 			}
+			if _, ok := data["uri"]; !ok {
+				return nil // no uri to copy in
+			}
+			data["static_uri"] = data["uri"]
+			out, err := json.Marshal(&data)
+			if err != nil {
+				return err
+			}
+			stm.Put(appInstKey, string(out))
 			return nil
 		})
 		if err != nil {
@@ -667,16 +244,23 @@ func UpgradeCrmOnEdge(ctx context.Context, objStore objstore.KVStore, allApis *A
 				// deleted in the meantime
 				return nil
 			}
-			var appInst edgeproto.AppInst
-			if err2 := unmarshalUpgradeObj(ctx, appInstStr, &appInst); err2 != nil {
-				return err2
+			// Note that we cannot use edgeproto.AppInst because
+			// it has changed in later versions.
+			data := map[string]any{}
+			err := json.Unmarshal([]byte(appInstStr), &data)
+			if err != nil {
+				return err
 			}
-			if appInst.ObjId == "" {
+			if _, ok := data["obj_id"]; ok {
 				// already upgraded
 				return nil
 			}
-			appInst.ObjId = ulid.Make().String()
-			allApis.appInstApi.store.STMPut(stm, &appInst)
+			data["obj_id"] = ulid.Make().String()
+			out, err := json.Marshal(data)
+			if err != nil {
+				return err
+			}
+			stm.Put(appInstKey, string(out))
 			return nil
 		})
 		if err != nil {
@@ -685,13 +269,168 @@ func UpgradeCrmOnEdge(ctx context.Context, objStore objstore.KVStore, allApis *A
 	}
 
 	// Upgrade ClusterInst keys
-	clusterInstKeys, err := getDbObjectKeys(objStore, "ClusterInst")
+	clusterKeys, err := getDbObjectKeys(objStore, "ClusterInst")
 	if err != nil {
 		return err
 	}
-	for key, _ := range clusterInstKeys {
+	for key, _ := range clusterKeys {
 		_, err = objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
 			clusterInstStr := stm.Get(key)
+			if clusterInstStr == "" {
+				return nil // was deleted
+			}
+			// Note that we cannot use edgeproto.AppInst because
+			// it has changed in later versions.
+			data := map[string]any{}
+			err := json.Unmarshal([]byte(clusterInstStr), &data)
+			if err != nil {
+				return err
+			}
+			if _, ok := data["obj_id"]; ok {
+				// already upgraded
+				return nil
+			}
+			data["obj_id"] = ulid.Make().String()
+			out, err := json.Marshal(data)
+			if err != nil {
+				return err
+			}
+			stm.Put(key, string(out))
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// InstanceKeysRegionScopedName deals with moving the CloudletKey out
+// of the AppInst/ClusterInst Key and onto the object body, changing
+// the unique key. Also, this requires the instance name to be unique
+// within the entire region instead of within a cloudlet scope.
+func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
+	// Unfortunately the last upgrade func had a bug which failed to
+	// asign object IDs to AppInsts and ClusterInsts. We run the fixed
+	// version here again. Note that all upgrade functions must be idempotent.
+	err := UpgradeCrmOnEdge(ctx, objStore, allApis, sup)
+	if err != nil {
+		return err
+	}
+
+	// We may rename some ClusterInst and AppInst key names.
+	// We need to track what the new names are, because there
+	// are two objects that use the same key, i.e. ClusterInst and
+	// ClusterInstInfo, or there are references by name, i.e.
+	// CloudletRefs/ClusterRefs/AppInstRefs. Whatever renaming is
+	// done for one must match for the others.
+	ciUpdatedNames := map[edgeproto.ClusterInstKeyV2]edgeproto.ClusterKey{}
+	aiUpdatedNames := map[edgeproto.AppInstKeyV2]edgeproto.AppInstKey{}
+	trackCIName := func(clusterInst *edgeproto.ClusterInst) {
+		v2 := edgeproto.ClusterInstKeyV2{
+			ClusterKey:  clusterInst.Key,
+			CloudletKey: clusterInst.CloudletKey,
+		}
+		// get old name
+		v2.ClusterKey.Name = cloudcommon.GetClusterInstCloudletScopedName(clusterInst)
+		ciUpdatedNames[v2] = clusterInst.Key
+	}
+	trackAIName := func(appInst *edgeproto.AppInst) {
+		v2 := edgeproto.AppInstKeyV2{
+			Name:         appInst.Key.Name,
+			Organization: appInst.Key.Organization,
+			CloudletKey:  appInst.CloudletKey,
+		}
+		// get old name
+		v2.Name = cloudcommon.GetAppInstCloudletScopedName(appInst)
+		aiUpdatedNames[v2] = appInst.Key
+	}
+
+	// in order to have consistent results of unique name
+	// generation for unit tests, the order of the instances
+	// is sorted for determinism.
+	appInstKeys, err := getDbObjectKeysList(objStore, "AppInst")
+	if err != nil {
+		return err
+	}
+	for _, appInstKey := range appInstKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			appInstStr := stm.Get(appInstKey)
+			if appInstStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			var appInst edgeproto.AppInst
+			if err2 := unmarshalUpgradeObj(ctx, appInstStr, &appInst); err2 != nil {
+				return err2
+			}
+			// move cloudlet key info to appInst body
+			err := edgeproto.BindJSONAppInstV2(&appInst, []byte(appInstStr))
+			if err != nil {
+				return err
+			}
+
+			if !strings.Contains(appInstStr, `"cloudlet_key":{`) {
+				// already upgraded, just track name transformation
+				trackAIName(&appInst)
+				return nil
+			}
+
+			// Check for conflicts due to the scope of the name changing.
+			// We may need to calculate a new name. Number of iterations must
+			// be low to avoid STM limits.
+			for ii := 0; ii < 7; ii++ {
+				buf := edgeproto.AppInst{}
+				buf.Key = appInst.Key
+				if ii > 0 && ii < 6 {
+					buf.Key.Name += strconv.Itoa(ii)
+				} else if ii == 6 {
+					// append cloudlet hash, this should work because
+					// the old name was unique in the scope of the cloudlet.
+					buf.Key.Name += "-" + cloudcommon.GetCloudletKeyHash(&appInst.CloudletKey)
+				}
+				if allApis.appInstApi.store.STMGet(stm, &buf.Key, &buf) {
+					if appInst.ObjId == buf.ObjId {
+						// same object, another process already upgraded it
+						trackAIName(&buf)
+						return nil
+					}
+					// conflict, try again
+					continue
+				}
+				// no conflict
+				if appInst.Key.Name != buf.Key.Name {
+					// save old name to annotations
+					if appInst.Annotations == nil {
+						appInst.Annotations = map[string]string{}
+					}
+					appInst.Annotations[cloudcommon.AnnotationCloudletScopedName] = appInst.Key.Name
+				}
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "update old AppInst", "oldkey", appInst.Key, "newName", buf.Key.Name, "cloudlet", appInst.CloudletKey)
+				// set new name, save new obj, delete old obj
+				appInst.Key.Name = buf.Key.Name
+				allApis.appInstApi.store.STMPut(stm, &appInst)
+				stm.Del(appInstKey)
+				trackAIName(&appInst)
+				return nil
+			}
+			return fmt.Errorf("failed to upgrade AppInst %s on Cloudlet %s, unable to assign new non-conflicting name", appInst.Key.GetKeyString(), appInst.CloudletKey.GetKeyString())
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// in order to have consistent results of unique name
+	// generation for unit tests, the order of the instances
+	// is sorted for determinism.
+	clusterKeys, err := getDbObjectKeysList(objStore, "ClusterInst")
+	if err != nil {
+		return err
+	}
+	for _, clusterKey := range clusterKeys {
+		_, err = objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			clusterInstStr := stm.Get(clusterKey)
 			if clusterInstStr == "" {
 				return nil // was deleted
 			}
@@ -699,12 +438,218 @@ func UpgradeCrmOnEdge(ctx context.Context, objStore objstore.KVStore, allApis *A
 			if err2 := unmarshalUpgradeObj(ctx, clusterInstStr, &clusterInst); err2 != nil {
 				return err2
 			}
-			if clusterInst.ObjId == "" {
-				// already upgraded
+			// move cloudlet key info to clusterInst body
+			err := edgeproto.BindJSONClusterInstV2(&clusterInst, []byte(clusterInstStr))
+			if err != nil {
+				return err
+			}
+
+			if !strings.Contains(clusterInstStr, `"cloudlet_key":{`) {
+				// already upgraded, just track name transformation
+				trackCIName(&clusterInst)
 				return nil
 			}
-			clusterInst.ObjId = ulid.Make().String()
-			allApis.clusterInstApi.store.STMPut(stm, &clusterInst)
+
+			// Check for conflicts due to the scope of the name changing.
+			// We may need to calculate a new name. Number of iterations must
+			// be low to avoid STM limits.
+			for ii := 0; ii < 7; ii++ {
+				buf := edgeproto.ClusterInst{}
+				buf.Key = clusterInst.Key
+				if ii > 0 && ii < 6 {
+					buf.Key.Name += strconv.Itoa(ii)
+				} else if ii == 6 {
+					// append cloudlet hash, this should work because
+					// the old name was unique in the scope of the cloudlet.
+					buf.Key.Name += "-" + cloudcommon.GetCloudletKeyHash(&clusterInst.CloudletKey)
+				}
+				if allApis.clusterInstApi.store.STMGet(stm, &buf.Key, &buf) {
+					if clusterInst.ObjId == buf.ObjId {
+						// same object, another process already upgraded it
+						trackCIName(&buf)
+						return nil
+					}
+					// conflict, try again
+					continue
+				}
+				// no conflict
+				if clusterInst.Key.Name != buf.Key.Name {
+					// save old name to annotations
+					if clusterInst.Annotations == nil {
+						clusterInst.Annotations = map[string]string{}
+					}
+					clusterInst.Annotations[cloudcommon.AnnotationCloudletScopedName] = clusterInst.Key.Name
+				}
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "update old ClusterInst", "oldkey", clusterInst.Key, "newName", buf.Key.Name, "cloudlet", clusterInst.CloudletKey)
+				// set new name, save new obj, delete old obj
+				clusterInst.Key.Name = buf.Key.Name
+				allApis.clusterInstApi.store.STMPut(stm, &clusterInst)
+				stm.Del(clusterKey)
+				trackCIName(&clusterInst)
+				return nil
+			}
+			return fmt.Errorf("failed to upgrade AppInst %s on Cloudlet %s, unable to assign new non-conflicting name", clusterInst.Key.GetKeyString(), clusterInst.CloudletKey.GetKeyString())
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	cloudletRefsKeys, err := getDbObjectKeysList(objStore, "CloudletRefs")
+	if err != nil {
+		return err
+	}
+	for _, cloudletRefsKey := range cloudletRefsKeys {
+		_, err = objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			cloudletRefsStr := stm.Get(cloudletRefsKey)
+			if cloudletRefsStr == "" {
+				return nil // was deleted
+			}
+			refs := edgeproto.CloudletRefs{}
+			if err2 := unmarshalUpgradeObj(ctx, cloudletRefsStr, &refs); err2 != nil {
+				return err2
+			}
+			updated := false
+			// update ClusterInsts from ClusterInstKeyV2 to ClusterKey
+			for ii, cikey := range refs.ClusterInsts {
+				v2 := edgeproto.ClusterInstKeyV2{
+					ClusterKey:  cikey,
+					CloudletKey: refs.Key,
+				}
+				if newKey, ok := ciUpdatedNames[v2]; ok && !newKey.Matches(&cikey) {
+					refs.ClusterInsts[ii] = newKey
+					updated = true
+				}
+			}
+			// update VmAppInsts from AppInstKeyV2 to AppInstKey
+			for ii, aikey := range refs.VmAppInsts {
+				v2 := edgeproto.AppInstKeyV2{
+					Name:         aikey.Name,
+					Organization: aikey.Organization,
+					CloudletKey:  refs.Key,
+				}
+				if newKey, ok := aiUpdatedNames[v2]; ok && !newKey.Matches(&aikey) {
+					refs.VmAppInsts[ii] = newKey
+					updated = true
+				}
+			}
+			// update K8SAppInsts from AppInstKeyV2 to AppInstKey
+			for ii, aikey := range refs.K8SAppInsts {
+				v2 := edgeproto.AppInstKeyV2{
+					Name:         aikey.Name,
+					Organization: aikey.Organization,
+					CloudletKey:  refs.Key,
+				}
+				if newKey, ok := aiUpdatedNames[v2]; ok && !newKey.Matches(&aikey) {
+					refs.K8SAppInsts[ii] = newKey
+					updated = true
+				}
+			}
+			if !updated {
+				return nil
+			}
+			allApis.cloudletRefsApi.store.STMPut(stm, &refs)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	clusterRefsKeys, err := getDbObjectKeysList(objStore, "ClusterRefs")
+	if err != nil {
+		return err
+	}
+	for _, clusterRefsKey := range clusterRefsKeys {
+		if !strings.Contains(clusterRefsKey, `"cloudlet_key":{`) {
+			// not the old version
+			continue
+		}
+		_, err = objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			clusterRefsStr := stm.Get(clusterRefsKey)
+			if clusterRefsStr == "" {
+				return nil // was deleted
+			}
+			refs := edgeproto.ClusterRefs{}
+			if err2 := unmarshalUpgradeObj(ctx, clusterRefsStr, &refs); err2 != nil {
+				return err2
+			}
+			// update key from ClusterInstKeyV2 to ClusterKey
+			cloudletKey, err := edgeproto.BindJSONClusterRefsV2(&refs, []byte(clusterRefsStr))
+			if err != nil {
+				return err
+			}
+			if cloudletKey == nil {
+				// shouldn't happen, as cloudletKey info is in key
+				return fmt.Errorf("no cloudletKey info found for old key %s", clusterRefsKey)
+			}
+			// update key if renamed
+			v2 := edgeproto.ClusterInstKeyV2{
+				ClusterKey:  refs.Key,
+				CloudletKey: *cloudletKey,
+			}
+			if newKey, ok := ciUpdatedNames[v2]; ok && !newKey.Matches(&refs.Key) {
+				refs.Key = newKey
+			}
+			// update Apps refs from AppInstKeyV2 to AppInstKey
+			for ii, aikey := range refs.Apps {
+				v2 := edgeproto.AppInstKeyV2{
+					Name:         aikey.Name,
+					Organization: aikey.Organization,
+					CloudletKey:  *cloudletKey,
+				}
+				if newKey, ok := aiUpdatedNames[v2]; ok && !newKey.Matches(&aikey) {
+					refs.Apps[ii] = newKey
+				}
+			}
+			allApis.clusterRefsApi.store.STMPut(stm, &refs)
+			stm.Del(clusterRefsKey)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	appInstRefsKeys, err := getDbObjectKeysList(objStore, "AppInstRefs")
+	if err != nil {
+		return err
+	}
+	for _, key := range appInstRefsKeys {
+		_, err = objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			appInstRefsStr := stm.Get(key)
+			if appInstRefsStr == "" {
+				return nil // was deleted
+			}
+			refs := edgeproto.AppInstRefs{}
+			if err2 := unmarshalUpgradeObj(ctx, appInstRefsStr, &refs); err2 != nil {
+				return err2
+			}
+			// update insts refs from AppInstKeyV2 to AppInstKey
+			updated := false
+			for str, val := range refs.Insts {
+				key, v2, err := edgeproto.BindJSONAppInstKeyV2([]byte(str))
+				if err != nil {
+					return err
+				}
+				if v2 == nil {
+					// already upgraded
+					continue
+				}
+				if newKey, ok := aiUpdatedNames[*v2]; ok && !newKey.Matches(key) {
+					newStr, err := json.Marshal(newKey)
+					if err != nil {
+						return err
+					}
+					refs.Insts[string(newStr)] = val
+					delete(refs.Insts, str)
+					updated = true
+				}
+			}
+			if !updated {
+				return nil
+			}
+			allApis.appInstRefsApi.store.STMPut(stm, &refs)
 			return nil
 		})
 		if err != nil {

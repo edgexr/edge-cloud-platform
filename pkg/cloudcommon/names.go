@@ -15,9 +15,11 @@
 package cloudcommon
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -250,6 +252,10 @@ const (
 	HEALTH_CHECK_OK   InstanceEvent = "HEALTH_CHECK_OK"
 	RESERVED          InstanceEvent = "RESERVED"
 	UNRESERVED        InstanceEvent = "UNRESERVED"
+)
+
+const (
+	AnnotationCloudletScopedName = "cloudlet-scoped-name"
 )
 
 var InstanceUp = "UP"
@@ -587,4 +593,91 @@ func (s *AppInstLabelsOld) Map() map[string]string {
 func (s *AppInstLabelsOld) FromMap(labels map[string]string) {
 	s.AppNameLabel = labels[MexAppNameLabel]
 	s.AppVersionLabel = labels[MexAppVersionLabel]
+}
+
+// GetCloudletKeyHash returns a short hash of the cloudlet key to allow
+// for a deterministic string representing the cloudlet, that does not
+// reveal the cloudlet name (which would likely reveal its location).
+func GetCloudletKeyHash(key *edgeproto.CloudletKey) string {
+	cname := key.Name + "::" + key.Organization
+	h := sha256.New()
+	h.Write([]byte(cname))
+	bytesum := h.Sum(nil)
+	strsum := fmt.Sprintf("%x", bytesum)
+	num := len(strsum)
+	if num > 8 {
+		num = 8
+	}
+	return strsum[:num]
+}
+
+func BuildReservableClusterName(id int, cloudletKey *edgeproto.CloudletKey) string {
+	// name must be unique within the region
+	// append hash to conceal cloudlet name from developers
+	return fmt.Sprintf("%s%d-%s", ReservableClusterPrefix, id, GetCloudletKeyHash(cloudletKey))
+}
+
+func ParseReservableClusterName(name string) (int, string, error) {
+	idAndHash := strings.TrimPrefix(name, ReservableClusterPrefix)
+	parts := strings.Split(idAndHash, "-")
+	id, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, "", fmt.Errorf("parse reservable cluster name failed to extract numeric id %s from %s, %s", parts[0], name, err)
+	}
+	return id, parts[1], nil
+}
+
+func GetDefaultMTClustKey(cloudletKey edgeproto.CloudletKey) *edgeproto.ClusterKey {
+	// name must be unique within the region
+	// append hash to conceal cloudlet name from developers
+	return &edgeproto.ClusterKey{
+		Name:         DefaultMultiTenantCluster + "-" + GetCloudletKeyHash(&cloudletKey),
+		Organization: edgeproto.OrganizationEdgeCloud,
+	}
+}
+
+func GetDefaultClustKey(cloudletKey edgeproto.CloudletKey, ownerOrg string) *edgeproto.ClusterKey {
+	// name must be unique within the region
+	// append hash to conceal cloudlet name from developers
+	if ownerOrg == "" {
+		ownerOrg = edgeproto.OrganizationEdgeCloud
+	}
+	return &edgeproto.ClusterKey{
+		Name:         DefaultClust + "-" + GetCloudletKeyHash(&cloudletKey),
+		Organization: ownerOrg,
+	}
+}
+
+func IsDefaultClustKey(clusterKey edgeproto.ClusterKey, cloudletKey edgeproto.CloudletKey) bool {
+	if clusterKey.Organization == edgeproto.OrganizationEdgeCloud && strings.HasPrefix(clusterKey.Name, DefaultClust) {
+		parts := strings.Split(clusterKey.Name, "-")
+		if parts[1] == GetCloudletKeyHash(&cloudletKey) {
+			return true
+		}
+	}
+	return false
+}
+
+// GetAppInstCloudletScopedName gets the previous key name that was scoped
+// to the cloudlet, if it exists. The current name is scoped to the region
+// and may have been renamed on upgrade.
+func GetAppInstCloudletScopedName(appInst *edgeproto.AppInst) string {
+	if appInst.Annotations != nil {
+		if n, ok := appInst.Annotations[AnnotationCloudletScopedName]; ok && n != "" {
+			return n
+		}
+	}
+	return appInst.Key.Name
+}
+
+// GetClusterInstCloudletScopedName gets the previous key name that was scoped
+// to the cloudlet, if it exists. The current name is scoped to the region
+// and may have been renamed on upgrade.
+func GetClusterInstCloudletScopedName(clusterInst *edgeproto.ClusterInst) string {
+	if clusterInst.Annotations != nil {
+		if n, ok := clusterInst.Annotations[AnnotationCloudletScopedName]; ok && n != "" {
+			return n
+		}
+	}
+	return clusterInst.Key.Name
 }

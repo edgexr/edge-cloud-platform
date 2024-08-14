@@ -61,6 +61,21 @@ message AppInstKeyV1 {
   option (gogoproto.gostring) = true;
 }
 
+// (_deprecated_) App Instance Unique Key V2
+//
+// AppInstKey uniquely identifies an Application Instance (AppInst) or Application Instance state (AppInstInfo).
+message AppInstKeyV2 {
+  // App Instance name
+  string name = 1 [(protogen.keytag) = "appinstv2"];
+  // App Instance organization
+  string organization = 2 [(protogen.keytag) = "appinstv2org"];
+  // Name of Cloudlet on which to deploy the App Instance
+  CloudletKey cloudlet_key = 3 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+}
+
 // App Instance Unique Key
 //
 // AppInstKey uniquely identifies an Application Instance (AppInst) or Application Instance state (AppInstInfo).
@@ -69,8 +84,6 @@ message AppInstKey {
   string name = 1 [(protogen.keytag) = "appinst"];
   // App Instance organization
   string organization = 2 [(protogen.keytag) = "appinstorg"];
-  // Name of Cloudlet on which to deploy the App Instance
-  CloudletKey cloudlet_key = 3 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
   option (protogen.generate_matches) = true;
   option (protogen.obj_key) = true;
   option (gogoproto.gostring) = true;
@@ -130,6 +143,8 @@ message AppInst {
   AppKey app_key = 44 [(gogoproto.nullable) = false, (protogen.refers_to) = "App"];
   // Cluster on which to deploy App Instance, may be left blank for auto-placement
   ClusterKey cluster_key = 45 [(gogoproto.nullable) = false, (protogen.refers_to) = "ClusterInst"];
+  // Cloudlet on which the instance is deployed
+  CloudletKey cloudlet_key = 51 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
   // Cached location of the cloudlet
   distributed_match_engine.Loc cloudlet_loc = 3 [(gogoproto.nullable) = false];
   // Base FQDN (not really URI) for the App. See Service FQDN for endpoint access.
@@ -207,6 +222,8 @@ message AppInst {
   bool enable_ipv6 = 48;
   // Universally unique object ID
   string obj_id = 49 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Annotations
+  map<string, string> annotations = 52;
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;
@@ -217,9 +234,9 @@ message AppInst {
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_filter_cloudlet_key) = true;
   option (protogen.noconfig) = "CloudletLoc,Uri,StaticUri,MappedPorts,Liveness,CreatedAt,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,InternalPortToLbIp,UniqueId,DnsLabel,FedKey,AppKey.Organization,CompatibilityVersion,VirtualClusterKey";
-  option (protogen.alias) = "appinstname=Key.Name,appinstorg=Key.Organization,appname=AppKey.Name,appvers=AppKey.Version,cloudlet=Key.CloudletKey.Name,cloudletorg=Key.CloudletKey.Organization,federatedorg=Key.CloudletKey.FederatedOrganization,cluster=ClusterKey.Name,clusterorg=ClusterKey.Organization,flavor=Flavor.Name";
+  option (protogen.alias) = "appinstname=Key.Name,appinstorg=Key.Organization,appname=AppKey.Name,appvers=AppKey.Version,cloudlet=CloudletKey.Name,cloudletorg=CloudletKey.Organization,federatedorg=CloudletKey.FederatedOrganization,cluster=ClusterKey.Name,clusterorg=ClusterKey.Organization,flavor=Flavor.Name";
   option (protogen.mc2_target_cloudlet) = "Key.CloudletKey";
-  option (protogen.uses_org) = "key=Organization,key=CloudletKey.Organization";
+  option (protogen.uses_org) = "key=Organization,val=CloudletKey.Organization";
 }
 
 // AppInst Runtime Info
@@ -275,7 +292,7 @@ service AppInstApi {
     };
     option (protogen.stream_out_incremental) = true;
     option (protogen.mc2_api) = "ResourceAppInsts,ActionManage,Key.Organization";
-    option (protogen.method_noconfig) = "Flavor,AutoClusterIpAccess,UpdateMultiple,ForceUpdate,HealthCheck,SharedVolumeSize,VmFlavor,AppKey,ClusterKey";
+    option (protogen.method_noconfig) = "Flavor,AutoClusterIpAccess,UpdateMultiple,ForceUpdate,HealthCheck,SharedVolumeSize,VmFlavor,AppKey,ClusterKey,CloudletKey";
   }
   // Show Application Instances. Lists all the Application instances managed by the Edge Controller.
   // Any fields specified will be used to filter results.

@@ -63,19 +63,19 @@ func (r *Run) StreamObjApi_CloudletKey(data *[]edgeproto.CloudletKey, dataMap in
 	}
 }
 
-func (r *Run) StreamObjApi_ClusterInstKey(data *[]edgeproto.ClusterInstKey, dataMap interface{}, dataOut interface{}) {
-	log.DebugLog(log.DebugLevelApi, "API for ClusterInstKey", "mode", r.Mode)
+func (r *Run) StreamObjApi_ClusterKey(data *[]edgeproto.ClusterKey, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for ClusterKey", "mode", r.Mode)
 	for ii, objD := range *data {
 		obj := &objD
 		switch r.Mode {
 		case "streamclusterinst":
 			out, err := r.client.StreamClusterInst(r.ctx, obj)
 			if err != nil {
-				r.logErr(fmt.Sprintf("StreamObjApi_ClusterInstKey[%d]", ii), err)
+				r.logErr(fmt.Sprintf("StreamObjApi_ClusterKey[%d]", ii), err)
 			} else {
 				outp, ok := dataOut.(*[][]edgeproto.Result)
 				if !ok {
-					panic(fmt.Sprintf("RunStreamObjApi_ClusterInstKey expected dataOut type *[][]edgeproto.Result, but was %T", dataOut))
+					panic(fmt.Sprintf("RunStreamObjApi_ClusterKey expected dataOut type *[][]edgeproto.Result, but was %T", dataOut))
 				}
 				*outp = append(*outp, out)
 			}
@@ -119,7 +119,7 @@ func (s *CliClient) StreamAppInst(ctx context.Context, in *edgeproto.AppInstKey)
 	return output, err
 }
 
-func (s *ApiClient) StreamClusterInst(ctx context.Context, in *edgeproto.ClusterInstKey) ([]edgeproto.Result, error) {
+func (s *ApiClient) StreamClusterInst(ctx context.Context, in *edgeproto.ClusterKey) ([]edgeproto.Result, error) {
 	api := edgeproto.NewStreamObjApiClient(s.Conn)
 	stream, err := api.StreamClusterInst(ctx, in)
 	if err != nil {
@@ -128,7 +128,7 @@ func (s *ApiClient) StreamClusterInst(ctx context.Context, in *edgeproto.Cluster
 	return ResultReadStream(stream)
 }
 
-func (s *CliClient) StreamClusterInst(ctx context.Context, in *edgeproto.ClusterInstKey) ([]edgeproto.Result, error) {
+func (s *CliClient) StreamClusterInst(ctx context.Context, in *edgeproto.ClusterKey) ([]edgeproto.Result, error) {
 	output := []edgeproto.Result{}
 	args := append(s.BaseArgs, "controller", "StreamClusterInst")
 	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
@@ -169,7 +169,7 @@ func (s *CliClient) StreamGPUDriver(ctx context.Context, in *edgeproto.GPUDriver
 
 type StreamObjApiClient interface {
 	StreamAppInst(ctx context.Context, in *edgeproto.AppInstKey) ([]edgeproto.Result, error)
-	StreamClusterInst(ctx context.Context, in *edgeproto.ClusterInstKey) ([]edgeproto.Result, error)
+	StreamClusterInst(ctx context.Context, in *edgeproto.ClusterKey) ([]edgeproto.Result, error)
 	StreamCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.Result, error)
 	StreamGPUDriver(ctx context.Context, in *edgeproto.GPUDriverKey) ([]edgeproto.Result, error)
 }

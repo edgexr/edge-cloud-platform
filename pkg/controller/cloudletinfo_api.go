@@ -141,12 +141,15 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 		return
 	}
 	if changedToOnline {
+		log.SpanLog(ctx, log.DebugLevelApi, "cloudlet online", "cloudlet", in.Key)
 		nodeMgr.Event(ctx, "Cloudlet online", in.Key.Organization, in.Key.GetTags(), nil, "state", in.State.String(), "version", in.ContainerVersion)
 		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err == nil {
 			if features.SupportsMultiTenantCluster && cloudlet.EnableDefaultServerlessCluster {
 				s.all.cloudletApi.defaultMTClustWorkers.NeedsWork(ctx, in.Key)
 			}
+		} else {
+			log.SpanLog(ctx, log.DebugLevelApi, "unable to get features for cloudlet", "cloudlet", in.Key, "err", err)
 		}
 	}
 
@@ -298,9 +301,7 @@ func (s *CloudletInfoApi) clearCloudletDownAlert(ctx context.Context, in *edgepr
 
 func (s *CloudletInfoApi) clearCloudletDownAppInstAlerts(ctx context.Context, in *edgeproto.CloudletInfo) {
 	appInstFilter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			CloudletKey: in.Key,
-		},
+		CloudletKey: in.Key,
 	}
 	appInstKeys := make([]edgeproto.AppInstKey, 0)
 	s.all.appInstApi.cache.Show(&appInstFilter, func(obj *edgeproto.AppInst) error {
@@ -324,9 +325,7 @@ func (s *CloudletInfoApi) fireCloudletDownAppInstAlerts(ctx context.Context, in 
 	})
 
 	appInstFilter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			CloudletKey: in.Key,
-		},
+		CloudletKey: in.Key,
 	}
 	appInstKeys := make([]edgeproto.AppInstKey, 0)
 	s.all.appInstApi.cache.Show(&appInstFilter, func(obj *edgeproto.AppInst) error {

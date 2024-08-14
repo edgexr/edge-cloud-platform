@@ -17,6 +17,7 @@ package k8sbm
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -26,7 +27,7 @@ import (
 
 func (k *K8sBareMetalPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst")
-	if clusterInst.Key.ClusterKey.Name == cloudcommon.DefaultMultiTenantCluster && edgeproto.IsEdgeCloudOrg(clusterInst.Key.ClusterKey.Organization) {
+	if strings.HasPrefix(clusterInst.Key.Name, cloudcommon.DefaultMultiTenantCluster) && edgeproto.IsEdgeCloudOrg(clusterInst.Key.Organization) {
 		// The cluster that represents this Cloudlet's cluster.
 		// This is a no-op as the cluster already exists.
 		return nil

@@ -37,15 +37,14 @@ func TestGetNetworkPolicy(t *testing.T) {
 	app.Deployment = cloudcommon.DeploymentTypeKubernetes
 	app.AllowServerless = true
 	ci := edgeproto.ClusterInst{}
-	ci.Key.ClusterKey.Name = cloudcommon.DefaultMultiTenantCluster
-	ci.Key.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
-	ci.Key.CloudletKey.Name = "cloudlet1"
-	ci.Key.CloudletKey.Organization = "operorg"
+	ci.CloudletKey.Name = "cloudlet1"
+	ci.CloudletKey.Organization = "operorg"
+	ci.Key = *cloudcommon.GetDefaultMTClustKey(ci.CloudletKey)
 	appInst := edgeproto.AppInst{}
 	appInst.Key.Name = "appInst1"
 	appInst.Key.Organization = app.Key.Organization
 	appInst.AppKey = app.Key
-	appInst.ClusterKey = ci.Key.ClusterKey
+	appInst.ClusterKey = ci.Key
 	appInst.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
 
 	// Non-multi-tenant cluster does not need a network policy

@@ -329,6 +329,9 @@ type DummyServer struct {
 	AutoScalePolicyCache          edgeproto.AutoScalePolicyCache
 	TrustPolicyCache              edgeproto.TrustPolicyCache
 	AppCache                      edgeproto.AppCache
+	AppInstCache                  edgeproto.AppInstCache
+	AppInstInfoCache              edgeproto.AppInstInfoCache
+	FedAppInstCache               edgeproto.FedAppInstCache
 	CloudletInternalCache         edgeproto.CloudletInternalCache
 	PlatformFeaturesCache         edgeproto.PlatformFeaturesCache
 	GPUDriverCache                edgeproto.GPUDriverCache
@@ -341,9 +344,6 @@ type DummyServer struct {
 	ClusterInstInfoCache          edgeproto.ClusterInstInfoCache
 	AutoProvPolicyCache           edgeproto.AutoProvPolicyCache
 	AutoProvInfoCache             edgeproto.AutoProvInfoCache
-	AppInstCache                  edgeproto.AppInstCache
-	AppInstInfoCache              edgeproto.AppInstInfoCache
-	FedAppInstCache               edgeproto.FedAppInstCache
 	TrustPolicyExceptionCache     edgeproto.TrustPolicyExceptionCache
 	TPEInstanceStateCache         edgeproto.TPEInstanceStateCache
 	NetworkCache                  edgeproto.NetworkCache
@@ -374,6 +374,9 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitAutoScalePolicyCache(&d.AutoScalePolicyCache)
 	edgeproto.InitTrustPolicyCache(&d.TrustPolicyCache)
 	edgeproto.InitAppCache(&d.AppCache)
+	edgeproto.InitAppInstCache(&d.AppInstCache)
+	edgeproto.InitAppInstInfoCache(&d.AppInstInfoCache)
+	edgeproto.InitFedAppInstCache(&d.FedAppInstCache)
 	edgeproto.InitCloudletInternalCache(&d.CloudletInternalCache)
 	edgeproto.InitPlatformFeaturesCache(&d.PlatformFeaturesCache)
 	edgeproto.InitGPUDriverCache(&d.GPUDriverCache)
@@ -386,9 +389,6 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitClusterInstInfoCache(&d.ClusterInstInfoCache)
 	edgeproto.InitAutoProvPolicyCache(&d.AutoProvPolicyCache)
 	edgeproto.InitAutoProvInfoCache(&d.AutoProvInfoCache)
-	edgeproto.InitAppInstCache(&d.AppInstCache)
-	edgeproto.InitAppInstInfoCache(&d.AppInstInfoCache)
-	edgeproto.InitFedAppInstCache(&d.FedAppInstCache)
 	edgeproto.InitTrustPolicyExceptionCache(&d.TrustPolicyExceptionCache)
 	edgeproto.InitTPEInstanceStateCache(&d.TPEInstanceStateCache)
 	edgeproto.InitNetworkCache(&d.NetworkCache)
@@ -410,6 +410,8 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterAutoScalePolicyApiServer(server, d)
 	edgeproto.RegisterTrustPolicyApiServer(server, d)
 	edgeproto.RegisterAppApiServer(server, d)
+	edgeproto.RegisterAppInstApiServer(server, d)
+	edgeproto.RegisterAppInstInfoApiServer(server, d)
 	edgeproto.RegisterOrganizationApiServer(server, d)
 	edgeproto.RegisterPlatformFeaturesApiServer(server, d)
 	edgeproto.RegisterGPUDriverApiServer(server, d)
@@ -420,8 +422,6 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterClusterInstApiServer(server, d)
 	edgeproto.RegisterClusterInstInfoApiServer(server, d)
 	edgeproto.RegisterAutoProvPolicyApiServer(server, d)
-	edgeproto.RegisterAppInstApiServer(server, d)
-	edgeproto.RegisterAppInstInfoApiServer(server, d)
 	edgeproto.RegisterTrustPolicyExceptionApiServer(server, d)
 	edgeproto.RegisterNetworkApiServer(server, d)
 	edgeproto.RegisterCloudletRefsApiServer(server, d)
@@ -463,6 +463,10 @@ type Client interface {
 	AutoScalePolicyApiClient
 	TrustPolicyApiClient
 	AppApiClient
+	AppInstApiClient
+	AppInstInfoApiClient
+	AppInstMetricsApiClient
+	AppInstLatencyApiClient
 	OrganizationApiClient
 	PlatformFeaturesApiClient
 	GPUDriverApiClient
@@ -474,10 +478,6 @@ type Client interface {
 	ClusterInstApiClient
 	ClusterInstInfoApiClient
 	AutoProvPolicyApiClient
-	AppInstApiClient
-	AppInstInfoApiClient
-	AppInstMetricsApiClient
-	AppInstLatencyApiClient
 	TrustPolicyExceptionApiClient
 	NetworkApiClient
 	CloudletRefsApiClient

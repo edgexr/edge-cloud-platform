@@ -122,11 +122,11 @@ func CloudletPrometheusScraper(done chan bool) {
 }
 
 func getCloudletPrometheusStats(ctx context.Context, addr string, client ssh.Client) {
-	autoScalers := make(map[edgeproto.ClusterInstKey]*ClusterAutoScaler)
+	autoScalers := make(map[edgeproto.ClusterKey]*ClusterAutoScaler)
 	workerMapMutex.Lock()
 	for _, worker := range workerMap {
 		if worker.autoScaler.policyName != "" {
-			autoScalers[worker.clusterInstKey] = &worker.autoScaler
+			autoScalers[worker.clusterKey] = &worker.autoScaler
 		}
 	}
 	workerMapMutex.Unlock()
@@ -134,7 +134,7 @@ func getCloudletPrometheusStats(ctx context.Context, addr string, client ssh.Cli
 	for key, autoScaler := range autoScalers {
 		policy := edgeproto.AutoScalePolicy{}
 		policy.Key.Name = autoScaler.policyName
-		policy.Key.Organization = key.ClusterKey.Organization
+		policy.Key.Organization = key.Organization
 		found := AutoScalePoliciesCache.Get(&policy.Key, &policy)
 		if !found {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "cloudlet-worker autoscale policy not found", "policyKey", policy.Key)

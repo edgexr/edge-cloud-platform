@@ -3526,7 +3526,6 @@ func (m *mex) generateUsesOrg(message *descriptor.DescriptorProto) {
 	}
 	keyIter := "_"
 	valIter := "_"
-	valObj := ""
 	usesChecks := strings.Split(usesOrg, ",")
 	kvChecks := [][]string{}
 	for _, check := range usesChecks {
@@ -3539,7 +3538,7 @@ func (m *mex) generateUsesOrg(message *descriptor.DescriptorProto) {
 			keyIter = "key"
 		} else if kv[0] == "val" {
 			valIter = "val"
-			valObj = ".Obj"
+			kv[1] = "Obj." + kv[1]
 		} else {
 			m.gen.Fail(*message.Name, "invalid key in uses_org check spec, expected \"key\" or \"val\", but was ", kv[0])
 		}
@@ -3549,7 +3548,7 @@ func (m *mex) generateUsesOrg(message *descriptor.DescriptorProto) {
 	m.P("defer c.Mux.Unlock()")
 	m.P("for ", keyIter, ", ", valIter, " := range c.Objs {")
 	for _, kv := range kvChecks {
-		m.P("if ", kv[0], valObj, ".", kv[1], " == org { return true }")
+		m.P("if ", kv[0], ".", kv[1], " == org { return true }")
 	}
 	m.P("}")
 	m.P("return false")

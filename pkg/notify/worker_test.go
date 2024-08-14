@@ -137,7 +137,7 @@ func checkCurAppInst(t *testing.T, c *changes, expkey *edgeproto.AppInstKey, exp
 	assert.Equal(t, expold, old)
 }
 
-func checkCurClusterInst(t *testing.T, c *changes, expkey *edgeproto.ClusterInstKey, expold *edgeproto.ClusterInst) {
+func checkCurClusterInst(t *testing.T, c *changes, expkey *edgeproto.ClusterKey, expold *edgeproto.ClusterInst) {
 	old, found := c.curClusterInst[*expkey]
 	assert.True(t, found, "key should be in current workers %v", expkey)
 	assert.Equal(t, expold, old)
@@ -153,7 +153,7 @@ type changes struct {
 	appInstWorkGo          chan bool
 	clusterInstWorkGo      chan bool
 	curAppInst             map[edgeproto.AppInstKey]*edgeproto.AppInst
-	curClusterInst         map[edgeproto.ClusterInstKey]*edgeproto.ClusterInst
+	curClusterInst         map[edgeproto.ClusterKey]*edgeproto.ClusterInst
 	mux                    sync.Mutex
 }
 
@@ -166,7 +166,7 @@ func newChanges() *changes {
 	c.appInstWorkGo = make(chan bool, 5)
 	c.clusterInstWorkGo = make(chan bool, 5)
 	c.curAppInst = make(map[edgeproto.AppInstKey]*edgeproto.AppInst)
-	c.curClusterInst = make(map[edgeproto.ClusterInstKey]*edgeproto.ClusterInst)
+	c.curClusterInst = make(map[edgeproto.ClusterKey]*edgeproto.ClusterInst)
 	return &c
 }
 
@@ -185,7 +185,7 @@ func (c *changes) appInstChanged(key *edgeproto.AppInstKey, old *edgeproto.AppIn
 	c.appInstWorkDone <- true
 }
 
-func (c *changes) clusterInstChanged(key *edgeproto.ClusterInstKey, old *edgeproto.ClusterInst) {
+func (c *changes) clusterInstChanged(key *edgeproto.ClusterKey, old *edgeproto.ClusterInst) {
 	c.mux.Lock()
 	c.curClusterInst[*key] = old
 	c.mux.Unlock()

@@ -406,11 +406,8 @@ var ShowLogSpecialArgs = map[string]string{}
 var ExecRequestRequiredArgs = []string{
 	"appinstname",
 	"appinstorg",
-	"cloudletorg",
-	"cloudlet",
 }
 var ExecRequestOptionalArgs = []string{
-	"federatedorg",
 	"containerid",
 	"command",
 	"nodetype",
@@ -420,13 +417,13 @@ var ExecRequestOptionalArgs = []string{
 	"timestamps",
 	"follow",
 	"edgeturnproxyaddr",
+	"cloudletorg",
+	"cloudlet",
+	"cloudletkey.federatedorganization",
 }
 var ExecRequestAliasArgs = []string{
 	"appinstname=appinstkey.name",
 	"appinstorg=appinstkey.organization",
-	"cloudletorg=appinstkey.cloudletkey.organization",
-	"cloudlet=appinstkey.cloudletkey.name",
-	"federatedorg=appinstkey.cloudletkey.federatedorganization",
 	"command=cmd.command",
 	"nodetype=cmd.cloudletmgmtnode.type",
 	"nodename=cmd.cloudletmgmtnode.name",
@@ -434,78 +431,79 @@ var ExecRequestAliasArgs = []string{
 	"tail=log.tail",
 	"timestamps=log.timestamps",
 	"follow=log.follow",
+	"cloudletorg=cloudletkey.organization",
+	"cloudlet=cloudletkey.name",
 }
 var ExecRequestComments = map[string]string{
-	"appinstname":       "App Instance name",
-	"appinstorg":        "App Instance organization",
-	"cloudletorg":       "Organization of the cloudlet site",
-	"cloudlet":          "Name of the cloudlet",
-	"federatedorg":      "Federated operator organization who shared this cloudlet",
-	"containerid":       "ContainerId is the name or ID of the target container, if applicable",
-	"offer":             "Offer",
-	"answer":            "Answer",
-	"err":               "Any error message",
-	"command":           "Command or Shell",
-	"nodetype":          "Type of Cloudlet Mgmt Node",
-	"nodename":          "Name of Cloudlet Mgmt Node",
-	"since":             "Show logs since either a duration ago (5s, 2m, 3h) or a timestamp (RFC3339)",
-	"tail":              "Show only a recent number of lines",
-	"timestamps":        "Show timestamps",
-	"follow":            "Stream data",
-	"console.url":       "VM Console URL",
-	"timeout":           "Timeout",
-	"accessurl":         "Access URL",
-	"edgeturnaddr":      "EdgeTurn Server Address",
-	"edgeturnproxyaddr": "EdgeTurn Proxy Address",
+	"appinstname":                       "App Instance name",
+	"appinstorg":                        "App Instance organization",
+	"containerid":                       "ContainerId is the name or ID of the target container, if applicable",
+	"offer":                             "Offer",
+	"answer":                            "Answer",
+	"err":                               "Any error message",
+	"command":                           "Command or Shell",
+	"nodetype":                          "Type of Cloudlet Mgmt Node",
+	"nodename":                          "Name of Cloudlet Mgmt Node",
+	"since":                             "Show logs since either a duration ago (5s, 2m, 3h) or a timestamp (RFC3339)",
+	"tail":                              "Show only a recent number of lines",
+	"timestamps":                        "Show timestamps",
+	"follow":                            "Stream data",
+	"console.url":                       "VM Console URL",
+	"timeout":                           "Timeout",
+	"accessurl":                         "Access URL",
+	"edgeturnaddr":                      "EdgeTurn Server Address",
+	"edgeturnproxyaddr":                 "EdgeTurn Proxy Address",
+	"cloudletorg":                       "Organization of the cloudlet site",
+	"cloudlet":                          "Name of the cloudlet",
+	"cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
 }
 var ExecRequestSpecialArgs = map[string]string{}
 var RunCommandRequiredArgs = []string{
 	"appinstname",
 	"appinstorg",
-	"cloudletorg",
-	"cloudlet",
 	"command",
 }
 var RunCommandOptionalArgs = []string{
-	"federatedorg",
 	"containerid",
 	"edgeturnproxyaddr",
+	"cloudletorg",
+	"cloudlet",
+	"cloudletkey.federatedorganization",
 }
 var RunConsoleRequiredArgs = []string{
 	"appinstname",
 	"appinstorg",
-	"cloudletorg",
-	"cloudlet",
 }
 var RunConsoleOptionalArgs = []string{
-	"federatedorg",
 	"edgeturnproxyaddr",
+	"cloudletorg",
+	"cloudlet",
+	"cloudletkey.federatedorganization",
 }
 var ShowLogsRequiredArgs = []string{
 	"appinstname",
 	"appinstorg",
-	"cloudletorg",
-	"cloudlet",
 }
 var ShowLogsOptionalArgs = []string{
-	"federatedorg",
 	"containerid",
 	"since",
 	"tail",
 	"timestamps",
 	"follow",
 	"edgeturnproxyaddr",
-}
-var AccessCloudletRequiredArgs = []string{
 	"cloudletorg",
 	"cloudlet",
+	"cloudletkey.federatedorganization",
 }
+var AccessCloudletRequiredArgs = []string{}
 var AccessCloudletOptionalArgs = []string{
 	"appinstname",
 	"appinstorg",
-	"federatedorg",
 	"command",
 	"nodetype",
 	"nodename",
 	"edgeturnproxyaddr",
+	"cloudletorg",
+	"cloudlet",
+	"cloudletkey.federatedorganization",
 }

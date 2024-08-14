@@ -78,14 +78,12 @@ func TestAutoProvStats(t *testing.T) {
 	clusterInsts := []edgeproto.ClusterInst{}
 	for _, cl := range apCloudlets {
 		ci := edgeproto.ClusterInst{
-			Key: edgeproto.ClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name:         "clust",
-					Organization: edgeproto.OrganizationEdgeCloud,
-				},
-				CloudletKey: cl.Key,
+			Key: edgeproto.ClusterKey{
+				Name:         "clust",
+				Organization: edgeproto.OrganizationEdgeCloud,
 			},
-			Reservable: true,
+			CloudletKey: cl.Key,
+			Reservable:  true,
 		}
 		clusterInsts = append(clusterInsts, ci)
 	}

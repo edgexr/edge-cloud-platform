@@ -173,13 +173,13 @@ func GetVMAppRequirements(ctx context.Context, app *edgeproto.App, appInst *edge
 	}
 	if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
 		vmResources = append(vmResources, edgeproto.VMResource{
-			Key:      *appInst.ClusterInstKey(),
+			Key:      *appInst.GetClusterKey(),
 			VmFlavor: rootLBFlavor,
 			Type:     NodeTypeDedicatedRootLB.String(),
 		})
 	}
 	vmResources = append(vmResources, edgeproto.VMResource{
-		Key:           *appInst.ClusterInstKey(),
+		Key:           *appInst.GetClusterKey(),
 		VmFlavor:      vmFlavor,
 		Type:          NodeTypeAppVM.String(),
 		AppAccessType: app.AccessType,

@@ -826,13 +826,18 @@ func (s *CloudletApi) VerifyTrustPoliciesForAppInsts(ctx context.Context, app *e
 	}
 	s.cache.Mux.Unlock()
 	for akey := range appInsts {
-		pkey, cloudletFound := trustedCloudlets[akey.CloudletKey]
+		appInst := edgeproto.AppInst{}
+		if !s.all.appInstApi.cache.Get(&akey, &appInst) {
+			log.SpanLog(ctx, log.DebugLevelApi, "verify trust policies for app insts, app inst not found", "appInst", akey)
+			continue
+		}
+		pkey, cloudletFound := trustedCloudlets[appInst.CloudletKey]
 		if cloudletFound {
 			policy, policyFound := TrustPolicies[*pkey]
 			if !policyFound {
 				return fmt.Errorf("Unable to find trust policy in cache: %s", pkey.String())
 			}
-			err := s.all.appApi.CheckAppCompatibleWithTrustPolicy(ctx, &akey.CloudletKey, app, policy)
+			err := s.all.appApi.CheckAppCompatibleWithTrustPolicy(ctx, &appInst.CloudletKey, app, policy)
 			if err != nil {
 				return err
 			}
@@ -1519,14 +1524,14 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, cloudletKey.StreamKey(), inCb)
 
 	var dynInsts map[edgeproto.AppInstKey]struct{}
-	var clDynInsts map[edgeproto.ClusterInstKey]struct{}
+	var clDynInsts map[edgeproto.ClusterKey]struct{}
 
 	var features *edgeproto.PlatformFeatures
 	var prevState edgeproto.TrackedState
 	var gpuDriver edgeproto.GPUDriver
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		dynInsts = make(map[edgeproto.AppInstKey]struct{})
-		clDynInsts = make(map[edgeproto.ClusterInstKey]struct{})
+		clDynInsts = make(map[edgeproto.ClusterKey]struct{})
 		if !s.store.STMGet(stm, &in.Key, in) {
 			return in.Key.NotFoundError()
 		}
@@ -1538,9 +1543,9 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		if err != nil {
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
-		var defaultClustKey *edgeproto.ClusterInstKey
+		var defaultClustKey *edgeproto.ClusterKey
 		if features.IsSingleKubernetesCluster {
-			defaultClustKey = getDefaultClustKey(in.Key, in.SingleKubernetesClusterOwner)
+			defaultClustKey = cloudcommon.GetDefaultClustKey(in.Key, in.SingleKubernetesClusterOwner)
 		}
 		refs := edgeproto.CloudletRefs{}
 		if s.all.cloudletRefsApi.store.STMGet(stm, &in.Key, &refs) {
@@ -1823,7 +1828,7 @@ func (s *CloudletApi) UpdateAppInstLocations(ctx context.Context, in *edgeproto.
 	s.all.appInstApi.cache.Mux.Lock()
 	for _, data := range s.all.appInstApi.cache.Objs {
 		inst := data.Obj
-		if inst.Key.CloudletKey.Matches(&in.Key) {
+		if inst.CloudletKey.Matches(&in.Key) {
 			keys = append(keys, inst.Key)
 		}
 	}
@@ -2555,15 +2560,15 @@ func (s *CloudletApi) ShowFlavorsForCloudlet(in *edgeproto.CloudletKey, cb edgep
 func (s *CloudletApi) GetOrganizationsOnCloudlet(in *edgeproto.CloudletKey, cb edgeproto.CloudletApi_GetOrganizationsOnCloudletServer) error {
 	orgs := make(map[string]struct{})
 	aiFilter := edgeproto.AppInst{}
-	aiFilter.Key.CloudletKey = *in
+	aiFilter.CloudletKey = *in
 	s.all.appInstApi.cache.Show(&aiFilter, func(appInst *edgeproto.AppInst) error {
 		orgs[appInst.Key.Organization] = struct{}{}
 		return nil
 	})
 	ciFilter := edgeproto.ClusterInst{}
-	ciFilter.Key.CloudletKey = *in
+	ciFilter.CloudletKey = *in
 	s.all.clusterInstApi.cache.Show(&ciFilter, func(clusterInst *edgeproto.ClusterInst) error {
-		orgs[clusterInst.Key.ClusterKey.Organization] = struct{}{}
+		orgs[clusterInst.Key.Organization] = struct{}{}
 		return nil
 	})
 	for name, _ := range orgs {

@@ -19,7 +19,7 @@ package edgeproto;
 
 import "result.proto";
 import "appinst.proto";
-import "clusterinst.proto";
+import "cluster.proto";
 import "cloudletkey.proto";
 import "cloudlet.proto";
 import "tools/protogen/protogen.proto";
@@ -60,7 +60,7 @@ service StreamObjApi {
     option (protogen.mc2_api) = "ResourceAppInsts,ActionView,Organization";
   }
   // Stream Cluster Instance current progress
-  rpc StreamClusterInst(ClusterInstKey) returns (stream Result) {
+  rpc StreamClusterInst(ClusterKey) returns (stream Result) {
     option (google.api.http) = {
       post: "/stream/clusterinst"
       body: "*"

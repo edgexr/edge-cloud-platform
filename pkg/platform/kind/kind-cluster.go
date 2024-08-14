@@ -88,7 +88,7 @@ nodes:
 `
 
 func (s *Platform) CreateKINDCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
-	name := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
+	name := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
 	kconf := k8smgmt.GetKconfName(clusterInst)
 	log.SpanLog(ctx, log.DebugLevelInfra, "create KIND cluster", "name", name, "kconf", kconf)
 	client, err := s.Xind.GetClient(ctx)
@@ -182,7 +182,7 @@ func (s *Platform) CreateKINDCluster(ctx context.Context, clusterInst *edgeproto
 }
 
 func (s *Platform) DeleteKINDCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
-	name := k8smgmt.GetK8sNodeNameSuffix(&clusterInst.Key)
+	name := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
 	log.SpanLog(ctx, log.DebugLevelInfra, "delete KIND cluster", "name", name)
 	client, err := s.Xind.GetClient(ctx)
 	if err != nil {

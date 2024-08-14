@@ -276,7 +276,7 @@ func basicClusterInstShowTest(t *testing.T, ctx context.Context, api *ClusterIns
 	}
 }
 
-func GetClusterInst(t *testing.T, ctx context.Context, api *ClusterInstCommonApi, key *edgeproto.ClusterInstKey, out *edgeproto.ClusterInst) bool {
+func GetClusterInst(t *testing.T, ctx context.Context, api *ClusterInstCommonApi, key *edgeproto.ClusterKey, out *edgeproto.ClusterInst) bool {
 	var err error
 
 	show := ShowClusterInst{}
@@ -394,7 +394,7 @@ func DeleteClusterInstData(t *testing.T, ctx context.Context, api *ClusterInstCo
 	}
 }
 
-func FindClusterInstData(key *edgeproto.ClusterInstKey, testData []edgeproto.ClusterInst) (*edgeproto.ClusterInst, bool) {
+func FindClusterInstData(key *edgeproto.ClusterKey, testData []edgeproto.ClusterInst) (*edgeproto.ClusterInst, bool) {
 	for ii, _ := range testData {
 		if testData[ii].GetKey().Matches(key) {
 			return &testData[ii], true
@@ -570,7 +570,7 @@ func basicClusterInstInfoShowTest(t *testing.T, ctx context.Context, api *Cluste
 	}
 }
 
-func GetClusterInstInfo(t *testing.T, ctx context.Context, api *ClusterInstInfoCommonApi, key *edgeproto.ClusterInstKey, out *edgeproto.ClusterInstInfo) bool {
+func GetClusterInstInfo(t *testing.T, ctx context.Context, api *ClusterInstInfoCommonApi, key *edgeproto.ClusterKey, out *edgeproto.ClusterInstInfo) bool {
 	var err error
 
 	show := ShowClusterInstInfo{}
@@ -586,7 +586,7 @@ func GetClusterInstInfo(t *testing.T, ctx context.Context, api *ClusterInstInfoC
 	return found
 }
 
-func FindClusterInstInfoData(key *edgeproto.ClusterInstKey, testData []edgeproto.ClusterInstInfo) (*edgeproto.ClusterInstInfo, bool) {
+func FindClusterInstInfoData(key *edgeproto.ClusterKey, testData []edgeproto.ClusterInstInfo) (*edgeproto.ClusterInstInfo, bool) {
 	for ii, _ := range testData {
 		if testData[ii].GetKey().Matches(key) {
 			return &testData[ii], true

@@ -26,12 +26,12 @@ import (
 func (s *CCRMHandler) ApplyAppInst(in *edgeproto.AppInst, stream edgeproto.AppInstPlatformAPI_ApplyAppInstServer) error {
 	ctx := stream.Context()
 	responseSender := edgeproto.NewAppInstInfoSendUpdater(ctx, stream, in.Key)
-	needsUpdate, err := s.crmHandler.AppInstChanged(ctx, &in.Key.CloudletKey, in, responseSender)
+	needsUpdate, err := s.crmHandler.AppInstChanged(ctx, &in.CloudletKey, in, responseSender)
 	if err == nil && needsUpdate.Resources {
-		s.vmResourceActionEnd(ctx, &in.Key.CloudletKey)
+		s.vmResourceActionEnd(ctx, &in.CloudletKey)
 	}
 	if err == nil && needsUpdate.AppInstRuntime {
-		s.refreshAppInstRuntime(ctx, &in.Key.CloudletKey, nil, in)
+		s.refreshAppInstRuntime(ctx, &in.CloudletKey, nil, in)
 	}
 	return err
 }

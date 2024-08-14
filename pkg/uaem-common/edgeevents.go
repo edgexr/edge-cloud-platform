@@ -28,7 +28,6 @@ type EdgeEventsHandler interface {
 	RemoveClient(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey CookieKey)
 	UpdateClientLastLocation(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey CookieKey, lastLoc dme.Loc)
 	UpdateClientCarrier(ctx context.Context, appInstKey edgeproto.AppInstKey, cookieKey CookieKey, carrier string)
-	RemoveCloudlet(ctx context.Context, cloudletKey edgeproto.CloudletKey)
 	SendAvailableAppInst(ctx context.Context, app *DmeApp, newAppInstKey edgeproto.AppInstKey, newAppInst *DmeAppInst, newAppInstCarrier string)
 	RemoveAppInst(ctx context.Context, appInstKey edgeproto.AppInstKey)
 	SendLatencyRequestEdgeEvent(ctx context.Context, appInstKey edgeproto.AppInstKey)

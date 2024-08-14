@@ -36,7 +36,7 @@ option (gogoproto.goproto_sizecache_all) = false;
 // VMResource specifies the resource requirement of a VM
 message VMResource {
   // ClusterInstKey to track which cluster this VM resource belongs to
-  ClusterInstKey key = 1 [(gogoproto.nullable) = false];
+  ClusterKey key = 1 [(gogoproto.nullable) = false];
   // Flavor requirement of the VM required by the cluster
   FlavorInfo vm_flavor = 2;
   // Resource Type can be platform, rootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm, k8s-lb-svc
@@ -71,9 +71,9 @@ message CloudletRefs {
   // Clusters instantiated on the Cloudlet
   repeated ClusterKey cluster_insts = 13 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "ClusterInst"];
   // VM apps instantiated on the Cloudlet
-  repeated AppInstRefKey vm_app_insts = 14 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "AppInst"];
+  repeated AppInstKey vm_app_insts = 14 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "AppInst"];
   // K8s apps instantiated on the Cloudlet
-  repeated AppInstRefKey k8s_app_insts = 15 [(gogoproto.nullable) = false]; // no tracks_refs_by as it is handled by ClusterInst refs
+  repeated AppInstKey k8s_app_insts = 15 [(gogoproto.nullable) = false]; // no tracks_refs_by as it is handled by ClusterInst refs
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cache) = true;
@@ -88,9 +88,9 @@ message CloudletRefs {
 // ClusterRefs track used resources within a ClusterInst. Each AppInst specifies a set of required resources (Flavor), so tracking resources used by Apps within a Cluster is necessary to determine if enough resources are available for another AppInst to be instantiated on a ClusterInst.
 message ClusterRefs {
   // Cluster Instance key
-  ClusterInstKey key = 1 [(gogoproto.nullable) = false, (protogen.refers_to) = "ClusterInst"];
+  ClusterKey key = 1 [(gogoproto.nullable) = false, (protogen.refers_to) = "ClusterInst"];
   // App instances in the Cluster Instance
-  repeated AppInstRefKey apps = 2 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "AppInst"];
+  repeated AppInstKey apps = 2 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "AppInst"];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cache) = true;

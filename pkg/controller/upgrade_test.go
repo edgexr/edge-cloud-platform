@@ -56,19 +56,29 @@ func buildDbFromTestData(objStore objstore.KVStore, funcName string) error {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	for {
-		if !scanner.Scan() {
-			break
+		// double for loop to skip empty lines
+		for {
+			if !scanner.Scan() {
+				return nil
+			}
+			key = scanner.Text()
+			if key != "" {
+				break
+			}
 		}
-		key = scanner.Text()
-		if !scanner.Scan() {
-			return fmt.Errorf("Improper formatted preupgrade .etcd file - Unmatched key without a value.")
+		for {
+			if !scanner.Scan() {
+				return fmt.Errorf("Improper formatted preupgrade .etcd file - Unmatched key without a value.")
+			}
+			val = scanner.Text()
+			if val != "" {
+				break
+			}
 		}
-		val = scanner.Text()
 		if _, err := objStore.Put(ctx, key, val); err != nil {
 			return err
 		}
 	}
-	return nil
 }
 
 // walk testutils data and see if the entries exist in the objstore

@@ -75,8 +75,8 @@ func (s *DummyServer) SetDummyOrgObjs(ctx context.Context, a Action, org string,
 		}
 
 		cinst := edgeproto.ClusterInst{}
-		cinst.Key.ClusterKey.Organization = org
-		cinst.Key.ClusterKey.Name = name
+		cinst.Key.Organization = org
+		cinst.Key.Name = name
 		if a == Create {
 			s.ClusterInstCache.Update(ctx, &cinst, int64(ii))
 		} else if a == Delete {

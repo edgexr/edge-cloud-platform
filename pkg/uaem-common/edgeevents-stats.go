@@ -206,7 +206,7 @@ func (e *EdgeEventStats) RunNotify() {
 }
 
 func LatencyStatToMetric(ts *types.Timestamp, key LatencyStatKey, stat *LatencyStat) *edgeproto.Metric {
-	metric := initMetric(cloudcommon.LatencyMetric, *ts, &key.AppInstKey, &key.AppKey)
+	metric := initMetric(cloudcommon.LatencyMetric, *ts, &key.AppInstKey, &key.AppKey, &key.CloudletKey)
 	// Add tags (independent variables)
 	metric.AddTag(cloudcommon.MetricTagLocationTile, key.LocationTile)
 	metric.AddTag(cloudcommon.MetricTagDeviceCarrier, key.DeviceCarrier)
@@ -228,7 +228,7 @@ func LatencyStatToMetric(ts *types.Timestamp, key LatencyStatKey, stat *LatencyS
 }
 
 func DeviceStatToMetric(ts *types.Timestamp, key DeviceStatKey, stat *DeviceStat) *edgeproto.Metric {
-	metric := initMetric(cloudcommon.DeviceMetric, *ts, &key.AppInstKey, &key.AppKey)
+	metric := initMetric(cloudcommon.DeviceMetric, *ts, &key.AppInstKey, &key.AppKey, &key.CloudletKey)
 	// Add tags (independent variables)
 	metric.AddTag(cloudcommon.MetricTagLocationTile, key.LocationTile)
 	metric.AddTag(cloudcommon.MetricTagDeviceCarrier, key.DeviceCarrier)
@@ -242,7 +242,7 @@ func DeviceStatToMetric(ts *types.Timestamp, key DeviceStatKey, stat *DeviceStat
 }
 
 func CustomStatToMetric(ts *types.Timestamp, key CustomStatKey, stat *CustomStat) *edgeproto.Metric {
-	metric := initMetric(cloudcommon.CustomMetric, *ts, &key.AppInstKey, &key.AppKey)
+	metric := initMetric(cloudcommon.CustomMetric, *ts, &key.AppInstKey, &key.AppKey, &key.CloudletKey)
 	// Custom Stats info
 	metric.AddTag(cloudcommon.MetricTagStatName, key.Name)
 	metric.AddIntVal("count", stat.Count)
@@ -256,7 +256,7 @@ func CustomStatToMetric(ts *types.Timestamp, key CustomStatKey, stat *CustomStat
 }
 
 // Helper function that adds in appinst info, metric name, metric timestamp, and dme cloudlet info
-func initMetric(metricName string, ts types.Timestamp, appInstKey *edgeproto.AppInstKey, appKey *edgeproto.AppKey) *edgeproto.Metric {
+func initMetric(metricName string, ts types.Timestamp, appInstKey *edgeproto.AppInstKey, appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey) *edgeproto.Metric {
 	metric := &edgeproto.Metric{}
 	metric.Timestamp = ts
 	metric.Name = metricName
@@ -268,8 +268,8 @@ func initMetric(metricName string, ts types.Timestamp, appInstKey *edgeproto.App
 	metric.AddTag(edgeproto.AppKeyTagName, appKey.Name)
 	metric.AddTag(edgeproto.AppKeyTagOrganization, appKey.Organization)
 	metric.AddTag(edgeproto.AppKeyTagVersion, appKey.Version)
-	metric.AddTag(edgeproto.CloudletKeyTagName, appInstKey.CloudletKey.Name)
-	metric.AddTag(edgeproto.CloudletKeyTagOrganization, appInstKey.CloudletKey.Organization)
-	metric.AddTag(edgeproto.CloudletKeyTagFederatedOrganization, appInstKey.CloudletKey.FederatedOrganization)
+	metric.AddTag(edgeproto.CloudletKeyTagName, cloudletKey.Name)
+	metric.AddTag(edgeproto.CloudletKeyTagOrganization, cloudletKey.Organization)
+	metric.AddTag(edgeproto.CloudletKeyTagFederatedOrganization, cloudletKey.FederatedOrganization)
 	return metric
 }

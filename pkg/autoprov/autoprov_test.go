@@ -87,10 +87,10 @@ func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, 
 
 	// alert labels for ClusterInst
 	keys := make(map[string]string)
-	keys[edgeproto.ClusterKeyTagOrganization] = cinst.Key.ClusterKey.Organization
-	keys[edgeproto.CloudletKeyTagOrganization] = cinst.Key.CloudletKey.Organization
-	keys[edgeproto.CloudletKeyTagName] = cinst.Key.CloudletKey.Name
-	keys[edgeproto.ClusterKeyTagName] = cinst.Key.ClusterKey.Name
+	keys[edgeproto.ClusterKeyTagOrganization] = cinst.Key.Organization
+	keys[edgeproto.CloudletKeyTagOrganization] = cinst.CloudletKey.Organization
+	keys[edgeproto.CloudletKeyTagName] = cinst.CloudletKey.Name
+	keys[edgeproto.ClusterKeyTagName] = cinst.Key.Name
 
 	// scale up alert
 	scaleup := edgeproto.Alert{}
@@ -126,7 +126,7 @@ func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, 
 	require.Equal(t, 0, len(cacheData.frClusterInsts.InstsByCloudlet))
 }
 
-func requireClusterInstNumNodes(t *testing.T, cache *edgeproto.ClusterInstCache, key *edgeproto.ClusterInstKey, numnodes int) {
+func requireClusterInstNumNodes(t *testing.T, cache *edgeproto.ClusterInstCache, key *edgeproto.ClusterKey, numnodes int) {
 	checkCount := -1
 	for ii := 0; ii < 10; ii++ {
 		cinst := edgeproto.ClusterInst{}
@@ -151,13 +151,13 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	// add reservable ClusterInst
 	rcinst := testutil.ClusterInstData()[7]
 	dn.ClusterInstCache.Update(ctx, &rcinst, 0)
-	cloudletKey := rcinst.Key.CloudletKey
+	cloudletKey := rcinst.CloudletKey
 
 	// add policies
 	policy := testutil.AutoProvPolicyData()[0]
 	policy.Cloudlets = []*edgeproto.AutoProvCloudlet{
 		&edgeproto.AutoProvCloudlet{
-			Key: rcinst.Key.CloudletKey,
+			Key: rcinst.CloudletKey,
 		},
 	}
 	dn.AutoProvPolicyCache.Update(ctx, &policy, 0)
@@ -165,7 +165,7 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	policy2 := testutil.AutoProvPolicyData()[3]
 	policy2.Cloudlets = []*edgeproto.AutoProvCloudlet{
 		&edgeproto.AutoProvCloudlet{
-			Key: rcinst.Key.CloudletKey,
+			Key: rcinst.CloudletKey,
 		},
 	}
 	dn.AutoProvPolicyCache.Update(ctx, &policy2, 0)
@@ -291,7 +291,7 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	policy.DeployIntervalCount *= scale
 	policy.Cloudlets = []*edgeproto.AutoProvCloudlet{
 		&edgeproto.AutoProvCloudlet{
-			Key: rcinst.Key.CloudletKey,
+			Key: rcinst.CloudletKey,
 		},
 		&edgeproto.AutoProvCloudlet{
 			Key: edgeproto.CloudletKey{

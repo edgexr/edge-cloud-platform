@@ -50,7 +50,7 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 		return fmt.Errorf("Only K8s and Docker clusters are supported on DIND")
 	}
 	// Create K8s cluster
-	clusterName := k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name + clusterInst.Key.ClusterKey.Organization)
+	clusterName := k8smgmt.NormalizeName(clusterInst.Key.Name + clusterInst.Key.Organization)
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating local dind cluster", "clusterName", clusterName)
 
 	kconfName := k8smgmt.GetKconfName(clusterInst)
@@ -69,7 +69,7 @@ func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto
 	return s.DeleteDINDCluster(ctx, clusterInst)
 }
 
-//CreateDINDCluster creates kubernetes cluster on local mac
+// CreateDINDCluster creates kubernetes cluster on local mac
 func (s *Platform) CreateDINDCluster(ctx context.Context, clusterName, kconfName string) error {
 	clusters, err := GetClusters()
 	if err != nil {
@@ -133,10 +133,10 @@ func (s *Platform) CreateDINDCluster(ctx context.Context, clusterName, kconfName
 	return nil
 }
 
-//DeleteDINDCluster creates kubernetes cluster on local mac
+// DeleteDINDCluster creates kubernetes cluster on local mac
 func (s *Platform) DeleteDINDCluster(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
 
-	clusterName := k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name + clusterInst.Key.ClusterKey.Organization)
+	clusterName := k8smgmt.NormalizeName(clusterInst.Key.Name + clusterInst.Key.Organization)
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteDINDCluster", "clusterName", clusterName)
 
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {

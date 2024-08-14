@@ -78,7 +78,7 @@ var metricsScrapingInterval time.Duration
 var defaultPrometheusPort = cloudcommon.PrometheusPort
 
 // map keeping track of all the currently running prometheuses
-var workerMap map[string]*ClusterWorker
+var workerMap map[edgeproto.ClusterKey]*ClusterWorker
 var workerMapMutex sync.Mutex
 var vmAppWorkerMap map[string]*AppInstWorker
 var MEXPrometheusAppName = cloudcommon.MEXPrometheusAppName
@@ -127,7 +127,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 
 	var port int32
 	var exists bool
-	var mapKey string
+	var mapKey edgeproto.ClusterKey
 
 	ChangeSinceLastPlatformStats = true
 	collectInterval := settings.ShepherdMetricsCollectionInterval.TimeDuration()
@@ -138,26 +138,28 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find app", "app", new.AppKey.Name)
 		return
 	}
+	if cloudcommon.IsClusterInstReqd(&app) {
+		mapKey = *new.GetClusterKey()
+	}
 	if app.Deployment == cloudcommon.DeploymentTypeVM {
-		mapKey = new.Key.GetKeyString()
-		stats, exists := vmAppWorkerMap[mapKey]
+		vmMapKey := new.Key.GetKeyString()
+		stats, exists := vmAppWorkerMap[vmMapKey]
 		myPlatform.VmAppChangedCallback(ctx, new, new.State)
 		if new.State == edgeproto.TrackedState_READY && !exists {
 			// Add/Create
 			stats := NewAppInstWorker(ctx, collectInterval, MetricSender.Update, new, myPlatform)
 			if stats != nil {
-				vmAppWorkerMap[mapKey] = stats
+				vmAppWorkerMap[vmMapKey] = stats
 				stats.Start(ctx)
 			}
 		} else if new.State != edgeproto.TrackedState_READY && exists {
-			delete(vmAppWorkerMap, mapKey)
+			delete(vmAppWorkerMap, vmMapKey)
 			stats.Stop(ctx)
 		}
 		// Done for VM Apps
 		return
 	} else if new.AppKey.Name == MEXPrometheusAppName {
 		// check for prometheus
-		mapKey = k8smgmt.GetK8sNodeNameSuffix(new.ClusterInstKey())
 	} else if app.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		// for backwards compatibility, we need to map App+Version to
 		// AppInstName+AppInstOrg. This is because older kubernetes
@@ -165,7 +167,6 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		// labels in their manifests.
 		workerMapMutex.Lock()
 		defer workerMapMutex.Unlock()
-		mapKey := getClusterWorkerMapKey(new.ClusterInstKey())
 		clusterWorker, ok := workerMap[mapKey]
 		if !ok {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find cluster worker for new AppInst", "mapKey", mapKey, "appInstKey", new.Key)
@@ -187,7 +188,7 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		log.SpanLog(ctx, log.DebugLevelMetrics, "New Prometheus instance detected", "clustername", mapKey, "appInst", new)
 		// get address of prometheus.
 		clusterInst := edgeproto.ClusterInst{}
-		found := ClusterInstCache.Get(new.ClusterInstKey(), &clusterInst)
+		found := ClusterInstCache.Get(new.GetClusterKey(), &clusterInst)
 		if !found {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to find clusterInst for prometheus")
 			return
@@ -249,7 +250,7 @@ func clusterInstDeletedCb(ctx context.Context, old *edgeproto.ClusterInst) {
 
 func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst) {
 	ChangeSinceLastPlatformStats = true
-	var mapKey = getClusterWorkerMapKey(&new.Key)
+	var mapKey = new.Key
 	workerMapMutex.Lock()
 	defer workerMapMutex.Unlock()
 	stats, exists := workerMap[mapKey]
@@ -527,7 +528,7 @@ func start() {
 		log.FatalLog("Failed to start prometheus metrics proxy", "err", err)
 	}
 
-	workerMap = make(map[string]*ClusterWorker)
+	workerMap = make(map[edgeproto.ClusterKey]*ClusterWorker)
 	vmAppWorkerMap = make(map[string]*AppInstWorker)
 
 	// register shepherd to receive appinst and clusterinst notifications from crm

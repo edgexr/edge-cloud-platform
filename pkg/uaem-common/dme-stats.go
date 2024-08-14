@@ -343,7 +343,6 @@ func (s *DmeStats) UnaryStatsInterceptor(ctx context.Context, req interface{}, i
 			client.ClientKey.AppInstKey = edgeproto.AppInstKey{
 				Name:         fcResp.Tags[edgeproto.AppInstKeyTagName],
 				Organization: fcResp.Tags[edgeproto.AppInstKeyTagOrganization],
-				CloudletKey:  call.Key.CloudletFound,
 			}
 			client.ClientKey.AppKey = call.Key.AppKey
 			client.Location = *loc

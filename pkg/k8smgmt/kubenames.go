@@ -54,34 +54,55 @@ type KubeNames struct {
 
 type KubeNamesOp func(k *KubeNames) error
 
+func getKconfNameDeprecated(clusterName, cloudletOrg string) string {
+	// This has a bug, it should have used the Cluster's Org
+	// instead of the Cloudlet's Org. This means if two different
+	// developers choose the same cluster name on the same cloudlet,
+	// the kubeconfigs will overwrite each other.
+	return fmt.Sprintf("%s.%s.kubeconfig", clusterName, cloudletOrg)
+}
+
 func GetKconfName(clusterInst *edgeproto.ClusterInst) string {
-	return fmt.Sprintf("%s.%s.kubeconfig",
-		clusterInst.Key.ClusterKey.Name,
-		clusterInst.Key.CloudletKey.Organization)
+	if clusterInst.CompatibilityVersion >= cloudcommon.ClusterInstCompatibilityRegionScopeName {
+		return fmt.Sprintf("%s.%s.kubeconfig", clusterInst.Key.Name, clusterInst.Key.Organization)
+	} else {
+		clusterName := cloudcommon.GetClusterInstCloudletScopedName(clusterInst)
+		return getKconfNameDeprecated(clusterName, clusterInst.CloudletKey.Organization)
+	}
 }
 
 func GetKconfArg(clusterInst *edgeproto.ClusterInst) string {
 	return "--kubeconfig=" + GetKconfName(clusterInst)
 }
 
-func GetK8sNodeNameSuffix(clusterInstKey *edgeproto.ClusterInstKey) string {
-	cloudletName := clusterInstKey.CloudletKey.Name
-	clusterName := clusterInstKey.ClusterKey.Name
-	devName := clusterInstKey.ClusterKey.Organization
-	if devName != "" {
+func GetK8sNodeNameSuffix(clusterInst *edgeproto.ClusterInst) string {
+	if clusterInst.CompatibilityVersion >= cloudcommon.ClusterInstCompatibilityRegionScopeName {
+		cloudletName := clusterInst.CloudletKey.Name
+		clusterName := clusterInst.Key.Name
+		devName := clusterInst.Key.Organization
 		return NormalizeName(cloudletName + "-" + clusterName + "-" + devName)
+	} else {
+		cloudletName := clusterInst.CloudletKey.Name
+		clusterName := cloudcommon.GetClusterInstCloudletScopedName(clusterInst)
+		devName := clusterInst.Key.Organization
+		if devName != "" {
+			return NormalizeName(cloudletName + "-" + clusterName + "-" + devName)
+		}
+		return NormalizeName(cloudletName + "-" + clusterName)
 	}
-	return NormalizeName(cloudletName + "-" + clusterName)
 }
 
 // GetCloudletClusterName return the name of the cluster including cloudlet
-func GetCloudletClusterName(clusterKey *edgeproto.ClusterInstKey) string {
-	return GetK8sNodeNameSuffix(clusterKey)
+func GetCloudletClusterName(cluster *edgeproto.ClusterInst) string {
+	return GetK8sNodeNameSuffix(cluster)
 }
 
 func GetNamespace(appInst *edgeproto.AppInst) string {
-	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
+	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityRegionScopeName {
 		return util.NamespaceSanitize(fmt.Sprintf("%s-%s", appInst.Key.Name, appInst.Key.Organization))
+	} else if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
+		name := cloudcommon.GetAppInstCloudletScopedName(appInst)
+		return util.NamespaceSanitize(fmt.Sprintf("%s-%s", name, appInst.Key.Organization))
 	} else {
 		// Note that we use the virtual cluster name, not the real cluster name
 		vclust := appInst.VClusterKey()
@@ -110,7 +131,12 @@ func FixImagePath(origImagePath string) string {
 }
 
 func GetNormalizedClusterName(clusterInst *edgeproto.ClusterInst) string {
-	return NormalizeName(clusterInst.Key.ClusterKey.Name + clusterInst.Key.ClusterKey.Organization)
+	if clusterInst.CompatibilityVersion >= cloudcommon.ClusterInstCompatibilityRegionScopeName {
+		return NormalizeName(clusterInst.Key.Name + clusterInst.Key.Organization)
+	} else {
+		clusterName := cloudcommon.GetClusterInstCloudletScopedName(clusterInst)
+		return NormalizeName(clusterName + clusterInst.Key.Organization)
+	}
 }
 
 // GetKubeNames udpates kubeNames with normalized strings for the included clusterinst, app, and appisnt
@@ -130,12 +156,18 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 			return nil, err
 		}
 	}
+	var appInstName string
+	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityRegionScopeName {
+		appInstName = appInst.Key.Name
+	} else {
+		appInstName = cloudcommon.GetAppInstCloudletScopedName(appInst)
+	}
 	kubeNames.ClusterName = GetNormalizedClusterName(clusterInst)
-	kubeNames.K8sNodeNameSuffix = GetK8sNodeNameSuffix(&clusterInst.Key)
+	kubeNames.K8sNodeNameSuffix = GetK8sNodeNameSuffix(clusterInst)
 	kubeNames.AppName = NormalizeName(app.Key.Name)
 	kubeNames.AppVersion = NormalizeName(app.Key.Version)
 	kubeNames.AppOrg = NormalizeName(app.Key.Organization)
-	kubeNames.AppInstName = NormalizeName(appInst.Key.Name)
+	kubeNames.AppInstName = NormalizeName(appInstName)
 	kubeNames.AppInstOrg = NormalizeName(appInst.Key.Organization)
 	// Helm app name has to conform to DNS naming standards
 	kubeNames.HelmAppName = util.DNSSanitize(app.Key.Name + "v" + app.Key.Version)
@@ -143,10 +175,10 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 	kubeNames.AppRevision = app.Revision
 	kubeNames.AppInstRevision = appInst.Revision
 	kubeNames.AppImage = NormalizeName(app.ImagePath)
-	kubeNames.OperatorName = NormalizeName(clusterInst.Key.CloudletKey.Organization)
+	kubeNames.OperatorName = NormalizeName(clusterInst.CloudletKey.Organization)
 	kubeNames.KconfName = GetKconfName(clusterInst)
 	// if clusterInst is multi-tenant and AppInst is specified, use namespaced config
-	if clusterInst.MultiTenant && appInst.Key.Name != "" && !cloudcommon.IsSideCarApp(app) {
+	if clusterInst.MultiTenant && appInstName != "" && !cloudcommon.IsSideCarApp(app) {
 		kubeNames.MultitenantNamespace = GetNamespace(appInst)
 		kubeNames.BaseKconfName = kubeNames.KconfName
 		baseName := strings.TrimSuffix(kubeNames.KconfName, ".kubeconfig")

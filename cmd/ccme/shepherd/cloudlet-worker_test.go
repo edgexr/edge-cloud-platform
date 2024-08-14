@@ -67,7 +67,7 @@ var failAlerts = `{
 			"` + edgeproto.CloudletKeyTagName + `": "` + shepherd_test.TestCloudletKey.Name + `",
 			"` + edgeproto.CloudletKeyTagOrganization + `": "` + shepherd_test.TestCloudletKey.Organization + `",
 			"` + edgeproto.ClusterKeyTagName + `": "` + shepherd_test.TestClusterKey.Name + `",
-			"` + edgeproto.ClusterKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.ClusterKey.Organization + `",
+			"` + edgeproto.ClusterKeyTagOrganization + `": "` + shepherd_test.TestClusterKey.Organization + `",
 			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_ROOTLB_OFFLINE)) + `",
 			"instance": "host.docker.internal:9091",
 			"job": "envoy_targets"
@@ -85,7 +85,7 @@ var failAlerts = `{
 			"` + edgeproto.CloudletKeyTagName + `": "` + shepherd_test.TestCloudletKey.Name + `",
 			"` + edgeproto.CloudletKeyTagOrganization + `": "` + shepherd_test.TestCloudletKey.Organization + `",
 			"` + edgeproto.ClusterKeyTagName + `": "` + shepherd_test.TestClusterKey.Name + `",
-			"` + edgeproto.ClusterKeyTagOrganization + `": "` + shepherd_test.TestClusterInstKey.ClusterKey.Organization + `",
+			"` + edgeproto.ClusterKeyTagOrganization + `": "` + shepherd_test.TestClusterKey.Organization + `",
 			"` + cloudcommon.AlertHealthCheckStatus + `": "` + strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_SERVER_FAIL)) + `",
 			"envoy_cluster_name": "backend7777",
 			"instance": "host.docker.internal:9091",
@@ -163,7 +163,7 @@ func TestCloudletAlerts(t *testing.T) {
 		assert.Equal(t, shepherd_test.TestCloudletKey.Name, alert.Obj.Labels[edgeproto.CloudletKeyTagName])
 		assert.Equal(t, shepherd_test.TestCloudletKey.Organization, alert.Obj.Labels[edgeproto.CloudletKeyTagOrganization])
 		assert.Equal(t, shepherd_test.TestClusterKey.Name, alert.Obj.Labels[edgeproto.ClusterKeyTagName])
-		assert.Equal(t, shepherd_test.TestClusterInstKey.ClusterKey.Organization, alert.Obj.Labels[edgeproto.ClusterKeyTagOrganization])
+		assert.Equal(t, shepherd_test.TestClusterKey.Organization, alert.Obj.Labels[edgeproto.ClusterKeyTagOrganization])
 		// make sure the alert status is not OK, or UNKNOWN
 		assert.NotEqual(t, strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_OK)), alert.Obj.Labels[cloudcommon.AlertHealthCheckStatus])
 		assert.NotEqual(t, strconv.Itoa(int(dme.HealthCheck_HEALTH_CHECK_UNKNOWN)), alert.Obj.Labels[cloudcommon.AlertHealthCheckStatus])

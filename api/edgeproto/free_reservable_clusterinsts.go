@@ -27,12 +27,14 @@ type AppCloudletKey struct {
 }
 
 type FreeReservableClusterInstCache struct {
-	InstsByCloudlet map[CloudletKey]map[ClusterInstKey]*ClusterInst
+	InstsByCloudlet map[CloudletKey]map[ClusterKey]*ClusterInst
+	KeyToCloudlet   map[ClusterKey]CloudletKey // for delete
 	Mux             sync.Mutex
 }
 
 func (s *FreeReservableClusterInstCache) Init() {
-	s.InstsByCloudlet = make(map[CloudletKey]map[ClusterInstKey]*ClusterInst)
+	s.InstsByCloudlet = make(map[CloudletKey]map[ClusterKey]*ClusterInst)
+	s.KeyToCloudlet = make(map[ClusterKey]CloudletKey)
 }
 
 func (s *FreeReservableClusterInstCache) Update(ctx context.Context, in *ClusterInst, rev int64) {
@@ -41,38 +43,49 @@ func (s *FreeReservableClusterInstCache) Update(ctx context.Context, in *Cluster
 	}
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
-	cinsts, found := s.InstsByCloudlet[in.Key.CloudletKey]
+	cinsts, found := s.InstsByCloudlet[in.CloudletKey]
 	if !found {
-		cinsts = make(map[ClusterInstKey]*ClusterInst)
-		s.InstsByCloudlet[in.Key.CloudletKey] = cinsts
+		cinsts = make(map[ClusterKey]*ClusterInst)
+		s.InstsByCloudlet[in.CloudletKey] = cinsts
 	}
 	if in.ReservedBy != "" {
 		delete(cinsts, in.Key)
+		delete(s.KeyToCloudlet, in.Key)
 	} else {
 		cinsts[in.Key] = in
+		s.KeyToCloudlet[in.Key] = in.CloudletKey
 	}
 }
 
 func (s *FreeReservableClusterInstCache) Delete(ctx context.Context, in *ClusterInst, rev int64) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
-	cinsts, found := s.InstsByCloudlet[in.Key.CloudletKey]
+	// The passed in ClusterInst is only guaranteed to have the
+	// key set. To be able to look up by cloudlet, we maintain a
+	// separate lookup table to map cluster keys to cloudlet keys.
+	cloudletKey, ok := s.KeyToCloudlet[in.Key]
+	if !ok {
+		return
+	}
+	cinsts, found := s.InstsByCloudlet[cloudletKey]
 	if !found {
 		return
 	}
 	delete(cinsts, in.Key)
 	if len(cinsts) == 0 {
-		delete(s.InstsByCloudlet, in.Key.CloudletKey)
+		delete(s.InstsByCloudlet, in.CloudletKey)
 	}
+	delete(s.KeyToCloudlet, in.Key)
 }
 
-func (s *FreeReservableClusterInstCache) Prune(ctx context.Context, validKeys map[ClusterInstKey]struct{}) {
+func (s *FreeReservableClusterInstCache) Prune(ctx context.Context, validKeys map[ClusterKey]struct{}) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for cloudletKey, cmap := range s.InstsByCloudlet {
-		for clusterInstKey, _ := range cmap {
-			if _, ok := validKeys[clusterInstKey]; !ok {
-				delete(cmap, clusterInstKey)
+		for clusterKey, _ := range cmap {
+			if _, ok := validKeys[clusterKey]; !ok {
+				delete(cmap, clusterKey)
+				delete(s.KeyToCloudlet, clusterKey)
 			}
 		}
 		if len(cmap) == 0 {
@@ -83,7 +96,7 @@ func (s *FreeReservableClusterInstCache) Prune(ctx context.Context, validKeys ma
 
 func (s *FreeReservableClusterInstCache) Flush(ctx context.Context, notifyId int64) {}
 
-func (s *FreeReservableClusterInstCache) GetForCloudlet(key *CloudletKey, deployment, flavor string, deploymentTransformFunc func(string) string) *ClusterInstKey {
+func (s *FreeReservableClusterInstCache) GetForCloudlet(key *CloudletKey, deployment, flavor string, deploymentTransformFunc func(string) string) *ClusterKey {
 	// need a transform func to avoid import cycle
 	deployment = deploymentTransformFunc(deployment)
 	s.Mux.Lock()

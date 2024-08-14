@@ -214,9 +214,9 @@ func GetRunTimeStats(usageType string, checkpoint, key interface{}, logs []clien
 		if !ok {
 			return fmt.Errorf("Unable to cast cluster checkpoint")
 		}
-		castedKey, ok := key.(edgeproto.ClusterInstKey)
+		castedKey, ok := key.(edgeproto.ClusterKey)
 		if !ok {
-			return fmt.Errorf("Unable to cast clusterinstkey")
+			return fmt.Errorf("Unable to cast clusterkey")
 		}
 		startTime = clusterCheckpoint.Timestamp
 		checkpointTimestamp = clusterCheckpoint.Timestamp

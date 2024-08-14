@@ -117,7 +117,7 @@ func (s *DummyController) waitForAppInsts(ctx context.Context, count int) error 
 			log.SpanLog(ctx, log.DebugLevelInfo, "waitForAppInsts: count matched", "count", count)
 			return nil
 		}
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(40 * time.Millisecond)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "Timed out waiting for cache")
 	return fmt.Errorf("Timed out waiting for %d AppInsts, have %d instead", count, s.appInstCache.GetCount())
@@ -129,7 +129,7 @@ func (s *DummyController) CreateAppInst(in *edgeproto.AppInst, server edgeproto.
 	}
 	failKey := edgeproto.AppCloudletKeyPair{
 		AppKey:      in.AppKey,
-		CloudletKey: in.Key.CloudletKey,
+		CloudletKey: in.CloudletKey,
 	}
 	if _, found := s.failCreateInsts[failKey]; found {
 		return fmt.Errorf("Some error")
@@ -149,7 +149,7 @@ func (s *DummyController) DeleteAppInst(in *edgeproto.AppInst, server edgeproto.
 	}
 	failKey := edgeproto.AppCloudletKeyPair{
 		AppKey:      in.AppKey,
-		CloudletKey: in.Key.CloudletKey,
+		CloudletKey: in.CloudletKey,
 	}
 	if _, found := s.failDeleteInsts[failKey]; found {
 		return fmt.Errorf("Some error")
@@ -203,7 +203,7 @@ func (s *DummyController) deleteAppInstFor(ctx context.Context, appKey *edgeprot
 	deleted := []edgeproto.AppInstKey{}
 	s.appInstCache.Mux.Lock()
 	for k, data := range s.appInstCache.Objs {
-		if data.Obj.AppKey.Matches(appKey) && data.Obj.Key.CloudletKey.Matches(cloudletKey) {
+		if data.Obj.AppKey.Matches(appKey) && data.Obj.CloudletKey.Matches(cloudletKey) {
 			delete(s.appInstCache.Objs, k)
 			deleted = append(deleted, data.Obj.Key)
 		}

@@ -25,10 +25,6 @@ var AppInstClientData = []edgeproto.AppInstClient{
 			AppInstKey: edgeproto.AppInstKey{
 				Name:         "appInst1",
 				Organization: "devorg1",
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "cloudlet1",
-					Organization: "operator1",
-				},
 			},
 			AppKey: edgeproto.AppKey{
 				Name:         "app1",
@@ -44,10 +40,6 @@ var AppInstClientData = []edgeproto.AppInstClient{
 			AppInstKey: edgeproto.AppInstKey{
 				Name:         "appInst2",
 				Organization: "devorg2",
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "cloudlet1",
-					Organization: "operator1",
-				},
 			},
 			AppKey: edgeproto.AppKey{
 				Name:         "app2",
@@ -64,10 +56,6 @@ var AppInstClientData = []edgeproto.AppInstClient{
 			AppInstKey: edgeproto.AppInstKey{
 				Name:         "appInst1",
 				Organization: "devorg1",
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "cloudlet2",
-					Organization: "operator2",
-				},
 			},
 			AppKey: edgeproto.AppKey{
 				Name:         "app1",
@@ -83,10 +71,6 @@ var AppInstClientData = []edgeproto.AppInstClient{
 			AppInstKey: edgeproto.AppInstKey{
 				Name:         "appInst1",
 				Organization: "devorg1",
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "cloudlet1",
-					Organization: "operator1",
-				},
 			},
 			AppKey: edgeproto.AppKey{
 				Name:         "app1",
@@ -102,10 +86,6 @@ var AppInstClientData = []edgeproto.AppInstClient{
 			AppInstKey: edgeproto.AppInstKey{
 				Name:         "appInst1",
 				Organization: "devorg1",
-				CloudletKey: edgeproto.CloudletKey{
-					Name:         "cloudlet1",
-					Organization: "operator1",
-				},
 			},
 			AppKey: edgeproto.AppKey{
 				Name:         "app1",

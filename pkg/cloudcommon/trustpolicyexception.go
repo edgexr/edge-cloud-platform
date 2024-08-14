@@ -16,7 +16,7 @@ package cloudcommon
 
 import "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 
-type TrustPolicyExceptionKeyClusterInstKey struct {
+type TrustPolicyExceptionKeyClusterKey struct {
 	TpeKey         edgeproto.TrustPolicyExceptionKey
-	ClusterInstKey edgeproto.ClusterInstKey
+	ClusterKey edgeproto.ClusterKey
 }

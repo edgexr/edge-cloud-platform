@@ -2037,18 +2037,6 @@ func (m *CloudletExecReq) CopyInFields(src *CloudletExecReq) int {
 			m.ExecReq.AppInstKey.Organization = src.ExecReq.AppInstKey.Organization
 			changed++
 		}
-		if m.ExecReq.AppInstKey.CloudletKey.Organization != src.ExecReq.AppInstKey.CloudletKey.Organization {
-			m.ExecReq.AppInstKey.CloudletKey.Organization = src.ExecReq.AppInstKey.CloudletKey.Organization
-			changed++
-		}
-		if m.ExecReq.AppInstKey.CloudletKey.Name != src.ExecReq.AppInstKey.CloudletKey.Name {
-			m.ExecReq.AppInstKey.CloudletKey.Name = src.ExecReq.AppInstKey.CloudletKey.Name
-			changed++
-		}
-		if m.ExecReq.AppInstKey.CloudletKey.FederatedOrganization != src.ExecReq.AppInstKey.CloudletKey.FederatedOrganization {
-			m.ExecReq.AppInstKey.CloudletKey.FederatedOrganization = src.ExecReq.AppInstKey.CloudletKey.FederatedOrganization
-			changed++
-		}
 		if m.ExecReq.ContainerId != src.ExecReq.ContainerId {
 			m.ExecReq.ContainerId = src.ExecReq.ContainerId
 			changed++
@@ -2143,6 +2131,18 @@ func (m *CloudletExecReq) CopyInFields(src *CloudletExecReq) int {
 		}
 		if m.ExecReq.EdgeTurnProxyAddr != src.ExecReq.EdgeTurnProxyAddr {
 			m.ExecReq.EdgeTurnProxyAddr = src.ExecReq.EdgeTurnProxyAddr
+			changed++
+		}
+		if m.ExecReq.CloudletKey.Organization != src.ExecReq.CloudletKey.Organization {
+			m.ExecReq.CloudletKey.Organization = src.ExecReq.CloudletKey.Organization
+			changed++
+		}
+		if m.ExecReq.CloudletKey.Name != src.ExecReq.CloudletKey.Name {
+			m.ExecReq.CloudletKey.Name = src.ExecReq.CloudletKey.Name
+			changed++
+		}
+		if m.ExecReq.CloudletKey.FederatedOrganization != src.ExecReq.CloudletKey.FederatedOrganization {
+			m.ExecReq.CloudletKey.FederatedOrganization = src.ExecReq.CloudletKey.FederatedOrganization
 			changed++
 		}
 	} else if m.ExecReq != nil {

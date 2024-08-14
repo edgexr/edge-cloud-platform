@@ -59,6 +59,9 @@ func ClusterInstHideTags(in *edgeproto.ClusterInst) {
 	if _, found := tags["nocmp"]; found {
 		in.ObjId = ""
 	}
+	if _, found := tags["nocmp"]; found {
+		in.CompatibilityVersion = 0
+	}
 }
 
 func ClusterInstInfoHideTags(in *edgeproto.ClusterInstInfo) {
@@ -565,31 +568,31 @@ var ClusterInstKeyV1Comments = map[string]string{
 	"organization":                      "Name of Developer organization that this cluster belongs to",
 }
 var ClusterInstKeyV1SpecialArgs = map[string]string{}
-var ClusterInstKeyRequiredArgs = []string{}
-var ClusterInstKeyOptionalArgs = []string{
+var ClusterInstKeyV2RequiredArgs = []string{}
+var ClusterInstKeyV2OptionalArgs = []string{
 	"clusterkey.name",
 	"clusterkey.organization",
 	"cloudletkey.organization",
 	"cloudletkey.name",
 	"cloudletkey.federatedorganization",
 }
-var ClusterInstKeyAliasArgs = []string{}
-var ClusterInstKeyComments = map[string]string{
+var ClusterInstKeyV2AliasArgs = []string{}
+var ClusterInstKeyV2Comments = map[string]string{
 	"clusterkey.name":                   "Cluster name",
 	"clusterkey.organization":           "Name of the organization that this cluster belongs to",
 	"cloudletkey.organization":          "Organization of the cloudlet site",
 	"cloudletkey.name":                  "Name of the cloudlet",
 	"cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
 }
-var ClusterInstKeySpecialArgs = map[string]string{}
+var ClusterInstKeyV2SpecialArgs = map[string]string{}
 var ClusterInstRequiredArgs = []string{
 	"cluster",
 	"clusterorg",
-	"cloudletorg",
-	"cloudlet",
 }
 var ClusterInstOptionalArgs = []string{
-	"federatedorg",
+	"cloudletorg",
+	"cloudlet",
+	"cloudletkey.federatedorganization",
 	"flavor",
 	"crmoverride",
 	"ipaccess",
@@ -605,13 +608,13 @@ var ClusterInstOptionalArgs = []string{
 	"networks",
 	"enableipv6",
 	"objid",
+	"annotations",
 }
 var ClusterInstAliasArgs = []string{
-	"cluster=key.clusterkey.name",
-	"clusterorg=key.clusterkey.organization",
-	"cloudletorg=key.cloudletkey.organization",
-	"cloudlet=key.cloudletkey.name",
-	"federatedorg=key.cloudletkey.federatedorganization",
+	"cluster=key.name",
+	"clusterorg=key.organization",
+	"cloudletorg=cloudletkey.organization",
+	"cloudlet=cloudletkey.name",
 	"flavor=flavor.name",
 }
 var ClusterInstComments = map[string]string{
@@ -620,7 +623,7 @@ var ClusterInstComments = map[string]string{
 	"clusterorg":                        "Name of the organization that this cluster belongs to",
 	"cloudletorg":                       "Organization of the cloudlet site",
 	"cloudlet":                          "Name of the cloudlet",
-	"federatedorg":                      "Federated operator organization who shared this cloudlet",
+	"cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
 	"flavor":                            "Flavor name",
 	"liveness":                          "Liveness of instance (see Liveness), one of Unknown, Static, Dynamic, Autoprov",
 	"auto":                              "Auto is set to true when automatically created by back-end (internal use only)",
@@ -668,11 +671,14 @@ var ClusterInstComments = map[string]string{
 	"staticfqdn":                               "Static startup FQDN is an immutable globally unique name, set when object is created",
 	"enableipv6":                               "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting",
 	"objid":                                    "Universally unique object ID",
+	"compatibilityversion":                     "internal compatibility version",
+	"annotations":                              "Annotations, specify annotations:empty=true to clear",
 }
 var ClusterInstSpecialArgs = map[string]string{
-	"errors":   "StringArray",
-	"fields":   "StringArray",
-	"networks": "StringArray",
+	"annotations": "StringToString",
+	"errors":      "StringArray",
+	"fields":      "StringArray",
+	"networks":    "StringArray",
 }
 var IdleReservableClusterInstsRequiredArgs = []string{}
 var IdleReservableClusterInstsOptionalArgs = []string{
@@ -684,11 +690,8 @@ var IdleReservableClusterInstsComments = map[string]string{
 }
 var IdleReservableClusterInstsSpecialArgs = map[string]string{}
 var ClusterInstInfoRequiredArgs = []string{
-	"key.clusterkey.name",
-	"key.clusterkey.organization",
-	"key.cloudletkey.organization",
-	"key.cloudletkey.name",
-	"key.cloudletkey.federatedorganization",
+	"key.name",
+	"key.organization",
 }
 var ClusterInstInfoOptionalArgs = []string{
 	"notifyid",
@@ -714,25 +717,22 @@ var ClusterInstInfoOptionalArgs = []string{
 }
 var ClusterInstInfoAliasArgs = []string{}
 var ClusterInstInfoComments = map[string]string{
-	"fields":                                   "Fields are used for the Update API to specify which fields to apply",
-	"key.clusterkey.name":                      "Cluster name",
-	"key.clusterkey.organization":              "Name of the organization that this cluster belongs to",
-	"key.cloudletkey.organization":             "Organization of the cloudlet site",
-	"key.cloudletkey.name":                     "Name of the cloudlet",
-	"key.cloudletkey.federatedorganization":    "Federated operator organization who shared this cloudlet",
-	"notifyid":                                 "Id of client assigned by server (internal use only)",
-	"state":                                    "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
-	"errors":                                   "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
-	"status.tasknumber":                        "Task number",
-	"status.maxtasks":                          "Max tasks",
-	"status.taskname":                          "Task name",
-	"status.stepname":                          "Step name",
-	"status.msgcount":                          "Message count",
-	"status.msgs":                              "Messages",
-	"resources.vms:#.name":                     "Virtual machine name",
-	"resources.vms:#.type":                     "Type can be platformvm, platform-cluster-master, platform-cluster-primary-node, platform-cluster-secondary-node, sharedrootlb, dedicatedrootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm",
-	"resources.vms:#.status":                   "Runtime status of the VM",
-	"resources.vms:#.infraflavor":              "Flavor allocated within the cloudlet infrastructure, distinct from the control plane flavor",
+	"fields":                      "Fields are used for the Update API to specify which fields to apply",
+	"key.name":                    "Cluster name",
+	"key.organization":            "Name of the organization that this cluster belongs to",
+	"notifyid":                    "Id of client assigned by server (internal use only)",
+	"state":                       "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
+	"errors":                      "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet.",
+	"status.tasknumber":           "Task number",
+	"status.maxtasks":             "Max tasks",
+	"status.taskname":             "Task name",
+	"status.stepname":             "Step name",
+	"status.msgcount":             "Message count",
+	"status.msgs":                 "Messages",
+	"resources.vms:#.name":        "Virtual machine name",
+	"resources.vms:#.type":        "Type can be platformvm, platform-cluster-master, platform-cluster-primary-node, platform-cluster-secondary-node, sharedrootlb, dedicatedrootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm",
+	"resources.vms:#.status":      "Runtime status of the VM",
+	"resources.vms:#.infraflavor": "Flavor allocated within the cloudlet infrastructure, distinct from the control plane flavor",
 	"resources.vms:#.ipaddresses:#.externalip": "External IP address",
 	"resources.vms:#.ipaddresses:#.internalip": "Internal IP address",
 	"resources.vms:#.containers:#.name":        "Name of the container",
@@ -749,15 +749,13 @@ var ClusterInstInfoSpecialArgs = map[string]string{
 var UpdateClusterInstRequiredArgs = []string{
 	"cluster",
 	"clusterorg",
-	"cloudletorg",
-	"cloudlet",
 }
 var UpdateClusterInstOptionalArgs = []string{
-	"federatedorg",
 	"crmoverride",
 	"numnodes",
 	"autoscalepolicy",
 	"skipcrmcleanuponfailure",
 	"enableipv6",
 	"objid",
+	"annotations",
 }

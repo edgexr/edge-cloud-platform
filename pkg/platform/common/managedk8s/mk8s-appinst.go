@@ -168,7 +168,7 @@ func (m *ManagedK8sPlatform) SetupKconf(ctx context.Context, clusterInst *edgepr
 		// already exists
 		return nil
 	}
-	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(&clusterInst.Key))
+	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
 	if err := m.Provider.GetCredentials(ctx, clusterName); err != nil {
 		return fmt.Errorf("unable to get credentials %v", err)
 	}

@@ -48,11 +48,11 @@ func TestVmStats(t *testing.T) {
 		Key: edgeproto.AppInstKey{
 			Name:         "testvminst",
 			Organization: "",
-			CloudletKey:  testCloudletKey,
 		},
 		AppKey: edgeproto.AppKey{
 			Name: "TestVM",
 		},
+		CloudletKey: testCloudletKey,
 	}
 
 	buf, err := json.Marshal(testVmAppData)

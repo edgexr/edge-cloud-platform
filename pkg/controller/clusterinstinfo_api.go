@@ -49,6 +49,6 @@ func (s *ClusterInstInfoApi) Flush(ctx context.Context, notifyId int64) {
 	// no-op
 }
 
-func (s *ClusterInstInfoApi) Prune(ctx context.Context, keys map[edgeproto.ClusterInstKey]struct{}) {
+func (s *ClusterInstInfoApi) Prune(ctx context.Context, keys map[edgeproto.ClusterKey]struct{}) {
 	// no-op
 }

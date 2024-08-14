@@ -95,7 +95,8 @@ func TestAppInstClientApi(t *testing.T) {
 	ch1 := make(chan edgeproto.AppInstClient, qSize)
 	apis.appInstClientApi.SetRecvChan(ctx, &testutil.AppInstClientKeyData()[0], ch1)
 	// Wait for local cache since it's in a separate go routine
-	notify.WaitFor(&apis.appInstClientKeyApi.cache, 1)
+	err = notify.WaitFor(&apis.appInstClientKeyApi.cache, 1)
+	require.Nil(t, err)
 
 	// Add Client for AppInst1
 	apis.appInstClientApi.AddAppInstClient(ctx, &testutil.AppInstClientData()[0])
@@ -106,7 +107,8 @@ func TestAppInstClientApi(t *testing.T) {
 	ch2 := make(chan edgeproto.AppInstClient, qSize)
 	apis.appInstClientApi.SetRecvChan(ctx, &testutil.AppInstClientKeyData()[1], ch2)
 	// Wait for local cache since it's in a separate go routine
-	notify.WaitFor(&apis.appInstClientKeyApi.cache, 2)
+	err = notify.WaitFor(&apis.appInstClientKeyApi.cache, 2)
+	require.Nil(t, err)
 
 	// Add a Client for AppInst2
 	apis.appInstClientApi.AddAppInstClient(ctx, &testutil.AppInstClientData()[3])
@@ -123,9 +125,13 @@ func TestAppInstClientApi(t *testing.T) {
 	assert.Equal(t, -1, count)
 	// Add a second Channel for AppInst1
 	ch12 := make(chan edgeproto.AppInstClient, qSize)
-	apis.appInstClientApi.SetRecvChan(ctx, &testutil.AppInstClientKeyData()[0], ch12)
+	wg := apis.appInstClientApi.SetRecvChan(ctx, &testutil.AppInstClientKeyData()[0], ch12)
 	// Wait for local cache since it's in a separate go routine
-	notify.WaitFor(&apis.appInstClientKeyApi.cache, 2)
+	err = notify.WaitFor(&apis.appInstClientKeyApi.cache, 1)
+	require.Nil(t, err)
+	// for test to work deterministically, need to wait for write thread
+	// spawned by SetRecvChan to finish before calling AddAppInstClient.
+	wg.Wait()
 
 	// Add a client 2 for AppInst1
 	apis.appInstClientApi.AddAppInstClient(ctx, &testutil.AppInstClientData()[1])

@@ -82,11 +82,11 @@ func (k *K8sBareMetalPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolic
 	return fmt.Errorf("UpdateTrustPolicy TODO")
 }
 
-func (k *K8sBareMetalPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, clusterInstKey *edgeproto.ClusterInstKey) error {
+func (k *K8sBareMetalPlatform) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, clusterKey *edgeproto.ClusterKey) error {
 	return fmt.Errorf("UpdateTrustPolicyException TODO")
 }
 
-func (k *K8sBareMetalPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey, clusterInstKey *edgeproto.ClusterInstKey) error {
+func (k *K8sBareMetalPlatform) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey, clusterKey *edgeproto.ClusterKey) error {
 	return fmt.Errorf("DeleteTrustPolicyException TODO")
 }
 

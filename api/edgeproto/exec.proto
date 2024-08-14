@@ -18,6 +18,7 @@ package edgeproto;
 import "tools/protogen/protogen.proto";
 import "gogoproto/gogo.proto";
 import "appinst.proto";
+import "cloudletkey.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -79,11 +80,12 @@ message ExecRequest {
   string edge_turn_addr = 15 [(protogen.backend) = true];
   // EdgeTurn Proxy Address
   string edge_turn_proxy_addr = 16 [(protogen.backend) = true];
+  // Cloudlet key
+  CloudletKey cloudlet_key = 17 [(gogoproto.nullable) = false, (protogen.backend) = true];
   option (protogen.notify_message) = true;
   option (protogen.notify_custom_update) = true;
-  option (protogen.noconfig) = "Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr";
-  option (protogen.alias) = "appinstname=AppInstKey.Name,appinstorg=AppInstKey.Organization,cloudlet=AppInstKey.CloudletKey.Name,cloudletorg=AppInstKey.CloudletKey.Organization,federatedorg=AppInstKey.CloudletKey.FederatedOrganization,command=Cmd.Command,since=Log.Since,tail=Log.Tail,timestamps=Log.Timestamps,follow=Log.Follow,nodetype=Cmd.CloudletMgmtNode.Type,nodename=Cmd.CloudletMgmtNode.Name";
-  option (protogen.not_required) = "AppInstKey.CloudletKey.FederatedOrganization";
+  option (protogen.noconfig) = "Offer,Answer,Err,Console.Url,Timeout,AccessUrl,EdgeTurnAddr,TargetCloudlet";
+  option (protogen.alias) = "appinstname=AppInstKey.Name,appinstorg=AppInstKey.Organization,cloudlet=CloudletKey.Name,cloudletorg=CloudletKey.Organization,federatedorg=AppInstKey.CloudletKey.FederatedOrganization,command=Cmd.Command,since=Log.Since,tail=Log.Tail,timestamps=Log.Timestamps,follow=Log.Follow,nodetype=Cmd.CloudletMgmtNode.Type,nodename=Cmd.CloudletMgmtNode.Name";
   option (protogen.also_required) = "AppInstKey";
 }
 

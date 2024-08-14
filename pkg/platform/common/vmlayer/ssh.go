@@ -76,13 +76,13 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 	}
 
 	// Dedicated RootLB + Cluster VMs
-	clusterInstKeys := make(map[edgeproto.ClusterInstKey]struct{})
-	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
-		clusterInstKeys[*k] = struct{}{}
+	clusterKeys := make(map[edgeproto.ClusterKey]struct{})
+	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterKey, modRev int64) {
+		clusterKeys[*k] = struct{}{}
 	})
 	clusterInst := &edgeproto.ClusterInst{}
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs got clusters", "num clusters", len(clusterInstKeys))
-	for k := range clusterInstKeys {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs got clusters", "num clusters", len(clusterKeys))
+	for k := range clusterKeys {
 		if !caches.ClusterInstCache.Get(&k, clusterInst) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Error: failed to get cluster", "key", k)
 			continue

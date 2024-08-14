@@ -72,10 +72,10 @@ func runAutoScale(ctx context.Context, k interface{}) {
 
 func getClusterInstToScale(ctx context.Context, name string, alert *edgeproto.Alert) (*edgeproto.ClusterInst, error) {
 	inst := edgeproto.ClusterInst{}
-	inst.Key.ClusterKey.Organization = alert.Labels[edgeproto.ClusterKeyTagOrganization]
-	inst.Key.ClusterKey.Name = alert.Labels[edgeproto.ClusterKeyTagName]
-	inst.Key.CloudletKey.Name = alert.Labels[edgeproto.CloudletKeyTagName]
-	inst.Key.CloudletKey.Organization = alert.Labels[edgeproto.CloudletKeyTagOrganization]
+	inst.Key.Organization = alert.Labels[edgeproto.ClusterKeyTagOrganization]
+	inst.Key.Name = alert.Labels[edgeproto.ClusterKeyTagName]
+	inst.CloudletKey.Name = alert.Labels[edgeproto.CloudletKeyTagName]
+	inst.CloudletKey.Organization = alert.Labels[edgeproto.CloudletKeyTagOrganization]
 	if name == cloudcommon.AlertClusterAutoScale {
 		// new v1 scaling alert
 		inst.NumNodes = uint32(alert.Value)
@@ -140,7 +140,7 @@ func scaleClusterInst(ctx context.Context, name string, alert *edgeproto.Alert, 
 	}
 	if err == nil {
 		// only log event if scaling succeeded
-		nodeMgr.TimedEvent(ctx, name+" ClusterInst", inst.Key.ClusterKey.Organization, node.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "new nodecount", strconv.Itoa(int(inst.NumNodes)), "reason", alert.Annotations["reason"])
+		nodeMgr.TimedEvent(ctx, name+" ClusterInst", inst.Key.Organization, node.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "new nodecount", strconv.Itoa(int(inst.NumNodes)), "reason", alert.Annotations["reason"])
 	}
 	return err
 }

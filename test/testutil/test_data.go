@@ -85,32 +85,6 @@ func DevData() []string {
 	}
 }
 
-func ClusterKeys() []edgeproto.ClusterKey {
-	devData := DevData()
-	return []edgeproto.ClusterKey{{
-		Name:         "Pillimos",
-		Organization: devData[0],
-	}, {
-		Name:         "Ever.Ai",
-		Organization: devData[0],
-	}, {
-		Name:         "Untomt",
-		Organization: devData[3],
-	}, {
-		Name:         "Big-Pillimos",
-		Organization: devData[3],
-	}, {
-		Name:         "Reservable",
-		Organization: edgeproto.OrganizationEdgeCloud,
-	}, {
-		Name:         cloudcommon.DefaultMultiTenantCluster,
-		Organization: edgeproto.OrganizationEdgeCloud,
-	}, {
-		Name:         "dockerCluster",
-		Organization: devData[0],
-	}}
-}
-
 func AppData() []edgeproto.App {
 	devData := DevData()
 	flavorData := FlavorData()
@@ -541,88 +515,94 @@ func CloudletNodeData() []edgeproto.CloudletNode {
 }
 
 func ClusterInstData() []edgeproto.ClusterInst {
+	devData := DevData()
 	flavorData := FlavorData()
-	clusterKeys := ClusterKeys()
 	cloudletData := CloudletData()
 	autoScalePolicyData := AutoScalePolicyData()
 	return []edgeproto.ClusterInst{{ // 0
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[0],
-			CloudletKey: cloudletData[0].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         "Pillimos",
+			Organization: devData[0],
 		},
-		Flavor:     flavorData[0].Key,
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_DEDICATED,
-		NumMasters: 1,
-		NumNodes:   2,
+		CloudletKey: cloudletData[0].Key,
+		Flavor:      flavorData[0].Key,
+		IpAccess:    edgeproto.IpAccess_IP_ACCESS_DEDICATED,
+		NumMasters:  1,
+		NumNodes:    2,
 	}, { // edgeproto.ClusterInst // 1
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[0],
-			CloudletKey: cloudletData[1].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         "Pillimos2",
+			Organization: devData[0],
 		},
-		Flavor:     flavorData[0].Key,
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-		NumMasters: 1,
-		NumNodes:   2,
+		CloudletKey: cloudletData[1].Key,
+		Flavor:      flavorData[0].Key,
+		IpAccess:    edgeproto.IpAccess_IP_ACCESS_SHARED,
+		NumMasters:  1,
+		NumNodes:    2,
 	}, { // edgeproto.ClusterInst // 2
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[0],
-			CloudletKey: cloudletData[2].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         "Pillimos3",
+			Organization: devData[0],
 		},
+		CloudletKey:     cloudletData[2].Key,
 		Flavor:          flavorData[0].Key,
 		NumMasters:      1,
 		NumNodes:        2,
 		AutoScalePolicy: autoScalePolicyData[2].Key.Name,
 	}, { // edgeproto.ClusterInst // 3
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[1],
-			CloudletKey: cloudletData[0].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         "Ever.Ai",
+			Organization: devData[0],
 		},
+		CloudletKey:     cloudletData[0].Key,
 		Flavor:          flavorData[1].Key,
 		IpAccess:        edgeproto.IpAccess_IP_ACCESS_DEDICATED,
 		NumMasters:      1,
 		NumNodes:        3,
 		AutoScalePolicy: autoScalePolicyData[0].Key.Name,
 	}, { // edgeproto.ClusterInst // 4
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[1],
-			CloudletKey: cloudletData[1].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         "Ever.Ai2",
+			Organization: devData[0],
 		},
-		Flavor:     flavorData[1].Key,
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-		NumMasters: 1,
-		NumNodes:   3,
+		CloudletKey: cloudletData[1].Key,
+		Flavor:      flavorData[1].Key,
+		IpAccess:    edgeproto.IpAccess_IP_ACCESS_SHARED,
+		NumMasters:  1,
+		NumNodes:    3,
 	}, { // edgeproto.ClusterInst // 5
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[2],
-			CloudletKey: cloudletData[2].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         "Untomt",
+			Organization: devData[3],
 		},
-		Flavor:     flavorData[2].Key,
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_DEDICATED,
-		NumMasters: 1,
-		NumNodes:   4,
+		CloudletKey: cloudletData[2].Key,
+		Flavor:      flavorData[2].Key,
+		IpAccess:    edgeproto.IpAccess_IP_ACCESS_DEDICATED,
+		NumMasters:  1,
+		NumNodes:    4,
 	}, { // edgeproto.ClusterInst // 6
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[3],
-			CloudletKey: cloudletData[3].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         "Big-Pillimos",
+			Organization: devData[3],
 		},
-		Flavor:     flavorData[2].Key,
-		NumMasters: 1,
-		NumNodes:   3,
+		CloudletKey: cloudletData[3].Key,
+		Flavor:      flavorData[2].Key,
+		NumMasters:  1,
+		NumNodes:    3,
 	}, { // edgeproto.ClusterInst // 7
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[4],
-			CloudletKey: cloudletData[0].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         "Reservable",
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
-		Flavor:     flavorData[0].Key,
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-		NumMasters: 1,
-		NumNodes:   2,
-		Reservable: true,
+		CloudletKey: cloudletData[0].Key,
+		Flavor:      flavorData[0].Key,
+		IpAccess:    edgeproto.IpAccess_IP_ACCESS_SHARED,
+		NumMasters:  1,
+		NumNodes:    2,
+		Reservable:  true,
 	}, { // edgeproto.ClusterInst // 8
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[5], // multi-tenant cluster
-			CloudletKey: cloudletData[0].Key,
-		},
+		Key:              *cloudcommon.GetDefaultMTClustKey(cloudletData[0].Key),
+		CloudletKey:      cloudletData[0].Key,
 		Flavor:           flavorData[0].Key,
 		IpAccess:         edgeproto.IpAccess_IP_ACCESS_SHARED,
 		NumMasters:       1,
@@ -630,13 +610,14 @@ func ClusterInstData() []edgeproto.ClusterInst {
 		MasterNodeFlavor: flavorData[2].Key.Name, // medium
 		MultiTenant:      true,
 	}, { // edgeproto.ClusterInst // 9
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey:  clusterKeys[6],
-			CloudletKey: cloudletData[1].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         "dockerCluster",
+			Organization: devData[0],
 		},
-		Deployment: cloudcommon.DeploymentTypeDocker,
-		Flavor:     flavorData[0].Key,
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_DEDICATED,
+		CloudletKey: cloudletData[1].Key,
+		Deployment:  cloudcommon.DeploymentTypeDocker,
+		Flavor:      flavorData[0].Key,
+		IpAccess:    edgeproto.IpAccess_IP_ACCESS_DEDICATED,
 	}}
 }
 
@@ -648,68 +629,60 @@ func ClusterInstAutoData() []edgeproto.ClusterInst {
 	cloudletData := CloudletData()
 	return []edgeproto.ClusterInst{{
 		// from AppInstData[3] -> AppData[1]
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name:         "reservable0",
-				Organization: edgeproto.OrganizationEdgeCloud,
-			},
-			CloudletKey: cloudletData[1].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         cloudcommon.BuildReservableClusterName(0, &cloudletData[1].Key),
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
-		Flavor:     flavorData[0].Key,
-		NumMasters: 1,
-		NumNodes:   1,
-		State:      edgeproto.TrackedState_READY,
-		Auto:       true,
-		Reservable: true,
-		ReservedBy: devData[0],
+		CloudletKey: cloudletData[1].Key,
+		Flavor:      flavorData[0].Key,
+		NumMasters:  1,
+		NumNodes:    1,
+		State:       edgeproto.TrackedState_READY,
+		Auto:        true,
+		Reservable:  true,
+		ReservedBy:  devData[0],
 	}, { // edgeproto.ClusterInst
 		// from AppInstData[4] -> AppData[2]
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name:         "reservable0",
-				Organization: edgeproto.OrganizationEdgeCloud,
-			},
-			CloudletKey: cloudletData[2].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         cloudcommon.BuildReservableClusterName(0, &cloudletData[2].Key),
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
-		Flavor:     flavorData[1].Key,
-		NumMasters: 1,
-		NumNodes:   1,
-		State:      edgeproto.TrackedState_READY,
-		Auto:       true,
-		Reservable: true,
-		ReservedBy: devData[0],
+		CloudletKey: cloudletData[2].Key,
+		Flavor:      flavorData[1].Key,
+		NumMasters:  1,
+		NumNodes:    1,
+		State:       edgeproto.TrackedState_READY,
+		Auto:        true,
+		Reservable:  true,
+		ReservedBy:  devData[0],
 	}, { // edgeproto.ClusterInst
 		// from AppInstData[6] -> AppData[6]
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name:         "reservable1",
-				Organization: edgeproto.OrganizationEdgeCloud,
-			},
-			CloudletKey: cloudletData[2].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         cloudcommon.BuildReservableClusterName(1, &cloudletData[2].Key),
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
-		Flavor:     flavorData[1].Key,
-		NumMasters: 1,
-		NumNodes:   1,
-		State:      edgeproto.TrackedState_READY,
-		Auto:       true,
-		Reservable: true,
-		ReservedBy: devData[0],
+		CloudletKey: cloudletData[2].Key,
+		Flavor:      flavorData[1].Key,
+		NumMasters:  1,
+		NumNodes:    1,
+		State:       edgeproto.TrackedState_READY,
+		Auto:        true,
+		Reservable:  true,
+		ReservedBy:  devData[0],
 	}, { // edgeproto.ClusterInst
 		// from AppInstData[12] -> AppData[13]
-		Key: edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name:         "reservable0",
-				Organization: edgeproto.OrganizationEdgeCloud,
-			},
-			CloudletKey: cloudletData[3].Key,
+		Key: edgeproto.ClusterKey{
+			Name:         cloudcommon.BuildReservableClusterName(0, &cloudletData[3].Key),
+			Organization: edgeproto.OrganizationEdgeCloud,
 		},
-		Flavor:     flavorData[0].Key,
-		NumMasters: 1,
-		NumNodes:   1,
-		State:      edgeproto.TrackedState_READY,
-		Auto:       true,
-		Reservable: true,
-		ReservedBy: edgeproto.OrganizationEdgeCloud,
+		CloudletKey: cloudletData[3].Key,
+		Flavor:      flavorData[0].Key,
+		NumMasters:  1,
+		NumNodes:    1,
+		State:       edgeproto.TrackedState_READY,
+		Auto:        true,
+		Reservable:  true,
+		ReservedBy:  edgeproto.OrganizationEdgeCloud,
 	}}
 }
 
@@ -722,134 +695,134 @@ func AppInstData() []edgeproto.AppInst {
 		Key: edgeproto.AppInstKey{
 			Name:         appData[0].Key.Name + "1",
 			Organization: appData[0].Key.Organization,
-			CloudletKey:  clusterInstData[0].Key.CloudletKey,
 		},
 		AppKey:      appData[0].Key,
-		ClusterKey:  clusterInstData[0].Key.ClusterKey,
+		ClusterKey:  clusterInstData[0].Key,
+		CloudletKey: clusterInstData[0].CloudletKey,
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 1
 		Key: edgeproto.AppInstKey{
 			Name:         appData[0].Key.Name + "2",
 			Organization: appData[0].Key.Organization,
-			CloudletKey:  clusterInstData[3].Key.CloudletKey,
 		},
 		AppKey:      appData[0].Key,
-		ClusterKey:  clusterInstData[3].Key.ClusterKey,
+		ClusterKey:  clusterInstData[3].Key,
+		CloudletKey: clusterInstData[3].CloudletKey,
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 2
 		Key: edgeproto.AppInstKey{
 			Name:         appData[0].Key.Name + "3",
 			Organization: appData[0].Key.Organization,
-			CloudletKey:  clusterInstData[1].Key.CloudletKey,
 		},
 		AppKey:      appData[0].Key,
-		ClusterKey:  clusterInstData[1].Key.ClusterKey,
+		ClusterKey:  clusterInstData[1].Key,
+		CloudletKey: clusterInstData[1].CloudletKey,
 		CloudletLoc: cloudletData[1].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 3
 		Key: edgeproto.AppInstKey{
-			Name:         appData[1].Key.Name + "1",
+			Name:         appData[1].Key.Name + "4",
 			Organization: appData[1].Key.Organization,
-			CloudletKey:  clusterInstAutoData[0].Key.CloudletKey,
 		},
 		AppKey:      appData[1].Key,
+		CloudletKey: clusterInstAutoData[0].CloudletKey,
 		CloudletLoc: cloudletData[1].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 4
 		Key: edgeproto.AppInstKey{
 			Name:         appData[2].Key.Name + "1",
 			Organization: appData[2].Key.Organization,
-			CloudletKey:  clusterInstAutoData[1].Key.CloudletKey,
 		},
 		AppKey:      appData[2].Key,
+		CloudletKey: clusterInstAutoData[1].CloudletKey,
 		CloudletLoc: cloudletData[2].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 5
 		Key: edgeproto.AppInstKey{
 			Name:         appData[5].Key.Name + "1",
 			Organization: appData[5].Key.Organization,
-			CloudletKey:  clusterInstData[2].Key.CloudletKey,
 		},
 		AppKey:      appData[5].Key,
-		ClusterKey:  clusterInstData[2].Key.ClusterKey,
+		ClusterKey:  clusterInstData[2].Key,
+		CloudletKey: clusterInstData[2].CloudletKey,
 		CloudletLoc: cloudletData[2].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 6
 		Key: edgeproto.AppInstKey{
 			Name:         appData[6].Key.Name + "1",
 			Organization: appData[6].Key.Organization,
-			CloudletKey:  clusterInstAutoData[2].Key.CloudletKey,
 		},
 		AppKey:      appData[6].Key,
+		CloudletKey: clusterInstAutoData[2].CloudletKey,
 		CloudletLoc: cloudletData[2].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 7
 		Key: edgeproto.AppInstKey{
 			Name:         appData[6].Key.Name + "2",
 			Organization: appData[6].Key.Organization,
-			CloudletKey:  clusterInstData[0].Key.CloudletKey,
 		},
 		AppKey:      appData[6].Key,
-		ClusterKey:  clusterInstData[0].Key.ClusterKey,
+		ClusterKey:  clusterInstData[0].Key,
+		CloudletKey: clusterInstData[0].CloudletKey,
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 8
 		Key: edgeproto.AppInstKey{
 			Name:         appData[7].Key.Name + "1",
 			Organization: appData[7].Key.Organization,
-			CloudletKey:  clusterInstData[0].Key.CloudletKey,
 		},
 		AppKey:      appData[7].Key,
-		ClusterKey:  clusterInstData[0].Key.ClusterKey,
+		ClusterKey:  clusterInstData[0].Key,
+		CloudletKey: clusterInstData[0].CloudletKey,
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 9
 		Key: edgeproto.AppInstKey{
 			Name:         appData[9].Key.Name + "1",
 			Organization: appData[9].Key.Organization,
-			CloudletKey:  clusterInstData[0].Key.CloudletKey,
 		},
 		AppKey:      appData[9].Key, // auto-delete app
-		ClusterKey:  clusterInstData[0].Key.ClusterKey,
+		ClusterKey:  clusterInstData[0].Key,
+		CloudletKey: clusterInstData[0].CloudletKey,
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 10
 		Key: edgeproto.AppInstKey{
 			Name:         appData[9].Key.Name + "2",
 			Organization: appData[9].Key.Organization,
-			CloudletKey:  clusterInstAutoData[0].Key.CloudletKey,
 		},
 		AppKey:      appData[9].Key, //auto-delete app
-		ClusterKey:  clusterInstAutoData[0].Key.ClusterKey,
+		ClusterKey:  clusterInstAutoData[0].Key,
+		CloudletKey: clusterInstAutoData[0].CloudletKey,
 		CloudletLoc: cloudletData[1].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 11
 		Key: edgeproto.AppInstKey{
 			Name:         appData[12].Key.Name + "1",
 			Organization: appData[12].Key.Organization,
-			CloudletKey:  cloudletData[0].Key,
 		},
 		AppKey:      appData[12].Key, //vm app with lb
+		CloudletKey: cloudletData[0].Key,
 		CloudletLoc: cloudletData[1].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 12 - deploy EdgeCloud app to reservable autocluster
 		Key: edgeproto.AppInstKey{
 			Name:         appData[13].Key.Name + "1",
 			Organization: appData[13].Key.Organization,
-			CloudletKey:  clusterInstAutoData[3].Key.CloudletKey,
 		},
 		AppKey:      appData[13].Key, // edgecloud sample app
+		CloudletKey: clusterInstAutoData[3].CloudletKey,
 		CloudletLoc: cloudletData[3].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 13
 		Key: edgeproto.AppInstKey{
 			Name:         appData[0].Key.Name + "6",
 			Organization: appData[0].Key.Organization,
-			CloudletKey:  clusterInstData[8].Key.CloudletKey, // multi-tenant
 		},
-		AppKey: appData[0].Key,
+		AppKey:      appData[0].Key,
+		CloudletKey: clusterInstData[8].CloudletKey, // multi-tenant
 		// No ClusterKey, autocluster should choose MT first
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
@@ -857,19 +830,19 @@ func AppInstData() []edgeproto.AppInst {
 		Key: edgeproto.AppInstKey{
 			Name:         appData[9].Key.Name + "3",
 			Organization: appData[9].Key.Organization,
-			CloudletKey:  clusterInstData[8].Key.CloudletKey,
 		},
-		AppKey:      appData[9].Key,                    // sidecar app
-		ClusterKey:  clusterInstData[8].Key.ClusterKey, // sidecar requires cluster key
+		AppKey:      appData[9].Key,         // sidecar app
+		ClusterKey:  clusterInstData[8].Key, // sidecar requires cluster key
+		CloudletKey: clusterInstData[8].CloudletKey,
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}, { // edgeproto.AppInst // 15
 		Key: edgeproto.AppInstKey{
 			Name:         appData[13].Key.Name + "2",
 			Organization: appData[13].Key.Organization,
-			CloudletKey:  clusterInstData[8].Key.CloudletKey,
 		},
-		AppKey: appData[13].Key,
+		AppKey:      appData[13].Key,
+		CloudletKey: clusterInstData[8].CloudletKey,
 		// No ClusterKey, autocluster should choose MT first
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
@@ -877,9 +850,9 @@ func AppInstData() []edgeproto.AppInst {
 		Key: edgeproto.AppInstKey{
 			Name:         appData[14].Key.Name + "1",
 			Organization: appData[14].Key.Organization,
-			CloudletKey:  clusterInstData[8].Key.CloudletKey,
 		},
-		AppKey: appData[14].Key,
+		AppKey:      appData[14].Key,
+		CloudletKey: clusterInstData[8].CloudletKey,
 		// No ClusterKey, autocluster should choose MT first
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
@@ -887,10 +860,10 @@ func AppInstData() []edgeproto.AppInst {
 		Key: edgeproto.AppInstKey{
 			Name:         appData[15].Key.Name + "1",
 			Organization: appData[15].Key.Organization,
-			CloudletKey:  clusterInstData[9].Key.CloudletKey,
 		},
 		AppKey:      appData[15].Key,
-		ClusterKey:  clusterInstData[9].Key.ClusterKey,
+		ClusterKey:  clusterInstData[9].Key,
+		CloudletKey: clusterInstData[9].CloudletKey,
 		CloudletLoc: cloudletData[0].Location,
 		PowerState:  edgeproto.PowerState_POWER_ON,
 	}}
@@ -1244,34 +1217,34 @@ func CloudletRefsData() []edgeproto.CloudletRefs {
 		// ClusterInstData[0,3,7,8]:
 		Key: cloudletData[0].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
-			clusterInstData[0].Key.ClusterKey,
-			clusterInstData[3].Key.ClusterKey,
-			clusterInstData[7].Key.ClusterKey,
-			clusterInstData[8].Key.ClusterKey,
+			clusterInstData[0].Key,
+			clusterInstData[3].Key,
+			clusterInstData[7].Key,
+			clusterInstData[8].Key,
 		},
 		UsedDynamicIps: 2,
 	}, { // edgeproto.CloudletRefs
 		// ClusterInstData[1,4,9]:
 		Key: cloudletData[1].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
-			clusterInstData[1].Key.ClusterKey,
-			clusterInstData[4].Key.ClusterKey,
-			clusterInstData[9].Key.ClusterKey,
+			clusterInstData[1].Key,
+			clusterInstData[4].Key,
+			clusterInstData[9].Key,
 		},
 		UsedDynamicIps: 1,
 	}, { // edgeproto.CloudletRefs
 		// ClusterInstData[2,5]:
 		Key: cloudletData[2].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
-			clusterInstData[2].Key.ClusterKey,
-			clusterInstData[5].Key.ClusterKey,
+			clusterInstData[2].Key,
+			clusterInstData[5].Key,
 		},
 		UsedDynamicIps: 1,
 	}, { // edgeproto.CloudletRefs
 		// ClusterInstData[6]:
 		Key: cloudletData[3].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
-			clusterInstData[6].Key.ClusterKey,
+			clusterInstData[6].Key,
 		},
 	}}
 }
@@ -1290,26 +1263,25 @@ func CloudletRefsWithAppInstsData() []edgeproto.CloudletRefs {
 		// AppInstData[13,14,15,16] -> App[0,9,13,14] -> ports[tcp:443,tcp:10002,udp:10002;;tcp:889;tcp:444]
 		Key: cloudletData[0].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
-			clusterInstData[0].Key.ClusterKey,
-			clusterInstData[3].Key.ClusterKey,
-			clusterInstData[7].Key.ClusterKey,
-			clusterInstData[8].Key.ClusterKey,
+			clusterInstData[0].Key,
+			clusterInstData[3].Key,
+			clusterInstData[7].Key,
+			clusterInstData[8].Key,
 		},
 		RootLbPorts: map[int32]int32{443: 1, 10002: 3, 889: 1, 444: 1},
-		VmAppInsts: []edgeproto.AppInstRefKey{{
-			Name:         appInstData[11].Key.Name,
-			Organization: appInstData[11].Key.Organization,
-		}},
+		VmAppInsts: []edgeproto.AppInstKey{
+			appInstData[11].Key,
+		},
 		UsedDynamicIps: 2,
 	}, { // edgeproto.CloudletRefs
 		// ClusterInstData[1,4,9], ClusterInstAutoData[0]: (shared,shared,dedicated,shared)
 		// AppInstData[2,3] -> ports[tcp:443;tcp:80,tcp:443,tcp:81,udp:10002]
 		Key: cloudletData[1].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
-			clusterInstData[1].Key.ClusterKey,
-			clusterInstData[4].Key.ClusterKey,
-			clusterInstAutoData[0].Key.ClusterKey,
-			clusterInstData[9].Key.ClusterKey,
+			clusterInstData[1].Key,
+			clusterInstData[4].Key,
+			clusterInstAutoData[0].Key,
+			clusterInstData[9].Key,
 		},
 		RootLbPorts:            map[int32]int32{80: 1, 81: 1, 443: 1, 10000: 1, 10002: 3},
 		ReservedAutoClusterIds: 1,
@@ -1319,10 +1291,10 @@ func CloudletRefsWithAppInstsData() []edgeproto.CloudletRefs {
 		// AppInstData[4,5,6] -> ports[tcp:443,udp:11111;udp:2024;tcp:80,udp:8001,tcp:65535]
 		Key: cloudletData[2].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
-			clusterInstData[2].Key.ClusterKey,
-			clusterInstData[5].Key.ClusterKey,
-			clusterInstAutoData[1].Key.ClusterKey,
-			clusterInstAutoData[2].Key.ClusterKey,
+			clusterInstData[2].Key,
+			clusterInstData[5].Key,
+			clusterInstAutoData[1].Key,
+			clusterInstAutoData[2].Key,
 		},
 		UsedDynamicIps:         1,
 		RootLbPorts:            map[int32]int32{443: 1, 11111: 2, 2024: 2, 80: 1, 8001: 2, 65535: 1},
@@ -1333,8 +1305,8 @@ func CloudletRefsWithAppInstsData() []edgeproto.CloudletRefs {
 		// AppInstData[12] -> ports[tcp:889]
 		Key: cloudletData[3].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
-			clusterInstData[6].Key.ClusterKey,
-			clusterInstAutoData[3].Key.ClusterKey,
+			clusterInstData[6].Key,
+			clusterInstAutoData[3].Key,
 		},
 		RootLbPorts:            map[int32]int32{889: 1},
 		ReservedAutoClusterIds: 1,
@@ -1410,10 +1382,10 @@ func AlertData() []edgeproto.Alert {
 	return []edgeproto.Alert{{
 		Labels: map[string]string{
 			"alertname":   "AutoScaleUp",
-			"cloudletorg": clusterInstData[0].Key.CloudletKey.Organization,
-			"cloudlet":    clusterInstData[0].Key.CloudletKey.Name,
-			"cluster":     clusterInstData[0].Key.ClusterKey.Name,
-			"clusterorg":  clusterInstData[0].Key.ClusterKey.Organization,
+			"cloudletorg": clusterInstData[0].CloudletKey.Organization,
+			"cloudlet":    clusterInstData[0].CloudletKey.Name,
+			"cluster":     clusterInstData[0].Key.Name,
+			"clusterorg":  clusterInstData[0].Key.Organization,
 			"severity":    "none",
 		},
 		Annotations: map[string]string{
@@ -1428,10 +1400,10 @@ func AlertData() []edgeproto.Alert {
 	}, { // edgeproto.Alert
 		Labels: map[string]string{
 			"alertname":   "AutoScaleDown",
-			"cloudletorg": clusterInstData[0].Key.CloudletKey.Organization,
-			"cloudlet":    clusterInstData[0].Key.CloudletKey.Name,
-			"cluster":     clusterInstData[0].Key.ClusterKey.Name,
-			"clusterorg":  clusterInstData[0].Key.ClusterKey.Organization,
+			"cloudletorg": clusterInstData[0].CloudletKey.Organization,
+			"cloudlet":    clusterInstData[0].CloudletKey.Name,
+			"cluster":     clusterInstData[0].Key.Name,
+			"clusterorg":  clusterInstData[0].Key.Organization,
 			"severity":    "none",
 		},
 		Annotations: map[string]string{
@@ -1446,10 +1418,10 @@ func AlertData() []edgeproto.Alert {
 	}, { // edgeproto.Alert
 		Labels: map[string]string{
 			"alertname":   "AutoScaleUp",
-			"cloudletorg": clusterInstData[1].Key.CloudletKey.Organization,
-			"cloudlet":    clusterInstData[1].Key.CloudletKey.Name,
-			"cluster":     clusterInstData[1].Key.ClusterKey.Name,
-			"clusterorg":  clusterInstData[1].Key.ClusterKey.Organization,
+			"cloudletorg": clusterInstData[1].CloudletKey.Organization,
+			"cloudlet":    clusterInstData[1].CloudletKey.Name,
+			"cluster":     clusterInstData[1].Key.Name,
+			"clusterorg":  clusterInstData[1].Key.Organization,
 			"severity":    "critical",
 		},
 		Annotations: map[string]string{
@@ -1469,10 +1441,10 @@ func AlertData() []edgeproto.Alert {
 			"app":         appInstData[0].AppKey.Name,
 			"appver":      appInstData[0].AppKey.Version,
 			"apporg":      appInstData[0].AppKey.Organization,
-			"cloudletorg": clusterInstData[7].Key.CloudletKey.Organization,
-			"cloudlet":    clusterInstData[7].Key.CloudletKey.Name,
-			"cluster":     clusterInstData[7].Key.ClusterKey.Name,
-			"clusterorg":  clusterInstData[7].Key.ClusterKey.Organization,
+			"cloudletorg": clusterInstData[7].CloudletKey.Organization,
+			"cloudlet":    clusterInstData[7].CloudletKey.Name,
+			"cluster":     clusterInstData[7].Key.Name,
+			"clusterorg":  clusterInstData[7].Key.Organization,
 			"status":      "1",
 		},
 		State: "firing",
@@ -1488,8 +1460,8 @@ func AlertData() []edgeproto.Alert {
 			"app":         appInstData[0].AppKey.Name,
 			"appver":      appInstData[0].AppKey.Version,
 			"apporg":      appInstData[0].AppKey.Organization,
-			"cloudletorg": appInstData[0].Key.CloudletKey.Organization,
-			"cloudlet":    appInstData[0].Key.CloudletKey.Name,
+			"cloudletorg": appInstData[0].CloudletKey.Organization,
+			"cloudlet":    appInstData[0].CloudletKey.Name,
 			"cluster":     appInstData[0].ClusterKey.Name,
 			"clusterorg":  appInstData[0].ClusterKey.Organization,
 			"status":      "2",
@@ -1865,7 +1837,7 @@ func AppInstClientData() []edgeproto.AppInstClient {
 		ClientKey: appInstClientKeyData[1],
 		Location: dme.Loc{
 			Latitude:  1.0,
-			Longitude: 2.0,
+			Longitude: 4.0,
 		},
 	}}
 }
@@ -2247,20 +2219,20 @@ func CreatedAppInstData() []edgeproto.AppInst {
 		switch ii {
 		case 3:
 			// grab expected autocluster real name
-			appInst.ClusterKey = clusterInstAutoData[0].Key.ClusterKey
+			appInst.ClusterKey = clusterInstAutoData[0].Key
 		case 4:
-			appInst.ClusterKey = clusterInstAutoData[1].Key.ClusterKey
+			appInst.ClusterKey = clusterInstAutoData[1].Key
 		case 6:
-			appInst.ClusterKey = clusterInstAutoData[2].Key.ClusterKey
+			appInst.ClusterKey = clusterInstAutoData[2].Key
 		case 12:
-			appInst.ClusterKey = clusterInstAutoData[3].Key.ClusterKey
+			appInst.ClusterKey = clusterInstAutoData[3].Key
 		case 13:
 			fallthrough
 		case 15:
 			fallthrough
 		case 16:
 			// auto cluster chooses MT cluster
-			appInst.ClusterKey = clusterInstData[8].Key.ClusterKey
+			appInst.ClusterKey = clusterInstData[8].Key
 		}
 		insts = append(insts, appInst)
 	}

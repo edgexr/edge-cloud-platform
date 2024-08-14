@@ -158,15 +158,15 @@ func (s *AddRefsDataGen) GetCreateAppInstTestObj() (*edgeproto.AppInst, *testSup
 	cloudlet := testutil.CloudletData()[0]
 	cloudletInfo := testutil.CloudletInfoData()[0]
 	clusterInst := testutil.ClusterInstData()[0]
-	clusterInst.Key.CloudletKey = cloudlet.Key
+	clusterInst.CloudletKey = cloudlet.Key
 	clusterInst.State = edgeproto.TrackedState_READY
 	flavor := testutil.FlavorData()[0]
 
 	appInst := testutil.AppInstData()[0]
 	appInst.Key.Organization = app.Key.Organization
-	appInst.Key.CloudletKey = cloudlet.Key
+	appInst.CloudletKey = cloudlet.Key
 	appInst.AppKey = app.Key
-	appInst.ClusterKey = clusterInst.Key.ClusterKey
+	appInst.ClusterKey = clusterInst.Key
 	appInst.Flavor = flavor.Key
 	appInst.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 
@@ -254,7 +254,7 @@ func (s *AddRefsDataGen) GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, 
 	network.Key.CloudletKey = cloudlet.Key
 
 	clusterInst := testutil.ClusterInstData()[0]
-	clusterInst.Key.CloudletKey = cloudlet.Key
+	clusterInst.CloudletKey = cloudlet.Key
 	clusterInst.Flavor = flavor.Key
 	clusterInst.AutoScalePolicy = autoScalePolicy.Key.Name
 	clusterInst.Networks = []string{network.Key.Name}

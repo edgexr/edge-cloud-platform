@@ -20,7 +20,7 @@ const (
 	CRMCompatibilityNewAppInstKey         uint32 = 3
 )
 
-// This should always return the highest compatibility version
+// GetCRMCompatibilityVersion always returns the highest compatibility version
 func GetCRMCompatibilityVersion() uint32 {
 	return CRMCompatibilityNewAppInstKey
 }
@@ -34,8 +34,21 @@ const (
 	AppInstCompatibilityInitial             uint32 = 0
 	AppInstCompatibilityUniqueNameKey       uint32 = 1
 	AppInstCompatibilityUniqueNameKeyConfig uint32 = 2
+	AppInstCompatibilityRegionScopeName     uint32 = 3
 )
 
+// GetAppInstCompatibilityVersion always returns the highest compatibility version
 func GetAppInstCompatibilityVersion() uint32 {
 	return AppInstCompatibilityUniqueNameKeyConfig
+}
+
+// ClusterInst compatibility versions, same as above for AppInsts.
+const (
+	ClusterInstCompatibilityInitial         uint32 = 0
+	ClusterInstCompatibilityRegionScopeName uint32 = 1
+)
+
+// GetClusterInstCompatibilityVersion always returns the highest compatibility version
+func GetClusterInstCompatibilityVersion() uint32 {
+	return ClusterInstCompatibilityRegionScopeName
 }

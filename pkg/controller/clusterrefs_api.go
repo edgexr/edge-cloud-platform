@@ -45,28 +45,28 @@ func (s *ClusterRefsApi) ShowClusterRefs(in *edgeproto.ClusterRefs, cb edgeproto
 	return err
 }
 
-func (s *ClusterRefsApi) deleteRef(stm concurrency.STM, key *edgeproto.ClusterInstKey) {
+func (s *ClusterRefsApi) deleteRef(stm concurrency.STM, key *edgeproto.ClusterKey) {
 	s.store.STMDel(stm, key)
 }
 
 func (s *ClusterRefsApi) addRef(stm concurrency.STM, appInst *edgeproto.AppInst) {
-	key := appInst.ClusterInstKey()
+	key := appInst.GetClusterKey()
 	refs := edgeproto.ClusterRefs{}
 	if !s.store.STMGet(stm, key, &refs) {
 		refs.Key = *key
 	}
-	refs.Apps = append(refs.Apps, *appInst.Key.GetRefKey())
+	refs.Apps = append(refs.Apps, appInst.Key)
 	s.store.STMPut(stm, &refs)
 }
 
 func (s *ClusterRefsApi) removeRef(stm concurrency.STM, appInst *edgeproto.AppInst) {
-	key := appInst.ClusterInstKey()
+	key := appInst.GetClusterKey()
 	refs := edgeproto.ClusterRefs{}
 	if !s.store.STMGet(stm, key, &refs) {
 		return
 	}
 	changed := false
-	refKey := appInst.Key.GetRefKey()
+	refKey := appInst.Key
 	for ii := range refs.Apps {
 		if refKey.Matches(&refs.Apps[ii]) {
 			refs.Apps = append(refs.Apps[:ii], refs.Apps[ii+1:]...)

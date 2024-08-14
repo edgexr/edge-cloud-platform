@@ -386,7 +386,7 @@ func basicClusterRefsShowTest(t *testing.T, ctx context.Context, api *ClusterRef
 	}
 }
 
-func GetClusterRefs(t *testing.T, ctx context.Context, api *ClusterRefsCommonApi, key *edgeproto.ClusterInstKey, out *edgeproto.ClusterRefs) bool {
+func GetClusterRefs(t *testing.T, ctx context.Context, api *ClusterRefsCommonApi, key *edgeproto.ClusterKey, out *edgeproto.ClusterRefs) bool {
 	var err error
 
 	show := ShowClusterRefs{}
@@ -402,7 +402,7 @@ func GetClusterRefs(t *testing.T, ctx context.Context, api *ClusterRefsCommonApi
 	return found
 }
 
-func FindClusterRefsData(key *edgeproto.ClusterInstKey, testData []edgeproto.ClusterRefs) (*edgeproto.ClusterRefs, bool) {
+func FindClusterRefsData(key *edgeproto.ClusterKey, testData []edgeproto.ClusterRefs) (*edgeproto.ClusterRefs, bool) {
 	for ii, _ := range testData {
 		if testData[ii].GetKey().Matches(key) {
 			return &testData[ii], true

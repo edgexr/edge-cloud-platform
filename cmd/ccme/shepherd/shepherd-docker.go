@@ -75,7 +75,8 @@ type ContainerSize struct {
 // Docker Cluster
 type DockerClusterStats struct {
 	vCPUs         int
-	key           edgeproto.ClusterInstKey
+	key           edgeproto.ClusterKey
+	cloudletKey   edgeproto.CloudletKey
 	client        ssh.Client
 	clusterClient ssh.Client
 	shepherd_common.ClusterMetrics
@@ -136,7 +137,7 @@ func (c *DockerClusterStats) GetContainerStats(ctx context.Context) (*DockerStat
 	}
 
 	// find apps on this cluster and add appName
-	AppInstCache.GetForRealClusterInstKey(&c.key, func(obj *edgeproto.AppInst) {
+	AppInstCache.GetForRealClusterKey(&c.key, func(obj *edgeproto.AppInst) {
 		var cData *ContainerStats
 		var found bool
 
@@ -172,8 +173,9 @@ func parsePercentStr(pStr string) (float64, error) {
 
 // This looks like this:
 // $ cat /proc/$CONTAINER_PID/net/dev | grep ens
-//Inter-|   Receive                                                |  Transmit
-//  ens3: 448842077 3084030    0    0    0     0          0         0 514882026 2675536    0    0    0     0       0          0
+// Inter-|   Receive                                                |  Transmit
+//
+//	ens3: 448842077 3084030    0    0    0     0          0         0 514882026 2675536    0    0    0     0       0          0
 func parseNetData(dataStr string) ([]uint64, error) {
 	var items []uint64
 	details := strings.Fields(dataStr)
@@ -339,7 +341,8 @@ func (c *DockerClusterStats) GetContainerDiskUsage(ctx context.Context) (map[str
 // Currently it runs "docker stats" on rootLB and gets coarse stats from the resource utilization
 // If a more detailed resource usage is needed /containers/(id)/stats API endpoint should be used
 // To get to the API endpoint on a rootLB netcat can be used:
-//   $ echo -e "GET /containers/mobiledgexsdkdemo/stats?stream=0 HTTP/1.0\r\n" | nc -q -1 -U /var/run/docker.sock | grep "^{" | jq
+//
+//	$ echo -e "GET /containers/mobiledgexsdkdemo/stats?stream=0 HTTP/1.0\r\n" | nc -q -1 -U /var/run/docker.sock | grep "^{" | jq
 func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *DockerClusterStats) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
 	var diskUsageMap map[string]ContainerDiskAndLabels // map of container id to virtual disk used and app labels
 	appStatsMap := make(map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics)
@@ -358,7 +361,8 @@ func (c *DockerClusterStats) collectDockerAppMetrics(ctx context.Context, p *Doc
 
 	log.SpanLog(ctx, log.DebugLevelMetrics, "Docker stats", "stats", stats)
 	appKey := shepherd_common.MetricAppInstKey{
-		ClusterInstKey: p.key,
+		ClusterKey:  p.key,
+		CloudletKey: p.cloudletKey,
 	}
 
 	// We scraped it at the same time, so same timestamp for everything

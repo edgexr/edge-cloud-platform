@@ -61,7 +61,6 @@ func TestChoose(t *testing.T) {
 		aiKey := edgeproto.AppInstKey{}
 		aiKey.Name = app.Key.Name
 		aiKey.Organization = app.Key.Organization
-		aiKey.CloudletKey = cloudlet.Key
 		potentialAppInsts = append(potentialAppInsts, aiKey)
 		pc := &potentialCreateSite{
 			cloudletKey: cloudlet.Key,
@@ -549,7 +548,7 @@ func TestAppChecker(t *testing.T) {
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 
-	// create App with MobiledgeX org, no policies
+	// create App with edgecloud org, no policies
 	// make sure they don't get deleted (edgecloud-3053)
 	app2 := edgeproto.App{}
 	app2.Key.Name = "app2"
@@ -697,9 +696,9 @@ func makePolicyTest(name string, count uint32, caches *CacheData) *policyTest {
 		s.cloudlets[ii].Key.Name = fmt.Sprintf("%s_%d", name, ii)
 		s.cloudletInfos[ii].Key = s.cloudlets[ii].Key
 		s.cloudletInfos[ii].State = dme.CloudletState_CLOUDLET_STATE_READY
-		s.clusterInsts[ii].Key.CloudletKey = s.cloudlets[ii].Key
+		s.clusterInsts[ii].CloudletKey = s.cloudlets[ii].Key
 		s.clusterInsts[ii].Reservable = true
-		s.clusterInsts[ii].Key.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
+		s.clusterInsts[ii].Key.Organization = edgeproto.OrganizationEdgeCloud
 		s.policy.Cloudlets = append(s.policy.Cloudlets,
 			&edgeproto.AutoProvCloudlet{Key: s.cloudlets[ii].Key})
 	}
@@ -743,17 +742,15 @@ func (s *policyTest) getAppInsts(key *edgeproto.AppKey, dc *DummyController) []e
 		return nil
 	})
 	sort.Slice(insts, func(i, j int) bool {
-		return insts[i].Key.CloudletKey.Name < insts[j].Key.CloudletKey.Name
+		return insts[i].CloudletKey.Name < insts[j].CloudletKey.Name
 	})
 	return insts
 }
 
 func (s *policyTest) hasAppInst(key *edgeproto.AppKey, dc *DummyController, cloudletIndex int) bool {
 	filter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			CloudletKey: s.cloudlets[cloudletIndex].Key,
-		},
-		AppKey: *key,
+		CloudletKey: s.cloudlets[cloudletIndex].Key,
+		AppKey:      *key,
 	}
 	found := false
 	_ = dc.appInstCache.Show(&filter, func(ai *edgeproto.AppInst) error {
@@ -768,11 +765,11 @@ func (s *policyTest) getManualAppInsts(key *edgeproto.AppKey) []edgeproto.AppIns
 	for idx := range s.cloudlets {
 		inst := edgeproto.AppInst{
 			Key: edgeproto.AppInstKey{
-				Name:         "manual",
+				Name:         fmt.Sprintf("manual-%d", idx),
 				Organization: key.Organization,
-				CloudletKey:  s.cloudlets[idx].Key,
 			},
-			AppKey: *key,
+			AppKey:      *key,
+			CloudletKey: s.cloudlets[idx].Key,
 		}
 		insts = append(insts, inst)
 	}

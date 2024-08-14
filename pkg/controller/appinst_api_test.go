@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -79,7 +80,7 @@ func GetAppInstStreamMsgs(t *testing.T, ctx context.Context, key *edgeproto.AppI
 	return streamAppInst.Msgs
 }
 
-func GetClusterInstStreamMsgs(t *testing.T, ctx context.Context, key *edgeproto.ClusterInstKey, apis *AllApis, pass bool) []edgeproto.Result {
+func GetClusterInstStreamMsgs(t *testing.T, ctx context.Context, key *edgeproto.ClusterKey, apis *AllApis, pass bool) []edgeproto.Result {
 	// Verify stream clusterInst
 	streamClusterInst := NewStreamoutMsg(ctx)
 	err := apis.streamObjApi.StreamClusterInst(key, streamClusterInst)
@@ -337,10 +338,10 @@ func TestAppInstApi(t *testing.T) {
 			continue
 		}
 		cloudlet := edgeproto.Cloudlet{}
-		found := apis.cloudletApi.cache.Get(&obj.Key.CloudletKey, &cloudlet)
+		found := apis.cloudletApi.cache.Get(&obj.CloudletKey, &cloudlet)
 		require.True(t, found)
 		features := edgeproto.PlatformFeatures{}
-		operator := obj.Key.CloudletKey.Organization
+		operator := obj.CloudletKey.Organization
 
 		for _, port := range obj.MappedPorts {
 			lproto, err := edgeproto.LProtoStr(port.Proto)
@@ -432,7 +433,7 @@ func appInstCachedFieldsTest(t *testing.T, ctx context.Context, cAppApi *testuti
 
 	show.Init()
 	filter = edgeproto.AppInst{}
-	filter.Key.CloudletKey = testutil.CloudletData()[0].Key
+	filter.CloudletKey = testutil.CloudletData()[0].Key
 	err = cAppInstApi.ShowAppInst(ctx, &filter, &show)
 	require.Nil(t, err, "show app inst data")
 	for _, inst := range show.Data {
@@ -493,7 +494,7 @@ func TestAutoClusterInst(t *testing.T) {
 	// negative tests
 	// bad Organization
 	mtBad := mt
-	mtBad.Key.ClusterKey.Organization = "foo"
+	mtBad.Key.Organization = "foo"
 	err := apis.clusterInstApi.CreateClusterInst(&mtBad, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Only edgecloudorg ClusterInsts may be multi-tenant")
@@ -510,11 +511,10 @@ func TestAutoClusterInst(t *testing.T) {
 	err = apis.clusterInstApi.CreateClusterInst(&mt, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err)
 
-	checkReserved := func(cloudletKey edgeproto.CloudletKey, found bool, id, reservedBy string) {
-		key := &edgeproto.ClusterInstKey{}
-		key.ClusterKey.Name = cloudcommon.ReservableClusterPrefix + id
-		key.CloudletKey = cloudletKey
-		key.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
+	checkReserved := func(cloudletKey edgeproto.CloudletKey, found bool, id int, reservedBy string) {
+		key := &edgeproto.ClusterKey{}
+		key.Name = cloudcommon.BuildReservableClusterName(id, &cloudletKey)
+		key.Organization = edgeproto.OrganizationEdgeCloud
 		// look up reserved ClusterInst
 		clusterInst := edgeproto.ClusterInst{}
 		actualFound := apis.clusterInstApi.Get(key, &clusterInst)
@@ -529,24 +529,25 @@ func TestAutoClusterInst(t *testing.T) {
 		msgs := GetClusterInstStreamMsgs(t, ctx, key, apis, Pass)
 		require.Greater(t, len(msgs), 0, "some progress messages")
 	}
-	createAutoClusterAppInst := func(copy edgeproto.AppInst, expectedId string) {
-		copy.Key.Name += expectedId
+	createAutoClusterAppInst := func(copy edgeproto.AppInst, expectedId int) {
+		copy.Key.Name += strconv.Itoa(expectedId)
 		err := apis.appInstApi.CreateAppInst(&copy, testutil.NewCudStreamoutAppInst(ctx))
 		require.Nil(t, err, "create app inst")
 		// As there was some progress, there should be some messages in stream
 		msgs := GetAppInstStreamMsgs(t, ctx, &copy.Key, apis, Pass)
 		require.Greater(t, len(msgs), 0, "some progress messages")
 		// Check that reserved ClusterInst was created
-		checkReserved(copy.Key.CloudletKey, true, expectedId, copy.Key.Organization)
+		checkReserved(copy.CloudletKey, true, expectedId, copy.Key.Organization)
 		// check for expected cluster name.
-		require.Equal(t, cloudcommon.ReservableClusterPrefix+expectedId, copy.ClusterKey.Name)
+		expClusterName := cloudcommon.BuildReservableClusterName(expectedId, &copy.CloudletKey)
+		require.Equal(t, expClusterName, copy.ClusterKey.Name)
 	}
-	deleteAutoClusterAppInst := func(copy edgeproto.AppInst, id string) {
+	deleteAutoClusterAppInst := func(copy edgeproto.AppInst, id int) {
 		// delete appinst
-		copy.Key.Name += id
+		copy.Key.Name += strconv.Itoa(id)
 		err := apis.appInstApi.DeleteAppInst(&copy, testutil.NewCudStreamoutAppInst(ctx))
 		require.Nil(t, err, "delete app inst")
-		checkReserved(copy.Key.CloudletKey, true, id, "")
+		checkReserved(copy.CloudletKey, true, id, "")
 	}
 	checkReservedIds := func(key edgeproto.CloudletKey, expected uint64) {
 		refs := edgeproto.CloudletRefs{}
@@ -559,41 +560,41 @@ func TestAutoClusterInst(t *testing.T) {
 	appInst := testutil.AppInstData()[0]
 	appInst.AppKey = testutil.AppData()[1].Key // does not support multi-tenant
 	appInst.ClusterKey = edgeproto.ClusterKey{}
-	cloudletKey := appInst.Key.CloudletKey
-	createAutoClusterAppInst(appInst, "0")
+	cloudletKey := appInst.CloudletKey
+	createAutoClusterAppInst(appInst, 0)
 	checkReservedIds(cloudletKey, 1)
-	createAutoClusterAppInst(appInst, "1")
+	createAutoClusterAppInst(appInst, 1)
 	checkReservedIds(cloudletKey, 3)
-	createAutoClusterAppInst(appInst, "2")
+	createAutoClusterAppInst(appInst, 2)
 	checkReservedIds(cloudletKey, 7)
 	// delete one
-	deleteAutoClusterAppInst(appInst, "1")
+	deleteAutoClusterAppInst(appInst, 1)
 	checkReservedIds(cloudletKey, 7) // clusterinst doesn't get deleted
 	// create again, should reuse existing free ClusterInst
-	createAutoClusterAppInst(appInst, "1")
+	createAutoClusterAppInst(appInst, 1)
 	checkReservedIds(cloudletKey, 7)
 	// delete one again
-	deleteAutoClusterAppInst(appInst, "1")
+	deleteAutoClusterAppInst(appInst, 1)
 	checkReservedIds(cloudletKey, 7) // clusterinst doesn't get deleted
 	// cleanup unused reservable auto clusters
 	apis.clusterInstApi.cleanupIdleReservableAutoClusters(ctx, time.Duration(0))
 	apis.clusterInstApi.cleanupWorkers.WaitIdle()
-	checkReserved(cloudletKey, false, "1", "")
+	checkReserved(cloudletKey, false, 1, "")
 	checkReservedIds(cloudletKey, 5)
 	// create again, should create new ClusterInst with next free id
-	createAutoClusterAppInst(appInst, "1")
+	createAutoClusterAppInst(appInst, 1)
 	checkReservedIds(cloudletKey, 7)
 	// delete all of them
-	deleteAutoClusterAppInst(appInst, "0")
-	deleteAutoClusterAppInst(appInst, "1")
-	deleteAutoClusterAppInst(appInst, "2")
+	deleteAutoClusterAppInst(appInst, 0)
+	deleteAutoClusterAppInst(appInst, 1)
+	deleteAutoClusterAppInst(appInst, 2)
 	checkReservedIds(cloudletKey, 7)
 	// cleanup unused reservable auto clusters
 	apis.clusterInstApi.cleanupIdleReservableAutoClusters(ctx, time.Duration(0))
 	apis.clusterInstApi.cleanupWorkers.WaitIdle()
-	checkReserved(cloudletKey, false, "0", "")
-	checkReserved(cloudletKey, false, "1", "")
-	checkReserved(cloudletKey, false, "2", "")
+	checkReserved(cloudletKey, false, 0, "")
+	checkReserved(cloudletKey, false, 1, "")
+	checkReserved(cloudletKey, false, 2, "")
 	checkReservedIds(cloudletKey, 0)
 
 	// Autocluster AppInst with AutoDelete delete option should fail
@@ -678,9 +679,9 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 		Key: edgeproto.AppInstKey{
 			Name:         "testApp",
 			Organization: appKey.Organization,
-			CloudletKey:  testutil.CloudletData()[1].Key,
 		},
-		AppKey: appKey,
+		AppKey:      appKey,
+		CloudletKey: testutil.CloudletData()[1].Key,
 	}
 	// autoapp
 	require.Equal(t, edgeproto.DeleteType_AUTO_DELETE, testutil.AppData()[9].DelOpt)
@@ -689,9 +690,9 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 		Key: edgeproto.AppInstKey{
 			Name:         "autoDeleteInst",
 			Organization: aiautoAppKey.Organization,
-			CloudletKey:  ai.Key.CloudletKey,
 		},
-		AppKey: aiautoAppKey,
+		AppKey:      aiautoAppKey,
+		CloudletKey: ai.CloudletKey,
 	}
 	var err error
 	var obj edgeproto.AppInst
@@ -716,9 +717,9 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 		checkAppInstState(t, ctx, api, &obj, state)
 
 		// set aiauto cluster name from real cluster name of create autocluster
-		clKey := obj.ClusterInstKey()
+		clKey := *obj.GetClusterKey()
 		obj = aiauto
-		obj.ClusterKey = clKey.ClusterKey
+		obj.ClusterKey = clKey
 		// create auto app
 		err = apis.appInstApi.CreateAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
 		require.Nil(t, err, "create AppInst on cluster %v", obj.ClusterKey)
@@ -727,7 +728,7 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 		checkAppInstState(t, ctx, api, &obj, state)
 
 		clust = edgeproto.ClusterInst{}
-		clust.Key = *clKey
+		clust.Key = clKey
 		err = forceClusterInstState(ctx, &clust, state, responder, apis)
 		require.Nil(t, err, "force state")
 		checkClusterInstState(t, ctx, clustApi, &clust, state)
@@ -786,50 +787,50 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	stOrg := testutil.AppInstData()[0].Key.Organization
 	// Note: cloudcommon.DefaultMultiTenantCluster is for the MT cluster
 	// on cloudlets with multiple k8s clusters and VMs.
-	mtClust := cloudcommon.DefaultClust
-	stClust := cloudcommon.DefaultClust
-
 	cloudletST := cloudletMT
 	cloudletST.Key.Name = "singlek8sST"
 	cloudletST.SingleKubernetesClusterOwner = stOrg
 	cloudletSTInfo := cloudletMTInfo
 	cloudletSTInfo.Key = cloudletST.Key
 
+	mtClustKey := cloudcommon.GetDefaultClustKey(cloudletMT.Key, "")
+	stClustKey := cloudcommon.GetDefaultClustKey(cloudletST.Key, stOrg)
+	mtClust := mtClustKey.Name
+	stClust := stClustKey.Name
+
 	setupTests := []struct {
 		desc         string
 		cloudlet     *edgeproto.Cloudlet
 		cloudletInfo *edgeproto.CloudletInfo
+		clusterKey   *edgeproto.ClusterKey
 		ownerOrg     string
 		mt           bool
 	}{
-		{"mt setup", &cloudletMT, &cloudletMTInfo, "", true},
-		{"st setup", &cloudletST, &cloudletSTInfo, stOrg, false},
+		{"mt setup", &cloudletMT, &cloudletMTInfo, mtClustKey, "", true},
+		{"st setup", &cloudletST, &cloudletSTInfo, stClustKey, stOrg, false},
 	}
 	for _, test := range setupTests {
-		clusterInstKey := getDefaultClustKey(test.cloudlet.Key, test.ownerOrg)
 		// create cloudlet
 		err = apis.cloudletApi.CreateCloudlet(test.cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 		require.Nil(t, err, test.desc)
 		apis.cloudletInfoApi.Update(ctx, test.cloudletInfo, 0)
 		// creating cloudlet also creates singleton cluster for cloudlet
 		clusterInst := edgeproto.ClusterInst{}
-		found = apis.clusterInstApi.Get(clusterInstKey, &clusterInst)
+		found = apis.clusterInstApi.Get(test.clusterKey, &clusterInst)
 		require.True(t, found, test.desc)
 		require.Equal(t, clusterInst.MultiTenant, test.mt)
 
 		// trying to create clusterinst against cloudlets should fail
 		tryClusterInst := edgeproto.ClusterInst{
-			Key: edgeproto.ClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name:         "someclust",
-					Organization: "foo",
-				},
+			Key: edgeproto.ClusterKey{
+				Name:         "someclust",
+				Organization: "foo",
 			},
 			Flavor:     testutil.FlavorData()[0].Key,
 			NumMasters: 1,
 			NumNodes:   2,
 		}
-		tryClusterInst.Key.CloudletKey = test.cloudlet.Key
+		tryClusterInst.CloudletKey = test.cloudlet.Key
 		err = apis.clusterInstApi.CreateClusterInst(&tryClusterInst, testutil.NewCudStreamoutClusterInst(ctx))
 		require.NotNil(t, err, test.desc)
 		require.Contains(t, err.Error(), "only supports AppInst creates", test.desc)
@@ -912,7 +913,7 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	}}
 	for _, test := range appInstCreateTests {
 		ai := testutil.AppInstData()[test.aiIdx]
-		ai.Key.CloudletKey = test.cloudlet.Key
+		ai.CloudletKey = test.cloudlet.Key
 		ai.ClusterKey.Name = test.clusterName
 		ai.ClusterKey.Organization = test.clusterOrg
 		ai.DedicatedIp = test.dedicatedIp
@@ -941,11 +942,11 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 		{"st cleanup test", &cloudletST, stOrg},
 	}
 	for _, test := range cleanupTests {
-		clusterInstKey := getDefaultClustKey(test.cloudlet.Key, test.ownerOrg)
+		clusterKey := cloudcommon.GetDefaultClustKey(test.cloudlet.Key, test.ownerOrg)
 		// Create AppInst
 		ai := testutil.AppInstData()[0]
 		ai.Key.Name = "blocker"
-		ai.Key.CloudletKey = test.cloudlet.Key
+		ai.CloudletKey = test.cloudlet.Key
 		ai.ClusterKey.Name = ""
 		ai.ClusterKey.Organization = ""
 		err = apis.appInstApi.CreateAppInst(&ai, testutil.NewCudStreamoutAppInst(ctx))
@@ -953,10 +954,10 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 
 		// check refs
 		refs := edgeproto.ClusterRefs{}
-		found = apis.clusterRefsApi.cache.Get(clusterInstKey, &refs)
+		found = apis.clusterRefsApi.cache.Get(clusterKey, &refs)
 		require.True(t, found, test.desc)
 		require.Equal(t, 1, len(refs.Apps), test.desc)
-		refAiKey := ai.Key.GetRefKey()
+		refAiKey := &ai.Key
 		require.Equal(t, refAiKey, &refs.Apps[0], test.desc)
 
 		// Test that delete cloudlet fails if AppInst exists
@@ -976,9 +977,9 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 
 		// check that cluster and refs don't exist
 		clusterInst := edgeproto.ClusterInst{}
-		found = apis.clusterInstApi.Get(clusterInstKey, &clusterInst)
+		found = apis.clusterInstApi.Get(clusterKey, &clusterInst)
 		require.False(t, found, test.desc)
-		found = apis.clusterRefsApi.cache.Get(clusterInstKey, &refs)
+		found = apis.clusterRefsApi.cache.Get(clusterKey, &refs)
 		require.False(t, found, test.desc)
 	}
 }
@@ -1011,12 +1012,12 @@ func testAppInstId(t *testing.T, ctx context.Context, apis *AllApis) {
 	// also create ClusterInsts because they share the same dns id
 	// namespace as AppInsts
 	cl0 := testutil.ClusterInstData()[0]
-	cl0.Key.ClusterKey.Name = appInst0.Key.Name
-	cl0.Key.ClusterKey.Organization = app0.Key.Organization
+	cl0.Key.Name = appInst0.Key.Name
+	cl0.Key.Organization = app0.Key.Organization
 
 	cl1 := cl0
-	cl1.Key.ClusterKey.Name = appInst1.Key.Name
-	cl1.Key.ClusterKey.Organization = app1.Key.Organization
+	cl1.Key.Name = appInst1.Key.Name
+	cl1.Key.Organization = app1.Key.Organization
 
 	expId0 := "atlanticinc-ai1-sanjosesite-ufgtinc"
 	expId1 := "atlanticinc-ai1-sanjosesite-ufgtinc-1"
@@ -1073,7 +1074,7 @@ func testAppInstId(t *testing.T, ctx context.Context, apis *AllApis) {
 	hasDnsLabels := func(hasIds bool, ids ...string) {
 		for _, id := range ids {
 			// note that all objects are on the same cloudlet
-			found := testHasAppInstDnsLabel(apis.appInstApi.sync.GetKVStore(), &appInst0.Key.CloudletKey, id)
+			found := testHasAppInstDnsLabel(apis.appInstApi.sync.GetKVStore(), &appInst0.CloudletKey, id)
 			require.Equal(t, hasIds, found, "has id %s", id)
 		}
 	}
@@ -1171,8 +1172,8 @@ func TestAppInstIdDelimiter(t *testing.T) {
 	appInst.AppKey = app.Key
 	appInst.ClusterKey.Name += "."
 	appInst.ClusterKey.Organization += "."
-	appInst.Key.CloudletKey.Name += "."
-	appInst.Key.CloudletKey.Organization += "."
+	appInst.CloudletKey.Name += "."
+	appInst.CloudletKey.Organization += "."
 	id, _ := GetAppInstID(ctx, &appInst, &app, ".", sanitizer)
 	require.NotContains(t, id, ".", "id must not contain '.'")
 
@@ -1189,10 +1190,10 @@ func TestAppInstIdDelimiter(t *testing.T) {
 		Key: edgeproto.AppInstKey{
 			Name:         "111",
 			Organization: appOrgStartWithNumber.Key.Organization,
-			CloudletKey: edgeproto.CloudletKey{
-				Organization: "GDDT",
-				Name:         "CloudletA",
-			},
+		},
+		CloudletKey: edgeproto.CloudletKey{
+			Organization: "GDDT",
+			Name:         "CloudletA",
 		},
 	}
 

@@ -33,7 +33,7 @@ func TestClusterAutoScaler(t *testing.T) {
 	cluster := testutil.ClusterInstData()[2]
 	policy := edgeproto.AutoScalePolicy{}
 	policy.Key.Name = "test-policy"
-	policy.Key.Organization = cluster.Key.ClusterKey.Organization
+	policy.Key.Organization = cluster.Key.Organization
 	policy.MinNodes = 1
 	policy.MaxNodes = 4
 	policy.StabilizationWindowSec = 20
@@ -58,14 +58,14 @@ func TestClusterAutoScaler(t *testing.T) {
 	// fake cluster worker
 	worker := &ClusterWorker{}
 	worker.autoScaler.policyName = cluster.AutoScalePolicy
-	worker.clusterInstKey = cluster.Key
+	worker.clusterKey = cluster.Key
 	workerMapMutex.Lock()
-	workerMap = make(map[string]*ClusterWorker)
-	workerMap[getClusterWorkerMapKey(&cluster.Key)] = worker
+	workerMap = make(map[edgeproto.ClusterKey]*ClusterWorker)
+	workerMap[cluster.Key] = worker
 	workerMapMutex.Unlock()
 	defer func() {
 		workerMapMutex.Lock()
-		delete(workerMap, getClusterWorkerMapKey(&cluster.Key))
+		delete(workerMap, cluster.Key)
 		workerMapMutex.Unlock()
 	}()
 
@@ -73,11 +73,11 @@ func TestClusterAutoScaler(t *testing.T) {
 		stats := shepherd_common.ClusterMetrics{}
 		stats.AutoScaleCpu = cpu
 		stats.AutoScaleMem = mem
-		worker.autoScaler.updateClusterStats(ctx, worker.clusterInstKey, &stats)
+		worker.autoScaler.updateClusterStats(ctx, worker.clusterKey, &stats)
 		clusterAutoScalerWorkers.WaitIdle()
 	}
 	updateProxyStats := func(conns float64) {
-		worker.autoScaler.updateConnStats(ctx, worker.clusterInstKey, conns)
+		worker.autoScaler.updateConnStats(ctx, worker.clusterKey, conns)
 		clusterAutoScalerWorkers.WaitIdle()
 	}
 

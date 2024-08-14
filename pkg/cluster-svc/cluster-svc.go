@@ -181,7 +181,7 @@ type retryMapKey struct {
 	cloudletKey   edgeproto.CloudletKey
 }
 
-type retryMapValue map[edgeproto.ClusterInstKey]struct{}
+type retryMapValue map[edgeproto.ClusterKey]struct{}
 
 type retryMapT map[retryMapKey]retryMapValue
 
@@ -202,44 +202,44 @@ func clusterInstCb(ctx context.Context, old *edgeproto.ClusterInst, new *edgepro
 	}
 	// don't touch federated cloudlets; monitoring is the domain of the
 	// federated partner
-	if new.Key.CloudletKey.FederatedOrganization != "" {
+	if new.CloudletKey.FederatedOrganization != "" {
 		return
 	}
 
-	log.SpanLog(ctx, log.DebugLevelNotify, "cluster update", "cluster", new.Key.ClusterKey.Name,
-		"cloudlet", new.Key.CloudletKey.Name, "state", edgeproto.TrackedState_name[int32(new.State)])
+	log.SpanLog(ctx, log.DebugLevelNotify, "cluster update", "cluster", new.Key.Name,
+		"cloudlet", new.CloudletKey.Name, "state", edgeproto.TrackedState_name[int32(new.State)])
 
 	// Need to create a connection to server, as passed to us by commands
 	if new.State == edgeproto.TrackedState_READY {
 		// Create Prometheus on the cluster after creation
 		if err = createMEXPromInst(ctx, dialOpts, new, nil, nil); err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "Prometheus-operator inst create failed", "cluster",
-				new.Key.ClusterKey.Name, "error", err.Error())
+				new.Key.Name, "error", err.Error())
 			if strings.Contains(err.Error(), isUpgradingErrorString) {
-				// Save (cloudlet Key => clusterInstKey) in retryMap, so we don't stall notify framework
+				// Save (cloudlet Key => clusterKey) in retryMap, so we don't stall notify framework
 				key := retryMapKey{
 					createTypeStr: retryCreateMexPromStr,
-					cloudletKey:   new.Key.CloudletKey,
+					cloudletKey:   new.CloudletKey,
 				}
 				mValue := make(retryMapValue)
-				clusterInstKey := new.Key
-				mValue[clusterInstKey] = struct{}{}
+				clusterKey := new.Key
+				mValue[clusterKey] = struct{}{}
 
 				retryMap[key] = mValue
 			}
 		}
 		if err = createNFSAutoProvAppInstIfRequired(ctx, dialOpts, new); err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "NFS Auto provision inst create failed", "cluster",
-				new.Key.ClusterKey.Name, "error", err.Error())
+				new.Key.Name, "error", err.Error())
 			if strings.Contains(err.Error(), isUpgradingErrorString) {
-				// Save (cloudlet Key => clusterInstKey) in retryMap, so we don't stall notify framework
+				// Save (cloudlet Key => clusterKey) in retryMap, so we don't stall notify framework
 				key := retryMapKey{
 					createTypeStr: retryCreateNFSAutoProvAppInstStr,
-					cloudletKey:   new.Key.CloudletKey,
+					cloudletKey:   new.CloudletKey,
 				}
 				mValue := make(retryMapValue)
-				clusterInstKey := new.Key
-				mValue[clusterInstKey] = struct{}{}
+				clusterKey := new.Key
+				mValue[clusterKey] = struct{}{}
 
 				retryMap[key] = mValue
 			}
@@ -262,7 +262,7 @@ func autoScalePolicyCb(ctx context.Context, old *edgeproto.AutoScalePolicy, new 
 	insts := []edgeproto.ClusterInst{}
 	ClusterInstCache.Mux.Lock()
 	for k, v := range ClusterInstCache.Objs {
-		if new.Key.Organization == k.ClusterKey.Organization && new.Key.Name == v.Obj.AutoScalePolicy {
+		if new.Key.Organization == k.Organization && new.Key.Name == v.Obj.AutoScalePolicy {
 			insts = append(insts, *v.Obj)
 		}
 	}
@@ -300,10 +300,10 @@ func appInstCb(ctx context.Context, old *edgeproto.AppInst, new *edgeproto.AppIn
 		}
 		// get the prometheus cluster
 		cluster := edgeproto.ClusterInst{}
-		found = ClusterInstCache.Get(new.ClusterInstKey(), &cluster)
+		found = ClusterInstCache.Get(new.GetClusterKey(), &cluster)
 		if !found {
 			log.SpanLog(ctx, log.DebugLevelNotify, "Unable to find cluster", "app", new.AppKey.Name,
-				"cluster", new.ClusterInstKey())
+				"cluster", new.GetClusterKey())
 			return
 		}
 		if cluster.MultiTenant {
@@ -324,10 +324,10 @@ func updateAllPromInstsForApp(ctx context.Context, app *edgeproto.App) {
 	for _, v := range AppInstCache.Objs {
 		if v.Obj.AppKey == app.Key {
 			cluster := edgeproto.ClusterInst{}
-			found := ClusterInstCache.Get(v.Obj.ClusterInstKey(), &cluster)
+			found := ClusterInstCache.Get(v.Obj.GetClusterKey(), &cluster)
 			if !found {
 				log.SpanLog(ctx, log.DebugLevelNotify, "Unable to find cluster", "app", v.Obj,
-					"cluster", v.Obj.ClusterInstKey())
+					"cluster", v.Obj.GetClusterKey())
 				continue
 			}
 			insts = append(insts, cluster)
@@ -504,11 +504,10 @@ func isClusterPrometheusAlert(alert *edgeproto.AlertPolicy) bool {
 }
 
 // Get a unique AppInstKey for the sidecar app
-func getSidecarAppInstKey(platformApp *edgeproto.App, cikey *edgeproto.ClusterInstKey) edgeproto.AppInstKey {
+func getSidecarAppInstKey(platformApp *edgeproto.App, cikey *edgeproto.ClusterKey) edgeproto.AppInstKey {
 	return edgeproto.AppInstKey{
-		Name:         platformApp.Key.Name + "-" + cikey.ClusterKey.Name + "-" + cikey.ClusterKey.Organization,
+		Name:         platformApp.Key.Name + "-" + cikey.Name + "-" + cikey.Organization,
 		Organization: platformApp.Key.Organization,
-		CloudletKey:  cikey.CloudletKey,
 	}
 }
 
@@ -526,7 +525,7 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 	platformAppInst := edgeproto.AppInst{
 		Key:        getSidecarAppInstKey(platformApp, &clusterInst.Key),
 		AppKey:     platformApp.Key,
-		ClusterKey: clusterInst.Key.ClusterKey,
+		ClusterKey: clusterInst.Key,
 		Flavor:     clusterInst.Flavor,
 	}
 	if clusterSvcPlugin != nil {
@@ -536,7 +535,7 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 		if clusterInst.AutoScalePolicy != "" {
 			policy = &edgeproto.AutoScalePolicy{}
 			policyKey := edgeproto.PolicyKey{}
-			policyKey.Organization = clusterInst.Key.ClusterKey.Organization
+			policyKey.Organization = clusterInst.Key.Organization
 			policyKey.Name = clusterInst.AutoScalePolicy
 			if !AutoScalePolicyCache.Get(&policyKey, policy) {
 				return fmt.Errorf("Auto scale policy %s not found for ClusterInst %s", clusterInst.AutoScalePolicy, clusterInst.Key.GetKeyString())
@@ -922,14 +921,14 @@ func retryCreateClusterServices(ctx context.Context, createTypeStr string, cloud
 	}
 
 	for k, _ := range mValue {
-		clusterInstKey := k
+		clusterKey := k
 		cluster := edgeproto.ClusterInst{}
-		found = ClusterInstCache.Get(&clusterInstKey, &cluster)
+		found = ClusterInstCache.Get(&clusterKey, &cluster)
 		if !found {
-			log.SpanLog(ctx, log.DebugLevelNotify, "retryMap Unable to find cluster", "cluster", clusterInstKey)
+			log.SpanLog(ctx, log.DebugLevelNotify, "retryMap Unable to find cluster", "cluster", clusterKey)
 			continue
 		}
-		log.SpanLog(ctx, log.DebugLevelNotify, "cluster update", "cluster", clusterInstKey)
+		log.SpanLog(ctx, log.DebugLevelNotify, "cluster update", "cluster", clusterKey)
 
 		var err error
 		err = nil
