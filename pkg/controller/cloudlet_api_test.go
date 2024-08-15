@@ -216,6 +216,7 @@ func TestCloudletApi(t *testing.T) {
 	testBadLong(t, ctx, &cl, []float64{180.1, -180.1, -1323213, 1232334}, "update", apis)
 
 	testCloudletDnsLabel(t, ctx, apis)
+	testUpdateCloudletDNS(t, ctx, apis)
 
 	// Resource Mapping tests
 	testResMapKeysApi(t, ctx, &cl, apis)
@@ -285,6 +286,7 @@ func forceCloudletInfoState(ctx context.Context, key *edgeproto.CloudletKey, sta
 	apis.cloudletInfoApi.Update(ctx, &info, 0)
 }
 
+// Not used?
 func forceCloudletInfoMaintenanceState(ctx context.Context, key *edgeproto.CloudletKey, state dme.MaintenanceState, apis *AllApis) {
 	info := edgeproto.CloudletInfo{}
 	if !apis.cloudletInfoApi.cache.Get(key, &info) {
@@ -1124,4 +1126,81 @@ func testCloudletEdgeboxOnly(t *testing.T, ctx context.Context, cloudlet edgepro
 	require.Nil(t, err)
 	// clean up
 	err = apis.cloudletApi.DeleteCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+}
+
+func testUpdateCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
+	// For now CRM off edge is unsupported
+	err := apis.cloudletApi.UpdateCloudletDNS(&testutil.CloudletData()[0].Key, testutil.NewCudStreamoutCloudlet(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "unsupported")
+	// Create a cloudlet to test with
+	cloudlet := testutil.CloudletData()[2]
+	cloudlet.Key.Name = "cloudletDNSUpdate"
+	err = apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+
+	err = waitForState(&cloudlet.Key, edgeproto.TrackedState_READY, apis)
+	require.Nil(t, err, "cloudlet obj created")
+	forceCloudletInfoState(ctx, &cloudlet.Key, dme.CloudletState_CLOUDLET_STATE_READY, "sending ready", crm_v2, apis)
+	err = waitForState(&cloudlet.Key, edgeproto.TrackedState_READY, apis)
+	require.Nil(t, err, fmt.Sprintf("cloudlet state transtions"))
+
+	// Nothing to be done
+	err = apis.cloudletApi.UpdateCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	// Set up a different appDNSRoot
+	*appDNSRoot = "new.and.improved.dns.com"
+	// Cloudlet has to be in maintenance mode
+	err = apis.cloudletApi.UpdateCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "maintenance mode")
+
+	// Update cloudlet maintenance mode
+	// TODO - 1160 - 1203 is duplicate code, should fix this
+	stateTransitions := map[dme.MaintenanceState]dme.MaintenanceState{
+		dme.MaintenanceState_FAILOVER_REQUESTED:    dme.MaintenanceState_FAILOVER_DONE,
+		dme.MaintenanceState_CRM_REQUESTED:         dme.MaintenanceState_CRM_UNDER_MAINTENANCE,
+		dme.MaintenanceState_NORMAL_OPERATION_INIT: dme.MaintenanceState_NORMAL_OPERATION,
+	}
+
+	cancel := apis.cloudletApi.cache.WatchKey(&cloudlet.Key, func(ctx context.Context) {
+		cl := edgeproto.Cloudlet{}
+		if !apis.cloudletApi.cache.Get(&cloudlet.Key, &cl) {
+			return
+		}
+		switch cl.MaintenanceState {
+		case dme.MaintenanceState_FAILOVER_REQUESTED:
+			info := edgeproto.AutoProvInfo{}
+			if !apis.autoProvInfoApi.cache.Get(&cloudlet.Key, &info) {
+				info.Key = cloudlet.Key
+			}
+			info.MaintenanceState = stateTransitions[cl.MaintenanceState]
+			apis.autoProvInfoApi.cache.Update(ctx, &info, 0)
+		case dme.MaintenanceState_CRM_REQUESTED:
+			fallthrough
+		case dme.MaintenanceState_NORMAL_OPERATION_INIT:
+			info := edgeproto.CloudletInfo{}
+			if !apis.cloudletInfoApi.cache.Get(&cloudlet.Key, &info) {
+				info.Key = cloudlet.Key
+			}
+			info.MaintenanceState = stateTransitions[cl.MaintenanceState]
+			apis.cloudletInfoApi.cache.Update(ctx, &info, 0)
+		}
+	})
+
+	defer cancel()
+
+	cloudlet.MaintenanceState = dme.MaintenanceState_MAINTENANCE_START
+	cloudlet.Fields = append(cloudlet.Fields, edgeproto.CloudletFieldMaintenanceState)
+	err = apis.cloudletApi.UpdateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err, fmt.Sprintf("update cloudlet maintenance state"))
+
+	eMock.verifyEvent(t, "cloudlet maintenance start", []node.EventTag{
+		node.EventTag{
+			Key:   "maintenance-state",
+			Value: "UNDER_MAINTENANCE",
+		},
+	})
+	err = apis.cloudletApi.UpdateCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	require.NotNil(t, err)
 }

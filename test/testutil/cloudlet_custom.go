@@ -87,6 +87,10 @@ func (s *DummyServer) GetCloudletGPUDriverLicenseConfig(ctx context.Context, in 
 	return &edgeproto.Result{}, nil
 }
 
+func (s *DummyServer) UpdateCloudletDNS(key *edgeproto.CloudletKey, inCb edgeproto.CloudletApi_UpdateCloudletDNSServer) error {
+	return nil
+}
+
 // minimal bits not currently generated for flavorkey.proto to stream flavorKey objs
 // for ShowFlavorsForCloudlet cli
 type ShowFlavorsForCloudlet struct {

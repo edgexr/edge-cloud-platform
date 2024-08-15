@@ -2402,6 +2402,15 @@ func (s *AppInstApi) RecordAppInstEvent(ctx context.Context, appInst *edgeproto.
 	services.events.AddMetric(&metric)
 }
 
+func (s *AppInstApi) updateURI(stm concurrency.STM, key *edgeproto.AppInstKey, cloudlet *edgeproto.Cloudlet) {
+	appInst := edgeproto.AppInst{}
+	if !s.store.STMGet(stm, key, &appInst) {
+		return
+	}
+	appInst.Uri = getAppInstFQDN(&appInst, cloudlet)
+	s.store.STMPut(stm, &appInst)
+}
+
 func clusterInstReservationEvent(ctx context.Context, eventName string, appInst *edgeproto.AppInst) {
 	nodeMgr.Event(ctx, eventName, appInst.Key.Organization, appInst.GetTags(), nil, edgeproto.ClusterKeyTagName, appInst.ClusterKey.Name, edgeproto.ClusterKeyTagOrganization, appInst.ClusterKey.Organization)
 }
