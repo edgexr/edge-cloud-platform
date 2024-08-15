@@ -28,14 +28,10 @@ option (gogoproto.goproto_sizecache_all) = false;
 enum VersionHash {
   HASH_d41d8cd98f00b204e9800998ecf8427e = 0;
   //interim versions deleted
-  HASH_611b28894b117c2aaa22c12adcd81f74 = 47; // FedAppInstKey
-  HASH_37dea30756fed2b0c0ecbc3e7b084855 = 48 [(protogen.upgrade_func) = "AppInstKeyName"];
-  HASH_1304c4ec69343ced28fd3ebc85f4a3a9 = 49; // Bad PlatformType upgrade that was a no-op
-  HASH_601fa4f6a8109f39e46adf1ea3b89197 = 50 [(protogen.upgrade_func) = "PlatformType"];
-  HASH_a61a29cd41f6b7459b05b6f7be6be4ce = 51 [(protogen.upgrade_func) = "CloudletAccessVars"];
   HASH_c2d882033b0c14f28cece41cf4010060 = 52;
   HASH_14ae4c721c1bace6e8379d0061a72a77 = 53 [(protogen.upgrade_func) = "UpgradeCrmOnEdge"];
   HASH_eff9d3a6c74fd02840efce05d1984e8d = 54 [(protogen.upgrade_func) = "AddStaticFqdn"];
+  HASH_eac56710c013d954db31eeb306b514a4 = 55 [(protogen.upgrade_func) = "InstanceKeysRegionScopedName"];
   option (protogen.version_hash) = true;
   option (protogen.version_hash_salt) = "0";
 }

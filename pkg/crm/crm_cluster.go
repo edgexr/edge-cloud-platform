@@ -90,7 +90,7 @@ func (s *CRMData) clusterInstDeleted(ctx context.Context, old *edgeproto.Cluster
 // This is used when the controller sends CRM a state that implies the
 // controller is waiting for the CRM to send back the next state, but the
 // CRM does not have any change in progress.
-func (s *CRMData) clusterInstInfoCheckState(ctx context.Context, key *edgeproto.ClusterInstKey, transStates map[edgeproto.TrackedState]struct{}, finalState, errState edgeproto.TrackedState) {
+func (s *CRMData) clusterInstInfoCheckState(ctx context.Context, key *edgeproto.ClusterKey, transStates map[edgeproto.TrackedState]struct{}, finalState, errState edgeproto.TrackedState) {
 	s.ClusterInstInfoCache.UpdateModFunc(ctx, key, 0, func(old *edgeproto.ClusterInstInfo) (newObj *edgeproto.ClusterInstInfo, changed bool) {
 		if old == nil {
 			if _, ok := transStates[edgeproto.TrackedState_NOT_PRESENT]; ok || finalState == edgeproto.TrackedState_NOT_PRESENT {

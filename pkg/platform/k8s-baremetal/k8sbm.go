@@ -55,12 +55,8 @@ func NewPlatform() platform.Platform {
 
 func (k *K8sBareMetalPlatform) GetDefaultCluster(cloudletKey *edgeproto.CloudletKey) *edgeproto.ClusterInst {
 	defCluster := edgeproto.ClusterInst{
-		Key: edgeproto.ClusterInstKey{
-			CloudletKey: *cloudletKey,
-			ClusterKey: edgeproto.ClusterKey{
-				Name: cloudcommon.DefaultClust,
-			},
-		},
+		Key:         *cloudcommon.GetDefaultClustKey(*cloudletKey, ""),
+		CloudletKey: *cloudletKey,
 	}
 	return &defCluster
 }
@@ -173,7 +169,7 @@ func (k *K8sBareMetalPlatform) GetClusterAdditionalResourceMetric(ctx context.Co
 }
 
 // TODO
-func (k *K8sBareMetalPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
+func (k *K8sBareMetalPlatform) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
 	var resources edgeproto.InfraResources
 	return &resources, nil
 }

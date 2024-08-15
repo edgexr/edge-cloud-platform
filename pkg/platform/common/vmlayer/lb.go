@@ -752,19 +752,19 @@ func (v *VMPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.
 	return rootlbClients, nil
 }
 
-func (v *VMPlatform) GetRootLBClientForClusterInstKey(ctx context.Context, clusterInstKey *edgeproto.ClusterInstKey) (map[string]platform.RootLBClient, error) {
+func (v *VMPlatform) GetRootLBClientForClusterKey(ctx context.Context, clusterKey *edgeproto.ClusterKey) (map[string]platform.RootLBClient, error) {
 	rootLBClients := make(map[string]platform.RootLBClient)
 
 	var clusterInst edgeproto.ClusterInst
-	found := v.Caches.ClusterInstCache.Get(clusterInstKey, &clusterInst)
+	found := v.Caches.ClusterInstCache.Get(clusterKey, &clusterInst)
 	if !found {
-		return nil, fmt.Errorf("Unable to get clusterInst %v", clusterInstKey.GetKeyString())
+		return nil, fmt.Errorf("Unable to get clusterInst %v", clusterKey.GetKeyString())
 	}
 	lbName := v.VMProperties.GetRootLBNameForCluster(ctx, &clusterInst)
 	client, err := v.GetClusterPlatformClient(ctx, &clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get rootLB client for dedicated cluster", "key", clusterInst.Key, "error", err)
-		return nil, fmt.Errorf("Unable to get client from clusterInst %v", clusterInstKey.GetKeyString())
+		return nil, fmt.Errorf("Unable to get client from clusterInst %v", clusterKey.GetKeyString())
 	}
 	rootLBClients[lbName] = platform.RootLBClient{
 		Client: client,
@@ -787,11 +787,11 @@ func (v *VMPlatform) GetDedicatedRootLBClients(ctx context.Context) (map[string]
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
 	rootLBClients := make(map[string]platform.RootLBClient)
-	clusterInstKeys := []edgeproto.ClusterInstKey{}
-	v.Caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
-		clusterInstKeys = append(clusterInstKeys, *k)
+	clusterKeys := []edgeproto.ClusterKey{}
+	v.Caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterKey, modRev int64) {
+		clusterKeys = append(clusterKeys, *k)
 	})
-	for _, k := range clusterInstKeys {
+	for _, k := range clusterKeys {
 		var clusterInst edgeproto.ClusterInst
 		if v.Caches.ClusterInstCache.Get(&k, &clusterInst) {
 			if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {

@@ -30,7 +30,7 @@ type StreamAppInst struct {
 }
 
 type StreamClusterInst struct {
-	Key  edgeproto.ClusterInstKey
+	Key  edgeproto.ClusterKey
 	Msgs []edgeproto.Result
 }
 
@@ -54,9 +54,9 @@ func RunAllDataStreamApis(run *Run, in *edgeproto.AllData, out *AllDataStreamOut
 
 	run.Mode = "streamclusterinst"
 	for _, clusterInst := range in.ClusterInsts {
-		clusterInstKeys := []edgeproto.ClusterInstKey{clusterInst.Key}
+		clusterKeys := []edgeproto.ClusterKey{clusterInst.Key}
 		outMsgs := [][]edgeproto.Result{}
-		run.StreamObjApi_ClusterInstKey(&clusterInstKeys, nil, &outMsgs)
+		run.StreamObjApi_ClusterKey(&clusterKeys, nil, &outMsgs)
 		outObj := StreamClusterInst{Key: clusterInst.Key}
 		for _, objsMsgs := range outMsgs {
 			outObj.Msgs = objsMsgs

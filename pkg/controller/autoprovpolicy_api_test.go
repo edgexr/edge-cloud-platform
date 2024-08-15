@@ -489,9 +489,9 @@ func (s *autoProvPolicyTest) goDoAppInsts(t *testing.T, ctx context.Context, app
 			defer span.Finish()
 
 			inst := edgeproto.AppInst{}
-			inst.Key.Name = app.Key.Name + "inst" + strconv.Itoa(ii)
+			inst.Key.Name = app.Key.Name + "inst" + strconv.Itoa(ii) + "-" + cloudcommon.GetCloudletKeyHash(&s.cloudlets[ii].Key)
 			inst.Key.Organization = app.Key.Organization
-			inst.Key.CloudletKey = s.cloudlets[ii].Key
+			inst.CloudletKey = s.cloudlets[ii].Key
 			inst.AppKey = app.Key
 			var err error
 			if action == cloudcommon.Create {
@@ -513,7 +513,7 @@ func (s *autoProvPolicyTest) expectAppInsts(t *testing.T, ctx context.Context, a
 		AppKey: app.Key,
 	}
 	s.apis.appInstApi.cache.Show(&filter, func(ai *edgeproto.AppInst) error {
-		if _, found := s.cloudletKeys[ai.Key.CloudletKey]; found {
+		if _, found := s.cloudletKeys[ai.CloudletKey]; found {
 			actual++
 		}
 		return nil

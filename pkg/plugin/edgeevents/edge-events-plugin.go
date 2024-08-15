@@ -28,7 +28,7 @@ func GetEdgeEventsHandler(ctx context.Context, edgeEventsCookieExpiration time.D
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetEdgeEventHandler")
 	edgeEventsHandlerPlugin := new(edgeevents.EdgeEventsHandlerPlugin)
 	edgeEventsHandlerPlugin.EdgeEventsCookieExpiration = edgeEventsCookieExpiration
-	edgeEventsHandlerPlugin.Cloudlets = make(map[edgeproto.CloudletKey]*edgeevents.CloudletInfo) // Initialize Cloudlets hashmap
+	edgeEventsHandlerPlugin.AppInsts = make(map[edgeproto.AppInstKey]*edgeevents.AppInstInfo) // Initialize Cloudlets hashmap
 	return edgeEventsHandlerPlugin, nil
 }
 

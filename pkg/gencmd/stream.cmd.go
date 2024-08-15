@@ -110,12 +110,12 @@ func StreamAppInsts(c *cli.Command, data []edgeproto.AppInstKey, err *error) {
 
 var StreamClusterInstCmd = &cli.Command{
 	Use:          "StreamClusterInst",
-	RequiredArgs: strings.Join(ClusterInstKeyRequiredArgs, " "),
-	OptionalArgs: strings.Join(ClusterInstKeyOptionalArgs, " "),
-	AliasArgs:    strings.Join(ClusterInstKeyAliasArgs, " "),
-	SpecialArgs:  &ClusterInstKeySpecialArgs,
-	Comments:     ClusterInstKeyComments,
-	ReqData:      &edgeproto.ClusterInstKey{},
+	RequiredArgs: strings.Join(ClusterKeyRequiredArgs, " "),
+	OptionalArgs: strings.Join(ClusterKeyOptionalArgs, " "),
+	AliasArgs:    strings.Join(ClusterKeyAliasArgs, " "),
+	SpecialArgs:  &ClusterKeySpecialArgs,
+	Comments:     ClusterKeyComments,
+	ReqData:      &edgeproto.ClusterKey{},
 	ReplyData:    &edgeproto.Result{},
 	Run:          runStreamClusterInst,
 }
@@ -124,7 +124,7 @@ func runStreamClusterInst(c *cli.Command, args []string) error {
 	if cli.SilenceUsage {
 		c.CobraCmd.SilenceUsage = true
 	}
-	obj := c.ReqData.(*edgeproto.ClusterInstKey)
+	obj := c.ReqData.(*edgeproto.ClusterKey)
 	_, err := c.ParseInput(args)
 	if err != nil {
 		return err
@@ -132,7 +132,7 @@ func runStreamClusterInst(c *cli.Command, args []string) error {
 	return StreamClusterInst(c, obj)
 }
 
-func StreamClusterInst(c *cli.Command, in *edgeproto.ClusterInstKey) error {
+func StreamClusterInst(c *cli.Command, in *edgeproto.ClusterKey) error {
 	if StreamObjApiCmd == nil {
 		return fmt.Errorf("StreamObjApi client not initialized")
 	}
@@ -175,7 +175,7 @@ func StreamClusterInst(c *cli.Command, in *edgeproto.ClusterInstKey) error {
 }
 
 // this supports "Create" and "Delete" commands on ApplicationData
-func StreamClusterInsts(c *cli.Command, data []edgeproto.ClusterInstKey, err *error) {
+func StreamClusterInsts(c *cli.Command, data []edgeproto.ClusterKey, err *error) {
 	if *err != nil {
 		return
 	}

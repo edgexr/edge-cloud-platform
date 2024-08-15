@@ -151,7 +151,7 @@ func PurgeAppInstClients(ctx context.Context, appInstKey *edgeproto.AppInstKey, 
 		jj := 0
 		for _, c := range clients {
 			// Remove matching clients
-			if appInstKey.CloudletKey.Matches(&c.ClientKey.AppInstKey.CloudletKey) {
+			if appInstKey.Matches(&c.ClientKey.AppInstKey) {
 				continue
 			}
 			clientsMap.clientsByApp[*appKey][jj] = c

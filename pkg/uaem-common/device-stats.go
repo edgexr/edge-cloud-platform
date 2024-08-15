@@ -30,6 +30,7 @@ func GetDeviceStatKey(appInst *edgeproto.AppInst, deviceInfo *DeviceInfo, loc *d
 	statKey := DeviceStatKey{
 		AppInstKey:   appInst.Key,
 		AppKey:       appInst.AppKey,
+		CloudletKey:  appInst.CloudletKey,
 		LocationTile: GetLocationTileFromGpsLocation(loc, tileLength),
 	}
 	if deviceInfo.DeviceInfoStatic != nil {
@@ -49,6 +50,7 @@ func GetDeviceStatKey(appInst *edgeproto.AppInst, deviceInfo *DeviceInfo, loc *d
 type DeviceStatKey struct {
 	AppInstKey      edgeproto.AppInstKey
 	AppKey          edgeproto.AppKey
+	CloudletKey     edgeproto.CloudletKey
 	DeviceCarrier   string
 	LocationTile    string
 	DataNetworkType string

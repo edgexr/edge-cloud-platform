@@ -91,35 +91,32 @@ flavors:
 
 clusterinsts:
 - key:
-    clusterkey:
-      name: pillimo_cluster
-      organization: Untomt
-    cloudletkey:
-      organization: DMUUS
-      name: cloud2
+    name: pillimo_cluster
+    organization: Untomt
+  cloudletkey:
+    organization: DMUUS
+    name: cloud2
   flavor:
     name: x1.tiny
   numnodes: 3
   liveness: LivenessStatic
 - key:
-    clusterkey:
-      name: Untomt_cluster
-      organization: Untomt
-    cloudletkey:
-      organization: DMUUS
-      name: cloud2
+    name: Untomt_cluster
+    organization: Untomt
+  cloudletkey:
+    organization: DMUUS
+    name: cloud2
   flavor:
     name: x1.small
   numnodes: 3
   liveness: LivenessDynamic
   ipaccess: Dedicated
 - key:
-    clusterkey:
-      name: Untomt_cluster_22
-      organization: Untomt
-    cloudletkey:
-      organization: DMUUS
-      name: cloud2
+    name: Untomt_cluster_22
+    organization: Untomt
+  cloudletkey:
+    organization: DMUUS
+    name: cloud2
   flavor:
     name: x1.small
   numnodes: 3
@@ -138,9 +135,9 @@ appinstances:
 - key:
     organization: Atlantic
     name: Pillimo Go
-    cloudletkey:
-      organization: DMUUS
-      name: cloud2
+  cloudletkey:
+    organization: DMUUS
+    name: cloud2
   appkey:
     organization: Atlantic
     name: Pillimo Go
@@ -157,9 +154,9 @@ appinstances:
 - key:
     organization: Untomt
     name: VRmax
-    cloudletkey:
-      organization: DMUUS
-      name: cloud2
+  cloudletkey:
+    organization: DMUUS
+    name: cloud2
   appkey:
     organization: Untomt
     name: VRmax
@@ -176,9 +173,9 @@ appinstances:
 - key:
     organization: Untomt
     name: VRmax2
-    cloudletkey:
-      organization: DMUUS
-      name: cloud2
+  cloudletkey:
+    organization: DMUUS
+    name: cloud2
   appkey:
     organization: Untomt
     name: VRmax

@@ -47,10 +47,10 @@ message ClusterInstKeyV1 {
   option (gogoproto.gostring) = true;
 }
 
-// Cluster Instance unique key
+// (_deprecated_) Cluster Instance unique key V2
 //
 // ClusterInstKey uniquely identifies a Cluster Instance (ClusterInst) or Cluster Instance state (ClusterInstInfo).
-message ClusterInstKey {
+message ClusterInstKeyV2 {
   // Name of Cluster
   ClusterKey cluster_key = 1 [(gogoproto.nullable) = false];
   // Name of Cloudlet on which the Cluster is instantiated
@@ -69,7 +69,9 @@ message ClusterInst {
   repeated string fields = 1;
   // Unique key
   // required: true
-  ClusterInstKey key = 2 [(gogoproto.nullable) = false];
+  ClusterKey key = 2 [(gogoproto.nullable) = false];
+  // Cloudlet on which the cluster is deployed
+  CloudletKey cloudlet_key = 41 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
   // Flavor of the k8s node 
   FlavorKey flavor = 3 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.refers_to) = "Flavor"];
   // Liveness of instance (see Liveness)
@@ -140,6 +142,10 @@ message ClusterInst {
   bool enable_ipv6 = 37;
   // Universally unique object ID
   string obj_id = 38 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // internal compatibility version
+  uint32 compatibility_version = 40 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Annotations
+  map<string, string> annotations = 42;
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;
@@ -149,10 +155,10 @@ message ClusterInst {
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_filter_cloudlet_key) = true;
-  option (protogen.noconfig) = "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,DeletePrepare,DnsLabel,Fqdn,StaticFqdn";
-  option (protogen.not_required) = "Key.CloudletKey.FederatedOrganization";
-  option (protogen.alias) = "cluster=Key.ClusterKey.Name,cloudlet=Key.CloudletKey.Name,cloudletorg=Key.CloudletKey.Organization,federatedorg=Key.CloudletKey.FederatedOrganization,clusterorg=Key.ClusterKey.Organization,flavor=Flavor.Name";
-  option (protogen.mc2_target_cloudlet) = "Key.CloudletKey";
+  option (protogen.noconfig) = "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,DeletePrepare,DnsLabel,Fqdn,StaticFqdn,CompatibilityVersion";
+  option (protogen.not_required) = "CloudletKey.FederatedOrganization";
+  option (protogen.alias) = "cluster=Key.Name,cloudlet=CloudletKey.Name,cloudletorg=CloudletKey.Organization,federatedorg=CloudletKey.FederatedOrganization,clusterorg=Key.Organization,flavor=Flavor.Name";
+  option (protogen.mc2_target_cloudlet) = "CloudletKey";
   option (protogen.uses_org) = "custom";
 }
 
@@ -174,7 +180,7 @@ service ClusterInstApi {
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.ClusterKey.Organization";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
     option (protogen.mc2_custom_authz) = true;
   }
   // Delete Cluster Instance. Deletes an instance of a Cluster deployed on a Cloudlet.
@@ -184,7 +190,7 @@ service ClusterInstApi {
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.ClusterKey.Organization";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
   }
   // Update Cluster Instance. Updates an instance of a Cluster deployed on a Cloudlet.
   rpc UpdateClusterInst(ClusterInst) returns (stream Result) {
@@ -193,8 +199,8 @@ service ClusterInstApi {
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.ClusterKey.Organization";
-    option (protogen.method_noconfig) = "Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName,Networks,MultiTenant";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
+    option (protogen.method_noconfig) = "Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName,Networks,MultiTenant,CloudletKey";
   }
   // Show Cluster Instances. Lists all the cluster instances managed by Edge Controller.
   rpc ShowClusterInst(ClusterInst) returns (stream ClusterInst) {
@@ -202,7 +208,7 @@ service ClusterInstApi {
       post: "/show/clusterinst"
       body: "*"
     };
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.ClusterKey.Organization";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.Organization";
     option (protogen.mc2_custom_authz) = true;
   }
   // Cleanup Reservable Cluster Instances. Deletes reservable cluster instances that are not in use.
@@ -220,7 +226,7 @@ message ClusterInstInfo {
   // Fields are used for the Update API to specify which fields to apply
   repeated string fields = 1;
   // Unique identifier key
-  ClusterInstKey key = 2 [(gogoproto.nullable) = false];
+  ClusterKey key = 2 [(gogoproto.nullable) = false];
   // Id of client assigned by server (internal use only)
   int64 notify_id = 3 [(protogen.hidetag) = "nocmp"];
   // State of the cluster instance

@@ -41,7 +41,7 @@ func (s *TrustPolicyExceptionApi) applyAllTPEsForAppInst(ctx context.Context, ap
 	}
 	tpes := s.cache.GetForApp(&app.Key)
 	for _, tpe := range tpes {
-		s.applyTPEForAppInst(ctx, tpe.Key, appInst.Key, *appInst.ClusterInstKey())
+		s.applyTPEForAppInst(ctx, tpe.Key, appInst.Key, *appInst.GetClusterKey(), appInst.CloudletKey)
 	}
 }
 
@@ -83,44 +83,43 @@ func (s *TrustPolicyExceptionApi) applyTPEForCloudlet(ctx context.Context, tpeKe
 	log.SpanLog(ctx, log.DebugLevelApi, "applyCloudletTPEChange", "tpeKey", tpeKey, "cloudletKey", cloudletKey)
 	// Apply to all matching AppInsts on cloudlet
 	filter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			CloudletKey: cloudletKey,
-		},
-		AppKey: tpeKey.AppKey,
+		CloudletKey: cloudletKey,
+		AppKey:      tpeKey.AppKey,
 	}
 	appInstKeys := []edgeproto.AppInstKey{}
-	clusterInstKeys := []edgeproto.ClusterInstKey{}
+	clusterKeys := []edgeproto.ClusterKey{}
 	s.all.appInstApi.cache.Show(&filter, func(appInst *edgeproto.AppInst) error {
 		appInstKeys = append(appInstKeys, appInst.Key)
-		clusterInstKeys = append(clusterInstKeys, *appInst.ClusterInstKey())
+		clusterKeys = append(clusterKeys, *appInst.GetClusterKey())
 		return nil
 	})
 	for ii := range appInstKeys {
-		s.applyTPEForAppInst(ctx, tpeKey, appInstKeys[ii], clusterInstKeys[ii])
+		s.applyTPEForAppInst(ctx, tpeKey, appInstKeys[ii], clusterKeys[ii], cloudletKey)
 	}
 }
 
 // wrapper function to spawn go thread
-func (s *TrustPolicyExceptionApi) applyTPEForAppInst(ctx context.Context, tpeKey edgeproto.TrustPolicyExceptionKey, appInstKey edgeproto.AppInstKey, clusterInstKey edgeproto.ClusterInstKey) {
+func (s *TrustPolicyExceptionApi) applyTPEForAppInst(ctx context.Context, tpeKey edgeproto.TrustPolicyExceptionKey, appInstKey edgeproto.AppInstKey, clusterKey edgeproto.ClusterKey, cloudletKey edgeproto.CloudletKey) {
 	log.SpanLog(ctx, log.DebugLevelApi, "applyTPEForAppInst", "tpeKey", tpeKey, "appInstKey", appInstKey)
 
 	go func() {
 		span, ctx := log.ChildSpan(ctx, log.DebugLevelApi, "update trustpolicyexception")
 		defer span.Finish()
-		err := s.runTPEChange(ctx, tpeKey, appInstKey, clusterInstKey)
+		err := s.runTPEChange(ctx, tpeKey, appInstKey, clusterKey, cloudletKey)
 		log.SpanLog(ctx, log.DebugLevelApi, "applyTPEForAppInst result", "err", err, "appInstKey", appInstKey, "tpeKey", tpeKey)
 	}()
 }
 
-func (s *TrustPolicyExceptionApi) runTPEChange(ctx context.Context, tpeKey edgeproto.TrustPolicyExceptionKey, appInstKey edgeproto.AppInstKey, clusterInstKey edgeproto.ClusterInstKey) error {
+func (s *TrustPolicyExceptionApi) runTPEChange(ctx context.Context, tpeKey edgeproto.TrustPolicyExceptionKey, appInstKey edgeproto.AppInstKey, clusterKey edgeproto.ClusterKey, cloudletKey edgeproto.CloudletKey) error {
 	threadID := ulid.Make().String()
 	tpeInstKey := edgeproto.TPEInstanceKey{
-		TpeKey:     tpeKey,
-		AppInstKey: appInstKey,
-		ClusterKey: clusterInstKey.ClusterKey,
+		TpeKey:      tpeKey,
+		AppInstKey:  appInstKey,
+		ClusterKey:  clusterKey,
+		CloudletKey: cloudletKey,
 	}
 
-	log.SpanLog(ctx, log.DebugLevelApi, "runTPEChange", "tpeKey", tpeKey, "appInstKey", appInstKey, "clusterKey", clusterInstKey.ClusterKey)
+	log.SpanLog(ctx, log.DebugLevelApi, "runTPEChange", "tpeKey", tpeKey, "appInstKey", appInstKey, "clusterKey", clusterKey, "cloudletKey", cloudletKey)
 
 	// Multiple different changes across different objects can trigger
 	// an update to TPEs. To avoid multiple changes running in parallel,
@@ -175,7 +174,6 @@ func (s *TrustPolicyExceptionApi) runTPEChange(ctx context.Context, tpeKey edgep
 		var done bool
 		platformType := ""
 		nodeType := ""
-		cloudletKey := &appInstKey.CloudletKey
 		err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 			tpeState = edgeproto.TPEInstanceState{}
 			curTpe = &edgeproto.TrustPolicyException{}
@@ -205,7 +203,7 @@ func (s *TrustPolicyExceptionApi) runTPEChange(ctx context.Context, tpeKey edgep
 				return nil
 			}
 			var deleteReason error
-			if !s.all.cloudletApi.store.STMGet(stm, cloudletKey, cloudlet) {
+			if !s.all.cloudletApi.store.STMGet(stm, &cloudletKey, cloudlet) {
 				deleteReason = cloudletKey.NotFoundError()
 			}
 			if !s.all.cloudletPoolApi.store.STMGet(stm, &tpeKey.CloudletPoolKey, &cloudletPool) {
@@ -214,8 +212,8 @@ func (s *TrustPolicyExceptionApi) runTPEChange(ctx context.Context, tpeKey edgep
 			if !s.all.appInstApi.store.STMGet(stm, &appInstKey, &appInst) {
 				deleteReason = appInstKey.NotFoundError()
 			}
-			if !s.all.clusterInstApi.store.STMGet(stm, &clusterInstKey, &clusterInst) {
-				deleteReason = clusterInstKey.NotFoundError()
+			if !s.all.clusterInstApi.store.STMGet(stm, &clusterKey, &clusterInst) {
+				deleteReason = clusterKey.NotFoundError()
 			}
 			if !s.store.STMGet(stm, &tpeKey, curTpe) {
 				deleteReason = tpeKey.NotFoundError()
@@ -233,7 +231,7 @@ func (s *TrustPolicyExceptionApi) runTPEChange(ctx context.Context, tpeKey edgep
 				curTpe.State,
 				clusterInst.IpAccess,
 				cloudlet.TrustPolicy,
-				cloudletKey,
+				&cloudletKey,
 				cloudletPool.Cloudlets,
 			)
 			// Note that RunCount is used to trigger the CRM, as we

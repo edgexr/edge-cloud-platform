@@ -38,11 +38,9 @@ func TestNginxStats(t *testing.T) {
 
 	testScrapePoint := ProxyScrapePoint{
 		App: "UnitTestApp",
-		ClusterInstKey: edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name:         "UnitTestCluster",
-				Organization: "UnitTestDev",
-			},
+		ClusterKey: edgeproto.ClusterKey{
+			Name:         "UnitTestCluster",
+			Organization: "UnitTestDev",
 		},
 		Client:         &shepherd_unittest.UTClient{},
 		ListenEndpoint: cloudcommon.ProxyMetricsDefaultListenIP,

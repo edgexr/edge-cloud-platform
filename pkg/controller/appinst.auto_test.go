@@ -70,23 +70,6 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 	testObj, supportData := dataGen.GetCreateAppInstTestObj()
 	supportData.put(t, ctx, all)
 	{
-		// set delete_prepare on referenced Cloudlet
-		ref := supportData.getOneCloudlet()
-		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
-		ref.DeletePrepare = true
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
-		require.Nil(t, err)
-		// api call must fail with object being deleted
-		testObj, _ = dataGen.GetCreateAppInstTestObj()
-		err = all.appInstApi.CreateAppInst(testObj, testutil.NewCudStreamoutAppInst(ctx))
-		require.NotNil(t, err, "CreateAppInst must fail with Cloudlet.DeletePrepare set")
-		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
-		// reset delete_prepare on referenced Cloudlet
-		ref.DeletePrepare = false
-		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
-		require.Nil(t, err)
-	}
-	{
 		// set delete_prepare on referenced App
 		ref := supportData.getOneApp()
 		require.NotNil(t, ref, "support data must include one referenced App")
@@ -121,6 +104,23 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 		require.Nil(t, err)
 	}
 	{
+		// set delete_prepare on referenced Cloudlet
+		ref := supportData.getOneCloudlet()
+		require.NotNil(t, ref, "support data must include one referenced Cloudlet")
+		ref.DeletePrepare = true
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
+		require.Nil(t, err)
+		// api call must fail with object being deleted
+		testObj, _ = dataGen.GetCreateAppInstTestObj()
+		err = all.appInstApi.CreateAppInst(testObj, testutil.NewCudStreamoutAppInst(ctx))
+		require.NotNil(t, err, "CreateAppInst must fail with Cloudlet.DeletePrepare set")
+		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
+		// reset delete_prepare on referenced Cloudlet
+		ref.DeletePrepare = false
+		_, err = all.cloudletApi.store.Put(ctx, ref, all.cloudletApi.sync.SyncWait)
+		require.Nil(t, err)
+	}
+	{
 		// set delete_prepare on referenced Flavor
 		ref := supportData.getOneFlavor()
 		require.NotNil(t, ref, "support data must include one referenced Flavor")
@@ -142,12 +142,12 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 	// happen in the same STM.
 	appInstApiStore, appInstApiUnwrap := wrapAppInstTrackerStore(all.appInstApi)
 	defer appInstApiUnwrap()
-	cloudletApiStore, cloudletApiUnwrap := wrapCloudletTrackerStore(all.cloudletApi)
-	defer cloudletApiUnwrap()
 	appApiStore, appApiUnwrap := wrapAppTrackerStore(all.appApi)
 	defer appApiUnwrap()
 	clusterInstApiStore, clusterInstApiUnwrap := wrapClusterInstTrackerStore(all.clusterInstApi)
 	defer clusterInstApiUnwrap()
+	cloudletApiStore, cloudletApiUnwrap := wrapCloudletTrackerStore(all.cloudletApi)
+	defer cloudletApiUnwrap()
 	flavorApiStore, flavorApiUnwrap := wrapFlavorTrackerStore(all.flavorApi)
 	defer flavorApiUnwrap()
 
@@ -157,12 +157,12 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 	require.Nil(t, err, "CreateAppInst should succeed if no references are in delete prepare")
 	// make sure everything ran in the same STM
 	require.NotNil(t, appInstApiStore.putSTM, "CreateAppInst put AppInst must be done in STM")
-	require.NotNil(t, cloudletApiStore.getSTM, "CreateAppInst check Cloudlet ref must be done in STM")
-	require.Equal(t, appInstApiStore.putSTM, cloudletApiStore.getSTM, "CreateAppInst check Cloudlet ref must be done in same STM as AppInst put")
 	require.NotNil(t, appApiStore.getSTM, "CreateAppInst check App ref must be done in STM")
 	require.Equal(t, appInstApiStore.putSTM, appApiStore.getSTM, "CreateAppInst check App ref must be done in same STM as AppInst put")
 	require.NotNil(t, clusterInstApiStore.getSTM, "CreateAppInst check ClusterInst ref must be done in STM")
 	require.Equal(t, appInstApiStore.putSTM, clusterInstApiStore.getSTM, "CreateAppInst check ClusterInst ref must be done in same STM as AppInst put")
+	require.NotNil(t, cloudletApiStore.getSTM, "CreateAppInst check Cloudlet ref must be done in STM")
+	require.Equal(t, appInstApiStore.putSTM, cloudletApiStore.getSTM, "CreateAppInst check Cloudlet ref must be done in same STM as AppInst put")
 	require.NotNil(t, flavorApiStore.getSTM, "CreateAppInst check Flavor ref must be done in STM")
 	require.Equal(t, appInstApiStore.putSTM, flavorApiStore.getSTM, "CreateAppInst check Flavor ref must be done in same STM as AppInst put")
 

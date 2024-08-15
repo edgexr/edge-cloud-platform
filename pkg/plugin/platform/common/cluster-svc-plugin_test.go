@@ -125,7 +125,7 @@ func TestAutoScaleT(t *testing.T) {
 	clusterInst := testutil.ClusterInstData()[0]
 
 	policy := edgeproto.AutoScalePolicy{}
-	policy.Key.Organization = clusterInst.Key.ClusterKey.Organization
+	policy.Key.Organization = clusterInst.Key.Organization
 	policy.Key.Name = "test-policy"
 	policy.TriggerTimeSec = 120
 

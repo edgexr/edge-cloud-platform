@@ -61,7 +61,7 @@ func TestRetry(t *testing.T) {
 	require.Equal(t, 1, len(retry.allFailures))
 
 	// retryTracker should return failure
-	failure := retry.hasFailure(ctx, appInst.AppKey, appInst.Key.CloudletKey)
+	failure := retry.hasFailure(ctx, appInst.AppKey, appInst.CloudletKey)
 	require.True(t, failure)
 
 	cacheData.init(nil)

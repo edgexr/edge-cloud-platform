@@ -137,7 +137,7 @@ func (v *VMPlatform) setupGPUDrivers(ctx context.Context, rootLBClient ssh.Clien
 		return err
 	}
 	if gpuDriver == nil {
-		return fmt.Errorf("No GPU driver associated with cloudlet %s", clusterInst.Key.CloudletKey)
+		return fmt.Errorf("No GPU driver associated with cloudlet %s", clusterInst.CloudletKey)
 	}
 
 	updateCallback(edgeproto.UpdateTask, "Setting up GPU drivers on all cluster nodes")
@@ -335,7 +335,7 @@ var NvidiaGPUOperatorApp = edgeproto.App{
 func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Client, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, action ActionType) error {
 	appInst := edgeproto.AppInst{}
 	appInst.AppKey = NvidiaGPUOperatorApp.Key
-	appInst.ClusterKey = clusterInst.Key.ClusterKey
+	appInst.ClusterKey = clusterInst.Key
 	appInst.Flavor = clusterInst.Flavor
 
 	kubeNames, err := k8smgmt.GetKubeNames(clusterInst, &NvidiaGPUOperatorApp, &appInst)

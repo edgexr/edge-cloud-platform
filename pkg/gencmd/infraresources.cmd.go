@@ -104,17 +104,6 @@ var NodeInfoComments = map[string]string{
 	"name": "Node name",
 }
 var NodeInfoSpecialArgs = map[string]string{}
-var AppInstRefKeyRequiredArgs = []string{}
-var AppInstRefKeyOptionalArgs = []string{
-	"name",
-	"organization",
-}
-var AppInstRefKeyAliasArgs = []string{}
-var AppInstRefKeyComments = map[string]string{
-	"name":         "AppInst name",
-	"organization": "AppInst organization",
-}
-var AppInstRefKeySpecialArgs = map[string]string{}
 var InfraResourcesRequiredArgs = []string{}
 var InfraResourcesOptionalArgs = []string{
 	"vms:#.name",
@@ -193,9 +182,9 @@ var InfraResourcesSnapshotComments = map[string]string{
 	"info:#.alertthreshold":                  "Generate alert when more than threshold percentage of resource is used",
 	"clusterinsts:#.name":                    "Cluster name",
 	"clusterinsts:#.organization":            "Name of the organization that this cluster belongs to",
-	"vmappinsts:#.name":                      "AppInst name",
-	"vmappinsts:#.organization":              "AppInst organization",
-	"k8sappinsts:#.name":                     "AppInst name",
-	"k8sappinsts:#.organization":             "AppInst organization",
+	"vmappinsts:#.name":                      "App Instance name",
+	"vmappinsts:#.organization":              "App Instance organization",
+	"k8sappinsts:#.name":                     "App Instance name",
+	"k8sappinsts:#.organization":             "App Instance organization",
 }
 var InfraResourcesSnapshotSpecialArgs = map[string]string{}

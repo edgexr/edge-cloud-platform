@@ -140,35 +140,17 @@ func (e *EdgeEventsHandlerPlugin) getClientInfo(ctx context.Context, appInstKey 
 // Helper function that gets the AppInstInfo for the specified AppInst on the specified Cloudlet
 // Must lock EdgeEventsHandlerPlugin before calling this function
 func (e *EdgeEventsHandlerPlugin) getAppInstInfo(ctx context.Context, appInstKey edgeproto.AppInstKey) (*AppInstInfo, error) {
-	// Get cloudletinfo for specified cloudlet
-	cloudletinfo, err := e.getCloudletInfo(ctx, appInstKey.CloudletKey)
-	if err != nil {
-		return nil, err
-	}
 	// Make sure AppInsts map is initialized
-	if cloudletinfo.AppInsts == nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "cannot get appinstinfo - AppInsts map is uninitialized, because no appinsts are on the clouudlet yet", "cloudletKey", appInstKey.CloudletKey)
-		return nil, fmt.Errorf("cannot get appisntinfo - AppInsts map is uninitialized for cloudlet %v", appInstKey.CloudletKey)
+	if e.AppInsts == nil {
+		e.AppInsts = make(map[edgeproto.AppInstKey]*AppInstInfo)
 	}
 	// Get clients on specified appinst
-	appinstinfo, ok := cloudletinfo.AppInsts[appInstKey]
+	appinstinfo, ok := e.AppInsts[appInstKey]
 	if !ok {
 		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find appinst on cloudlet", "appInstKey", appInstKey)
 		return nil, fmt.Errorf("unable to find appinst on cloudlet: %v", appInstKey)
 	}
 	return appinstinfo, nil
-}
-
-// Helper function that gets the CloudletInfo for the specified Cloudlet
-// Must lock EdgeEventsHandlerPlugin before calling this function
-func (e *EdgeEventsHandlerPlugin) getCloudletInfo(ctx context.Context, cloudletKey edgeproto.CloudletKey) (*CloudletInfo, error) {
-	// Get cloudletinfo for specified cloudlet
-	cloudletinfo, ok := e.Cloudlets[cloudletKey]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find cloudlet", "cloudletKey", cloudletKey)
-		return nil, fmt.Errorf("unable to find cloudlet: %v", cloudletKey)
-	}
-	return cloudletinfo, nil
 }
 
 // Helper function that removes ClientKey from appinstinfo.Clients
@@ -189,22 +171,6 @@ func (e *EdgeEventsHandlerPlugin) removeClientKey(ctx context.Context, appInstKe
 // Will also remove CloudletKey if appinsts is empty
 // Must lock EdgeEventsHandlerPlugin before calling this function
 func (e *EdgeEventsHandlerPlugin) removeAppInstKey(ctx context.Context, appInstKey edgeproto.AppInstKey) {
-	// Check to see if appinst exists
-	cloudletinfo, err := e.getCloudletInfo(ctx, appInstKey.CloudletKey)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "unable to find appinst to remove", "appInstKey", appInstKey, "error", err)
-		return
-	}
 	// Remove appinst from map of appinsts
-	delete(cloudletinfo.AppInsts, appInstKey)
-	if len(cloudletinfo.AppInsts) == 0 {
-		e.removeCloudletKey(ctx, appInstKey.CloudletKey)
-	}
-}
-
-// Helper function that removes CloudletKey from Cloudlets.CloudletsMap
-// Must lock EdgeEventsHandlerPlugin before calling this function
-func (e *EdgeEventsHandlerPlugin) removeCloudletKey(ctx context.Context, cloudletKey edgeproto.CloudletKey) {
-	// Remove cloudlet from map of cloudlets
-	delete(e.Cloudlets, cloudletKey)
+	delete(e.AppInsts, appInstKey)
 }

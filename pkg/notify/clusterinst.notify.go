@@ -28,14 +28,14 @@ var _ = math.Inf
 
 type SendClusterInstHandler interface {
 	GetAllLocked(ctx context.Context, cb func(key *edgeproto.ClusterInst, modRev int64))
-	GetWithRev(key *edgeproto.ClusterInstKey, buf *edgeproto.ClusterInst, modRev *int64) bool
+	GetWithRev(key *edgeproto.ClusterKey, buf *edgeproto.ClusterInst, modRev *int64) bool
 	GetForCloudlet(cloudlet *edgeproto.Cloudlet, cb func(data *edgeproto.ClusterInstCacheData))
 }
 
 type RecvClusterInstHandler interface {
 	Update(ctx context.Context, in *edgeproto.ClusterInst, rev int64)
 	Delete(ctx context.Context, in *edgeproto.ClusterInst, rev int64)
-	Prune(ctx context.Context, keys map[edgeproto.ClusterInstKey]struct{})
+	Prune(ctx context.Context, keys map[edgeproto.ClusterKey]struct{})
 	Flush(ctx context.Context, notifyId int64)
 }
 
@@ -49,8 +49,8 @@ type ClusterInstSend struct {
 	Name        string
 	MessageName string
 	handler     SendClusterInstHandler
-	Keys        map[edgeproto.ClusterInstKey]ClusterInstSendContext
-	keysToSend  map[edgeproto.ClusterInstKey]ClusterInstSendContext
+	Keys        map[edgeproto.ClusterKey]ClusterInstSendContext
+	keysToSend  map[edgeproto.ClusterKey]ClusterInstSendContext
 	notifyId    int64
 	Mux         sync.Mutex
 	buf         edgeproto.ClusterInst
@@ -69,7 +69,7 @@ func NewClusterInstSend(handler SendClusterInstHandler) *ClusterInstSend {
 	send.Name = "ClusterInst"
 	send.MessageName = proto.MessageName((*edgeproto.ClusterInst)(nil))
 	send.handler = handler
-	send.Keys = make(map[edgeproto.ClusterInstKey]ClusterInstSendContext)
+	send.Keys = make(map[edgeproto.ClusterKey]ClusterInstSendContext)
 	return send
 }
 
@@ -120,12 +120,12 @@ func (s *ClusterInstSend) Update(ctx context.Context, obj *edgeproto.ClusterInst
 	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
-func (s *ClusterInstSend) ForceDelete(ctx context.Context, key *edgeproto.ClusterInstKey, modRev int64) {
+func (s *ClusterInstSend) ForceDelete(ctx context.Context, key *edgeproto.ClusterKey, modRev int64) {
 	forceDelete := true
 	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *ClusterInstSend) updateInternal(ctx context.Context, key *edgeproto.ClusterInstKey, modRev int64, forceDelete bool) {
+func (s *ClusterInstSend) updateInternal(ctx context.Context, key *edgeproto.ClusterKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal ClusterInst", "key", key, "modRev", modRev)
 	s.Keys[*key] = ClusterInstSendContext{
@@ -138,7 +138,7 @@ func (s *ClusterInstSend) updateInternal(ctx context.Context, key *edgeproto.Clu
 }
 
 func (s *ClusterInstSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
-	keys := make(map[edgeproto.ClusterInstKey]*edgeproto.ClusterInstCacheData)
+	keys := make(map[edgeproto.ClusterKey]*edgeproto.ClusterInstCacheData)
 	s.handler.GetForCloudlet(cloudlet, func(data *edgeproto.ClusterInstCacheData) {
 		if data.Obj == nil {
 			return
@@ -203,7 +203,7 @@ func (s *ClusterInstSend) PrepData() bool {
 	defer s.Mux.Unlock()
 	if len(s.Keys) > 0 {
 		s.keysToSend = s.Keys
-		s.Keys = make(map[edgeproto.ClusterInstKey]ClusterInstSendContext)
+		s.Keys = make(map[edgeproto.ClusterKey]ClusterInstSendContext)
 		return true
 	}
 	return false
@@ -262,7 +262,7 @@ type ClusterInstRecv struct {
 	Name        string
 	MessageName string
 	handler     RecvClusterInstHandler
-	sendAllKeys map[edgeproto.ClusterInstKey]struct{}
+	sendAllKeys map[edgeproto.ClusterKey]struct{}
 	Mux         sync.Mutex
 	buf         edgeproto.ClusterInst
 	RecvCount   uint64
@@ -335,7 +335,7 @@ func (s *ClusterInstRecv) Recv(ctx context.Context, notice *edgeproto.Notice, no
 func (s *ClusterInstRecv) RecvAllStart() {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
-	s.sendAllKeys = make(map[edgeproto.ClusterInstKey]struct{})
+	s.sendAllKeys = make(map[edgeproto.ClusterKey]struct{})
 }
 
 func (s *ClusterInstRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {
@@ -393,13 +393,13 @@ func (s *Client) RegisterRecvClusterInstCache(cache ClusterInstCacheHandler) {
 
 type SendClusterInstInfoHandler interface {
 	GetAllLocked(ctx context.Context, cb func(key *edgeproto.ClusterInstInfo, modRev int64))
-	GetWithRev(key *edgeproto.ClusterInstKey, buf *edgeproto.ClusterInstInfo, modRev *int64) bool
+	GetWithRev(key *edgeproto.ClusterKey, buf *edgeproto.ClusterInstInfo, modRev *int64) bool
 }
 
 type RecvClusterInstInfoHandler interface {
 	Update(ctx context.Context, in *edgeproto.ClusterInstInfo, rev int64)
 	Delete(ctx context.Context, in *edgeproto.ClusterInstInfo, rev int64)
-	Prune(ctx context.Context, keys map[edgeproto.ClusterInstKey]struct{})
+	Prune(ctx context.Context, keys map[edgeproto.ClusterKey]struct{})
 	Flush(ctx context.Context, notifyId int64)
 }
 
@@ -413,8 +413,8 @@ type ClusterInstInfoSend struct {
 	Name        string
 	MessageName string
 	handler     SendClusterInstInfoHandler
-	Keys        map[edgeproto.ClusterInstKey]ClusterInstInfoSendContext
-	keysToSend  map[edgeproto.ClusterInstKey]ClusterInstInfoSendContext
+	Keys        map[edgeproto.ClusterKey]ClusterInstInfoSendContext
+	keysToSend  map[edgeproto.ClusterKey]ClusterInstInfoSendContext
 	notifyId    int64
 	Mux         sync.Mutex
 	buf         edgeproto.ClusterInstInfo
@@ -433,7 +433,7 @@ func NewClusterInstInfoSend(handler SendClusterInstInfoHandler) *ClusterInstInfo
 	send.Name = "ClusterInstInfo"
 	send.MessageName = proto.MessageName((*edgeproto.ClusterInstInfo)(nil))
 	send.handler = handler
-	send.Keys = make(map[edgeproto.ClusterInstKey]ClusterInstInfoSendContext)
+	send.Keys = make(map[edgeproto.ClusterKey]ClusterInstInfoSendContext)
 	return send
 }
 
@@ -478,12 +478,12 @@ func (s *ClusterInstInfoSend) Update(ctx context.Context, obj *edgeproto.Cluster
 	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
-func (s *ClusterInstInfoSend) ForceDelete(ctx context.Context, key *edgeproto.ClusterInstKey, modRev int64) {
+func (s *ClusterInstInfoSend) ForceDelete(ctx context.Context, key *edgeproto.ClusterKey, modRev int64) {
 	forceDelete := true
 	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *ClusterInstInfoSend) updateInternal(ctx context.Context, key *edgeproto.ClusterInstKey, modRev int64, forceDelete bool) {
+func (s *ClusterInstInfoSend) updateInternal(ctx context.Context, key *edgeproto.ClusterKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal ClusterInstInfo", "key", key, "modRev", modRev)
 	s.Keys[*key] = ClusterInstInfoSendContext{
@@ -547,7 +547,7 @@ func (s *ClusterInstInfoSend) PrepData() bool {
 	defer s.Mux.Unlock()
 	if len(s.Keys) > 0 {
 		s.keysToSend = s.Keys
-		s.Keys = make(map[edgeproto.ClusterInstKey]ClusterInstInfoSendContext)
+		s.Keys = make(map[edgeproto.ClusterKey]ClusterInstInfoSendContext)
 		return true
 	}
 	return false
@@ -606,7 +606,7 @@ type ClusterInstInfoRecv struct {
 	Name        string
 	MessageName string
 	handler     RecvClusterInstInfoHandler
-	sendAllKeys map[edgeproto.ClusterInstKey]struct{}
+	sendAllKeys map[edgeproto.ClusterKey]struct{}
 	Mux         sync.Mutex
 	buf         edgeproto.ClusterInstInfo
 	RecvCount   uint64
@@ -680,7 +680,7 @@ func (s *ClusterInstInfoRecv) Recv(ctx context.Context, notice *edgeproto.Notice
 func (s *ClusterInstInfoRecv) RecvAllStart() {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
-	s.sendAllKeys = make(map[edgeproto.ClusterInstKey]struct{})
+	s.sendAllKeys = make(map[edgeproto.ClusterKey]struct{})
 }
 
 func (s *ClusterInstInfoRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {

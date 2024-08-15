@@ -18,9 +18,9 @@ import (
 	"encoding/json"
 	fmt "fmt"
 
-	"go.etcd.io/etcd/client/v3/concurrency"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 // CloudletDnsLabelStore is used to store Cloudlet DNS labels which are

@@ -87,17 +87,17 @@ func TestRunTPEChange(t *testing.T) {
 	tpe.State = edgeproto.TrustPolicyExceptionState_TRUST_POLICY_EXCEPTION_STATE_ACTIVE
 	// clusterInst
 	ci := edgeproto.ClusterInst{}
-	ci.Key.CloudletKey = cloudlet.Key
-	ci.Key.ClusterKey.Name = "clust"
-	ci.Key.ClusterKey.Organization = app.Key.Organization
+	ci.CloudletKey = cloudlet.Key
+	ci.Key.Name = "clust"
+	ci.Key.Organization = app.Key.Organization
 	ci.IpAccess = edgeproto.IpAccess_IP_ACCESS_DEDICATED
 	// appInst
 	ai := edgeproto.AppInst{}
 	ai.Key.Name = "appInst"
 	ai.Key.Organization = app.Key.Organization
-	ai.Key.CloudletKey = cloudlet.Key
+	ai.CloudletKey = cloudlet.Key
 	ai.AppKey = app.Key
-	ai.ClusterKey = ci.Key.ClusterKey
+	ai.ClusterKey = ci.Key
 	ai.State = edgeproto.TrackedState_READY
 
 	// write objects to store
@@ -111,15 +111,16 @@ func TestRunTPEChange(t *testing.T) {
 
 	// target TPE instance
 	tpeInstKey := edgeproto.TPEInstanceKey{
-		TpeKey:     tpe.Key,
-		AppInstKey: ai.Key,
-		ClusterKey: ci.Key.ClusterKey,
+		TpeKey:      tpe.Key,
+		AppInstKey:  ai.Key,
+		ClusterKey:  ci.Key,
+		CloudletKey: cloudlet.Key,
 	}
 	tpeInst := edgeproto.TPEInstanceState{}
 
 	// helper funcs
 	requireState := func(enable bool) {
-		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key)
+		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key, cloudlet.Key)
 		require.Nil(t, err)
 		found := apis.trustPolicyExceptionApi.instCache.Get(&tpeInstKey, &tpeInst)
 		require.True(t, found)
@@ -129,7 +130,7 @@ func TestRunTPEChange(t *testing.T) {
 		require.Equal(t, false, tpeInst.RunRequested)
 	}
 	requireDeleted := func() {
-		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key)
+		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key, cloudlet.Key)
 		require.Nil(t, err)
 		found := apis.trustPolicyExceptionApi.instCache.Get(&tpeInstKey, &tpeInst)
 		require.False(t, found)
@@ -232,35 +233,35 @@ func TestRunTPEChange(t *testing.T) {
 		defer wg.Done()
 		ai.State = edgeproto.TrackedState_READY
 		apis.appInstApi.store.Put(ctx, &ai, datasync.SyncWait)
-		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key)
+		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key, cloudlet.Key)
 		require.Nil(t, err)
 	}()
 	go func() {
 		defer wg.Done()
 		tpe.State = edgeproto.TrustPolicyExceptionState_TRUST_POLICY_EXCEPTION_STATE_ACTIVE
 		apis.trustPolicyExceptionApi.store.Put(ctx, &tpe, datasync.SyncWait)
-		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key)
+		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key, cloudlet.Key)
 		require.Nil(t, err)
 	}()
 	go func() {
 		defer wg.Done()
 		ci.IpAccess = edgeproto.IpAccess_IP_ACCESS_DEDICATED
 		apis.clusterInstApi.store.Put(ctx, &ci, datasync.SyncWait)
-		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key)
+		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key, cloudlet.Key)
 		require.Nil(t, err)
 	}()
 	go func() {
 		defer wg.Done()
 		cloudlet.TrustPolicy = trustPolicy.Key.Name
 		apis.cloudletApi.store.Put(ctx, &cloudlet, datasync.SyncWait)
-		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key)
+		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key, cloudlet.Key)
 		require.Nil(t, err)
 	}()
 	go func() {
 		defer wg.Done()
 		cloudletPool.Cloudlets = []edgeproto.CloudletKey{cloudlet.Key}
 		apis.cloudletPoolApi.store.Put(ctx, &cloudletPool, datasync.SyncWait)
-		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key)
+		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key, cloudlet.Key)
 		require.Nil(t, err)
 	}()
 	wg.Wait()

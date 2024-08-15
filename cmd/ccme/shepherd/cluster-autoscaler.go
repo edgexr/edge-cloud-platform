@@ -42,7 +42,7 @@ type ClusterAutoScaler struct {
 	scaleInProgress           bool // makes sure Alert gets deleted when done
 }
 
-func (s *ClusterAutoScaler) updateClusterStats(ctx context.Context, key edgeproto.ClusterInstKey, stats *shepherd_common.ClusterMetrics) {
+func (s *ClusterAutoScaler) updateClusterStats(ctx context.Context, key edgeproto.ClusterKey, stats *shepherd_common.ClusterMetrics) {
 	if stats == nil {
 		return
 	}
@@ -64,7 +64,7 @@ func (s *ClusterAutoScaler) updateClusterStats(ctx context.Context, key edgeprot
 	}
 }
 
-func (s *ClusterAutoScaler) updateConnStats(ctx context.Context, key edgeproto.ClusterInstKey, activeConns float64) {
+func (s *ClusterAutoScaler) updateConnStats(ctx context.Context, key edgeproto.ClusterKey, activeConns float64) {
 	needsWork := false
 	s.mux.Lock()
 	if s.lastStabilizedActiveConns != activeConns {
@@ -78,9 +78,9 @@ func (s *ClusterAutoScaler) updateConnStats(ctx context.Context, key edgeproto.C
 }
 
 func checkClusterAutoScale(ctx context.Context, k interface{}) {
-	key, ok := k.(edgeproto.ClusterInstKey)
+	key, ok := k.(edgeproto.ClusterKey)
 	if !ok {
-		log.SpanLog(ctx, log.DebugLevelApi, "Unexpected failure, checkClusterAutoScale key not a ClusterInstKey", "key", k)
+		log.SpanLog(ctx, log.DebugLevelApi, "Unexpected failure, checkClusterAutoScale key not a ClusterKey", "key", k)
 		return
 	}
 	log.SetContextTags(ctx, key.GetTags())
@@ -95,7 +95,7 @@ func checkClusterAutoScale(ctx context.Context, k interface{}) {
 	// Lookup the policy
 	policy := edgeproto.AutoScalePolicy{}
 	policy.Key.Name = autoScaler.policyName
-	policy.Key.Organization = key.ClusterKey.Organization
+	policy.Key.Organization = key.Organization
 	found := AutoScalePoliciesCache.Get(&policy.Key, &policy)
 	if !found {
 		log.SpanLog(ctx, log.DebugLevelApi, "checkClusterAutoScale policy not found", "policyKey", policy.Key)
@@ -177,7 +177,7 @@ func checkClusterAutoScale(ctx context.Context, k interface{}) {
 	autoScaler.scaleInProgress = true
 }
 
-func getAutoScaleAlert(key *edgeproto.ClusterInstKey, desiredNodes float64) *edgeproto.Alert {
+func getAutoScaleAlert(key *edgeproto.ClusterKey, desiredNodes float64) *edgeproto.Alert {
 	alert := &edgeproto.Alert{}
 	alert.Labels = key.GetTags()
 	alert.Labels["alertname"] = cloudcommon.AlertClusterAutoScale

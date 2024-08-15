@@ -35,6 +35,6 @@ func (s *K8sOperator) UpdateClusterInst(ctx context.Context, clusterInst *edgepr
 	return errors.New("update cluster should not be called for k8s operator")
 }
 
-func (s *K8sOperator) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
+func (s *K8sOperator) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
 	return nil, fmt.Errorf("GetClusterInfraResources not implemented for k8s operator")
 }

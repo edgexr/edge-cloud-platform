@@ -59,7 +59,7 @@ func request_StreamObjApi_StreamAppInst_0(ctx context.Context, marshaler runtime
 }
 
 func request_StreamObjApi_StreamClusterInst_0(ctx context.Context, marshaler runtime.Marshaler, client StreamObjApiClient, req *http.Request, pathParams map[string]string) (StreamObjApi_StreamClusterInstClient, runtime.ServerMetadata, error) {
-	var protoReq ClusterInstKey
+	var protoReq ClusterKey
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)

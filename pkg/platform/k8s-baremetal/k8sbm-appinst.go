@@ -94,9 +94,9 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 		deploymentVars := deployvars.DeploymentReplaceVars{
 			Deployment: deployvars.CrmReplaceVars{
 				ClusterIp:    masterNodeIpAddr,
-				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
-				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
-				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
+				CloudletName: k8smgmt.NormalizeName(clusterInst.CloudletKey.Name),
+				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.Name),
+				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.CloudletKey.Organization),
 				AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 				DnsZone:      k.commonPf.GetCloudletDNSZone(),
 			},
@@ -197,9 +197,9 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 		// Add crm local replace variables
 		deploymentVars := deployvars.DeploymentReplaceVars{
 			Deployment: deployvars.CrmReplaceVars{
-				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
-				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
-				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
+				CloudletName: k8smgmt.NormalizeName(clusterInst.CloudletKey.Name),
+				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.Name),
+				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.CloudletKey.Organization),
 				AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 				DnsZone:      k.commonPf.GetCloudletDNSZone(),
 			},

@@ -1069,7 +1069,7 @@ func (s *AppApi) tryDeployApp(ctx context.Context, stm concurrency.STM, app *edg
 		s.all.clusterInstApi.cache.Mux.Lock()
 		canDeploy := false
 		for _, data := range s.all.clusterInstApi.cache.Objs {
-			if !cloudlet.Key.Matches(&data.Obj.Key.CloudletKey) {
+			if !cloudlet.Key.Matches(&data.Obj.CloudletKey) {
 				continue
 			}
 			if data.Obj.Reservable && data.Obj.ReservedBy == "" && data.Obj.Deployment == deployment && data.Obj.Flavor.Name == app.DefaultFlavor.Name {

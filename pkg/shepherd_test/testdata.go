@@ -33,13 +33,10 @@ var (
 		Name:         "testcluster",
 		Organization: "",
 	}
-	TestClusterInstKey = edgeproto.ClusterInstKey{
-		ClusterKey:  TestClusterKey,
-		CloudletKey: TestCloudletKey,
-	}
 	TestClusterInst = edgeproto.ClusterInst{
-		Key:        TestClusterInstKey,
-		Deployment: cloudcommon.DeploymentTypeDocker,
+		Key:         TestClusterKey,
+		Deployment:  cloudcommon.DeploymentTypeDocker,
+		CloudletKey: TestCloudletKey,
 	}
 	TestAutoProvPolicyKey = edgeproto.PolicyKey{
 		Name: "autoprov",
@@ -68,12 +65,12 @@ var (
 	TestAppInstKey = edgeproto.AppInstKey{
 		Name:         "AppInstTest",
 		Organization: TestAppKey.Organization,
-		CloudletKey:  TestCloudletKey,
 	}
 	TestAppInst = edgeproto.AppInst{
 		Key:         TestAppInstKey,
 		AppKey:      TestApp.Key,
 		ClusterKey:  TestClusterKey,
+		CloudletKey: TestCloudletKey,
 		State:       edgeproto.TrackedState_READY,
 		HealthCheck: dme.HealthCheck_HEALTH_CHECK_OK,
 		Liveness:    edgeproto.Liveness_LIVENESS_AUTOPROV,

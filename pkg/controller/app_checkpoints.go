@@ -63,9 +63,9 @@ func (s *AppApi) CreateAppUsageRecord(ctx context.Context, appInst *edgeproto.Ap
 		cloudcommon.AppInstEvent,
 		appInst.Key.Name,
 		appInst.Key.Organization,
-		appInst.Key.CloudletKey.Name,
-		appInst.Key.CloudletKey.Organization,
-		appInst.Key.CloudletKey.FederatedOrganization,
+		appInst.CloudletKey.Name,
+		appInst.CloudletKey.Organization,
+		appInst.CloudletKey.FederatedOrganization,
 		checkpoint.Timestamp.Format(time.RFC3339),
 		endTime.Format(time.RFC3339))
 	logs, err := services.events.QueryDB(influxLogQuery)
@@ -121,17 +121,9 @@ func createAppUsageMetric(appInst *edgeproto.AppInst, appInfo *edgeproto.App, st
 func appInstKeyFromMetricValues(values []interface{}) edgeproto.AppInstKey {
 	appinst := fmt.Sprintf("%v", values[1])
 	appinstorg := fmt.Sprintf("%v", values[2])
-	cloudlet := fmt.Sprintf("%v", values[3])
-	cloudletorg := fmt.Sprintf("%v", values[4])
-	cloudletfedorg := fmt.Sprintf("%v", values[5])
 	key := edgeproto.AppInstKey{
 		Name:         appinst,
 		Organization: appinstorg,
-		CloudletKey: edgeproto.CloudletKey{
-			Name:                  cloudlet,
-			Organization:          cloudletorg,
-			FederatedOrganization: cloudletfedorg,
-		},
 	}
 	return key
 }

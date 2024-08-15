@@ -106,15 +106,13 @@ func TestDockerStats(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 
 	testAppKey := shepherd_common.MetricAppInstKey{
-		ClusterInstKey: edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name:         "testcluster",
-				Organization: "",
-			},
-			CloudletKey: edgeproto.CloudletKey{
-				Organization: "testoperator",
-				Name:         "testcloudlet",
-			},
+		ClusterKey: edgeproto.ClusterKey{
+			Name:         "testcluster",
+			Organization: "",
+		},
+		CloudletKey: edgeproto.CloudletKey{
+			Organization: "testoperator",
+			Name:         "testcloudlet",
 		},
 	}
 
@@ -128,13 +126,10 @@ func TestDockerStats(t *testing.T) {
 		Name:         "testcluster",
 		Organization: "",
 	}
-	testClusterInstKey := edgeproto.ClusterInstKey{
-		ClusterKey:  testClusterKey,
-		CloudletKey: testCloudletKey,
-	}
 	testClusterInst := edgeproto.ClusterInst{
-		Key:        testClusterInstKey,
-		Deployment: cloudcommon.DeploymentTypeDocker,
+		Key:         testClusterKey,
+		Deployment:  cloudcommon.DeploymentTypeDocker,
+		CloudletKey: testCloudletKey,
 	}
 	testFlavorKey1 := edgeproto.FlavorKey{Name: "testFlavor1"}
 	testFlavor1 := edgeproto.Flavor{
@@ -145,13 +140,13 @@ func TestDockerStats(t *testing.T) {
 		Key: edgeproto.AppInstKey{
 			Name:         "testAppInst1",
 			Organization: testDeveloper,
-			CloudletKey:  testCloudletKey,
 		},
 		AppKey: edgeproto.AppKey{
 			Name:    "DockerApp1",
 			Version: "1.0",
 		},
-		ClusterKey: testClusterKey,
+		ClusterKey:  testClusterKey,
+		CloudletKey: testCloudletKey,
 		RuntimeInfo: edgeproto.AppInstRuntime{
 			ContainerIds: []string{"DockerApp1"},
 		},
@@ -162,13 +157,13 @@ func TestDockerStats(t *testing.T) {
 		Key: edgeproto.AppInstKey{
 			Name:         "testAppInst2",
 			Organization: testDeveloper,
-			CloudletKey:  testCloudletKey,
 		},
 		AppKey: edgeproto.AppKey{
 			Name:    "DockerApp2",
 			Version: "1.0",
 		},
-		ClusterKey: testClusterKey,
+		ClusterKey:  testClusterKey,
+		CloudletKey: testCloudletKey,
 		RuntimeInfo: edgeproto.AppInstRuntime{
 			ContainerIds: []string{"DockerApp2Container1", "DockerApp2Container2"},
 		},

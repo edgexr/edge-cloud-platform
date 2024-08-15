@@ -221,20 +221,20 @@ func (s *MinMaxChecker) UpdatedAppInst(ctx context.Context, old *edgeproto.AppIn
 
 	lookup := edgeproto.AppInstLookup2{
 		Key:         new.Key,
-		CloudletKey: new.Key.CloudletKey,
+		CloudletKey: new.CloudletKey,
 	}
 	s.autoprovInstsByCloudlet.Updated(&lookup)
 
 	// recheck if online state changed
 	if old != nil {
 		cloudletInfo := edgeproto.CloudletInfo{}
-		if !s.caches.cloudletInfoCache.Get(&new.Key.CloudletKey, &cloudletInfo) {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "UpdatedAppInst cloudletInfo not found", "app", new.Key, "cloudlet", new.Key.CloudletKey)
+		if !s.caches.cloudletInfoCache.Get(&new.CloudletKey, &cloudletInfo) {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "UpdatedAppInst cloudletInfo not found", "app", new.Key, "cloudlet", new.CloudletKey)
 			return
 		}
 		cloudlet := edgeproto.Cloudlet{}
-		if !s.caches.cloudletCache.Get(&new.Key.CloudletKey, &cloudlet) {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "UpdatedAppInst cloudlet not found", "app", new.Key, "cloudlet", new.Key.CloudletKey)
+		if !s.caches.cloudletCache.Get(&new.CloudletKey, &cloudlet) {
+			log.SpanLog(ctx, log.DebugLevelMetrics, "UpdatedAppInst cloudlet not found", "app", new.Key, "cloudlet", new.CloudletKey)
 			return
 		}
 		if cloudcommon.AutoProvAppInstOnline(old, &cloudletInfo, &cloudlet) ==
@@ -255,7 +255,7 @@ func (s *MinMaxChecker) DeletedAppInst(ctx context.Context, inst *edgeproto.AppI
 	}
 	lookup := edgeproto.AppInstLookup2{
 		Key:         inst.Key,
-		CloudletKey: inst.Key.CloudletKey,
+		CloudletKey: inst.CloudletKey,
 	}
 	s.autoprovInstsByCloudlet.Deleted(&lookup)
 
@@ -381,10 +381,14 @@ func (s *AppChecker) Check(ctx context.Context) {
 	for keyStr, _ := range refs.Insts {
 		key := edgeproto.AppInstKey{}
 		edgeproto.AppInstKeyStringParse(keyStr, &key)
-		insts, found := s.cloudletInsts[key.CloudletKey]
+		refInst := edgeproto.AppInst{}
+		if !s.caches.appInstCache.Get(&key, &refInst) {
+			continue
+		}
+		insts, found := s.cloudletInsts[refInst.CloudletKey]
 		if !found {
 			insts = make(map[edgeproto.AppInstKey]struct{})
-			s.cloudletInsts[key.CloudletKey] = insts
+			s.cloudletInsts[refInst.CloudletKey] = insts
 		}
 		insts[key] = struct{}{}
 	}
@@ -406,8 +410,9 @@ func (s *AppChecker) Check(ctx context.Context) {
 				continue
 			}
 			inst := edgeproto.AppInst{
-				Key:    appInstKey,
-				AppKey: app.Key,
+				Key:         appInstKey,
+				AppKey:      app.Key,
+				CloudletKey: ckey,
 			}
 			go goAppInstApi(ctx, &inst, cloudcommon.Delete, cloudcommon.AutoProvReasonOrphaned, "")
 		}
@@ -556,7 +561,7 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 				inst := edgeproto.AppInst{}
 				inst.Key = cloudcommon.GetAutoProvAppInstKey(&app.Key, &site.cloudletKey)
 				inst.AppKey = app.Key
-				inst.Key.CloudletKey = site.cloudletKey
+				inst.CloudletKey = site.cloudletKey
 
 				err := goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonMinMax, pname)
 				if err == nil {
@@ -654,12 +659,12 @@ func (s *AppChecker) appInstOnlineOrGoingOnline(ctx context.Context, key *edgepr
 		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline AppInst not found", "key", key)
 		return false
 	}
-	if !s.caches.cloudletInfoCache.Get(&appInst.Key.CloudletKey, &cloudletInfo) {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline CloudletInfo not found", "key", appInst.Key.CloudletKey)
+	if !s.caches.cloudletInfoCache.Get(&appInst.CloudletKey, &cloudletInfo) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline CloudletInfo not found", "key", appInst.CloudletKey)
 		return false
 	}
-	if !s.caches.cloudletCache.Get(&appInst.Key.CloudletKey, &cloudlet) {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline Cloudlet not found", "key", appInst.Key.CloudletKey)
+	if !s.caches.cloudletCache.Get(&appInst.CloudletKey, &cloudlet) {
+		log.SpanLog(ctx, log.DebugLevelMetrics, "appInstOnlineOrGoingOnline Cloudlet not found", "key", appInst.CloudletKey)
 		return false
 	}
 	online = cloudcommon.AutoProvAppInstOnline(&appInst, &cloudletInfo, &cloudlet)

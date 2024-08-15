@@ -64,9 +64,10 @@ func (s *ExecApi) getApp(ctx context.Context, req *edgeproto.ExecRequest, app *e
 	if !s.all.appApi.Get(&appInst.AppKey, app) {
 		return appInst.AppKey.NotFoundError()
 	}
-	if !s.all.cloudletApi.Get(&appInst.Key.CloudletKey, cloudlet) {
-		return appInst.Key.CloudletKey.NotFoundError()
+	if !s.all.cloudletApi.Get(&appInst.CloudletKey, cloudlet) {
+		return appInst.CloudletKey.NotFoundError()
 	}
+	req.CloudletKey = appInst.CloudletKey
 	return nil
 }
 
@@ -152,8 +153,8 @@ func (s *ExecApi) AccessCloudlet(ctx context.Context, req *edgeproto.ExecRequest
 		return nil, fmt.Errorf("No cloudlet mgmt node specified")
 	}
 	cloudlet := edgeproto.Cloudlet{}
-	if !s.all.cloudletApi.Get(&req.AppInstKey.CloudletKey, &cloudlet) {
-		return nil, req.AppInstKey.CloudletKey.NotFoundError()
+	if !s.all.cloudletApi.Get(&req.CloudletKey, &cloudlet) {
+		return nil, req.CloudletKey.NotFoundError()
 	}
 	req.Timeout = ShortTimeout
 	return s.doExchange(ctx, &cloudlet, req)

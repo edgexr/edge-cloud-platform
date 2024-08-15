@@ -227,16 +227,6 @@ func (key *ClusterKey) ValidateKey() error {
 	return nil
 }
 
-func (key *ClusterInstKey) ValidateKey() error {
-	if err := key.ClusterKey.ValidateKey(); err != nil {
-		return err
-	}
-	if err := key.CloudletKey.ValidateKey(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *ClusterInst) Validate(fmap objstore.FieldMap) error {
 	return s.GetKey().ValidateKey()
 }
@@ -620,9 +610,6 @@ func (key *AppInstKey) ValidateKey() error {
 	}
 	if !util.ValidName(key.Organization) {
 		return errors.New("Invalid app instance organization")
-	}
-	if err := key.CloudletKey.ValidateKey(); err != nil {
-		return err
 	}
 	return nil
 }
@@ -1174,7 +1161,7 @@ func GetOrg(obj interface{}) string {
 	case *Cloudlet:
 		return v.Key.Organization
 	case *ClusterInst:
-		return v.Key.ClusterKey.Organization
+		return v.Key.Organization
 	case *App:
 		return v.Key.Organization
 	case *AppInst:
@@ -1200,7 +1187,7 @@ func (c *ClusterInstCache) UsesOrg(org string) bool {
 	defer c.Mux.Unlock()
 	for _, cd := range c.Objs {
 		val := cd.Obj
-		if val.Key.ClusterKey.Organization == org || val.Key.CloudletKey.Organization == org || (val.Reservable && val.ReservedBy == org) {
+		if val.Key.Organization == org || val.CloudletKey.Organization == org || (val.Reservable && val.ReservedBy == org) {
 			return true
 		}
 	}
@@ -1286,11 +1273,8 @@ func (s *CloudletPool) GetCloudletKeys() map[CloudletKey]struct{} {
 	return keys
 }
 
-func (s *AppInst) ClusterInstKey() *ClusterInstKey {
-	return &ClusterInstKey{
-		ClusterKey:  s.ClusterKey,
-		CloudletKey: s.Key.CloudletKey,
-	}
+func (s *AppInst) GetClusterKey() *ClusterKey {
+	return &s.ClusterKey
 }
 
 // For backwards compatibility with the old virtual cluster name,
@@ -1301,23 +1285,6 @@ func (s *AppInst) VClusterKey() ClusterKey {
 		return s.VirtualClusterKey
 	}
 	return s.ClusterKey
-}
-
-func (s *AppInstRefKey) FromAppInstKey(key *AppInstKey) {
-	s.Name = key.Name
-	s.Organization = key.Organization
-}
-
-func (s *AppInstKey) GetRefKey() *AppInstRefKey {
-	refKey := AppInstRefKey{}
-	refKey.FromAppInstKey(s)
-	return &refKey
-}
-
-func (s *AppInstKey) FromAppInstRefKey(key *AppInstRefKey, clKey *CloudletKey) {
-	s.Name = key.Name
-	s.Organization = key.Organization
-	s.CloudletKey = *clKey
 }
 
 func (r *InfraResources) UpdateResources(inRes *InfraResources) (updated bool) {
@@ -1502,7 +1469,7 @@ type AppCloudletKeyPair struct {
 func (s *AppInst) AppCloudletKeyPair() *AppCloudletKeyPair {
 	return &AppCloudletKeyPair{
 		AppKey:      s.AppKey,
-		CloudletKey: s.Key.CloudletKey,
+		CloudletKey: s.CloudletKey,
 	}
 }
 
@@ -1516,4 +1483,5 @@ func (s *AppInst) AddTags(tags map[string]string) {
 	s.Key.AddTags(tags)
 	s.AppKey.AddTags(tags)
 	s.ClusterKey.AddTags(tags)
+	s.CloudletKey.AddTags(tags)
 }

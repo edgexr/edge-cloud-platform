@@ -80,7 +80,7 @@ func wrapClusterRefsTrackerStore(api *ClusterRefsApi) (*ClusterRefsStoreTracker,
 	return tracker, unwrap
 }
 
-func (s *ClusterRefsStoreTracker) STMGet(stm concurrency.STM, key *edgeproto.ClusterInstKey, buf *edgeproto.ClusterRefs) bool {
+func (s *ClusterRefsStoreTracker) STMGet(stm concurrency.STM, key *edgeproto.ClusterKey, buf *edgeproto.ClusterRefs) bool {
 	found := s.ClusterRefsStore.STMGet(stm, key, buf)
 	if s.getSTM == nil {
 		s.getSTM = stm

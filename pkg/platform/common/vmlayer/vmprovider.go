@@ -536,7 +536,7 @@ func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platf
 		return
 	}
 	cinst := edgeproto.ClusterInst{}
-	if !caches.ClusterInstCache.Get(appInst.ClusterInstKey(), &cinst) {
+	if !caches.ClusterInstCache.Get(appInst.GetClusterKey(), &cinst) {
 		log.SpanLog(ctx, log.DebugLevelInfra, "clusterInstNot found", "AppInst", appInst.Key)
 		return
 	}
@@ -695,7 +695,7 @@ func (v *VMPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, clo
 	return v.VMProvider.GetClusterAdditionalResourceMetric(ctx, cloudlet, resMetric, resources)
 }
 
-func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
+func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterInfraResources")
 
 	var err error
@@ -708,6 +708,6 @@ func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *e
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
 
-	clusterName := v.VMProvider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterKey))
+	clusterName := v.VMProvider.NameSanitize(k8smgmt.GetCloudletClusterName(cluster))
 	return v.VMProvider.GetServerGroupResources(ctx, clusterName)
 }
