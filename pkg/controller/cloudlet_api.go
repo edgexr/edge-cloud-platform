@@ -2638,57 +2638,65 @@ func (s *CloudletApi) UpdateCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 		return fmt.Errorf("unsupported - only cloudlets with crm on edge are currently supported")
 	}
 
-	// Does our current DNS app root name match what the clouldet alredy have?
-	if strings.HasSuffix(cloudlet.RootLbFqdn, *appDNSRoot) {
-		log.SpanLog(ctx, log.DebugLevelApi, "Current cloudlet fqdn already contains appDNSRoot suffix - nothing to do")
-		return nil
-	}
-
 	if cloudlet.MaintenanceState != dme.MaintenanceState_UNDER_MAINTENANCE {
 		return fmt.Errorf("maintenance mode is required to update DNS")
 	}
 
-	log.SpanLog(ctx, log.DebugLevelApi, "Updated rootLB fqdn", "old", cloudlet.RootLbFqdn, "new", getCloudletRootLBFQDN(&cloudlet))
 	// Step 1 - update rootLb fqdn
-	s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		if !s.store.STMGet(stm, key, &cloudlet) {
-			// got deleted in the meantime
+	// Does our current DNS app root name match what the clouldet alredy have?
+	if strings.HasSuffix(cloudlet.RootLbFqdn, *appDNSRoot) {
+		log.SpanLog(ctx, log.DebugLevelApi, "Current cloudlet fqdn already contains appDNSRoot suffix - nothing to do")
+	} else {
+		log.SpanLog(ctx, log.DebugLevelApi, "Update rootLB fqdn", "old", cloudlet.RootLbFqdn, "new", getCloudletRootLBFQDN(&cloudlet))
+		s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			if !s.store.STMGet(stm, key, &cloudlet) {
+				// got deleted in the meantime
+				return nil
+			}
+			cloudlet.RootLbFqdn = getCloudletRootLBFQDN(&cloudlet)
+			s.store.STMPut(stm, &cloudlet)
 			return nil
-		}
-		cloudlet.RootLbFqdn = getCloudletRootLBFQDN(&cloudlet)
-		s.store.STMPut(stm, &cloudlet)
-		return nil
-	})
+		})
+	}
 
 	// Step 2 - update all the clusterInst fqdns on this cloudlet
 	ciFilter := edgeproto.ClusterInst{
-		Key: edgeproto.ClusterInstKey{
-			CloudletKey: *key,
-		},
+		CloudletKey: *key,
 	}
+	clustersToUpdate := []edgeproto.ClusterInst{}
 	s.all.clusterInstApi.cache.Show(&ciFilter, func(clusterInst *edgeproto.ClusterInst) error {
-		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS", "old FQDN", clusterInst.Fqdn, "new", *appDNSRoot)
-		s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-			s.all.clusterInstApi.updateRootLbFQDN(stm, &clusterInst.Key, &cloudlet)
-			return nil
-		})
+		log.SpanLog(ctx, log.DebugLevelApi, "Collecting clusters", "cluster", clusterInst.Key.Name)
+		if !strings.HasSuffix(clusterInst.Fqdn, *appDNSRoot) {
+			clustersToUpdate = append(clustersToUpdate, *clusterInst)
+		}
 		return nil
 	})
+	for ii := range clustersToUpdate {
+		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS for clusters", "old FQDN", clustersToUpdate[ii].Fqdn, "new", *appDNSRoot)
+		s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			s.all.clusterInstApi.updateRootLbFQDN(stm, &clustersToUpdate[ii].Key, &cloudlet)
+			return nil
+		})
+
+	}
 
 	// Step 3 - update all the appinst uris on this cluster
 	aiFilter := edgeproto.AppInst{
-		Key: edgeproto.AppInstKey{
-			CloudletKey: *key,
-		},
+		CloudletKey: *key,
 	}
+	appinstsToUpdate := []edgeproto.AppInst{}
 	s.all.appInstApi.cache.Show(&aiFilter, func(appInst *edgeproto.AppInst) error {
-		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS", "old FQDN", appInst.Uri, "new", *appDNSRoot)
-		s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-			s.all.appInstApi.updateURI(stm, &appInst.Key, &cloudlet)
-			return nil
-		})
+		appinstsToUpdate = append(appinstsToUpdate, *appInst)
 		return nil
 	})
+	for ii := range appinstsToUpdate {
+		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS", "old FQDN", appinstsToUpdate[ii].Uri, "new", *appDNSRoot)
+		s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			s.all.appInstApi.updateURI(stm, &appinstsToUpdate[ii].Key, &cloudlet)
+			return nil
+		})
+	}
+
 	// Step 4 - dispatch to CRM to actually deploy DNS update code
 	// Perhaps this could be tied to notify code.....updates will be sent to crm/ccrm anyways
 	// TODO

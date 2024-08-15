@@ -1133,21 +1133,33 @@ func testUpdateCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	err := apis.cloudletApi.UpdateCloudletDNS(&testutil.CloudletData()[0].Key, testutil.NewCudStreamoutCloudlet(ctx))
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "unsupported")
+
 	// Create a cloudlet to test with
 	cloudlet := testutil.CloudletData()[2]
 	cloudlet.Key.Name = "cloudletDNSUpdate"
 	err = apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
-
+	info := testutil.CloudletInfoData()[2]
+	info.Key = cloudlet.Key
+	info.State = dme.CloudletState_CLOUDLET_STATE_READY
+	apis.cloudletInfoApi.Update(ctx, &info, 0)
 	err = waitForState(&cloudlet.Key, edgeproto.TrackedState_READY, apis)
 	require.Nil(t, err, "cloudlet obj created")
-	forceCloudletInfoState(ctx, &cloudlet.Key, dme.CloudletState_CLOUDLET_STATE_READY, "sending ready", crm_v2, apis)
-	err = waitForState(&cloudlet.Key, edgeproto.TrackedState_READY, apis)
-	require.Nil(t, err, fmt.Sprintf("cloudlet state transtions"))
+	// check that static fqdn and running match
+	cloudletObj := edgeproto.Cloudlet{}
+	ok := apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
+	require.True(t, ok)
+	require.Equal(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
 
-	// Nothing to be done
-	err = apis.cloudletApi.UpdateCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
-	require.Nil(t, err)
+	// Add some clusterInsts, appInsts
+	clusterInst := testutil.ClusterInstData()[5]
+	clusterInst.CloudletKey = cloudlet.Key
+	err = apis.clusterInstApi.CreateClusterInst(&clusterInst, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err, "Create ClusterInst")
+	clusterObj := edgeproto.ClusterInst{}
+	ok = apis.clusterInstApi.store.Get(ctx, &clusterInst.Key, &clusterObj)
+	require.True(t, ok)
+	originalFqdn := clusterObj.Fqdn
 	// Set up a different appDNSRoot
 	*appDNSRoot = "new.and.improved.dns.com"
 	// Cloudlet has to be in maintenance mode
@@ -1202,5 +1214,25 @@ func testUpdateCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 		},
 	})
 	err = apis.cloudletApi.UpdateCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
-	require.NotNil(t, err)
+	require.Nil(t, err)
+	// check new fqdn
+	cloudletObj = edgeproto.Cloudlet{}
+	ok = apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
+	require.True(t, ok)
+	require.Contains(t, cloudletObj.RootLbFqdn, *appDNSRoot)
+	// at this point static and current fqdns should be different
+	require.NotEqual(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
+	updatedRootLbFqdn := cloudletObj.RootLbFqdn
+	ok = apis.clusterInstApi.store.Get(ctx, &clusterInst.Key, &clusterObj)
+	require.True(t, ok)
+	require.NotEqual(t, clusterObj.Fqdn, originalFqdn)
+	require.Contains(t, clusterObj.Fqdn, *appDNSRoot)
+	// Repeat update should result in the same fqdn
+	err = apis.cloudletApi.UpdateCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	ok = apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
+	require.True(t, ok)
+	require.Contains(t, cloudletObj.RootLbFqdn, *appDNSRoot)
+	require.Equal(t, cloudletObj.RootLbFqdn, updatedRootLbFqdn)
+	require.NotEqual(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
 }

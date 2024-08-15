@@ -2060,7 +2060,7 @@ func (s *ClusterInstApi) deleteCloudletSingularCluster(stm concurrency.STM, key 
 	s.all.clusterRefsApi.deleteRef(stm, clusterKey)
 }
 
-func (s *ClusterInstApi) updateRootLbFQDN(stm concurrency.STM, key *edgeproto.ClusterInstKey, cloudlet *edgeproto.Cloudlet) {
+func (s *ClusterInstApi) updateRootLbFQDN(stm concurrency.STM, key *edgeproto.ClusterKey, cloudlet *edgeproto.Cloudlet) {
 	clusterInst := edgeproto.ClusterInst{}
 	if !s.store.STMGet(stm, key, &clusterInst) {
 		return
