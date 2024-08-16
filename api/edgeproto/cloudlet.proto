@@ -866,14 +866,13 @@ service CloudletApi {
   }
 
   // Get Cloudlet Manifest. Shows deployment manifest required to setup cloudlet
-  rpc UpdateCloudletDNS(CloudletKey) returns (stream Result) {
+  rpc ChangeCloudletDNS(CloudletKey) returns (stream Result) {
     option (google.api.http) = {
-      post: "/update/cloudlet/dns"
+      post: "/change/cloudlet/dns"
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
     option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
-    option (protogen.mc2_custom_authz) = true;
   }
 }
 

@@ -87,7 +87,7 @@ func (s *DummyServer) GetCloudletGPUDriverLicenseConfig(ctx context.Context, in 
 	return &edgeproto.Result{}, nil
 }
 
-func (s *DummyServer) UpdateCloudletDNS(key *edgeproto.CloudletKey, inCb edgeproto.CloudletApi_UpdateCloudletDNSServer) error {
+func (s *DummyServer) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgeproto.CloudletApi_ChangeCloudletDNSServer) error {
 	return nil
 }
 

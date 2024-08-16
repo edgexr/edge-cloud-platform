@@ -216,7 +216,7 @@ func TestCloudletApi(t *testing.T) {
 	testBadLong(t, ctx, &cl, []float64{180.1, -180.1, -1323213, 1232334}, "update", apis)
 
 	testCloudletDnsLabel(t, ctx, apis)
-	testUpdateCloudletDNS(t, ctx, apis)
+	testChangeCloudletDNS(t, ctx, apis)
 
 	// Resource Mapping tests
 	testResMapKeysApi(t, ctx, &cl, apis)
@@ -1128,9 +1128,9 @@ func testCloudletEdgeboxOnly(t *testing.T, ctx context.Context, cloudlet edgepro
 	err = apis.cloudletApi.DeleteCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 }
 
-func testUpdateCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
+func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	// For now CRM off edge is unsupported
-	err := apis.cloudletApi.UpdateCloudletDNS(&testutil.CloudletData()[0].Key, testutil.NewCudStreamoutCloudlet(ctx))
+	err := apis.cloudletApi.ChangeCloudletDNS(&testutil.CloudletData()[0].Key, testutil.NewCudStreamoutCloudlet(ctx))
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "unsupported")
 
@@ -1163,7 +1163,7 @@ func testUpdateCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	// Set up a different appDNSRoot
 	*appDNSRoot = "new.and.improved.dns.com"
 	// Cloudlet has to be in maintenance mode
-	err = apis.cloudletApi.UpdateCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "maintenance mode")
 
@@ -1213,7 +1213,7 @@ func testUpdateCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 			Value: "UNDER_MAINTENANCE",
 		},
 	})
-	err = apis.cloudletApi.UpdateCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
 	// check new fqdn
 	cloudletObj = edgeproto.Cloudlet{}
@@ -1228,7 +1228,7 @@ func testUpdateCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	require.NotEqual(t, clusterObj.Fqdn, originalFqdn)
 	require.Contains(t, clusterObj.Fqdn, *appDNSRoot)
 	// Repeat update should result in the same fqdn
-	err = apis.cloudletApi.UpdateCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
 	ok = apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
 	require.True(t, ok)

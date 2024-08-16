@@ -2626,7 +2626,7 @@ func (s *CloudletApi) updateDefaultMultiTenantClusterWorker(ctx context.Context,
 	}
 }
 
-func (s *CloudletApi) UpdateCloudletDNS(key *edgeproto.CloudletKey, inCb edgeproto.CloudletApi_UpdateCloudletDNSServer) error {
+func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgeproto.CloudletApi_ChangeCloudletDNSServer) (reterr error) {
 	ctx := inCb.Context()
 	cctx := DefCallContext()
 
@@ -2644,11 +2644,12 @@ func (s *CloudletApi) UpdateCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 
 	// Step 1 - update rootLb fqdn
 	// Does our current DNS app root name match what the clouldet alredy have?
+	var modRev int64
 	if strings.HasSuffix(cloudlet.RootLbFqdn, *appDNSRoot) {
 		log.SpanLog(ctx, log.DebugLevelApi, "Current cloudlet fqdn already contains appDNSRoot suffix - nothing to do")
 	} else {
 		log.SpanLog(ctx, log.DebugLevelApi, "Update rootLB fqdn", "old", cloudlet.RootLbFqdn, "new", getCloudletRootLBFQDN(&cloudlet))
-		s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+		modRev, _ = s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 			if !s.store.STMGet(stm, key, &cloudlet) {
 				// got deleted in the meantime
 				return nil
@@ -2658,6 +2659,16 @@ func (s *CloudletApi) UpdateCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 			return nil
 		})
 	}
+
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
+
+	sendObj, err := s.startCloudletStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		s.stopCloudletStream(ctx, cctx, key, sendObj, reterr, NoCleanupStream)
+	}()
 
 	// Step 2 - update all the clusterInst fqdns on this cloudlet
 	ciFilter := edgeproto.ClusterInst{
@@ -2671,13 +2682,13 @@ func (s *CloudletApi) UpdateCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 		}
 		return nil
 	})
+	cb.Send(&edgeproto.Result{Message: "Updating cluster FQDNs"})
 	for ii := range clustersToUpdate {
 		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS for clusters", "old FQDN", clustersToUpdate[ii].Fqdn, "new", *appDNSRoot)
 		s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 			s.all.clusterInstApi.updateRootLbFQDN(stm, &clustersToUpdate[ii].Key, &cloudlet)
 			return nil
 		})
-
 	}
 
 	// Step 3 - update all the appinst uris on this cluster
@@ -2689,6 +2700,7 @@ func (s *CloudletApi) UpdateCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 		appinstsToUpdate = append(appinstsToUpdate, *appInst)
 		return nil
 	})
+	cb.Send(&edgeproto.Result{Message: "Updating AppInst FQDNs"})
 	for ii := range appinstsToUpdate {
 		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS", "old FQDN", appinstsToUpdate[ii].Uri, "new", *appDNSRoot)
 		s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
@@ -2698,9 +2710,44 @@ func (s *CloudletApi) UpdateCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	}
 
 	// Step 4 - dispatch to CRM to actually deploy DNS update code
-	// Perhaps this could be tied to notify code.....updates will be sent to crm/ccrm anyways
-	// TODO
-	/*streamCb, cb*/
-	_, _ = s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
+	// Instead of relying on the notify code, we make an explicit call in order to monitor progress
+	// TODO - we are updating all of these with expectation that
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateCloudletTimeout.TimeDuration())
+	defer reqCancel()
+
+	successMsg := "Cloudlet updated successfully"
+	if cloudlet.CrmOnEdge {
+		// Wait for cloudlet to finish updating DNS entries
+		err = edgeproto.WaitForCloudletInfo(
+			reqCtx, key, s.all.cloudletInfoApi.store,
+			dme.CloudletState_CLOUDLET_STATE_READY,
+			UpdateCloudletTransitions, dme.CloudletState_CLOUDLET_STATE_ERRORS,
+			successMsg, cb.Send,
+			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+		return err
+	}
+	/* else if !ignoreCRM(cctx) {
+		conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
+		if err != nil {
+			return err
+		}
+		api := edgeproto.NewCloudletPlatformAPIClient(conn)
+		cur.Fields = diffFields.Fields()
+		outStream, err := api.ApplyCloudlet(reqCtx, cur)
+		if err != nil {
+			return cloudcommon.GRPCErrorUnwrap(err)
+		}
+		err = cloudcommon.StreamRecvWithStatus(ctx, outStream, cb.Send, func(info *edgeproto.CloudletInfo) error {
+			s.all.cloudletInfoApi.UpdateRPC(ctx, info)
+			return nil
+		})
+		if err == nil {
+			cb.Send(&edgeproto.Result{
+				Message: successMsg,
+			})
+		}
+		return err
+	}
+	*/
 	return nil
 }
