@@ -853,7 +853,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 		cloudlet := edgeproto.Cloudlet{}
 		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
-			return errors.New("Specified Cloudlet not found")
+			return in.CloudletKey.NotFoundError()
 		}
 		if cloudlet.DeletePrepare {
 			return in.CloudletKey.BeingDeletedError()
@@ -1165,7 +1165,7 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 			}
 		}
 
-		if err := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &in.CloudletKey, cloudcommon.Update); err != nil {
+		if err := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &inbuf.CloudletKey, cloudcommon.Update); err != nil {
 			return err
 		}
 
@@ -1179,8 +1179,8 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 
 		cloudlet := edgeproto.Cloudlet{}
-		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
-			return in.CloudletKey.NotFoundError()
+		if !s.all.cloudletApi.store.STMGet(stm, &inbuf.CloudletKey, &cloudlet) {
+			return inbuf.CloudletKey.NotFoundError()
 		}
 		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err != nil {
@@ -1219,11 +1219,11 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 		if resChanged {
 			info := edgeproto.CloudletInfo{}
-			if !s.all.cloudletInfoApi.store.STMGet(stm, &in.CloudletKey, &info) {
-				return fmt.Errorf("No resource information found for Cloudlet %s", in.CloudletKey)
+			if !s.all.cloudletInfoApi.store.STMGet(stm, &inbuf.CloudletKey, &info) {
+				return fmt.Errorf("No resource information found for Cloudlet %s", inbuf.CloudletKey)
 			}
 			cloudletRefs := edgeproto.CloudletRefs{}
-			s.all.cloudletRefsApi.store.STMGet(stm, &in.CloudletKey, &cloudletRefs)
+			s.all.cloudletRefsApi.store.STMGet(stm, &inbuf.CloudletKey, &cloudletRefs)
 			// set ipaccess to unknown so that rootlb resource is not calculated as part of diff resource calculation
 			resClusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
 			err = s.validateResources(ctx, stm, resClusterInst, nil, nil, &cloudlet, &info, &cloudletRefs, GenResourceAlerts)
@@ -1363,7 +1363,7 @@ func (s *ClusterInstApi) checkDisableDisableIPV6(ctx context.Context, key *edgep
 func (s *ClusterInstApi) validateClusterInstUpdates(ctx context.Context, stm concurrency.STM, in *edgeproto.ClusterInst) error {
 	cloudlet := edgeproto.Cloudlet{}
 	if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
-		return errors.New("Specified Cloudlet not found")
+		return in.CloudletKey.NotFoundError()
 	}
 	if in.AutoScalePolicy != "" {
 		policy := edgeproto.AutoScalePolicy{}

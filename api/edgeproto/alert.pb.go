@@ -1422,7 +1422,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, 1304C4Ec69343Ced28Fd3Ebc85F4A3A9, 601Fa4F6A8109F39E46Adf1Ea3B89197, A61A29Cd41F6B7459B05B6F7Be6Be4Ce, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, Eac56710C013D954Db31Eeb306B514A4, or 0, 47, 48, 49, 50, 51, 52, 53, 54, 55", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, Eac56710C013D954Db31Eeb306B514A4, or 0, 52, 53, 54, 55", true
 	}
 	return "", "", false
 }

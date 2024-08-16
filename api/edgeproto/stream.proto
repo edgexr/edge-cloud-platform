@@ -66,7 +66,7 @@ service StreamObjApi {
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,ClusterKey.Organization";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Organization";
   }
   // Stream Cloudlet current progress
   rpc StreamCloudlet(CloudletKey) returns (stream Result) {

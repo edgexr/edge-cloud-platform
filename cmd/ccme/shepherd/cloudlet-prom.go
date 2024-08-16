@@ -17,6 +17,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	baselog "log"
@@ -405,14 +406,6 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 
 	log.SpanLog(ctx, log.DebugLevelMetrics, "write rules for AppInst", "AppInst", key)
 
-	if appInst.CompatibilityVersion < cloudcommon.AppInstCompatibilityRegionScopeName {
-		// for backwards compatibility, delete the old rules file.
-		// we can't delete it as part of the delete path, because on the
-		// delete path we don't have the full AppInst object.
-		oldFile := getAppInstRulesFileNameCloudletScoped(&appInst)
-		os.Remove(oldFile)
-	}
-
 	// get any rules for AppInst
 	grps := prommgmt.GroupsData{}
 
@@ -467,6 +460,18 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 	}
 
 	fileName := getAppInstRulesFileName(&key)
+	if appInst.CompatibilityVersion < cloudcommon.AppInstCompatibilityRegionScopeName {
+		// for backwards compatibility, delete the old rule file.
+		// we can't delete it as part of the delete path, because on the
+		// delete path we don't have the full AppInst object.
+		oldFile := getAppInstRulesFileNameCloudletScoped(&appInst)
+		if oldFile != fileName {
+			err = os.Remove(oldFile)
+			if err != nil && !errors.Is(err, os.ErrNotExist) {
+				log.SpanLog(ctx, log.DebugLevelApi, "failed to delete old prom rulefile %s, %s", oldFile, err)
+			}
+		}
+	}
 	err = writeCloudletPrometheusAlerts(ctx, fileName, byt)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to write prometheus rules", "file", fileName, "err", err)

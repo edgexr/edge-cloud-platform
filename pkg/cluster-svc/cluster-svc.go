@@ -523,10 +523,11 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 	apiClient := edgeproto.NewAppInstApiClient(conn)
 
 	platformAppInst := edgeproto.AppInst{
-		Key:        getSidecarAppInstKey(platformApp, &clusterInst.Key),
-		AppKey:     platformApp.Key,
-		ClusterKey: clusterInst.Key,
-		Flavor:     clusterInst.Flavor,
+		Key:         getSidecarAppInstKey(platformApp, &clusterInst.Key),
+		AppKey:      platformApp.Key,
+		ClusterKey:  clusterInst.Key,
+		CloudletKey: clusterInst.CloudletKey,
+		Flavor:      clusterInst.Flavor,
 	}
 	if clusterSvcPlugin != nil {
 		var policy *edgeproto.AutoScalePolicy

@@ -22,9 +22,8 @@ import (
 )
 
 // Support for unmarshaling older-object formatted JSON into current
-// objects for backwards compatibility. These functions shall be
-// used at the Master Controller to process data from old
-// CLI/UI clients that are sending the older format JSON.
+// objects for backwards compatibility. These functions are used in
+// upgrading old data in etcd to the newer format.
 
 func BindJSONAppInstV2(ai *AppInst, jsonData []byte) error {
 	if ai.CloudletKey.IsEmpty() {

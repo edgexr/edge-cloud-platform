@@ -592,7 +592,7 @@ var ClusterInstRequiredArgs = []string{
 var ClusterInstOptionalArgs = []string{
 	"cloudletorg",
 	"cloudlet",
-	"cloudletkey.federatedorganization",
+	"federatedorg",
 	"flavor",
 	"crmoverride",
 	"ipaccess",
@@ -615,6 +615,7 @@ var ClusterInstAliasArgs = []string{
 	"clusterorg=key.organization",
 	"cloudletorg=cloudletkey.organization",
 	"cloudlet=cloudletkey.name",
+	"federatedorg=cloudletkey.federatedorganization",
 	"flavor=flavor.name",
 }
 var ClusterInstComments = map[string]string{
@@ -623,7 +624,7 @@ var ClusterInstComments = map[string]string{
 	"clusterorg":                        "Name of the organization that this cluster belongs to",
 	"cloudletorg":                       "Organization of the cloudlet site",
 	"cloudlet":                          "Name of the cloudlet",
-	"cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"federatedorg":                      "Federated operator organization who shared this cloudlet",
 	"flavor":                            "Flavor name",
 	"liveness":                          "Liveness of instance (see Liveness), one of Unknown, Static, Dynamic, Autoprov",
 	"auto":                              "Auto is set to true when automatically created by back-end (internal use only)",

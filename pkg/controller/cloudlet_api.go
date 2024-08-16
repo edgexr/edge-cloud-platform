@@ -2448,7 +2448,7 @@ func (s *CloudletApi) GetCloudletResourceUsage(ctx context.Context, usage *edgep
 	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		cloudlet := edgeproto.Cloudlet{}
 		if !s.store.STMGet(stm, &usage.Key, &cloudlet) {
-			return errors.New("Specified Cloudlet not found")
+			return usage.Key.NotFoundError()
 		}
 		cloudletInfo := edgeproto.CloudletInfo{}
 		if !s.all.cloudletInfoApi.store.STMGet(stm, &usage.Key, &cloudletInfo) {

@@ -532,7 +532,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		// make sure cloudlet exists so we don't create refs for missing cloudlet
 		cloudlet := edgeproto.Cloudlet{}
 		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
-			return errors.New("Specified Cloudlet not found")
+			return in.CloudletKey.NotFoundError()
 		}
 		if cloudlet.DeletePrepare {
 			return cloudlet.Key.BeingDeletedError()
@@ -1062,7 +1062,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 		cloudlet := edgeproto.Cloudlet{}
 		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
-			return errors.New("Specified Cloudlet not found")
+			return in.CloudletKey.NotFoundError()
 		}
 		clusterInst := edgeproto.ClusterInst{}
 		ipaccess := edgeproto.IpAccess_IP_ACCESS_SHARED

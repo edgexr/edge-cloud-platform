@@ -111,7 +111,7 @@ service CloudletRefsApi {
 service ClusterRefsApi {
   // Show ClusterRefs (debug only)
   rpc ShowClusterRefs(ClusterRefs) returns (stream ClusterRefs) {
-    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.ClusterKey.Organization";
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.Organization";
   }
 }
 

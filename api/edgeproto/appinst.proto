@@ -235,7 +235,7 @@ message AppInst {
   option (protogen.notify_filter_cloudlet_key) = true;
   option (protogen.noconfig) = "CloudletLoc,Uri,StaticUri,MappedPorts,Liveness,CreatedAt,Revision,Errors,RuntimeInfo,VmFlavor,ExternalVolumeSize,AvailabilityZone,State,UpdatedAt,OptRes,SharedVolumeSize,AutoClusterIpAccess,InternalPortToLbIp,UniqueId,DnsLabel,FedKey,AppKey.Organization,CompatibilityVersion,VirtualClusterKey";
   option (protogen.alias) = "appinstname=Key.Name,appinstorg=Key.Organization,appname=AppKey.Name,appvers=AppKey.Version,cloudlet=CloudletKey.Name,cloudletorg=CloudletKey.Organization,federatedorg=CloudletKey.FederatedOrganization,cluster=ClusterKey.Name,clusterorg=ClusterKey.Organization,flavor=Flavor.Name";
-  option (protogen.mc2_target_cloudlet) = "Key.CloudletKey";
+  option (protogen.mc2_target_cloudlet) = "CloudletKey";
   option (protogen.uses_org) = "key=Organization,val=CloudletKey.Organization";
 }
 

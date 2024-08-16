@@ -495,7 +495,10 @@ var ShowLogsOptionalArgs = []string{
 	"cloudlet",
 	"cloudletkey.federatedorganization",
 }
-var AccessCloudletRequiredArgs = []string{}
+var AccessCloudletRequiredArgs = []string{
+	"cloudletorg",
+	"cloudlet",
+}
 var AccessCloudletOptionalArgs = []string{
 	"appinstname",
 	"appinstorg",
@@ -503,7 +506,5 @@ var AccessCloudletOptionalArgs = []string{
 	"nodetype",
 	"nodename",
 	"edgeturnproxyaddr",
-	"cloudletorg",
-	"cloudlet",
 	"cloudletkey.federatedorganization",
 }

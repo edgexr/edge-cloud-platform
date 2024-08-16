@@ -121,7 +121,7 @@ func GetAutoProvAppInstKey(appKey *edgeproto.AppKey, cloudletKey *edgeproto.Clou
 	// So we append a subset of the cloudlet key's sha hash to allow for
 	// a deterministic name tied to the target cloudlet, but without
 	// cloudlet identifying info.
-	name := AutoProvPrefix + "-" + GetCloudletKeyHash(cloudletKey)
+	name := AutoProvPrefix + "-" + appKey.Name + appKey.Version + "-" + GetCloudletKeyHash(cloudletKey)
 	return edgeproto.AppInstKey{
 		Name:         util.DNSSanitize(name),
 		Organization: appKey.Organization,
