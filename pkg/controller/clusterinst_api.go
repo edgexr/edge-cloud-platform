@@ -2060,11 +2060,41 @@ func (s *ClusterInstApi) deleteCloudletSingularCluster(stm concurrency.STM, key 
 	s.all.clusterRefsApi.deleteRef(stm, clusterKey)
 }
 
-func (s *ClusterInstApi) updateRootLbFQDN(stm concurrency.STM, key *edgeproto.ClusterKey, cloudlet *edgeproto.Cloudlet) {
-	clusterInst := edgeproto.ClusterInst{}
-	if !s.store.STMGet(stm, key, &clusterInst) {
-		return
+func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *edgeproto.Cloudlet, inCb edgeproto.AppInstApi_DeleteAppInstServer) (reterr error) {
+	ctx := inCb.Context()
+	cctx := DefCallContext()
+
+	log.SpanLog(ctx, log.DebugLevelApi, "updateRootLbFQDN", "cluster", key, "cloudlet", cloudlet)
+
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
+	modRev, _ := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
+		clusterInst := edgeproto.ClusterInst{}
+		if !s.store.STMGet(stm, key, &clusterInst) {
+			// deleted in the meantime
+			log.SpanLog(ctx, log.DebugLevelApi, "Cluster deleted before DNS update", "cluster", key)
+			return nil
+		}
+		clusterInst.Fqdn = getClusterInstFQDN(&clusterInst, cloudlet)
+		clusterInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
+		s.store.STMPut(stm, &clusterInst)
+		return nil
+	})
+
+	sendObj, err := s.startClusterInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
 	}
-	clusterInst.Fqdn = getClusterInstFQDN(&clusterInst, cloudlet)
-	s.store.STMPut(stm, &clusterInst)
+	defer func() {
+		s.stopClusterInstStream(ctx, cctx, key, sendObj, reterr, NoCleanupStream)
+	}()
+
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateClusterInstTimeout.TimeDuration())
+	defer reqCancel()
+	
+	successMsg := fmt.Sprintf("Cluster %s updated successfully", key.Name)
+	return edgeproto.WaitForClusterInstInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
+		UpdateClusterInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
+		successMsg, cb.Send,
+		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+	)
 }

@@ -2372,13 +2372,42 @@ func (s *AppInstApi) RecordAppInstEvent(ctx context.Context, appInst *edgeproto.
 	services.events.AddMetric(&metric)
 }
 
-func (s *AppInstApi) updateURI(stm concurrency.STM, key *edgeproto.AppInstKey, cloudlet *edgeproto.Cloudlet) {
-	appInst := edgeproto.AppInst{}
-	if !s.store.STMGet(stm, key, &appInst) {
-		return
+func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cloudlet, inCb edgeproto.AppInstApi_UpdateAppInstServer) (reterr error) {
+	ctx := inCb.Context()
+	cctx := DefCallContext()
+
+	log.SpanLog(ctx, log.DebugLevelApi, "updateRootLbFQDN", "cluster", key, "cloudlet", cloudlet)
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
+	modRev, _ := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
+		appInst := edgeproto.AppInst{}
+		if !s.store.STMGet(stm, key, &appInst) {
+			// deleted in the meantime
+			log.SpanLog(ctx, log.DebugLevelApi, "Appinst deleted before DNS update", "appinst", key)
+			return nil
+		}
+		appInst.Uri = getAppInstFQDN(&appInst, cloudlet)
+		appInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
+		s.store.STMPut(stm, &appInst)
+		return nil
+	})
+	sendObj, err := s.startAppInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
 	}
-	appInst.Uri = getAppInstFQDN(&appInst, cloudlet)
-	s.store.STMPut(stm, &appInst)
+	defer func() {
+		s.stopAppInstStream(ctx, cctx, key, sendObj, reterr, NoCleanupStream)
+	}()
+	reqCtx, reqCancel := context.WithTimeout(cb.Context(), s.all.settingsApi.Get().UpdateAppInstTimeout.TimeDuration())
+	defer reqCancel()
+
+	successMsg := ""
+	if !strings.Contains(key.Name, cloudcommon.MEXPrometheusAppName) && !strings.Contains(key.Name, cloudcommon.NFSAutoProvisionAppName) {
+		successMsg = fmt.Sprintf("AppInst %s updated successfully", key.Name)
+	}
+	return edgeproto.WaitForAppInstInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
+		UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
+		successMsg, cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+
 }
 
 func clusterInstReservationEvent(ctx context.Context, eventName string, appInst *edgeproto.AppInst) {
