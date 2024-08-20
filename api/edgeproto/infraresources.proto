@@ -22,6 +22,7 @@ import "gogoproto/gogo.proto";
 import "cluster.proto";
 import "decimal.proto";
 import "app.proto";
+import "appinst.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -104,18 +105,6 @@ message NodeInfo {
   map<string, Udec64> capacity = 3;
 }
 
-// AppInst Ref Key
-//
-// AppInstRefKey is app instance key without cloudlet key.
-message AppInstRefKey {
-  // AppInst name
-  string name = 1 [(protogen.keytag) = "appinstrefname"];
-  // AppInst organization
-  string organization = 2 [(protogen.keytag) = "appinstreforg"];
-  option (protogen.obj_key) = true;
-  option (protogen.generate_matches) = true;
-}
-
 // InfraResources
 //
 // InfraResources is infomation about infrastructure resources.
@@ -136,7 +125,7 @@ message InfraResourcesSnapshot {
   // List of clusterinsts this resources snapshot represent
   repeated ClusterKey cluster_insts = 3 [(gogoproto.nullable) = false];
   // List of vm appinsts this resources snapshot represent
-  repeated AppInstRefKey vm_app_insts = 4 [(gogoproto.nullable) = false];
+  repeated AppInstKey vm_app_insts = 4 [(gogoproto.nullable) = false];
   // List of k8s appinsts this resources snapshot represent
-  repeated AppInstRefKey k8s_app_insts = 5 [(gogoproto.nullable) = false];
+  repeated AppInstKey k8s_app_insts = 5 [(gogoproto.nullable) = false];
 }

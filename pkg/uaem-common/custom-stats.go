@@ -30,16 +30,18 @@ type CustomStatInfo struct {
 // Used to find corresponding CustomStat
 // Created using CustomStatInfo
 type CustomStatKey struct {
-	AppInstKey edgeproto.AppInstKey
-	AppKey     edgeproto.AppKey
-	Name       string
+	AppInstKey  edgeproto.AppInstKey
+	AppKey      edgeproto.AppKey
+	CloudletKey edgeproto.CloudletKey
+	Name        string
 }
 
 func GetCustomStatKey(appInst *edgeproto.AppInst, statName string) CustomStatKey {
 	return CustomStatKey{
-		AppInstKey: appInst.Key,
-		AppKey:     appInst.AppKey,
-		Name:       statName,
+		AppInstKey:  appInst.Key,
+		AppKey:      appInst.AppKey,
+		CloudletKey: appInst.CloudletKey,
+		Name:        statName,
 	}
 }
 

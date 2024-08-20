@@ -551,18 +551,6 @@ func (m *AppInstClientKey) CopyInFields(src *AppInstClientKey) int {
 		m.AppInstKey.Organization = src.AppInstKey.Organization
 		changed++
 	}
-	if m.AppInstKey.CloudletKey.Organization != src.AppInstKey.CloudletKey.Organization {
-		m.AppInstKey.CloudletKey.Organization = src.AppInstKey.CloudletKey.Organization
-		changed++
-	}
-	if m.AppInstKey.CloudletKey.Name != src.AppInstKey.CloudletKey.Name {
-		m.AppInstKey.CloudletKey.Name = src.AppInstKey.CloudletKey.Name
-		changed++
-	}
-	if m.AppInstKey.CloudletKey.FederatedOrganization != src.AppInstKey.CloudletKey.FederatedOrganization {
-		m.AppInstKey.CloudletKey.FederatedOrganization = src.AppInstKey.CloudletKey.FederatedOrganization
-		changed++
-	}
 	if m.UniqueId != src.UniqueId {
 		m.UniqueId = src.UniqueId
 		changed++
@@ -1214,9 +1202,6 @@ func (m *AppInstClientKey) GetTags() map[string]string {
 func (m *AppInstClientKey) AddTagsByFunc(addTag AddTagFunc) {
 	addTag("appinst", m.AppInstKey.Name)
 	addTag("appinstorg", m.AppInstKey.Organization)
-	addTag("cloudletorg", m.AppInstKey.CloudletKey.Organization)
-	addTag("cloudlet", m.AppInstKey.CloudletKey.Name)
-	addTag("cloudletfedorg", m.AppInstKey.CloudletKey.FederatedOrganization)
 	addTag("uniqueid", m.UniqueId)
 	addTag("uniqueidtype", m.UniqueIdType)
 	addTag("apporg", m.AppKey.Organization)
@@ -1280,10 +1265,6 @@ const AppInstClientFieldClientKey = "2"
 const AppInstClientFieldClientKeyAppInstKey = "2.1"
 const AppInstClientFieldClientKeyAppInstKeyName = "2.1.1"
 const AppInstClientFieldClientKeyAppInstKeyOrganization = "2.1.2"
-const AppInstClientFieldClientKeyAppInstKeyCloudletKey = "2.1.3"
-const AppInstClientFieldClientKeyAppInstKeyCloudletKeyOrganization = "2.1.3.1"
-const AppInstClientFieldClientKeyAppInstKeyCloudletKeyName = "2.1.3.2"
-const AppInstClientFieldClientKeyAppInstKeyCloudletKeyFederatedOrganization = "2.1.3.3"
 const AppInstClientFieldClientKeyUniqueId = "2.2"
 const AppInstClientFieldClientKeyUniqueIdType = "2.3"
 const AppInstClientFieldClientKeyAppKey = "2.4"
@@ -1306,9 +1287,6 @@ const AppInstClientFieldNotifyId = "4"
 var AppInstClientAllFields = []string{
 	AppInstClientFieldClientKeyAppInstKeyName,
 	AppInstClientFieldClientKeyAppInstKeyOrganization,
-	AppInstClientFieldClientKeyAppInstKeyCloudletKeyOrganization,
-	AppInstClientFieldClientKeyAppInstKeyCloudletKeyName,
-	AppInstClientFieldClientKeyAppInstKeyCloudletKeyFederatedOrganization,
 	AppInstClientFieldClientKeyUniqueId,
 	AppInstClientFieldClientKeyUniqueIdType,
 	AppInstClientFieldClientKeyAppKeyOrganization,
@@ -1327,49 +1305,43 @@ var AppInstClientAllFields = []string{
 }
 
 var AppInstClientAllFieldsMap = NewFieldMap(map[string]struct{}{
-	AppInstClientFieldClientKeyAppInstKeyName:                             struct{}{},
-	AppInstClientFieldClientKeyAppInstKeyOrganization:                     struct{}{},
-	AppInstClientFieldClientKeyAppInstKeyCloudletKeyOrganization:          struct{}{},
-	AppInstClientFieldClientKeyAppInstKeyCloudletKeyName:                  struct{}{},
-	AppInstClientFieldClientKeyAppInstKeyCloudletKeyFederatedOrganization: struct{}{},
-	AppInstClientFieldClientKeyUniqueId:                                   struct{}{},
-	AppInstClientFieldClientKeyUniqueIdType:                               struct{}{},
-	AppInstClientFieldClientKeyAppKeyOrganization:                         struct{}{},
-	AppInstClientFieldClientKeyAppKeyName:                                 struct{}{},
-	AppInstClientFieldClientKeyAppKeyVersion:                              struct{}{},
-	AppInstClientFieldLocationLatitude:                                    struct{}{},
-	AppInstClientFieldLocationLongitude:                                   struct{}{},
-	AppInstClientFieldLocationHorizontalAccuracy:                          struct{}{},
-	AppInstClientFieldLocationVerticalAccuracy:                            struct{}{},
-	AppInstClientFieldLocationAltitude:                                    struct{}{},
-	AppInstClientFieldLocationCourse:                                      struct{}{},
-	AppInstClientFieldLocationSpeed:                                       struct{}{},
-	AppInstClientFieldLocationTimestampSeconds:                            struct{}{},
-	AppInstClientFieldLocationTimestampNanos:                              struct{}{},
-	AppInstClientFieldNotifyId:                                            struct{}{},
+	AppInstClientFieldClientKeyAppInstKeyName:         struct{}{},
+	AppInstClientFieldClientKeyAppInstKeyOrganization: struct{}{},
+	AppInstClientFieldClientKeyUniqueId:               struct{}{},
+	AppInstClientFieldClientKeyUniqueIdType:           struct{}{},
+	AppInstClientFieldClientKeyAppKeyOrganization:     struct{}{},
+	AppInstClientFieldClientKeyAppKeyName:             struct{}{},
+	AppInstClientFieldClientKeyAppKeyVersion:          struct{}{},
+	AppInstClientFieldLocationLatitude:                struct{}{},
+	AppInstClientFieldLocationLongitude:               struct{}{},
+	AppInstClientFieldLocationHorizontalAccuracy:      struct{}{},
+	AppInstClientFieldLocationVerticalAccuracy:        struct{}{},
+	AppInstClientFieldLocationAltitude:                struct{}{},
+	AppInstClientFieldLocationCourse:                  struct{}{},
+	AppInstClientFieldLocationSpeed:                   struct{}{},
+	AppInstClientFieldLocationTimestampSeconds:        struct{}{},
+	AppInstClientFieldLocationTimestampNanos:          struct{}{},
+	AppInstClientFieldNotifyId:                        struct{}{},
 })
 
 var AppInstClientAllFieldsStringMap = map[string]string{
-	AppInstClientFieldClientKeyAppInstKeyName:                             "Client Key App Inst Key Name",
-	AppInstClientFieldClientKeyAppInstKeyOrganization:                     "Client Key App Inst Key Organization",
-	AppInstClientFieldClientKeyAppInstKeyCloudletKeyOrganization:          "Client Key App Inst Key Cloudlet Key Organization",
-	AppInstClientFieldClientKeyAppInstKeyCloudletKeyName:                  "Client Key App Inst Key Cloudlet Key Name",
-	AppInstClientFieldClientKeyAppInstKeyCloudletKeyFederatedOrganization: "Client Key App Inst Key Cloudlet Key Federated Organization",
-	AppInstClientFieldClientKeyUniqueId:                                   "Client Key Unique Id",
-	AppInstClientFieldClientKeyUniqueIdType:                               "Client Key Unique Id Type",
-	AppInstClientFieldClientKeyAppKeyOrganization:                         "Client Key App Key Organization",
-	AppInstClientFieldClientKeyAppKeyName:                                 "Client Key App Key Name",
-	AppInstClientFieldClientKeyAppKeyVersion:                              "Client Key App Key Version",
-	AppInstClientFieldLocationLatitude:                                    "Location Latitude",
-	AppInstClientFieldLocationLongitude:                                   "Location Longitude",
-	AppInstClientFieldLocationHorizontalAccuracy:                          "Location Horizontal Accuracy",
-	AppInstClientFieldLocationVerticalAccuracy:                            "Location Vertical Accuracy",
-	AppInstClientFieldLocationAltitude:                                    "Location Altitude",
-	AppInstClientFieldLocationCourse:                                      "Location Course",
-	AppInstClientFieldLocationSpeed:                                       "Location Speed",
-	AppInstClientFieldLocationTimestampSeconds:                            "Location Timestamp Seconds",
-	AppInstClientFieldLocationTimestampNanos:                              "Location Timestamp Nanos",
-	AppInstClientFieldNotifyId:                                            "Notify Id",
+	AppInstClientFieldClientKeyAppInstKeyName:         "Client Key App Inst Key Name",
+	AppInstClientFieldClientKeyAppInstKeyOrganization: "Client Key App Inst Key Organization",
+	AppInstClientFieldClientKeyUniqueId:               "Client Key Unique Id",
+	AppInstClientFieldClientKeyUniqueIdType:           "Client Key Unique Id Type",
+	AppInstClientFieldClientKeyAppKeyOrganization:     "Client Key App Key Organization",
+	AppInstClientFieldClientKeyAppKeyName:             "Client Key App Key Name",
+	AppInstClientFieldClientKeyAppKeyVersion:          "Client Key App Key Version",
+	AppInstClientFieldLocationLatitude:                "Location Latitude",
+	AppInstClientFieldLocationLongitude:               "Location Longitude",
+	AppInstClientFieldLocationHorizontalAccuracy:      "Location Horizontal Accuracy",
+	AppInstClientFieldLocationVerticalAccuracy:        "Location Vertical Accuracy",
+	AppInstClientFieldLocationAltitude:                "Location Altitude",
+	AppInstClientFieldLocationCourse:                  "Location Course",
+	AppInstClientFieldLocationSpeed:                   "Location Speed",
+	AppInstClientFieldLocationTimestampSeconds:        "Location Timestamp Seconds",
+	AppInstClientFieldLocationTimestampNanos:          "Location Timestamp Nanos",
+	AppInstClientFieldNotifyId:                        "Notify Id",
 }
 
 func (m *AppInstClient) IsKeyField(s string) bool {
@@ -1384,24 +1356,6 @@ func (m *AppInstClient) DiffFields(o *AppInstClient, fields *FieldMap) {
 	}
 	if m.ClientKey.AppInstKey.Organization != o.ClientKey.AppInstKey.Organization {
 		fields.Set(AppInstClientFieldClientKeyAppInstKeyOrganization)
-		fields.Set(AppInstClientFieldClientKeyAppInstKey)
-		fields.Set(AppInstClientFieldClientKey)
-	}
-	if m.ClientKey.AppInstKey.CloudletKey.Organization != o.ClientKey.AppInstKey.CloudletKey.Organization {
-		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKeyOrganization)
-		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKey)
-		fields.Set(AppInstClientFieldClientKeyAppInstKey)
-		fields.Set(AppInstClientFieldClientKey)
-	}
-	if m.ClientKey.AppInstKey.CloudletKey.Name != o.ClientKey.AppInstKey.CloudletKey.Name {
-		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKeyName)
-		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKey)
-		fields.Set(AppInstClientFieldClientKeyAppInstKey)
-		fields.Set(AppInstClientFieldClientKey)
-	}
-	if m.ClientKey.AppInstKey.CloudletKey.FederatedOrganization != o.ClientKey.AppInstKey.CloudletKey.FederatedOrganization {
-		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKeyFederatedOrganization)
-		fields.Set(AppInstClientFieldClientKeyAppInstKeyCloudletKey)
 		fields.Set(AppInstClientFieldClientKeyAppInstKey)
 		fields.Set(AppInstClientFieldClientKey)
 	}
@@ -1503,26 +1457,6 @@ func (m *AppInstClient) CopyInFields(src *AppInstClient) int {
 				if m.ClientKey.AppInstKey.Organization != src.ClientKey.AppInstKey.Organization {
 					m.ClientKey.AppInstKey.Organization = src.ClientKey.AppInstKey.Organization
 					changed++
-				}
-			}
-			if fmap.HasOrHasChild("2.1.3") {
-				if fmap.Has("2.1.3.1") {
-					if m.ClientKey.AppInstKey.CloudletKey.Organization != src.ClientKey.AppInstKey.CloudletKey.Organization {
-						m.ClientKey.AppInstKey.CloudletKey.Organization = src.ClientKey.AppInstKey.CloudletKey.Organization
-						changed++
-					}
-				}
-				if fmap.Has("2.1.3.2") {
-					if m.ClientKey.AppInstKey.CloudletKey.Name != src.ClientKey.AppInstKey.CloudletKey.Name {
-						m.ClientKey.AppInstKey.CloudletKey.Name = src.ClientKey.AppInstKey.CloudletKey.Name
-						changed++
-					}
-				}
-				if fmap.Has("2.1.3.3") {
-					if m.ClientKey.AppInstKey.CloudletKey.FederatedOrganization != src.ClientKey.AppInstKey.CloudletKey.FederatedOrganization {
-						m.ClientKey.AppInstKey.CloudletKey.FederatedOrganization = src.ClientKey.AppInstKey.CloudletKey.FederatedOrganization
-						changed++
-					}
 				}
 			}
 		}

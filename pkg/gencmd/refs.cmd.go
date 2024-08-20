@@ -271,11 +271,8 @@ var AppInstRefsApiCmds = []*cobra.Command{
 }
 
 var VMResourceRequiredArgs = []string{
-	"key.clusterkey.name",
-	"key.clusterkey.organization",
-	"key.cloudletkey.organization",
-	"key.cloudletkey.name",
-	"key.cloudletkey.federatedorganization",
+	"key.name",
+	"key.organization",
 }
 var VMResourceOptionalArgs = []string{
 	"vmflavor.name",
@@ -288,18 +285,15 @@ var VMResourceOptionalArgs = []string{
 }
 var VMResourceAliasArgs = []string{}
 var VMResourceComments = map[string]string{
-	"key.clusterkey.name":                   "Cluster name",
-	"key.clusterkey.organization":           "Name of the organization that this cluster belongs to",
-	"key.cloudletkey.organization":          "Organization of the cloudlet site",
-	"key.cloudletkey.name":                  "Name of the cloudlet",
-	"key.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
-	"vmflavor.name":                         "Name of the flavor on the Cloudlet",
-	"vmflavor.vcpus":                        "Number of VCPU cores on the Cloudlet",
-	"vmflavor.ram":                          "Ram in MB on the Cloudlet",
-	"vmflavor.disk":                         "Amount of disk in GB on the Cloudlet",
-	"vmflavor.propmap":                      "OS Flavor Properties, if any",
-	"type":                                  "Resource Type can be platform, rootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm, k8s-lb-svc",
-	"appaccesstype":                         "(deprecated) Access type for resource of type App VM, one of DefaultForDeployment, Direct, LoadBalancer",
+	"key.name":         "Cluster name",
+	"key.organization": "Name of the organization that this cluster belongs to",
+	"vmflavor.name":    "Name of the flavor on the Cloudlet",
+	"vmflavor.vcpus":   "Number of VCPU cores on the Cloudlet",
+	"vmflavor.ram":     "Ram in MB on the Cloudlet",
+	"vmflavor.disk":    "Amount of disk in GB on the Cloudlet",
+	"vmflavor.propmap": "OS Flavor Properties, if any",
+	"type":             "Resource Type can be platform, rootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm, k8s-lb-svc",
+	"appaccesstype":    "(deprecated) Access type for resource of type App VM, one of DefaultForDeployment, Direct, LoadBalancer",
 }
 var VMResourceSpecialArgs = map[string]string{
 	"vmflavor.propmap": "StringToString",
@@ -330,18 +324,15 @@ var CloudletRefsComments = map[string]string{
 	"reservedautoclusterids":      "Track reservable autoclusterinsts ids in use. This is a bitmap.",
 	"clusterinsts:#.name":         "Cluster name",
 	"clusterinsts:#.organization": "Name of the organization that this cluster belongs to",
-	"vmappinsts:#.name":           "AppInst name",
-	"vmappinsts:#.organization":   "AppInst organization",
-	"k8sappinsts:#.name":          "AppInst name",
-	"k8sappinsts:#.organization":  "AppInst organization",
+	"vmappinsts:#.name":           "App Instance name",
+	"vmappinsts:#.organization":   "App Instance organization",
+	"k8sappinsts:#.name":          "App Instance name",
+	"k8sappinsts:#.organization":  "App Instance organization",
 }
 var CloudletRefsSpecialArgs = map[string]string{}
 var ClusterRefsRequiredArgs = []string{
-	"key.clusterkey.name",
-	"key.clusterkey.organization",
-	"key.cloudletkey.organization",
-	"key.cloudletkey.name",
-	"key.cloudletkey.federatedorganization",
+	"key.name",
+	"key.organization",
 }
 var ClusterRefsOptionalArgs = []string{
 	"apps:#.name",
@@ -349,13 +340,10 @@ var ClusterRefsOptionalArgs = []string{
 }
 var ClusterRefsAliasArgs = []string{}
 var ClusterRefsComments = map[string]string{
-	"key.clusterkey.name":                   "Cluster name",
-	"key.clusterkey.organization":           "Name of the organization that this cluster belongs to",
-	"key.cloudletkey.organization":          "Organization of the cloudlet site",
-	"key.cloudletkey.name":                  "Name of the cloudlet",
-	"key.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
-	"apps:#.name":                           "AppInst name",
-	"apps:#.organization":                   "AppInst organization",
+	"key.name":            "Cluster name",
+	"key.organization":    "Name of the organization that this cluster belongs to",
+	"apps:#.name":         "App Instance name",
+	"apps:#.organization": "App Instance organization",
 }
 var ClusterRefsSpecialArgs = map[string]string{}
 var AppInstRefsRequiredArgs = []string{

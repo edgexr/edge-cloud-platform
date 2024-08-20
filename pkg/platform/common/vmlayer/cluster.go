@@ -65,7 +65,7 @@ type ClusterFlavor struct {
 var MaxDockerVmWait = 2 * time.Minute
 
 func (v *VMPlatform) GetClusterSubnetName(ctx context.Context, clusterInst *edgeproto.ClusterInst) SubnetNames {
-	subnetName := MexSubnetPrefix + k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+	subnetName := MexSubnetPrefix + k8smgmt.GetCloudletClusterName(clusterInst)
 	subnetNames := SubnetNames{}
 	subnetNames[infracommon.IndexIPV4] = subnetName
 	subnetNames[infracommon.IndexIPV6] = subnetName + "-ipv6"
@@ -77,7 +77,7 @@ func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterIns
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		namePrefix = ClusterTypeDockerVMLabel
 	}
-	return namePrefix + "-" + k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+	return namePrefix + "-" + k8smgmt.GetCloudletClusterName(clusterInst)
 }
 
 // GetClusterMasterNameFromNodeList is used instead of GetClusterMasterName when getting the actual master name from
@@ -98,11 +98,11 @@ func GetClusterMasterNameFromNodeList(ctx context.Context, client ssh.Client, cl
 }
 
 func GetClusterNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst, nodeNum uint32) string {
-	return ClusterNodePrefix(nodeNum) + "-" + k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+	return ClusterNodePrefix(nodeNum) + "-" + k8smgmt.GetCloudletClusterName(clusterInst)
 }
 
 func (v *VMPlatform) GetDockerNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
-	return ClusterTypeDockerVMLabel + "-" + k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+	return ClusterTypeDockerVMLabel + "-" + k8smgmt.GetCloudletClusterName(clusterInst)
 }
 
 func ClusterNodePrefix(num uint32) string {
@@ -263,7 +263,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting cluster", "clusterInst", clusterInst)
 
-	name := k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+	name := k8smgmt.GetCloudletClusterName(clusterInst)
 
 	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
@@ -324,7 +324,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		nodeName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
 		nodeKey := &edgeproto.CloudletNodeKey{
 			Name:        nodeName,
-			CloudletKey: clusterInst.Key.CloudletKey,
+			CloudletKey: clusterInst.CloudletKey,
 		}
 		err = accessApi.DeleteCloudletNode(ctx, nodeKey)
 		if err != nil {
@@ -336,7 +336,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		nodeName := v.GetDockerNodeName(ctx, clusterInst)
 		nodeKey := &edgeproto.CloudletNodeKey{
 			Name:        nodeName,
-			CloudletKey: clusterInst.Key.CloudletKey,
+			CloudletKey: clusterInst.CloudletKey,
 		}
 		err = accessApi.DeleteCloudletNode(ctx, nodeKey)
 		if err != nil {
@@ -347,7 +347,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		nodeName := GetClusterMasterName(ctx, clusterInst)
 		nodeKey := &edgeproto.CloudletNodeKey{
 			Name:        nodeName,
-			CloudletKey: clusterInst.Key.CloudletKey,
+			CloudletKey: clusterInst.CloudletKey,
 		}
 		err = accessApi.DeleteCloudletNode(ctx, nodeKey)
 		if err != nil {
@@ -358,7 +358,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 			nodeName := GetClusterNodeName(ctx, clusterInst, nn)
 			nodeKey := &edgeproto.CloudletNodeKey{
 				Name:        nodeName,
-				CloudletKey: clusterInst.Key.CloudletKey,
+				CloudletKey: clusterInst.CloudletKey,
 			}
 			err = accessApi.DeleteCloudletNode(ctx, nodeKey)
 			if err != nil {
@@ -430,7 +430,7 @@ func (v *VMPlatform) cleanupClusterInst(ctx context.Context, clusterInst *edgepr
 			updateCallback(edgeproto.UpdateTask, "Retrying cleanup")
 		}
 	}
-	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up cluster", clusterInst.Key.ClusterKey.Organization, clusterInst.Key.GetTags(), err)
+	v.VMProperties.CommonPf.PlatformConfig.NodeMgr.Event(ctx, "Failed to clean up cluster", clusterInst.Key.Organization, clusterInst.Key.GetTags(), err)
 	return fmt.Errorf("Failed to cleanup cluster - %v", err)
 }
 
@@ -519,7 +519,7 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 				return err
 			}
 		}
-		err := v.SetupRootLB(ctx, rootLBName, rootLBName, &clusterInst.Key.CloudletKey, &TrustPolicy, rootLBDetail, clusterInst.EnableIpv6, updateCallback)
+		err := v.SetupRootLB(ctx, rootLBName, rootLBName, &clusterInst.CloudletKey, &TrustPolicy, rootLBDetail, clusterInst.EnableIpv6, updateCallback)
 		if err != nil {
 			return err
 		}
@@ -806,7 +806,7 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 		false,
 		WithExternalVolume(clusterInst.ExternalVolumeSize),
 		WithSubnetConnection(newSubnetName),
-		WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.Key.CloudletKey, &clusterInst.Key),
+		WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.CloudletKey, &clusterInst.Key),
 		WithOptionalResource(clusterInst.OptRes),
 		WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
 		WithAdditionalNetworks(nodeNets),
@@ -824,7 +824,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 
 	var vms []*VMRequestSpec
 	var err error
-	vmgroupName := k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+	vmgroupName := k8smgmt.GetCloudletClusterName(clusterInst)
 	var newSubnetName SubnetNames
 	var newSecgrpName string
 
@@ -899,7 +899,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 			WithSharedVolume(clusterInst.SharedVolumeSize),
 			WithExternalVolume(clusterInst.ExternalVolumeSize),
 			WithSubnetConnection(newSubnetName),
-			WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.Key.CloudletKey, &clusterInst.Key),
+			WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.CloudletKey, &clusterInst.Key),
 			WithComputeAvailabilityZone(masterAZ),
 		)
 		if err != nil {
@@ -916,7 +916,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 				false, //connect external
 				WithExternalVolume(clusterInst.ExternalVolumeSize),
 				WithSubnetConnection(newSubnetName),
-				WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.Key.CloudletKey, &clusterInst.Key),
+				WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.CloudletKey, &clusterInst.Key),
 				WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
 				WithAdditionalNetworks(nodeNets),
 				WithRoutes(nodeRoutes),

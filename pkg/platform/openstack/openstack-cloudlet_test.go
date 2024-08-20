@@ -148,9 +148,9 @@ func TestOpenstackLive(t *testing.T) {
 		Key: edgeproto.AppInstKey{
 			Name:         "hello",
 			Organization: devOrg,
-			CloudletKey:  cloudlet.Key,
 		},
-		AppKey: dockerApp.Key,
+		AppKey:      dockerApp.Key,
+		CloudletKey: cloudlet.Key,
 		MappedPorts: []distributed_match_engine.AppPort{{
 			Proto:        distributed_match_engine.LProto_L_PROTO_TCP,
 			InternalPort: 5678,
@@ -166,17 +166,15 @@ func TestOpenstackLive(t *testing.T) {
 
 	if false {
 		dockerClusterInst := &edgeproto.ClusterInst{
-			Key: edgeproto.ClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name:         "dockerclust",
-					Organization: devOrg,
-				},
-				CloudletKey: cloudlet.Key,
+			Key: edgeproto.ClusterKey{
+				Name:         "dockerclust",
+				Organization: devOrg,
 			},
-			Deployment: cloudcommon.DeploymentTypeDocker,
-			NodeFlavor: flavor,
-			IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-			EnableIpv6: false,
+			CloudletKey: cloudlet.Key,
+			Deployment:  cloudcommon.DeploymentTypeDocker,
+			NodeFlavor:  flavor,
+			IpAccess:    edgeproto.IpAccess_IP_ACCESS_SHARED,
+			EnableIpv6:  false,
 		}
 		//err = plat.CreateClusterInst(ctx, dockerClusterInst, cb, 6*time.Minute)
 		//err = plat.UpdateClusterInst(ctx, dockerClusterInst, cb)
@@ -197,19 +195,17 @@ func TestOpenstackLive(t *testing.T) {
 	}
 	if false {
 		k8sClusterInst := &edgeproto.ClusterInst{
-			Key: edgeproto.ClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name:         "k8sclust",
-					Organization: devOrg,
-				},
-				CloudletKey: cloudlet.Key,
+			Key: edgeproto.ClusterKey{
+				Name:         "k8sclust",
+				Organization: devOrg,
 			},
-			Deployment: cloudcommon.DeploymentTypeKubernetes,
-			NodeFlavor: flavor,
-			IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-			EnableIpv6: false, // TODO: needs new base image
-			NumMasters: 1,
-			NumNodes:   1,
+			CloudletKey: cloudlet.Key,
+			Deployment:  cloudcommon.DeploymentTypeKubernetes,
+			NodeFlavor:  flavor,
+			IpAccess:    edgeproto.IpAccess_IP_ACCESS_SHARED,
+			EnableIpv6:  false, // TODO: needs new base image
+			NumMasters:  1,
+			NumNodes:    1,
 		}
 		//err = plat.CreateClusterInst(ctx, k8sClusterInst, cb, 30*time.Minute)
 		err = plat.DeleteClusterInst(ctx, k8sClusterInst, cb)
@@ -221,7 +217,7 @@ func TestOpenstackLive(t *testing.T) {
 
 		if false {
 			// check getting resources for cluster (IPs, etc).
-			res2, err := plat.GetClusterInfraResources(ctx, &k8sClusterInst.Key)
+			res2, err := plat.GetClusterInfraResources(ctx, k8sClusterInst)
 			require.Nil(t, err)
 			out, err := yaml.Marshal(res2)
 			require.Nil(t, err)
@@ -231,19 +227,17 @@ func TestOpenstackLive(t *testing.T) {
 	}
 	if false {
 		dockerClusterInstD := &edgeproto.ClusterInst{
-			Key: edgeproto.ClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name:         "dockerclustD",
-					Organization: devOrg,
-				},
-				CloudletKey: cloudlet.Key,
+			Key: edgeproto.ClusterKey{
+				Name:         "dockerclustD",
+				Organization: devOrg,
 			},
-			Deployment: cloudcommon.DeploymentTypeDocker,
-			NodeFlavor: flavor,
-			IpAccess:   edgeproto.IpAccess_IP_ACCESS_DEDICATED,
-			Fqdn:       "dockerclustDLB",
-			StaticFqdn: "dockerclustDLB", // becomes rootLB name
-			EnableIpv6: false,
+			CloudletKey: cloudlet.Key,
+			Deployment:  cloudcommon.DeploymentTypeDocker,
+			NodeFlavor:  flavor,
+			IpAccess:    edgeproto.IpAccess_IP_ACCESS_DEDICATED,
+			Fqdn:        "dockerclustDLB",
+			StaticFqdn:  "dockerclustDLB", // becomes rootLB name
+			EnableIpv6:  false,
 		}
 		err = plat.CreateClusterInst(ctx, dockerClusterInstD, cb, 6*time.Minute)
 		//err = plat.DeleteClusterInst(ctx, dockerClusterInstD, cb)
@@ -295,12 +289,12 @@ runcmd:
 			Key: edgeproto.AppInstKey{
 				Name:         "vmapp",
 				Organization: devOrg,
-				CloudletKey:  cloudlet.Key,
 			},
-			AppKey:   vmApp.Key,
-			Uri:      os.Getenv("USER") + "-functest-vmappinst-uri",       // security group name
-			UniqueId: os.Getenv("USER") + "-functest-vmappinst-unique-id", // used for heat stack name
-			VmFlavor: flavor,
+			AppKey:      vmApp.Key,
+			CloudletKey: cloudlet.Key,
+			Uri:         os.Getenv("USER") + "-functest-vmappinst-uri",       // security group name
+			UniqueId:    os.Getenv("USER") + "-functest-vmappinst-unique-id", // used for heat stack name
+			VmFlavor:    flavor,
 			MappedPorts: []distributed_match_engine.AppPort{{
 				Proto:        distributed_match_engine.LProto_L_PROTO_TCP,
 				InternalPort: 5677,

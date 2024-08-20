@@ -15775,7 +15775,7 @@ func (m *CloudletInfo) RemoveResourcesSnapshotClusterInsts(vals ...ClusterKey) i
 	return changes
 }
 
-func (m *CloudletInfo) AddResourcesSnapshotVmAppInsts(vals ...AppInstRefKey) int {
+func (m *CloudletInfo) AddResourcesSnapshotVmAppInsts(vals ...AppInstKey) int {
 	changes := 0
 	cur := make(map[string]struct{})
 	for _, v := range m.ResourcesSnapshot.VmAppInsts {
@@ -15791,7 +15791,7 @@ func (m *CloudletInfo) AddResourcesSnapshotVmAppInsts(vals ...AppInstRefKey) int
 	return changes
 }
 
-func (m *CloudletInfo) RemoveResourcesSnapshotVmAppInsts(vals ...AppInstRefKey) int {
+func (m *CloudletInfo) RemoveResourcesSnapshotVmAppInsts(vals ...AppInstKey) int {
 	changes := 0
 	remove := make(map[string]struct{})
 	for _, v := range vals {
@@ -15806,7 +15806,7 @@ func (m *CloudletInfo) RemoveResourcesSnapshotVmAppInsts(vals ...AppInstRefKey) 
 	return changes
 }
 
-func (m *CloudletInfo) AddResourcesSnapshotK8SAppInsts(vals ...AppInstRefKey) int {
+func (m *CloudletInfo) AddResourcesSnapshotK8SAppInsts(vals ...AppInstKey) int {
 	changes := 0
 	cur := make(map[string]struct{})
 	for _, v := range m.ResourcesSnapshot.K8SAppInsts {
@@ -15822,7 +15822,7 @@ func (m *CloudletInfo) AddResourcesSnapshotK8SAppInsts(vals ...AppInstRefKey) in
 	return changes
 }
 
-func (m *CloudletInfo) RemoveResourcesSnapshotK8SAppInsts(vals ...AppInstRefKey) int {
+func (m *CloudletInfo) RemoveResourcesSnapshotK8SAppInsts(vals ...AppInstKey) int {
 	changes := 0
 	remove := make(map[string]struct{})
 	for _, v := range vals {
@@ -16126,7 +16126,7 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 				} else if updateListAction == "remove" {
 					changed += m.RemoveResourcesSnapshotVmAppInsts(src.ResourcesSnapshot.VmAppInsts...)
 				} else {
-					m.ResourcesSnapshot.VmAppInsts = make([]AppInstRefKey, 0)
+					m.ResourcesSnapshot.VmAppInsts = make([]AppInstKey, 0)
 					for k1, _ := range src.ResourcesSnapshot.VmAppInsts {
 						m.ResourcesSnapshot.VmAppInsts = append(m.ResourcesSnapshot.VmAppInsts, *src.ResourcesSnapshot.VmAppInsts[k1].Clone())
 					}
@@ -16144,7 +16144,7 @@ func (m *CloudletInfo) CopyInFields(src *CloudletInfo) int {
 				} else if updateListAction == "remove" {
 					changed += m.RemoveResourcesSnapshotK8SAppInsts(src.ResourcesSnapshot.K8SAppInsts...)
 				} else {
-					m.ResourcesSnapshot.K8SAppInsts = make([]AppInstRefKey, 0)
+					m.ResourcesSnapshot.K8SAppInsts = make([]AppInstKey, 0)
 					for k1, _ := range src.ResourcesSnapshot.K8SAppInsts {
 						m.ResourcesSnapshot.K8SAppInsts = append(m.ResourcesSnapshot.K8SAppInsts, *src.ResourcesSnapshot.K8SAppInsts[k1].Clone())
 					}

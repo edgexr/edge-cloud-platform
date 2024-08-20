@@ -81,7 +81,7 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 		return nil
 	case cloudcommon.DeploymentTypeKubernetes:
 		// create local k3d cluster
-		name := clusterInst.Key.ClusterKey.Name
+		name := clusterInst.Key.Name
 		cmd := "k3d cluster create " + name + " --kubeconfig-switch-context=false --kubeconfig-update-default=false"
 		out, err := client.Output(cmd)
 		if err != nil {
@@ -114,7 +114,7 @@ func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto
 		return nil
 	case cloudcommon.DeploymentTypeKubernetes:
 		// create local k3d cluster
-		name := clusterInst.Key.ClusterKey.Name
+		name := clusterInst.Key.Name
 		cmd := "k3d cluster delete " + name
 		out, err := client.Output(cmd)
 		if err != nil {
@@ -208,7 +208,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 
 func (s *Platform) getAppInstProxy(clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst) *process.NginxProxy {
 	// create proxy for localhost access
-	clustName := clusterInst.Key.ClusterKey.Name
+	clustName := clusterInst.Key.Name
 	proxy := &process.NginxProxy{
 		DockerGeneric: process.DockerGeneric{
 			Common: process.Common{

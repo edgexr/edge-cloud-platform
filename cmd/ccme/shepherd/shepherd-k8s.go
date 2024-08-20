@@ -27,10 +27,11 @@ import (
 
 // K8s Cluster
 type K8sClusterStats struct {
-	key      edgeproto.ClusterInstKey
-	promAddr string // ip:port
-	promPort int32  // only needed if we don't know the IP to generate promAddr
-	client   ssh.Client
+	key         edgeproto.ClusterKey
+	cloudletKey edgeproto.CloudletKey
+	promAddr    string // ip:port
+	promPort    int32  // only needed if we don't know the IP to generate promAddr
+	client      ssh.Client
 	shepherd_common.ClusterMetrics
 	kubeNames *k8smgmt.KubeNames
 	AppInstLabels

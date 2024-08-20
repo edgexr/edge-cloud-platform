@@ -438,12 +438,11 @@ flavors:
 
 clusterinsts:
 - key:
-    clusterkey:
-      name: SmallCluster
-      organization: AcmeAppCo
-    cloudletkey:
-      organization: dmuus
-      name: dmuus-cloud-1
+    name: SmallCluster
+    organization: AcmeAppCo
+  cloudletkey:
+    organization: dmuus
+    name: dmuus-cloud-1
   flavor:
     name: x1.small
   liveness: Static
@@ -452,12 +451,11 @@ clusterinsts:
   numnodes: 2
 
 - key:
-    clusterkey:
-      name: SmallCluster
-      organization: AcmeAppCo
-    cloudletkey:
-      organization: dmuus
-      name: dmuus-cloud-2
+    name: SmallCluster
+    organization: AcmeAppCo
+  cloudletkey:
+    organization: dmuus
+    name: dmuus-cloud-2
   flavor:
     name: x1.small
   liveness: Static
@@ -496,14 +494,12 @@ clusterinsts:
    "cluster_insts": [
       {
          "key": {
-            "cluster_key": {
-               "name": "SmallCluster",
-               "organization": "AcmeAppCo"
-            },
-            "cloudlet_key": {
-               "organization": "dmuus",
-               "name": "dmuus-cloud-1"
-            }
+            "name": "SmallCluster",
+            "organization": "AcmeAppCo"
+         },
+         "cloudlet_key": {
+            "organization": "dmuus",
+            "name": "dmuus-cloud-1"
          },
          "flavor": {
             "name": "x1.small"
@@ -515,14 +511,12 @@ clusterinsts:
       },
       {
          "key": {
-            "cluster_key": {
-               "name": "SmallCluster",
-               "organization": "AcmeAppCo"
-            },
-            "cloudlet_key": {
-               "organization": "dmuus",
-               "name": "dmuus-cloud-2"
-            }
+            "name": "SmallCluster",
+            "organization": "AcmeAppCo"
+         },
+         "cloudlet_key": {
+            "organization": "dmuus",
+            "name": "dmuus-cloud-2"
          },
          "flavor": {
             "name": "x1.small"

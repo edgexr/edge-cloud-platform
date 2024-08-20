@@ -49,7 +49,7 @@ func wrapClusterInstTrackerStore(api *ClusterInstApi) (*ClusterInstStoreTracker,
 	return tracker, unwrap
 }
 
-func (s *ClusterInstStoreTracker) STMGet(stm concurrency.STM, key *edgeproto.ClusterInstKey, buf *edgeproto.ClusterInst) bool {
+func (s *ClusterInstStoreTracker) STMGet(stm concurrency.STM, key *edgeproto.ClusterKey, buf *edgeproto.ClusterInst) bool {
 	found := s.ClusterInstStore.STMGet(stm, key, buf)
 	if s.getSTM == nil {
 		s.getSTM = stm
@@ -70,7 +70,7 @@ func (s *ClusterInstStoreTracker) STMPut(stm concurrency.STM, obj *edgeproto.Clu
 // object that has multiple references).
 type ClusterInstDeleteDataGen interface {
 	GetClusterInstTestObj() (*edgeproto.ClusterInst, *testSupportData)
-	GetClusterInstAppInstAppsRef(key *edgeproto.ClusterInstKey) (*edgeproto.ClusterRefs, *testSupportData)
+	GetClusterInstAppInstAppsRef(key *edgeproto.ClusterKey) (*edgeproto.ClusterRefs, *testSupportData)
 }
 
 // ClusterInstDeleteStore wraps around the usual
@@ -117,7 +117,7 @@ func (s *ClusterInstDeleteStore) Delete(ctx context.Context, m *edgeproto.Cluste
 	return s.ClusterInstStore.Delete(ctx, m, wait)
 }
 
-func (s *ClusterInstDeleteStore) STMDel(stm concurrency.STM, key *edgeproto.ClusterInstKey) {
+func (s *ClusterInstDeleteStore) STMDel(stm concurrency.STM, key *edgeproto.ClusterKey) {
 	require.True(s.t, s.putDeletePrepare, "DeletePrepare must be comitted to database with a sync.Wait before deleting")
 	s.ClusterInstStore.STMDel(stm, key)
 }

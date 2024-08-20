@@ -33,7 +33,7 @@ const MaxKubeCredentialsWait = 10 * time.Second
 
 func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst", "clusterInst", clusterInst)
-	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(&clusterInst.Key))
+	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
 	updateCallback(edgeproto.UpdateTask, "Creating Kubernetes Cluster: "+clusterName)
 	client, err := m.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
@@ -98,7 +98,7 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 
 func (m *ManagedK8sPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteClusterInst", "clusterInst", clusterInst)
-	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(&clusterInst.Key))
+	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
 	err := m.deleteClusterInstInternal(ctx, clusterName, updateCallback)
 	if err != nil {
 		return err
@@ -134,6 +134,6 @@ func (m *ManagedK8sPlatform) GetCloudletInfraResources(ctx context.Context) (*ed
 	return &resources, nil
 }
 
-func (m *ManagedK8sPlatform) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
+func (m *ManagedK8sPlatform) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
 	return nil, fmt.Errorf("GetClusterInfraResources not implemented for managed k8s")
 }

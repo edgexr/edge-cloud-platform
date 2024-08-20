@@ -1329,6 +1329,8 @@ func EnumDecodeHook(from, to reflect.Type, data interface{}) (interface{}, error
 		return ParseAccessType(data)
 	case reflect.TypeOf(GpuType(0)):
 		return ParseGpuType(data)
+	case reflect.TypeOf(PowerState(0)):
+		return ParsePowerState(data)
 	case reflect.TypeOf(InfraApiAccess(0)):
 		return ParseInfraApiAccess(data)
 	case reflect.TypeOf(OSType(0)):
@@ -1339,8 +1341,6 @@ func EnumDecodeHook(from, to reflect.Type, data interface{}) (interface{}, error
 		return ParseVMState(data)
 	case reflect.TypeOf(VMAction(0)):
 		return ParseVMAction(data)
-	case reflect.TypeOf(PowerState(0)):
-		return ParsePowerState(data)
 	case reflect.TypeOf(TrustPolicyExceptionState(0)):
 		return ParseTrustPolicyExceptionState(data)
 	case reflect.TypeOf(NetworkConnectionType(0)):
@@ -1393,6 +1393,8 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 		return "AccessType", ", valid values are one of DefaultForDeployment, Direct, LoadBalancer, or 0, 1, 2", true
 	case reflect.TypeOf(GpuType(0)):
 		return "GpuType", ", valid values are one of None, Any, Vgpu, Pci, or 0, 1, 2, 3", true
+	case reflect.TypeOf(PowerState(0)):
+		return "PowerState", ", valid values are one of PowerStateUnknown, PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff, PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10", true
 	case reflect.TypeOf(InfraApiAccess(0)):
 		return "InfraApiAccess", ", valid values are one of DirectAccess, RestrictedAccess, or 0, 1", true
 	case reflect.TypeOf(OSType(0)):
@@ -1403,8 +1405,6 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 		return "VMState", ", valid values are one of Free, InProgress, InUse, Add, Remove, Update, ForceFree, or 0, 1, 2, 3, 4, 5, 6", true
 	case reflect.TypeOf(VMAction(0)):
 		return "VMAction", ", valid values are one of Done, Allocate, Release, or 0, 1, 2", true
-	case reflect.TypeOf(PowerState(0)):
-		return "PowerState", ", valid values are one of PowerStateUnknown, PowerOnRequested, PoweringOn, PowerOn, PowerOffRequested, PoweringOff, PowerOff, RebootRequested, Rebooting, Reboot, PowerStateError, or 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10", true
 	case reflect.TypeOf(TrustPolicyExceptionState(0)):
 		return "TrustPolicyExceptionState", ", valid values are one of Unknown, ApprovalRequested, Active, Rejected, or 0, 1, 2, 3", true
 	case reflect.TypeOf(NetworkConnectionType(0)):
@@ -1422,7 +1422,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, 611B28894B117C2Aaa22C12Adcd81F74, 37Dea30756Fed2B0C0Ecbc3E7B084855, 1304C4Ec69343Ced28Fd3Ebc85F4A3A9, 601Fa4F6A8109F39E46Adf1Ea3B89197, A61A29Cd41F6B7459B05B6F7Be6Be4Ce, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, or 0, 47, 48, 49, 50, 51, 52, 53, 54", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, Eac56710C013D954Db31Eeb306B514A4, or 0, 52, 53, 54, 55", true
 	}
 	return "", "", false
 }
@@ -1438,6 +1438,9 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowTrustPolicy":               struct{}{},
 	"ShowApp":                       struct{}{},
 	"ShowCloudletsForAppDeployment": struct{}{},
+	"ShowAppInst":                   struct{}{},
+	"ShowAppInstInfo":               struct{}{},
+	"ShowAppInstMetrics":            struct{}{},
 	"ShowPlatformFeatures":          struct{}{},
 	"ShowGPUDriver":                 struct{}{},
 	"ShowCloudlet":                  struct{}{},
@@ -1448,9 +1451,6 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowClusterInst":               struct{}{},
 	"ShowClusterInstInfo":           struct{}{},
 	"ShowAutoProvPolicy":            struct{}{},
-	"ShowAppInst":                   struct{}{},
-	"ShowAppInstInfo":               struct{}{},
-	"ShowAppInstMetrics":            struct{}{},
 	"ShowTrustPolicyException":      struct{}{},
 	"ShowNetwork":                   struct{}{},
 	"ShowCloudletRefs":              struct{}{},
@@ -1479,8 +1479,8 @@ var AllKeyTags = []string{
 	"app",
 	"appinst",
 	"appinstorg",
-	"appinstrefname",
-	"appinstreforg",
+	"appinstv2",
+	"appinstv2org",
 	"apporg",
 	"appver",
 	"cloudlet",
@@ -1523,8 +1523,8 @@ var AllKeyTagsMap = map[string]struct{}{
 	"app":                 struct{}{},
 	"appinst":             struct{}{},
 	"appinstorg":          struct{}{},
-	"appinstrefname":      struct{}{},
-	"appinstreforg":       struct{}{},
+	"appinstv2":           struct{}{},
+	"appinstv2org":        struct{}{},
 	"apporg":              struct{}{},
 	"appver":              struct{}{},
 	"cloudlet":            struct{}{},
@@ -1567,36 +1567,27 @@ func GetReferencesMap() map[string][]string {
 	refs["AppAlertPolicy"] = []string{"AlertPolicy", "App"}
 	refs["AppAutoProvPolicy"] = []string{"App", "AutoProvPolicy"}
 	refs["AppInst"] = []string{"App", "Cloudlet", "ClusterInst", "Flavor"}
-	refs["AppInstClient"] = []string{"Cloudlet"}
-	refs["AppInstKey"] = []string{"Cloudlet"}
 	refs["AppInstKeyV1"] = []string{"ClusterInst"}
-	refs["AppInstLatency"] = []string{"Cloudlet"}
-	refs["AppInstLookup"] = []string{"Cloudlet"}
-	refs["AppInstLookup2"] = []string{"Cloudlet"}
+	refs["AppInstKeyV2"] = []string{"Cloudlet"}
 	refs["AppInstRefs"] = []string{"AppInst"}
 	refs["AutoProvPolicy"] = []string{"Cloudlet"}
 	refs["AutoProvPolicyCloudlet"] = []string{"AutoProvPolicy", "Cloudlet"}
 	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
-	refs["CloudletExecReq"] = []string{"Cloudlet"}
 	refs["CloudletPool"] = []string{"Cloudlet"}
 	refs["CloudletPoolMember"] = []string{"Cloudlet", "CloudletPool"}
 	refs["CloudletRefs"] = []string{"AppInst", "ClusterInst"}
 	refs["CloudletResMap"] = []string{"Cloudlet", "ResTagTable"}
 	refs["ClusterInst"] = []string{"AutoScalePolicy", "Cloudlet", "Flavor", "Network"}
-	refs["ClusterInstKey"] = []string{"Cloudlet"}
 	refs["ClusterInstKeyV1"] = []string{"Cloudlet"}
+	refs["ClusterInstKeyV2"] = []string{"Cloudlet"}
 	refs["ClusterRefs"] = []string{"AppInst"}
-	refs["ClusterResourceMetricReq"] = []string{"Cloudlet"}
-	refs["ClusterResourcesReq"] = []string{"Cloudlet"}
 	refs["DeploymentCloudletRequest"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
-	refs["ExecRequest"] = []string{"Cloudlet"}
 	refs["GPUConfig"] = []string{"GPUDriver"}
 	refs["Network"] = []string{"Cloudlet"}
 	refs["NetworkKey"] = []string{"Cloudlet"}
-	refs["TPEInstanceKey"] = []string{"App", "Cloudlet", "CloudletPool"}
+	refs["TPEInstanceKey"] = []string{"App", "CloudletPool"}
 	refs["TrustPolicyException"] = []string{"App", "CloudletPool"}
 	refs["TrustPolicyExceptionKey"] = []string{"App", "CloudletPool"}
-	refs["VMResource"] = []string{"Cloudlet"}
 	return refs
 }
 func (m *Alert) Size() (n int) {

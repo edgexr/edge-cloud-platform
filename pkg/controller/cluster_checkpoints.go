@@ -28,7 +28,7 @@ import (
 type ClusterCheckpoint struct {
 	Timestamp time.Time
 	Org       string
-	Keys      []*edgeproto.ClusterInstKey
+	Keys      []*edgeproto.ClusterKey
 	Status    []string // either cloudcommon.InstanceUp or cloudcommon.InstanceDown
 }
 
@@ -39,8 +39,8 @@ func CreateClusterUsageRecord(ctx context.Context, cluster *edgeproto.ClusterIns
 	// query from the checkpoint up to the event
 	selectors := []string{"event", "status"}
 	reservedByOption := ""
-	org := cluster.Key.ClusterKey.Organization
-	if edgeproto.IsEdgeCloudOrg(cluster.Key.ClusterKey.Organization) && cluster.ReservedBy != "" {
+	org := cluster.Key.Organization
+	if edgeproto.IsEdgeCloudOrg(cluster.Key.Organization) && cluster.ReservedBy != "" {
 		reservedByOption = fmt.Sprintf(`AND "reservedBy"='%s' `, cluster.ReservedBy)
 		org = cluster.ReservedBy
 	}
@@ -52,11 +52,11 @@ func CreateClusterUsageRecord(ctx context.Context, cluster *edgeproto.ClusterIns
 	influxLogQuery := fmt.Sprintf(ClusterUsageInfluxQueryTemplate,
 		cloudcommon.GetInfluxSelectFields(selectors),
 		cloudcommon.ClusterInstEvent,
-		cluster.Key.ClusterKey.Name,
-		cluster.Key.ClusterKey.Organization,
-		cluster.Key.CloudletKey.Name,
-		cluster.Key.CloudletKey.Organization,
-		cluster.Key.CloudletKey.FederatedOrganization,
+		cluster.Key.Name,
+		cluster.Key.Organization,
+		cluster.CloudletKey.Name,
+		cluster.CloudletKey.Organization,
+		cluster.CloudletKey.FederatedOrganization,
 		reservedByOption,
 		checkpoint.Timestamp.Format(time.RFC3339),
 		endTime.Format(time.RFC3339))
@@ -97,31 +97,21 @@ func createClusterUsageMetric(cluster *edgeproto.ClusterInst, startTime, endTime
 	metric.AddStringVal("start", startUTC.Format(time.RFC3339))
 	metric.AddStringVal("end", endUTC.Format(time.RFC3339))
 	metric.AddDoubleVal("uptime", runTime.Seconds())
-	if cluster.ReservedBy != "" && edgeproto.IsEdgeCloudOrg(cluster.Key.ClusterKey.Organization) {
+	if cluster.ReservedBy != "" && edgeproto.IsEdgeCloudOrg(cluster.Key.Organization) {
 		metric.AddTag("org", cluster.ReservedBy)
 	} else {
-		metric.AddTag("org", cluster.Key.ClusterKey.Organization)
+		metric.AddTag("org", cluster.Key.Organization)
 	}
 	metric.AddStringVal("status", status)
 	return &metric
 }
 
-func clusterInstKeyFromMetricValues(values []interface{}) edgeproto.ClusterInstKey {
+func clusterKeyFromMetricValues(values []interface{}) edgeproto.ClusterKey {
 	cluster := fmt.Sprintf("%v", values[1])
 	clusterorg := fmt.Sprintf("%v", values[2])
-	cloudlet := fmt.Sprintf("%v", values[3])
-	cloudletorg := fmt.Sprintf("%v", values[4])
-	cloudletfedorg := fmt.Sprintf("%v", values[5])
-	key := edgeproto.ClusterInstKey{
-		ClusterKey: edgeproto.ClusterKey{
-			Name:         cluster,
-			Organization: clusterorg,
-		},
-		CloudletKey: edgeproto.CloudletKey{
-			Name:                  cloudlet,
-			Organization:          cloudletorg,
-			FederatedOrganization: cloudletfedorg,
-		},
+	key := edgeproto.ClusterKey{
+		Name:         cluster,
+		Organization: clusterorg,
 	}
 	return key
 }
@@ -153,14 +143,14 @@ func (s *ClusterInstApi) CreateClusterCheckpoint(ctx context.Context, timestamp 
 		skipLogCheck = true
 	}
 
-	seenClusters := make(map[edgeproto.ClusterInstKey]bool)
+	seenClusters := make(map[edgeproto.ClusterKey]bool)
 	if !skipLogCheck {
 		for _, values := range logs[0].Series[0].Values {
 			// value should be of the format [timestamp cluster clusterorg cloudlet cloudletorg event]
 			if len(values) != len(selectors)+1 {
 				return fmt.Errorf("Error parsing influx response")
 			}
-			key := clusterInstKeyFromMetricValues(values)
+			key := clusterKeyFromMetricValues(values)
 			event := cloudcommon.InstanceEvent(fmt.Sprintf("%v", values[6]))
 			// only care about each clusterinsts most recent log
 			if _, exists := seenClusters[key]; exists {
@@ -208,7 +198,7 @@ func (s *ClusterInstApi) CreateClusterCheckpoint(ctx context.Context, timestamp 
 		if len(values) != len(selectors)+1 {
 			return fmt.Errorf("Error parsing influx response")
 		}
-		key := clusterInstKeyFromMetricValues(values)
+		key := clusterKeyFromMetricValues(values)
 		// only care about each clusterinsts most recent log
 		if _, exists := seenClusters[key]; exists {
 			continue
@@ -249,7 +239,7 @@ func GetClusterCheckpoint(ctx context.Context, org string, timestamp time.Time) 
 	result := ClusterCheckpoint{
 		Timestamp: PrevCheckpoint,
 		Org:       org,
-		Keys:      make([]*edgeproto.ClusterInstKey, 0),
+		Keys:      make([]*edgeproto.ClusterKey, 0),
 		Status:    make([]string, 0),
 	}
 
@@ -265,7 +255,7 @@ func GetClusterCheckpoint(ctx context.Context, org string, timestamp time.Time) 
 		if len(values) != len(selectors)+1 {
 			return nil, fmt.Errorf("Error parsing influx response")
 		}
-		key := clusterInstKeyFromMetricValues(values)
+		key := clusterKeyFromMetricValues(values)
 		status := fmt.Sprintf("%v", values[6])
 		result.Keys = append(result.Keys, &key)
 		result.Status = append(result.Status, status)

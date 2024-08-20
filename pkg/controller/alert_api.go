@@ -62,24 +62,9 @@ func (s *AlertApi) appInstSetStateFromHealthCheckAlert(ctx context.Context, aler
 		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find AppInst Org label in Alert", "alert", alert)
 		return
 	}
-	clorg, ok := alert.Labels[edgeproto.CloudletKeyTagOrganization]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find Cloudlet Org label in Alert", "alert", alert)
-		return
-	}
-	cloudlet, ok := alert.Labels[edgeproto.CloudletKeyTagName]
-	if !ok {
-		log.SpanLog(ctx, log.DebugLevelNotify, "Could not find Cloudlet label in Alert", "alert", alert)
-		return
-	}
 	appInstKey := edgeproto.AppInstKey{
 		Name:         appInstName,
 		Organization: appInstOrg,
-		CloudletKey: edgeproto.CloudletKey{
-			Organization:          clorg,
-			Name:                  cloudlet,
-			FederatedOrganization: alert.Labels[edgeproto.CloudletKeyTagFederatedOrganization],
-		},
 	}
 	s.all.appInstApi.HealthCheckUpdate(ctx, &appInstKey, state)
 }
@@ -261,25 +246,25 @@ func (s *AlertApi) CleanupAppInstAlerts(ctx context.Context, key *edgeproto.AppI
 	}
 }
 
-func (s *AlertApi) CleanupClusterInstAlerts(ctx context.Context, key *edgeproto.ClusterInstKey) {
+func (s *AlertApi) CleanupClusterInstAlerts(ctx context.Context, key *edgeproto.ClusterKey, cloudletKey *edgeproto.CloudletKey) {
 	matches := []*edgeproto.Alert{}
 	s.cache.Mux.Lock()
 	for _, data := range s.cache.Objs {
 		val := data.Obj
 		if cloudletName, found := val.Labels[edgeproto.CloudletKeyTagName]; !found ||
-			cloudletName != key.CloudletKey.Name {
+			cloudletName != cloudletKey.Name {
 			continue
 		}
 		if cloudletOrg, found := val.Labels[edgeproto.CloudletKeyTagOrganization]; !found ||
-			cloudletOrg != key.CloudletKey.Organization {
+			cloudletOrg != cloudletKey.Organization {
 			continue
 		}
 		if clusterName, found := val.Labels[edgeproto.ClusterKeyTagName]; !found ||
-			clusterName != key.ClusterKey.Name {
+			clusterName != key.Name {
 			continue
 		}
 		if clusterOrg, found := val.Labels[edgeproto.ClusterKeyTagOrganization]; !found ||
-			clusterOrg != key.ClusterKey.Organization {
+			clusterOrg != key.Organization {
 			continue
 		}
 		matches = append(matches, val)

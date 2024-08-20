@@ -65,13 +65,13 @@ func handleTransientClusterInsts(ctx context.Context, caches *pf.Caches, cleanup
 
 	// Retrieve the set of cluster instances in the current thread which is blocking the completion of transitoning to active. We want
 	// to block the transition until we have the list
-	clusterInstKeys := []edgeproto.ClusterInstKey{}
-	clusterInstsToCleanup := make(map[edgeproto.ClusterInstKey]edgeproto.TrackedState)
+	clusterKeys := []edgeproto.ClusterKey{}
+	clusterInstsToCleanup := make(map[edgeproto.ClusterKey]edgeproto.TrackedState)
 
-	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
-		clusterInstKeys = append(clusterInstKeys, *k)
+	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterKey, modRev int64) {
+		clusterKeys = append(clusterKeys, *k)
 	})
-	for _, k := range clusterInstKeys {
+	for _, k := range clusterKeys {
 		var clusterInst edgeproto.ClusterInst
 		if caches.ClusterInstCache.Get(&k, &clusterInst) {
 			errorState, generateError, needsCleanup := mapStateForSwitchover(ctx, clusterInst.State)
@@ -152,9 +152,9 @@ func handleTransientAppInsts(ctx context.Context, caches *pf.Caches, cleanupFunc
 			if caches.AppInstCache.Get(&k, &appInst) {
 				clusterInst := edgeproto.ClusterInst{}
 				if cloudcommon.IsClusterInstReqd(&app) {
-					clusterInstFound := caches.ClusterInstCache.Get((*edgeproto.ClusterInstKey)(appInst.ClusterInstKey()), &clusterInst)
+					clusterInstFound := caches.ClusterInstCache.Get((*edgeproto.ClusterKey)(appInst.GetClusterKey()), &clusterInst)
 					if !clusterInstFound {
-						log.SpanLog(ctx, log.DebugLevelInfra, "failed to find clusterinst in cache", "clusterkey", appInst.ClusterInstKey())
+						log.SpanLog(ctx, log.DebugLevelInfra, "failed to find clusterinst in cache", "clusterkey", appInst.GetClusterKey())
 						log.SpanLog(ctx, log.DebugLevelInfra, "CRM switched over while App Instance in transient state, unable to cleanup", "key", k, "state", data.state)
 					}
 				}

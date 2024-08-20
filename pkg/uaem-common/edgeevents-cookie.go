@@ -58,8 +58,8 @@ func CreateEdgeEventsCookieKey(appInst *DmeAppInst, loc dme.Loc) *EdgeEventsCook
 		AppInstName:  appInst.key.Name,
 		ClusterOrg:   appInst.clusterKey.Organization,
 		ClusterName:  appInst.clusterKey.Name,
-		CloudletOrg:  appInst.key.CloudletKey.Organization,
-		CloudletName: appInst.key.CloudletKey.Name,
+		CloudletOrg:  appInst.cloudletKey.Organization,
+		CloudletName: appInst.cloudletKey.Name,
 		Location:     loc,
 	}
 	return key

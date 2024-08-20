@@ -48,12 +48,12 @@ func (s *Xind) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.Tru
 	return nil
 }
 
-func (s *Xind) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, clusterInstKey *edgeproto.ClusterInstKey) error {
+func (s *Xind) UpdateTrustPolicyException(ctx context.Context, TrustPolicyException *edgeproto.TrustPolicyException, clusterKey *edgeproto.ClusterKey) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "update xind TrustPolicyException", "policy", TrustPolicyException)
 	return nil
 }
 
-func (s *Xind) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey, clusterInstKey *edgeproto.ClusterInstKey) error {
+func (s *Xind) DeleteTrustPolicyException(ctx context.Context, TrustPolicyExceptionKey *edgeproto.TrustPolicyExceptionKey, clusterKey *edgeproto.ClusterKey) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "delete xind TrustPolicyException", "policyKey", TrustPolicyExceptionKey)
 	return nil
 }
@@ -115,7 +115,7 @@ func (s *Xind) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraR
 	return &resources, nil
 }
 
-func (s *Xind) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
+func (s *Xind) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
 	resources := edgeproto.InfraResources{}
 	return &resources, nil
 }

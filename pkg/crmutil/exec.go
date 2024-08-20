@@ -127,10 +127,10 @@ func (cd *CRMHandler) ProcessExecReq(ctx context.Context, pf platform.Platform, 
 	} else {
 		execReqType = cloudcommon.ExecReqShell
 		clusterInst := edgeproto.ClusterInst{}
-		found := cd.ClusterInstCache.Get(appInst.ClusterInstKey(), &clusterInst)
+		found := cd.ClusterInstCache.Get(appInst.GetClusterKey(), &clusterInst)
 		if !found {
 			return fmt.Errorf("cluster inst %s not found",
-				appInst.ClusterInstKey().GetKeyString())
+				appInst.GetClusterKey().GetKeyString())
 		}
 
 		run.contcmd, err = pf.GetContainerCommand(ctx, &clusterInst, &app, &appInst, req)

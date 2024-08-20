@@ -18,25 +18,17 @@ var _ = math.Inf
 
 var VersionHash_UpgradeFuncs = map[int32]VersionUpgradeFunc{
 	0:  nil,
-	47: nil,
-	48: AppInstKeyName,
-	49: nil,
-	50: PlatformType,
-	51: CloudletAccessVars,
 	52: nil,
 	53: UpgradeCrmOnEdge,
 	54: AddStaticFqdn,
+	55: InstanceKeysRegionScopedName,
 }
 var VersionHash_UpgradeFuncNames = map[int32]string{
 	0:  "",
-	47: "",
-	48: "AppInstKeyName",
-	49: "",
-	50: "PlatformType",
-	51: "CloudletAccessVars",
 	52: "",
 	53: "UpgradeCrmOnEdge",
 	54: "AddStaticFqdn",
+	55: "InstanceKeysRegionScopedName",
 }
 
 // Auto-generated code: DO NOT EDIT

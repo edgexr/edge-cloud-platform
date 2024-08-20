@@ -82,10 +82,10 @@ func (s *DeleteDataGen) GetAppAppInstInstsRef(key *edgeproto.AppKey) (*edgeproto
 		Key: edgeproto.AppInstKey{
 			Name:         "appAppInstRef",
 			Organization: key.Organization,
-			CloudletKey:  cloudlet.Key,
 		},
-		AppKey:   *key,
-		Liveness: edgeproto.Liveness_LIVENESS_STATIC,
+		AppKey:      *key,
+		Liveness:    edgeproto.Liveness_LIVENESS_STATIC,
+		CloudletKey: cloudlet.Key,
 	}
 	supportData := &testSupportData{}
 	supportData.AppInstances = []edgeproto.AppInst{inst}
@@ -121,7 +121,7 @@ func (s *DeleteDataGen) GetAutoScalePolicyTestObj() (*edgeproto.AutoScalePolicy,
 }
 func (s *DeleteDataGen) GetClusterInstAutoScalePolicyRef(key *edgeproto.PolicyKey) (*edgeproto.ClusterInst, *testSupportData) {
 	ref := testutil.ClusterInstData()[0]
-	ref.Key.ClusterKey.Organization = key.Organization
+	ref.Key.Organization = key.Organization
 	ref.AutoScalePolicy = key.Name
 	return &ref, noSupportData
 }
@@ -160,7 +160,7 @@ func (s *DeleteDataGen) GetCloudletClusterInstClusterInstsRef(key *edgeproto.Clo
 	clusterInst := testutil.ClusterInstData()[0]
 	supportData := &testSupportData{}
 	supportData.ClusterInsts = []edgeproto.ClusterInst{clusterInst}
-	clusterInstRefKey := clusterInst.Key.ClusterKey
+	clusterInstRefKey := clusterInst.Key
 	ref.ClusterInsts = []edgeproto.ClusterKey{clusterInstRefKey}
 	return &ref, supportData
 }
@@ -173,8 +173,8 @@ func (s *DeleteDataGen) GetCloudletAppInstVmAppInstsRef(key *edgeproto.CloudletK
 	supportData := &testSupportData{}
 	supportData.AppInstances = []edgeproto.AppInst{appInst}
 	supportData.Apps = []edgeproto.App{app}
-	appInstRefKey := appInst.Key.GetRefKey()
-	ref.VmAppInsts = append(ref.VmAppInsts, *appInstRefKey)
+	appInstRefKey := appInst.Key
+	ref.VmAppInsts = append(ref.VmAppInsts, appInstRefKey)
 	return &ref, supportData
 }
 
@@ -194,9 +194,9 @@ func (s *DeleteDataGen) GetClusterInstTestObj() (*edgeproto.ClusterInst, *testSu
 	obj := testutil.ClusterInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 	cloudlet := edgeproto.Cloudlet{}
-	cloudlet.Key = obj.Key.CloudletKey
+	cloudlet.Key = obj.CloudletKey
 	cloudletInfo := edgeproto.CloudletInfo{}
-	cloudletInfo.Key = obj.Key.CloudletKey
+	cloudletInfo.Key = obj.CloudletKey
 	cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_READY
 	supportData := &testSupportData{}
 	supportData.Cloudlets = []edgeproto.Cloudlet{cloudlet}
@@ -204,14 +204,13 @@ func (s *DeleteDataGen) GetClusterInstTestObj() (*edgeproto.ClusterInst, *testSu
 	supportData.Flavors = []edgeproto.Flavor{testutil.FlavorData()[0]}
 	return &obj, supportData
 }
-func (s *DeleteDataGen) GetClusterInstAppInstAppsRef(key *edgeproto.ClusterInstKey) (*edgeproto.ClusterRefs, *testSupportData) {
+func (s *DeleteDataGen) GetClusterInstAppInstAppsRef(key *edgeproto.ClusterKey) (*edgeproto.ClusterRefs, *testSupportData) {
 	app := testutil.AppData()[0]
 	appInst := edgeproto.AppInst{}
 	appInst.Key.Name = "clusterInstAppInstRef"
 	appInst.Key.Organization = app.Key.Organization
-	appInst.Key.CloudletKey = key.CloudletKey
 	appInst.AppKey = app.Key
-	appInst.ClusterKey = key.ClusterKey
+	appInst.ClusterKey = *key
 	appInst.Liveness = edgeproto.Liveness_LIVENESS_STATIC
 	supportData := &testSupportData{}
 	supportData.AppInstances = []edgeproto.AppInst{appInst}
@@ -219,8 +218,8 @@ func (s *DeleteDataGen) GetClusterInstAppInstAppsRef(key *edgeproto.ClusterInstK
 
 	ref := edgeproto.ClusterRefs{}
 	ref.Key = *key
-	instRefKey := appInst.Key.GetRefKey()
-	ref.Apps = []edgeproto.AppInstRefKey{*instRefKey}
+	instRefKey := appInst.Key
+	ref.Apps = []edgeproto.AppInstKey{instRefKey}
 	return &ref, supportData
 }
 
@@ -271,7 +270,7 @@ func (s *DeleteDataGen) GetNetworkTestObj() (*edgeproto.Network, *testSupportDat
 }
 func (s *DeleteDataGen) GetClusterInstNetworksRef(key *edgeproto.NetworkKey) (*edgeproto.ClusterInst, *testSupportData) {
 	ref := testutil.ClusterInstData()[0]
-	ref.Key.CloudletKey = key.CloudletKey
+	ref.CloudletKey = key.CloudletKey
 	ref.Networks = []string{key.Name}
 	return &ref, noSupportData
 }

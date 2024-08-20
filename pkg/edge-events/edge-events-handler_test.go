@@ -47,32 +47,26 @@ var cloudlets = [3]edgeproto.CloudletKey{cloudlet0, cloudlet1, cloudlet2}
 var appinst0 = edgeproto.AppInstKey{
 	Name:         "app0",
 	Organization: "org0",
-	CloudletKey:  cloudlet0,
 }
 var appinst1 = edgeproto.AppInstKey{
 	Name:         "app1",
 	Organization: "org1",
-	CloudletKey:  cloudlet0,
 }
 var appinst2 = edgeproto.AppInstKey{
 	Name:         "app2",
 	Organization: "org2",
-	CloudletKey:  cloudlet1,
 }
 var appinst3 = edgeproto.AppInstKey{
 	Name:         "app3",
 	Organization: "org3",
-	CloudletKey:  cloudlet1,
 }
 var appinst4 = edgeproto.AppInstKey{
 	Name:         "app4",
 	Organization: "org4",
-	CloudletKey:  cloudlet2,
 }
 var appinst5 = edgeproto.AppInstKey{
 	Name:         "app5",
 	Organization: "org5",
-	CloudletKey:  cloudlet2,
 }
 var appinsts = [6]edgeproto.AppInstKey{appinst0, appinst1, appinst2, appinst3, appinst4, appinst5}
 
@@ -113,7 +107,7 @@ func testAddRemoveKeysSerial(t *testing.T, ctx context.Context) {
 	app := &uaemcommon.DmeApp{}
 	// Intialize EdgeEventsHandlerPlugin
 	e := new(EdgeEventsHandlerPlugin)
-	e.Cloudlets = make(map[edgeproto.CloudletKey]*CloudletInfo)
+	e.AppInsts = make(map[edgeproto.AppInstKey]*AppInstInfo)
 	e.EdgeEventsCookieExpiration = 10 * time.Minute
 	// Add appinsts
 	e.SendAvailableAppInst(ctx, app, appinst0, nil, "")
@@ -145,12 +139,9 @@ func testAddRemoveKeysSerial(t *testing.T, ctx context.Context) {
 	e.AddClient(ctx, appinst5, client1, emptyLoc, "", nil)
 
 	// Check that all Cloudlets, AppInsts, and Clients were added to maps
-	require.Equal(t, 3, len(e.Cloudlets))
-	for _, cloudletinfo := range e.Cloudlets {
-		require.Equal(t, 2, len(cloudletinfo.AppInsts))
-		for _, appinstinfo := range cloudletinfo.AppInsts {
-			require.Equal(t, 3, len(appinstinfo.Clients))
-		}
+	require.Equal(t, 6, len(e.AppInsts))
+	for _, appinstinfo := range e.AppInsts {
+		require.Equal(t, 3, len(appinstinfo.Clients))
 	}
 
 	// Remove clients
@@ -184,14 +175,14 @@ func testAddRemoveKeysSerial(t *testing.T, ctx context.Context) {
 	e.RemoveAppInst(ctx, appinst5)
 
 	// All Cloudlets, AppInsts, and Clients should have been removed
-	require.Equal(t, 0, len(e.Cloudlets))
+	require.Equal(t, 0, len(e.AppInsts))
 }
 
 func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 	app := &uaemcommon.DmeApp{}
 	// Intialize EdgeEventsHandlerPlugin
 	e := new(EdgeEventsHandlerPlugin)
-	e.Cloudlets = make(map[edgeproto.CloudletKey]*CloudletInfo)
+	e.AppInsts = make(map[edgeproto.AppInstKey]*AppInstInfo)
 	e.EdgeEventsCookieExpiration = 10 * time.Minute
 	// Add appinsts
 	e.SendAvailableAppInst(ctx, app, appinst0, nil, "")
@@ -259,5 +250,5 @@ func testAddRemoveKeysConcurrent(t *testing.T, ctx context.Context) {
 	e.RemoveAppInst(ctx, appinst5)
 
 	// All Cloudlets, AppInsts, and Clients should have been removed
-	require.Equal(t, 0, len(e.Cloudlets))
+	require.Equal(t, 0, len(e.AppInsts))
 }

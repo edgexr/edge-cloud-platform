@@ -248,8 +248,8 @@ func (a *AwsEksPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]e
 
 func getAwsEksResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, resources []edgeproto.VMResource) *AwsEksResources {
 	var eksRes AwsEksResources
-	// ClusterInstKey -> Node count
-	uniqueClusters := make(map[edgeproto.ClusterInstKey]int)
+	// ClusterKey -> Node count
+	uniqueClusters := make(map[edgeproto.ClusterKey]int)
 	networkLBs := 0
 	k8sNodeCount := 0
 	for _, vmRes := range resources {

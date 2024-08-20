@@ -191,12 +191,12 @@ func testC(t *testing.T) {
 	crmClusterInstCount := 0
 	crmAppInstCount := 0
 	for _, ci := range append(testutil.ClusterInstData(), testutil.ClusterInstAutoData()...) {
-		if _, found := crmsOnEdge[ci.Key.CloudletKey]; found {
+		if _, found := crmsOnEdge[ci.CloudletKey]; found {
 			crmClusterInstCount++
 		}
 	}
 	for _, ai := range testutil.AppInstData() {
-		if _, found := crmsOnEdge[ai.Key.CloudletKey]; found {
+		if _, found := crmsOnEdge[ai.CloudletKey]; found {
 			crmAppInstCount++
 		}
 	}
@@ -457,11 +457,11 @@ func testClusterInstDeleteChecks(t *testing.T, ctx context.Context, apis1, apis2
 		Key: edgeproto.AppInstKey{
 			Name:         "autodel",
 			Organization: appKey.Organization,
-			CloudletKey:  ci.Key.CloudletKey,
 		},
-		AppKey:     appKey,
-		ClusterKey: ci.Key.ClusterKey,
-		Liveness:   edgeproto.Liveness_LIVENESS_DYNAMIC,
+		AppKey:      appKey,
+		ClusterKey:  ci.Key,
+		CloudletKey: ci.CloudletKey,
+		Liveness:    edgeproto.Liveness_LIVENESS_DYNAMIC,
 	}
 
 	validTries := 0

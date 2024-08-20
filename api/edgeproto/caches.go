@@ -104,19 +104,19 @@ func (s *AppInstCache) GetForCloudlet(cloudlet *Cloudlet, cb func(appInstData *A
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, v := range s.Objs {
-		if v.Obj.Key.CloudletKey == cloudlet.Key {
+		if v.Obj.CloudletKey == cloudlet.Key {
 			cb(v.Clone())
 		}
 	}
 }
 
-func (s *AppInstCache) GetForRealClusterInstKey(key *ClusterInstKey, cb func(appInst *AppInst)) {
+func (s *AppInstCache) GetForRealClusterKey(key *ClusterKey, cb func(appInst *AppInst)) {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, v := range s.Objs {
 		obj := v.Obj
-		clusterInstKey := obj.ClusterInstKey()
-		if !key.Matches(clusterInstKey) {
+		clusterKey := obj.GetClusterKey()
+		if !key.Matches(clusterKey) {
 			continue
 		}
 		cb(obj)
@@ -129,13 +129,13 @@ func (s *ClusterInstCache) GetForCloudlet(cloudlet *Cloudlet, cb func(clusterIns
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, v := range s.Objs {
-		if v.Obj.Key.CloudletKey == cloudlet.Key {
+		if v.Obj.CloudletKey == cloudlet.Key {
 			cb(v.Clone())
 		}
 	}
 }
 
-func (s *ClusterInstInfoCache) SetState(ctx context.Context, key *ClusterInstKey, state TrackedState) error {
+func (s *ClusterInstInfoCache) SetState(ctx context.Context, key *ClusterKey, state TrackedState) error {
 	var err error
 	s.UpdateModFunc(ctx, key, 0, func(old *ClusterInstInfo) (newObj *ClusterInstInfo, changed bool) {
 		info := &ClusterInstInfo{}
@@ -157,7 +157,7 @@ func (s *ClusterInstInfoCache) SetState(ctx context.Context, key *ClusterInstKey
 	return err
 }
 
-func (s *ClusterInstInfoCache) SetResources(ctx context.Context, key *ClusterInstKey, resources *InfraResources) error {
+func (s *ClusterInstInfoCache) SetResources(ctx context.Context, key *ClusterKey, resources *InfraResources) error {
 	info := ClusterInstInfo{}
 	if !s.Get(key, &info) {
 		log.SpanLog(ctx, log.DebugLevelApi, "SetResources failed, did not find clusterInst in cache")
@@ -168,7 +168,7 @@ func (s *ClusterInstInfoCache) SetResources(ctx context.Context, key *ClusterIns
 	return nil
 }
 
-func (s *ClusterInstInfoCache) SetStatusTask(ctx context.Context, key *ClusterInstKey, taskName string, resetStatus bool) {
+func (s *ClusterInstInfoCache) SetStatusTask(ctx context.Context, key *ClusterKey, taskName string, resetStatus bool) {
 	log.SpanLog(ctx, log.DebugLevelApi, "SetStatusTask", "key", key, "taskName", taskName)
 	info := ClusterInstInfo{}
 	if !s.Get(key, &info) {
@@ -183,7 +183,7 @@ func (s *ClusterInstInfoCache) SetStatusTask(ctx context.Context, key *ClusterIn
 	s.Update(ctx, &info, 0)
 }
 
-func (s *ClusterInstInfoCache) SetStatusMaxTasks(ctx context.Context, key *ClusterInstKey, maxTasks uint32) {
+func (s *ClusterInstInfoCache) SetStatusMaxTasks(ctx context.Context, key *ClusterKey, maxTasks uint32) {
 	log.SpanLog(ctx, log.DebugLevelApi, "SetStatusMaxTasks", "key", key, "maxTasks", maxTasks)
 	info := ClusterInstInfo{}
 	if !s.Get(key, &info) {
@@ -195,7 +195,7 @@ func (s *ClusterInstInfoCache) SetStatusMaxTasks(ctx context.Context, key *Clust
 	s.Update(ctx, &info, 0)
 }
 
-func (s *ClusterInstInfoCache) SetStatusStep(ctx context.Context, key *ClusterInstKey, stepName string, resetStatus bool) {
+func (s *ClusterInstInfoCache) SetStatusStep(ctx context.Context, key *ClusterKey, stepName string, resetStatus bool) {
 	log.SpanLog(ctx, log.DebugLevelApi, "SetStatusStep", "key", key, "stepName", stepName)
 	info := ClusterInstInfo{}
 	if !s.Get(key, &info) {
@@ -210,7 +210,7 @@ func (s *ClusterInstInfoCache) SetStatusStep(ctx context.Context, key *ClusterIn
 	s.Update(ctx, &info, 0)
 }
 
-func (s *ClusterInstInfoCache) SetError(ctx context.Context, key *ClusterInstKey, errState TrackedState, err string) {
+func (s *ClusterInstInfoCache) SetError(ctx context.Context, key *ClusterKey, errState TrackedState, err string) {
 	info := ClusterInstInfo{}
 	if !s.Get(key, &info) {
 		info.Key = *key
@@ -636,7 +636,7 @@ func (s *TPEInstanceStateCache) GetForCloudlet(cloudlet *Cloudlet, cb func(data 
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, v := range s.Objs {
-		if v.Obj.Key.AppInstKey.CloudletKey.Matches(&cloudlet.Key) {
+		if v.Obj.Key.CloudletKey.Matches(&cloudlet.Key) {
 			cb(v.Clone())
 		}
 	}
@@ -672,7 +672,7 @@ func GetNetworksForClusterInst(ctx context.Context, clusterInst *ClusterInst, ne
 		net := Network{}
 		nk := NetworkKey{
 			Name:        netName,
-			CloudletKey: clusterInst.Key.CloudletKey,
+			CloudletKey: clusterInst.CloudletKey,
 		}
 		if !networkCache.Get(&nk, &net) {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Cannot find network from cache", "nk", nk)

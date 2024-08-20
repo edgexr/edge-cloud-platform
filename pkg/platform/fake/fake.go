@@ -40,7 +40,7 @@ import (
 type Platform struct {
 	consoleServer  *httptest.Server
 	caches         *platform.Caches
-	clusterTPEs    map[cloudcommon.TrustPolicyExceptionKeyClusterInstKey]struct{}
+	clusterTPEs    map[cloudcommon.TrustPolicyExceptionKeyClusterKey]struct{}
 	mux            sync.Mutex
 	cloudletKey    *edgeproto.CloudletKey
 	crmServiceOps  []process.CrmServiceOp
@@ -197,7 +197,7 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 	if err != nil {
 		return err
 	}
-	s.clusterTPEs = make(map[cloudcommon.TrustPolicyExceptionKeyClusterInstKey]struct{})
+	s.clusterTPEs = make(map[cloudcommon.TrustPolicyExceptionKeyClusterKey]struct{})
 
 	return nil
 }
@@ -319,8 +319,8 @@ func (s *Platform) GetClusterAdditionalResourceMetric(ctx context.Context, cloud
 	return nil
 }
 
-func (s *Platform) GetClusterInfraResources(ctx context.Context, clusterKey *edgeproto.ClusterInstKey) (*edgeproto.InfraResources, error) {
-	return s.resources.GetClusterResources(clusterKey), nil
+func (s *Platform) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
+	return s.resources.GetClusterResources(&cluster.Key), nil
 }
 
 func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
@@ -442,24 +442,24 @@ func (s *Platform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto
 	return nil
 }
 
-func (s *Platform) UpdateTrustPolicyException(ctx context.Context, tpe *edgeproto.TrustPolicyException, clusterInstKey *edgeproto.ClusterInstKey) error {
+func (s *Platform) UpdateTrustPolicyException(ctx context.Context, tpe *edgeproto.TrustPolicyException, clusterKey *edgeproto.ClusterKey) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	key := cloudcommon.TrustPolicyExceptionKeyClusterInstKey{
-		TpeKey:         tpe.Key,
-		ClusterInstKey: *clusterInstKey,
+	key := cloudcommon.TrustPolicyExceptionKeyClusterKey{
+		TpeKey:     tpe.Key,
+		ClusterKey: *clusterKey,
 	}
 	s.clusterTPEs[key] = struct{}{}
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake UpdateTrustPolicyException", "ADD_TPE policyKey", key)
 	return nil
 }
 
-func (s *Platform) DeleteTrustPolicyException(ctx context.Context, tpeKey *edgeproto.TrustPolicyExceptionKey, clusterInstKey *edgeproto.ClusterInstKey) error {
+func (s *Platform) DeleteTrustPolicyException(ctx context.Context, tpeKey *edgeproto.TrustPolicyExceptionKey, clusterKey *edgeproto.ClusterKey) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	key := cloudcommon.TrustPolicyExceptionKeyClusterInstKey{
-		TpeKey:         *tpeKey,
-		ClusterInstKey: *clusterInstKey,
+	key := cloudcommon.TrustPolicyExceptionKeyClusterKey{
+		TpeKey:     *tpeKey,
+		ClusterKey: *clusterKey,
 	}
 	delete(s.clusterTPEs, key)
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake DeleteTrustPolicyException", "DELETE_TPE policyKey", key)
@@ -469,9 +469,9 @@ func (s *Platform) DeleteTrustPolicyException(ctx context.Context, tpeKey *edgep
 func (s *Platform) HasTrustPolicyException(ctx context.Context, tpeKey *edgeproto.TrustPolicyExceptionKey, clusterInst *edgeproto.ClusterInst) bool {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	key := cloudcommon.TrustPolicyExceptionKeyClusterInstKey{
-		TpeKey:         *tpeKey,
-		ClusterInstKey: clusterInst.Key,
+	key := cloudcommon.TrustPolicyExceptionKeyClusterKey{
+		TpeKey:     *tpeKey,
+		ClusterKey: clusterInst.Key,
 	}
 	_, found := s.clusterTPEs[key]
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake HasTrustPolicyException", "policyKey", tpeKey, "found", found)

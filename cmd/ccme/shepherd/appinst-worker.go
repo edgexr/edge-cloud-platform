@@ -27,14 +27,15 @@ import (
 
 // For each cluster the notify worker is created
 type AppInstWorker struct {
-	pf         platform.Platform
-	appInstKey edgeproto.AppInstKey
-	appKey     edgeproto.AppKey
-	clusterKey edgeproto.ClusterKey
-	interval   time.Duration
-	send       func(ctx context.Context, metric *edgeproto.Metric) bool
-	waitGrp    sync.WaitGroup
-	stop       chan struct{}
+	pf          platform.Platform
+	appInstKey  edgeproto.AppInstKey
+	appKey      edgeproto.AppKey
+	clusterKey  edgeproto.ClusterKey
+	cloudletKey edgeproto.CloudletKey
+	interval    time.Duration
+	send        func(ctx context.Context, metric *edgeproto.Metric) bool
+	waitGrp     sync.WaitGroup
+	stop        chan struct{}
 }
 
 func NewAppInstWorker(ctx context.Context, interval time.Duration, send func(ctx context.Context, metric *edgeproto.Metric) bool, appinst *edgeproto.AppInst, pf platform.Platform) *AppInstWorker {
@@ -49,6 +50,7 @@ func NewAppInstWorker(ctx context.Context, interval time.Duration, send func(ctx
 	p.appInstKey = appinst.Key
 	p.appKey = appinst.AppKey
 	p.clusterKey = appinst.ClusterKey
+	p.cloudletKey = appinst.CloudletKey
 	log.SpanLog(ctx, log.DebugLevelMetrics, "NewAppInstWorker", "app", appinst)
 	return &p
 }
@@ -72,10 +74,8 @@ func (p *AppInstWorker) sendMetrics() {
 	ctx := log.ContextWithSpan(context.Background(), span)
 	defer span.Finish()
 	key := shepherd_common.MetricAppInstKey{
-		ClusterInstKey: edgeproto.ClusterInstKey{
-			ClusterKey:  p.clusterKey,
-			CloudletKey: p.appInstKey.CloudletKey,
-		},
+		ClusterKey:  p.clusterKey,
+		CloudletKey: p.cloudletKey,
 		Pod:         p.appInstKey.Name,
 		AppInstName: p.appInstKey.Name,
 		AppInstOrg:  p.appInstKey.Organization,

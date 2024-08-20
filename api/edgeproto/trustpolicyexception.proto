@@ -25,6 +25,7 @@ import "trustpolicy.proto";
 import "appinst.proto";
 import "cluster.proto";
 import "dme/loc.proto";
+import "cloudletkey.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -121,6 +122,7 @@ message TPEInstanceKey {
   TrustPolicyExceptionKey tpe_key = 1 [(gogoproto.nullable) = false, (protogen.keytag) = "tpestatetpekey"];
   AppInstKey app_inst_key = 2 [(gogoproto.nullable) = false, (protogen.keytag) = "tpestateappinstkey"];
   ClusterKey cluster_key = 3 [(gogoproto.nullable) = false, (protogen.keytag) = "tpestateclusterkey"];
+  CloudletKey cloudlet_key = 4 [(gogoproto.nullable) = false, (protogen.keytag) = "tpestatecloudletkey"];
 
   option (protogen.generate_matches) = true;
   option (protogen.obj_key) = true;

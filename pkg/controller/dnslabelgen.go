@@ -60,15 +60,15 @@ func (s *CloudletApi) setDnsLabel(stm concurrency.STM, cloudlet *edgeproto.Cloud
 func (s *ClusterInstApi) setDnsLabel(stm concurrency.STM, ci *edgeproto.ClusterInst) error {
 	// More likely unique names should come first
 	// to avoid being truncated.
-	name := dnsSanitizeTrunc(ci.Key.ClusterKey.Name, 40)
-	org := dnsSanitizeTrunc(ci.Key.ClusterKey.Organization, 20)
+	name := dnsSanitizeTrunc(ci.Key.Name, 40)
+	org := dnsSanitizeTrunc(ci.Key.Organization, 20)
 	baseLabel := name + "-" + org
 
 	// Number of iterations must be fairly low to avoid STM limits
 	ci.DnsLabel = ""
 	for ii := 0; ii < 10; ii++ {
 		label := genNextDnsLabel(baseLabel, cloudcommon.DnsCloudletObjectLabelMaxLen, ii)
-		if isReservedCloudletObjectDnsLabel(label) || s.dnsLabelStore.STMHas(stm, &ci.Key.CloudletKey, label) {
+		if isReservedCloudletObjectDnsLabel(label) || s.dnsLabelStore.STMHas(stm, &ci.CloudletKey, label) {
 			continue
 		}
 		ci.DnsLabel = label
@@ -96,7 +96,7 @@ func (s *AppInstApi) setDnsLabel(stm concurrency.STM, ai *edgeproto.AppInst) err
 	ai.DnsLabel = ""
 	for ii := 0; ii < 10; ii++ {
 		label := genNextDnsLabel(baseLabel, cloudcommon.DnsCloudletObjectLabelMaxLen, ii)
-		if isReservedCloudletObjectDnsLabel(label) || s.dnsLabelStore.STMHas(stm, &ai.Key.CloudletKey, label) {
+		if isReservedCloudletObjectDnsLabel(label) || s.dnsLabelStore.STMHas(stm, &ai.CloudletKey, label) {
 			continue
 		}
 		ai.DnsLabel = label

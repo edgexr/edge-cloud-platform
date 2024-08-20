@@ -49,7 +49,7 @@ type Resources struct {
 	lbFlavorName    string // load balancer VM flavor name
 
 	platformVMs  []edgeproto.VmInfo
-	clusterVMs   map[edgeproto.ClusterInstKey][]edgeproto.VmInfo
+	clusterVMs   map[edgeproto.ClusterKey][]edgeproto.VmInfo
 	vmAppInstVMs map[edgeproto.AppInstKey][]edgeproto.VmInfo
 }
 
@@ -64,7 +64,7 @@ func (s *Resources) Init() {
 	s.instancesUsed = 0
 	s.platformVMs = make([]edgeproto.VmInfo, 0)
 	s.cloudletFlavors = map[string]*edgeproto.FlavorInfo{}
-	s.clusterVMs = make(map[edgeproto.ClusterInstKey][]edgeproto.VmInfo)
+	s.clusterVMs = make(map[edgeproto.ClusterKey][]edgeproto.VmInfo)
 }
 
 func (s *Resources) SetCloudletFlavors(flavors []*edgeproto.FlavorInfo, lbFlavorName string) {
@@ -93,13 +93,15 @@ func (s *Resources) SetUserResources(ctx context.Context, cloudletKey *edgeproto
 	if caches == nil {
 		return fmt.Errorf("caches is nil")
 	}
-	clusterInstKeys := []edgeproto.ClusterInstKey{}
-	caches.ClusterInstCache.GetAllKeys(ctx, func(k *edgeproto.ClusterInstKey, modRev int64) {
-		if k.CloudletKey.Matches(cloudletKey) {
-			clusterInstKeys = append(clusterInstKeys, *k)
-		}
+	clusterKeys := []edgeproto.ClusterKey{}
+	ciFilter := edgeproto.ClusterInst{
+		CloudletKey: *cloudletKey,
+	}
+	caches.ClusterInstCache.Show(&ciFilter, func(inst *edgeproto.ClusterInst) error {
+		clusterKeys = append(clusterKeys, inst.Key)
+		return nil
 	})
-	for _, k := range clusterInstKeys {
+	for _, k := range clusterKeys {
 		var clusterInst edgeproto.ClusterInst
 		if caches.ClusterInstCache.Get(&k, &clusterInst) {
 			s.AddClusterResources(&clusterInst)
@@ -107,10 +109,12 @@ func (s *Resources) SetUserResources(ctx context.Context, cloudletKey *edgeproto
 	}
 
 	appInstKeys := []edgeproto.AppInstKey{}
-	caches.AppInstCache.GetAllKeys(ctx, func(k *edgeproto.AppInstKey, modRev int64) {
-		if k.CloudletKey.Matches(cloudletKey) {
-			appInstKeys = append(appInstKeys, *k)
-		}
+	aiFilter := edgeproto.AppInst{
+		CloudletKey: *cloudletKey,
+	}
+	caches.AppInstCache.Show(&aiFilter, func(inst *edgeproto.AppInst) error {
+		appInstKeys = append(appInstKeys, inst.Key)
+		return nil
 	})
 	for _, k := range appInstKeys {
 		var appInst edgeproto.AppInst
@@ -136,7 +140,7 @@ func (s *Resources) AddPlatformVM(info edgeproto.VmInfo) {
 
 // RemoveClusterResources removes the cluster resources from the current
 // resource count.
-func (s *Resources) RemoveClusterResources(key *edgeproto.ClusterInstKey) {
+func (s *Resources) RemoveClusterResources(key *edgeproto.ClusterKey) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -159,9 +163,9 @@ func (s *Resources) AddClusterResources(clusterInst *edgeproto.ClusterInst) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	vmNameSuffix := k8smgmt.GetCloudletClusterName(&clusterInst.Key)
+	vmNameSuffix := k8smgmt.GetCloudletClusterName(clusterInst)
 	if len(s.clusterVMs) == 0 {
-		s.clusterVMs = make(map[edgeproto.ClusterInstKey][]edgeproto.VmInfo)
+		s.clusterVMs = make(map[edgeproto.ClusterKey][]edgeproto.VmInfo)
 	}
 	if _, ok := s.clusterVMs[clusterInst.Key]; !ok {
 		s.clusterVMs[clusterInst.Key] = []edgeproto.VmInfo{}
@@ -196,7 +200,7 @@ func (s *Resources) AddClusterResources(clusterInst *edgeproto.ClusterInst) {
 	}
 }
 
-func (s *Resources) GetClusterResources(key *edgeproto.ClusterInstKey) *edgeproto.InfraResources {
+func (s *Resources) GetClusterResources(key *edgeproto.ClusterKey) *edgeproto.InfraResources {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -241,11 +245,9 @@ func (s *Resources) RemoveVmAppResCount(ctx context.Context, app *edgeproto.App,
 	}
 }
 
-func getVmAppKey(appInst *edgeproto.AppInst) edgeproto.ClusterInstKey {
-	return edgeproto.ClusterInstKey{
-		ClusterKey: edgeproto.ClusterKey{
-			Name: appInst.DnsLabel,
-		},
+func getVmAppKey(appInst *edgeproto.AppInst) edgeproto.ClusterKey {
+	return edgeproto.ClusterKey{
+		Name: appInst.DnsLabel,
 	}
 }
 

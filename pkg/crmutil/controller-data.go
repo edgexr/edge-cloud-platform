@@ -239,8 +239,8 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		}
 		var cloudlet edgeproto.Cloudlet
 
-		if !cd.CloudletCache.Get(&new.Key.CloudletKey, &cloudlet) {
-			err = new.Key.CloudletKey.NotFoundError()
+		if !cd.CloudletCache.Get(&new.CloudletKey, &cloudlet) {
+			err = new.CloudletKey.NotFoundError()
 			sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
 			return nu, err
 		}
@@ -258,7 +258,7 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		}
 		// Get cluster resources and report to controller.
 		updateClusterCacheCallback(edgeproto.UpdateTask, "Getting Cluster Infra Resources")
-		resources, err := pf.GetClusterInfraResources(ctx, &new.Key)
+		resources, err := pf.GetClusterInfraResources(ctx, new)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "error getting infra resources", "err", err)
 		} else {
@@ -287,7 +287,7 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		}
 		// Get cluster resources and report to controller.
 		updateClusterCacheCallback(edgeproto.UpdateTask, "Getting Cluster Infra Resources")
-		resources, err := pf.GetClusterInfraResources(ctx, &new.Key)
+		resources, err := pf.GetClusterInfraResources(ctx, new)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "error getting infra resources", "err", err)
 		} else {
@@ -389,8 +389,8 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 		}
 		clusterInst := edgeproto.ClusterInst{}
 		if cloudcommon.IsClusterInstReqd(&app) {
-			if !cd.ClusterInstCache.Get(new.ClusterInstKey(), &clusterInst) {
-				err = new.ClusterInstKey().ClusterKey.NotFoundError()
+			if !cd.ClusterInstCache.Get(new.GetClusterKey(), &clusterInst) {
+				err = new.GetClusterKey().NotFoundError()
 				sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
 				return nu, err
 			}
@@ -461,9 +461,9 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 		}
 		clusterInst := edgeproto.ClusterInst{}
 		if cloudcommon.IsClusterInstReqd(&app) {
-			clusterInstFound := cd.ClusterInstCache.Get(new.ClusterInstKey(), &clusterInst)
+			clusterInstFound := cd.ClusterInstCache.Get(new.GetClusterKey(), &clusterInst)
 			if !clusterInstFound {
-				err = new.ClusterInstKey().ClusterKey.NotFoundError()
+				err = new.GetClusterKey().NotFoundError()
 				sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
 				return nu, err
 			}
@@ -491,9 +491,9 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 		}
 		clusterInst := edgeproto.ClusterInst{}
 		if cloudcommon.IsClusterInstReqd(&app) {
-			clusterInstFound := cd.ClusterInstCache.Get(new.ClusterInstKey(), &clusterInst)
+			clusterInstFound := cd.ClusterInstCache.Get(new.GetClusterKey(), &clusterInst)
 			if !clusterInstFound {
-				err = new.ClusterInstKey().ClusterKey.NotFoundError()
+				err = new.GetClusterKey().NotFoundError()
 				sender.SendState(edgeproto.TrackedState_DELETE_ERROR, edgeproto.WithStateError(err))
 				return nu, err
 			}
@@ -690,7 +690,7 @@ func (cd *CRMHandler) UpdateTrustPolicy(ctx context.Context, cloudlet *edgeproto
 // Common code to handle add and removal of trust policy exception rules
 func (cd *CRMHandler) HandleTrustPolicyException(ctx context.Context, inst *edgeproto.TPEInstanceState) error {
 	cloudlet := edgeproto.Cloudlet{}
-	cloudletKey := &inst.Key.AppInstKey.CloudletKey
+	cloudletKey := &inst.Key.CloudletKey
 	if !cd.CloudletCache.Get(cloudletKey, &cloudlet) {
 		log.SpanLog(ctx, log.DebugLevelApi, "cloudlet not found", "cloudlet", cloudletKey)
 		return cloudletKey.NotFoundError()
@@ -701,12 +701,9 @@ func (cd *CRMHandler) HandleTrustPolicyException(ctx context.Context, inst *edge
 	}
 
 	tpeKey := inst.Key.TpeKey
-	clusterInstKey := edgeproto.ClusterInstKey{
-		CloudletKey: inst.Key.AppInstKey.CloudletKey,
-		ClusterKey:  inst.Key.ClusterKey,
-	}
+	clusterKey := inst.Key.ClusterKey
 	log.SetContextTags(ctx, tpeKey.GetTags())
-	log.SpanLog(ctx, log.DebugLevelInfra, "HandleTrustPolicyException", "TrustPolicyExceptionKey", tpeKey, "clusterInstKey", clusterInstKey)
+	log.SpanLog(ctx, log.DebugLevelInfra, "HandleTrustPolicyException", "TrustPolicyExceptionKey", tpeKey, "clusterKey", clusterKey)
 
 	if inst.TpeEnable {
 		tpe := edgeproto.TrustPolicyException{}
@@ -715,11 +712,11 @@ func (cd *CRMHandler) HandleTrustPolicyException(ctx context.Context, inst *edge
 			log.SpanLog(ctx, log.DebugLevelInfra, "HandleTrustPolicyException missing TPE", "TrustPolicyExceptionKey", tpeKey)
 			return inst.Key.TpeKey.NotFoundError()
 		}
-		err := pf.UpdateTrustPolicyException(ctx, &tpe, &clusterInstKey)
+		err := pf.UpdateTrustPolicyException(ctx, &tpe, &clusterKey)
 		log.SpanLog(ctx, log.DebugLevelInfra, "platform UpdateTrustPolicyException Done", "err", err)
 		return err
 	} else {
-		err := pf.DeleteTrustPolicyException(ctx, &tpeKey, &clusterInstKey)
+		err := pf.DeleteTrustPolicyException(ctx, &tpeKey, &clusterKey)
 		log.SpanLog(ctx, log.DebugLevelInfra, "platform DeleteTrustPolicyException Done", "err", err)
 		return err
 	}
@@ -736,11 +733,11 @@ func (cd *CRMHandler) RefreshAppInstRuntime(ctx context.Context, cloudletKey *ed
 		appInsts = append(appInsts, appInst)
 	} else {
 		cd.AppInstCache.Show(&edgeproto.AppInst{}, func(ai *edgeproto.AppInst) error {
-			if !ai.Key.CloudletKey.Matches(cloudletKey) {
+			if !ai.CloudletKey.Matches(cloudletKey) {
 				return nil
 			}
 			if clusterInst != nil {
-				if !ai.ClusterInstKey().Matches(&clusterInst.Key) {
+				if !ai.GetClusterKey().Matches(&clusterInst.Key) {
 					return nil
 				}
 			}
@@ -758,7 +755,7 @@ func (cd *CRMHandler) RefreshAppInstRuntime(ctx context.Context, cloudletKey *ed
 
 	for _, ai := range appInsts {
 		clusterInst := edgeproto.ClusterInst{}
-		if !cd.ClusterInstCache.Get(ai.ClusterInstKey(), &clusterInst) {
+		if !cd.ClusterInstCache.Get(ai.GetClusterKey(), &clusterInst) {
 			log.SpanLog(ctx, log.DebugLevelApi, "refresh appinst runtime, cluster not found", "cluster", clusterInst.Key, "appInst", ai.Key)
 			// maybe deleted, continue to update other AppInsts
 			continue

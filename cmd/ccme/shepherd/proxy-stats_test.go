@@ -120,7 +120,7 @@ func TestCollectProxyStats(t *testing.T) {
 
 		// For each appInst in testutil.AppInstData() the result might differ
 		switch ii {
-		case 0, 1, 2, 4, 6, 7:
+		case 0, 1, 2, 3, 4, 6, 7:
 			// tcp,udp,http ports, load-balancer access
 			// dedicated access k8s
 			// We should write a targets file and get a scrape point
@@ -129,10 +129,6 @@ func TestCollectProxyStats(t *testing.T) {
 			// CollectProxyStats should return empty when running on the same
 			// object that we already have
 			target = CollectProxyStats(ctx, &obj)
-			require.Empty(t, target)
-		case 3:
-			// Same app, but different cloudlets - map entry is the same
-			target := CollectProxyStats(ctx, &obj)
 			require.Empty(t, target)
 		case 5:
 			// udp load-balancer
@@ -164,7 +160,7 @@ func TestCollectProxyStats(t *testing.T) {
 
 		// For each appInst in testutil.AppInstData() the result might differ
 		switch ii {
-		case 0, 1, 2, 4, 6, 7:
+		case 0, 1, 2, 3, 4, 6, 7:
 			// tcp,udp,http ports, load-balancer access
 			// dedicated access k8s
 			// We should write a targets file and get a scrape point
@@ -173,10 +169,6 @@ func TestCollectProxyStats(t *testing.T) {
 			// CollectProxyStats should return empty when running on the same
 			// object that we already have
 			target = CollectProxyStats(ctx, &obj)
-			require.Empty(t, target)
-		case 3:
-			// Same app, but different cloudlets - map entry is the same
-			target := CollectProxyStats(ctx, &obj)
 			require.Empty(t, target)
 		case 5:
 			// udp load-balancer
@@ -277,14 +269,14 @@ func envoyProxyHandler(w http.ResponseWriter, r *http.Request) {
 
 type testProxyMetricsdb struct {
 	appStats     map[edgeproto.AppInstKey]shepherd_common.ClusterNetMetrics
-	clusterStats map[edgeproto.ClusterInstKey]shepherd_common.ClusterNetMetrics
+	clusterStats map[edgeproto.ClusterKey]shepherd_common.ClusterNetMetrics
 	mux          sync.Mutex
 	done         chan bool
 }
 
 func (n *testProxyMetricsdb) Init() {
 	n.appStats = make(map[edgeproto.AppInstKey]shepherd_common.ClusterNetMetrics)
-	n.clusterStats = make(map[edgeproto.ClusterInstKey]shepherd_common.ClusterNetMetrics)
+	n.clusterStats = make(map[edgeproto.ClusterKey]shepherd_common.ClusterNetMetrics)
 	n.done = make(chan bool, 1)
 }
 

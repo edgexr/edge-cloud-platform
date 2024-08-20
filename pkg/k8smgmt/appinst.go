@@ -320,6 +320,9 @@ func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst) string {
 		// backwards compatibility, may clobber other instances
 		// using the same app definition in multi-tenant clusters.
 		return names.AppName + names.AppOrg + names.AppVersion + ".yaml"
+	} else if appInst.CompatibilityVersion < cloudcommon.AppInstCompatibilityRegionScopeName {
+		appInstName := cloudcommon.GetAppInstCloudletScopedName(appInst)
+		return appInstName + names.AppInstOrg + ".yaml"
 	}
 	return names.AppInstName + names.AppInstOrg + ".yaml"
 }

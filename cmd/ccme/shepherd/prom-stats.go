@@ -81,10 +81,11 @@ func getAppMetricFromPrometheusData(ctx context.Context, p *K8sClusterStats, app
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to find appInstKey for cluster from labels", "labels", metric.Labels, "labelKey", labelKey, "labelKeyOld", labelKeyOld, "cluster", p.key)
 	}
 	appKey := shepherd_common.MetricAppInstKey{
-		ClusterInstKey: p.key,
-		Pod:            metric.Labels.PodName,
-		AppInstName:    appInstInfo.AppInstKey.Name,
-		AppInstOrg:     appInstInfo.AppInstKey.Organization,
+		ClusterKey:  p.key,
+		CloudletKey: p.cloudletKey,
+		Pod:         metric.Labels.PodName,
+		AppInstName: appInstInfo.AppInstKey.Name,
+		AppInstOrg:  appInstInfo.AppInstKey.Organization,
 	}
 	stat, found := appStatsMap[appKey]
 	if !found {

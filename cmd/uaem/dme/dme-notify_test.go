@@ -185,11 +185,11 @@ func waitAndCheckCloudletforApps(t *testing.T, key *edgeproto.CloudletKey, isApp
 		still_enabled = false
 		for _, app := range tbl.Apps {
 			if c, found := app.Carriers[carrier]; found {
-				for clusterInstKey, appInst := range c.Insts {
-					if clusterInstKey.CloudletKey.GetKeyString() == key.GetKeyString() {
+				for _, appInst := range c.Insts {
+					if appInst.GetCloudletKey().GetKeyString() == key.GetKeyString() {
 						fmt.Printf("Appinst is %+v\n", appInst)
 					}
-					if clusterInstKey.CloudletKey.GetKeyString() == key.GetKeyString() &&
+					if appInst.GetCloudletKey().GetKeyString() == key.GetKeyString() &&
 						uaemcommon.IsAppInstUsable(appInst) {
 						still_enabled = true
 					}
@@ -209,7 +209,7 @@ func waitForAppInst(appInst *edgeproto.AppInst) {
 	tbl := uaemcommon.DmeAppTbl
 
 	appkey := appInst.AppKey
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 20; i++ {
 		if app, found := tbl.Apps[appkey]; found {
 			for _, c := range app.Carriers {
 				if _, found := c.Insts[appInst.Key]; found {
@@ -217,7 +217,7 @@ func waitForAppInst(appInst *edgeproto.AppInst) {
 				}
 			}
 		}
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 

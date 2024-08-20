@@ -244,8 +244,9 @@ func (s *AutoProvPolicyApi) deployImmediate(ctx context.Context, k interface{}) 
 		cloudcommon.AutoProvPolicyName, "dme-process-now")
 	ctx = metadata.NewIncomingContext(ctx, md)
 	appInst := edgeproto.AppInst{
-		Key:    cloudcommon.GetAutoProvAppInstKey(&key.AppKey, &key.CloudletKey),
-		AppKey: key.AppKey,
+		Key:         cloudcommon.GetAutoProvAppInstKey(&key.AppKey, &key.CloudletKey),
+		AppKey:      key.AppKey,
+		CloudletKey: key.CloudletKey,
 	}
 	stream := streamoutAppInst{
 		ctx:      ctx,
@@ -363,8 +364,15 @@ func (s *AutoProvPolicyApi) appInstCheck(ctx context.Context, stm concurrency.ST
 		for k, _ := range refs.Insts {
 			instKey := edgeproto.AppInstKey{}
 			edgeproto.AppInstKeyStringParse(k, &instKey)
-			if inst.Key.CloudletKey.Matches(&instKey.CloudletKey) {
-				return fmt.Errorf("already an AppInst on Cloudlet %s", inst.Key.CloudletKey.GetKeyString())
+			// lookup cloudlet for AppInst
+			refAppInst := edgeproto.AppInst{}
+			if !s.all.appInstApi.store.STMGet(stm, &instKey, &refAppInst) {
+				// should not happen
+				log.SpanLog(ctx, log.DebugLevelApi, "unexpected missing AppInst from App refs", "appInst", instKey)
+				continue
+			}
+			if inst.CloudletKey.Matches(&refAppInst.CloudletKey) {
+				return fmt.Errorf("already an AppInst on Cloudlet %s", inst.CloudletKey.GetKeyString())
 			}
 		}
 	}
@@ -424,7 +432,7 @@ func (s *AutoProvPolicyApi) checkDemand(ctx context.Context, stm concurrency.STM
 		withinPolicy := false
 		count := 0
 		for _, apCloudlet := range policy.Cloudlets {
-			if apCloudlet.Key.Matches(&inst.Key.CloudletKey) {
+			if apCloudlet.Key.Matches(&inst.CloudletKey) {
 				withinPolicy = true
 			}
 			count += countsByCloudlet[apCloudlet.Key]
@@ -507,7 +515,7 @@ func (s *AutoProvPolicyApi) checkOrphaned(ctx context.Context, stm concurrency.S
 			continue
 		}
 		for _, apCloudlet := range policy.Cloudlets {
-			if apCloudlet.Key.Matches(&inst.Key.CloudletKey) {
+			if apCloudlet.Key.Matches(&inst.CloudletKey) {
 				return fmt.Errorf("AppInst %s on Cloudlet in policy %s on App, not orphaned", inst.Key.GetKeyString(), pname)
 			}
 		}
@@ -539,7 +547,7 @@ func (s *AutoProvPolicyApi) getAppInstCountsForAutoProv(ctx context.Context, stm
 				continue
 			}
 		}
-		countsByCloudlet[inst.Key.CloudletKey]++
+		countsByCloudlet[inst.CloudletKey]++
 	}
 	return countsByCloudlet, nil
 }
@@ -550,12 +558,12 @@ func (s *AutoProvPolicyApi) autoProvAppInstOnline(ctx context.Context, stm concu
 		return false, key.NotFoundError()
 	}
 	cloudletInfo := edgeproto.CloudletInfo{}
-	if !s.all.cloudletInfoApi.store.STMGet(stm, &appInst.Key.CloudletKey, &cloudletInfo) {
-		return false, appInst.Key.CloudletKey.NotFoundError()
+	if !s.all.cloudletInfoApi.store.STMGet(stm, &appInst.CloudletKey, &cloudletInfo) {
+		return false, appInst.CloudletKey.NotFoundError()
 	}
 	cloudlet := edgeproto.Cloudlet{}
-	if !s.all.cloudletApi.store.STMGet(stm, &appInst.Key.CloudletKey, &cloudlet) {
-		return false, appInst.Key.CloudletKey.NotFoundError()
+	if !s.all.cloudletApi.store.STMGet(stm, &appInst.CloudletKey, &cloudlet) {
+		return false, appInst.CloudletKey.NotFoundError()
 	}
 	return cloudcommon.AutoProvAppInstOnline(&appInst, &cloudletInfo, &cloudlet), nil
 }

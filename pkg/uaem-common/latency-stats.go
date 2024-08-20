@@ -32,6 +32,7 @@ func GetLatencyStatKey(appInst *edgeproto.AppInst, deviceInfo *DeviceInfo, loc *
 	statKey := LatencyStatKey{
 		AppInstKey:   appInst.Key,
 		AppKey:       appInst.AppKey,
+		CloudletKey:  appInst.CloudletKey,
 		LocationTile: GetLocationTileFromGpsLocation(loc, tileLength),
 	}
 
@@ -52,6 +53,7 @@ func GetLatencyStatKey(appInst *edgeproto.AppInst, deviceInfo *DeviceInfo, loc *
 type LatencyStatKey struct {
 	AppInstKey      edgeproto.AppInstKey
 	AppKey          edgeproto.AppKey
+	CloudletKey     edgeproto.CloudletKey
 	DeviceCarrier   string
 	LocationTile    string
 	DataNetworkType string

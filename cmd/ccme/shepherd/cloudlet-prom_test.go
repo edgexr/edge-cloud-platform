@@ -118,15 +118,13 @@ func genApps(ctx context.Context, cnt int) {
 func genClusters(ctx context.Context, cnt int) {
 	for ii := 1; ii < cnt+1; ii++ {
 		cluster := edgeproto.ClusterInst{
-			Key: edgeproto.ClusterInstKey{
-				ClusterKey: edgeproto.ClusterKey{
-					Name:         fmt.Sprintf("Cluster-%d", ii),
-					Organization: fmt.Sprintf("Clusterorg-%d", ii),
-				},
-				CloudletKey: edgeproto.CloudletKey{
-					Organization: fmt.Sprintf("Cloudletorg-%d", ii),
-					Name:         fmt.Sprintf("Cloudlet-%d", ii),
-				},
+			Key: edgeproto.ClusterKey{
+				Name:         fmt.Sprintf("Cluster-%d", ii),
+				Organization: fmt.Sprintf("Clusterorg-%d", ii),
+			},
+			CloudletKey: edgeproto.CloudletKey{
+				Organization: fmt.Sprintf("Cloudletorg-%d", ii),
+				Name:         fmt.Sprintf("Cloudlet-%d", ii),
 			},
 		}
 		ClusterInstCache.Update(ctx, &cluster, 0)
@@ -144,10 +142,6 @@ func genAppInstances(ctx context.Context, cnt int) ([]edgeproto.AppInst, map[str
 			Key: edgeproto.AppInstKey{
 				Name:         fmt.Sprintf("AppInst-%d", ii),
 				Organization: fmt.Sprintf("AppOrg-%d", ii),
-				CloudletKey: edgeproto.CloudletKey{
-					Organization: fmt.Sprintf("Cloudletorg-%d", ii),
-					Name:         fmt.Sprintf("Cloudlet-%d", ii),
-				},
 			},
 			AppKey: edgeproto.AppKey{
 				Name:         fmt.Sprintf("App-%d", ii),
@@ -156,6 +150,10 @@ func genAppInstances(ctx context.Context, cnt int) ([]edgeproto.AppInst, map[str
 			ClusterKey: edgeproto.ClusterKey{
 				Name:         fmt.Sprintf("Cluster-%d", ii),
 				Organization: fmt.Sprintf("Clusterorg-%d", ii),
+			},
+			CloudletKey: edgeproto.CloudletKey{
+				Organization: fmt.Sprintf("Cloudletorg-%d", ii),
+				Name:         fmt.Sprintf("Cloudlet-%d", ii),
 			},
 			MappedPorts: ports,
 			State:       edgeproto.TrackedState_READY,

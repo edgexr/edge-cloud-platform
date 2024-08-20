@@ -44,14 +44,14 @@ func (s *AppInstSend) UpdateOk(ctx context.Context, appInst *edgeproto.AppInst) 
 		if !s.sendrecv.cloudletReady {
 			return false
 		}
-		if !s.sendrecv.hasCloudletKey(&appInst.Key.CloudletKey) {
+		if !s.sendrecv.hasCloudletKey(&appInst.CloudletKey) {
 			return false
 		}
 		triggerSend = true
 	}
 	if s.sendrecv.filterFederatedCloudlet {
 		// Federated cloudlets are ignored by CRMs and are handled by FRMs
-		if appInst.Key.CloudletKey.FederatedOrganization == "" {
+		if appInst.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 		triggerSend = true
@@ -104,13 +104,13 @@ func (s *ClusterInstSend) UpdateOk(ctx context.Context, clusterInst *edgeproto.C
 		if !s.sendrecv.cloudletReady {
 			return false
 		}
-		if !s.sendrecv.hasCloudletKey(&clusterInst.Key.CloudletKey) {
+		if !s.sendrecv.hasCloudletKey(&clusterInst.CloudletKey) {
 			return false
 		}
 	}
 	if s.sendrecv.filterFederatedCloudlet {
 		// Federated cloudlets are ignored by CRMs and are handled by FRMs
-		if clusterInst.Key.CloudletKey.FederatedOrganization == "" {
+		if clusterInst.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 	}
@@ -122,13 +122,13 @@ func (s *ExecRequestSend) UpdateOk(ctx context.Context, msg *edgeproto.ExecReque
 		if !s.sendrecv.cloudletReady {
 			return false
 		}
-		if !s.sendrecv.hasCloudletKey(&msg.AppInstKey.CloudletKey) {
+		if !s.sendrecv.hasCloudletKey(&msg.CloudletKey) {
 			return false
 		}
 	}
 	if s.sendrecv.filterFederatedCloudlet {
 		// Federated cloudlets are ignored by CRMs and are handled by FRMs
-		if msg.AppInstKey.CloudletKey.FederatedOrganization == "" {
+		if msg.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 	}
@@ -189,13 +189,13 @@ func (s *TPEInstanceStateSend) UpdateOk(ctx context.Context, tpe *edgeproto.TPEI
 		if !s.sendrecv.cloudletReady {
 			return false
 		}
-		if !s.sendrecv.hasCloudletKey(&tpe.Key.AppInstKey.CloudletKey) {
+		if !s.sendrecv.hasCloudletKey(&tpe.Key.CloudletKey) {
 			return false
 		}
 	}
 	if s.sendrecv.filterFederatedCloudlet {
 		// Federated cloudlets are ignored by CRMs and are handled by FRMs
-		if tpe.Key.AppInstKey.CloudletKey.FederatedOrganization == "" {
+		if tpe.Key.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 	}
@@ -211,7 +211,7 @@ func (s *AppInstSend) UpdateAllOkLocked(appInst *edgeproto.AppInst) bool {
 		return false
 	}
 	if s.sendrecv.filterFederatedCloudlet {
-		if appInst.Key.CloudletKey.FederatedOrganization == "" {
+		if appInst.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 	}
@@ -235,7 +235,7 @@ func (s *ClusterInstSend) UpdateAllOkLocked(clusterInst *edgeproto.ClusterInst) 
 		return false
 	}
 	if s.sendrecv.filterFederatedCloudlet {
-		if clusterInst.Key.CloudletKey.FederatedOrganization == "" {
+		if clusterInst.CloudletKey.FederatedOrganization == "" {
 			return false
 		}
 	}

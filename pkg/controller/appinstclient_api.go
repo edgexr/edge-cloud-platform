@@ -45,7 +45,7 @@ func NewAppInstClientApi(all *AllApis) *AppInstClientApi {
 	return &appInstClientApi
 }
 
-func (s *AppInstClientApi) SetRecvChan(ctx context.Context, in *edgeproto.AppInstClientKey, ch chan edgeproto.AppInstClient) {
+func (s *AppInstClientApi) SetRecvChan(ctx context.Context, in *edgeproto.AppInstClientKey, ch chan edgeproto.AppInstClient) *sync.WaitGroup {
 	s.queueMux.Lock()
 	defer s.queueMux.Unlock()
 	_, found := s.recvChans[*in]
@@ -57,18 +57,29 @@ func (s *AppInstClientApi) SetRecvChan(ctx context.Context, in *edgeproto.AppIns
 
 	// Send cached clients out in a separate go routine
 	// this way reading and writing to this channel will happen simultaneously
+	wg := sync.WaitGroup{} // wait group primarily for unit test determinism
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
+		s.queueMux.Lock()
+		cachedClients := []edgeproto.AppInstClient{}
 		// use filter match option, since not all parts of the key may be set
 		for ii, client := range s.appInstClients {
 			if client.ClientKey.Matches(in, edgeproto.MatchFilter()) {
-				ch <- *s.appInstClients[ii]
+				cachedClients = append(cachedClients, *s.appInstClients[ii])
 			}
+		}
+		defer s.queueMux.Unlock()
+		// chan may block so don't write under lock
+		for _, client := range cachedClients {
+			ch <- client
 		}
 		// request new clients only after we sent out the cached ones
 		if !s.all.appInstClientKeyApi.HasKey(in) {
 			s.all.appInstClientKeyApi.Update(ctx, in, 0)
 		}
 	}()
+	return &wg
 }
 
 // Returns number of channels in the list that are left
@@ -110,6 +121,7 @@ func (s *AppInstClientApi) ClearRecvChan(ctx context.Context, in *edgeproto.AppI
 func (s *AppInstClientApi) AddAppInstClient(ctx context.Context, client *edgeproto.AppInstClient) {
 	s.queueMux.Lock()
 	defer s.queueMux.Unlock()
+	log.SpanLog(ctx, log.DebugLevelApi, "AddAppInstClient", "key", client.ClientKey, "numClients", len(s.appInstClients))
 	if client == nil {
 		return
 	}
@@ -159,7 +171,9 @@ func (s *AppInstClientApi) Prune(ctx context.Context, keys map[edgeproto.AppInst
 func (s *AppInstClientApi) StreamAppInstClientsLocal(in *edgeproto.AppInstClientKey, cb edgeproto.AppInstClientApi_StreamAppInstClientsLocalServer) error {
 	// Request this AppInst to be sent
 	recvCh := make(chan edgeproto.AppInstClient, int(s.all.settingsApi.Get().MaxTrackedDmeClients))
-	s.SetRecvChan(cb.Context(), in, recvCh)
+	// don't need to wait for writes to recvCh to finish if caller
+	// terminates early.
+	_ = s.SetRecvChan(cb.Context(), in, recvCh)
 
 	done := false
 	for !done {

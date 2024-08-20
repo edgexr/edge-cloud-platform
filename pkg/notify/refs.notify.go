@@ -26,13 +26,13 @@ var _ = math.Inf
 
 type SendClusterRefsHandler interface {
 	GetAllLocked(ctx context.Context, cb func(key *edgeproto.ClusterRefs, modRev int64))
-	GetWithRev(key *edgeproto.ClusterInstKey, buf *edgeproto.ClusterRefs, modRev *int64) bool
+	GetWithRev(key *edgeproto.ClusterKey, buf *edgeproto.ClusterRefs, modRev *int64) bool
 }
 
 type RecvClusterRefsHandler interface {
 	Update(ctx context.Context, in *edgeproto.ClusterRefs, rev int64)
 	Delete(ctx context.Context, in *edgeproto.ClusterRefs, rev int64)
-	Prune(ctx context.Context, keys map[edgeproto.ClusterInstKey]struct{})
+	Prune(ctx context.Context, keys map[edgeproto.ClusterKey]struct{})
 	Flush(ctx context.Context, notifyId int64)
 }
 
@@ -46,8 +46,8 @@ type ClusterRefsSend struct {
 	Name        string
 	MessageName string
 	handler     SendClusterRefsHandler
-	Keys        map[edgeproto.ClusterInstKey]ClusterRefsSendContext
-	keysToSend  map[edgeproto.ClusterInstKey]ClusterRefsSendContext
+	Keys        map[edgeproto.ClusterKey]ClusterRefsSendContext
+	keysToSend  map[edgeproto.ClusterKey]ClusterRefsSendContext
 	notifyId    int64
 	Mux         sync.Mutex
 	buf         edgeproto.ClusterRefs
@@ -66,7 +66,7 @@ func NewClusterRefsSend(handler SendClusterRefsHandler) *ClusterRefsSend {
 	send.Name = "ClusterRefs"
 	send.MessageName = proto.MessageName((*edgeproto.ClusterRefs)(nil))
 	send.handler = handler
-	send.Keys = make(map[edgeproto.ClusterInstKey]ClusterRefsSendContext)
+	send.Keys = make(map[edgeproto.ClusterKey]ClusterRefsSendContext)
 	return send
 }
 
@@ -111,12 +111,12 @@ func (s *ClusterRefsSend) Update(ctx context.Context, obj *edgeproto.ClusterRefs
 	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
 }
 
-func (s *ClusterRefsSend) ForceDelete(ctx context.Context, key *edgeproto.ClusterInstKey, modRev int64) {
+func (s *ClusterRefsSend) ForceDelete(ctx context.Context, key *edgeproto.ClusterKey, modRev int64) {
 	forceDelete := true
 	s.updateInternal(ctx, key, modRev, forceDelete)
 }
 
-func (s *ClusterRefsSend) updateInternal(ctx context.Context, key *edgeproto.ClusterInstKey, modRev int64, forceDelete bool) {
+func (s *ClusterRefsSend) updateInternal(ctx context.Context, key *edgeproto.ClusterKey, modRev int64, forceDelete bool) {
 	s.Mux.Lock()
 	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal ClusterRefs", "key", key, "modRev", modRev)
 	s.Keys[*key] = ClusterRefsSendContext{
@@ -180,7 +180,7 @@ func (s *ClusterRefsSend) PrepData() bool {
 	defer s.Mux.Unlock()
 	if len(s.Keys) > 0 {
 		s.keysToSend = s.Keys
-		s.Keys = make(map[edgeproto.ClusterInstKey]ClusterRefsSendContext)
+		s.Keys = make(map[edgeproto.ClusterKey]ClusterRefsSendContext)
 		return true
 	}
 	return false
@@ -239,7 +239,7 @@ type ClusterRefsRecv struct {
 	Name        string
 	MessageName string
 	handler     RecvClusterRefsHandler
-	sendAllKeys map[edgeproto.ClusterInstKey]struct{}
+	sendAllKeys map[edgeproto.ClusterKey]struct{}
 	Mux         sync.Mutex
 	buf         edgeproto.ClusterRefs
 	RecvCount   uint64
@@ -312,7 +312,7 @@ func (s *ClusterRefsRecv) Recv(ctx context.Context, notice *edgeproto.Notice, no
 func (s *ClusterRefsRecv) RecvAllStart() {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
-	s.sendAllKeys = make(map[edgeproto.ClusterInstKey]struct{})
+	s.sendAllKeys = make(map[edgeproto.ClusterKey]struct{})
 }
 
 func (s *ClusterRefsRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {

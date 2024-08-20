@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/influxsup"
+	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	influxdb "github.com/influxdata/influxdb/client/v2"
@@ -297,6 +297,7 @@ func (s *AutoProvAggr) deploy(ctx context.Context, app *edgeproto.App, cloudletK
 	inst := edgeproto.AppInst{}
 	inst.Key = cloudcommon.GetAutoProvAppInstKey(&app.Key, cloudletKey)
 	inst.AppKey = app.Key
+	inst.CloudletKey = *cloudletKey
 	// let Controller pick or create a reservable ClusterInst.
 
 	go goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonDemand, "")

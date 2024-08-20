@@ -74,11 +74,9 @@ func TestEnvoyStats(t *testing.T) {
 
 	testScrapePoint := ProxyScrapePoint{
 		App: "UnitTestApp",
-		ClusterInstKey: edgeproto.ClusterInstKey{
-			ClusterKey: edgeproto.ClusterKey{
-				Name:         "UnitTestCluster",
-				Organization: "UnitTestDev",
-			},
+		ClusterKey: edgeproto.ClusterKey{
+			Name:         "UnitTestCluster",
+			Organization: "UnitTestDev",
 		},
 		TcpPorts:       []int32{1234, 4321},
 		UdpPorts:       []int32{5678, 8765},

@@ -120,8 +120,8 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	}
 	deploymentVars := deployvars.DeploymentReplaceVars{
 		Deployment: deployvars.CrmReplaceVars{
-			CloudletName: k8smgmt.NormalizeName(appInst.Key.CloudletKey.Name),
-			CloudletOrg:  k8smgmt.NormalizeName(appInst.Key.CloudletKey.Organization),
+			CloudletName: k8smgmt.NormalizeName(appInst.CloudletKey.Name),
+			CloudletOrg:  k8smgmt.NormalizeName(appInst.CloudletKey.Organization),
 			AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 			DnsZone:      v.VMProperties.CommonPf.GetCloudletDNSZone(),
 		},
@@ -208,7 +208,7 @@ func (v *VMPlatform) setupVMAppRootLBAndNode(ctx context.Context, clusterInst *e
 	}
 	updateCallback(edgeproto.UpdateTask, "Setting Up Load Balancer")
 	pp := edgeproto.TrustPolicy{}
-	err = v.SetupRootLB(ctx, orchVals.lbName, orchVals.lbName, &clusterInst.Key.CloudletKey, &pp, rootLBDetail, appInst.EnableIpv6, updateCallback)
+	err = v.SetupRootLB(ctx, orchVals.lbName, orchVals.lbName, &clusterInst.CloudletKey, &pp, rootLBDetail, appInst.EnableIpv6, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -478,9 +478,9 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			Deployment: deployvars.CrmReplaceVars{
 				ClusterIp:    masterIPs.IPV4ExternalAddr(),
 				ClusterIPV6:  masterIPs.IPV6ExternalAddr(),
-				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
-				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
-				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
+				CloudletName: k8smgmt.NormalizeName(clusterInst.CloudletKey.Name),
+				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.Name),
+				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.CloudletKey.Organization),
 				AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 				DnsZone:      v.VMProperties.CommonPf.GetCloudletDNSZone(),
 			},
@@ -680,9 +680,9 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 			Deployment: deployvars.CrmReplaceVars{
 				ClusterIp:    masterIPs.IPV4ExternalAddr(),
 				ClusterIPV6:  masterIPs.IPV6ExternalAddr(),
-				CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Name),
-				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
-				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
+				CloudletName: k8smgmt.NormalizeName(clusterInst.CloudletKey.Name),
+				ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.Name),
+				CloudletOrg:  k8smgmt.NormalizeName(clusterInst.CloudletKey.Organization),
 				AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 				DnsZone:      v.VMProperties.CommonPf.GetCloudletDNSZone(),
 			},
@@ -730,7 +730,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 		lbName := appInst.Uri
 		nodeKey := edgeproto.CloudletNodeKey{
 			Name:        lbName,
-			CloudletKey: clusterInst.Key.CloudletKey,
+			CloudletKey: clusterInst.CloudletKey,
 		}
 		err = accessApi.DeleteCloudletNode(ctx, &nodeKey)
 		if err != nil {
@@ -865,8 +865,9 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		Deployment: deployvars.CrmReplaceVars{
 			ClusterIp:    masterIPs.IPV4ExternalAddr(),
 			ClusterIPV6:  masterIPs.IPV6ExternalAddr(),
-			ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.ClusterKey.Name),
-			CloudletName: k8smgmt.NormalizeName(clusterInst.Key.CloudletKey.Organization),
+			ClusterName:  k8smgmt.NormalizeName(clusterInst.Key.Name),
+			CloudletName: k8smgmt.NormalizeName(clusterInst.CloudletKey.Name),
+			CloudletOrg:  k8smgmt.NormalizeName(clusterInst.CloudletKey.Organization),
 			AppOrg:       k8smgmt.NormalizeName(app.Key.Organization),
 			DnsZone:      v.VMProperties.CommonPf.GetCloudletDNSZone(),
 		},

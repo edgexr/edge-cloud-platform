@@ -86,8 +86,11 @@ var EnvoyProxy = "envoy"
 var NginxProxy = "nginx"
 
 func GetContainerName(appInst *edgeproto.AppInst) string {
-	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
+	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityRegionScopeName {
 		return util.DNSSanitize(appInst.Key.Name)
+	} else if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
+		appInstName := cloudcommon.GetAppInstCloudletScopedName(appInst)
+		return util.DNSSanitize(appInstName)
 	} else {
 		return util.DNSSanitize(appInst.AppKey.Name + appInst.AppKey.Version)
 	}
@@ -143,6 +146,9 @@ func GetDockerPortString(ports []dme.AppPort, containerPortType string, proxyMat
 func getDockerComposeFileName(app *edgeproto.App, appInst *edgeproto.AppInst) string {
 	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
 		return util.DNSSanitize("docker-compose-"+appInst.Key.Name) + ".yml"
+	} else if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
+		appInstName := cloudcommon.GetAppInstCloudletScopedName(appInst)
+		return util.DNSSanitize("docker-compose-"+appInstName) + ".yml"
 	} else {
 		return util.DNSSanitize("docker-compose-"+app.Key.Name+app.Key.Version) + ".yml"
 	}

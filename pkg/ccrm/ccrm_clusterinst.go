@@ -20,12 +20,12 @@ import "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 func (s *CCRMHandler) ApplyClusterInst(in *edgeproto.ClusterInst, stream edgeproto.ClusterPlatformAPI_ApplyClusterInstServer) error {
 	ctx := stream.Context()
 	responseSender := edgeproto.NewClusterInstInfoSendUpdater(ctx, stream, in.Key)
-	needsUpdate, err := s.crmHandler.ClusterInstChanged(ctx, &in.Key.CloudletKey, in, responseSender)
+	needsUpdate, err := s.crmHandler.ClusterInstChanged(ctx, &in.CloudletKey, in, responseSender)
 	if err == nil && needsUpdate.Resources {
-		s.vmResourceActionEnd(ctx, &in.Key.CloudletKey)
+		s.vmResourceActionEnd(ctx, &in.CloudletKey)
 	}
 	if err == nil && needsUpdate.AppInstRuntime {
-		s.refreshAppInstRuntime(ctx, &in.Key.CloudletKey, in, nil)
+		s.refreshAppInstRuntime(ctx, &in.CloudletKey, in, nil)
 	}
 	return err
 }

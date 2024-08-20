@@ -137,8 +137,8 @@ func CreateClusterConfigMap(ctx context.Context, client ssh.Client, clusterInst 
 		"--from-literal=ClusterName='%s' "+
 		"--from-literal=CloudletName='%s' "+
 		"--from-literal=Organization='%s' --kubeconfig=%s",
-		clusterInst.Key.ClusterKey.Name, clusterInst.Key.CloudletKey.Name,
-		clusterInst.Key.CloudletKey.Organization,
+		clusterInst.Key.Name, clusterInst.CloudletKey.Name,
+		clusterInst.CloudletKey.Organization,
 		k8smgmt.GetKconfName(clusterInst))
 
 	out, err := client.Output(cmd)

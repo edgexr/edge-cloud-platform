@@ -263,5 +263,5 @@ func requireFileRemoved(t *testing.T, file string) {
 		}
 		time.Sleep(timeout / time.Duration(10))
 	}
-	require.True(t, os.IsNotExist(err), "require file removed error is %v", err)
+	require.True(t, os.IsNotExist(err), "require file removed error is %v for file %s", err, file)
 }

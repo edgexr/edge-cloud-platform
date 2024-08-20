@@ -139,7 +139,7 @@ func (d *DummyInfoResponder) runClusterInstChanged(ctx context.Context, obj *edg
 	if !d.enable {
 		return
 	}
-	if _, ok := d.crmsOnEdge[obj.Key.CloudletKey]; !ok {
+	if _, ok := d.crmsOnEdge[obj.CloudletKey]; !ok {
 		return
 	}
 	// copy out from cache since data may change while thread runs
@@ -155,7 +155,7 @@ func (d *DummyInfoResponder) runClusterInstDeleted(ctx context.Context, old *edg
 	if !d.enable {
 		return
 	}
-	if _, ok := d.crmsOnEdge[old.Key.CloudletKey]; !ok {
+	if _, ok := d.crmsOnEdge[old.CloudletKey]; !ok {
 		return
 	}
 	copy := &edgeproto.ClusterInst{}
@@ -167,7 +167,7 @@ func (d *DummyInfoResponder) runAppInstChanged(ctx context.Context, obj *edgepro
 	if !d.enable {
 		return
 	}
-	if _, ok := d.crmsOnEdge[obj.Key.CloudletKey]; !ok {
+	if _, ok := d.crmsOnEdge[obj.CloudletKey]; !ok {
 		return
 	}
 	// copy out from cache since data may change while thread runs
@@ -183,7 +183,7 @@ func (d *DummyInfoResponder) runAppInstDeleted(ctx context.Context, old *edgepro
 	if !d.enable {
 		return
 	}
-	if _, ok := d.crmsOnEdge[old.Key.CloudletKey]; !ok {
+	if _, ok := d.crmsOnEdge[old.CloudletKey]; !ok {
 		return
 	}
 	copy := &edgeproto.AppInst{}

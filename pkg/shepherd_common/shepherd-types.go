@@ -151,14 +151,15 @@ type TcpConnectionsMetric struct {
 	BytesRecvd  uint64
 }
 
-// We keep the name of the pod+ClusterInstKey rather than AppInstKey
+// We keep the name of the pod+ClusterKey rather than AppInstKey
 // The reason is that we do not have a way to differentiate between different pods in a k8s cluster
 // See EDGECLOUD-1183
 type MetricAppInstKey struct {
-	ClusterInstKey edgeproto.ClusterInstKey
-	Pod            string
-	AppInstName    string
-	AppInstOrg     string
+	ClusterKey  edgeproto.ClusterKey
+	CloudletKey edgeproto.CloudletKey
+	Pod         string
+	AppInstName string
+	AppInstOrg  string
 }
 
 type StatsOptions struct {
