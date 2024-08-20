@@ -668,10 +668,8 @@ func stopServices() {
 	services = Services{}
 }
 
-// Helper function to verify the compatibility of etcd version and
-// current data model version
+// get the etcd data model version
 func getDataVersion(ctx context.Context, objStore objstore.KVStore) (*edgeproto.DataModelVersion, error) {
-	// Version has value which is the hash value
 	// Version2 has value which is JSON string of edgeproto.DataModelVersion.
 	keyV2 := objstore.DbKeyPrefixString(DataModelVersion2Prefix)
 	val, _, _, err := objStore.Get(keyV2)
@@ -686,7 +684,7 @@ func getDataVersion(ctx context.Context, objStore objstore.KVStore) (*edgeproto.
 		return nil, err
 	}
 
-	// keyV2 not found, look for old key
+	// keyV2 not found, look for old key whose value is the hash value
 	key := objstore.DbKeyPrefixString(DataModelVersion0Prefix)
 	val, _, _, err = objStore.Get(key)
 	if err == nil {
