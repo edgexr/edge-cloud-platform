@@ -93,7 +93,7 @@ type ClusterRefsV1 struct {
 	Apps []AppInstRefKeyV1 `json:"apps"`
 }
 
-func AddStaticFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
+func AddStaticFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport, dbModelID int32) error {
 	// 1. Update cloudlets - set StaticRootLbFqdn
 	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
 	if err != nil {
@@ -198,7 +198,7 @@ func AddStaticFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllA
 	return nil
 }
 
-func UpgradeCrmOnEdge(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
+func UpgradeCrmOnEdge(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport, dbModelID int32) error {
 	log.SpanLog(ctx, log.DebugLevelUpgrade, "CrmOnEdge")
 
 	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
@@ -309,11 +309,11 @@ func UpgradeCrmOnEdge(ctx context.Context, objStore objstore.KVStore, allApis *A
 // of the AppInst/ClusterInst Key and onto the object body, changing
 // the unique key. Also, this requires the instance name to be unique
 // within the entire region instead of within a cloudlet scope.
-func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport) error {
+func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport, dbModelID int32) error {
 	// Unfortunately the last upgrade func had a bug which failed to
 	// asign object IDs to AppInsts and ClusterInsts. We run the fixed
 	// version here again. Note that all upgrade functions must be idempotent.
-	err := UpgradeCrmOnEdge(ctx, objStore, allApis, sup)
+	err := UpgradeCrmOnEdge(ctx, objStore, allApis, sup, dbModelID)
 	if err != nil {
 		return err
 	}

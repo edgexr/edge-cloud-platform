@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
@@ -358,7 +359,7 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		require.Nil(t, err, "Unable to build db from testData")
 		vaultPreData, vaultDataLoaded, err := loadVaultTestData(ctx, vaultConfig, funcName)
 		require.Nil(t, err, "Load Vault test data")
-		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn)
+		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, ii)
 		require.Nil(t, err, "Upgrade failed")
 		err = compareDbToExpected(&objStore, funcName)
 		require.Nil(t, err, "Unexpected result from upgrade function(%s)", funcName)
@@ -368,7 +369,7 @@ func TestAllUpgradeFuncs(t *testing.T) {
 			require.Nil(t, err)
 		}
 		// Run the upgrade again to make sure it's idempotent
-		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn)
+		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, ii)
 		require.Nil(t, err, "Upgrade second run failed")
 		err = compareDbToExpected(&objStore, funcName)
 		require.Nil(t, err, "Unexpected result from upgrade function second run (idempotency check) (%s)", funcName)
@@ -380,4 +381,56 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		// Stop it, so it's re-created again
 		objStore.Stop()
 	}
+}
+
+func TestGetDataVersion(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	kvstore := &regiondata.InMemoryStore{}
+	kvstore.Start()
+
+	// inject db version and check that it can be read back
+	keyV2 := objstore.DbKeyPrefixString("VersionV2")
+	vers := &edgeproto.DataModelVersion{
+		Hash: "myhash",
+		ID:   234,
+	}
+	out, err := json.Marshal(vers)
+	require.Nil(t, err)
+	_, err = kvstore.Put(ctx, keyV2, string(out))
+	require.Nil(t, err)
+	outVers, err := getDataVersion(ctx, kvstore)
+	require.Nil(t, err)
+	require.Equal(t, vers, outVers)
+	_, err = kvstore.Delete(ctx, keyV2)
+	require.Nil(t, err)
+
+	// write an older format version
+	key := objstore.DbKeyPrefixString("Version")
+	_, err = kvstore.Put(ctx, key, vers.Hash)
+	require.Nil(t, err)
+	outVers, err = getDataVersion(ctx, kvstore)
+	require.Nil(t, err)
+	require.Equal(t, vers.Hash, outVers.Hash)
+	require.Equal(t, int32(0), outVers.ID)
+	_, err = kvstore.Delete(ctx, key)
+	require.Nil(t, err)
+
+	// check no version
+	_, err = kvstore.Delete(ctx, keyV2)
+	require.Nil(t, err)
+	outVers, err = getDataVersion(ctx, kvstore)
+	curVers := edgeproto.GetDataModelVersion()
+	require.Nil(t, err)
+	require.Equal(t, curVers, outVers)
+	// check that current version was written to db
+	out, _, _, err = kvstore.Get(keyV2)
+	require.Nil(t, err)
+	writtenVers := &edgeproto.DataModelVersion{}
+	err = json.Unmarshal([]byte(out), writtenVers)
+	require.Nil(t, err)
+	require.Equal(t, curVers, writtenVers)
 }

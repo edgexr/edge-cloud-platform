@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -265,8 +266,11 @@ func startServices() error {
 	// We might need to upgrade the stored objects
 	if !*skipVersionCheck {
 		// First off - check version of the objectStore we are running
-		version, err := checkVersion(ctx, objStore)
-		if err != nil && strings.Contains(err.Error(), ErrCtrlUpgradeRequired.Error()) && *autoUpgrade {
+		version, err := getDataVersion(ctx, objStore)
+		if err != nil {
+			return fmt.Errorf("database version check failed, %s", err)
+		}
+		if *autoUpgrade && dataNeedsUpgrade(ctx, version) {
 			upgradeSupport := &UpgradeSupport{
 				region:      *region,
 				vaultConfig: vaultConfig,
@@ -664,31 +668,47 @@ func stopServices() {
 	services = Services{}
 }
 
-// Helper function to verify the compatibility of etcd version and
-// current data model version
-func checkVersion(ctx context.Context, objStore objstore.KVStore) (string, error) {
-	key := objstore.DbKeyPrefixString("Version")
-	val, _, _, err := objStore.Get(key)
-	if err != nil {
-		if !strings.Contains(err.Error(), objstore.NotFoundError(key).Error()) {
-			return "", err
-		}
-	}
-	verHash := string(val)
-	// If this is the first upgrade, just write the latest hash into etcd
-	if verHash == "" {
-		log.InfoLog("Could not find a previous version", "curr hash", edgeproto.GetDataModelVersion())
-		key := objstore.DbKeyPrefixString("Version")
-		_, err = objStore.Put(ctx, key, edgeproto.GetDataModelVersion())
+// get the etcd data model version
+func getDataVersion(ctx context.Context, objStore objstore.KVStore) (*edgeproto.DataModelVersion, error) {
+	// Version2 has value which is JSON string of edgeproto.DataModelVersion.
+	keyV2 := objstore.DbKeyPrefixString(DataModelVersion2Prefix)
+	val, _, _, err := objStore.Get(keyV2)
+	if err == nil {
+		vers := edgeproto.DataModelVersion{}
+		err = json.Unmarshal(val, &vers)
 		if err != nil {
-			return "", err
+			return nil, fmt.Errorf("failed to unmarshal data model version string %s, %s", string(val), err)
 		}
-		return edgeproto.GetDataModelVersion(), nil
+		return &vers, nil
+	} else if !strings.Contains(err.Error(), objstore.NotFoundError(keyV2).Error()) {
+		return nil, err
 	}
-	if edgeproto.GetDataModelVersion() != verHash {
-		return verHash, ErrCtrlUpgradeRequired
+
+	// keyV2 not found, look for old key whose value is the hash value
+	key := objstore.DbKeyPrefixString(DataModelVersion0Prefix)
+	val, _, _, err = objStore.Get(key)
+	if err == nil {
+		vers := edgeproto.DataModelVersion{
+			Hash: string(val),
+			ID:   0,
+		}
+		return &vers, nil
+	} else if !strings.Contains(err.Error(), objstore.NotFoundError(key).Error()) {
+		return nil, err
 	}
-	return verHash, nil
+
+	// neither key found, this is the first upgrade,
+	// write the latest hash into etcd
+	log.InfoLog("Could not find a previous version", "curr version", edgeproto.GetDataModelVersion())
+	vers := edgeproto.GetDataModelVersion()
+	if err := writeDataModelVersionV2(ctx, objStore, vers); err != nil {
+		return nil, fmt.Errorf("failed to write data model version %v, %s", vers, err)
+	}
+	return vers, nil
+}
+
+func dataNeedsUpgrade(ctx context.Context, vers *edgeproto.DataModelVersion) bool {
+	return edgeproto.GetDataModelVersion().Hash != vers.Hash
 }
 
 type AllApis struct {
