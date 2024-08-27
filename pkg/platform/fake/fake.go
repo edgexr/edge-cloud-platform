@@ -247,6 +247,10 @@ func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto
 	return nil
 }
 
+func (s *Platform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return s.UpdateClusterInst(ctx, clusterInst, updateCallback)
+}
+
 func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake CreateClusterInst", "clusterInst", clusterInst)
 	updateCallback(edgeproto.UpdateTask, "First Create Task")
@@ -356,6 +360,11 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 	return nil
 }
 
+func (v *Platform) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+	updateCallback(edgeproto.UpdateTask, "fake appinst dns updated")
+	return nil
+}
+
 func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 	if app.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		rt := &edgeproto.AppInstRuntime{}
@@ -430,15 +439,20 @@ func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 }
 
 func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.DebugLog(log.DebugLevelInfra, "update fake Cloudlet", "cloudlet", cloudlet)
+	log.SpanLog(ctx, log.DebugLevelInfra, "update fake Cloudlet", "cloudlet", cloudlet)
 	for key, val := range cloudlet.EnvVar {
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Updating envvar, %s=%s", key, val))
 	}
 	return nil
 }
 
+func (s *Platform) ChangeCloudletDNS(ctx context.Context, cloudlet *edgeproto.Cloudlet, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "update fake Cloudlet fqdn", "cloudlet", cloudlet)
+	return nil
+}
+
 func (s *Platform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {
-	log.DebugLog(log.DebugLevelInfra, "fake UpdateTrustPolicy begin", "policy", TrustPolicy)
+	log.SpanLog(ctx, log.DebugLevelInfra, "fake UpdateTrustPolicy begin", "policy", TrustPolicy)
 	return nil
 }
 
@@ -498,7 +512,7 @@ func (s *Platform) TrustPolicyExceptionCount(ctx context.Context) int {
 }
 
 func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.DebugLog(log.DebugLevelInfra, "delete fake Cloudlet", "key", cloudlet.Key)
+	log.SpanLog(ctx, log.DebugLevelInfra, "delete fake Cloudlet", "key", cloudlet.Key)
 	updateCallback(edgeproto.UpdateTask, "Deleting Cloudlet")
 	updateCallback(edgeproto.UpdateTask, "Stopping CRMServer")
 	err := process.StopCRMService(ctx, cloudlet, process.HARoleAll, s.crmServiceOps...)

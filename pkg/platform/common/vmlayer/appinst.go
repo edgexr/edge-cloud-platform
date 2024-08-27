@@ -217,10 +217,13 @@ func (v *VMPlatform) setupVMAppRootLBAndNode(ctx context.Context, clusterInst *e
 	if err != nil {
 		return err
 	}
-	err = v.proxyCerts.SetupTLSCerts(ctx, orchVals.lbName, orchVals.lbName, client)
-	if err != nil {
-		return err
-	}
+
+	// Why? This is done in SetupRootLB
+	//	err = v.proxyCerts.SetupTLSCerts(ctx, orchVals.lbName, orchVals.lbName, client)
+	//	if err != nil {
+	//		return err
+	//	}
+
 	// clusterInst is empty but that is ok here
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {
@@ -912,6 +915,33 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 	default:
 		return fmt.Errorf("UpdateAppInst not supported for deployment: %s", app.Deployment)
 	}
+}
+
+func (v *VMPlatform) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+	// only VM-type deployment require any work
+	if app.Deployment != cloudcommon.DeploymentTypeVM {
+		return nil
+	}
+	// Add a new DNS entry for appInst
+	rootLBDetail, err := v.VMProvider.GetServerDetail(ctx, appInst.Uri)
+	if err != nil {
+		return fmt.Errorf("failed to get server detail for VMApp rootLB %s, %s", appInst.Uri, err)
+	}
+
+	updateCallback(edgeproto.UpdateTask, "Setting Up Load Balancer")
+	pp := edgeproto.TrustPolicy{}
+	err = v.SetupRootLB(ctx, appInst.Uri, appInst.Uri, &appInst.CloudletKey, &pp, rootLBDetail, appInst.EnableIpv6, updateCallback)
+	if err != nil {
+		return err
+	}
+
+	// Now delete old DNS entry
+	updateCallback(edgeproto.UpdateTask, "Deleting old DNS")
+	if err := v.VMProperties.CommonPf.DeleteDNSRecords(ctx, OldURI); err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete DNS record", "uri", OldURI, "err", err)
+	}
+
+	return nil
 }
 
 func (v *VMPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {

@@ -2090,7 +2090,7 @@ func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *e
 
 	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateClusterInstTimeout.TimeDuration())
 	defer reqCancel()
-	
+
 	successMsg := fmt.Sprintf("Cluster %s updated successfully", key.Name)
 	return edgeproto.WaitForClusterInstInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
 		UpdateClusterInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,

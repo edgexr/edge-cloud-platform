@@ -42,3 +42,7 @@ func (k *K8sBareMetalPlatform) UpdateClusterInst(ctx context.Context, clusterIns
 func (k *K8sBareMetalPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("DeleteClusterInst not supported on " + platformName())
 }
+
+func (s *K8sBareMetalPlatform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("ChangeClusterInstDNS not supported on " + platformName())
+}

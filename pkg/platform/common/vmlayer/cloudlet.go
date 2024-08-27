@@ -304,6 +304,23 @@ func (v *VMPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	return nil
 }
 
+func (v *VMPlatform) ChangeCloudletDNS(ctx context.Context, cloudlet *edgeproto.Cloudlet, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	var err error
+
+	// Set up new dns registration before removing the old one
+	err = v.initRootLB(ctx, v.VMProperties.CommonPf.PlatformConfig, ActionUpdate, updateCallback)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "Unable to update shared lb dns", "cloudlet", cloudlet.Key, "oldFqdn", oldFqdn)
+		return err
+	}
+
+	// now delete old dns entry
+	if err = v.VMProperties.CommonPf.DeleteDNSRecords(ctx, oldFqdn); err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete old sharedRootLB DNS record", "fqdn", oldFqdn, "err", err)
+	}
+	return nil
+}
+
 func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "update VMPlatform TrustPolicy", "policy", TrustPolicy)
 	egressRestricted := TrustPolicy.Key.Name != ""

@@ -199,3 +199,7 @@ func (m *ManagedK8sPlatform) CreatePlatformApp(ctx context.Context, name string,
 
 func (m *ManagedK8sPlatform) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {
 }
+
+func (v *ManagedK8sPlatform) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("Updating DNS is not supported")
+}

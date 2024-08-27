@@ -2642,6 +2642,9 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 		return fmt.Errorf("maintenance mode is required to update DNS")
 	}
 
+	// DEBUG - for testing only
+	*appDNSRoot = "app.dnsmigratetestclould.edgexr.org"
+
 	// Step 1 - update rootLb fqdn
 	// Does our current DNS app root name match what the clouldet alredy have?
 	var modRev int64
@@ -2677,9 +2680,9 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	clustersToUpdate := []edgeproto.ClusterInst{}
 	s.all.clusterInstApi.cache.Show(&ciFilter, func(clusterInst *edgeproto.ClusterInst) error {
 		log.SpanLog(ctx, log.DebugLevelApi, "Collecting clusters", "cluster", clusterInst.Key.Name)
-		//DEBUG		if !strings.HasSuffix(clusterInst.Fqdn, *appDNSRoot) {
-		clustersToUpdate = append(clustersToUpdate, *clusterInst)
-		//		}
+		if !strings.HasSuffix(clusterInst.Fqdn, *appDNSRoot) {
+			clustersToUpdate = append(clustersToUpdate, *clusterInst)
+		}
 		return nil
 	})
 	cb.Send(&edgeproto.Result{Message: "Updating cluster FQDNs"})
@@ -2694,7 +2697,9 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	}
 	appinstsToUpdate := []edgeproto.AppInst{}
 	s.all.appInstApi.cache.Show(&aiFilter, func(appInst *edgeproto.AppInst) error {
-		appinstsToUpdate = append(appinstsToUpdate, *appInst)
+		if !strings.HasSuffix(appInst.Uri, *appDNSRoot) {
+			appinstsToUpdate = append(appinstsToUpdate, *appInst)
+		}
 		return nil
 	})
 	cb.Send(&edgeproto.Result{Message: "Updating AppInst URIs"})

@@ -61,6 +61,10 @@ func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto
 	return fmt.Errorf("update cluster not supported for KIND")
 }
 
+func (s *Platform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("cluster dns change not supported for KIND")
+}
+
 func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return s.DeleteKINDCluster(ctx, clusterInst)
 }

@@ -200,6 +200,36 @@ type NeedsUpdate struct {
 	AppInstRuntime bool
 }
 
+func (cd *CRMHandler) ClusterInstDNSChanged(ctx context.Context, target *edgeproto.CloudletKey, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst, sender edgeproto.ClusterInstInfoSender) (reterr error) {
+	var err error
+
+	fmap := edgeproto.MakeFieldMap(new.Fields)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ClusterInstChange for DNS", "key", new.Key, "old dns", old.Fqdn, "new dns", new.Fqdn)
+
+	if !fmap.Has(edgeproto.ClusterInstFieldFqdn) {
+		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
+		return nil
+	}
+	// call into cluster.go in vmlayer and update dns address and upate certs
+	// see where we do that in rebuilding rootLb image
+	// v.ActivateFQDNs(ctx, rootLBFQDN, rootLBIPs.IPV4(), rootLBIPs.IPV6())
+	// v.proxyCerts.SetupTLSCerts(ctx, rootLBFQDN, rootLBName, client)
+	// also need to restart nginx services(maybe even simpler to restart the rootLb vm)
+	// TODO - maybe we could just rely on clusterUpdate to doo what we need to?
+	updateClusterCacheCallback := sender.SendStatusIgnoreErr
+	pf, err := cd.getPlatform(ctx, target)
+	if err != nil {
+		return err
+	}
+	err = pf.ChangeClusterInstDNS(ctx, new, old.Fqdn, updateClusterCacheCallback)
+	if err != nil {
+		err := fmt.Errorf("update failed: %s", err)
+		sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
+		return err
+	}
+	return nil
+}
+
 func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.ClusterInst, sender edgeproto.ClusterInstInfoSender) (nu NeedsUpdate, reterr error) {
 	var err error
 
@@ -334,6 +364,42 @@ func (cd *CRMHandler) CloudletHasTrustPolicy(ctx context.Context, cloudletKey *e
 		return false, nil
 	}
 	return true, nil
+}
+
+func (cd *CRMHandler) AppInstDNSChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.AppInst, old *edgeproto.AppInst, sender edgeproto.AppInstInfoSender) (reterr error) {
+	var err error
+
+	fmap := edgeproto.MakeFieldMap(new.Fields)
+	log.SpanLog(ctx, log.DebugLevelInfra, "AppInstDNSChanged", "key", new.Key, "old dns", old.Uri, "new dns", new.Uri)
+
+	if !fmap.Has(edgeproto.AppInstFieldUri) {
+		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
+		return nil
+	}
+	// call into cluster.go in vmlayer and update dns address and upate certs
+	// see where we do that in rebuilding rootLb image
+	// v.ActivateFQDNs(ctx, rootLBFQDN, rootLBIPs.IPV4(), rootLBIPs.IPV6())
+	// v.proxyCerts.SetupTLSCerts(ctx, rootLBFQDN, rootLBName, client)
+	// also need to restart nginx services(maybe even simpler to restart the rootLb vm)
+	// TODO - maybe we could just rely on clusterUpdate to doo what we need to?
+	updateAppCacheCallback := sender.SendStatusIgnoreErr
+	pf, err := cd.getPlatform(ctx, target)
+	if err != nil {
+		return err
+	}
+	app := edgeproto.App{}
+	found := cd.AppCache.Get(&new.AppKey, &app)
+	if !found {
+		log.SpanLog(ctx, log.DebugLevelInfra, "App not found for AppInst", "key", new.Key)
+		return new.AppKey.NotFoundError()
+	}
+	err = pf.ChangeAppInstDNS(ctx, &app, new, old.Uri, updateAppCacheCallback)
+	if err != nil {
+		err := fmt.Errorf("update failed: %s", err)
+		sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
+		return err
+	}
+	return nil
 }
 
 func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.AppInst, sender edgeproto.AppInstInfoSender) (nu NeedsUpdate, reterr error) {
@@ -542,6 +608,31 @@ func (cd *CRMHandler) appInstInfoRuntime(ctx context.Context, sender edgeproto.A
 		info.Status.SetTask(edgeproto.TrackedState_CamelName[int32(state)])
 		return nil
 	})
+}
+
+func (cd *CRMHandler) CloudletDNSChanged(ctx context.Context, target *edgeproto.CloudletKey, old *edgeproto.Cloudlet, new *edgeproto.Cloudlet, sender edgeproto.CloudletInfoSender) (reterr error) {
+	var err error
+
+	fmap := edgeproto.MakeFieldMap(new.Fields)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CloudletDNSChanged", "key", target, "old dns", old.RootLbFqdn, "new dns", new.RootLbFqdn)
+
+	if !fmap.Has(edgeproto.CloudletFieldRootLbFqdn) {
+		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
+		return nil
+	}
+	updateCloudletCallback := sender.SendStatusIgnoreErr
+	pf, err := cd.getPlatform(ctx, target)
+	if err != nil {
+		return err
+	}
+
+	err = pf.ChangeCloudletDNS(ctx, new, old.RootLbFqdn, updateCloudletCallback)
+	if err != nil {
+		err := fmt.Errorf("update failed: %s", err)
+		sender.SendState(dme.CloudletState(edgeproto.TrackedState_UPDATE_ERROR), edgeproto.WithStateError(err))
+		return err
+	}
+	return nil
 }
 
 func (cd *CRMHandler) CloudletChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.Cloudlet, sender edgeproto.CloudletInfoSender) (reterr error) {
