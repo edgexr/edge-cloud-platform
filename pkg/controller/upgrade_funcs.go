@@ -54,6 +54,14 @@ func getDbObjectKeysList(objStore objstore.KVStore, dbPrefix string) ([]string, 
 	return keyList, nil
 }
 
+func getDbObjects(objStore objstore.KVStore, dbPrefix string, cb func(key, val string) error) error {
+	keystr := fmt.Sprintf("%s/", objstore.DbKeyPrefixString(dbPrefix))
+	err := objStore.List(keystr, func(key, val []byte, rev, modRev int64) error {
+		return cb(string(key), string(val))
+	})
+	return err
+}
+
 func removeKeyDbPrefix(key, dbPrefix string) string {
 	pre := objstore.DbKeyPrefixString(dbPrefix)
 	if len(key) > len(pre)+1 {
@@ -89,8 +97,104 @@ type CloudletRefsV1 struct {
 	K8SAppInsts  []AppInstRefKeyV1     `json:"k8s_app_insts"`
 }
 
-type ClusterRefsV1 struct {
-	Apps []AppInstRefKeyV1 `json:"apps"`
+// AppInstKeyName fixes an issue with the original AppInstKeyName
+// upgrade function which failed to upgrade ClusterRefs properly, as it was
+// looking for the wrong AppInst ref format.
+func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport, dbModelID int32) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "AppInstKeyNameClusterRefs")
+
+	// Track key refs so we can upgrade references
+	appInstsByCluster := map[edgeproto.ClusterKey]map[edgeproto.AppInstKey]*edgeproto.AppInst{}
+
+	// AppInst keys
+	err := getDbObjects(objStore, "AppInst", func(key, val string) error {
+		var appInst edgeproto.AppInst
+		if err2 := unmarshalUpgradeObj(ctx, val, &appInst); err2 != nil {
+			return err2
+		}
+		if appInst.ClusterKey.Name == "" || appInst.ClusterKey.Organization == "" {
+			// VM app inst
+			return nil
+		}
+		insts, ok := appInstsByCluster[appInst.ClusterKey]
+		if !ok {
+			insts = map[edgeproto.AppInstKey]*edgeproto.AppInst{}
+			appInstsByCluster[appInst.ClusterKey] = insts
+		}
+		insts[appInst.Key] = &appInst
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// Remove old refs that didn't get upgraded properly
+	err = getDbObjects(objStore, "ClusterRefs", func(key, val string) error {
+		if strings.Contains(val, "v_cluster_name") {
+			_, err := objStore.Delete(ctx, key)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	// ensure cluster refs exist and are up to date
+	for clusterKey, appInsts := range appInstsByCluster {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			refs := edgeproto.ClusterRefs{}
+			if !allApis.clusterRefsApi.store.STMGet(stm, &clusterKey, &refs) {
+				refs.Key = clusterKey
+			}
+			curRefs := map[edgeproto.AppInstKey]struct{}{}
+			refsList := []edgeproto.AppInstKey{}
+			for _, aikey := range refs.Apps {
+				buf := edgeproto.AppInst{}
+				if !allApis.appInstApi.store.STMGet(stm, &aikey, &buf) {
+					// invalid ref
+					continue
+				}
+				refsList = append(refsList, aikey)
+				curRefs[aikey] = struct{}{}
+			}
+			updated := false
+			if len(refsList) != len(refs.Apps) {
+				// some invalid apps were removed
+				refs.Apps = refsList
+				updated = true
+			}
+			// add any appinsts that were missing
+			for aikey, _ := range appInsts {
+				if _, found := curRefs[aikey]; found {
+					continue
+				}
+				// make sure it hasn't been deleted
+				ai := edgeproto.AppInst{}
+				if !allApis.appInstApi.store.STMGet(stm, &aikey, &ai) {
+					continue
+				}
+				// double check cluster
+				if !ai.ClusterKey.Matches(&refs.Key) {
+					continue
+				}
+				refs.Apps = append(refs.Apps, aikey)
+				updated = true
+			}
+			if updated {
+				allApis.clusterRefsApi.store.STMPut(stm, &refs)
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+	}
+
+	return nil
 }
 
 func AddStaticFqdn(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport, dbModelID int32) error {
@@ -598,6 +702,10 @@ func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore
 					Organization: aikey.Organization,
 					CloudletKey:  *cloudletKey,
 				}
+				if v2.Name == "" {
+					// invalid ref, skip it, we'll rebuild clusterRefs
+					// at the end anyway.
+				}
 				if newKey, ok := aiUpdatedNames[v2]; ok && !newKey.Matches(&aikey) {
 					refs.Apps[ii] = newKey
 				}
@@ -656,5 +764,14 @@ func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore
 			return err
 		}
 	}
+
+	// AppInstKeyName had a bug where clusterRefs were not upgraded properly.
+	// The fix assumes clusterRefs are stored with a key in the current
+	// format, so this must be run after the instance key upgrade.
+	err = AppInstKeyName(ctx, objStore, allApis, sup, dbModelID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
