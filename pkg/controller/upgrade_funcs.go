@@ -353,6 +353,7 @@ func UpgradeCrmOnEdge(ctx context.Context, objStore objstore.KVStore, allApis *A
 			data := map[string]any{}
 			err := json.Unmarshal([]byte(appInstStr), &data)
 			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "Upgrade unmarshal object failed", "objType", "appInst", "key", appInstKey, "val", appInstStr, "err", err)
 				return err
 			}
 			if _, ok := data["obj_id"]; ok {
@@ -388,6 +389,7 @@ func UpgradeCrmOnEdge(ctx context.Context, objStore objstore.KVStore, allApis *A
 			data := map[string]any{}
 			err := json.Unmarshal([]byte(clusterInstStr), &data)
 			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelUpgrade, "Upgrade unmarshal object failed", "objType", "clusterInst", "key", key, "val", clusterInstStr, "err", err)
 				return err
 			}
 			if _, ok := data["obj_id"]; ok {
@@ -620,7 +622,7 @@ func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore
 					ClusterKey:  cikey,
 					CloudletKey: refs.Key,
 				}
-				if newKey, ok := ciUpdatedNames[v2]; ok && !newKey.Matches(&cikey) {
+				if newKey, ok := ciUpdatedNames[v2]; ok {
 					refs.ClusterInsts[ii] = newKey
 					updated = true
 				}
@@ -632,7 +634,7 @@ func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore
 					Organization: aikey.Organization,
 					CloudletKey:  refs.Key,
 				}
-				if newKey, ok := aiUpdatedNames[v2]; ok && !newKey.Matches(&aikey) {
+				if newKey, ok := aiUpdatedNames[v2]; ok {
 					refs.VmAppInsts[ii] = newKey
 					updated = true
 				}
@@ -644,7 +646,7 @@ func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore
 					Organization: aikey.Organization,
 					CloudletKey:  refs.Key,
 				}
-				if newKey, ok := aiUpdatedNames[v2]; ok && !newKey.Matches(&aikey) {
+				if newKey, ok := aiUpdatedNames[v2]; ok {
 					refs.K8SAppInsts[ii] = newKey
 					updated = true
 				}
@@ -706,7 +708,7 @@ func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore
 					// invalid ref, skip it, we'll rebuild clusterRefs
 					// at the end anyway.
 				}
-				if newKey, ok := aiUpdatedNames[v2]; ok && !newKey.Matches(&aikey) {
+				if newKey, ok := aiUpdatedNames[v2]; ok {
 					refs.Apps[ii] = newKey
 				}
 			}
@@ -736,7 +738,7 @@ func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore
 			// update insts refs from AppInstKeyV2 to AppInstKey
 			updated := false
 			for str, val := range refs.Insts {
-				key, v2, err := edgeproto.BindJSONAppInstKeyV2([]byte(str))
+				_, v2, err := edgeproto.BindJSONAppInstKeyV2([]byte(str))
 				if err != nil {
 					return err
 				}
@@ -744,7 +746,7 @@ func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore
 					// already upgraded
 					continue
 				}
-				if newKey, ok := aiUpdatedNames[*v2]; ok && !newKey.Matches(key) {
+				if newKey, ok := aiUpdatedNames[*v2]; ok {
 					newStr, err := json.Marshal(newKey)
 					if err != nil {
 						return err
