@@ -79,5 +79,17 @@
 1/ClusterRefs/{"cluster_key":{"name":"conflict","organization":"dev1},"cloudlet_key":{"organization":"oper1","name":"cloudlet7"}}
 {"key":{"cluster_key":{"name":"conflict","organization":"dev1"},"cloudlet_key":{"organization":"oper1","name":"cloudlet7"}},"apps":[{"name":"conflict","organization":"edgecloudorg"}]}
 
+1/AppInst/{"name":"ref2","organization":"edgecloudorg","cloudlet_key":{"organization":"oper1","name":"cloudletx"}}
+{"key":{"name":"ref2","organization":"edgecloudorg","cloudlet_key":{"organization":"oper1","name":"cloudletx"}},"cluster_key":{"name":"reservable0","organization":"edgecloudorg"},"obj_id":"10"}
+
+1/AppInst/{"name":"ref2a","organization":"edgecloudorg","cloudlet_key":{"organization":"oper1","name":"cloudletx"}}
+{"key":{"name":"ref2a","organization":"edgecloudorg","cloudlet_key":{"organization":"oper1","name":"cloudletx"}},"cluster_key":{"name":"reservable0","organization":"edgecloudorg"},"obj_id":"11"}
+
+1/ClusterRefs/{"cluster_key":{"name":"reservable0"},"cloudlet_key":{"organization":"oper1","name":"cloudletx"},"organization":"edgecloudorg"}
+{"key":{"cluster_key":{"name":"reservable0"},"cloudlet_key":{"organization":"oper1","name":"cloudletx"},"organization":"edgecloudorg"},"apps":[{"app_key":{"organization":"EdgeXR-Dev","name":"ComputerVision","version":"2.2"},"v_cluster_name":"autoclustercomputervision"},{"app_key":{"organization":"edgecloudorg","name":"MEXPrometheusAppName","version":"1.0"},"v_cluster_name":"reservable0"}]}
+
+1/ClusterRefs/{"cluster_key":{"name":"reservable0"},"cloudlet_key":{"organization":"oper1","name":"nosuchcloudlet"},"organization":"edgecloudorg"}
+{"key":{"cluster_key":{"name":"reservable0"},"cloudlet_key":{"organization":"oper1","name":"nosuchcloudlet"},"organization":"edgecloudorg"},"apps":[{"app_key":{"organization":"EdgeXR-Dev","name":"ComputerVision","version":"2.2"},"v_cluster_name":"autoclustercomputervision"},{"app_key":{"organization":"edgecloudorg","name":"MEXPrometheusAppName","version":"1.0"},"v_cluster_name":"reservable0"}]}
+
 1/AppInstRefs/{"organization":"edgecloudorg","name":"app1","version":"1.0"}
 {"key":{"organization":"edgecloudorg","name":"app1","version":"1.0"},"insts":{"{\"name\":\"conflict\",\"organization\":\"edgecloudorg\",\"cloudlet_key\":{\"organization\":\"oper1\",\"name\":\"cloudlet7\"}}":1}}

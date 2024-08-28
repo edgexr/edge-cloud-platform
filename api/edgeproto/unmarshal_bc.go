@@ -81,28 +81,25 @@ func BindJSONClusterRefsV2(refs *ClusterRefs, jsonData []byte) (*CloudletKey, er
 // the parent object, and the jsonData corresponds to the parent.
 // Examples of this are ClusterInstInfo, ClusterRefs.
 func bindJSONObjectWithClusterInstKeyV2(objKey *ClusterKey, jsonData []byte) (*CloudletKey, error) {
-	if objKey.IsEmpty() {
-		// read the cluster key from the old location
-		out, _, _, err := jsonparser.Get(jsonData, "key", "cluster_key")
-		if err == nil {
-			// data was found, unmarshal it
-			err = json.Unmarshal(out, objKey)
-			if err != nil {
-				return nil, err
-			}
+	// read the cluster key from the old location
+	out, _, _, err := jsonparser.Get(jsonData, "key", "cluster_key")
+	if err == nil {
+		// data was found, unmarshal it
+		err = json.Unmarshal(out, objKey)
+		if err != nil {
+			return nil, err
 		}
-		cloudletKey := CloudletKey{}
-		out, _, _, err = jsonparser.Get(jsonData, "key", "cloudlet_key")
-		if err == nil {
-			// data was found, unmarshal it
-			err = json.Unmarshal(out, &cloudletKey)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return &cloudletKey, nil
 	}
-	return nil, nil
+	cloudletKey := CloudletKey{}
+	out, _, _, err = jsonparser.Get(jsonData, "key", "cloudlet_key")
+	if err == nil {
+		// data was found, unmarshal it
+		err = json.Unmarshal(out, &cloudletKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &cloudletKey, nil
 }
 
 // BindJSONAppInstKeyV2 reads jsonData corresponding to either
