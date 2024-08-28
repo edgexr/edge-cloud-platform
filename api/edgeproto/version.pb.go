@@ -250,8 +250,15 @@ var VersionHashCommonPrefix = "Hash"
 // TrustPolicyExceptionKey
 // VMPoolKey
 // VirtualClusterInstKeyV1
-var versionHashString = "eac56710c013d954db31eeb306b514a4"
 
-func GetDataModelVersion() string {
-	return versionHashString
+type DataModelVersion struct {
+	Hash string
+	ID   int32
+}
+
+func GetDataModelVersion() *DataModelVersion {
+	return &DataModelVersion{
+		Hash: "eac56710c013d954db31eeb306b514a4",
+		ID:   55,
+	}
 }

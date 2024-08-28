@@ -16,6 +16,10 @@
 {"key":{"name":"noconflict","organization":"edgecloudorg"},"app_key":{},"cluster_key":{},"cloudlet_key":{"organization":"oper1","name":"cloudlet1"},"cloudlet_loc":{},"mapped_ports":null,"flavor":{},"runtime_info":{},"created_at":"","updated_at":"","fed_key":{},"virtual_cluster_key":{},"obj_id":"1"}
 1/AppInst/{"name":"noconflict2","organization":"edgecloudorg"}
 {"key":{"name":"noconflict2","organization":"edgecloudorg"},"app_key":{},"cluster_key":{},"cloudlet_key":{"organization":"oper1","name":"cloudlet1"},"cloudlet_loc":{},"mapped_ports":null,"flavor":{},"runtime_info":{},"created_at":"","updated_at":"","fed_key":{},"virtual_cluster_key":{},"obj_id":"2"}
+1/AppInst/{"name":"ref2","organization":"edgecloudorg"}
+{"key":{"name":"ref2","organization":"edgecloudorg"},"app_key":{},"cluster_key":{"name":"reservable0","organization":"edgecloudorg"},"cloudlet_key":{"organization":"oper1","name":"cloudletx"},"cloudlet_loc":{},"mapped_ports":null,"flavor":{},"runtime_info":{},"created_at":"","updated_at":"","fed_key":{},"virtual_cluster_key":{},"obj_id":"10"}
+1/AppInst/{"name":"ref2a","organization":"edgecloudorg"}
+{"key":{"name":"ref2a","organization":"edgecloudorg"},"app_key":{},"cluster_key":{"name":"reservable0","organization":"edgecloudorg"},"cloudlet_key":{"organization":"oper1","name":"cloudletx"},"cloudlet_loc":{},"mapped_ports":null,"flavor":{},"runtime_info":{},"created_at":"","updated_at":"","fed_key":{},"virtual_cluster_key":{},"obj_id":"11"}
 1/AppInstRefs/{"organization":"edgecloudorg","name":"app1","version":"1.0"}
 {"key":{"organization":"edgecloudorg","name":"app1","version":"1.0"},"insts":{"{\"name\":\"conflict-132bad5b\",\"organization\":\"edgecloudorg\"}":1},"delete_requested_insts":null}
 1/CloudletRefs/{"organization":"oper1","name":"cloudlet1"}
@@ -54,3 +58,5 @@
 {"key":{"name":"conflict-132bad5b","organization":"dev1"},"apps":[{"name":"conflict-132bad5b","organization":"edgecloudorg"}]}
 1/ClusterRefs/{"name":"noconflict","organization":"dev1"}
 {"key":{"name":"noconflict","organization":"dev1"},"apps":[{"name":"noconflict","organization":"edgecloudorg"},{"name":"noconflict2","organization":"edgecloudorg"},{"name":"conflict","organization":"edgecloudorg"}]}
+1/ClusterRefs/{"name":"reservable0","organization":"edgecloudorg"}
+{"key":{"name":"reservable0","organization":"edgecloudorg"},"apps":[{"name":"ref2","organization":"edgecloudorg"},{"name":"ref2a","organization":"edgecloudorg"}]}

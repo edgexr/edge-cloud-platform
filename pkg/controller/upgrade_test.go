@@ -18,12 +18,15 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
@@ -45,7 +48,6 @@ var upgradeVaultTestFileExpectedSuffix = "_expected.vault"
 
 // Walk testutils data and populate objStore
 func buildDbFromTestData(objStore objstore.KVStore, funcName string) error {
-	var key, val string
 	ctx := context.Background()
 
 	filename := upgradeTestFileLocation + "/" + funcName + upgradeTestFilePreSuffix
@@ -54,7 +56,24 @@ func buildDbFromTestData(objStore objstore.KVStore, funcName string) error {
 		return fmt.Errorf("Unable to find preupgrade testdata file at %s", filename)
 	}
 	defer file.Close()
+	err = scanEtcdFile(ctx, file, func(ctx context.Context, key, val string) error {
+		if _, err := objStore.Put(ctx, key, val); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to scan etcd file %s, %s", filename, err)
+	}
+	return nil
+}
+
+func scanEtcdFile(ctx context.Context, file *os.File, cb func(ctx context.Context, key, val string) error) error {
+	var key, val string
 	scanner := bufio.NewScanner(file)
+	buf := make([]byte, 10*1024*1024)
+	scanner.Buffer(buf, len(buf))
+	lineno := 1
 	for {
 		// double for loop to skip empty lines
 		for {
@@ -62,20 +81,26 @@ func buildDbFromTestData(objStore objstore.KVStore, funcName string) error {
 				return nil
 			}
 			key = scanner.Text()
+			lineno++
 			if key != "" {
+				if !strings.HasPrefix(key, "1/") {
+					return fmt.Errorf("invalid key %s on line %d", key, lineno)
+				}
 				break
 			}
 		}
 		for {
 			if !scanner.Scan() {
-				return fmt.Errorf("Improper formatted preupgrade .etcd file - Unmatched key without a value.")
+				return fmt.Errorf("key without a value for key %s on line %d.", key, lineno)
 			}
 			val = scanner.Text()
+			lineno++
 			if val != "" {
 				break
 			}
 		}
-		if _, err := objStore.Put(ctx, key, val); err != nil {
+		err := cb(ctx, key, val)
+		if err != nil {
 			return err
 		}
 	}
@@ -84,8 +109,6 @@ func buildDbFromTestData(objStore objstore.KVStore, funcName string) error {
 // walk testutils data and see if the entries exist in the objstore
 func compareDbToExpected(objStore objstore.KVStore, funcName string) error {
 	var dbObjCount, fileObjCount int
-
-	var key, val string
 
 	filename := upgradeTestFileLocation + "/" + funcName + upgradeTestFilePostSuffix
 	file, err := os.Open(filename)
@@ -104,19 +127,12 @@ func compareDbToExpected(objStore objstore.KVStore, funcName string) error {
 		val string
 	}
 	var compareErr error
-	scanner := bufio.NewScanner(file)
-	for {
-		if !scanner.Scan() {
-			break
-		}
-		key = scanner.Text()
-		if !scanner.Scan() {
-			return fmt.Errorf("Improper formatted postupgrade .etcd file - Unmatched key, without a value.")
-		}
-		val = scanner.Text()
+	ctx := context.Background()
+	err = scanEtcdFile(ctx, file, func(ctx context.Context, key, val string) error {
 		dbVal, _, _, err := objStore.Get(key)
-		if err != nil {
-			return fmt.Errorf("Unable to get value for key[%s], %v", key, err)
+		if err != nil && compareErr == nil {
+			// continue writing to expected file
+			compareErr = fmt.Errorf("Unable to get value for key[%s], %v", key, err)
 		}
 		// data may be in json format or non-json string
 		compareDone, err := compareJson(funcName, key, val, string(dbVal))
@@ -128,6 +144,10 @@ func compareDbToExpected(objStore objstore.KVStore, funcName string) error {
 			compareErr = err
 		}
 		fileObjCount++
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to scan etcd file %s, %s", filename, err)
 	}
 	kvs := []kv{}
 	err = objStore.List("", func(key, val []byte, rev, modRev int64) error {
@@ -348,6 +368,46 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	}
 
 	ctx := log.StartTestSpan(context.Background())
+
+	// The upgrade path test is normally not run. It can be used to
+	// test a full upgrade of an existing etcd database dump.
+	// To dump the etcd database from a kubernetes deployment, use:
+	// kubectl exec -it edgecloud-etcd-0 -c edgecloud-etcd -- bash -c "ETCDCTL_API=3 etcdctl get '' --prefix" > UpgradePath_pre.etcd
+	// Then move the UpgradePath_pre.etcd file into the upgrade_testfiles
+	// directory, and also copy it to UpgradePath_post.etcd.
+	// Note that you will need to compare the UpgradePath_expected.etcd
+	// output and diff manually, as it is intended to fail since
+	// the expected resulting etcd db is not provided.
+	t.Run("upgrade-path", func(t *testing.T) {
+		funcName := "UpgradePath"
+		_, err := os.Stat("upgrade_testfiles/" + funcName + upgradeTestFilePreSuffix)
+		if err != nil && errors.Is(err, os.ErrNotExist) {
+			return
+		}
+		require.Nil(t, err)
+
+		objStore.Start()
+		err = buildDbFromTestData(&objStore, funcName)
+		require.Nil(t, err)
+		vaultPreData, vaultDataLoaded, err := loadVaultTestData(ctx, vaultConfig, funcName)
+		require.Nil(t, err, "Load Vault test data")
+		for ii, fn := range VersionHash_UpgradeFuncs {
+			if fn == nil {
+				continue
+			}
+			err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, ii)
+			require.Nil(t, err, "Upgrade failed")
+		}
+		err = compareDbToExpected(&objStore, funcName)
+		require.Nil(t, err, "Unexpected result from upgrade function(%s)", funcName)
+		if vaultDataLoaded {
+			cleanupVault := false
+			err = compareVaultData(ctx, vaultConfig, funcName, region, vaultPreData, cleanupVault)
+			require.Nil(t, err)
+		}
+		objStore.Stop()
+	})
+
 	for ii, fn := range VersionHash_UpgradeFuncs {
 		if fn == nil {
 			continue
@@ -358,7 +418,7 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		require.Nil(t, err, "Unable to build db from testData")
 		vaultPreData, vaultDataLoaded, err := loadVaultTestData(ctx, vaultConfig, funcName)
 		require.Nil(t, err, "Load Vault test data")
-		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn)
+		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, ii)
 		require.Nil(t, err, "Upgrade failed")
 		err = compareDbToExpected(&objStore, funcName)
 		require.Nil(t, err, "Unexpected result from upgrade function(%s)", funcName)
@@ -368,7 +428,7 @@ func TestAllUpgradeFuncs(t *testing.T) {
 			require.Nil(t, err)
 		}
 		// Run the upgrade again to make sure it's idempotent
-		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn)
+		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, ii)
 		require.Nil(t, err, "Upgrade second run failed")
 		err = compareDbToExpected(&objStore, funcName)
 		require.Nil(t, err, "Unexpected result from upgrade function second run (idempotency check) (%s)", funcName)
@@ -380,4 +440,56 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		// Stop it, so it's re-created again
 		objStore.Stop()
 	}
+}
+
+func TestGetDataVersion(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	kvstore := &regiondata.InMemoryStore{}
+	kvstore.Start()
+
+	// inject db version and check that it can be read back
+	keyV2 := objstore.DbKeyPrefixString("VersionV2")
+	vers := &edgeproto.DataModelVersion{
+		Hash: "myhash",
+		ID:   234,
+	}
+	out, err := json.Marshal(vers)
+	require.Nil(t, err)
+	_, err = kvstore.Put(ctx, keyV2, string(out))
+	require.Nil(t, err)
+	outVers, err := getDataVersion(ctx, kvstore)
+	require.Nil(t, err)
+	require.Equal(t, vers, outVers)
+	_, err = kvstore.Delete(ctx, keyV2)
+	require.Nil(t, err)
+
+	// write an older format version
+	key := objstore.DbKeyPrefixString("Version")
+	_, err = kvstore.Put(ctx, key, vers.Hash)
+	require.Nil(t, err)
+	outVers, err = getDataVersion(ctx, kvstore)
+	require.Nil(t, err)
+	require.Equal(t, vers.Hash, outVers.Hash)
+	require.Equal(t, int32(0), outVers.ID)
+	_, err = kvstore.Delete(ctx, key)
+	require.Nil(t, err)
+
+	// check no version
+	_, err = kvstore.Delete(ctx, keyV2)
+	require.Nil(t, err)
+	outVers, err = getDataVersion(ctx, kvstore)
+	curVers := edgeproto.GetDataModelVersion()
+	require.Nil(t, err)
+	require.Equal(t, curVers, outVers)
+	// check that current version was written to db
+	out, _, _, err = kvstore.Get(keyV2)
+	require.Nil(t, err)
+	writtenVers := &edgeproto.DataModelVersion{}
+	err = json.Unmarshal([]byte(out), writtenVers)
+	require.Nil(t, err)
+	require.Equal(t, curVers, writtenVers)
 }

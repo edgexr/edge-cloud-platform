@@ -254,10 +254,18 @@ func (m *mex) generateEnum(file *generator.FileDescriptor, desc *generator.EnumD
 		m.getAllKeyMessages()
 		salt := GetVersionHashSalt(en)
 		hashStr := fmt.Sprintf("%x", getKeyVersionHash(m.keyMessages, salt))
+		// get latest version field ID
+		lastIndex := 0
+		for i, _ := range en.Value {
+			if i > lastIndex {
+				lastIndex = i
+			}
+		}
+		latestVerEnum := en.Value[lastIndex]
 		// Generate a hash of all the key messages.
-		m.generateVersionString(hashStr)
+		m.generateVersionString(hashStr, *latestVerEnum.Number)
 		// Generate version check code for version message
-		validateVersionHash(en, hashStr, file)
+		validateVersionHash(latestVerEnum, hashStr, file)
 	}
 }
 
@@ -2651,6 +2659,9 @@ enum VersionHash {
 	...
 }
 
+IMPORTANT: The field value {{.NewHashEnumVal}} must be a monotonically increasing
+value and must never be reused.
+
 Implementation of "sample_upgrade_function" should be added tp pkg/controller/upgrade_funcs.go
 
 NOTE: If no upgrade function is needed don't need to add "[(protogen.upgrade_func) = "sample_upgrade_function];" to
@@ -3007,30 +3018,30 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 	}
 }
 
-func (m *mex) generateVersionString(hashStr string) {
+func (m *mex) generateVersionString(hashStr string, ID int32) {
 	m.P("// Keys being hashed:")
 	for _, v := range m.keyMessages {
 		m.P("// ", v.Name)
 	}
-	m.P("var versionHashString = \"", hashStr, "\"")
-	m.P("")
-	m.P("func GetDataModelVersion() string {")
-	m.P("return versionHashString")
+	m.P()
+	m.P("type DataModelVersion struct {")
+	m.P("Hash string")
+	m.P("ID int32")
+	m.P("}")
+	m.P()
+	m.P("func GetDataModelVersion() *DataModelVersion {")
+	m.P("return &DataModelVersion{")
+	m.P("Hash: \"", hashStr, "\",")
+	m.P("ID: ", int(ID), ",")
+	m.P("}")
 	m.P("}")
 }
 
-func validateVersionHash(en *descriptor.EnumDescriptorProto, hashStr string, file *generator.FileDescriptor) {
+func validateVersionHash(latestVer *descriptor.EnumValueDescriptorProto, hashStr string, file *generator.FileDescriptor) {
 	// We need to check the hash and verify that we have the correct one
 	// If we don't have a correct one fail suggesting an upgrade function
 	// Check the last one(it's the latest) and if it doesn't match fail
 	// Check the substring of the value
-	lastIndex := 0
-	for i, _ := range en.Value {
-		if i > lastIndex {
-			lastIndex = i
-		}
-	}
-	latestVer := en.Value[lastIndex]
 	if !strings.Contains(*latestVer.Name, hashStr) {
 		var upgradeTemplate *template.Template
 		upgradeTemplate = template.Must(template.New("upgrade").Parse(upgradeErrorTemplete))
