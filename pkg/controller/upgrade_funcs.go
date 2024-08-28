@@ -184,6 +184,10 @@ func AppInstKeyName(ctx context.Context, objStore objstore.KVStore, allApis *All
 				updated = true
 			}
 			if updated {
+				// sort refs for determinism
+				sort.Slice(refs.Apps, func(i, j int) bool {
+					return refs.Apps[i].GetKeyString() < refs.Apps[j].GetKeyString()
+				})
 				allApis.clusterRefsApi.store.STMPut(stm, &refs)
 			}
 			return nil
