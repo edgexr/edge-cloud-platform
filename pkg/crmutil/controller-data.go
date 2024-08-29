@@ -210,12 +210,7 @@ func (cd *CRMHandler) ClusterInstDNSChanged(ctx context.Context, target *edgepro
 		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
 		return nil
 	}
-	// call into cluster.go in vmlayer and update dns address and upate certs
-	// see where we do that in rebuilding rootLb image
-	// v.ActivateFQDNs(ctx, rootLBFQDN, rootLBIPs.IPV4(), rootLBIPs.IPV6())
-	// v.proxyCerts.SetupTLSCerts(ctx, rootLBFQDN, rootLBName, client)
-	// also need to restart nginx services(maybe even simpler to restart the rootLb vm)
-	// TODO - maybe we could just rely on clusterUpdate to doo what we need to?
+
 	updateClusterCacheCallback := sender.SendStatusIgnoreErr
 	pf, err := cd.getPlatform(ctx, target)
 	if err != nil {
@@ -376,12 +371,7 @@ func (cd *CRMHandler) AppInstDNSChanged(ctx context.Context, target *edgeproto.C
 		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
 		return nil
 	}
-	// call into cluster.go in vmlayer and update dns address and upate certs
-	// see where we do that in rebuilding rootLb image
-	// v.ActivateFQDNs(ctx, rootLBFQDN, rootLBIPs.IPV4(), rootLBIPs.IPV6())
-	// v.proxyCerts.SetupTLSCerts(ctx, rootLBFQDN, rootLBName, client)
-	// also need to restart nginx services(maybe even simpler to restart the rootLb vm)
-	// TODO - maybe we could just rely on clusterUpdate to doo what we need to?
+
 	updateAppCacheCallback := sender.SendStatusIgnoreErr
 	pf, err := cd.getPlatform(ctx, target)
 	if err != nil {
