@@ -256,6 +256,7 @@ const (
 
 const (
 	AnnotationCloudletScopedName = "cloudlet-scoped-name"
+	AnnotationBadUpgrade55Name   = "bad-upgrade55-name"
 )
 
 var InstanceUp = "UP"
@@ -624,7 +625,13 @@ func ParseReservableClusterName(name string) (int, string, error) {
 	if err != nil {
 		return 0, "", fmt.Errorf("parse reservable cluster name failed to extract numeric id %s from %s, %s", parts[0], name, err)
 	}
-	return id, parts[1], nil
+	// Note: parser MUST be able to handle old name format, which was
+	// reservable<ID>, where ID is a positive integer.
+	hash := ""
+	if len(parts) > 1 {
+		hash = parts[1]
+	}
+	return id, hash, nil
 }
 
 func GetDefaultMTClustKey(cloudletKey edgeproto.CloudletKey) *edgeproto.ClusterKey {
