@@ -2642,9 +2642,6 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 		return fmt.Errorf("maintenance mode is required to update DNS")
 	}
 
-	// DEBUG - for testing only
-	*appDNSRoot = "app.dnsmigratetestclould.edgexr.org"
-
 	// Step 1 - update rootLb fqdn
 	// Does our current DNS app root name match what the clouldet alredy have?
 	var modRev int64
