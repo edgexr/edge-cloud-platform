@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"os"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -83,9 +82,6 @@ func scanEtcdFile(ctx context.Context, file *os.File, cb func(ctx context.Contex
 			key = scanner.Text()
 			lineno++
 			if key != "" {
-				if !strings.HasPrefix(key, "1/") {
-					return fmt.Errorf("invalid key %s on line %d", key, lineno)
-				}
 				break
 			}
 		}
