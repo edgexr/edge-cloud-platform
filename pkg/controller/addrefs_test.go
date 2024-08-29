@@ -396,19 +396,3 @@ func (s *AddRefsDataGen) GetUpdateClusterInstTestObj() (*edgeproto.ClusterInst, 
 	}
 	return testObj, supportData
 }
-
-func (s *AddRefsDataGen) GetUpdateCloudletDNSTestObj() (*edgeproto.Cloudlet, *testSupportData) {
-	testObj, supportData := s.GetCreateCloudletTestObj()
-	// copy and clear refs
-	updatable := *testObj
-	updatable.Flavor = edgeproto.FlavorKey{}
-	updatable.ResTagMap = nil
-	updatable.TrustPolicy = ""
-	updatable.GpuConfig.Driver = edgeproto.GPUDriverKey{}
-
-	supportData.Cloudlets = []edgeproto.Cloudlet{updatable}
-	supportData.CloudletInfos = []edgeproto.CloudletInfo{testutil.CloudletInfoData()[2]}
-
-	testObj.Fields = []string{}
-	return testObj, supportData
-}
