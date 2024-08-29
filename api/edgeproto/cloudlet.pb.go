@@ -2766,7 +2766,8 @@ type CloudletApiClient interface {
 	GenerateAccessKey(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (*Result, error)
 	// Get Cloudlet Specific GPU Driver License Config. Returns the license config associated with the cloudlet
 	GetCloudletGPUDriverLicenseConfig(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (*Result, error)
-	// Get Cloudlet Manifest. Shows deployment manifest required to setup cloudlet
+	// Change DNS for all the objects on the cloudlet(shared rootLb, appsinsts, clusterinsts).
+	// New DNS name is picked form the currently configured for this cloudlet
 	ChangeCloudletDNS(ctx context.Context, in *CloudletKey, opts ...grpc.CallOption) (CloudletApi_ChangeCloudletDNSClient, error)
 }
 
@@ -3151,7 +3152,8 @@ type CloudletApiServer interface {
 	GenerateAccessKey(context.Context, *CloudletKey) (*Result, error)
 	// Get Cloudlet Specific GPU Driver License Config. Returns the license config associated with the cloudlet
 	GetCloudletGPUDriverLicenseConfig(context.Context, *CloudletKey) (*Result, error)
-	// Get Cloudlet Manifest. Shows deployment manifest required to setup cloudlet
+	// Change DNS for all the objects on the cloudlet(shared rootLb, appsinsts, clusterinsts).
+	// New DNS name is picked form the currently configured for this cloudlet
 	ChangeCloudletDNS(*CloudletKey, CloudletApi_ChangeCloudletDNSServer) error
 }
 
