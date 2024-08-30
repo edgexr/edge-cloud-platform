@@ -265,22 +265,8 @@ func startServices() error {
 
 	// We might need to upgrade the stored objects
 	if !*skipVersionCheck {
-		// First off - check version of the objectStore we are running
-		version, err := getDataVersion(ctx, objStore)
-		if err != nil {
-			return fmt.Errorf("database version check failed, %s", err)
-		}
-		if *autoUpgrade && dataNeedsUpgrade(ctx, version) {
-			upgradeSupport := &UpgradeSupport{
-				region:      *region,
-				vaultConfig: vaultConfig,
-			}
-			err = UpgradeToLatest(version, objStore, allApis, upgradeSupport)
-			if err != nil {
-				return fmt.Errorf("Failed to ugprade data model: %v", err)
-			}
-		} else if err != nil {
-			return fmt.Errorf("Running version doesn't match the version of etcd, %v", err)
+		if err := checkAndUpgrade(ctx, objStore, allApis, *autoUpgrade, edgeproto.GetDataModelVersion(), VersionHash_UpgradeFuncs); err != nil {
+			return err
 		}
 	}
 	lis, err := net.Listen("tcp", *apiAddr)
@@ -669,7 +655,7 @@ func stopServices() {
 }
 
 // get the etcd data model version
-func getDataVersion(ctx context.Context, objStore objstore.KVStore) (*edgeproto.DataModelVersion, error) {
+func getDataVersion(ctx context.Context, objStore objstore.KVStore, latestVersion *edgeproto.DataModelVersion) (*edgeproto.DataModelVersion, error) {
 	// Version2 has value which is JSON string of edgeproto.DataModelVersion.
 	keyV2 := objstore.DbKeyPrefixString(DataModelVersion2Prefix)
 	val, _, _, err := objStore.Get(keyV2)
@@ -699,16 +685,12 @@ func getDataVersion(ctx context.Context, objStore objstore.KVStore) (*edgeproto.
 
 	// neither key found, this is the first upgrade,
 	// write the latest hash into etcd
-	log.InfoLog("Could not find a previous version", "curr version", edgeproto.GetDataModelVersion())
-	vers := edgeproto.GetDataModelVersion()
+	log.InfoLog("Could not find a previous version", "latest version", latestVersion)
+	vers := latestVersion
 	if err := writeDataModelVersionV2(ctx, objStore, vers); err != nil {
 		return nil, fmt.Errorf("failed to write data model version %v, %s", vers, err)
 	}
 	return vers, nil
-}
-
-func dataNeedsUpgrade(ctx context.Context, vers *edgeproto.DataModelVersion) bool {
-	return edgeproto.GetDataModelVersion().Hash != vers.Hash
 }
 
 type AllApis struct {

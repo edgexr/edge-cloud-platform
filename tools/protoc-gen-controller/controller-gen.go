@@ -16,6 +16,7 @@ package main
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/gensupport"
 	"github.com/edgexr/edge-cloud-platform/tools/protogen"
@@ -62,25 +63,26 @@ func (s *ControllerGen) generateEnum(file *generator.FileDescriptor, desc *gener
 	en := desc.EnumDescriptorProto
 	if GetVersionHashOpt(en) {
 		s.generateUpgradeFuncs(en)
-		s.generateUpgradeFuncNames(en)
 	}
 }
 
 func (s *ControllerGen) generateUpgradeFuncs(enum *descriptor.EnumDescriptorProto) {
-	s.P("var ", enum.Name, "_UpgradeFuncs = map[int32]VersionUpgradeFunc{")
-	for _, e := range enum.Value {
-		if GetUpgradeFunc(e) != "" {
-			s.P(e.Number, ": ", GetUpgradeFunc(e), ",")
-		} else {
-			s.P(e.Number, ": nil,")
-		}
-	}
+	s.P("type VersionUpgrade struct {")
+	s.P("id int32")
+	s.P("hash string")
+	s.P("upgradeFunc VersionUpgradeFunc")
+	s.P("name string")
 	s.P("}")
-}
-func (s *ControllerGen) generateUpgradeFuncNames(enum *descriptor.EnumDescriptorProto) {
-	s.P("var ", enum.Name, "_UpgradeFuncNames = map[int32]string{")
+	s.P()
+	s.P("var ", enum.Name, "_UpgradeFuncs = []VersionUpgrade{")
 	for _, e := range enum.Value {
-		s.P(e.Number, ": ", strconv.Quote(GetUpgradeFunc(e)), ",")
+		fnName := GetUpgradeFunc(e)
+		fn := fnName
+		if fnName == "" {
+			fn = "nil"
+		}
+		hash := strconv.Quote(strings.TrimPrefix(*e.Name, "HASH_"))
+		s.P("{", e.Number, ", ", hash, ", ", fn, ", ", strconv.Quote(fnName), "},")
 	}
 	s.P("}")
 }

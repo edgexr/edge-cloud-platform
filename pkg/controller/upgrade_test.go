@@ -387,11 +387,11 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		require.Nil(t, err)
 		vaultPreData, vaultDataLoaded, err := loadVaultTestData(ctx, vaultConfig, funcName)
 		require.Nil(t, err, "Load Vault test data")
-		for ii, fn := range VersionHash_UpgradeFuncs {
-			if fn == nil {
+		for _, upgrade := range VersionHash_UpgradeFuncs {
+			if upgrade.upgradeFunc == nil {
 				continue
 			}
-			err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, ii)
+			err = RunSingleUpgrade(ctx, &objStore, apis, sup, upgrade.upgradeFunc, upgrade.id)
 			require.Nil(t, err, "Upgrade failed")
 		}
 		err = compareDbToExpected(&objStore, funcName)
@@ -404,17 +404,19 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		objStore.Stop()
 	})
 
-	for ii, fn := range VersionHash_UpgradeFuncs {
+	for _, upgrade := range VersionHash_UpgradeFuncs {
+		fn := upgrade.upgradeFunc
 		if fn == nil {
 			continue
 		}
 		objStore.Start()
-		funcName := VersionHash_UpgradeFuncNames[ii]
+		funcName := upgrade.name
+		id := upgrade.id
 		err := buildDbFromTestData(&objStore, funcName)
 		require.Nil(t, err, "Unable to build db from testData")
 		vaultPreData, vaultDataLoaded, err := loadVaultTestData(ctx, vaultConfig, funcName)
 		require.Nil(t, err, "Load Vault test data")
-		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, ii)
+		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, id)
 		require.Nil(t, err, "Upgrade failed")
 		err = compareDbToExpected(&objStore, funcName)
 		require.Nil(t, err, "Unexpected result from upgrade function(%s)", funcName)
@@ -424,7 +426,7 @@ func TestAllUpgradeFuncs(t *testing.T) {
 			require.Nil(t, err)
 		}
 		// Run the upgrade again to make sure it's idempotent
-		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, ii)
+		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, id)
 		require.Nil(t, err, "Upgrade second run failed")
 		err = compareDbToExpected(&objStore, funcName)
 		require.Nil(t, err, "Unexpected result from upgrade function second run (idempotency check) (%s)", funcName)
@@ -453,11 +455,12 @@ func TestGetDataVersion(t *testing.T) {
 		Hash: "myhash",
 		ID:   234,
 	}
+	latestVers := edgeproto.GetDataModelVersion()
 	out, err := json.Marshal(vers)
 	require.Nil(t, err)
 	_, err = kvstore.Put(ctx, keyV2, string(out))
 	require.Nil(t, err)
-	outVers, err := getDataVersion(ctx, kvstore)
+	outVers, err := getDataVersion(ctx, kvstore, latestVers)
 	require.Nil(t, err)
 	require.Equal(t, vers, outVers)
 	_, err = kvstore.Delete(ctx, keyV2)
@@ -467,7 +470,7 @@ func TestGetDataVersion(t *testing.T) {
 	key := objstore.DbKeyPrefixString("Version")
 	_, err = kvstore.Put(ctx, key, vers.Hash)
 	require.Nil(t, err)
-	outVers, err = getDataVersion(ctx, kvstore)
+	outVers, err = getDataVersion(ctx, kvstore, latestVers)
 	require.Nil(t, err)
 	require.Equal(t, vers.Hash, outVers.Hash)
 	require.Equal(t, int32(0), outVers.ID)
@@ -477,7 +480,7 @@ func TestGetDataVersion(t *testing.T) {
 	// check no version
 	_, err = kvstore.Delete(ctx, keyV2)
 	require.Nil(t, err)
-	outVers, err = getDataVersion(ctx, kvstore)
+	outVers, err = getDataVersion(ctx, kvstore, latestVers)
 	curVers := edgeproto.GetDataModelVersion()
 	require.Nil(t, err)
 	require.Equal(t, curVers, outVers)
@@ -488,4 +491,94 @@ func TestGetDataVersion(t *testing.T) {
 	err = json.Unmarshal([]byte(out), writtenVers)
 	require.Nil(t, err)
 	require.Equal(t, curVers, writtenVers)
+}
+
+// TestCheckAndUpgrade tests that correct upgrade functions are
+// run depending upon the current database version.
+func TestCheckAndUpgrade(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelUpgrade | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	kvstore := &regiondata.InMemoryStore{}
+	kvstore.Start()
+
+	upgradesDone := []int32{}
+	runUpgrade := func() VersionUpgradeFunc {
+		return func(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, upgradeSupport *UpgradeSupport, id int32) error {
+			upgradesDone = append(upgradesDone, id)
+			return nil
+		}
+	}
+	// fake upgrades
+	upgradeFuncs := []VersionUpgrade{
+		{0, "0", nil, ""},
+		{10, "10", runUpgrade(), "10"},
+		{11, "11", nil, ""},
+		{12, "12", runUpgrade(), "12"},
+		{20, "20", runUpgrade(), "20"},
+		{21, "21", runUpgrade(), "21"},
+		{22, "22", nil, ""},
+		{23, "23", nil, ""},
+		{24, "24", nil, ""},
+		{28, "28", nil, ""},
+		{30, "30", runUpgrade(), "30"},
+		{40, "40", runUpgrade(), "40"},
+		{50, "50", nil, ""},
+		{51, "51", runUpgrade(), "51"},
+		{52, "52", runUpgrade(), "52"},
+		{53, "53", runUpgrade(), "53"},
+		{54, "54", runUpgrade(), "54"},
+	}
+	targetVers := &edgeproto.DataModelVersion{
+		ID:   54,
+		Hash: "54",
+	}
+
+	type testRun struct {
+		startID     int32
+		startHash   string
+		expUpgrades []int32
+	}
+	testRuns := []testRun{
+		{54, "54", []int32{}},
+		{53, "53", []int32{54}},
+		{52, "52", []int32{53, 54}},
+		{40, "40", []int32{51, 52, 53, 54}},
+		{23, "23", []int32{30, 40, 51, 52, 53, 54}},
+		{20, "20", []int32{21, 30, 40, 51, 52, 53, 54}},
+		{0, "0", []int32{10, 12, 20, 21, 30, 40, 51, 52, 53, 54}},
+		{-1, "-1", []int32{}},
+	}
+	for _, tr := range testRuns {
+		log.SpanLog(ctx, log.DebugLevelUpgrade, "start test run", "startID", tr.startID)
+		// set start version
+		if tr.startID == -1 {
+			// test with no version set in db
+			key := objstore.DbKeyPrefixString(DataModelVersion0Prefix)
+			keyV2 := objstore.DbKeyPrefixString(DataModelVersion2Prefix)
+			_, err := kvstore.Delete(ctx, key)
+			require.Nil(t, err)
+			_, err = kvstore.Delete(ctx, keyV2)
+			require.Nil(t, err)
+		} else {
+			startVers := &edgeproto.DataModelVersion{
+				ID:   tr.startID,
+				Hash: tr.startHash,
+			}
+			err := writeDataModelVersionV2(ctx, kvstore, startVers)
+			require.Nil(t, err)
+		}
+		// run upgrades
+		upgradesDone = []int32{}
+		err := checkAndUpgrade(ctx, kvstore, nil, true, targetVers, upgradeFuncs)
+		require.Nil(t, err)
+		// check the correct upgrades were run
+		require.Equal(t, tr.expUpgrades, upgradesDone)
+		// check that final version in the db is correct
+		finalVers, err := getDataVersion(ctx, kvstore, targetVers)
+		require.Nil(t, err)
+		require.Equal(t, targetVers, finalVers)
+	}
 }

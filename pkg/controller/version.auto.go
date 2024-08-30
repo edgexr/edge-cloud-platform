@@ -16,19 +16,19 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-var VersionHash_UpgradeFuncs = map[int32]VersionUpgradeFunc{
-	0:  nil,
-	52: nil,
-	53: UpgradeCrmOnEdge,
-	54: AddStaticFqdn,
-	55: InstanceKeysRegionScopedName,
+type VersionUpgrade struct {
+	id          int32
+	hash        string
+	upgradeFunc VersionUpgradeFunc
+	name        string
 }
-var VersionHash_UpgradeFuncNames = map[int32]string{
-	0:  "",
-	52: "",
-	53: "UpgradeCrmOnEdge",
-	54: "AddStaticFqdn",
-	55: "InstanceKeysRegionScopedName",
+
+var VersionHash_UpgradeFuncs = []VersionUpgrade{
+	{0, "d41d8cd98f00b204e9800998ecf8427e", nil, ""},
+	{52, "c2d882033b0c14f28cece41cf4010060", nil, ""},
+	{53, "14ae4c721c1bace6e8379d0061a72a77", UpgradeCrmOnEdge, "UpgradeCrmOnEdge"},
+	{54, "eff9d3a6c74fd02840efce05d1984e8d", AddStaticFqdn, "AddStaticFqdn"},
+	{55, "eac56710c013d954db31eeb306b514a4", InstanceKeysRegionScopedName, "InstanceKeysRegionScopedName"},
 }
 
 // Auto-generated code: DO NOT EDIT
