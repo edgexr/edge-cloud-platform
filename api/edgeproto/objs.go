@@ -1485,3 +1485,25 @@ func (s *AppInst) AddTags(tags map[string]string) {
 	s.ClusterKey.AddTags(tags)
 	s.CloudletKey.AddTags(tags)
 }
+
+func (s *AppInst) AddAnnotationNoClobber(key, val string) bool {
+	if s.Annotations == nil {
+		s.Annotations = map[string]string{}
+	}
+	if _, ok := s.Annotations[key]; ok {
+		return false
+	}
+	s.Annotations[key] = val
+	return true
+}
+
+func (s *ClusterInst) AddAnnotationNoClobber(key, val string) bool {
+	if s.Annotations == nil {
+		s.Annotations = map[string]string{}
+	}
+	if _, ok := s.Annotations[key]; ok {
+		return false
+	}
+	s.Annotations[key] = val
+	return true
+}

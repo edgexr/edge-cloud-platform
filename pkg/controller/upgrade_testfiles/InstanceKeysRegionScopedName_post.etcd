@@ -58,5 +58,3 @@
 {"key":{"name":"conflict-132bad5b","organization":"dev1"},"apps":[{"name":"conflict-132bad5b","organization":"edgecloudorg"}]}
 1/ClusterRefs/{"name":"noconflict","organization":"dev1"}
 {"key":{"name":"noconflict","organization":"dev1"},"apps":[{"name":"noconflict","organization":"edgecloudorg"},{"name":"noconflict2","organization":"edgecloudorg"},{"name":"conflict","organization":"edgecloudorg"}]}
-1/ClusterRefs/{"name":"reservable0","organization":"edgecloudorg"}
-{"key":{"name":"reservable0","organization":"edgecloudorg"},"apps":[{"name":"ref2","organization":"edgecloudorg"},{"name":"ref2a","organization":"edgecloudorg"}]}
