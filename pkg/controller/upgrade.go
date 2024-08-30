@@ -42,52 +42,69 @@ func RunSingleUpgrade(ctx context.Context, objStore objstore.KVStore, allApis *A
 	return nil
 }
 
+func checkAndUpgrade(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, autoUpgrade bool, targetVers *edgeproto.DataModelVersion, upgradeFuncs []VersionUpgrade) error {
+	// First off - check version of the objectStore we are running
+	version, err := getDataVersion(ctx, objStore, targetVers)
+	if err != nil {
+		return fmt.Errorf("database version check failed, %s", err)
+	}
+	if autoUpgrade && targetVers.Hash != version.Hash {
+		upgradeSupport := &UpgradeSupport{
+			region:      *region,
+			vaultConfig: vaultConfig,
+		}
+		err = upgradeToLatest(version, objStore, allApis, upgradeSupport, upgradeFuncs)
+		if err != nil {
+			return fmt.Errorf("Failed to ugprade data model: %v", err)
+		}
+	} else if targetVers.Hash != version.Hash {
+		return fmt.Errorf("Running version %s doesn't match the etcd database version %s, and autoUpgrade is not enabled", targetVers.Hash, version.Hash)
+	}
+	return nil
+}
+
 // This function walks all upgrade functions from the fromVersion to current
 // and upgrades the KVStore using those functions one-by-one
-func UpgradeToLatest(fromVersion *edgeproto.DataModelVersion, objStore objstore.KVStore, allApis *AllApis, upgradeSupport *UpgradeSupport) error {
-	var fn VersionUpgradeFunc
-	var ok bool
+func upgradeToLatest(fromVersion *edgeproto.DataModelVersion, objStore objstore.KVStore, allApis *AllApis, upgradeSupport *UpgradeSupport, upgradeFuncs []VersionUpgrade) error {
 	verID := fromVersion.ID
 	span := log.StartSpan(log.DebugLevelInfo, "upgrade")
 	span.SetTag("fromVersion", fromVersion)
 	span.SetTag("verID", verID)
 	defer span.Finish()
 	ctx := opentracing.ContextWithSpan(context.Background(), span)
-	nextVer := verID + 1
-	for {
-		if fn, ok = VersionHash_UpgradeFuncs[nextVer]; !ok {
-			break
+	for _, upgrade := range upgradeFuncs {
+		if verID >= upgrade.id {
+			continue
 		}
-		name := VersionHash_UpgradeFuncNames[nextVer]
+		// run upgrade
+		verID = upgrade.id
+		fn := upgrade.upgradeFunc
+		if fn == nil {
+			continue
+		}
+		name := upgrade.name
 
 		uspan := log.StartSpan(log.DebugLevelInfo, name, opentracing.ChildOf(span.Context()))
 		uctx := log.ContextWithSpan(context.Background(), uspan)
 		if fn != nil {
 			// Call the upgrade with an appropriate callback
-			if err := RunSingleUpgrade(uctx, objStore, allApis, upgradeSupport, fn, nextVer); err != nil {
+			if err := RunSingleUpgrade(uctx, objStore, allApis, upgradeSupport, fn, verID); err != nil {
 				uspan.Finish()
 				return fmt.Errorf("Failed to run %s: %v\n",
 					name, err)
 			}
-			log.SpanLog(uctx, log.DebugLevelUpgrade, "Upgrade complete", "upgradeID", nextVer, "upgradeFunc", name)
+			log.SpanLog(uctx, log.DebugLevelUpgrade, "Upgrade complete", "upgradeID", verID, "upgradeFunc", name)
 		}
 		// Write out the new version
-		versionStr, ok := edgeproto.VersionHash_name[nextVer]
-		if !ok {
-			uspan.Finish()
-			return fmt.Errorf("No hash string for version")
-		}
-		versionStr = versionStr[5:]
 		upgradedVers := edgeproto.DataModelVersion{
-			Hash: versionStr,
-			ID:   nextVer,
+			Hash: upgrade.hash,
+			ID:   verID,
 		}
 		err := writeDataModelVersionV2(uctx, objStore, &upgradedVers)
 		uspan.Finish()
 		if err != nil {
 			return fmt.Errorf("Failed to update version for the db: %v\n", err)
 		}
-		nextVer++
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "Upgrade done")
 	return nil
