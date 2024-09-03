@@ -49,14 +49,6 @@ func (x *ShowClusterInst) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowClusterInst) ListData() []edgeproto.ClusterInst {
-	data := []edgeproto.ClusterInst{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var ClusterInstShowExtraCount = 0
 
 type CudStreamoutClusterInst struct {
@@ -434,14 +426,6 @@ func (x *ShowClusterInstInfo) Send(m *edgeproto.ClusterInstInfo) error {
 
 func (x *ShowClusterInstInfo) Context() context.Context {
 	return x.Ctx
-}
-
-func (x *ShowClusterInstInfo) ListData() []edgeproto.ClusterInstInfo {
-	data := []edgeproto.ClusterInstInfo{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
 }
 
 var ClusterInstInfoShowExtraCount = 0

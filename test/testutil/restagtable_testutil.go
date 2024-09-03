@@ -48,14 +48,6 @@ func (x *ShowResTagTable) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowResTagTable) ListData() []edgeproto.ResTagTable {
-	data := []edgeproto.ResTagTable{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var ResTagTableShowExtraCount = 0
 
 func (x *ShowResTagTable) ReadStream(stream edgeproto.ResTagTableApi_ShowResTagTableClient, err error) {

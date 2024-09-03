@@ -48,14 +48,6 @@ func (x *ShowAutoScalePolicy) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowAutoScalePolicy) ListData() []edgeproto.AutoScalePolicy {
-	data := []edgeproto.AutoScalePolicy{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var AutoScalePolicyShowExtraCount = 0
 
 func (x *ShowAutoScalePolicy) ReadStream(stream edgeproto.AutoScalePolicyApi_ShowAutoScalePolicyClient, err error) {

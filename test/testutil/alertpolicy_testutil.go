@@ -48,14 +48,6 @@ func (x *ShowAlertPolicy) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowAlertPolicy) ListData() []edgeproto.AlertPolicy {
-	data := []edgeproto.AlertPolicy{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var AlertPolicyShowExtraCount = 0
 
 func (x *ShowAlertPolicy) ReadStream(stream edgeproto.AlertPolicyApi_ShowAlertPolicyClient, err error) {

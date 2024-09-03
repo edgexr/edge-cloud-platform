@@ -49,14 +49,6 @@ func (x *ShowAppInst) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowAppInst) ListData() []edgeproto.AppInst {
-	data := []edgeproto.AppInst{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var AppInstShowExtraCount = 0
 
 type CudStreamoutAppInst struct {
@@ -434,14 +426,6 @@ func (x *ShowAppInstInfo) Send(m *edgeproto.AppInstInfo) error {
 
 func (x *ShowAppInstInfo) Context() context.Context {
 	return x.Ctx
-}
-
-func (x *ShowAppInstInfo) ListData() []edgeproto.AppInstInfo {
-	data := []edgeproto.AppInstInfo{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
 }
 
 var AppInstInfoShowExtraCount = 0

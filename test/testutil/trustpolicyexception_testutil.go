@@ -49,14 +49,6 @@ func (x *ShowTrustPolicyException) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowTrustPolicyException) ListData() []edgeproto.TrustPolicyException {
-	data := []edgeproto.TrustPolicyException{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var TrustPolicyExceptionShowExtraCount = 0
 
 func (x *ShowTrustPolicyException) ReadStream(stream edgeproto.TrustPolicyExceptionApi_ShowTrustPolicyExceptionClient, err error) {

@@ -47,14 +47,6 @@ func (x *ShowNode) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowNode) ListData() []edgeproto.Node {
-	data := []edgeproto.Node{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var NodeShowExtraCount = 0
 
 func (x *ShowNode) ReadStream(stream edgeproto.NodeApi_ShowNodeClient, err error) {

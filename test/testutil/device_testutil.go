@@ -48,14 +48,6 @@ func (x *ShowDevice) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowDevice) ListData() []edgeproto.Device {
-	data := []edgeproto.Device{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var DeviceShowExtraCount = 0
 
 func (x *ShowDevice) ReadStream(stream edgeproto.DeviceApi_ShowDeviceClient, err error) {

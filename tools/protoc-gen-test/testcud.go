@@ -123,14 +123,6 @@ func (x *Show{{.Name}}) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *Show{{.Name}}) ListData() []{{.Pkg}}.{{.Name}} {
-	data := []{{.Pkg}}.{{.Name}}{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var {{.Name}}ShowExtraCount = 0
 
 {{- if .Streamout}}
@@ -1304,14 +1296,12 @@ func (t *TestCud) genE2edata(desc *generator.Descriptor) {
 	t.P()
 
 	t.P("func DeleteAll", message.Name, "Internal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *", pkg, message.Name, ") {")
-	//t.P("func DeleteAll", message.Name, "Internal(t *testing.T, ctx context.Context, apis InternalCUDAPIs) {")
 	for ii := len(fieldInfos) - 1; ii >= 0; ii-- {
 		finfo := fieldInfos[ii]
 		if !finfo.genCUD {
 			continue
 		}
 		t.P("Internal", finfo.baseType, "DeleteAll(t, ctx, apis.Get", finfo.group.ApiName(), "(), in.", finfo.fieldName, ")")
-		//t.P("Internal", finfo.baseType, "DeleteAll(t, ctx, apis.Get", finfo.group.ApiName(), "())")
 	}
 	t.P("}")
 	t.P()

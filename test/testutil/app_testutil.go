@@ -49,14 +49,6 @@ func (x *ShowApp) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowApp) ListData() []edgeproto.App {
-	data := []edgeproto.App{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var AppShowExtraCount = 0
 
 func (x *ShowApp) ReadStream(stream edgeproto.AppApi_ShowAppClient, err error) {

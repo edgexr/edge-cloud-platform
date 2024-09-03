@@ -48,14 +48,6 @@ func (x *ShowTrustPolicy) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowTrustPolicy) ListData() []edgeproto.TrustPolicy {
-	data := []edgeproto.TrustPolicy{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var TrustPolicyShowExtraCount = 0
 
 type CudStreamoutTrustPolicy struct {

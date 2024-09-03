@@ -48,14 +48,6 @@ func (x *ShowNetwork) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowNetwork) ListData() []edgeproto.Network {
-	data := []edgeproto.Network{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var NetworkShowExtraCount = 0
 
 type CudStreamoutNetwork struct {

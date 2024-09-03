@@ -47,14 +47,6 @@ func (x *ShowOperatorCode) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowOperatorCode) ListData() []edgeproto.OperatorCode {
-	data := []edgeproto.OperatorCode{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var OperatorCodeShowExtraCount = 0
 
 func (x *ShowOperatorCode) ReadStream(stream edgeproto.OperatorCodeApi_ShowOperatorCodeClient, err error) {

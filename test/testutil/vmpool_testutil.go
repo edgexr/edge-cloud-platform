@@ -49,14 +49,6 @@ func (x *ShowVMPool) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowVMPool) ListData() []edgeproto.VMPool {
-	data := []edgeproto.VMPool{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var VMPoolShowExtraCount = 0
 
 func (x *ShowVMPool) ReadStream(stream edgeproto.VMPoolApi_ShowVMPoolClient, err error) {

@@ -49,14 +49,6 @@ func (x *ShowCloudletPool) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowCloudletPool) ListData() []edgeproto.CloudletPool {
-	data := []edgeproto.CloudletPool{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var CloudletPoolShowExtraCount = 0
 
 func (x *ShowCloudletPool) ReadStream(stream edgeproto.CloudletPoolApi_ShowCloudletPoolClient, err error) {

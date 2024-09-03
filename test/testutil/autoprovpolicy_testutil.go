@@ -50,14 +50,6 @@ func (x *ShowAutoProvPolicy) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowAutoProvPolicy) ListData() []edgeproto.AutoProvPolicy {
-	data := []edgeproto.AutoProvPolicy{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var AutoProvPolicyShowExtraCount = 0
 
 func (x *ShowAutoProvPolicy) ReadStream(stream edgeproto.AutoProvPolicyApi_ShowAutoProvPolicyClient, err error) {

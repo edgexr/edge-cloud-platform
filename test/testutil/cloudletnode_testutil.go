@@ -48,14 +48,6 @@ func (x *ShowCloudletNode) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowCloudletNode) ListData() []edgeproto.CloudletNode {
-	data := []edgeproto.CloudletNode{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var CloudletNodeShowExtraCount = 0
 
 func (x *ShowCloudletNode) ReadStream(stream edgeproto.CloudletNodeApi_ShowCloudletNodeClient, err error) {

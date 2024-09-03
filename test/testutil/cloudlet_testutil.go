@@ -49,14 +49,6 @@ func (x *ShowGPUDriver) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowGPUDriver) ListData() []edgeproto.GPUDriver {
-	data := []edgeproto.GPUDriver{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var GPUDriverShowExtraCount = 0
 
 type CudStreamoutGPUDriver struct {
@@ -436,14 +428,6 @@ func (x *ShowCloudlet) Context() context.Context {
 	return x.Ctx
 }
 
-func (x *ShowCloudlet) ListData() []edgeproto.Cloudlet {
-	data := []edgeproto.Cloudlet{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
-}
-
 var CloudletShowExtraCount = 0
 
 type CudStreamoutCloudlet struct {
@@ -821,14 +805,6 @@ func (x *ShowCloudletInfo) Send(m *edgeproto.CloudletInfo) error {
 
 func (x *ShowCloudletInfo) Context() context.Context {
 	return x.Ctx
-}
-
-func (x *ShowCloudletInfo) ListData() []edgeproto.CloudletInfo {
-	data := []edgeproto.CloudletInfo{}
-	for _, val := range x.Data {
-		data = append(data, val)
-	}
-	return data
 }
 
 var CloudletInfoShowExtraCount = 0
