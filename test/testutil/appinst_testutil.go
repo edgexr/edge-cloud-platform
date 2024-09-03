@@ -49,6 +49,14 @@ func (x *ShowAppInst) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowAppInst) ListData() []edgeproto.AppInst {
+	data := []edgeproto.AppInst{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var AppInstShowExtraCount = 0
 
 type CudStreamoutAppInst struct {
@@ -376,6 +384,12 @@ func InternalAppInstDelete(t *testing.T, api edgeproto.AppInstApiServer, testDat
 	DeleteAppInstData(t, ctx, NewInternalAppInstApi(api), testData)
 }
 
+func InternalAppInstDeleteAll(t *testing.T, ctx context.Context, api edgeproto.AppInstApiServer, data []edgeproto.AppInst) {
+	intapi := NewInternalAppInstApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all AppInsts", "count", len(data))
+	DeleteAppInstData(t, ctx, intapi, data)
+}
+
 func ClientAppInstDelete(t *testing.T, api edgeproto.AppInstApiClient, testData []edgeproto.AppInst) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientAppInstDelete")
 	defer span.Finish()
@@ -420,6 +434,14 @@ func (x *ShowAppInstInfo) Send(m *edgeproto.AppInstInfo) error {
 
 func (x *ShowAppInstInfo) Context() context.Context {
 	return x.Ctx
+}
+
+func (x *ShowAppInstInfo) ListData() []edgeproto.AppInstInfo {
+	data := []edgeproto.AppInstInfo{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
 }
 
 var AppInstInfoShowExtraCount = 0

@@ -48,6 +48,14 @@ func (x *ShowNetwork) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowNetwork) ListData() []edgeproto.Network {
+	data := []edgeproto.Network{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var NetworkShowExtraCount = 0
 
 type CudStreamoutNetwork struct {
@@ -373,6 +381,12 @@ func InternalNetworkDelete(t *testing.T, api edgeproto.NetworkApiServer, testDat
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteNetworkData(t, ctx, NewInternalNetworkApi(api), testData)
+}
+
+func InternalNetworkDeleteAll(t *testing.T, ctx context.Context, api edgeproto.NetworkApiServer, data []edgeproto.Network) {
+	intapi := NewInternalNetworkApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all Networks", "count", len(data))
+	DeleteNetworkData(t, ctx, intapi, data)
 }
 
 func ClientNetworkDelete(t *testing.T, api edgeproto.NetworkApiClient, testData []edgeproto.Network) {

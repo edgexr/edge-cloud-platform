@@ -1734,6 +1734,21 @@ func (s *AutoProvPolicyStoreImpl) STMDel(stm concurrency.STM, key *PolicyKey) {
 	stm.Del(keystr)
 }
 
+func StoreListAutoProvPolicy(ctx context.Context, kvstore objstore.KVStore) ([]AutoProvPolicy, error) {
+	keyPrefix := objstore.DbKeyPrefixString("AutoProvPolicy") + "/"
+	objs := []AutoProvPolicy{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := AutoProvPolicy{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal AutoProvPolicy json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type AutoProvPolicyKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -3154,6 +3169,21 @@ func (s *AutoProvInfoStoreImpl) STMPut(stm concurrency.STM, obj *AutoProvInfo, o
 func (s *AutoProvInfoStoreImpl) STMDel(stm concurrency.STM, key *CloudletKey) {
 	keystr := objstore.DbKeyString("AutoProvInfo", key)
 	stm.Del(keystr)
+}
+
+func StoreListAutoProvInfo(ctx context.Context, kvstore objstore.KVStore) ([]AutoProvInfo, error) {
+	keyPrefix := objstore.DbKeyPrefixString("AutoProvInfo") + "/"
+	objs := []AutoProvInfo{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := AutoProvInfo{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal AutoProvInfo json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type AutoProvInfoKeyWatcher struct {

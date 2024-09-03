@@ -46,6 +46,14 @@ func (x *ShowCloudletRefs) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowCloudletRefs) ListData() []edgeproto.CloudletRefs {
+	data := []edgeproto.CloudletRefs{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var CloudletRefsShowExtraCount = 0
 
 func (x *ShowCloudletRefs) ReadStream(stream edgeproto.CloudletRefsApi_ShowCloudletRefsClient, err error) {
@@ -238,6 +246,14 @@ func (x *ShowClusterRefs) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowClusterRefs) ListData() []edgeproto.ClusterRefs {
+	data := []edgeproto.ClusterRefs{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var ClusterRefsShowExtraCount = 0
 
 func (x *ShowClusterRefs) ReadStream(stream edgeproto.ClusterRefsApi_ShowClusterRefsClient, err error) {
@@ -428,6 +444,14 @@ func (x *ShowAppInstRefs) Send(m *edgeproto.AppInstRefs) error {
 
 func (x *ShowAppInstRefs) Context() context.Context {
 	return x.Ctx
+}
+
+func (x *ShowAppInstRefs) ListData() []edgeproto.AppInstRefs {
+	data := []edgeproto.AppInstRefs{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
 }
 
 var AppInstRefsShowExtraCount = 0

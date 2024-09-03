@@ -48,6 +48,14 @@ func (x *ShowAutoScalePolicy) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowAutoScalePolicy) ListData() []edgeproto.AutoScalePolicy {
+	data := []edgeproto.AutoScalePolicy{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var AutoScalePolicyShowExtraCount = 0
 
 func (x *ShowAutoScalePolicy) ReadStream(stream edgeproto.AutoScalePolicyApi_ShowAutoScalePolicyClient, err error) {
@@ -351,6 +359,12 @@ func InternalAutoScalePolicyDelete(t *testing.T, api edgeproto.AutoScalePolicyAp
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteAutoScalePolicyData(t, ctx, NewInternalAutoScalePolicyApi(api), testData)
+}
+
+func InternalAutoScalePolicyDeleteAll(t *testing.T, ctx context.Context, api edgeproto.AutoScalePolicyApiServer, data []edgeproto.AutoScalePolicy) {
+	intapi := NewInternalAutoScalePolicyApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all AutoScalePolicys", "count", len(data))
+	DeleteAutoScalePolicyData(t, ctx, intapi, data)
 }
 
 func ClientAutoScalePolicyDelete(t *testing.T, api edgeproto.AutoScalePolicyApiClient, testData []edgeproto.AutoScalePolicy) {

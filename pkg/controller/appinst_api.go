@@ -1723,8 +1723,10 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, appInstKey.StreamKey(), inCb)
 
 	// get appinst info for flavor
+	log.SpanLog(ctx, log.DebugLevelInfo, "debug deleteAppInst", "key", in.Key)
 	appInstInfo := edgeproto.AppInst{}
 	if !s.cache.Get(&in.Key, &appInstInfo) {
+		log.SpanLog(ctx, log.DebugLevelInfo, "debug deleteAppInst not found", "key", in.Key)
 		return in.Key.NotFoundError()
 	}
 	defer func() {
@@ -1747,6 +1749,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 		if !s.store.STMGet(stm, &in.Key, in) {
 			// already deleted
+			log.SpanLog(ctx, log.DebugLevelInfo, "debug deleteAppInst not found", "key", in.Key)
 			return in.Key.NotFoundError()
 		}
 		if err := validateDeleteState(cctx, "AppInst", in.State, in.Errors, cb.Send); err != nil {

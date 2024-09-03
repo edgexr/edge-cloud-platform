@@ -49,6 +49,14 @@ func (x *ShowTrustPolicyException) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowTrustPolicyException) ListData() []edgeproto.TrustPolicyException {
+	data := []edgeproto.TrustPolicyException{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var TrustPolicyExceptionShowExtraCount = 0
 
 func (x *ShowTrustPolicyException) ReadStream(stream edgeproto.TrustPolicyExceptionApi_ShowTrustPolicyExceptionClient, err error) {
@@ -332,6 +340,12 @@ func InternalTrustPolicyExceptionDelete(t *testing.T, api edgeproto.TrustPolicyE
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteTrustPolicyExceptionData(t, ctx, NewInternalTrustPolicyExceptionApi(api), testData)
+}
+
+func InternalTrustPolicyExceptionDeleteAll(t *testing.T, ctx context.Context, api edgeproto.TrustPolicyExceptionApiServer, data []edgeproto.TrustPolicyException) {
+	intapi := NewInternalTrustPolicyExceptionApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all TrustPolicyExceptions", "count", len(data))
+	DeleteTrustPolicyExceptionData(t, ctx, intapi, data)
 }
 
 func ClientTrustPolicyExceptionDelete(t *testing.T, api edgeproto.TrustPolicyExceptionApiClient, testData []edgeproto.TrustPolicyException) {

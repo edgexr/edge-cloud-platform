@@ -16,6 +16,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"io"
 	math "math"
+	"testing"
 	"time"
 )
 
@@ -48,6 +49,9 @@ func RunRateLimitSettingsDataShowApis(run *Run, in *edgeproto.RateLimitSettingsD
 	if selector.Has("settings") {
 		run.RateLimitSettingsApi(&in.Settings, nil, &out.Settings)
 	}
+}
+
+func DeleteAllRateLimitSettingsDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.RateLimitSettingsData) {
 }
 
 func (r *Run) RateLimitSettingsApi_FlowRateLimitSettings(data *[]edgeproto.FlowRateLimitSettings, dataMap interface{}, dataOut interface{}) {

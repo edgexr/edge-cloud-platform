@@ -750,6 +750,21 @@ func (s *AppInstClientKeyStoreImpl) STMDel(stm concurrency.STM, key *AppInstClie
 	stm.Del(keystr)
 }
 
+func StoreListAppInstClientKey(ctx context.Context, kvstore objstore.KVStore) ([]AppInstClientKey, error) {
+	keyPrefix := objstore.DbKeyPrefixString("AppInstClientKey") + "/"
+	objs := []AppInstClientKey{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := AppInstClientKey{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal AppInstClientKey json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type AppInstClientKeyKeyWatcher struct {
 	cb func(ctx context.Context)
 }

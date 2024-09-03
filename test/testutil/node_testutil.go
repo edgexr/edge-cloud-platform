@@ -47,6 +47,14 @@ func (x *ShowNode) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowNode) ListData() []edgeproto.Node {
+	data := []edgeproto.Node{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var NodeShowExtraCount = 0
 
 func (x *ShowNode) ReadStream(stream edgeproto.NodeApi_ShowNodeClient, err error) {
@@ -243,6 +251,9 @@ func RunNodeDataShowApis(run *Run, in *edgeproto.NodeData, selector edgeproto.Al
 	if selector.Has("nodes") {
 		run.NodeApi(&in.Nodes, nil, &out.Nodes)
 	}
+}
+
+func DeleteAllNodeDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.NodeData) {
 }
 
 func (r *Run) NodeApi(data *[]edgeproto.Node, dataMap interface{}, dataOut interface{}) {

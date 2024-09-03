@@ -1359,6 +1359,21 @@ func (s *NetworkStoreImpl) STMDel(stm concurrency.STM, key *NetworkKey) {
 	stm.Del(keystr)
 }
 
+func StoreListNetwork(ctx context.Context, kvstore objstore.KVStore) ([]Network, error) {
+	keyPrefix := objstore.DbKeyPrefixString("Network") + "/"
+	objs := []Network{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := Network{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal Network json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type NetworkKeyWatcher struct {
 	cb func(ctx context.Context)
 }

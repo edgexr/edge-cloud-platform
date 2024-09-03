@@ -48,6 +48,14 @@ func (x *ShowTrustPolicy) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowTrustPolicy) ListData() []edgeproto.TrustPolicy {
+	data := []edgeproto.TrustPolicy{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var TrustPolicyShowExtraCount = 0
 
 type CudStreamoutTrustPolicy struct {
@@ -373,6 +381,12 @@ func InternalTrustPolicyDelete(t *testing.T, api edgeproto.TrustPolicyApiServer,
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteTrustPolicyData(t, ctx, NewInternalTrustPolicyApi(api), testData)
+}
+
+func InternalTrustPolicyDeleteAll(t *testing.T, ctx context.Context, api edgeproto.TrustPolicyApiServer, data []edgeproto.TrustPolicy) {
+	intapi := NewInternalTrustPolicyApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all TrustPolicys", "count", len(data))
+	DeleteTrustPolicyData(t, ctx, intapi, data)
 }
 
 func ClientTrustPolicyDelete(t *testing.T, api edgeproto.TrustPolicyApiClient, testData []edgeproto.TrustPolicy) {

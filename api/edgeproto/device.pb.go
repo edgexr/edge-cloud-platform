@@ -987,6 +987,21 @@ func (s *DeviceReportStoreImpl) STMDel(stm concurrency.STM, key *DeviceKey) {
 	stm.Del(keystr)
 }
 
+func StoreListDeviceReport(ctx context.Context, kvstore objstore.KVStore) ([]DeviceReport, error) {
+	keyPrefix := objstore.DbKeyPrefixString("DeviceReport") + "/"
+	objs := []DeviceReport{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := DeviceReport{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal DeviceReport json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 func (m *DeviceReport) GetObjKey() objstore.ObjKey {
 	return m.GetKey()
 }
@@ -1524,6 +1539,21 @@ func (s *DeviceStoreImpl) STMPut(stm concurrency.STM, obj *Device, ops ...objsto
 func (s *DeviceStoreImpl) STMDel(stm concurrency.STM, key *DeviceKey) {
 	keystr := objstore.DbKeyString("Device", key)
 	stm.Del(keystr)
+}
+
+func StoreListDevice(ctx context.Context, kvstore objstore.KVStore) ([]Device, error) {
+	keyPrefix := objstore.DbKeyPrefixString("Device") + "/"
+	objs := []Device{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := Device{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal Device json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type DeviceKeyWatcher struct {
@@ -2124,6 +2154,15 @@ func (m *DeviceData) IsEmpty() bool {
 		return false
 	}
 	return true
+}
+
+func (m *DeviceData) StoreRead(ctx context.Context, kvstore objstore.KVStore) error {
+	devices, err := StoreListDevice(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.Devices = devices
+	return nil
 }
 
 func (m *Device) IsValidArgsForInjectDevice() error {

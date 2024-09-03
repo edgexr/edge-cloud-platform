@@ -49,6 +49,14 @@ func (x *ShowClusterInst) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowClusterInst) ListData() []edgeproto.ClusterInst {
+	data := []edgeproto.ClusterInst{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var ClusterInstShowExtraCount = 0
 
 type CudStreamoutClusterInst struct {
@@ -376,6 +384,12 @@ func InternalClusterInstDelete(t *testing.T, api edgeproto.ClusterInstApiServer,
 	DeleteClusterInstData(t, ctx, NewInternalClusterInstApi(api), testData)
 }
 
+func InternalClusterInstDeleteAll(t *testing.T, ctx context.Context, api edgeproto.ClusterInstApiServer, data []edgeproto.ClusterInst) {
+	intapi := NewInternalClusterInstApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all ClusterInsts", "count", len(data))
+	DeleteClusterInstData(t, ctx, intapi, data)
+}
+
 func ClientClusterInstDelete(t *testing.T, api edgeproto.ClusterInstApiClient, testData []edgeproto.ClusterInst) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientClusterInstDelete")
 	defer span.Finish()
@@ -420,6 +434,14 @@ func (x *ShowClusterInstInfo) Send(m *edgeproto.ClusterInstInfo) error {
 
 func (x *ShowClusterInstInfo) Context() context.Context {
 	return x.Ctx
+}
+
+func (x *ShowClusterInstInfo) ListData() []edgeproto.ClusterInstInfo {
+	data := []edgeproto.ClusterInstInfo{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
 }
 
 var ClusterInstInfoShowExtraCount = 0

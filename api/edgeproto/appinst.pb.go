@@ -5086,6 +5086,21 @@ func (s *AppInstStoreImpl) STMDel(stm concurrency.STM, key *AppInstKey) {
 	stm.Del(keystr)
 }
 
+func StoreListAppInst(ctx context.Context, kvstore objstore.KVStore) ([]AppInst, error) {
+	keyPrefix := objstore.DbKeyPrefixString("AppInst") + "/"
+	objs := []AppInst{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := AppInst{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal AppInst json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type AppInstKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -6551,6 +6566,21 @@ func (s *AppInstInfoStoreImpl) STMDel(stm concurrency.STM, key *AppInstKey) {
 	stm.Del(keystr)
 }
 
+func StoreListAppInstInfo(ctx context.Context, kvstore objstore.KVStore) ([]AppInstInfo, error) {
+	keyPrefix := objstore.DbKeyPrefixString("AppInstInfo") + "/"
+	objs := []AppInstInfo{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := AppInstInfo{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal AppInstInfo json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type AppInstInfoKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -7987,6 +8017,21 @@ func (s *FedAppInstStoreImpl) STMPut(stm concurrency.STM, obj *FedAppInst, ops .
 func (s *FedAppInstStoreImpl) STMDel(stm concurrency.STM, key *FedAppInstKey) {
 	keystr := objstore.DbKeyString("FedAppInst", key)
 	stm.Del(keystr)
+}
+
+func StoreListFedAppInst(ctx context.Context, kvstore objstore.KVStore) ([]FedAppInst, error) {
+	keyPrefix := objstore.DbKeyPrefixString("FedAppInst") + "/"
+	objs := []FedAppInst{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := FedAppInst{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal FedAppInst json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type FedAppInstKeyWatcher struct {

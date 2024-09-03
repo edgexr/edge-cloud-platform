@@ -931,3 +931,27 @@ func initContinuousQueries(allApis *AllApis) {
 	}
 	services.waitGroup.Done()
 }
+
+func (s *AllApis) GetAlertPolicyApi() edgeproto.AlertPolicyApiServer   { return s.alertPolicyApi }
+func (s *AllApis) GetFlavorApi() edgeproto.FlavorApiServer             { return s.flavorApi }
+func (s *AllApis) GetOperatorCodeApi() edgeproto.OperatorCodeApiServer { return s.operatorCodeApi }
+func (s *AllApis) GetResTagTableApi() edgeproto.ResTagTableApiServer   { return s.resTagTableApi }
+func (s *AllApis) GetAutoScalePolicyApi() edgeproto.AutoScalePolicyApiServer {
+	return s.autoScalePolicyApi
+}
+func (s *AllApis) GetTrustPolicyApi() edgeproto.TrustPolicyApiServer   { return s.trustPolicyApi }
+func (s *AllApis) GetAppApi() edgeproto.AppApiServer                   { return s.appApi }
+func (s *AllApis) GetAppInstApi() edgeproto.AppInstApiServer           { return s.appInstApi }
+func (s *AllApis) GetGPUDriverApi() edgeproto.GPUDriverApiServer       { return s.gpuDriverApi }
+func (s *AllApis) GetCloudletApi() edgeproto.CloudletApiServer         { return s.cloudletApi }
+func (s *AllApis) GetCloudletPoolApi() edgeproto.CloudletPoolApiServer { return s.cloudletPoolApi }
+func (s *AllApis) GetVMPoolApi() edgeproto.VMPoolApiServer             { return s.vmPoolApi }
+func (s *AllApis) GetClusterInstApi() edgeproto.ClusterInstApiServer   { return s.clusterInstApi }
+func (s *AllApis) GetAutoProvPolicyApi() edgeproto.AutoProvPolicyApiServer {
+	return s.autoProvPolicyApi
+}
+func (s *AllApis) GetTrustPolicyExceptionApi() edgeproto.TrustPolicyExceptionApiServer {
+	return s.trustPolicyExceptionApi
+}
+func (s *AllApis) GetNetworkApi() edgeproto.NetworkApiServer           { return s.networkApi }
+func (s *AllApis) GetCloudletNodeApi() edgeproto.CloudletNodeApiServer { return s.cloudletNodeApi }

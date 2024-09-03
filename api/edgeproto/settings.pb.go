@@ -1946,6 +1946,21 @@ func (s *SettingsStoreImpl) STMDel(stm concurrency.STM, key *SettingsKey) {
 	stm.Del(keystr)
 }
 
+func StoreListSettings(ctx context.Context, kvstore objstore.KVStore) ([]Settings, error) {
+	keyPrefix := objstore.DbKeyPrefixString("Settings") + "/"
+	objs := []Settings{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := Settings{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal Settings json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type SettingsKeyWatcher struct {
 	cb func(ctx context.Context)
 }

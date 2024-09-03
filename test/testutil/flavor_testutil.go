@@ -48,6 +48,14 @@ func (x *ShowFlavor) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowFlavor) ListData() []edgeproto.Flavor {
+	data := []edgeproto.Flavor{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var FlavorShowExtraCount = 0
 
 func (x *ShowFlavor) ReadStream(stream edgeproto.FlavorApi_ShowFlavorClient, err error) {
@@ -331,6 +339,12 @@ func InternalFlavorDelete(t *testing.T, api edgeproto.FlavorApiServer, testData 
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteFlavorData(t, ctx, NewInternalFlavorApi(api), testData)
+}
+
+func InternalFlavorDeleteAll(t *testing.T, ctx context.Context, api edgeproto.FlavorApiServer, data []edgeproto.Flavor) {
+	intapi := NewInternalFlavorApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all Flavors", "count", len(data))
+	DeleteFlavorData(t, ctx, intapi, data)
 }
 
 func ClientFlavorDelete(t *testing.T, api edgeproto.FlavorApiClient, testData []edgeproto.Flavor) {

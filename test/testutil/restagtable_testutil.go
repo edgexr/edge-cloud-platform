@@ -48,6 +48,14 @@ func (x *ShowResTagTable) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowResTagTable) ListData() []edgeproto.ResTagTable {
+	data := []edgeproto.ResTagTable{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var ResTagTableShowExtraCount = 0
 
 func (x *ShowResTagTable) ReadStream(stream edgeproto.ResTagTableApi_ShowResTagTableClient, err error) {
@@ -317,6 +325,12 @@ func InternalResTagTableDelete(t *testing.T, api edgeproto.ResTagTableApiServer,
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteResTagTableData(t, ctx, NewInternalResTagTableApi(api), testData)
+}
+
+func InternalResTagTableDeleteAll(t *testing.T, ctx context.Context, api edgeproto.ResTagTableApiServer, data []edgeproto.ResTagTable) {
+	intapi := NewInternalResTagTableApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all ResTagTables", "count", len(data))
+	DeleteResTagTableData(t, ctx, intapi, data)
 }
 
 func ClientResTagTableDelete(t *testing.T, api edgeproto.ResTagTableApiClient, testData []edgeproto.ResTagTable) {

@@ -50,6 +50,14 @@ func (x *ShowAutoProvPolicy) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowAutoProvPolicy) ListData() []edgeproto.AutoProvPolicy {
+	data := []edgeproto.AutoProvPolicy{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var AutoProvPolicyShowExtraCount = 0
 
 func (x *ShowAutoProvPolicy) ReadStream(stream edgeproto.AutoProvPolicyApi_ShowAutoProvPolicyClient, err error) {
@@ -353,6 +361,12 @@ func InternalAutoProvPolicyDelete(t *testing.T, api edgeproto.AutoProvPolicyApiS
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteAutoProvPolicyData(t, ctx, NewInternalAutoProvPolicyApi(api), testData)
+}
+
+func InternalAutoProvPolicyDeleteAll(t *testing.T, ctx context.Context, api edgeproto.AutoProvPolicyApiServer, data []edgeproto.AutoProvPolicy) {
+	intapi := NewInternalAutoProvPolicyApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all AutoProvPolicys", "count", len(data))
+	DeleteAutoProvPolicyData(t, ctx, intapi, data)
 }
 
 func ClientAutoProvPolicyDelete(t *testing.T, api edgeproto.AutoProvPolicyApiClient, testData []edgeproto.AutoProvPolicy) {

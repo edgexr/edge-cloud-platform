@@ -4032,6 +4032,21 @@ func (s *AppStoreImpl) STMDel(stm concurrency.STM, key *AppKey) {
 	stm.Del(keystr)
 }
 
+func StoreListApp(ctx context.Context, kvstore objstore.KVStore) ([]App, error) {
+	keyPrefix := objstore.DbKeyPrefixString("App") + "/"
+	objs := []App{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := App{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal App json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type AppKeyWatcher struct {
 	cb func(ctx context.Context)
 }

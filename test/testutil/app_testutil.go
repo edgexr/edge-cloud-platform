@@ -49,6 +49,14 @@ func (x *ShowApp) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowApp) ListData() []edgeproto.App {
+	data := []edgeproto.App{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var AppShowExtraCount = 0
 
 func (x *ShowApp) ReadStream(stream edgeproto.AppApi_ShowAppClient, err error) {
@@ -332,6 +340,12 @@ func InternalAppDelete(t *testing.T, api edgeproto.AppApiServer, testData []edge
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteAppData(t, ctx, NewInternalAppApi(api), testData)
+}
+
+func InternalAppDeleteAll(t *testing.T, ctx context.Context, api edgeproto.AppApiServer, data []edgeproto.App) {
+	intapi := NewInternalAppApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all Apps", "count", len(data))
+	DeleteAppData(t, ctx, intapi, data)
 }
 
 func ClientAppDelete(t *testing.T, api edgeproto.AppApiClient, testData []edgeproto.App) {

@@ -48,6 +48,14 @@ func (x *ShowDevice) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowDevice) ListData() []edgeproto.Device {
+	data := []edgeproto.Device{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var DeviceShowExtraCount = 0
 
 func (x *ShowDevice) ReadStream(stream edgeproto.DeviceApi_ShowDeviceClient, err error) {
@@ -249,6 +257,9 @@ func RunDeviceDataShowApis(run *Run, in *edgeproto.DeviceData, selector edgeprot
 	if selector.Has("devices") {
 		run.DeviceApi(&in.Devices, nil, &out.Devices)
 	}
+}
+
+func DeleteAllDeviceDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.DeviceData) {
 }
 
 func (r *Run) DeviceApi(data *[]edgeproto.Device, dataMap interface{}, dataOut interface{}) {

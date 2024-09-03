@@ -49,6 +49,14 @@ func (x *ShowVMPool) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowVMPool) ListData() []edgeproto.VMPool {
+	data := []edgeproto.VMPool{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var VMPoolShowExtraCount = 0
 
 func (x *ShowVMPool) ReadStream(stream edgeproto.VMPoolApi_ShowVMPoolClient, err error) {
@@ -332,6 +340,12 @@ func InternalVMPoolDelete(t *testing.T, api edgeproto.VMPoolApiServer, testData 
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteVMPoolData(t, ctx, NewInternalVMPoolApi(api), testData)
+}
+
+func InternalVMPoolDeleteAll(t *testing.T, ctx context.Context, api edgeproto.VMPoolApiServer, data []edgeproto.VMPool) {
+	intapi := NewInternalVMPoolApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all VMPools", "count", len(data))
+	DeleteVMPoolData(t, ctx, intapi, data)
 }
 
 func ClientVMPoolDelete(t *testing.T, api edgeproto.VMPoolApiClient, testData []edgeproto.VMPool) {

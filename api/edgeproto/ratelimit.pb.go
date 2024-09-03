@@ -2110,6 +2110,21 @@ func (s *FlowRateLimitSettingsStoreImpl) STMDel(stm concurrency.STM, key *FlowRa
 	stm.Del(keystr)
 }
 
+func StoreListFlowRateLimitSettings(ctx context.Context, kvstore objstore.KVStore) ([]FlowRateLimitSettings, error) {
+	keyPrefix := objstore.DbKeyPrefixString("FlowRateLimitSettings") + "/"
+	objs := []FlowRateLimitSettings{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := FlowRateLimitSettings{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal FlowRateLimitSettings json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type FlowRateLimitSettingsKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -3090,6 +3105,21 @@ func (s *MaxReqsRateLimitSettingsStoreImpl) STMDel(stm concurrency.STM, key *Max
 	stm.Del(keystr)
 }
 
+func StoreListMaxReqsRateLimitSettings(ctx context.Context, kvstore objstore.KVStore) ([]MaxReqsRateLimitSettings, error) {
+	keyPrefix := objstore.DbKeyPrefixString("MaxReqsRateLimitSettings") + "/"
+	objs := []MaxReqsRateLimitSettings{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := MaxReqsRateLimitSettings{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal MaxReqsRateLimitSettings json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type MaxReqsRateLimitSettingsKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -3977,6 +4007,21 @@ func (s *RateLimitSettingsStoreImpl) STMDel(stm concurrency.STM, key *RateLimitS
 	stm.Del(keystr)
 }
 
+func StoreListRateLimitSettings(ctx context.Context, kvstore objstore.KVStore) ([]RateLimitSettings, error) {
+	keyPrefix := objstore.DbKeyPrefixString("RateLimitSettings") + "/"
+	objs := []RateLimitSettings{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := RateLimitSettings{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal RateLimitSettings json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 func (m *RateLimitSettings) GetObjKey() objstore.ObjKey {
 	return m.GetKey()
 }
@@ -4080,6 +4125,15 @@ func (m *RateLimitSettingsData) IsEmpty() bool {
 		return false
 	}
 	return true
+}
+
+func (m *RateLimitSettingsData) StoreRead(ctx context.Context, kvstore objstore.KVStore) error {
+	settings, err := StoreListRateLimitSettings(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.Settings = settings
+	return nil
 }
 
 var ApiEndpointTypeStrings = []string{

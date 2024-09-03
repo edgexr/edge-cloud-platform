@@ -49,6 +49,14 @@ func (x *ShowGPUDriver) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowGPUDriver) ListData() []edgeproto.GPUDriver {
+	data := []edgeproto.GPUDriver{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var GPUDriverShowExtraCount = 0
 
 type CudStreamoutGPUDriver struct {
@@ -376,6 +384,12 @@ func InternalGPUDriverDelete(t *testing.T, api edgeproto.GPUDriverApiServer, tes
 	DeleteGPUDriverData(t, ctx, NewInternalGPUDriverApi(api), testData)
 }
 
+func InternalGPUDriverDeleteAll(t *testing.T, ctx context.Context, api edgeproto.GPUDriverApiServer, data []edgeproto.GPUDriver) {
+	intapi := NewInternalGPUDriverApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all GPUDrivers", "count", len(data))
+	DeleteGPUDriverData(t, ctx, intapi, data)
+}
+
 func ClientGPUDriverDelete(t *testing.T, api edgeproto.GPUDriverApiClient, testData []edgeproto.GPUDriver) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientGPUDriverDelete")
 	defer span.Finish()
@@ -420,6 +434,14 @@ func (x *ShowCloudlet) Send(m *edgeproto.Cloudlet) error {
 
 func (x *ShowCloudlet) Context() context.Context {
 	return x.Ctx
+}
+
+func (x *ShowCloudlet) ListData() []edgeproto.Cloudlet {
+	data := []edgeproto.Cloudlet{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
 }
 
 var CloudletShowExtraCount = 0
@@ -749,6 +771,12 @@ func InternalCloudletDelete(t *testing.T, api edgeproto.CloudletApiServer, testD
 	DeleteCloudletData(t, ctx, NewInternalCloudletApi(api), testData)
 }
 
+func InternalCloudletDeleteAll(t *testing.T, ctx context.Context, api edgeproto.CloudletApiServer, data []edgeproto.Cloudlet) {
+	intapi := NewInternalCloudletApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all Cloudlets", "count", len(data))
+	DeleteCloudletData(t, ctx, intapi, data)
+}
+
 func ClientCloudletDelete(t *testing.T, api edgeproto.CloudletApiClient, testData []edgeproto.Cloudlet) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientCloudletDelete")
 	defer span.Finish()
@@ -793,6 +821,14 @@ func (x *ShowCloudletInfo) Send(m *edgeproto.CloudletInfo) error {
 
 func (x *ShowCloudletInfo) Context() context.Context {
 	return x.Ctx
+}
+
+func (x *ShowCloudletInfo) ListData() []edgeproto.CloudletInfo {
+	data := []edgeproto.CloudletInfo{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
 }
 
 var CloudletInfoShowExtraCount = 0

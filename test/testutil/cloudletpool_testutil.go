@@ -49,6 +49,14 @@ func (x *ShowCloudletPool) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowCloudletPool) ListData() []edgeproto.CloudletPool {
+	data := []edgeproto.CloudletPool{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var CloudletPoolShowExtraCount = 0
 
 func (x *ShowCloudletPool) ReadStream(stream edgeproto.CloudletPoolApi_ShowCloudletPoolClient, err error) {
@@ -318,6 +326,12 @@ func InternalCloudletPoolDelete(t *testing.T, api edgeproto.CloudletPoolApiServe
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteCloudletPoolData(t, ctx, NewInternalCloudletPoolApi(api), testData)
+}
+
+func InternalCloudletPoolDeleteAll(t *testing.T, ctx context.Context, api edgeproto.CloudletPoolApiServer, data []edgeproto.CloudletPool) {
+	intapi := NewInternalCloudletPoolApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all CloudletPools", "count", len(data))
+	DeleteCloudletPoolData(t, ctx, intapi, data)
 }
 
 func ClientCloudletPoolDelete(t *testing.T, api edgeproto.CloudletPoolApiClient, testData []edgeproto.CloudletPool) {

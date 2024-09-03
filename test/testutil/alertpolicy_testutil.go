@@ -48,6 +48,14 @@ func (x *ShowAlertPolicy) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowAlertPolicy) ListData() []edgeproto.AlertPolicy {
+	data := []edgeproto.AlertPolicy{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var AlertPolicyShowExtraCount = 0
 
 func (x *ShowAlertPolicy) ReadStream(stream edgeproto.AlertPolicyApi_ShowAlertPolicyClient, err error) {
@@ -331,6 +339,12 @@ func InternalAlertPolicyDelete(t *testing.T, api edgeproto.AlertPolicyApiServer,
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteAlertPolicyData(t, ctx, NewInternalAlertPolicyApi(api), testData)
+}
+
+func InternalAlertPolicyDeleteAll(t *testing.T, ctx context.Context, api edgeproto.AlertPolicyApiServer, data []edgeproto.AlertPolicy) {
+	intapi := NewInternalAlertPolicyApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all AlertPolicys", "count", len(data))
+	DeleteAlertPolicyData(t, ctx, intapi, data)
 }
 
 func ClientAlertPolicyDelete(t *testing.T, api edgeproto.AlertPolicyApiClient, testData []edgeproto.AlertPolicy) {

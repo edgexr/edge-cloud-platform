@@ -47,6 +47,14 @@ func (x *ShowOperatorCode) Context() context.Context {
 	return x.Ctx
 }
 
+func (x *ShowOperatorCode) ListData() []edgeproto.OperatorCode {
+	data := []edgeproto.OperatorCode{}
+	for _, val := range x.Data {
+		data = append(data, val)
+	}
+	return data
+}
+
 var OperatorCodeShowExtraCount = 0
 
 func (x *ShowOperatorCode) ReadStream(stream edgeproto.OperatorCodeApi_ShowOperatorCodeClient, err error) {
@@ -316,6 +324,12 @@ func InternalOperatorCodeDelete(t *testing.T, api edgeproto.OperatorCodeApiServe
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteOperatorCodeData(t, ctx, NewInternalOperatorCodeApi(api), testData)
+}
+
+func InternalOperatorCodeDeleteAll(t *testing.T, ctx context.Context, api edgeproto.OperatorCodeApiServer, data []edgeproto.OperatorCode) {
+	intapi := NewInternalOperatorCodeApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all OperatorCodes", "count", len(data))
+	DeleteOperatorCodeData(t, ctx, intapi, data)
 }
 
 func ClientOperatorCodeDelete(t *testing.T, api edgeproto.OperatorCodeApiClient, testData []edgeproto.OperatorCode) {

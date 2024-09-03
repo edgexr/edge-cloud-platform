@@ -46,9 +46,7 @@ var upgradeVaultTestFilePostSuffix = "_post.vault"
 var upgradeVaultTestFileExpectedSuffix = "_expected.vault"
 
 // Walk testutils data and populate objStore
-func buildDbFromTestData(objStore objstore.KVStore, funcName string) error {
-	ctx := context.Background()
-
+func buildDbFromTestData(ctx context.Context, objStore objstore.KVStore, funcName string) error {
 	filename := upgradeTestFileLocation + "/" + funcName + upgradeTestFilePreSuffix
 	file, err := os.Open(filename)
 	if err != nil {
@@ -342,9 +340,6 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	// because the appinst_api_test sets it to something else.
 	*appDNSRoot = "appdnsroot.net"
 
-	sync := regiondata.InitSync(&objStore)
-	apis := NewAllApis(sync)
-
 	// Start in-memory Vault for upgrade funcs that upgrade Vault data
 	region := "local"
 	vp := process.Vault{
@@ -382,11 +377,16 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		}
 		require.Nil(t, err)
 
+		testSvcs := testinit(ctx, t)
+		defer testfinish(testSvcs)
+
 		objStore.Start()
-		err = buildDbFromTestData(&objStore, funcName)
+		defer objStore.Stop()
+		sync := regiondata.InitSync(&objStore)
+		apis := NewAllApis(sync)
+
+		err = buildDbFromTestData(ctx, &objStore, funcName)
 		require.Nil(t, err)
-		vaultPreData, vaultDataLoaded, err := loadVaultTestData(ctx, vaultConfig, funcName)
-		require.Nil(t, err, "Load Vault test data")
 		for _, upgrade := range VersionHash_UpgradeFuncs {
 			if upgrade.upgradeFunc == nil {
 				continue
@@ -394,14 +394,12 @@ func TestAllUpgradeFuncs(t *testing.T) {
 			err = RunSingleUpgrade(ctx, &objStore, apis, sup, upgrade.upgradeFunc, upgrade.id)
 			require.Nil(t, err, "Upgrade failed")
 		}
-		err = compareDbToExpected(&objStore, funcName)
-		require.Nil(t, err, "Unexpected result from upgrade function(%s)", funcName)
-		if vaultDataLoaded {
-			cleanupVault := false
-			err = compareVaultData(ctx, vaultConfig, funcName, region, vaultPreData, cleanupVault)
-			require.Nil(t, err)
-		}
-		objStore.Stop()
+		// run compare to generate the expected file, we don't actually expect
+		// it to match.
+		_ = compareDbToExpected(&objStore, funcName)
+		sync.Start()
+		defer sync.Done()
+		deleteAllObjects(t, ctx, &objStore, apis)
 	})
 
 	for _, upgrade := range VersionHash_UpgradeFuncs {
@@ -410,9 +408,12 @@ func TestAllUpgradeFuncs(t *testing.T) {
 			continue
 		}
 		objStore.Start()
+		sync := regiondata.InitSync(&objStore)
+		apis := NewAllApis(sync)
+
 		funcName := upgrade.name
 		id := upgrade.id
-		err := buildDbFromTestData(&objStore, funcName)
+		err := buildDbFromTestData(ctx, &objStore, funcName)
 		require.Nil(t, err, "Unable to build db from testData")
 		vaultPreData, vaultDataLoaded, err := loadVaultTestData(ctx, vaultConfig, funcName)
 		require.Nil(t, err, "Load Vault test data")
@@ -438,6 +439,33 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		// Stop it, so it's re-created again
 		objStore.Stop()
 	}
+}
+
+// deleteAllObjects is used as a consistency check on the database state.
+// After an upgrade, users will either update or delete existing database
+// objects. Unfortunately update can be quite complicated, so we just check
+// if we can delete objects properly. If any dependencies are missing these
+// deletes will fail (for example AppInst depends on a non-existent ClusterInst).
+// This does not check everything, for examples refs objects, but at least
+// provides a way to check that user actions will be ok.
+func deleteAllObjects(t *testing.T, ctx context.Context, objStore objstore.KVStore, apis *AllApis) {
+	allData := edgeproto.AllData{}
+	err := allData.StoreRead(ctx, objStore)
+	require.Nil(t, err)
+	for ii := range allData.AppInstances {
+		log.SpanLog(ctx, log.DebugLevelInfo, "appinstance", "ai", allData.AppInstances[ii].Key.GetKeyString())
+		allData.AppInstances[ii].CrmOverride = edgeproto.CRMOverride_IGNORE_CRM_AND_TRANSIENT_STATE
+	}
+	for ii := range allData.ClusterInsts {
+		allData.ClusterInsts[ii].CrmOverride = edgeproto.CRMOverride_IGNORE_CRM_AND_TRANSIENT_STATE
+	}
+	for ii := range allData.Cloudlets {
+		allData.Cloudlets[ii].CrmOverride = edgeproto.CRMOverride_IGNORE_CRM_AND_TRANSIENT_STATE
+	}
+	for ii := range allData.VmPools {
+		allData.VmPools[ii].CrmOverride = edgeproto.CRMOverride_IGNORE_CRM_AND_TRANSIENT_STATE
+	}
+	testutil.DeleteAllAllDataInternal(t, ctx, apis, &allData)
 }
 
 func TestGetDataVersion(t *testing.T) {
