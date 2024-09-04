@@ -15,6 +15,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	"io"
 	math "math"
+	"testing"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -48,6 +49,9 @@ func RunDebugDataReverseApis(run *Run, in *edgeproto.DebugData, inMap map[string
 }
 
 func RunDebugDataShowApis(run *Run, in *edgeproto.DebugData, selector edgeproto.AllSelector, out *edgeproto.DebugData) {
+}
+
+func DeleteAllDebugDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.DebugData) {
 }
 
 func (r *Run) DebugApi_DebugRequest(data *[]edgeproto.DebugRequest, dataMap interface{}, dataOut interface{}) {

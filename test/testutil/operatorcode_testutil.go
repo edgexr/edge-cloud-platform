@@ -318,6 +318,12 @@ func InternalOperatorCodeDelete(t *testing.T, api edgeproto.OperatorCodeApiServe
 	DeleteOperatorCodeData(t, ctx, NewInternalOperatorCodeApi(api), testData)
 }
 
+func InternalOperatorCodeDeleteAll(t *testing.T, ctx context.Context, api edgeproto.OperatorCodeApiServer, data []edgeproto.OperatorCode) {
+	intapi := NewInternalOperatorCodeApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all OperatorCodes", "count", len(data))
+	DeleteOperatorCodeData(t, ctx, intapi, data)
+}
+
 func ClientOperatorCodeDelete(t *testing.T, api edgeproto.OperatorCodeApiClient, testData []edgeproto.OperatorCode) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientOperatorCodeDelete")
 	defer span.Finish()

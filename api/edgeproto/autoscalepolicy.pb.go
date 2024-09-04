@@ -1182,6 +1182,21 @@ func (s *AutoScalePolicyStoreImpl) STMDel(stm concurrency.STM, key *PolicyKey) {
 	stm.Del(keystr)
 }
 
+func StoreListAutoScalePolicy(ctx context.Context, kvstore objstore.KVStore) ([]AutoScalePolicy, error) {
+	keyPrefix := objstore.DbKeyPrefixString("AutoScalePolicy") + "/"
+	objs := []AutoScalePolicy{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := AutoScalePolicy{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal AutoScalePolicy json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type AutoScalePolicyKeyWatcher struct {
 	cb func(ctx context.Context)
 }

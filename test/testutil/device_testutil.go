@@ -251,6 +251,9 @@ func RunDeviceDataShowApis(run *Run, in *edgeproto.DeviceData, selector edgeprot
 	}
 }
 
+func DeleteAllDeviceDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.DeviceData) {
+}
+
 func (r *Run) DeviceApi(data *[]edgeproto.Device, dataMap interface{}, dataOut interface{}) {
 	log.DebugLog(log.DebugLevelApi, "API for Device", "mode", r.Mode)
 	if r.Mode == "show" {

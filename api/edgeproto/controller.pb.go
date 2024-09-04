@@ -828,6 +828,21 @@ func (s *ControllerStoreImpl) STMDel(stm concurrency.STM, key *ControllerKey) {
 	stm.Del(keystr)
 }
 
+func StoreListController(ctx context.Context, kvstore objstore.KVStore) ([]Controller, error) {
+	keyPrefix := objstore.DbKeyPrefixString("Controller") + "/"
+	objs := []Controller{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := Controller{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal Controller json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type ControllerKeyWatcher struct {
 	cb func(ctx context.Context)
 }

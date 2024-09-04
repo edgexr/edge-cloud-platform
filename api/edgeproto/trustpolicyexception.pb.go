@@ -1490,6 +1490,21 @@ func (s *TrustPolicyExceptionStoreImpl) STMDel(stm concurrency.STM, key *TrustPo
 	stm.Del(keystr)
 }
 
+func StoreListTrustPolicyException(ctx context.Context, kvstore objstore.KVStore) ([]TrustPolicyException, error) {
+	keyPrefix := objstore.DbKeyPrefixString("TrustPolicyException") + "/"
+	objs := []TrustPolicyException{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := TrustPolicyException{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal TrustPolicyException json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type TrustPolicyExceptionKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -2459,6 +2474,21 @@ func (s *TPEInstanceStateStoreImpl) STMPut(stm concurrency.STM, obj *TPEInstance
 func (s *TPEInstanceStateStoreImpl) STMDel(stm concurrency.STM, key *TPEInstanceKey) {
 	keystr := objstore.DbKeyString("TPEInstanceState", key)
 	stm.Del(keystr)
+}
+
+func StoreListTPEInstanceState(ctx context.Context, kvstore objstore.KVStore) ([]TPEInstanceState, error) {
+	keyPrefix := objstore.DbKeyPrefixString("TPEInstanceState") + "/"
+	objs := []TPEInstanceState{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := TPEInstanceState{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal TPEInstanceState json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type TPEInstanceStateKeyWatcher struct {

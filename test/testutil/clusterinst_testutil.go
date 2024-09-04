@@ -376,6 +376,12 @@ func InternalClusterInstDelete(t *testing.T, api edgeproto.ClusterInstApiServer,
 	DeleteClusterInstData(t, ctx, NewInternalClusterInstApi(api), testData)
 }
 
+func InternalClusterInstDeleteAll(t *testing.T, ctx context.Context, api edgeproto.ClusterInstApiServer, data []edgeproto.ClusterInst) {
+	intapi := NewInternalClusterInstApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all ClusterInsts", "count", len(data))
+	DeleteClusterInstData(t, ctx, intapi, data)
+}
+
 func ClientClusterInstDelete(t *testing.T, api edgeproto.ClusterInstApiClient, testData []edgeproto.ClusterInst) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientClusterInstDelete")
 	defer span.Finish()

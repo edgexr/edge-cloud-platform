@@ -245,6 +245,9 @@ func RunNodeDataShowApis(run *Run, in *edgeproto.NodeData, selector edgeproto.Al
 	}
 }
 
+func DeleteAllNodeDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.NodeData) {
+}
+
 func (r *Run) NodeApi(data *[]edgeproto.Node, dataMap interface{}, dataOut interface{}) {
 	log.DebugLog(log.DebugLevelApi, "API for Node", "mode", r.Mode)
 	if r.Mode == "show" {

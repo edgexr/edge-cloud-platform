@@ -319,6 +319,12 @@ func InternalResTagTableDelete(t *testing.T, api edgeproto.ResTagTableApiServer,
 	DeleteResTagTableData(t, ctx, NewInternalResTagTableApi(api), testData)
 }
 
+func InternalResTagTableDeleteAll(t *testing.T, ctx context.Context, api edgeproto.ResTagTableApiServer, data []edgeproto.ResTagTable) {
+	intapi := NewInternalResTagTableApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all ResTagTables", "count", len(data))
+	DeleteResTagTableData(t, ctx, intapi, data)
+}
+
 func ClientResTagTableDelete(t *testing.T, api edgeproto.ResTagTableApiClient, testData []edgeproto.ResTagTable) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientResTagTableDelete")
 	defer span.Finish()

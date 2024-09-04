@@ -475,6 +475,12 @@ func Internal{{.Name}}{{.Delete}}(t *testing.T, api {{.Pkg}}.{{.Name}}ApiServer,
 	{{.Delete}}{{.Name}}Data(t, ctx, NewInternal{{.Name}}Api(api), testData)
 }
 
+func Internal{{.Name}}{{.Delete}}All(t *testing.T, ctx context.Context, api {{.Pkg}}.{{.Name}}ApiServer, data []{{.Pkg}}.{{.Name}}) {
+	intapi := NewInternal{{.Name}}Api(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all {{.Name}}s", "count", len(data))
+	{{.Delete}}{{.Name}}Data(t, ctx, intapi, data)
+}
+
 func Client{{.Name}}{{.Delete}}(t *testing.T, api {{.Pkg}}.{{.Name}}ApiClient, testData []{{.Pkg}}.{{.Name}}) {
 	span := log.StartSpan(log.DebugLevelApi, "Client{{.Name}}{{.Delete}}")
 	defer span.Finish()
@@ -609,7 +615,7 @@ func (t *TestCud) Generate(file *generator.FileDescriptor) {
 	}
 	if t.firstFile {
 		t.genDummyServer()
-		t.genClient()
+		t.genClient(file)
 		t.firstFile = false
 	}
 	gensupport.RunParseCheck(t.Generator, file)
@@ -1133,7 +1139,7 @@ func (t *TestCud) genClientInterface(service *descriptor.ServiceDescriptorProto)
 	t.P()
 }
 
-func (t *TestCud) genClient() {
+func (t *TestCud) genClient(fileDesc *generator.FileDescriptor) {
 	t.P("type ApiClient struct {")
 	t.P("Conn *grpc.ClientConn")
 	t.P("}")
@@ -1159,6 +1165,29 @@ func (t *TestCud) genClient() {
 	}
 	t.P("}")
 	t.P()
+
+	t.P("type InternalCUDAPIs interface {")
+	for _, file := range t.Generator.Request.ProtoFile {
+		if len(file.Service) == 0 {
+			continue
+		}
+		for _, service := range file.Service {
+			if gensupport.GetInternalApi(service) {
+				continue
+			}
+			if hasSupportedMethod(service) {
+				method := service.Method[0]
+				in := gensupport.GetDesc(t.Generator, method.GetInputType())
+				genCud := GetGenerateCudTest(in.DescriptorProto)
+				if genCud {
+					pkg := t.support.GetPackageName(t.Generator, in)
+					t.P("Get", service.Name, "() ", pkg, ".", service.Name, "Server")
+				}
+			}
+		}
+	}
+	t.P("}")
+	t.P()
 	t.importGrpc = true
 	t.importWrapper = true
 }
@@ -1168,6 +1197,8 @@ type e2eFieldInfo struct {
 	ref       string
 	group     *gensupport.MethodGroup
 	info      *gensupport.MethodInfo
+	baseType  string
+	genCUD    bool
 }
 
 func (t *TestCud) genE2edata(desc *generator.Descriptor) {
@@ -1192,9 +1223,11 @@ func (t *TestCud) genE2edata(desc *generator.Descriptor) {
 		for _, info := range group.MethodInfos {
 			finfo := e2eFieldInfo{
 				fieldName: generator.CamelCase(*field.Name),
+				baseType:  inType,
 				group:     group,
 				info:      info,
 				ref:       "&",
+				genCUD:    GetGenerateCudTest(fieldDesc.DescriptorProto),
 			}
 			if group.SingularData {
 				finfo.ref = ""
@@ -1261,6 +1294,19 @@ func (t *TestCud) genE2edata(desc *generator.Descriptor) {
 	}
 	t.P("}")
 	t.P()
+
+	t.P("func DeleteAll", message.Name, "Internal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *", pkg, message.Name, ") {")
+	for ii := len(fieldInfos) - 1; ii >= 0; ii-- {
+		finfo := fieldInfos[ii]
+		if !finfo.genCUD {
+			continue
+		}
+		t.P("Internal", finfo.baseType, "DeleteAll(t, ctx, apis.Get", finfo.group.ApiName(), "(), in.", finfo.fieldName, ")")
+	}
+	t.P("}")
+	t.P()
+	t.importTesting = true
+	t.importContext = true
 }
 
 func GetGenerateCud(message *descriptor.DescriptorProto) bool {

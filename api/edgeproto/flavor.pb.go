@@ -1163,6 +1163,21 @@ func (s *FlavorStoreImpl) STMDel(stm concurrency.STM, key *FlavorKey) {
 	stm.Del(keystr)
 }
 
+func StoreListFlavor(ctx context.Context, kvstore objstore.KVStore) ([]Flavor, error) {
+	keyPrefix := objstore.DbKeyPrefixString("Flavor") + "/"
+	objs := []Flavor{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := Flavor{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal Flavor json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type FlavorKeyWatcher struct {
 	cb func(ctx context.Context)
 }

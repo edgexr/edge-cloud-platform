@@ -93,3 +93,6 @@ type CliClient struct {
 type Client interface {
 	TestApiClient
 }
+
+type InternalCUDAPIs interface {
+}

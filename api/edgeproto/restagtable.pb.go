@@ -1247,6 +1247,21 @@ func (s *ResTagTableStoreImpl) STMDel(stm concurrency.STM, key *ResTagTableKey) 
 	stm.Del(keystr)
 }
 
+func StoreListResTagTable(ctx context.Context, kvstore objstore.KVStore) ([]ResTagTable, error) {
+	keyPrefix := objstore.DbKeyPrefixString("ResTagTable") + "/"
+	objs := []ResTagTable{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := ResTagTable{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal ResTagTable json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type ResTagTableKeyWatcher struct {
 	cb func(ctx context.Context)
 }

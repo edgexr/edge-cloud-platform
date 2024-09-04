@@ -14,6 +14,7 @@ import (
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	math "math"
+	"testing"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -47,6 +48,9 @@ func RunOrganizationDataReverseApis(run *Run, in *edgeproto.OrganizationData, in
 }
 
 func RunOrganizationDataShowApis(run *Run, in *edgeproto.OrganizationData, selector edgeproto.AllSelector, out *edgeproto.OrganizationData) {
+}
+
+func DeleteAllOrganizationDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.OrganizationData) {
 }
 
 func (r *Run) OrganizationApi(data *[]edgeproto.Organization, dataMap interface{}, dataOut interface{}) {

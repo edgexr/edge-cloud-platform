@@ -333,6 +333,12 @@ func InternalAlertPolicyDelete(t *testing.T, api edgeproto.AlertPolicyApiServer,
 	DeleteAlertPolicyData(t, ctx, NewInternalAlertPolicyApi(api), testData)
 }
 
+func InternalAlertPolicyDeleteAll(t *testing.T, ctx context.Context, api edgeproto.AlertPolicyApiServer, data []edgeproto.AlertPolicy) {
+	intapi := NewInternalAlertPolicyApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all AlertPolicys", "count", len(data))
+	DeleteAlertPolicyData(t, ctx, intapi, data)
+}
+
 func ClientAlertPolicyDelete(t *testing.T, api edgeproto.AlertPolicyApiClient, testData []edgeproto.AlertPolicy) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientAlertPolicyDelete")
 	defer span.Finish()

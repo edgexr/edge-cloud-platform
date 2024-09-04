@@ -353,6 +353,12 @@ func InternalAutoScalePolicyDelete(t *testing.T, api edgeproto.AutoScalePolicyAp
 	DeleteAutoScalePolicyData(t, ctx, NewInternalAutoScalePolicyApi(api), testData)
 }
 
+func InternalAutoScalePolicyDeleteAll(t *testing.T, ctx context.Context, api edgeproto.AutoScalePolicyApiServer, data []edgeproto.AutoScalePolicy) {
+	intapi := NewInternalAutoScalePolicyApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all AutoScalePolicys", "count", len(data))
+	DeleteAutoScalePolicyData(t, ctx, intapi, data)
+}
+
 func ClientAutoScalePolicyDelete(t *testing.T, api edgeproto.AutoScalePolicyApiClient, testData []edgeproto.AutoScalePolicy) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientAutoScalePolicyDelete")
 	defer span.Finish()

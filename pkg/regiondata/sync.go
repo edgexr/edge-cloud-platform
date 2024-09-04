@@ -95,6 +95,7 @@ func (s *Sync) Start() {
 func (s *Sync) Done() {
 	s.syncCancel()
 	s.mux.Lock()
+	defer s.mux.Unlock()
 	for !s.syncDone {
 		s.cond.Wait()
 	}

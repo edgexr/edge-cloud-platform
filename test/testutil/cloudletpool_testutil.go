@@ -320,6 +320,12 @@ func InternalCloudletPoolDelete(t *testing.T, api edgeproto.CloudletPoolApiServe
 	DeleteCloudletPoolData(t, ctx, NewInternalCloudletPoolApi(api), testData)
 }
 
+func InternalCloudletPoolDeleteAll(t *testing.T, ctx context.Context, api edgeproto.CloudletPoolApiServer, data []edgeproto.CloudletPool) {
+	intapi := NewInternalCloudletPoolApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all CloudletPools", "count", len(data))
+	DeleteCloudletPoolData(t, ctx, intapi, data)
+}
+
 func ClientCloudletPoolDelete(t *testing.T, api edgeproto.CloudletPoolApiClient, testData []edgeproto.CloudletPool) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientCloudletPoolDelete")
 	defer span.Finish()

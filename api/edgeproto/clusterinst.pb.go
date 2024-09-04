@@ -3293,6 +3293,21 @@ func (s *ClusterInstStoreImpl) STMDel(stm concurrency.STM, key *ClusterKey) {
 	stm.Del(keystr)
 }
 
+func StoreListClusterInst(ctx context.Context, kvstore objstore.KVStore) ([]ClusterInst, error) {
+	keyPrefix := objstore.DbKeyPrefixString("ClusterInst") + "/"
+	objs := []ClusterInst{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := ClusterInst{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal ClusterInst json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type ClusterInstKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -4568,6 +4583,21 @@ func (s *ClusterInstInfoStoreImpl) STMPut(stm concurrency.STM, obj *ClusterInstI
 func (s *ClusterInstInfoStoreImpl) STMDel(stm concurrency.STM, key *ClusterKey) {
 	keystr := objstore.DbKeyString("ClusterInstInfo", key)
 	stm.Del(keystr)
+}
+
+func StoreListClusterInstInfo(ctx context.Context, kvstore objstore.KVStore) ([]ClusterInstInfo, error) {
+	keyPrefix := objstore.DbKeyPrefixString("ClusterInstInfo") + "/"
+	objs := []ClusterInstInfo{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := ClusterInstInfo{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal ClusterInstInfo json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type ClusterInstInfoKeyWatcher struct {

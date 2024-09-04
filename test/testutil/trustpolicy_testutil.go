@@ -375,6 +375,12 @@ func InternalTrustPolicyDelete(t *testing.T, api edgeproto.TrustPolicyApiServer,
 	DeleteTrustPolicyData(t, ctx, NewInternalTrustPolicyApi(api), testData)
 }
 
+func InternalTrustPolicyDeleteAll(t *testing.T, ctx context.Context, api edgeproto.TrustPolicyApiServer, data []edgeproto.TrustPolicy) {
+	intapi := NewInternalTrustPolicyApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all TrustPolicys", "count", len(data))
+	DeleteTrustPolicyData(t, ctx, intapi, data)
+}
+
 func ClientTrustPolicyDelete(t *testing.T, api edgeproto.TrustPolicyApiClient, testData []edgeproto.TrustPolicy) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientTrustPolicyDelete")
 	defer span.Finish()

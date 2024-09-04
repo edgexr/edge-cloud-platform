@@ -355,6 +355,12 @@ func InternalAutoProvPolicyDelete(t *testing.T, api edgeproto.AutoProvPolicyApiS
 	DeleteAutoProvPolicyData(t, ctx, NewInternalAutoProvPolicyApi(api), testData)
 }
 
+func InternalAutoProvPolicyDeleteAll(t *testing.T, ctx context.Context, api edgeproto.AutoProvPolicyApiServer, data []edgeproto.AutoProvPolicy) {
+	intapi := NewInternalAutoProvPolicyApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all AutoProvPolicys", "count", len(data))
+	DeleteAutoProvPolicyData(t, ctx, intapi, data)
+}
+
 func ClientAutoProvPolicyDelete(t *testing.T, api edgeproto.AutoProvPolicyApiClient, testData []edgeproto.AutoProvPolicy) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientAutoProvPolicyDelete")
 	defer span.Finish()

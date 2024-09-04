@@ -1072,6 +1072,21 @@ func (s *TrustPolicyStoreImpl) STMDel(stm concurrency.STM, key *PolicyKey) {
 	stm.Del(keystr)
 }
 
+func StoreListTrustPolicy(ctx context.Context, kvstore objstore.KVStore) ([]TrustPolicy, error) {
+	keyPrefix := objstore.DbKeyPrefixString("TrustPolicy") + "/"
+	objs := []TrustPolicy{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := TrustPolicy{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal TrustPolicy json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type TrustPolicyKeyWatcher struct {
 	cb func(ctx context.Context)
 }

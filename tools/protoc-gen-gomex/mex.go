@@ -64,6 +64,8 @@ type mex struct {
 	importReflect          bool
 	importJson             bool
 	importSync             bool
+	importObjstore         bool
+	importContext          bool
 	firstFile              string
 	support                gensupport.PluginSupport
 	refData                *gensupport.RefData
@@ -119,6 +121,8 @@ func (m *mex) Generate(file *generator.FileDescriptor) {
 	m.importReflect = false
 	m.importJson = false
 	m.importSync = false
+	m.importObjstore = false
+	m.importContext = false
 	if m.firstFile == *file.FileDescriptorProto.Name {
 		m.refData = m.support.GatherRefData(m.gen)
 		m.checkDeletePrepares()
@@ -162,8 +166,11 @@ func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 	}
 	if hasGenerateCud {
 		m.gen.PrintImport("", "encoding/json")
-		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/objstore")
 		m.gen.PrintImport("", "go.etcd.io/etcd/client/v3/concurrency")
+		m.importObjstore = true
+	}
+	if m.importObjstore {
+		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/objstore")
 	}
 	if m.importUtil {
 		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/util")
@@ -188,6 +195,9 @@ func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 	}
 	if m.importTime {
 		m.gen.PrintImport("", "time")
+	}
+	if m.importContext {
+		m.gen.PrintImport("context", "context")
 	}
 	if m.importReflect {
 		m.gen.PrintImport("reflect", "reflect")
@@ -1557,6 +1567,21 @@ func (s *{{.Name}}StoreImpl) STMPut(stm concurrency.STM, obj *{{.Name}}, ops ...
 func (s *{{.Name}}StoreImpl) STMDel(stm concurrency.STM, key *{{.KeyType}}) {
 	keystr := objstore.DbKeyString("{{.Name}}", key)
 	stm.Del(keystr)
+}
+
+func StoreList{{.Name}}(ctx context.Context, kvstore objstore.KVStore) ([]{{.Name}}, error) {
+	keyPrefix := objstore.DbKeyPrefixString("{{.Name}}")+"/"
+	objs := []{{.Name}}{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := {{.Name}}{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal {{.Name}} json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 `
@@ -3015,6 +3040,42 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		m.P("return true")
 		m.P("}")
 		m.P()
+		storeReadFields := []*descriptor.FieldDescriptorProto{}
+		for _, field := range message.Field {
+			if field.Type == nil || field.OneofIndex != nil {
+				continue
+			}
+			if *field.Type != descriptor.FieldDescriptorProto_TYPE_MESSAGE {
+				continue
+			}
+			fieldDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
+			if !GetGenerateCud(fieldDesc.DescriptorProto) {
+				continue
+			}
+			storeReadFields = append(storeReadFields, field)
+		}
+		if len(storeReadFields) > 0 {
+			m.P("func (m *", message.Name, ") StoreRead(ctx context.Context, kvstore objstore.KVStore) error {")
+			for _, field := range storeReadFields {
+				fieldDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
+				inType := *fieldDesc.DescriptorProto.Name
+				fname := generator.CamelCase(*field.Name)
+				m.P(field.Name, ", err := StoreList", inType, "(ctx, kvstore)")
+				m.P("if err != nil { return err }")
+				if GetSingularData(fieldDesc.DescriptorProto) {
+					m.P("if len(", field.Name, ") > 0 {")
+					m.P("m.", fname, " = &", field.Name, "[0]")
+					m.P("}")
+				} else {
+					m.P("m.", fname, " = ", field.Name)
+				}
+			}
+			m.P("return nil")
+			m.P("}")
+			m.P()
+			m.importContext = true
+			m.importObjstore = true
+		}
 	}
 }
 
@@ -3709,6 +3770,10 @@ func GetUsesOrg(message *descriptor.DescriptorProto) string {
 
 func GetCopyInAllFields(message *descriptor.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, protogen.E_CopyInAllFields, false)
+}
+
+func GetSingularData(message *descriptor.DescriptorProto) bool {
+	return proto.GetBoolExtension(message.Options, protogen.E_SingularData, false)
 }
 
 func GetBackend(field *descriptor.FieldDescriptorProto) bool {

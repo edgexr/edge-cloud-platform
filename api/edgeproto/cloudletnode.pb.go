@@ -1310,6 +1310,21 @@ func (s *CloudletNodeStoreImpl) STMDel(stm concurrency.STM, key *CloudletNodeKey
 	stm.Del(keystr)
 }
 
+func StoreListCloudletNode(ctx context.Context, kvstore objstore.KVStore) ([]CloudletNode, error) {
+	keyPrefix := objstore.DbKeyPrefixString("CloudletNode") + "/"
+	objs := []CloudletNode{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := CloudletNode{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal CloudletNode json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type CloudletNodeKeyWatcher struct {
 	cb func(ctx context.Context)
 }

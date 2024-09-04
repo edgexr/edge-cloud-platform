@@ -334,6 +334,12 @@ func InternalVMPoolDelete(t *testing.T, api edgeproto.VMPoolApiServer, testData 
 	DeleteVMPoolData(t, ctx, NewInternalVMPoolApi(api), testData)
 }
 
+func InternalVMPoolDeleteAll(t *testing.T, ctx context.Context, api edgeproto.VMPoolApiServer, data []edgeproto.VMPool) {
+	intapi := NewInternalVMPoolApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all VMPools", "count", len(data))
+	DeleteVMPoolData(t, ctx, intapi, data)
+}
+
 func ClientVMPoolDelete(t *testing.T, api edgeproto.VMPoolApiClient, testData []edgeproto.VMPool) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientVMPoolDelete")
 	defer span.Finish()

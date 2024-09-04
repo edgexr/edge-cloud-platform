@@ -1641,6 +1641,21 @@ func (s *CloudletRefsStoreImpl) STMDel(stm concurrency.STM, key *CloudletKey) {
 	stm.Del(keystr)
 }
 
+func StoreListCloudletRefs(ctx context.Context, kvstore objstore.KVStore) ([]CloudletRefs, error) {
+	keyPrefix := objstore.DbKeyPrefixString("CloudletRefs") + "/"
+	objs := []CloudletRefs{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := CloudletRefs{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal CloudletRefs json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type CloudletRefsKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -2409,6 +2424,21 @@ func (s *ClusterRefsStoreImpl) STMDel(stm concurrency.STM, key *ClusterKey) {
 	stm.Del(keystr)
 }
 
+func StoreListClusterRefs(ctx context.Context, kvstore objstore.KVStore) ([]ClusterRefs, error) {
+	keyPrefix := objstore.DbKeyPrefixString("ClusterRefs") + "/"
+	objs := []ClusterRefs{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := ClusterRefs{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal ClusterRefs json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type ClusterRefsKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -3175,6 +3205,21 @@ func (s *AppInstRefsStoreImpl) STMPut(stm concurrency.STM, obj *AppInstRefs, ops
 func (s *AppInstRefsStoreImpl) STMDel(stm concurrency.STM, key *AppKey) {
 	keystr := objstore.DbKeyString("AppInstRefs", key)
 	stm.Del(keystr)
+}
+
+func StoreListAppInstRefs(ctx context.Context, kvstore objstore.KVStore) ([]AppInstRefs, error) {
+	keyPrefix := objstore.DbKeyPrefixString("AppInstRefs") + "/"
+	objs := []AppInstRefs{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := AppInstRefs{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal AppInstRefs json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type AppInstRefsKeyWatcher struct {

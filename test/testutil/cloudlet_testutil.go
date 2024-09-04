@@ -376,6 +376,12 @@ func InternalGPUDriverDelete(t *testing.T, api edgeproto.GPUDriverApiServer, tes
 	DeleteGPUDriverData(t, ctx, NewInternalGPUDriverApi(api), testData)
 }
 
+func InternalGPUDriverDeleteAll(t *testing.T, ctx context.Context, api edgeproto.GPUDriverApiServer, data []edgeproto.GPUDriver) {
+	intapi := NewInternalGPUDriverApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all GPUDrivers", "count", len(data))
+	DeleteGPUDriverData(t, ctx, intapi, data)
+}
+
 func ClientGPUDriverDelete(t *testing.T, api edgeproto.GPUDriverApiClient, testData []edgeproto.GPUDriver) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientGPUDriverDelete")
 	defer span.Finish()
@@ -747,6 +753,12 @@ func InternalCloudletDelete(t *testing.T, api edgeproto.CloudletApiServer, testD
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	DeleteCloudletData(t, ctx, NewInternalCloudletApi(api), testData)
+}
+
+func InternalCloudletDeleteAll(t *testing.T, ctx context.Context, api edgeproto.CloudletApiServer, data []edgeproto.Cloudlet) {
+	intapi := NewInternalCloudletApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all Cloudlets", "count", len(data))
+	DeleteCloudletData(t, ctx, intapi, data)
 }
 
 func ClientCloudletDelete(t *testing.T, api edgeproto.CloudletApiClient, testData []edgeproto.Cloudlet) {

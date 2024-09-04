@@ -560,6 +560,21 @@ func (s *OperatorCodeStoreImpl) STMDel(stm concurrency.STM, key *OperatorCodeKey
 	stm.Del(keystr)
 }
 
+func StoreListOperatorCode(ctx context.Context, kvstore objstore.KVStore) ([]OperatorCode, error) {
+	keyPrefix := objstore.DbKeyPrefixString("OperatorCode") + "/"
+	objs := []OperatorCode{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := OperatorCode{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal OperatorCode json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type OperatorCodeKeyWatcher struct {
 	cb func(ctx context.Context)
 }

@@ -4,12 +4,14 @@
 package testutil
 
 import (
+	"context"
 	fmt "fmt"
 	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	math "math"
+	"testing"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -222,4 +224,23 @@ func RunAllDataShowApis(run *Run, in *edgeproto.AllData, selector edgeproto.AllS
 	if selector.Has("trustpolicyexceptions") {
 		run.TrustPolicyExceptionApi(&in.TrustPolicyExceptions, nil, &out.TrustPolicyExceptions)
 	}
+}
+
+func DeleteAllAllDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.AllData) {
+	InternalTrustPolicyExceptionDeleteAll(t, ctx, apis.GetTrustPolicyExceptionApi(), in.TrustPolicyExceptions)
+	InternalAlertPolicyDeleteAll(t, ctx, apis.GetAlertPolicyApi(), in.AlertPolicies)
+	InternalVMPoolDeleteAll(t, ctx, apis.GetVMPoolApi(), in.VmPools)
+	InternalAppInstDeleteAll(t, ctx, apis.GetAppInstApi(), in.AppInstances)
+	InternalAppDeleteAll(t, ctx, apis.GetAppApi(), in.Apps)
+	InternalClusterInstDeleteAll(t, ctx, apis.GetClusterInstApi(), in.ClusterInsts)
+	InternalAutoScalePolicyDeleteAll(t, ctx, apis.GetAutoScalePolicyApi(), in.AutoScalePolicies)
+	InternalAutoProvPolicyDeleteAll(t, ctx, apis.GetAutoProvPolicyApi(), in.AutoProvPolicies)
+	InternalNetworkDeleteAll(t, ctx, apis.GetNetworkApi(), in.Networks)
+	InternalCloudletPoolDeleteAll(t, ctx, apis.GetCloudletPoolApi(), in.CloudletPools)
+	InternalCloudletDeleteAll(t, ctx, apis.GetCloudletApi(), in.Cloudlets)
+	InternalGPUDriverDeleteAll(t, ctx, apis.GetGPUDriverApi(), in.GpuDrivers)
+	InternalTrustPolicyDeleteAll(t, ctx, apis.GetTrustPolicyApi(), in.TrustPolicies)
+	InternalResTagTableDeleteAll(t, ctx, apis.GetResTagTableApi(), in.ResTagTables)
+	InternalOperatorCodeDeleteAll(t, ctx, apis.GetOperatorCodeApi(), in.OperatorCodes)
+	InternalFlavorDeleteAll(t, ctx, apis.GetFlavorApi(), in.Flavors)
 }

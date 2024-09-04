@@ -7059,6 +7059,21 @@ func (s *CloudletInternalStoreImpl) STMDel(stm concurrency.STM, key *CloudletKey
 	stm.Del(keystr)
 }
 
+func StoreListCloudletInternal(ctx context.Context, kvstore objstore.KVStore) ([]CloudletInternal, error) {
+	keyPrefix := objstore.DbKeyPrefixString("CloudletInternal") + "/"
+	objs := []CloudletInternal{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := CloudletInternal{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal CloudletInternal json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type CloudletInternalKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -8410,6 +8425,21 @@ func (s *PlatformFeaturesStoreImpl) STMPut(stm concurrency.STM, obj *PlatformFea
 func (s *PlatformFeaturesStoreImpl) STMDel(stm concurrency.STM, key *PlatformFeaturesKey) {
 	keystr := objstore.DbKeyString("PlatformFeatures", key)
 	stm.Del(keystr)
+}
+
+func StoreListPlatformFeatures(ctx context.Context, kvstore objstore.KVStore) ([]PlatformFeatures, error) {
+	keyPrefix := objstore.DbKeyPrefixString("PlatformFeatures") + "/"
+	objs := []PlatformFeatures{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := PlatformFeatures{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal PlatformFeatures json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type PlatformFeaturesKeyWatcher struct {
@@ -10010,6 +10040,21 @@ func (s *GPUDriverStoreImpl) STMPut(stm concurrency.STM, obj *GPUDriver, ops ...
 func (s *GPUDriverStoreImpl) STMDel(stm concurrency.STM, key *GPUDriverKey) {
 	keystr := objstore.DbKeyString("GPUDriver", key)
 	stm.Del(keystr)
+}
+
+func StoreListGPUDriver(ctx context.Context, kvstore objstore.KVStore) ([]GPUDriver, error) {
+	keyPrefix := objstore.DbKeyPrefixString("GPUDriver") + "/"
+	objs := []GPUDriver{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := GPUDriver{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal GPUDriver json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type GPUDriverKeyWatcher struct {
@@ -13306,6 +13351,21 @@ func (s *CloudletStoreImpl) STMDel(stm concurrency.STM, key *CloudletKey) {
 	stm.Del(keystr)
 }
 
+func StoreListCloudlet(ctx context.Context, kvstore objstore.KVStore) ([]Cloudlet, error) {
+	keyPrefix := objstore.DbKeyPrefixString("Cloudlet") + "/"
+	objs := []Cloudlet{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := Cloudlet{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal Cloudlet json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type CloudletKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -16490,6 +16550,21 @@ func (s *CloudletInfoStoreImpl) STMPut(stm concurrency.STM, obj *CloudletInfo, o
 func (s *CloudletInfoStoreImpl) STMDel(stm concurrency.STM, key *CloudletKey) {
 	keystr := objstore.DbKeyString("CloudletInfo", key)
 	stm.Del(keystr)
+}
+
+func StoreListCloudletInfo(ctx context.Context, kvstore objstore.KVStore) ([]CloudletInfo, error) {
+	keyPrefix := objstore.DbKeyPrefixString("CloudletInfo") + "/"
+	objs := []CloudletInfo{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := CloudletInfo{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal CloudletInfo json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type CloudletInfoKeyWatcher struct {

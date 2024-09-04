@@ -376,6 +376,12 @@ func InternalAppInstDelete(t *testing.T, api edgeproto.AppInstApiServer, testDat
 	DeleteAppInstData(t, ctx, NewInternalAppInstApi(api), testData)
 }
 
+func InternalAppInstDeleteAll(t *testing.T, ctx context.Context, api edgeproto.AppInstApiServer, data []edgeproto.AppInst) {
+	intapi := NewInternalAppInstApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all AppInsts", "count", len(data))
+	DeleteAppInstData(t, ctx, intapi, data)
+}
+
 func ClientAppInstDelete(t *testing.T, api edgeproto.AppInstApiClient, testData []edgeproto.AppInst) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientAppInstDelete")
 	defer span.Finish()

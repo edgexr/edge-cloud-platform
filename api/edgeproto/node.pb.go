@@ -1317,6 +1317,21 @@ func (s *NodeStoreImpl) STMDel(stm concurrency.STM, key *NodeKey) {
 	stm.Del(keystr)
 }
 
+func StoreListNode(ctx context.Context, kvstore objstore.KVStore) ([]Node, error) {
+	keyPrefix := objstore.DbKeyPrefixString("Node") + "/"
+	objs := []Node{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := Node{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal Node json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type NodeKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -1948,6 +1963,15 @@ func (m *NodeData) IsEmpty() bool {
 		return false
 	}
 	return true
+}
+
+func (m *NodeData) StoreRead(ctx context.Context, kvstore objstore.KVStore) error {
+	nodes, err := StoreListNode(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.Nodes = nodes
+	return nil
 }
 
 func (m *NodeKey) Size() (n int) {

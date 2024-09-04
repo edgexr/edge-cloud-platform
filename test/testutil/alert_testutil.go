@@ -494,3 +494,23 @@ type Client interface {
 	DeviceApiClient
 	StreamObjApiClient
 }
+
+type InternalCUDAPIs interface {
+	GetAlertPolicyApi() edgeproto.AlertPolicyApiServer
+	GetFlavorApi() edgeproto.FlavorApiServer
+	GetOperatorCodeApi() edgeproto.OperatorCodeApiServer
+	GetResTagTableApi() edgeproto.ResTagTableApiServer
+	GetAutoScalePolicyApi() edgeproto.AutoScalePolicyApiServer
+	GetTrustPolicyApi() edgeproto.TrustPolicyApiServer
+	GetAppApi() edgeproto.AppApiServer
+	GetAppInstApi() edgeproto.AppInstApiServer
+	GetGPUDriverApi() edgeproto.GPUDriverApiServer
+	GetCloudletApi() edgeproto.CloudletApiServer
+	GetCloudletPoolApi() edgeproto.CloudletPoolApiServer
+	GetVMPoolApi() edgeproto.VMPoolApiServer
+	GetClusterInstApi() edgeproto.ClusterInstApiServer
+	GetAutoProvPolicyApi() edgeproto.AutoProvPolicyApiServer
+	GetTrustPolicyExceptionApi() edgeproto.TrustPolicyExceptionApiServer
+	GetNetworkApi() edgeproto.NetworkApiServer
+	GetCloudletNodeApi() edgeproto.CloudletNodeApiServer
+}

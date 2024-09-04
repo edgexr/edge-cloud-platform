@@ -2303,6 +2303,21 @@ func (s *VMPoolStoreImpl) STMDel(stm concurrency.STM, key *VMPoolKey) {
 	stm.Del(keystr)
 }
 
+func StoreListVMPool(ctx context.Context, kvstore objstore.KVStore) ([]VMPool, error) {
+	keyPrefix := objstore.DbKeyPrefixString("VMPool") + "/"
+	objs := []VMPool{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := VMPool{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal VMPool json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type VMPoolKeyWatcher struct {
 	cb func(ctx context.Context)
 }
@@ -3801,6 +3816,21 @@ func (s *VMPoolInfoStoreImpl) STMPut(stm concurrency.STM, obj *VMPoolInfo, ops .
 func (s *VMPoolInfoStoreImpl) STMDel(stm concurrency.STM, key *VMPoolKey) {
 	keystr := objstore.DbKeyString("VMPoolInfo", key)
 	stm.Del(keystr)
+}
+
+func StoreListVMPoolInfo(ctx context.Context, kvstore objstore.KVStore) ([]VMPoolInfo, error) {
+	keyPrefix := objstore.DbKeyPrefixString("VMPoolInfo") + "/"
+	objs := []VMPoolInfo{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := VMPoolInfo{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal VMPoolInfo json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
 }
 
 type VMPoolInfoKeyWatcher struct {

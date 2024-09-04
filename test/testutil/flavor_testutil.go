@@ -333,6 +333,12 @@ func InternalFlavorDelete(t *testing.T, api edgeproto.FlavorApiServer, testData 
 	DeleteFlavorData(t, ctx, NewInternalFlavorApi(api), testData)
 }
 
+func InternalFlavorDeleteAll(t *testing.T, ctx context.Context, api edgeproto.FlavorApiServer, data []edgeproto.Flavor) {
+	intapi := NewInternalFlavorApi(api)
+	log.SpanLog(ctx, log.DebugLevelInfo, "deleting all Flavors", "count", len(data))
+	DeleteFlavorData(t, ctx, intapi, data)
+}
+
 func ClientFlavorDelete(t *testing.T, api edgeproto.FlavorApiClient, testData []edgeproto.Flavor) {
 	span := log.StartSpan(log.DebugLevelApi, "ClientFlavorDelete")
 	defer span.Finish()

@@ -4,7 +4,9 @@
 package edgeproto
 
 import (
+	context "context"
 	fmt "fmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
@@ -1990,6 +1992,127 @@ func (m *AllData) IsEmpty() bool {
 		return false
 	}
 	return true
+}
+
+func (m *AllData) StoreRead(ctx context.Context, kvstore objstore.KVStore) error {
+	settings, err := StoreListSettings(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	if len(settings) > 0 {
+		m.Settings = &settings[0]
+	}
+	flavors, err := StoreListFlavor(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.Flavors = flavors
+	operator_codes, err := StoreListOperatorCode(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.OperatorCodes = operator_codes
+	res_tag_tables, err := StoreListResTagTable(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.ResTagTables = res_tag_tables
+	cloudlets, err := StoreListCloudlet(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.Cloudlets = cloudlets
+	cloudlet_infos, err := StoreListCloudletInfo(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.CloudletInfos = cloudlet_infos
+	cloudlet_pools, err := StoreListCloudletPool(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.CloudletPools = cloudlet_pools
+	auto_prov_policies, err := StoreListAutoProvPolicy(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.AutoProvPolicies = auto_prov_policies
+	auto_scale_policies, err := StoreListAutoScalePolicy(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.AutoScalePolicies = auto_scale_policies
+	trust_policies, err := StoreListTrustPolicy(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.TrustPolicies = trust_policies
+	cluster_insts, err := StoreListClusterInst(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.ClusterInsts = cluster_insts
+	apps, err := StoreListApp(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.Apps = apps
+	app_instances, err := StoreListAppInst(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.AppInstances = app_instances
+	app_inst_refs, err := StoreListAppInstRefs(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.AppInstRefs = app_inst_refs
+	vm_pools, err := StoreListVMPool(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.VmPools = vm_pools
+	gpu_drivers, err := StoreListGPUDriver(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.GpuDrivers = gpu_drivers
+	alert_policies, err := StoreListAlertPolicy(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.AlertPolicies = alert_policies
+	flow_rate_limit_settings, err := StoreListFlowRateLimitSettings(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.FlowRateLimitSettings = flow_rate_limit_settings
+	max_reqs_rate_limit_settings, err := StoreListMaxReqsRateLimitSettings(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.MaxReqsRateLimitSettings = max_reqs_rate_limit_settings
+	networks, err := StoreListNetwork(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.Networks = networks
+	trust_policy_exceptions, err := StoreListTrustPolicyException(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.TrustPolicyExceptions = trust_policy_exceptions
+	cluster_refs, err := StoreListClusterRefs(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.ClusterRefs = cluster_refs
+	platform_features, err := StoreListPlatformFeatures(ctx, kvstore)
+	if err != nil {
+		return err
+	}
+	m.PlatformFeatures = platform_features
+	return nil
 }
 
 func (m *AllData) Size() (n int) {

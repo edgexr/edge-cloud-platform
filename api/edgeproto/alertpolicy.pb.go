@@ -1347,6 +1347,21 @@ func (s *AlertPolicyStoreImpl) STMDel(stm concurrency.STM, key *AlertPolicyKey) 
 	stm.Del(keystr)
 }
 
+func StoreListAlertPolicy(ctx context.Context, kvstore objstore.KVStore) ([]AlertPolicy, error) {
+	keyPrefix := objstore.DbKeyPrefixString("AlertPolicy") + "/"
+	objs := []AlertPolicy{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := AlertPolicy{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal AlertPolicy json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
 type AlertPolicyKeyWatcher struct {
 	cb func(ctx context.Context)
 }
