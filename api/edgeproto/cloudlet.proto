@@ -868,7 +868,7 @@ service CloudletApi {
   }
 
   // Change DNS for all the objects on the cloudlet(shared rootLb, appsinsts, clusterinsts).
-  // New DNS name is picked form the currently configured for this cloudlet
+  // New DNS name is picked from the currently configured for this cloudlet
   rpc ChangeCloudletDNS(CloudletKey) returns (stream Result) {
     option (google.api.http) = {
       post: "/change/cloudlet/dns"

@@ -2377,8 +2377,8 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 	log.SpanLog(ctx, log.DebugLevelApi, "updateURI", "appinst", key, "cloudlet", cloudlet)
 	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
 
-	needUpdate := true
-	modRev, _ := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
+	needUpdate := false
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		appInst := edgeproto.AppInst{}
 		if !s.store.STMGet(stm, key, &appInst) {
 			// deleted in the meantime
@@ -2386,16 +2386,27 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 			return nil
 		}
 		if appInst.Uri == "" {
-			needUpdate = false
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst is internal.")
+			return nil
+		}
+		if appInst.Uri == getAppInstFQDN(&appInst, cloudlet) {
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst URI is up to date.")
+			return nil
 		}
 		// Store previous URI, so we can update this with CCRM
+		log.SpanLog(ctx, log.DebugLevelApi, "Updating AppInst URI", "old FQDN", appInst.Uri, "new", getAppInstFQDN(&appInst, cloudlet))
 		appInst.AddAnnotation(cloudcommon.AnnotationPreviousDNSName, appInst.Uri)
 		appInst.Uri = getAppInstFQDN(&appInst, cloudlet)
 		appInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
 		appInst.State = edgeproto.TrackedState_UPDATE_REQUESTED
 		s.store.STMPut(stm, &appInst)
+		needUpdate = true
 		return nil
 	})
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "Failed to update appinst in etcd", "err", err)
+		return err
+	}
 
 	// No need to dispatch to CRM
 	if !needUpdate {

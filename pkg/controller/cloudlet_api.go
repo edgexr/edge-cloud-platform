@@ -2647,13 +2647,13 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	// Step 1 - update rootLb fqdn
 	// Does our current DNS app root name match what the clouldet alredy have?
 	// TODO - why does the streaming not work for cloudlet crm update
-	if strings.HasSuffix(cloudlet.RootLbFqdn, *appDNSRoot) {
+	if cloudlet.RootLbFqdn == getCloudletRootLBFQDN(&cloudlet) {
 		cb.Send(&edgeproto.Result{Message: "Cloudlet rootLB is already set correctly"})
 		log.SpanLog(ctx, log.DebugLevelApi, "Current cloudlet fqdn already contains appDNSRoot suffix - nothing to do")
 	} else {
 		log.SpanLog(ctx, log.DebugLevelApi, "Update rootLB fqdn", "old", cloudlet.RootLbFqdn, "new", getCloudletRootLBFQDN(&cloudlet))
 		cb.Send(&edgeproto.Result{Message: "Updating Cloudlet RootLb FQDN"})
-		modRev, _ := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
+		modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 			if !s.store.STMGet(stm, key, &cloudlet) {
 				// got deleted in the meantime
 				return nil
@@ -2666,6 +2666,10 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 			s.store.STMPut(stm, &cloudlet)
 			return nil
 		})
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "Failed to update cloudlet fqdn in etcd", "err", err)
+			return err
+		}
 		sendObj, err := s.startCloudletStream(ctx, cctx, streamCb, modRev)
 		if err != nil {
 			return err
@@ -2673,6 +2677,7 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 		defer func() {
 			s.stopCloudletStream(ctx, cctx, key, sendObj, reterr, NoCleanupStream)
 		}()
+
 		// TODO - this right now only works for crm running on the cloudlet, add a handler api for ccrm case
 		reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CreateCloudletTimeout.TimeDuration())
 		defer reqCancel()
@@ -2699,14 +2704,11 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	clustersToUpdate := []edgeproto.ClusterInst{}
 	s.all.clusterInstApi.cache.Show(&ciFilter, func(clusterInst *edgeproto.ClusterInst) error {
 		log.SpanLog(ctx, log.DebugLevelApi, "Collecting clusters", "cluster", clusterInst.Key.Name)
-		if !strings.HasSuffix(clusterInst.Fqdn, *appDNSRoot) {
-			clustersToUpdate = append(clustersToUpdate, *clusterInst)
-		}
+		clustersToUpdate = append(clustersToUpdate, *clusterInst)
 		return nil
 	})
 	cb.Send(&edgeproto.Result{Message: "Updating Cluster FQDNs"})
 	for ii := range clustersToUpdate {
-		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS for clusters", "old FQDN", clustersToUpdate[ii].Fqdn, "new", *appDNSRoot)
 		err := s.all.clusterInstApi.updateRootLbFQDN(&clustersToUpdate[ii].Key, &cloudlet, inCb)
 		if err != nil {
 			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Failed to update Cluster FQDN - %s", err.Error())})
@@ -2720,14 +2722,11 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	}
 	appinstsToUpdate := []edgeproto.AppInst{}
 	s.all.appInstApi.cache.Show(&aiFilter, func(appInst *edgeproto.AppInst) error {
-		if appInst.Uri != "" && !strings.HasSuffix(appInst.Uri, *appDNSRoot) {
-			appinstsToUpdate = append(appinstsToUpdate, *appInst)
-		}
+		appinstsToUpdate = append(appinstsToUpdate, *appInst)
 		return nil
 	})
 	cb.Send(&edgeproto.Result{Message: "Updating AppInst URIs"})
 	for ii := range appinstsToUpdate {
-		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS", "old FQDN", appinstsToUpdate[ii].Uri, "new", *appDNSRoot)
 		err := s.all.appInstApi.updateURI(&appinstsToUpdate[ii].Key, &cloudlet, inCb)
 		if err != nil {
 			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Failed to update AppInst URI - %s", err.Error())})

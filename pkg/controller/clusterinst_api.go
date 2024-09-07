@@ -2069,7 +2069,8 @@ func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *e
 	clusterKey := key
 	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, clusterKey.StreamKey(), inCb)
 
-	modRev, _ := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
+	needUpdate := false
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		clusterInst := edgeproto.ClusterInst{}
 		if !s.store.STMGet(stm, key, &clusterInst) {
 			log.SpanLog(ctx, log.DebugLevelApi, "Cluster deleted before DNS update", "cluster", key)
@@ -2079,16 +2080,30 @@ func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *e
 			log.SpanLog(ctx, log.DebugLevelApi, "Cluster is currently being deleted", "cluster", key)
 			return nil
 		}
+		if clusterInst.Fqdn == getClusterInstFQDN(&clusterInst, cloudlet) {
+			log.SpanLog(ctx, log.DebugLevelApi, "Cluster fqnd is up to date.")
+			return nil
+		}
 
 		// save old dns fqdn, so it can be updated in CCRM
+		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS for cluster", "old FQDN", clusterInst.Fqdn, "new", getClusterInstFQDN(&clusterInst, cloudlet))
 		clusterInst.AddAnnotation(cloudcommon.AnnotationPreviousDNSName, clusterInst.Fqdn)
 		clusterInst.Fqdn = getClusterInstFQDN(&clusterInst, cloudlet)
 		clusterInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
 		clusterInst.State = edgeproto.TrackedState_UPDATE_REQUESTED
 		s.store.STMPut(stm, &clusterInst)
+		needUpdate = true
 		return nil
 	})
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "Failed to update clusterinst in etcd", "err", err)
+		return err
+	}
 
+	// Nothing changed
+	if !needUpdate {
+		return nil
+	}
 	sendObj, err := s.startClusterInstStream(ctx, cctx, streamCb, modRev)
 	if err != nil {
 		return err
