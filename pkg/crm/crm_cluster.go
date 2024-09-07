@@ -65,11 +65,9 @@ func (s *CRMData) clusterInstChanged(ctx context.Context, old *edgeproto.Cluster
 				new.Fields = old.GetDiffFields(new).Fields()
 				// Special case for dns update - only possible if cluster exists
 				fmap := edgeproto.MakeFieldMap(new.Fields)
-				if !fmap.Has(edgeproto.ClusterInstFieldState) {
-					if fmap.Has(edgeproto.ClusterInstFieldFqdn) {
-						_ = s.ClusterInstDNSChanged(ctx, s.cloudletKey, old, new, responseSender)
-						return
-					}
+				if fmap.Has(edgeproto.ClusterInstFieldFqdn) {
+					_ = s.ClusterInstDNSChanged(ctx, s.cloudletKey, old, new, responseSender)
+					return
 				}
 			}
 			needsUpdate, err := s.ClusterInstChanged(ctx, s.cloudletKey, new, responseSender)

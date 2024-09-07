@@ -208,10 +208,16 @@ func (cd *CRMHandler) ClusterInstDNSChanged(ctx context.Context, target *edgepro
 
 	if !fmap.Has(edgeproto.ClusterInstFieldFqdn) {
 		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
+		sender.SendState(edgeproto.TrackedState_READY)
 		return nil
 	}
 
 	updateClusterCacheCallback := sender.SendStatusIgnoreErr
+	// reset status messages
+	err = sender.SendState(edgeproto.TrackedState_UPDATING, edgeproto.WithSenderResetStatus())
+	if err != nil {
+		return err
+	}
 	pf, err := cd.getPlatform(ctx, target)
 	if err != nil {
 		return err
@@ -222,6 +228,8 @@ func (cd *CRMHandler) ClusterInstDNSChanged(ctx context.Context, target *edgepro
 		sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
 		return err
 	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "ClusterInstChange for DNS done", "key", new.Key, "old dns", old.Fqdn, "new dns", new.Fqdn)
+	sender.SendState(edgeproto.TrackedState_READY)
 	return nil
 }
 
@@ -361,22 +369,30 @@ func (cd *CRMHandler) CloudletHasTrustPolicy(ctx context.Context, cloudletKey *e
 	return true, nil
 }
 
-func (cd *CRMHandler) AppInstDNSChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.AppInst, old *edgeproto.AppInst, sender edgeproto.AppInstInfoSender) (reterr error) {
+func (cd *CRMHandler) AppInstDNSChanged(ctx context.Context, target *edgeproto.CloudletKey, old *edgeproto.AppInst, new *edgeproto.AppInst, sender edgeproto.AppInstInfoSender) (reterr error) {
 	var err error
 
 	fmap := edgeproto.MakeFieldMap(new.Fields)
+	updateAppCacheCallback := sender.SendStatusIgnoreErr
 	log.SpanLog(ctx, log.DebugLevelInfra, "AppInstDNSChanged", "key", new.Key, "old dns", old.Uri, "new dns", new.Uri)
 
 	if !fmap.Has(edgeproto.AppInstFieldUri) {
 		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
+		updateAppCacheCallback(edgeproto.UpdateTask, fmt.Sprintf("Nothing changed - %s", new.Key.Name))
+		sender.SendState(edgeproto.TrackedState_READY)
 		return nil
 	}
 
-	updateAppCacheCallback := sender.SendStatusIgnoreErr
+	// reset status messages
+	err = sender.SendState(edgeproto.TrackedState_UPDATING, edgeproto.WithSenderResetStatus())
+	if err != nil {
+		return err
+	}
 	pf, err := cd.getPlatform(ctx, target)
 	if err != nil {
 		return err
 	}
+
 	app := edgeproto.App{}
 	found := cd.AppCache.Get(&new.AppKey, &app)
 	if !found {
@@ -389,6 +405,8 @@ func (cd *CRMHandler) AppInstDNSChanged(ctx context.Context, target *edgeproto.C
 		sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
 		return err
 	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "AppInstDNSChanged done", "key", new.Key, "old dns", old.Uri, "new dns", new.Uri)
+	sender.SendState(edgeproto.TrackedState_READY)
 	return nil
 }
 
@@ -608,20 +626,46 @@ func (cd *CRMHandler) CloudletDNSChanged(ctx context.Context, target *edgeproto.
 
 	if !fmap.Has(edgeproto.CloudletFieldRootLbFqdn) {
 		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
+		// TODO - same as what we do at the end - consolidate
+		sender.SendUpdate(func(info *edgeproto.CloudletInfo) error {
+			info.Fields = []string{
+				edgeproto.CloudletInfoFieldState,
+				edgeproto.CloudletInfoFieldStatus,
+			}
+			info.State = dme.CloudletState_CLOUDLET_STATE_READY
+			info.Status.StatusReset()
+			return nil
+		})
 		return nil
 	}
+
 	updateCloudletCallback := sender.SendStatusIgnoreErr
-	pf, err := cd.getPlatform(ctx, target)
+	err = sender.SendState(dme.CloudletState_CLOUDLET_STATE_UPGRADE, edgeproto.WithSenderResetStatus())
 	if err != nil {
 		return err
 	}
 
+	pf, err := cd.getPlatform(ctx, target)
+	if err != nil {
+		return err
+	}
+	// TODO -this doesn't send anything back for some reason...
+	updateCloudletCallback(edgeproto.UpdateTask, fmt.Sprintf("3. Updating Cloudlet DNS in CRM - %s", new.Key.Name))
 	err = pf.ChangeCloudletDNS(ctx, new, old.RootLbFqdn, updateCloudletCallback)
 	if err != nil {
 		err := fmt.Errorf("update failed: %s", err)
 		sender.SendState(dme.CloudletState(edgeproto.TrackedState_UPDATE_ERROR), edgeproto.WithStateError(err))
 		return err
 	}
+	sender.SendUpdate(func(info *edgeproto.CloudletInfo) error {
+		info.Fields = []string{
+			edgeproto.CloudletInfoFieldState,
+			edgeproto.CloudletInfoFieldStatus,
+		}
+		info.State = dme.CloudletState_CLOUDLET_STATE_READY
+		info.Status.StatusReset()
+		return nil
+	})
 	return nil
 }
 

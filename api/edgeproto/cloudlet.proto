@@ -598,6 +598,8 @@ message Cloudlet {
   bool crm_on_edge = 61;
   // Universally unique object ID
   string obj_id = 62 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Annotations
+  map<string, string> annotations = 64;
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;

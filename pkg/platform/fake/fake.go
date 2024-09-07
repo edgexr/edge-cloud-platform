@@ -446,7 +446,7 @@ func (s *Platform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	return nil
 }
 
-func (s *Platform) ChangeCloudletDNS(ctx context.Context, cloudlet *edgeproto.Cloudlet, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) ChangeCloudletDNS(ctx context.Context, cloudlet *edgeproto.Cloudl et, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "update fake Cloudlet fqdn", "cloudlet", cloudlet)
 	return nil
 }

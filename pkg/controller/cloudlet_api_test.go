@@ -1235,4 +1235,6 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	require.Contains(t, cloudletObj.RootLbFqdn, *appDNSRoot)
 	require.Equal(t, cloudletObj.RootLbFqdn, updatedRootLbFqdn)
 	require.NotEqual(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
+	// TODO - check appinst.Uri handling
+	// TODO - check annotaions on cloudlet/appinst/clusterinst for old uri
 }

@@ -2060,22 +2060,31 @@ func (s *ClusterInstApi) deleteCloudletSingularCluster(stm concurrency.STM, key 
 	s.all.clusterRefsApi.deleteRef(stm, clusterKey)
 }
 
-func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *edgeproto.Cloudlet, inCb edgeproto.AppInstApi_DeleteAppInstServer) (reterr error) {
+func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *edgeproto.Cloudlet, inCb edgeproto.ClusterInstApi_UpdateClusterInstServer) (reterr error) {
 	ctx := inCb.Context()
 	cctx := DefCallContext()
 
 	log.SpanLog(ctx, log.DebugLevelApi, "updateRootLbFQDN", "cluster", key, "cloudlet", cloudlet)
 
-	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
+	clusterKey := key
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, clusterKey.StreamKey(), inCb)
+
 	modRev, _ := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		clusterInst := edgeproto.ClusterInst{}
 		if !s.store.STMGet(stm, key, &clusterInst) {
-			// deleted in the meantime
 			log.SpanLog(ctx, log.DebugLevelApi, "Cluster deleted before DNS update", "cluster", key)
 			return nil
 		}
+		if clusterInst.DeletePrepare {
+			log.SpanLog(ctx, log.DebugLevelApi, "Cluster is currently being deleted", "cluster", key)
+			return nil
+		}
+
+		// save old dns fqdn, so it can be updated in CCRM
+		clusterInst.AddAnnotation(cloudcommon.AnnotationPreviousDNSName, clusterInst.Fqdn)
 		clusterInst.Fqdn = getClusterInstFQDN(&clusterInst, cloudlet)
 		clusterInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
+		clusterInst.State = edgeproto.TrackedState_UPDATE_REQUESTED
 		s.store.STMPut(stm, &clusterInst)
 		return nil
 	})

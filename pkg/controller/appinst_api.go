@@ -1357,7 +1357,6 @@ func (s *AppInstApi) updateCloudletResourcesMetric(ctx context.Context, in *edge
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to generate cloudlet resource usage metric", "clusterKey", in.Key, "err", resErr)
 		}
 	}
-	return
 }
 
 func (s *AppInstApi) updateAppInstStore(ctx context.Context, in *edgeproto.AppInst) error {
@@ -1544,7 +1543,7 @@ func (s *AppInstApi) RefreshAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstA
 	}
 
 	vmAppIpv6Enabled := false
-	for instkey, _ := range instances {
+	for instkey := range instances {
 		go func(k edgeproto.AppInstKey) {
 			log.SpanLog(ctx, log.DebugLevelApi, "updating AppInst", "key", k)
 			updated, err := s.refreshAppInstInternal(DefCallContext(), k, appKey, cb, in.ForceUpdate, vmAppIpv6Enabled, nil)
@@ -1781,7 +1780,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if hasRefs && clusterInstReqd && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED && !app.InternalPorts && !in.DedicatedIp {
 			// shared root load balancer
 			log.SpanLog(ctx, log.DebugLevelApi, "refs", "AppInst", in)
-			for ii, _ := range in.MappedPorts {
+			for ii := range in.MappedPorts {
 
 				p := in.MappedPorts[ii].PublicPort
 				protocol, err := getProtocolBitMap(in.MappedPorts[ii].Proto)
@@ -1954,9 +1953,8 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			}
 			return err
 		}
-		if err == nil {
-			s.updateCloudletResourcesMetric(ctx, in)
-		}
+		s.updateCloudletResourcesMetric(ctx, in)
+
 	}
 	// delete clusterinst afterwards if it was auto-created and nobody is left using it
 	// this is retained for old autoclusters that are not reservable,
@@ -2307,7 +2305,7 @@ func setPortFQDNPrefixes(in *edgeproto.AppInst, app *edgeproto.App) error {
 		if err != nil {
 			return fmt.Errorf("invalid kubernetes deployment yaml, %s", err.Error())
 		}
-		for ii, _ := range in.MappedPorts {
+		for ii := range in.MappedPorts {
 			setPortFQDNPrefix(&in.MappedPorts[ii], objs)
 			if err := cloudcommon.CheckFQDNLengths(in.MappedPorts[ii].FqdnPrefix, in.Uri); err != nil {
 				return err
@@ -2376,8 +2374,10 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 	ctx := inCb.Context()
 	cctx := DefCallContext()
 
-	log.SpanLog(ctx, log.DebugLevelApi, "updateRootLbFQDN", "cluster", key, "cloudlet", cloudlet)
+	log.SpanLog(ctx, log.DebugLevelApi, "updateURI", "appinst", key, "cloudlet", cloudlet)
 	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
+
+	needUpdate := true
 	modRev, _ := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		appInst := edgeproto.AppInst{}
 		if !s.store.STMGet(stm, key, &appInst) {
@@ -2385,11 +2385,22 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 			log.SpanLog(ctx, log.DebugLevelApi, "Appinst deleted before DNS update", "appinst", key)
 			return nil
 		}
+		if appInst.Uri == "" {
+			needUpdate = false
+		}
+		// Store previous URI, so we can update this with CCRM
+		appInst.AddAnnotation(cloudcommon.AnnotationPreviousDNSName, appInst.Uri)
 		appInst.Uri = getAppInstFQDN(&appInst, cloudlet)
 		appInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
+		appInst.State = edgeproto.TrackedState_UPDATE_REQUESTED
 		s.store.STMPut(stm, &appInst)
 		return nil
 	})
+
+	// No need to dispatch to CRM
+	if !needUpdate {
+		return
+	}
 	sendObj, err := s.startAppInstStream(ctx, cctx, streamCb, modRev)
 	if err != nil {
 		return err
@@ -2397,13 +2408,10 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 	defer func() {
 		s.stopAppInstStream(ctx, cctx, key, sendObj, reterr, NoCleanupStream)
 	}()
-	reqCtx, reqCancel := context.WithTimeout(cb.Context(), s.all.settingsApi.Get().UpdateAppInstTimeout.TimeDuration())
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateAppInstTimeout.TimeDuration())
 	defer reqCancel()
 
-	successMsg := ""
-	if !strings.Contains(key.Name, cloudcommon.MEXPrometheusAppName) && !strings.Contains(key.Name, cloudcommon.NFSAutoProvisionAppName) {
-		successMsg = fmt.Sprintf("AppInst %s updated successfully", key.Name)
-	}
+	successMsg := fmt.Sprintf("AppInst %s updated successfully", key.Name)
 	return edgeproto.WaitForAppInstInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
 		UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
 		successMsg, cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
