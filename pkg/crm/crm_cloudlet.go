@@ -43,13 +43,10 @@ func (s *CRMData) cloudletChanged(ctx context.Context, old *edgeproto.Cloudlet, 
 				log.SpanLog(ctx, log.DebugLevelApi, "crm cloudlet state trans", "old", old.State, "new", new.State, "fields", new.Fields)
 			}
 			// Special case for dns update - only possible if appinst exists
-			fmap := edgeproto.MakeFieldMap(new.Fields)
 			oldDNS, ok := new.Annotations[cloudcommon.AnnotationPreviousDNSName]
 			if ok && oldDNS == old.RootLbFqdn {
-				if fmap.Has(edgeproto.CloudletFieldRootLbFqdn) {
-					_ = s.CloudletDNSChanged(ctx, s.cloudletKey, old, new, responseSender)
-					return
-				}
+				_ = s.CloudletDNSChanged(ctx, s.cloudletKey, old, new, responseSender)
+				return
 			}
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "crm cloudlet changed", "old", old, "new", new)

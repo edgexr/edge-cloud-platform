@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -64,8 +65,8 @@ func (s *CRMData) clusterInstChanged(ctx context.Context, old *edgeproto.Cluster
 			} else {
 				new.Fields = old.GetDiffFields(new).Fields()
 				// Special case for dns update - only possible if cluster exists
-				fmap := edgeproto.MakeFieldMap(new.Fields)
-				if fmap.Has(edgeproto.ClusterInstFieldFqdn) {
+				oldDNS, ok := new.Annotations[cloudcommon.AnnotationPreviousDNSName]
+				if ok && oldDNS == old.Fqdn {
 					_ = s.ClusterInstDNSChanged(ctx, s.cloudletKey, old, new, responseSender)
 					return
 				}

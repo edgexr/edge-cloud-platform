@@ -69,14 +69,10 @@ func (s *CRMData) appInstChanged(ctx context.Context, old *edgeproto.AppInst, ne
 				new.Fields = edgeproto.AppInstAllFields
 			} else {
 				new.Fields = old.GetDiffFields(new).Fields()
-				// Special case for dns update - only possible if appinst exists
-				fmap := edgeproto.MakeFieldMap(new.Fields)
 				oldDNS, ok := new.Annotations[cloudcommon.AnnotationPreviousDNSName]
 				if ok && oldDNS == old.Uri {
-					if fmap.Has(edgeproto.AppInstFieldUri) {
-						_ = s.AppInstDNSChanged(ctx, s.cloudletKey, old, new, responseSender)
-						return
-					}
+					_ = s.AppInstDNSChanged(ctx, s.cloudletKey, old, new, responseSender)
+					return
 				}
 			}
 			needsUpdate, err := s.AppInstChanged(ctx, s.cloudletKey, new, responseSender)

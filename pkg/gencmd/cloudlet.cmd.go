@@ -2903,6 +2903,7 @@ var CloudletOptionalArgs = []string{
 	"edgeboxonly",
 	"crmonedge",
 	"objid",
+	"annotations",
 }
 var CloudletAliasArgs = []string{
 	"cloudletorg=key.organization",
@@ -3019,10 +3020,12 @@ var CloudletComments = map[string]string{
 	"edgeboxonly":                            "Edgebox only cloudlets allow for developers to set up cloudlets anywhere (laptop, etc) but can only use public images and do not support DNS mapping.",
 	"crmonedge":                              "CRM shall run on the edge site if true (required for restricted cloudlets), otherwise runs centrally (default)",
 	"objid":                                  "Universally unique object ID",
+	"annotations":                            "Annotations, specify annotations:empty=true to clear",
 }
 var CloudletSpecialArgs = map[string]string{
 	"accessvars":             "StringToString",
 	"allianceorgs":           "StringArray",
+	"annotations":            "StringToString",
 	"config.envvar":          "StringToString",
 	"envvar":                 "StringToString",
 	"errors":                 "StringArray",
@@ -3465,6 +3468,7 @@ var CreateCloudletOptionalArgs = []string{
 	"edgeboxonly",
 	"crmonedge",
 	"objid",
+	"annotations",
 }
 var DeleteCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3526,6 +3530,7 @@ var DeleteCloudletOptionalArgs = []string{
 	"edgeboxonly",
 	"crmonedge",
 	"objid",
+	"annotations",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3576,6 +3581,7 @@ var UpdateCloudletOptionalArgs = []string{
 	"infraflavors:#.propmap",
 	"crmonedge",
 	"objid",
+	"annotations",
 }
 var ShowCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3637,6 +3643,7 @@ var ShowCloudletOptionalArgs = []string{
 	"edgeboxonly",
 	"crmonedge",
 	"objid",
+	"annotations",
 }
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",
