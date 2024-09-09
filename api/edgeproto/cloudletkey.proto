@@ -42,3 +42,22 @@ message CloudletKey {
   option (protogen.generate_show_test) = true; 
   option (protogen.uses_org) = "none";
 }
+
+// ZoneKey uniquely identifies a Zone.
+message ZoneKey {
+  // Organization owner of the Zone
+  string organization = 1 [(protogen.keytag) = "zoneorg"];
+  // Name of the Zone
+  string name = 2 [(protogen.keytag) = "zone"];
+  // Federated operator organization who shared this Zone
+  string federated_organization = 3 [(protogen.keytag) = "zonefedorg"];
+
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+  option (protogen.also_required) = "Name,Organization";
+  option (protogen.alias) = "zone=Name,zoneorg=Organization,federatororg=FederatedOrganization";
+  option (protogen.custom_key_type) = "ZoneKey";
+  option (protogen.generate_show_test) = true; 
+  option (protogen.uses_org) = "none";
+}

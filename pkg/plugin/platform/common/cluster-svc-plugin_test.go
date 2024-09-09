@@ -46,6 +46,9 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
         scope: "Application"
         severity: "warning"
         type: "UserDefined"
+        zone: "SanJose"
+        zonefedorg: ""
+        zoneorg: "UFGT Inc."
       annotations:
         description: "Sample description"
         title: "testAlert1"
@@ -68,6 +71,9 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
         testLabel1: "testValue1"
         testLabel2: "testValue2"
         type: "UserDefined"
+        zone: "SanJose"
+        zonefedorg: ""
+        zoneorg: "UFGT Inc."
       annotations:
         description: "CPU Utilization > 100%"
         testAnnotation1: "description1"
@@ -90,6 +96,9 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
         scope: "Application"
         severity: "warning"
         type: "UserDefined"
+        zone: "SanJose"
+        zonefedorg: ""
+        zoneorg: "UFGT Inc."
       annotations:
         description: "CPU Utilization > 80% and Memory Utilization > 80%"
         title: "testAlert4"
@@ -110,6 +119,9 @@ var TestClusterUserDefAlertsRules = `additionalPrometheusRules:
         scope: "Application"
         severity: "warning"
         type: "UserDefined"
+        zone: "SanJose"
+        zonefedorg: ""
+        zoneorg: "UFGT Inc."
       annotations:
         description: "Custom Description"
         title: "CustomAlertName"
@@ -122,7 +134,7 @@ func TestAutoScaleT(t *testing.T) {
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	clusterInst := testutil.ClusterInstData()[0]
+	clusterInst := testutil.CreatedClusterInstData()[0]
 
 	policy := edgeproto.AutoScalePolicy{}
 	policy.Key.Organization = clusterInst.Key.Organization
@@ -194,7 +206,7 @@ func TestAutoScaleT(t *testing.T) {
 
 func testClusterRulesT(t *testing.T, ctx context.Context, clusterInst *edgeproto.ClusterInst, policy *edgeproto.AutoScalePolicy, settings *edgeproto.Settings, alerts []edgeproto.AlertPolicy, expectedAutoProvRules string, expectedAlertPoliciesRules string) {
 	clusterSvc := ClusterSvc{}
-	appInst := testutil.AppInstData()[0]
+	appInst := testutil.CreatedAppInstData()[0]
 
 	configs, err := clusterSvc.GetAppInstConfigs(ctx, clusterInst, &appInst, policy, settings, alerts)
 	require.Nil(t, err)

@@ -104,6 +104,7 @@ var appInstAlertWorkers tasks.KeyWorkers
 var cloudletFeatures edgeproto.PlatformFeatures
 
 var cloudletKey edgeproto.CloudletKey
+var zoneKey edgeproto.ZoneKey
 var myPlatform platform.Platform
 var nodeMgr node.NodeMgr
 var infraProps infracommon.InfraProperties
@@ -630,6 +631,7 @@ func start() {
 			log.FatalLog("failed to fetch vm pool cache from controller")
 		}
 	}
+	zoneKey = *cloudlet.GetZone()
 
 	pc := pf.PlatformConfig{
 		CloudletKey:   &cloudletKey,

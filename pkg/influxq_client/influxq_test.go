@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/gogo/protobuf/types"
 	"github.com/influxdata/influxdb/client/v2"
@@ -152,8 +152,8 @@ func testAutoProvCounts(t *testing.T, ctx context.Context, q *InfluxQ) {
 	ap.AppKey.Organization = "dev1"
 	ap.AppKey.Name = "app1"
 	ap.AppKey.Version = "1.0.0"
-	ap.CloudletKey.Organization = "oper1"
-	ap.CloudletKey.Name = "cloudlet1"
+	ap.ZoneKey.Organization = "oper1"
+	ap.ZoneKey.Name = "zone1"
 	ap.Count = 42
 
 	msg := edgeproto.AutoProvCounts{}

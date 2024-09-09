@@ -86,8 +86,8 @@ extend google.protobuf.MessageOptions {
   bool obj_and_key = 51032;
   // Comma separate list of fields for CLI that are also required for all CUD APIs. 
   string also_required = 51033;
-  // Field in the message that specifies the target cloudlet.
-  string mc2_target_cloudlet = 51035;
+  // Field in the message that specifies the target zone.
+  string mc2_target_zone = 51035;
   // Type name to be used as key for this message. Overrides the default behavior
   // that assumes a field named "Key" exists in the message that is the key.
   string custom_key_type = 51038;

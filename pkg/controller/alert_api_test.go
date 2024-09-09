@@ -75,6 +75,7 @@ func TestAlertApi(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, cloudletData)
 	testCloudlet.Key.Name = testCloudletName
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, []edgeproto.Cloudlet{testCloudlet})
@@ -140,6 +141,7 @@ func TestAppInstDownAlert(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
@@ -222,9 +224,9 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	services.cloudletResourcesInfluxQ = influxq.NewInfluxQ(cloudcommon.CloudletResourceUsageDbName, "user", "pass")
 	cleanupCloudletInfoTimeout = 100 * time.Millisecond
 	RequireAppInstPortConsistency = true
-	cplookup := &node.CloudletPoolCache{}
-	cplookup.Init()
-	nodeMgr.CloudletPoolLookup = cplookup
+	zplookup := &node.ZonePoolCache{}
+	zplookup.Init()
+	nodeMgr.ZonePoolLookup = zplookup
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup

@@ -151,22 +151,18 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	// add reservable ClusterInst
 	rcinst := testutil.ClusterInstData()[7]
 	dn.ClusterInstCache.Update(ctx, &rcinst, 0)
-	cloudletKey := rcinst.CloudletKey
+	zoneKey := rcinst.ZoneKey
 
 	// add policies
 	policy := testutil.AutoProvPolicyData()[0]
-	policy.Cloudlets = []*edgeproto.AutoProvCloudlet{
-		&edgeproto.AutoProvCloudlet{
-			Key: rcinst.CloudletKey,
-		},
+	policy.Zones = []*edgeproto.ZoneKey{
+		&rcinst.ZoneKey,
 	}
 	dn.AutoProvPolicyCache.Update(ctx, &policy, 0)
 
 	policy2 := testutil.AutoProvPolicyData()[3]
-	policy2.Cloudlets = []*edgeproto.AutoProvCloudlet{
-		&edgeproto.AutoProvCloudlet{
-			Key: rcinst.CloudletKey,
-		},
+	policy2.Zones = []*edgeproto.ZoneKey{
+		&rcinst.ZoneKey,
 	}
 	dn.AutoProvPolicyCache.Update(ctx, &policy2, 0)
 
@@ -206,20 +202,20 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 			Columns: []string{
 				"time",
 				"app",
-				"cloudlet",
+				"zone",
 				"count",
 				"apporg",
-				"cloudletorg",
+				"zoneorg",
 				"ver",
 			},
 			Values: [][]interface{}{
 				[]interface{}{
 					time.Now().Format(time.RFC3339),
 					app.Key.Name,
-					cloudletKey.Name,
+					zoneKey.Name,
 					count,
 					app.Key.Organization,
-					cloudletKey.Organization,
+					zoneKey.Organization,
 					app.Key.Version,
 				},
 			},
@@ -252,8 +248,8 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 		count += uint64(1)
 		err := autoProvAggr.runIter(ctx, false)
 		require.Nil(t, err)
-		requireDeployIntervalsMet(t, appStats, &policy, &cloudletKey, 0)
-		requireDeployIntervalsMet(t, appStats, &policy2, &cloudletKey, 0)
+		requireDeployIntervalsMet(t, appStats, &policy, &zoneKey, 0)
+		requireDeployIntervalsMet(t, appStats, &policy2, &zoneKey, 0)
 	}
 
 	// iterate to satisfy first policy
@@ -262,11 +258,11 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 		count += uint64(policy.DeployClientCount)
 		err := autoProvAggr.runIter(ctx, false)
 		require.Nil(t, err)
-		requireDeployIntervalsMet(t, appStats, &policy, &cloudletKey, ii+1)
-		requireDeployIntervalsMet(t, appStats, &policy2, &cloudletKey, 0)
+		requireDeployIntervalsMet(t, appStats, &policy, &zoneKey, ii+1)
+		requireDeployIntervalsMet(t, appStats, &policy2, &zoneKey, 0)
 	}
 
-	cstats, found := appStats.cloudlets[cloudletKey]
+	cstats, found := appStats.zones[zoneKey]
 	require.True(t, found, "found cloudlet stats")
 	require.Equal(t, count, cstats.count)
 
@@ -289,15 +285,11 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	// update policy
 	policy.DeployClientCount *= scale
 	policy.DeployIntervalCount *= scale
-	policy.Cloudlets = []*edgeproto.AutoProvCloudlet{
-		&edgeproto.AutoProvCloudlet{
-			Key: rcinst.CloudletKey,
-		},
-		&edgeproto.AutoProvCloudlet{
-			Key: edgeproto.CloudletKey{
-				Organization: "foo",
-				Name:         "blah",
-			},
+	policy.Zones = []*edgeproto.ZoneKey{
+		&rcinst.ZoneKey,
+		&edgeproto.ZoneKey{
+			Organization: "foo",
+			Name:         "blah",
 		},
 	}
 	dn.AutoProvPolicyCache.Update(ctx, &policy, 0)
@@ -311,7 +303,7 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	// verify changes
 	require.Equal(t, policy.DeployClientCount, ap1.deployClientCount)
 	require.Equal(t, policy.DeployIntervalCount, ap1.deployIntervalCount)
-	require.Equal(t, 2, len(ap1.cloudletTrackers))
+	require.Equal(t, 2, len(ap1.zoneTrackers))
 
 	// remove first policy from App
 	app.AutoProvPolicies = []string{
@@ -335,7 +327,7 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 		count += uint64(policy2.DeployClientCount)
 		err := autoProvAggr.runIter(ctx, false)
 		require.Nil(t, err)
-		requireDeployIntervalsMet(t, appStats, &policy2, &cloudletKey, ii+1)
+		requireDeployIntervalsMet(t, appStats, &policy2, &zoneKey, ii+1)
 	}
 
 	// check that auto-prov AppInst was created
@@ -366,10 +358,10 @@ func testAutoProv(t *testing.T, ctx context.Context, ds *testutil.DummyServer, d
 	dn.ClusterInstCache.Delete(ctx, &rcinst, 0)
 }
 
-func requireDeployIntervalsMet(t *testing.T, appStats *apAppStats, policy *edgeproto.AutoProvPolicy, ckey *edgeproto.CloudletKey, expected uint32) {
+func requireDeployIntervalsMet(t *testing.T, appStats *apAppStats, policy *edgeproto.AutoProvPolicy, zkey *edgeproto.ZoneKey, expected uint32) {
 	ap, found := appStats.policies[policy.Key.Name]
 	require.True(t, found)
-	tr, found := ap.cloudletTrackers[*ckey]
+	tr, found := ap.zoneTrackers[*zkey]
 	require.True(t, found)
 	require.Equal(t, expected, tr.deployIntervalsMet)
 }

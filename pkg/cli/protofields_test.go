@@ -99,3 +99,49 @@ func testGetFieldsYaml(t *testing.T, obj interface{}, data string, expected []st
 	fields := GetSpecifiedFields(inMap, obj)
 	require.ElementsMatch(t, expected, fields, "fields list should match")
 }
+
+func TestGetStructMapParentField(t *testing.T) {
+	// test behavior of field flag interpretation
+	// test that setting a struct field then includes all
+	// child fields
+	zoneName := "zone-name"
+	obj := edgeproto.AutoProvPolicy{
+		Zones: []*edgeproto.ZoneKey{{
+			Name: zoneName,
+		}},
+	}
+	// 1. Setting the parents Zones flag should include all child data,
+	// i.e. the zone name.
+	// 2. Setting the zone name should be honored even if the parent
+	// flag is not set.
+	fieldsSet := [][]string{
+		{edgeproto.AutoProvPolicyFieldZones},
+		{edgeproto.AutoProvPolicyFieldZonesName},
+	}
+	for _, fields := range fieldsSet {
+		md, err := GetStructMap(&obj, WithStructMapFieldFlags(fields))
+		require.Nil(t, err)
+		fmt.Println(md.Data)
+		require.Nil(t, err)
+		zones, ok := md.Data["Zones"]
+		require.True(t, ok)
+		zlist, ok := zones.([]any)
+		require.True(t, ok)
+		require.Equal(t, 1, len(zlist))
+		zone := zlist[0]
+		zmap, ok := zone.(map[string]any)
+		require.True(t, ok)
+		nameVal, ok := zmap["Name"]
+		require.True(t, ok)
+		name, ok := nameVal.(string)
+		require.True(t, ok)
+		require.Equal(t, zoneName, name)
+	}
+	// negative test
+	fields := []string{edgeproto.AutoProvPolicyFieldKey}
+	md, err := GetStructMap(&obj, WithStructMapFieldFlags(fields))
+	require.Nil(t, err)
+	fmt.Println(md.Data)
+	_, ok := md.Data["Zones"]
+	require.False(t, ok)
+}

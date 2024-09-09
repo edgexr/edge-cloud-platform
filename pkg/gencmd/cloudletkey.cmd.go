@@ -35,3 +35,21 @@ var CloudletKeyComments = map[string]string{
 	"federatororg": "Federated operator organization who shared this cloudlet",
 }
 var CloudletKeySpecialArgs = map[string]string{}
+var ZoneKeyRequiredArgs = []string{
+	"zoneorg",
+	"zone",
+}
+var ZoneKeyOptionalArgs = []string{
+	"federatororg",
+}
+var ZoneKeyAliasArgs = []string{
+	"zoneorg=organization",
+	"zone=name",
+	"federatororg=federatedorganization",
+}
+var ZoneKeyComments = map[string]string{
+	"zoneorg":      "Organization owner of the Zone",
+	"zone":         "Name of the Zone",
+	"federatororg": "Federated operator organization who shared this Zone",
+}
+var ZoneKeySpecialArgs = map[string]string{}

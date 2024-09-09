@@ -71,12 +71,12 @@ func (s *TrustPolicyExceptionApi) CreateTrustPolicyException(ctx context.Context
 		if !app.Trusted {
 			return fmt.Errorf("Non trusted app: %s not compatible with trust policy: %s", strings.TrimSpace(app.Key.String()), in.Key.String())
 		}
-		cloudletPool := edgeproto.CloudletPool{}
-		if !s.all.cloudletPoolApi.store.STMGet(stm, &in.Key.CloudletPoolKey, &cloudletPool) {
-			return in.Key.CloudletPoolKey.NotFoundError()
+		zonePool := edgeproto.ZonePool{}
+		if !s.all.zonePoolApi.store.STMGet(stm, &in.Key.ZonePoolKey, &zonePool) {
+			return in.Key.ZonePoolKey.NotFoundError()
 		}
-		if cloudletPool.DeletePrepare {
-			return in.Key.CloudletPoolKey.BeingDeletedError()
+		if zonePool.DeletePrepare {
+			return in.Key.ZonePoolKey.BeingDeletedError()
 		}
 		s.store.STMPut(stm, in)
 		return nil
@@ -177,12 +177,12 @@ func (s *TrustPolicyExceptionApi) ShowTrustPolicyException(in *edgeproto.TrustPo
 	return err
 }
 
-func (s *TrustPolicyExceptionApi) GetTrustPolicyExceptionRules(ckey *edgeproto.CloudletPoolKey, appKey *edgeproto.AppKey) []*edgeproto.SecurityRule {
+func (s *TrustPolicyExceptionApi) GetTrustPolicyExceptionRules(ckey *edgeproto.ZonePoolKey, appKey *edgeproto.AppKey) []*edgeproto.SecurityRule {
 	var rules []*edgeproto.SecurityRule
 
 	filter := edgeproto.TrustPolicyException{
 		Key: edgeproto.TrustPolicyExceptionKey{
-			CloudletPoolKey: *ckey,
+			ZonePoolKey: *ckey,
 			AppKey:          *appKey,
 		},
 	}
@@ -199,13 +199,13 @@ func (s *TrustPolicyExceptionApi) GetTrustPolicyExceptionRules(ckey *edgeproto.C
 	return rules
 }
 
-func (s *TrustPolicyExceptionApi) GetTrustPolicyExceptionForCloudletPoolKey(cKey *edgeproto.CloudletPoolKey) *edgeproto.TrustPolicyException {
+func (s *TrustPolicyExceptionApi) GetTrustPolicyExceptionForZonePoolKey(cKey *edgeproto.ZonePoolKey) *edgeproto.TrustPolicyException {
 
 	var TrustPolicyException *edgeproto.TrustPolicyException
 
 	filter := edgeproto.TrustPolicyException{
 		Key: edgeproto.TrustPolicyExceptionKey{
-			CloudletPoolKey: *cKey,
+			ZonePoolKey: *cKey,
 		},
 	}
 
@@ -217,8 +217,8 @@ func (s *TrustPolicyExceptionApi) GetTrustPolicyExceptionForCloudletPoolKey(cKey
 	return TrustPolicyException
 }
 
-func (s *TrustPolicyExceptionApi) TrustPolicyExceptionForCloudletPoolKeyExists(cKey *edgeproto.CloudletPoolKey) *edgeproto.TrustPolicyExceptionKey {
-	tpe := s.GetTrustPolicyExceptionForCloudletPoolKey(cKey)
+func (s *TrustPolicyExceptionApi) TrustPolicyExceptionForZonePoolKeyExists(cKey *edgeproto.ZonePoolKey) *edgeproto.TrustPolicyExceptionKey {
+	tpe := s.GetTrustPolicyExceptionForZonePoolKey(cKey)
 	if tpe != nil {
 		return &tpe.Key
 	}

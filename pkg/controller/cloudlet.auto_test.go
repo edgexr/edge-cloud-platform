@@ -426,8 +426,6 @@ func (s *CloudletStoreTracker) STMPut(stm concurrency.STM, obj *edgeproto.Cloudl
 // object that has multiple references).
 type CloudletDeleteDataGen interface {
 	GetCloudletTestObj() (*edgeproto.Cloudlet, *testSupportData)
-	GetAutoProvPolicyCloudletsRef(key *edgeproto.CloudletKey) (*edgeproto.AutoProvPolicy, *testSupportData)
-	GetCloudletPoolCloudletsRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletPool, *testSupportData)
 	GetNetworkKeyCloudletKeyRef(key *edgeproto.CloudletKey) (*edgeproto.Network, *testSupportData)
 	GetCloudletClusterInstClusterInstsRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletRefs, *testSupportData)
 	GetCloudletAppInstVmAppInstsRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletRefs, *testSupportData)
@@ -552,46 +550,6 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 	testObj, _ = dataGen.GetCloudletTestObj()
 	origStore.Put(ctx, testObj, api.sync.SyncWait)
 
-	{
-		// Negative test, AutoProvPolicy refers to Cloudlet.
-		// The cb will inject refBy obj after delete prepare has been set.
-		refBy, supportData := dataGen.GetAutoProvPolicyCloudletsRef(testObj.GetKey())
-		supportData.put(t, ctx, all)
-		deleteStore.putDeletePrepareCb = func() {
-			all.autoProvPolicyApi.store.Put(ctx, refBy, all.autoProvPolicyApi.sync.SyncWait)
-		}
-		testObj, _ = dataGen.GetCloudletTestObj()
-		err = api.DeleteCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
-		require.NotNil(t, err, "must fail delete with ref from AutoProvPolicy")
-		require.Contains(t, err.Error(), "in use")
-		// check that delete prepare was reset
-		deleteStore.requireUndoDeletePrepare(ctx, testObj)
-		// remove AutoProvPolicy obj
-		_, err = all.autoProvPolicyApi.store.Delete(ctx, refBy, all.autoProvPolicyApi.sync.SyncWait)
-		require.Nil(t, err, "cleanup ref from AutoProvPolicy must succeed")
-		deleteStore.putDeletePrepareCb = nil
-		supportData.delete(t, ctx, all)
-	}
-	{
-		// Negative test, CloudletPool refers to Cloudlet.
-		// The cb will inject refBy obj after delete prepare has been set.
-		refBy, supportData := dataGen.GetCloudletPoolCloudletsRef(testObj.GetKey())
-		supportData.put(t, ctx, all)
-		deleteStore.putDeletePrepareCb = func() {
-			all.cloudletPoolApi.store.Put(ctx, refBy, all.cloudletPoolApi.sync.SyncWait)
-		}
-		testObj, _ = dataGen.GetCloudletTestObj()
-		err = api.DeleteCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
-		require.NotNil(t, err, "must fail delete with ref from CloudletPool")
-		require.Contains(t, err.Error(), "in use")
-		// check that delete prepare was reset
-		deleteStore.requireUndoDeletePrepare(ctx, testObj)
-		// remove CloudletPool obj
-		_, err = all.cloudletPoolApi.store.Delete(ctx, refBy, all.cloudletPoolApi.sync.SyncWait)
-		require.Nil(t, err, "cleanup ref from CloudletPool must succeed")
-		deleteStore.putDeletePrepareCb = nil
-		supportData.delete(t, ctx, all)
-	}
 	{
 		// Negative test, Network refers to Cloudlet.
 		// The cb will inject refBy obj after delete prepare has been set.

@@ -218,7 +218,7 @@ func TestParseArgs(t *testing.T) {
 			Sublist: make([]SublistObj, 0),
 		},
 	}
-	fields := []string{"1.1", "1.3", "1.4", "4", "6", "7", "7.1", "7.4"}
+	fields := []string{"1.1", "1.3", "1.4", "4", "6", "7.1", "7.4"}
 	testConversionEmptyFields(t, input, &emptySets, &TestObj{}, args, fields)
 
 	// test parse empty invalid value

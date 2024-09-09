@@ -23,13 +23,15 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 )
 
-func addClusterDetailsToAlerts(alerts []edgeproto.Alert, clusterKey *edgeproto.ClusterKey, cloudletKey *edgeproto.CloudletKey) []edgeproto.Alert {
+func addClusterDetailsToAlerts(alerts []edgeproto.Alert, clusterKey *edgeproto.ClusterKey, cloudletKey *edgeproto.CloudletKey, zoneKey edgeproto.ZoneKey) []edgeproto.Alert {
 	for ii := range alerts {
 		alert := &alerts[ii]
 		alert.Labels[edgeproto.ClusterKeyTagOrganization] = clusterKey.Organization
 		alert.Labels[edgeproto.CloudletKeyTagOrganization] = cloudletKey.Organization
 		alert.Labels[edgeproto.CloudletKeyTagName] = cloudletKey.Name
 		alert.Labels[edgeproto.ClusterKeyTagName] = clusterKey.Name
+		alert.Labels[edgeproto.ZoneKeyTagName] = zoneKey.Name
+		alert.Labels[edgeproto.ZoneKeyTagOrganization] = zoneKey.Organization
 	}
 	return alerts
 }

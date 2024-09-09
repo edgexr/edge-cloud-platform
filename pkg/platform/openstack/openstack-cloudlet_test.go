@@ -72,9 +72,9 @@ func TestOpenstackLive(t *testing.T) {
 
 	nodeMgr := &node.NodeMgr{}
 	nodeMgr.Debug.Init(nodeMgr)
-	cloudletPoolLookup := &node.CloudletPoolCache{}
-	cloudletPoolLookup.Init()
-	nodeMgr.CloudletPoolLookup = cloudletPoolLookup
+	zonePoolLookup := &node.ZonePoolCache{}
+	zonePoolLookup.Init()
+	nodeMgr.ZonePoolLookup = zonePoolLookup
 	nodeMgr.MyNode.Key.CloudletKey = cloudlet.Key
 	accessAPI := &accessapi.TestHandler{
 		AccessVars: map[string]string{

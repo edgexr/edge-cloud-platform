@@ -49,14 +49,14 @@ type AutoProvAggr struct {
 // threshold for deployment. Only one AppInst per Cloudlet will be
 // deployed even if multiple policies meet the deployment criteria.
 type apAppStats struct {
-	policies  map[string]*apPolicyTracker
-	cloudlets map[edgeproto.CloudletKey]*apCloudletStats
+	policies map[string]*apPolicyTracker
+	zones    map[edgeproto.ZoneKey]*apCloudletStats
 }
 
 type apPolicyTracker struct {
 	deployClientCount   uint32 // cached from policy
 	deployIntervalCount uint32 // cached from policy
-	cloudletTrackers    map[edgeproto.CloudletKey]*apCloudletTracker
+	zoneTrackers        map[edgeproto.ZoneKey]*apZoneTracker
 }
 
 type apCloudletStats struct {
@@ -65,7 +65,7 @@ type apCloudletStats struct {
 	intervalNum uint64
 }
 
-type apCloudletTracker struct {
+type apZoneTracker struct {
 	deployIntervalsMet uint32
 }
 
@@ -182,8 +182,8 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 		return resp.Error()
 	}
 
-	// aggregate data by app + cloudlet (aggregates over all DME counts)
-	stats := make(map[edgeproto.AppKey]map[edgeproto.CloudletKey]uint64)
+	// aggregate data by app + zone (aggregates over all DME counts)
+	stats := make(map[edgeproto.AppKey]map[edgeproto.ZoneKey]uint64)
 	numStats := 0
 	for ii, _ := range resp.Results {
 		for jj, _ := range resp.Results[ii].Series {
@@ -199,12 +199,12 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 			}
 			appStats, found := stats[ap.AppKey]
 			if !found {
-				appStats = make(map[edgeproto.CloudletKey]uint64)
+				appStats = make(map[edgeproto.ZoneKey]uint64)
 				stats[ap.AppKey] = appStats
 			}
-			appStats[ap.CloudletKey] += ap.Count
+			appStats[ap.ZoneKey] += ap.Count
 			numStats++
-			log.SpanLog(ctx, log.DebugLevelMetrics, "stats", "app", ap.AppKey, "cloudlet", ap.CloudletKey, "count", ap.Count)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "stats", "app", ap.AppKey, "cloudlet", ap.ZoneKey, "count", ap.Count)
 		}
 	}
 
@@ -212,7 +212,7 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 	s.intervalNum++
 	numDeploy := 0
 	numUndeploy := 0
-	for appKey, cloudlets := range stats {
+	for appKey, zones := range stats {
 		appStats, found := s.allStats[appKey]
 		if !found {
 			// may have been deleted
@@ -223,13 +223,13 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 			// deleted
 			continue
 		}
-		for ckey, count := range cloudlets {
-			cstats, found := appStats.cloudlets[ckey]
+		for zkey, count := range zones {
+			cstats, found := appStats.zones[zkey]
 			if !found {
 				cstats = &apCloudletStats{}
 				// if not found, treat last iteration as 0 count
 				cstats.intervalNum = s.intervalNum - 1
-				appStats.cloudlets[ckey] = cstats
+				appStats.zones[zkey] = cstats
 			}
 			if init {
 				// just initialize count
@@ -237,7 +237,7 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 				cstats.intervalNum = s.intervalNum
 				continue
 			}
-			log.SpanLog(ctx, log.DebugLevelMetrics, "runIter cloudlet", "interval", s.intervalNum, "app", appKey, "cloudlet", ckey, "count", count, "lastCount", cstats.count)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "runIter cloudlet", "interval", s.intervalNum, "app", appKey, "cloudlet", zkey, "count", count, "lastCount", cstats.count)
 			// We are looking for consecutive intervals that
 			// match the deployment/undeployment criteria.
 			resetIntervalsMet := false
@@ -249,7 +249,7 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 			// check all policies to see if any meet criteria
 			doDeploy := false
 			for name, ap := range appStats.policies {
-				tracker, found := ap.cloudletTrackers[ckey]
+				tracker, found := ap.zoneTrackers[zkey]
 				if !found {
 					continue
 				}
@@ -271,7 +271,7 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 			cstats.intervalNum = s.intervalNum
 
 			if doDeploy {
-				s.deploy(ctx, &app, &ckey)
+				s.deploy(ctx, &app, &zkey)
 				numDeploy++
 			}
 
@@ -291,13 +291,13 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 	return nil
 }
 
-func (s *AutoProvAggr) deploy(ctx context.Context, app *edgeproto.App, cloudletKey *edgeproto.CloudletKey) {
-	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy App", "app", app.Key, "cloudlet", *cloudletKey)
+func (s *AutoProvAggr) deploy(ctx context.Context, app *edgeproto.App, zoneKey *edgeproto.ZoneKey) {
+	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy App", "app", app.Key, "zone", *zoneKey)
 
 	inst := edgeproto.AppInst{}
-	inst.Key = cloudcommon.GetAutoProvAppInstKey(&app.Key, cloudletKey)
+	inst.Key = cloudcommon.GetAutoProvAppInstKey(&app.Key, zoneKey)
 	inst.AppKey = app.Key
-	inst.CloudletKey = *cloudletKey
+	inst.ZoneKey = *zoneKey
 	// let Controller pick or create a reservable ClusterInst.
 
 	go goAppInstApi(ctx, &inst, cloudcommon.Create, cloudcommon.AutoProvReasonDemand, "")
@@ -334,7 +334,7 @@ func (s *AutoProvAggr) UpdateApp(ctx context.Context, appKey *edgeproto.AppKey) 
 	if !found {
 		appStats = &apAppStats{}
 		appStats.policies = make(map[string]*apPolicyTracker)
-		appStats.cloudlets = make(map[edgeproto.CloudletKey]*apCloudletStats)
+		appStats.zones = make(map[edgeproto.ZoneKey]*apCloudletStats)
 		s.allStats[app.Key] = appStats
 	}
 	// remove policies
@@ -367,16 +367,16 @@ func updatePolicyTracker(ctx context.Context, ap *apPolicyTracker, policy *edgep
 	ap.deployClientCount = policy.DeployClientCount
 	ap.deployIntervalCount = policy.DeployIntervalCount
 
-	oldTrackers := ap.cloudletTrackers
-	ap.cloudletTrackers = make(map[edgeproto.CloudletKey]*apCloudletTracker, len(policy.Cloudlets))
-	for ii, _ := range policy.Cloudlets {
-		key := policy.Cloudlets[ii].Key
+	oldTrackers := ap.zoneTrackers
+	ap.zoneTrackers = make(map[edgeproto.ZoneKey]*apZoneTracker, len(policy.Zones))
+	for ii, _ := range policy.Zones {
+		key := policy.Zones[ii]
 
-		tr, found := oldTrackers[key]
+		tr, found := oldTrackers[*key]
 		if !found {
-			tr = &apCloudletTracker{}
+			tr = &apZoneTracker{}
 		}
-		ap.cloudletTrackers[key] = tr
+		ap.zoneTrackers[*key] = tr
 	}
 }
 

@@ -296,8 +296,8 @@ func local_request_AppApi_RemoveAppAlertPolicy_0(ctx context.Context, marshaler 
 
 }
 
-func request_AppApi_ShowCloudletsForAppDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client AppApiClient, req *http.Request, pathParams map[string]string) (AppApi_ShowCloudletsForAppDeploymentClient, runtime.ServerMetadata, error) {
-	var protoReq DeploymentCloudletRequest
+func request_AppApi_ShowZonesForAppDeployment_0(ctx context.Context, marshaler runtime.Marshaler, client AppApiClient, req *http.Request, pathParams map[string]string) (AppApi_ShowZonesForAppDeploymentClient, runtime.ServerMetadata, error) {
+	var protoReq DeploymentZoneRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -308,7 +308,7 @@ func request_AppApi_ShowCloudletsForAppDeployment_0(ctx context.Context, marshal
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.ShowCloudletsForAppDeployment(ctx, &protoReq)
+	stream, err := client.ShowZonesForAppDeployment(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -495,7 +495,7 @@ func RegisterAppApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 
 	})
 
-	mux.Handle("POST", pattern_AppApi_ShowCloudletsForAppDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_AppApi_ShowZonesForAppDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -703,7 +703,7 @@ func RegisterAppApiHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 
 	})
 
-	mux.Handle("POST", pattern_AppApi_ShowCloudletsForAppDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_AppApi_ShowZonesForAppDeployment_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -712,14 +712,14 @@ func RegisterAppApiHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_AppApi_ShowCloudletsForAppDeployment_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_AppApi_ShowZonesForAppDeployment_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_AppApi_ShowCloudletsForAppDeployment_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_AppApi_ShowZonesForAppDeployment_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -743,7 +743,7 @@ var (
 
 	pattern_AppApi_RemoveAppAlertPolicy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"remove", "appalertpolicy"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_AppApi_ShowCloudletsForAppDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"showmapping", "deploymentcloudlets"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_AppApi_ShowZonesForAppDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"showmapping", "deploymentzones"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -763,5 +763,5 @@ var (
 
 	forward_AppApi_RemoveAppAlertPolicy_0 = runtime.ForwardResponseMessage
 
-	forward_AppApi_ShowCloudletsForAppDeployment_0 = runtime.ForwardResponseStream
+	forward_AppApi_ShowZonesForAppDeployment_0 = runtime.ForwardResponseStream
 )

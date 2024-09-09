@@ -467,6 +467,7 @@ func startServices() error {
 	edgeproto.RegisterClusterInstApiServer(server, allApis.clusterInstApi)
 	edgeproto.RegisterCloudletApiServer(server, allApis.cloudletApi)
 	edgeproto.RegisterCloudletNodeApiServer(server, allApis.cloudletNodeApi)
+	edgeproto.RegisterZoneApiServer(server, allApis.zoneApi)
 	edgeproto.RegisterAppInstApiServer(server, allApis.appInstApi)
 	edgeproto.RegisterCloudletInfoApiServer(server, allApis.cloudletInfoApi)
 	edgeproto.RegisterVMPoolApiServer(server, allApis.vmPoolApi)
@@ -477,7 +478,7 @@ func startServices() error {
 	edgeproto.RegisterControllerApiServer(server, allApis.controllerApi)
 	edgeproto.RegisterNodeApiServer(server, &nodeApi)
 	edgeproto.RegisterExecApiServer(server, allApis.execApi)
-	edgeproto.RegisterCloudletPoolApiServer(server, allApis.cloudletPoolApi)
+	edgeproto.RegisterZonePoolApiServer(server, allApis.zonePoolApi)
 	edgeproto.RegisterAlertApiServer(server, allApis.alertApi)
 	edgeproto.RegisterAutoScalePolicyApiServer(server, allApis.autoScalePolicyApi)
 	edgeproto.RegisterAutoProvPolicyApiServer(server, allApis.autoProvPolicyApi)
@@ -518,13 +519,14 @@ func startServices() error {
 			edgeproto.RegisterCloudletApiHandler,
 			edgeproto.RegisterCloudletNodeApiHandler,
 			edgeproto.RegisterCloudletInfoApiHandler,
+			edgeproto.RegisterZoneApiHandler,
 			edgeproto.RegisterVMPoolApiHandler,
 			edgeproto.RegisterGPUDriverApiHandler,
 			edgeproto.RegisterFlavorApiHandler,
 			edgeproto.RegisterClusterInstApiHandler,
 			edgeproto.RegisterControllerApiHandler,
 			edgeproto.RegisterNodeApiHandler,
-			edgeproto.RegisterCloudletPoolApiHandler,
+			edgeproto.RegisterZonePoolApiHandler,
 			edgeproto.RegisterAlertApiHandler,
 			edgeproto.RegisterAutoScalePolicyApiHandler,
 			edgeproto.RegisterAutoProvPolicyApiHandler,
@@ -698,6 +700,7 @@ type AllApis struct {
 	operatorCodeApi             *OperatorCodeApi
 	cloudletApi                 *CloudletApi
 	cloudletNodeApi             *CloudletNodeApi
+	zoneApi                     *ZoneApi
 	appInstApi                  *AppInstApi
 	flavorApi                   *FlavorApi
 	streamObjApi                *StreamObjApi
@@ -711,7 +714,7 @@ type AllApis struct {
 	clusterRefsApi              *ClusterRefsApi
 	appInstRefsApi              *AppInstRefsApi
 	controllerApi               *ControllerApi
-	cloudletPoolApi             *CloudletPoolApi
+	zonePoolApi                 *ZonePoolApi
 	execApi                     *ExecApi
 	alertApi                    *AlertApi
 	autoScalePolicyApi          *AutoScalePolicyApi
@@ -741,6 +744,7 @@ func NewAllApis(sync *regiondata.Sync) *AllApis {
 	all.operatorCodeApi = NewOperatorCodeApi(sync, all)
 	all.cloudletApi = NewCloudletApi(sync, all)
 	all.cloudletNodeApi = NewCloudletNodeApi(sync, all)
+	all.zoneApi = NewZoneApi(sync, all)
 	all.appInstApi = NewAppInstApi(sync, all)
 	all.flavorApi = NewFlavorApi(sync, all)
 	all.streamObjApi = NewStreamObjApi(sync, all)
@@ -754,7 +758,7 @@ func NewAllApis(sync *regiondata.Sync) *AllApis {
 	all.clusterRefsApi = NewClusterRefsApi(sync, all)
 	all.appInstRefsApi = NewAppInstRefsApi(sync, all)
 	all.controllerApi = NewControllerApi(sync, all)
-	all.cloudletPoolApi = NewCloudletPoolApi(sync, all)
+	all.zonePoolApi = NewZonePoolApi(sync, all)
 	all.execApi = NewExecApi(all)
 	all.alertApi = NewAlertApi(sync, all)
 	all.autoScalePolicyApi = NewAutoScalePolicyApi(sync, all)
@@ -800,11 +804,13 @@ func InitNotify(metricsInflux *influxq.InfluxQ, edgeEventsInflux *influxq.Influx
 	notify.ServerMgrOne.RegisterSendVMPoolCache(&allApis.vmPoolApi.cache)
 	notify.ServerMgrOne.RegisterSendResTagTableCache(&allApis.resTagTableApi.cache)
 	notify.ServerMgrOne.RegisterSendTrustPolicyCache(&allApis.trustPolicyApi.cache)
+	// note: zones must be sent before cloudlets, because cloudlet refers to zonekey.
+	notify.ServerMgrOne.RegisterSendZoneCache(&allApis.zoneApi.cache)
 	notify.ServerMgrOne.RegisterSendCloudletCache(allApis.cloudletApi.cache)
 	notify.ServerMgrOne.RegisterSendCloudletNodeCache(&allApis.cloudletNodeApi.cache)
 	// Be careful on dependencies.
-	// CloudletPools must be sent after cloudlets, because they reference cloudlets.
-	notify.ServerMgrOne.RegisterSendCloudletPoolCache(allApis.cloudletPoolApi.cache)
+	// ZonePools must be sent after Zones, because they reference Zones.
+	notify.ServerMgrOne.RegisterSendZonePoolCache(allApis.zonePoolApi.cache)
 
 	notify.ServerMgrOne.RegisterSendCloudletInfoCache(&allApis.cloudletInfoApi.cache)
 	notify.ServerMgrOne.RegisterSendAutoScalePolicyCache(&allApis.autoScalePolicyApi.cache)
@@ -939,14 +945,15 @@ func (s *AllApis) GetResTagTableApi() edgeproto.ResTagTableApiServer   { return 
 func (s *AllApis) GetAutoScalePolicyApi() edgeproto.AutoScalePolicyApiServer {
 	return s.autoScalePolicyApi
 }
-func (s *AllApis) GetTrustPolicyApi() edgeproto.TrustPolicyApiServer   { return s.trustPolicyApi }
-func (s *AllApis) GetAppApi() edgeproto.AppApiServer                   { return s.appApi }
-func (s *AllApis) GetAppInstApi() edgeproto.AppInstApiServer           { return s.appInstApi }
-func (s *AllApis) GetGPUDriverApi() edgeproto.GPUDriverApiServer       { return s.gpuDriverApi }
-func (s *AllApis) GetCloudletApi() edgeproto.CloudletApiServer         { return s.cloudletApi }
-func (s *AllApis) GetCloudletPoolApi() edgeproto.CloudletPoolApiServer { return s.cloudletPoolApi }
-func (s *AllApis) GetVMPoolApi() edgeproto.VMPoolApiServer             { return s.vmPoolApi }
-func (s *AllApis) GetClusterInstApi() edgeproto.ClusterInstApiServer   { return s.clusterInstApi }
+func (s *AllApis) GetTrustPolicyApi() edgeproto.TrustPolicyApiServer { return s.trustPolicyApi }
+func (s *AllApis) GetAppApi() edgeproto.AppApiServer                 { return s.appApi }
+func (s *AllApis) GetAppInstApi() edgeproto.AppInstApiServer         { return s.appInstApi }
+func (s *AllApis) GetGPUDriverApi() edgeproto.GPUDriverApiServer     { return s.gpuDriverApi }
+func (s *AllApis) GetZoneApi() edgeproto.ZoneApiServer               { return s.zoneApi }
+func (s *AllApis) GetCloudletApi() edgeproto.CloudletApiServer       { return s.cloudletApi }
+func (s *AllApis) GetZonePoolApi() edgeproto.ZonePoolApiServer       { return s.zonePoolApi }
+func (s *AllApis) GetVMPoolApi() edgeproto.VMPoolApiServer           { return s.vmPoolApi }
+func (s *AllApis) GetClusterInstApi() edgeproto.ClusterInstApiServer { return s.clusterInstApi }
 func (s *AllApis) GetAutoProvPolicyApi() edgeproto.AutoProvPolicyApiServer {
 	return s.autoProvPolicyApi
 }

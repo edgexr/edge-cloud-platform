@@ -22,10 +22,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
+	"github.com/edgexr/jsonparser"
 	"github.com/oklog/ulid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	context "golang.org/x/net/context"
@@ -878,4 +880,281 @@ func InstanceKeysRegionScopedName(ctx context.Context, objStore objstore.KVStore
 	}
 
 	return nil
+}
+
+type CloudletPoolKey struct {
+	// Name of the organization this pool belongs to
+	Organization string `protobuf:"bytes,1,opt,name=organization,proto3" json:"organization,omitempty"`
+	// CloudletPool Name
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+type CloudletPool struct {
+	// Fields are used for the Update API to specify which fields to apply
+	Fields []string `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`
+	// CloudletPool key
+	Key CloudletPoolKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key"`
+	// Cloudlets part of the pool
+	Cloudlets []edgeproto.CloudletKey `protobuf:"bytes,3,rep,name=cloudlets,proto3" json:"cloudlets"`
+	// Created at time
+	CreatedAt distributed_match_engine.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at"`
+	// Updated at time
+	UpdatedAt distributed_match_engine.Timestamp `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at"`
+	// Preparing to be deleted
+	DeletePrepare bool `protobuf:"varint,6,opt,name=delete_prepare,json=deletePrepare,proto3" json:"delete_prepare,omitempty"`
+}
+
+type AutoProvCloudlet struct {
+	// Cloudlet key
+	Key edgeproto.CloudletKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
+	// Cloudlet location
+	Loc distributed_match_engine.Loc `protobuf:"bytes,2,opt,name=loc,proto3" json:"loc"`
+}
+
+type TrustPolicyExceptionKey struct {
+	// App Key
+	AppKey edgeproto.AppKey `protobuf:"bytes,1,opt,name=app_key,json=appKey,proto3" json:"app_key"`
+	// CloudletPool Key
+	CloudletPoolKey CloudletPoolKey `protobuf:"bytes,2,opt,name=cloudlet_pool_key,json=cloudletPoolKey,proto3" json:"cloudlet_pool_key"`
+	// TrustPolicyExceptionKey name
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+}
+
+// ZoneFeature adds support for a Zone feature. Each pre-existing cloudlet
+// will get a Zone of the same name created it for, and assigned to it.
+// Existing cloudlet pools will be rewritten as zone pools, with the same
+// membership (because on upgrade, cloudlets and zones are 1:1).
+func ZoneFeature(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport, dbModelID int32) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "Zone Feature")
+
+	// Create a new Zone for every Cloudlet and assign the cloudlet to the zone.
+	cloudletKeys, err := getDbObjectKeys(objStore, "Cloudlet")
+	if err != nil {
+		return err
+	}
+	for cloudletKey := range cloudletKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			cloudletStr := stm.Get(cloudletKey)
+			if cloudletStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			cloudlet := edgeproto.Cloudlet{}
+			if err2 := unmarshalUpgradeObj(ctx, cloudletStr, &cloudlet); err2 != nil {
+				return err2
+			}
+			if cloudlet.DbModelId >= dbModelID {
+				// already upgraded
+				return nil
+			}
+			// create a new zone if needed for the cloudlet
+			zoneKey := cloudletKeyToZoneKey(&cloudlet.Key)
+			zone := edgeproto.Zone{}
+			if !allApis.zoneApi.store.STMGet(stm, zoneKey, &zone) {
+				zone.Key = *zoneKey
+				zone.ObjId = strings.ToLower(ulid.Make().String())
+				zone.Location = cloudlet.Location
+				zone.CreatedAt = cloudlet.CreatedAt
+				allApis.zoneApi.store.STMPut(stm, &zone)
+			}
+			cloudlet.DbModelId = dbModelID
+			cloudlet.Zone = zoneKey.Name
+			allApis.cloudletApi.store.STMPut(stm, &cloudlet)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Set ZoneKey field for ClusterInst
+	clusterKeys, err := getDbObjectKeys(objStore, "ClusterInst")
+	if err != nil {
+		return err
+	}
+	for clusterKey := range clusterKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			clusterStr := stm.Get(clusterKey)
+			if clusterStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			ci := edgeproto.ClusterInst{}
+			if err2 := unmarshalUpgradeObj(ctx, clusterStr, &ci); err2 != nil {
+				return err2
+			}
+			if ci.DbModelId >= dbModelID {
+				// already upgraded
+				return nil
+			}
+			ci.DbModelId = dbModelID
+			ci.ZoneKey = *cloudletKeyToZoneKey(&ci.CloudletKey)
+			allApis.clusterInstApi.store.STMPut(stm, &ci)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Set ZoneKey field for AppInst
+	aiKeys, err := getDbObjectKeys(objStore, "AppInst")
+	if err != nil {
+		return err
+	}
+	for aiKey := range aiKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			aiStr := stm.Get(aiKey)
+			if aiStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			ai := edgeproto.AppInst{}
+			if err2 := unmarshalUpgradeObj(ctx, aiStr, &ai); err2 != nil {
+				return err2
+			}
+			if ai.DbModelId >= dbModelID {
+				// already upgraded
+				return nil
+			}
+			ai.DbModelId = dbModelID
+			ai.ZoneKey = *cloudletKeyToZoneKey(&ai.CloudletKey)
+			allApis.appInstApi.store.STMPut(stm, &ai)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Convert CloudletPools to ZonePools
+	cpKeys, err := getDbObjectKeys(objStore, "CloudletPool")
+	if err != nil {
+		return err
+	}
+	for cpKey := range cpKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			cpStr := stm.Get(cpKey)
+			if cpStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			cp := CloudletPool{}
+			if err2 := unmarshalUpgradeObj(ctx, cpStr, &cp); err2 != nil {
+				return err2
+			}
+			zp := edgeproto.ZonePool{}
+			zp.Key.Name = cp.Key.Name
+			zp.Key.Organization = cp.Key.Organization
+			if allApis.zonePoolApi.store.STMGet(stm, &zp.Key, &zp) {
+				// already exists
+				return nil
+			}
+			zp.CreatedAt = cp.CreatedAt
+			zp.UpdatedAt = cp.UpdatedAt
+			zp.DeletePrepare = cp.DeletePrepare
+			for _, ckey := range cp.Cloudlets {
+				zkey := cloudletKeyToZoneKey(&ckey)
+				zp.Zones = append(zp.Zones, zkey)
+			}
+			stm.Del(cpKey)
+			allApis.zonePoolApi.store.STMPut(stm, &zp)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Change AutoProvPolicy to use Zones instead of Cloudlets
+	autoprovKeys, err := getDbObjectKeys(objStore, "AutoProvPolicy")
+	if err != nil {
+		return err
+	}
+	for key := range autoprovKeys {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			autoprovStr := stm.Get(key)
+			if autoprovStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			cloudlets := []AutoProvCloudlet{}
+			cloudletsStr, dt, _, err := jsonparser.Get([]byte(autoprovStr), "cloudlets")
+			if err != nil && dt == jsonparser.NotExist {
+				// already upgraded
+				return nil
+			}
+			if err != nil {
+				return fmt.Errorf("failed to read autoprovpolicy json %s, %s", autoprovStr, err)
+			}
+			err = json.Unmarshal(cloudletsStr, &cloudlets)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal autoprovpolicy cloudlets string %s, %s", string(cloudletsStr), err)
+			}
+			policy := edgeproto.AutoProvPolicy{}
+			if err2 := unmarshalUpgradeObj(ctx, autoprovStr, &policy); err2 != nil {
+				return err2
+			}
+			for _, cl := range cloudlets {
+				policy.Zones = append(policy.Zones, cloudletKeyToZoneKey(&cl.Key))
+			}
+			allApis.autoProvPolicyApi.store.STMPut(stm, &policy)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Change TrustPolicyException Key to use ZonePool instead of CloudletPool
+	tpeKeys, err := getDbObjectKeys(objStore, "TrustPolicyException")
+	if err != nil {
+		return err
+	}
+	for key := range tpeKeys {
+		if !strings.Contains(key, `"cloudlet_pool_key":{`) {
+			continue
+		}
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			tpeStr := stm.Get(key)
+			if tpeStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			tpeKeyOld := TrustPolicyExceptionKey{}
+			keyJSON := removeKeyDbPrefix(key, "TrustPolicyException")
+			if err := json.Unmarshal([]byte(keyJSON), &tpeKeyOld); err != nil {
+				return fmt.Errorf("failed to unmarshal old trust policy exception key using cloudlet pool %s, %s", key, err)
+			}
+			if tpeKeyOld.CloudletPoolKey.Name == "" || tpeKeyOld.CloudletPoolKey.Organization == "" {
+				return fmt.Errorf("old trust policy exception key missing cloudlet pool information or unable to extract using json unmarshal, %s", key)
+			}
+			tpe := edgeproto.TrustPolicyException{}
+			if err2 := unmarshalUpgradeObj(ctx, tpeStr, &tpe); err2 != nil {
+				return err2
+			}
+			tpe.Key.ZonePoolKey.Name = tpeKeyOld.CloudletPoolKey.Name
+			tpe.Key.ZonePoolKey.Organization = tpeKeyOld.CloudletPoolKey.Organization
+			buf := edgeproto.TrustPolicyException{}
+			if allApis.trustPolicyExceptionApi.store.STMGet(stm, &tpe.Key, &buf) {
+				// already exists
+				return nil
+			}
+			allApis.trustPolicyExceptionApi.store.STMPut(stm, &tpe)
+			stm.Del(key)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func cloudletKeyToZoneKey(key *edgeproto.CloudletKey) *edgeproto.ZoneKey {
+	return &edgeproto.ZoneKey{
+		Name:                  key.Name,
+		Organization:          key.Organization,
+		FederatedOrganization: key.FederatedOrganization,
+	}
 }

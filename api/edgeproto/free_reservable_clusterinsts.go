@@ -21,11 +21,6 @@ import (
 	context "golang.org/x/net/context"
 )
 
-type AppCloudletKey struct {
-	AppKey      AppKey
-	CloudletKey CloudletKey
-}
-
 type FreeReservableClusterInstCache struct {
 	InstsByCloudlet map[CloudletKey]map[ClusterKey]*ClusterInst
 	KeyToCloudlet   map[ClusterKey]CloudletKey // for delete

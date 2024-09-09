@@ -171,39 +171,43 @@ var ClusterInstEventSelectors = []string{
 }
 
 const (
-	MetricTagRegion          = "region"
-	MetricTagOrg             = "org"
-	MetricTagEvent           = "event"
-	MetricTagStatus          = "status"
-	MetricTagStart           = "start"
-	MetricTagEnd             = "end"
-	MetricTagStartTime       = "starttime"
-	MetricTagEndTime         = "endtime"
-	MetricTagDuration        = "duration"
-	MetricTagUptime          = "uptime"
-	MetricTagFlavor          = "flavor"
-	MetricTagDeployment      = "deployment"
-	MetricTagRAM             = "ram"
-	MetricTagVCPU            = "vcpu"
-	MetricTagDisk            = "disk"
-	MetricTagNodeCount       = "nodecount"
-	MetricTagNumNodes        = "numnodes"
-	MetricTagOther           = "other"
-	MetricTagNote            = "note"
-	MetricTagIpAccess        = "ipaccess"
-	MetricTagPort            = "port"
-	MetricTagDmeId           = "dmeId"
-	MetricTagMethod          = "method"
-	MetricTagLocationTile    = "locationtile"
-	MetricTagDataNetworkType = "datanetworktype"
-	MetricTagDeviceCarrier   = "devicecarrier"
-	MetricTagDeviceOS        = "deviceos"
-	MetricTagDeviceModel     = "devicemodel"
-	MetricTagFoundCloudlet   = "foundCloudlet"
-	MetricTagFoundOperator   = "foundOperator"
-	MetricTagDmeCloudlet     = "dmecloudlet"
-	MetricTagDmeCloudletOrg  = "dmecloudletorg"
-	MetricTagStatName        = "statname"
+	MetricTagRegion           = "region"
+	MetricTagOrg              = "org"
+	MetricTagEvent            = "event"
+	MetricTagStatus           = "status"
+	MetricTagStart            = "start"
+	MetricTagEnd              = "end"
+	MetricTagStartTime        = "starttime"
+	MetricTagEndTime          = "endtime"
+	MetricTagDuration         = "duration"
+	MetricTagUptime           = "uptime"
+	MetricTagFlavor           = "flavor"
+	MetricTagDeployment       = "deployment"
+	MetricTagRAM              = "ram"
+	MetricTagVCPU             = "vcpu"
+	MetricTagDisk             = "disk"
+	MetricTagNodeCount        = "nodecount"
+	MetricTagNumNodes         = "numnodes"
+	MetricTagOther            = "other"
+	MetricTagNote             = "note"
+	MetricTagIpAccess         = "ipaccess"
+	MetricTagPort             = "port"
+	MetricTagDmeId            = "dmeId"
+	MetricTagMethod           = "method"
+	MetricTagLocationTile     = "locationtile"
+	MetricTagDataNetworkType  = "datanetworktype"
+	MetricTagDeviceCarrier    = "devicecarrier"
+	MetricTagDeviceOS         = "deviceos"
+	MetricTagDeviceModel      = "devicemodel"
+	MetricTagFoundCloudlet    = "foundCloudlet"
+	MetricTagFoundAppInstName = "foundappinstname"
+	MetricTagFoundAppInstOrg  = "foundappinstorg"
+	MetricTagFoundZoneName    = "foundzone"
+	MetricTagFoundZoneOrg     = "foundzoneorg"
+	MetricTagFoundOperator    = "foundOperator"
+	MetricTagDmeCloudlet      = "dmecloudlet"
+	MetricTagDmeCloudletOrg   = "dmecloudletorg"
+	MetricTagStatName         = "statname"
 )
 
 // Cloudlet resource usage
@@ -601,8 +605,22 @@ func (s *AppInstLabelsOld) FromMap(labels map[string]string) {
 // reveal the cloudlet name (which would likely reveal its location).
 func GetCloudletKeyHash(key *edgeproto.CloudletKey) string {
 	cname := key.Name + "::" + key.Organization
+	return getShortHash(cname)
+}
+
+// GetZoneKeyHash returns a short hash of the zone key to allow
+// for a deterministic string representing the zone, that is just
+// shorter than appending the zone name plus org. Also, in case the
+// underlying cloudlet is changed to a different zone, the name
+// doesn't confuse the user by referencing the old zone by name.
+func GetZoneKeyHash(key *edgeproto.ZoneKey) string {
+	zname := key.Name + "::" + key.Organization
+	return getShortHash(zname)
+}
+
+func getShortHash(str string) string {
 	h := sha256.New()
-	h.Write([]byte(cname))
+	h.Write([]byte(str))
 	bytesum := h.Sum(nil)
 	strsum := fmt.Sprintf("%x", bytesum)
 	num := len(strsum)

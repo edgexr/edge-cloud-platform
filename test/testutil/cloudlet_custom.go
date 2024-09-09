@@ -72,8 +72,8 @@ func (s *DummyServer) GetCloudletResourceQuotaProps(ctx context.Context, in *edg
 	return &edgeproto.CloudletResourceQuotaProps{}, nil
 }
 
-func (s *DummyServer) GetOrganizationsOnCloudlet(in *edgeproto.CloudletKey, cb edgeproto.CloudletApi_GetOrganizationsOnCloudletServer) error {
-	orgs := s.OrgsOnCloudlet[*in]
+func (s *DummyServer) GetOrganizationsOnZone(in *edgeproto.ZoneKey, cb edgeproto.CloudletApi_GetOrganizationsOnZoneServer) error {
+	orgs := s.OrgsOnZone[*in]
 	for _, org := range orgs {
 		eorg := edgeproto.Organization{
 			Name: org,
@@ -88,29 +88,29 @@ func (s *DummyServer) GetCloudletGPUDriverLicenseConfig(ctx context.Context, in 
 }
 
 // minimal bits not currently generated for flavorkey.proto to stream flavorKey objs
-// for ShowFlavorsForCloudlet cli
-type ShowFlavorsForCloudlet struct {
+// for ShowFlavorsForZone cli
+type ShowFlavorsForZone struct {
 	Data map[string]edgeproto.FlavorKey
 	grpc.ServerStream
 	Ctx context.Context
 }
 
-func (x *ShowFlavorsForCloudlet) Init() {
+func (x *ShowFlavorsForZone) Init() {
 	x.Data = make(map[string]edgeproto.FlavorKey)
 }
 
-func (x *ShowFlavorsForCloudlet) Send(m *edgeproto.FlavorKey) error {
+func (x *ShowFlavorsForZone) Send(m *edgeproto.FlavorKey) error {
 	x.Data[m.Name] = *m
 	return nil
 }
 
-func (x *ShowFlavorsForCloudlet) Context() context.Context {
+func (x *ShowFlavorsForZone) Context() context.Context {
 	return x.Ctx
 }
 
 var ShowFlavorsForCloudletExtraCount = 0
 
-func (x *ShowFlavorsForCloudlet) ReadStream(stream edgeproto.CloudletApi_ShowFlavorsForCloudletClient, err error) {
+func (x *ShowFlavorsForZone) ReadStream(stream edgeproto.CloudletApi_ShowFlavorsForZoneClient, err error) {
 
 	x.Data = make(map[string]edgeproto.FlavorKey)
 	if err != nil {
@@ -128,14 +128,14 @@ func (x *ShowFlavorsForCloudlet) ReadStream(stream edgeproto.CloudletApi_ShowFla
 	}
 }
 
-func (x *CloudletCommonApi) ShowFlavorsForCloudlet(ctx context.Context, filter *edgeproto.CloudletKey, showData *ShowFlavorsForCloudlet) error {
+func (x *CloudletCommonApi) ShowFlavorsForZone(ctx context.Context, filter *edgeproto.ZoneKey, showData *ShowFlavorsForZone) error {
 
 	if x.internal_api != nil {
 		showData.Ctx = ctx
-		return x.internal_api.ShowFlavorsForCloudlet(filter, showData)
+		return x.internal_api.ShowFlavorsForZone(filter, showData)
 	} else {
 
-		stream, err := x.client_api.ShowFlavorsForCloudlet(ctx, filter)
+		stream, err := x.client_api.ShowFlavorsForZone(ctx, filter)
 		showData.ReadStream(stream, err)
 		return err
 	}

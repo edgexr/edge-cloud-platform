@@ -458,13 +458,20 @@ func (s *NodeMgr) event(ctx context.Context, name, org, typ string, keyTags map[
 		val := keysAndValues[ii*2+1]
 		event.Tags = append(event.Tags, EventTag{key, val})
 	}
-	// To allow operators to see events on Cloudlets in CloudletPools,
-	// add the operator org to the allowed orgs if the event is tagged
-	// with such a cloudlet.
+	// Events for AppInsts/ClusterInsts normally are only visible to the
+	// developer org who owns the instances. However, events on instances
+	// in zone pools are also visible to the operators who own those
+	// pool. This is an implicit behavior for developers who are granted
+	// access to private zone pools. Add the operator org here if the
+	// zone is part of a pool, to allow the operator to see it.
 	if cloudletKey.Organization != "" && cloudletKey.Name != "" &&
 		cloudletKey.Organization != org {
-		if s.CloudletPoolLookup.InPool(eventRegion, cloudletKey) {
-			event.Org = append(event.Org, cloudletKey.Organization)
+		cloudlet := edgeproto.Cloudlet{}
+		if s.CloudletLookup.GetCloudlet(eventRegion, &cloudletKey, &cloudlet) {
+			zoneKey := cloudlet.GetZone()
+			if zoneKey.IsSet() && s.ZonePoolLookup.InPool(eventRegion, *zoneKey) {
+				event.Org = append(event.Org, cloudletKey.Organization)
+			}
 		}
 	}
 

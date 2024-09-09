@@ -417,7 +417,7 @@ service GPUDriverApi {
       body: "*"
     };
     option (protogen.stream_out_incremental) = true;
-    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
+    option (protogen.mc2_api) = "ResourceZones,ActionView,Key.Organization";
     option (protogen.mc2_custom_authz) = true;
   }
 
@@ -486,6 +486,8 @@ message Cloudlet {
   CloudletKey key = 2 [(gogoproto.nullable) = false];
   // Location of the Cloudlet site
   distributed_match_engine.Loc location = 5 [(gogoproto.nullable) = false];
+  // Zone assignment, must be set to allow deployment to cloudlet
+  string zone = 64;
   // Type of IP support provided by Cloudlet (see IpSupport)
   IpSupport ip_support = 6;
   // List of static IPs for static IP support
@@ -598,6 +600,8 @@ message Cloudlet {
   bool crm_on_edge = 61;
   // Universally unique object ID
   string obj_id = 62 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // database version model ID
+  int32 db_model_id = 65 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;
@@ -607,10 +611,9 @@ message Cloudlet {
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_recv_hook) = true;
-  option (protogen.noconfig) = "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Config,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,SecondaryCrmAccessPublicKey,SecondaryCrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,GpuConfig.LicenseConfigMd5Sum,DnsLabel,RootLbFqdn,StaticRootLbFqdn,FederationConfig,LicenseConfigStoragePath";
+  option (protogen.noconfig) = "Location.HorizontalAccuracy,Location.VerticalAccuracy,Location.Course,Location.Speed,Location.Timestamp,Config,State,Errors,CrmAccessPublicKey,CrmAccessKeyUpgradeRequired,SecondaryCrmAccessPublicKey,SecondaryCrmAccessKeyUpgradeRequired,CreatedAt,UpdatedAt,TrustPolicyState,HostController,DeletePrepare,GpuConfig.LicenseConfigMd5Sum,DnsLabel,RootLbFqdn,StaticRootLbFqdn,LicenseConfigStoragePath";
   option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,federatedorg=Key.FederatedOrganization";
   option (protogen.not_required) = "Key.FederatedOrganization";
-  option (protogen.mc2_target_cloudlet) = "Key";
   option (protogen.uses_org) = "key=Organization";
 }
 
@@ -732,8 +735,7 @@ service CloudletApi {
       post: "/show/cloudlet"
       body: "*"
     };
-    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,";
-    option (protogen.mc2_custom_authz) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
     option (protogen.method_noconfig) = "ResTagMap";
   }
   // Get Cloudlet Manifest. Shows deployment manifest required to setup cloudlet
@@ -817,25 +819,25 @@ service CloudletApi {
     };
     option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
   }
-  // Find all meta flavors viable on cloudlet
-  rpc ShowFlavorsForCloudlet(CloudletKey) returns (stream FlavorKey) {
+  // Find all meta flavors viable on zone
+  rpc ShowFlavorsForZone(ZoneKey) returns (stream FlavorKey) {
     option(google.api.http) = {
-      post: "/showmapping/cloudletflavors"
+      post: "/showmapping/zoneflavors"
       body: "*"
     };
-    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,";
+    option (protogen.mc2_api) = "ResourceZones,ActionView,";
     option (protogen.mc2_custom_authz) = true;
     option (protogen.non_standard_show) = true;
     option (protogen.stream_out_incremental) = true;
     option (protogen.method_not_required) = "Organization,Name,FederatedOrganization";
   }
-  // Get organizations of ClusterInsts and AppInsts on cloudlet
-  rpc GetOrganizationsOnCloudlet(CloudletKey) returns (stream Organization) {
+  // Get organizations of ClusterInsts and AppInsts on zone
+  rpc GetOrganizationsOnZone(ZoneKey) returns (stream Organization) {
     option(google.api.http) = {
-      post: "/get/cloudlet/organizations"
+      post: "/get/zones/organizations"
       body: "*"
     };
-    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Organization";
+    option (protogen.mc2_api) = "ResourceZones,ActionView,Organization";
     option (protogen.stream_out_incremental) = true;
   }
 

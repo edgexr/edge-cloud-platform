@@ -81,9 +81,9 @@ func TestNotifyBasic(t *testing.T) {
 	require.Equal(t, uint64(5), stats.ObjSend["App"])
 
 	// Create some app insts which will trigger updates
-	serverHandler.AppInstCache.Update(ctx, &testutil.AppInstData()[0], 0)
-	serverHandler.AppInstCache.Update(ctx, &testutil.AppInstData()[1], 0)
-	serverHandler.AppInstCache.Update(ctx, &testutil.AppInstData()[2], 0)
+	serverHandler.AppInstCache.Update(ctx, &testutil.CreatedAppInstData()[0], 0)
+	serverHandler.AppInstCache.Update(ctx, &testutil.CreatedAppInstData()[1], 0)
+	serverHandler.AppInstCache.Update(ctx, &testutil.CreatedAppInstData()[2], 0)
 	dmeHandler.WaitForAppInsts(3)
 	require.Equal(t, 3, len(dmeHandler.AppInstCache.Objs), "num appInsts")
 	clientDME.GetStats(stats)
@@ -101,7 +101,7 @@ func TestNotifyBasic(t *testing.T) {
 
 	// All cloudlets and all app insts will be sent again
 	// Note on server side, this is a new connection so stats are reset
-	serverHandler.AppInstCache.Update(ctx, &testutil.AppInstData()[3], 0)
+	serverHandler.AppInstCache.Update(ctx, &testutil.CreatedAppInstData()[3], 0)
 	dmeHandler.WaitForAppInsts(4)
 	require.Equal(t, 4, len(dmeHandler.AppInstCache.Objs), "num appInsts")
 	require.Equal(t, uint64(17), clientDME.sendrecv.stats.Recv, "num updates")
@@ -110,7 +110,7 @@ func TestNotifyBasic(t *testing.T) {
 	require.Equal(t, uint64(5), stats.ObjSend["App"])
 
 	// Delete an inst
-	serverHandler.AppInstCache.Delete(ctx, &testutil.AppInstData()[0], 0)
+	serverHandler.AppInstCache.Delete(ctx, &testutil.CreatedAppInstData()[0], 0)
 	dmeHandler.WaitForAppInsts(3)
 	require.Equal(t, 3, len(dmeHandler.AppInstCache.Objs), "num appInsts")
 	require.Equal(t, uint64(18), clientDME.sendrecv.stats.Recv, "num updates")
@@ -138,7 +138,7 @@ func TestNotifyBasic(t *testing.T) {
 	// of the sendall done command by removing the stale entry.
 	fmt.Println("ServerMgr done")
 	serverMgr.Stop()
-	serverHandler.AppInstCache.Delete(ctx, &testutil.AppInstData()[1], 0)
+	serverHandler.AppInstCache.Delete(ctx, &testutil.CreatedAppInstData()[1], 0)
 	serverMgr.Start("ctrl", addr, nil)
 	require.Nil(t, clientDME.WaitForConnect(4))
 	dmeHandler.WaitForAppInsts(2)
@@ -147,15 +147,6 @@ func TestNotifyBasic(t *testing.T) {
 	require.Equal(t, uint64(13), stats.ObjRecv["AppInst"], "app inst updates")
 	stats = serverMgr.GetStats(clientDME.GetLocalAddr())
 	require.Equal(t, uint64(2), stats.ObjSend["AppInst"])
-
-	// set ClusterInst and AppInst state to CREATE_REQUESTED so they get
-	// sent to the CRM.
-	for i, _ := range testutil.ClusterInstData() {
-		testutil.ClusterInstData()[i].State = edgeproto.TrackedState_CREATE_REQUESTED
-	}
-	for i, _ := range testutil.AppInstData() {
-		testutil.AppInstData()[i].State = edgeproto.TrackedState_CREATE_REQUESTED
-	}
 
 	// Now test CRM
 	require.Nil(t, clientCRM.WaitForConnect(2))
@@ -188,14 +179,14 @@ func TestNotifyBasic(t *testing.T) {
 	serverHandler.FlavorCache.Update(ctx, &testutil.FlavorData()[0], 8)
 	serverHandler.FlavorCache.Update(ctx, &testutil.FlavorData()[1], 9)
 	serverHandler.FlavorCache.Update(ctx, &testutil.FlavorData()[2], 10)
-	serverHandler.ClusterInstCache.Update(ctx, &testutil.ClusterInstData()[0], 11)
-	serverHandler.ClusterInstCache.Update(ctx, &testutil.ClusterInstData()[1], 12)
-	serverHandler.ClusterInstCache.Update(ctx, &testutil.ClusterInstData()[2], 13)
-	serverHandler.ClusterInstCache.Update(ctx, &testutil.ClusterInstData()[3], 14)
-	serverHandler.AppInstCache.Update(ctx, &testutil.AppInstData()[0], 15)
-	serverHandler.AppInstCache.Update(ctx, &testutil.AppInstData()[1], 16)
-	serverHandler.AppInstCache.Update(ctx, &testutil.AppInstData()[2], 17)
-	serverHandler.AppInstCache.Update(ctx, &testutil.AppInstData()[3], 18)
+	serverHandler.ClusterInstCache.Update(ctx, &testutil.CreatedClusterInstData()[0], 11)
+	serverHandler.ClusterInstCache.Update(ctx, &testutil.CreatedClusterInstData()[1], 12)
+	serverHandler.ClusterInstCache.Update(ctx, &testutil.CreatedClusterInstData()[2], 13)
+	serverHandler.ClusterInstCache.Update(ctx, &testutil.CreatedClusterInstData()[3], 14)
+	serverHandler.AppInstCache.Update(ctx, &testutil.CreatedAppInstData()[0], 15)
+	serverHandler.AppInstCache.Update(ctx, &testutil.CreatedAppInstData()[1], 16)
+	serverHandler.AppInstCache.Update(ctx, &testutil.CreatedAppInstData()[2], 17)
+	serverHandler.AppInstCache.Update(ctx, &testutil.CreatedAppInstData()[3], 18)
 	serverHandler.NetworkCache.Update(ctx, &testutil.NetworkData()[0], 19)
 	// trigger updates with CloudletInfo update after updating other
 	// data, otherwise the updates here plus the updates triggered by
@@ -240,18 +231,18 @@ func TestNotifyBasic(t *testing.T) {
 	require.Equal(t, int64(9), modRev)
 	require.True(t, crmHandler.FlavorCache.GetWithRev(&testutil.FlavorData()[2].Key, &flavorBuf, &modRev))
 	require.Equal(t, int64(10), modRev)
-	require.True(t, crmHandler.ClusterInstCache.GetWithRev(&testutil.ClusterInstData()[0].Key, &clusterInstBuf, &modRev))
+	require.True(t, crmHandler.ClusterInstCache.GetWithRev(&testutil.CreatedClusterInstData()[0].Key, &clusterInstBuf, &modRev))
 	require.Equal(t, int64(11), modRev)
-	require.True(t, crmHandler.ClusterInstCache.GetWithRev(&testutil.ClusterInstData()[3].Key, &clusterInstBuf, &modRev))
+	require.True(t, crmHandler.ClusterInstCache.GetWithRev(&testutil.CreatedClusterInstData()[3].Key, &clusterInstBuf, &modRev))
 	require.Equal(t, int64(14), modRev)
-	require.True(t, crmHandler.AppInstCache.GetWithRev(&testutil.AppInstData()[0].Key, &appInstBuf, &modRev))
+	require.True(t, crmHandler.AppInstCache.GetWithRev(&testutil.CreatedAppInstData()[0].Key, &appInstBuf, &modRev))
 	require.Equal(t, int64(15), modRev)
-	require.True(t, crmHandler.AppInstCache.GetWithRev(&testutil.AppInstData()[1].Key, &appInstBuf, &modRev))
+	require.True(t, crmHandler.AppInstCache.GetWithRev(&testutil.CreatedAppInstData()[1].Key, &appInstBuf, &modRev))
 	require.Equal(t, int64(16), modRev)
 
 	serverHandler.FlavorCache.Delete(ctx, &testutil.FlavorData()[1], 0)
-	serverHandler.ClusterInstCache.Delete(ctx, &testutil.ClusterInstData()[0], 0)
-	serverHandler.AppInstCache.Delete(ctx, &testutil.AppInstData()[0], 0)
+	serverHandler.ClusterInstCache.Delete(ctx, &testutil.CreatedClusterInstData()[0], 0)
+	serverHandler.AppInstCache.Delete(ctx, &testutil.CreatedAppInstData()[0], 0)
 	crmHandler.WaitForFlavors(2)
 	crmHandler.WaitForClusterInsts(2)
 	crmHandler.WaitForAppInsts(1)
@@ -272,23 +263,23 @@ func TestNotifyBasic(t *testing.T) {
 
 	// Send data from CRM to server
 	fmt.Println("Create AppInstInfo")
-	for _, ai := range testutil.AppInstData() {
+	for _, ai := range testutil.CreatedAppInstData() {
 		info := edgeproto.AppInstInfo{}
 		info.Key = ai.Key
 		crmHandler.AppInstInfoCache.Update(ctx, &info, 0)
 	}
-	serverHandler.WaitForAppInstInfo(len(testutil.AppInstData()))
-	require.Equal(t, len(testutil.AppInstData()),
+	serverHandler.WaitForAppInstInfo(len(testutil.CreatedAppInstData()))
+	require.Equal(t, len(testutil.CreatedAppInstData()),
 		len(serverHandler.AppInstInfoCache.Objs),
 		"sent appInstInfo")
 
-	for _, ci := range testutil.ClusterInstData() {
+	for _, ci := range testutil.CreatedClusterInstData() {
 		info := edgeproto.ClusterInstInfo{}
 		info.Key = ci.Key
 		crmHandler.ClusterInstInfoCache.Update(ctx, &info, 0)
 	}
-	serverHandler.WaitForClusterInstInfo(len(testutil.ClusterInstData()))
-	require.Equal(t, len(testutil.ClusterInstData()),
+	serverHandler.WaitForClusterInstInfo(len(testutil.CreatedClusterInstData()))
+	require.Equal(t, len(testutil.CreatedClusterInstData()),
 		len(serverHandler.ClusterInstInfoCache.Objs),
 		"sent clusterInstInfo")
 

@@ -288,26 +288,26 @@ var TrustPolicyExceptionKeyOptionalArgs = []string{
 	"appkey.organization",
 	"appkey.name",
 	"appkey.version",
-	"cloudletpoolkey.organization",
-	"cloudletpoolkey.name",
+	"zonepoolkey.organization",
+	"zonepoolkey.name",
 	"name",
 }
 var TrustPolicyExceptionKeyAliasArgs = []string{}
 var TrustPolicyExceptionKeyComments = map[string]string{
-	"appkey.organization":          "App developer organization",
-	"appkey.name":                  "App name",
-	"appkey.version":               "App version",
-	"cloudletpoolkey.organization": "Name of the organization this pool belongs to",
-	"cloudletpoolkey.name":         "CloudletPool Name",
-	"name":                         "TrustPolicyExceptionKey name",
+	"appkey.organization":      "App developer organization",
+	"appkey.name":              "App name",
+	"appkey.version":           "App version",
+	"zonepoolkey.organization": "Name of the organization this pool belongs to",
+	"zonepoolkey.name":         "ZonePool Name",
+	"name":                     "TrustPolicyExceptionKey name",
 }
 var TrustPolicyExceptionKeySpecialArgs = map[string]string{}
 var TrustPolicyExceptionRequiredArgs = []string{
 	"apporg",
 	"appname",
 	"appvers",
-	"cloudletpoolorg",
-	"cloudletpoolname",
+	"zonepoolorg",
+	"zonepoolname",
 	"name",
 }
 var TrustPolicyExceptionOptionalArgs = []string{
@@ -322,8 +322,8 @@ var TrustPolicyExceptionAliasArgs = []string{
 	"apporg=key.appkey.organization",
 	"appname=key.appkey.name",
 	"appvers=key.appkey.version",
-	"cloudletpoolorg=key.cloudletpoolkey.organization",
-	"cloudletpoolname=key.cloudletpoolkey.name",
+	"zonepoolorg=key.zonepoolkey.organization",
+	"zonepoolname=key.zonepoolkey.name",
 	"name=key.name",
 }
 var TrustPolicyExceptionComments = map[string]string{
@@ -331,8 +331,8 @@ var TrustPolicyExceptionComments = map[string]string{
 	"apporg":                               "App developer organization",
 	"appname":                              "App name",
 	"appvers":                              "App version",
-	"cloudletpoolorg":                      "Name of the organization this pool belongs to",
-	"cloudletpoolname":                     "CloudletPool Name",
+	"zonepoolorg":                          "Name of the organization this pool belongs to",
+	"zonepoolname":                         "ZonePool Name",
 	"name":                                 "TrustPolicyExceptionKey name",
 	"state":                                "State of the exception within the approval process, one of Unknown, ApprovalRequested, Active, Rejected",
 	"outboundsecurityrules:empty":          "List of outbound security rules for whitelisting traffic, specify outboundsecurityrules:empty=true to clear",
@@ -349,8 +349,8 @@ var TPEInstanceKeyOptionalArgs = []string{
 	"tpekey.appkey.organization",
 	"tpekey.appkey.name",
 	"tpekey.appkey.version",
-	"tpekey.cloudletpoolkey.organization",
-	"tpekey.cloudletpoolkey.name",
+	"tpekey.zonepoolkey.organization",
+	"tpekey.zonepoolkey.name",
 	"tpekey.name",
 	"appinstkey.name",
 	"appinstkey.organization",
@@ -362,27 +362,27 @@ var TPEInstanceKeyOptionalArgs = []string{
 }
 var TPEInstanceKeyAliasArgs = []string{}
 var TPEInstanceKeyComments = map[string]string{
-	"tpekey.appkey.organization":          "App developer organization",
-	"tpekey.appkey.name":                  "App name",
-	"tpekey.appkey.version":               "App version",
-	"tpekey.cloudletpoolkey.organization": "Name of the organization this pool belongs to",
-	"tpekey.cloudletpoolkey.name":         "CloudletPool Name",
-	"tpekey.name":                         "TrustPolicyExceptionKey name",
-	"appinstkey.name":                     "App Instance name",
-	"appinstkey.organization":             "App Instance organization",
-	"clusterkey.name":                     "Cluster name",
-	"clusterkey.organization":             "Name of the organization that this cluster belongs to",
-	"cloudletkey.organization":            "Organization of the cloudlet site",
-	"cloudletkey.name":                    "Name of the cloudlet",
-	"cloudletkey.federatedorganization":   "Federated operator organization who shared this cloudlet",
+	"tpekey.appkey.organization":        "App developer organization",
+	"tpekey.appkey.name":                "App name",
+	"tpekey.appkey.version":             "App version",
+	"tpekey.zonepoolkey.organization":   "Name of the organization this pool belongs to",
+	"tpekey.zonepoolkey.name":           "ZonePool Name",
+	"tpekey.name":                       "TrustPolicyExceptionKey name",
+	"appinstkey.name":                   "App Instance name",
+	"appinstkey.organization":           "App Instance organization",
+	"clusterkey.name":                   "Cluster name",
+	"clusterkey.organization":           "Name of the organization that this cluster belongs to",
+	"cloudletkey.organization":          "Organization of the cloudlet site",
+	"cloudletkey.name":                  "Name of the cloudlet",
+	"cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
 }
 var TPEInstanceKeySpecialArgs = map[string]string{}
 var TPEInstanceStateRequiredArgs = []string{
 	"key.tpekey.appkey.organization",
 	"key.tpekey.appkey.name",
 	"key.tpekey.appkey.version",
-	"key.tpekey.cloudletpoolkey.organization",
-	"key.tpekey.cloudletpoolkey.name",
+	"key.tpekey.zonepoolkey.organization",
+	"key.tpekey.zonepoolkey.name",
 	"key.tpekey.name",
 	"key.appinstkey.name",
 	"key.appinstkey.organization",
@@ -403,27 +403,27 @@ var TPEInstanceStateOptionalArgs = []string{
 }
 var TPEInstanceStateAliasArgs = []string{}
 var TPEInstanceStateComments = map[string]string{
-	"key.tpekey.appkey.organization":          "App developer organization",
-	"key.tpekey.appkey.name":                  "App name",
-	"key.tpekey.appkey.version":               "App version",
-	"key.tpekey.cloudletpoolkey.organization": "Name of the organization this pool belongs to",
-	"key.tpekey.cloudletpoolkey.name":         "CloudletPool Name",
-	"key.tpekey.name":                         "TrustPolicyExceptionKey name",
-	"key.appinstkey.name":                     "App Instance name",
-	"key.appinstkey.organization":             "App Instance organization",
-	"key.clusterkey.name":                     "Cluster name",
-	"key.clusterkey.organization":             "Name of the organization that this cluster belongs to",
-	"key.cloudletkey.organization":            "Organization of the cloudlet site",
-	"key.cloudletkey.name":                    "Name of the cloudlet",
-	"key.cloudletkey.federatedorganization":   "Federated operator organization who shared this cloudlet",
+	"key.tpekey.appkey.organization":        "App developer organization",
+	"key.tpekey.appkey.name":                "App name",
+	"key.tpekey.appkey.version":             "App version",
+	"key.tpekey.zonepoolkey.organization":   "Name of the organization this pool belongs to",
+	"key.tpekey.zonepoolkey.name":           "ZonePool Name",
+	"key.tpekey.name":                       "TrustPolicyExceptionKey name",
+	"key.appinstkey.name":                   "App Instance name",
+	"key.appinstkey.organization":           "App Instance organization",
+	"key.clusterkey.name":                   "Cluster name",
+	"key.clusterkey.organization":           "Name of the organization that this cluster belongs to",
+	"key.cloudletkey.organization":          "Organization of the cloudlet site",
+	"key.cloudletkey.name":                  "Name of the cloudlet",
+	"key.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
 }
 var TPEInstanceStateSpecialArgs = map[string]string{}
 var CreateTrustPolicyExceptionRequiredArgs = []string{
 	"apporg",
 	"appname",
 	"appvers",
-	"cloudletpoolorg",
-	"cloudletpoolname",
+	"zonepoolorg",
+	"zonepoolname",
 	"name",
 }
 var CreateTrustPolicyExceptionOptionalArgs = []string{
@@ -436,8 +436,8 @@ var DeleteTrustPolicyExceptionRequiredArgs = []string{
 	"apporg",
 	"appname",
 	"appvers",
-	"cloudletpoolorg",
-	"cloudletpoolname",
+	"zonepoolorg",
+	"zonepoolname",
 	"name",
 }
 var DeleteTrustPolicyExceptionOptionalArgs = []string{

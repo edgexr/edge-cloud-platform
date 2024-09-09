@@ -154,6 +154,7 @@ func testC(t *testing.T) {
 	appClient := edgeproto.NewAppApiClient(conn)
 	gpuDriverClient := edgeproto.NewGPUDriverApiClient(conn)
 	resTagTableClient := edgeproto.NewResTagTableApiClient(conn)
+	zoneClient := edgeproto.NewZoneApiClient(conn)
 	cloudletClient := edgeproto.NewCloudletApiClient(conn)
 	appInstClient := edgeproto.NewAppInstApiClient(conn)
 	flavorClient := edgeproto.NewFlavorApiClient(conn)
@@ -179,8 +180,9 @@ func testC(t *testing.T) {
 	testutil.ClientAppTest(t, "cud", appClient, testutil.AppData())
 	testutil.ClientGPUDriverTest(t, "cud", gpuDriverClient, testutil.GPUDriverData())
 	testutil.ClientResTagTableTest(t, "cud", resTagTableClient, testutil.ResTagTableData())
+	testutil.ClientZoneTest(t, "cud", zoneClient, testutil.ZoneData())
 	testutil.ClientCloudletTest(t, "cud", cloudletClient, cloudletData)
-	testutil.ClientClusterInstTest(t, "cud", clusterInstClient, testutil.ClusterInstData())
+	testutil.ClientClusterInstTest(t, "cud", clusterInstClient, testutil.ClusterInstData(), testutil.WithCreatedClusterInstTestData(testutil.CreatedClusterInstData()))
 	testutil.ClientAppInstTest(t, "cud", appInstClient, testutil.AppInstData(), testutil.WithCreatedAppInstTestData(testutil.CreatedAppInstData()))
 
 	require.Nil(t, dmeNotify.WaitForAppInsts(len(testutil.AppInstData())))
@@ -190,12 +192,12 @@ func testC(t *testing.T) {
 	require.Equal(t, len(testutil.FlavorData()), len(crmNotify.FlavorCache.Objs), "num flavors")
 	crmClusterInstCount := 0
 	crmAppInstCount := 0
-	for _, ci := range append(testutil.ClusterInstData(), testutil.ClusterInstAutoData()...) {
+	for _, ci := range append(testutil.CreatedClusterInstData(), testutil.ClusterInstAutoData()...) {
 		if _, found := crmsOnEdge[ci.CloudletKey]; found {
 			crmClusterInstCount++
 		}
 	}
-	for _, ai := range testutil.AppInstData() {
+	for _, ai := range testutil.CreatedAppInstData() {
 		if _, found := crmsOnEdge[ai.CloudletKey]; found {
 			crmAppInstCount++
 		}

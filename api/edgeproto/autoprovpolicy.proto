@@ -44,7 +44,7 @@ message AutoProvPolicy {
   // Number of intervals to check before triggering deployment
   uint32 deploy_interval_count = 4 [(protogen.test_update) = true];
   // Allowed deployment locations
-  repeated AutoProvCloudlet cloudlets = 5 [(protogen.refers_to) = "Cloudlet"];
+  repeated ZoneKey zones = 5 [(protogen.refers_to) = "Zone"];
   // Minimum number of active instances for High-Availability
   uint32 min_active_instances = 6;
   // Maximum number of instances (active or not)
@@ -62,31 +62,23 @@ message AutoProvPolicy {
   option (protogen.notify_cache) = true;
   option (protogen.alias) = "name=Key.Name,apporg=Key.Organization";
   option (protogen.uses_org) = "key=Organization";
-  option (protogen.generate_lookup_by_sublist) = "CloudletKey";
-  option (protogen.noconfig) = "Cloudlets:#.Loc,DeletePrepare";
+  option (protogen.generate_lookup_by_sublist) = "ZoneKey";
+  option (protogen.noconfig) = "DeletePrepare";
 }
 
-// AutoProvCloudlet stores the potential cloudlet and location for DME lookup
-message AutoProvCloudlet {
-  // Cloudlet key
-  CloudletKey key = 1 [(gogoproto.nullable) = false];
-  // Cloudlet location
-  distributed_match_engine.Loc loc = 2 [(gogoproto.nullable) = false];
-}
-
-// AutoProvCount is used to send potential cloudlet and location counts from DME to Controller
+// AutoProvCount is used to send potential zone and location counts from DME to Controller
 message AutoProvCount {
   // Target app
   AppKey app_key = 1 [(gogoproto.nullable) = false];
-  // Target cloudlet
-  CloudletKey cloudlet_key = 2 [(gogoproto.nullable) = false];
+  // Target zone
+  ZoneKey zone_key = 2 [(gogoproto.nullable) = false];
   // FindCloudlet client count
   uint64 count = 3;
   // Process count immediately
   bool process_now = 4;
 }
 
-// AutoProvCounts is used to send potential cloudlet and location counts from DME to Controller
+// AutoProvCounts is used to send potential zone and location counts from DME to Controller
 message AutoProvCounts {
   // DME node name
   string dme_node_name = 1;
@@ -98,13 +90,13 @@ message AutoProvCounts {
   option (protogen.notify_print_send_recv) = false;
 }
 
-// AutoProvPolicyCloudlet is used to add and remove Cloudlets from the Auto Provisioning Policy
-message AutoProvPolicyCloudlet {
+// AutoProvPolicyZone is used to add and remove Zones from the Auto Provisioning Policy
+message AutoProvPolicyZone {
   // Unique policy identifier key
   PolicyKey key = 1 [(gogoproto.nullable) = false, (protogen.refers_to) = "AutoProvPolicy"];
-  // Cloudlet identifier key
-  CloudletKey cloudlet_key = 2 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
-  option (protogen.alias) = "name=Key.Name,apporg=Key.Organization,cloudlet=CloudletKey.Name,cloudletorg=CloudletKey.Organization,federatedorg=CloudletKey.FederatedOrganization";
+  // Zone identifier key
+  ZoneKey zone_key = 2 [(gogoproto.nullable) = false, (protogen.refers_to) = "Zone"];
+  option (protogen.alias) = "name=Key.Name,apporg=Key.Organization,zone=ZoneKey.Name,zoneorg=ZoneKey.Organization,federatedorg=ZoneKey.FederatedOrganization";
 }
 
 service AutoProvPolicyApi {
@@ -144,20 +136,20 @@ service AutoProvPolicyApi {
     };
     option (protogen.mc2_api) = "ResourceDeveloperPolicy,ActionView,Key.Organization";
   }
-  // Add a Cloudlet to the Auto Provisioning Policy
-  rpc AddAutoProvPolicyCloudlet(AutoProvPolicyCloudlet) returns (Result) {
+  // Add a Zone to the Auto Provisioning Policy
+  rpc AddAutoProvPolicyZone(AutoProvPolicyZone) returns (Result) {
     option (google.api.http) = {
-      post: "/add/autoprovpolicycloudlet"
+      post: "/add/autoprovpolicyzone"
       body: "*"
     };
     option (protogen.mc2_api) = "ResourceDeveloperPolicy,ActionManage,Key.Organization";
     option (protogen.input_required) = true;
     option (protogen.mc2_custom_authz) = true;
   }
-  // Remove a Cloudlet from the Auto Provisioning Policy
-  rpc RemoveAutoProvPolicyCloudlet(AutoProvPolicyCloudlet) returns (Result) {
+  // Remove a Zone from the Auto Provisioning Policy
+  rpc RemoveAutoProvPolicyZone(AutoProvPolicyZone) returns (Result) {
     option (google.api.http) = {
-      post: "/rm/autoprovpolicycloudlet"
+      post: "/rm/autoprovpolicyzone"
       body: "*"
     };
     option (protogen.mc2_api) = "ResourceDeveloperPolicy,ActionManage,Key.Organization";
@@ -165,6 +157,7 @@ service AutoProvPolicyApi {
   }
 }
 
+// AutoProvInfo notifies the controller when cloudlet maintenance failover is done.
 message AutoProvInfo {
   // Fields are used for the Update API to specify which fields to apply
   repeated string fields = 1;

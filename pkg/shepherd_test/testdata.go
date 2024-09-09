@@ -22,12 +22,20 @@ import (
 
 var (
 	// Test App/Cluster state data
+	TestZoneKey = edgeproto.ZoneKey{
+		Organization: "testoperator",
+		Name:         "testzone",
+	}
+	TestZone = edgeproto.Zone{
+		Key: TestZoneKey,
+	}
 	TestCloudletKey = edgeproto.CloudletKey{
 		Organization: "testoperator",
 		Name:         "testcloudlet",
 	}
 	TestCloudlet = edgeproto.Cloudlet{
-		Key: TestCloudletKey,
+		Key:  TestCloudletKey,
+		Zone: TestZoneKey.Name,
 	}
 	TestClusterKey = edgeproto.ClusterKey{
 		Name:         "testcluster",
@@ -37,6 +45,7 @@ var (
 		Key:         TestClusterKey,
 		Deployment:  cloudcommon.DeploymentTypeDocker,
 		CloudletKey: TestCloudletKey,
+		ZoneKey:     TestZoneKey,
 	}
 	TestAutoProvPolicyKey = edgeproto.PolicyKey{
 		Name: "autoprov",
@@ -45,10 +54,8 @@ var (
 		Key:                   TestAutoProvPolicyKey,
 		UndeployClientCount:   3,
 		UndeployIntervalCount: 3,
-		Cloudlets: []*edgeproto.AutoProvCloudlet{
-			&edgeproto.AutoProvCloudlet{
-				Key: TestCloudletKey,
-			},
+		Zones: []*edgeproto.ZoneKey{
+			&TestZoneKey,
 		},
 	}
 	TestAppKey = edgeproto.AppKey{
@@ -71,6 +78,7 @@ var (
 		AppKey:      TestApp.Key,
 		ClusterKey:  TestClusterKey,
 		CloudletKey: TestCloudletKey,
+		ZoneKey:     TestZoneKey,
 		State:       edgeproto.TrackedState_READY,
 		HealthCheck: dme.HealthCheck_HEALTH_CHECK_OK,
 		Liveness:    edgeproto.Liveness_LIVENESS_AUTOPROV,

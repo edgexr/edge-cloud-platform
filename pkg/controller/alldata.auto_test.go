@@ -53,6 +53,10 @@ func (s *testSupportData) put(t *testing.T, ctx context.Context, all *AllApis) {
 		_, err := all.platformFeaturesApi.store.Put(ctx, &obj, all.platformFeaturesApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
+	for _, obj := range s.Zones {
+		_, err := all.zoneApi.store.Put(ctx, &obj, all.zoneApi.sync.SyncWait)
+		require.Nil(t, err)
+	}
 	for _, obj := range s.Cloudlets {
 		_, err := all.cloudletApi.store.Put(ctx, &obj, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err)
@@ -61,8 +65,8 @@ func (s *testSupportData) put(t *testing.T, ctx context.Context, all *AllApis) {
 		_, err := all.cloudletInfoApi.store.Put(ctx, &obj, all.cloudletInfoApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
-	for _, obj := range s.CloudletPools {
-		_, err := all.cloudletPoolApi.store.Put(ctx, &obj, all.cloudletPoolApi.sync.SyncWait)
+	for _, obj := range s.ZonePools {
+		_, err := all.zonePoolApi.store.Put(ctx, &obj, all.zonePoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.Networks {
@@ -172,8 +176,8 @@ func (s *testSupportData) delete(t *testing.T, ctx context.Context, all *AllApis
 		_, err := all.networkApi.store.Delete(ctx, &obj, all.networkApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
-	for _, obj := range s.CloudletPools {
-		_, err := all.cloudletPoolApi.store.Delete(ctx, &obj, all.cloudletPoolApi.sync.SyncWait)
+	for _, obj := range s.ZonePools {
+		_, err := all.zonePoolApi.store.Delete(ctx, &obj, all.zonePoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.CloudletInfos {
@@ -182,6 +186,10 @@ func (s *testSupportData) delete(t *testing.T, ctx context.Context, all *AllApis
 	}
 	for _, obj := range s.Cloudlets {
 		_, err := all.cloudletApi.store.Delete(ctx, &obj, all.cloudletApi.sync.SyncWait)
+		require.Nil(t, err)
+	}
+	for _, obj := range s.Zones {
+		_, err := all.zoneApi.store.Delete(ctx, &obj, all.zoneApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.PlatformFeatures {
@@ -260,6 +268,13 @@ func (s *testSupportData) getOnePlatformFeatures() *edgeproto.PlatformFeatures {
 	return &s.PlatformFeatures[0]
 }
 
+func (s *testSupportData) getOneZone() *edgeproto.Zone {
+	if len(s.Zones) == 0 {
+		return nil
+	}
+	return &s.Zones[0]
+}
+
 func (s *testSupportData) getOneCloudlet() *edgeproto.Cloudlet {
 	if len(s.Cloudlets) == 0 {
 		return nil
@@ -274,11 +289,11 @@ func (s *testSupportData) getOneCloudletInfo() *edgeproto.CloudletInfo {
 	return &s.CloudletInfos[0]
 }
 
-func (s *testSupportData) getOneCloudletPool() *edgeproto.CloudletPool {
-	if len(s.CloudletPools) == 0 {
+func (s *testSupportData) getOneZonePool() *edgeproto.ZonePool {
+	if len(s.ZonePools) == 0 {
 		return nil
 	}
-	return &s.CloudletPools[0]
+	return &s.ZonePools[0]
 }
 
 func (s *testSupportData) getOneNetwork() *edgeproto.Network {

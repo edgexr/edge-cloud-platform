@@ -471,32 +471,32 @@ func (r *Run) AutoProvPolicyApi(data *[]edgeproto.AutoProvPolicy, dataMap interf
 	}
 }
 
-func (r *Run) AutoProvPolicyApi_AutoProvPolicyCloudlet(data *[]edgeproto.AutoProvPolicyCloudlet, dataMap interface{}, dataOut interface{}) {
-	log.DebugLog(log.DebugLevelApi, "API for AutoProvPolicyCloudlet", "mode", r.Mode)
+func (r *Run) AutoProvPolicyApi_AutoProvPolicyZone(data *[]edgeproto.AutoProvPolicyZone, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for AutoProvPolicyZone", "mode", r.Mode)
 	for ii, objD := range *data {
 		obj := &objD
 		switch r.Mode {
 		case "add":
-			out, err := r.client.AddAutoProvPolicyCloudlet(r.ctx, obj)
+			out, err := r.client.AddAutoProvPolicyZone(r.ctx, obj)
 			if err != nil {
 				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
-				r.logErr(fmt.Sprintf("AutoProvPolicyApi_AutoProvPolicyCloudlet[%d]", ii), err)
+				r.logErr(fmt.Sprintf("AutoProvPolicyApi_AutoProvPolicyZone[%d]", ii), err)
 			} else {
 				outp, ok := dataOut.(*[]edgeproto.Result)
 				if !ok {
-					panic(fmt.Sprintf("RunAutoProvPolicyApi_AutoProvPolicyCloudlet expected dataOut type *[]edgeproto.Result, but was %T", dataOut))
+					panic(fmt.Sprintf("RunAutoProvPolicyApi_AutoProvPolicyZone expected dataOut type *[]edgeproto.Result, but was %T", dataOut))
 				}
 				*outp = append(*outp, *out)
 			}
 		case "remove":
-			out, err := r.client.RemoveAutoProvPolicyCloudlet(r.ctx, obj)
+			out, err := r.client.RemoveAutoProvPolicyZone(r.ctx, obj)
 			if err != nil {
 				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
-				r.logErr(fmt.Sprintf("AutoProvPolicyApi_AutoProvPolicyCloudlet[%d]", ii), err)
+				r.logErr(fmt.Sprintf("AutoProvPolicyApi_AutoProvPolicyZone[%d]", ii), err)
 			} else {
 				outp, ok := dataOut.(*[]edgeproto.Result)
 				if !ok {
-					panic(fmt.Sprintf("RunAutoProvPolicyApi_AutoProvPolicyCloudlet expected dataOut type *[]edgeproto.Result, but was %T", dataOut))
+					panic(fmt.Sprintf("RunAutoProvPolicyApi_AutoProvPolicyZone expected dataOut type *[]edgeproto.Result, but was %T", dataOut))
 				}
 				*outp = append(*outp, *out)
 			}
@@ -623,26 +623,26 @@ func (s *CliClient) ShowAutoProvPolicy(ctx context.Context, in *edgeproto.AutoPr
 	return output, err
 }
 
-func (s *ApiClient) AddAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+func (s *ApiClient) AddAutoProvPolicyZone(ctx context.Context, in *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error) {
 	api := edgeproto.NewAutoProvPolicyApiClient(s.Conn)
-	return api.AddAutoProvPolicyCloudlet(ctx, in)
+	return api.AddAutoProvPolicyZone(ctx, in)
 }
 
-func (s *CliClient) AddAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+func (s *CliClient) AddAutoProvPolicyZone(ctx context.Context, in *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error) {
 	out := edgeproto.Result{}
-	args := append(s.BaseArgs, "controller", "AddAutoProvPolicyCloudlet")
+	args := append(s.BaseArgs, "controller", "AddAutoProvPolicyZone")
 	err := wrapper.RunEdgectlObjs(args, in, &out, s.RunOps...)
 	return &out, err
 }
 
-func (s *ApiClient) RemoveAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+func (s *ApiClient) RemoveAutoProvPolicyZone(ctx context.Context, in *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error) {
 	api := edgeproto.NewAutoProvPolicyApiClient(s.Conn)
-	return api.RemoveAutoProvPolicyCloudlet(ctx, in)
+	return api.RemoveAutoProvPolicyZone(ctx, in)
 }
 
-func (s *CliClient) RemoveAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+func (s *CliClient) RemoveAutoProvPolicyZone(ctx context.Context, in *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error) {
 	out := edgeproto.Result{}
-	args := append(s.BaseArgs, "controller", "RemoveAutoProvPolicyCloudlet")
+	args := append(s.BaseArgs, "controller", "RemoveAutoProvPolicyZone")
 	err := wrapper.RunEdgectlObjs(args, in, &out, s.RunOps...)
 	return &out, err
 }
@@ -652,6 +652,6 @@ type AutoProvPolicyApiClient interface {
 	DeleteAutoProvPolicy(ctx context.Context, in *edgeproto.AutoProvPolicy) (*edgeproto.Result, error)
 	UpdateAutoProvPolicy(ctx context.Context, in *edgeproto.AutoProvPolicy) (*edgeproto.Result, error)
 	ShowAutoProvPolicy(ctx context.Context, in *edgeproto.AutoProvPolicy) ([]edgeproto.AutoProvPolicy, error)
-	AddAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error)
-	RemoveAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error)
+	AddAutoProvPolicyZone(ctx context.Context, in *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error)
+	RemoveAutoProvPolicyZone(ctx context.Context, in *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error)
 }

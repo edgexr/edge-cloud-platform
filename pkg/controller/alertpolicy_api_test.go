@@ -55,6 +55,7 @@ func TestAlertPolicyApi(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
@@ -63,7 +64,7 @@ func TestAlertPolicyApi(t *testing.T) {
 	testutil.InternalClusterInstCreate(t, apis.clusterInstApi, testutil.ClusterInstData())
 	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsData())
 	clusterInstCnt := len(apis.clusterInstApi.cache.Objs)
-	require.Equal(t, len(testutil.ClusterInstData()), clusterInstCnt)
+	require.Equal(t, len(testutil.ClusterInstData())+testutil.GetDefaultClusterCount(), clusterInstCnt)
 	testutil.InternalAppInstCreate(t, apis.appInstApi, testutil.AppInstData())
 
 	// Invalid severity

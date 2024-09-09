@@ -33,6 +33,7 @@ type Cloudlet struct {
 	Uri         string
 	Ip          []byte
 	Location    dme.Loc
+	Zone        string
 }
 
 var Apps = []App{
@@ -82,6 +83,7 @@ var Cloudlets = []Cloudlet{
 		Uri:         "10.1.10.1",
 		Ip:          []byte{10, 1, 10, 1},
 		Location:    dme.Loc{Latitude: 50.7374, Longitude: 7.0982},
+		Zone:        "Buckhorn",
 	},
 	Cloudlet{
 		Id:          222,
@@ -90,6 +92,7 @@ var Cloudlets = []Cloudlet{
 		Uri:         "11.1.11.1",
 		Ip:          []byte{11, 1, 11, 1},
 		Location:    dme.Loc{Latitude: 52.7374, Longitude: 13.4050},
+		Zone:        "Sunnydale",
 	},
 	Cloudlet{
 		Id:          333,
@@ -98,6 +101,7 @@ var Cloudlets = []Cloudlet{
 		Uri:         "12.1.12.1",
 		Ip:          []byte{12, 1, 12, 1},
 		Location:    dme.Loc{Latitude: 48.1351, Longitude: 11.5820},
+		Zone:        "Beacon",
 	},
 	Cloudlet{
 		Id:          444,
@@ -106,6 +110,7 @@ var Cloudlets = []Cloudlet{
 		Uri:         "13.1.13.1",
 		Ip:          []byte{13, 1, 13, 1},
 		Location:    dme.Loc{Latitude: 47.6062, Longitude: 122.3321},
+		Zone:        "SanFrancisco",
 	},
 	Cloudlet{
 		Id:          555,
@@ -114,6 +119,7 @@ var Cloudlets = []Cloudlet{
 		Uri:         "14.1.13.1",
 		Ip:          []byte{14, 1, 13, 1},
 		Location:    dme.Loc{Latitude: -50.1101, Longitude: -100.2201},
+		Zone:        "HACloudlet1",
 	},
 	Cloudlet{
 		Id:          666,
@@ -122,18 +128,25 @@ var Cloudlets = []Cloudlet{
 		Uri:         "14.1.13.2",
 		Ip:          []byte{14, 1, 13, 2},
 		Location:    dme.Loc{Latitude: -50.1102, Longitude: -100.2202},
+		Zone:        "HACloudlet2",
 	},
+}
+
+func makeAppInstName(appName string, c *Cloudlet) string {
+	return appName + "-" + c.Name + "-" + c.CarrierName
 }
 
 func MakeAppInst(a *App, c *Cloudlet) *edgeproto.AppInst {
 	inst := edgeproto.AppInst{}
-	inst.Key.Name = a.Name + "-" + c.Name + "-" + c.CarrierName
+	inst.Key.Name = makeAppInstName(a.Name, c)
 	inst.Key.Organization = a.Organization
 	inst.AppKey.Organization = a.Organization
 	inst.AppKey.Name = a.Name
 	inst.AppKey.Version = a.Vers
 	inst.CloudletKey.Organization = c.CarrierName
 	inst.CloudletKey.Name = c.Name
+	inst.ZoneKey.Name = c.Zone
+	inst.ZoneKey.Organization = c.CarrierName
 	inst.ClusterKey.Name = "testcluster" //TODO - change the testdata to also have clusterInst information
 	inst.CloudletLoc = c.Location
 	inst.Uri = c.Uri

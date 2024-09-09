@@ -18,17 +18,15 @@ import (
 	"context"
 	"testing"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCloudletPoolApi(t *testing.T) {
+func TestZonePoolApi(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
@@ -56,87 +54,74 @@ func TestCloudletPoolApi(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 
-	testutil.InternalCloudletPoolTest(t, "cud", apis.cloudletPoolApi, testutil.CloudletPoolData())
+	testutil.InternalZonePoolTest(t, "cud", apis.zonePoolApi, testutil.ZonePoolData())
 
 	// create test cloudlet
-	testcloudlet := edgeproto.Cloudlet{
-		Key: edgeproto.CloudletKey{
-			Name:         "testcloudlet",
-			Organization: testutil.CloudletPoolData()[0].Key.Organization,
+	testzone := edgeproto.Zone{
+		Key: edgeproto.ZoneKey{
+			Name:         "testzone",
+			Organization: testutil.ZonePoolData()[0].Key.Organization,
 		},
-		NumDynamicIps: 100,
-		Location: dme.Loc{
-			Latitude:  40.712776,
-			Longitude: -74.005974,
-		},
-		PlatformType: platform.PlatformTypeFake,
-		CrmOverride:  edgeproto.CRMOverride_IGNORE_CRM,
 	}
-	err := apis.cloudletApi.CreateCloudlet(&testcloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	_, err := apis.zoneApi.CreateZone(ctx, &testzone)
 	require.Nil(t, err)
-	fedcloudlet := edgeproto.Cloudlet{
-		Key: edgeproto.CloudletKey{
-			Name:                  "testfedcloudlet",
-			Organization:          testutil.CloudletPoolData()[0].Key.Organization,
+	fedzone := edgeproto.Zone{
+		Key: edgeproto.ZoneKey{
+			Name:                  "testfedzone",
+			Organization:          testutil.ZonePoolData()[0].Key.Organization,
 			FederatedOrganization: "FedOrg",
 		},
-		NumDynamicIps: 100,
-		Location: dme.Loc{
-			Latitude:  40.712776,
-			Longitude: -74.005974,
-		},
-		PlatformType: platform.PlatformTypeFake,
-		CrmOverride:  edgeproto.CRMOverride_IGNORE_CRM,
 	}
-	err = apis.cloudletApi.CreateCloudlet(&fedcloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	_, err = apis.zoneApi.CreateZone(ctx, &fedzone)
 	require.Nil(t, err)
 
-	testcloudlets := []edgeproto.Cloudlet{testcloudlet, fedcloudlet}
+	testzones := []edgeproto.Zone{testzone, fedzone}
 
 	count := 1
-	for _, cloudlet := range testcloudlets {
+	for _, zone := range testzones {
 		// set up test data
-		poolKey := testutil.CloudletPoolData()[0].Key
-		member := edgeproto.CloudletPoolMember{}
+		poolKey := testutil.ZonePoolData()[0].Key
+		member := edgeproto.ZonePoolMember{}
 		member.Key = poolKey
-		member.Cloudlet = cloudlet.Key
-		pool := edgeproto.CloudletPool{}
+		member.Zone = zone.Key
+		pool := edgeproto.ZonePool{}
 
 		// add member to pool
-		_, err = apis.cloudletPoolApi.AddCloudletPoolMember(ctx, &member)
+		_, err = apis.zonePoolApi.AddZonePoolMember(ctx, &member)
 		require.Nil(t, err)
 		count++
-		found := apis.cloudletPoolApi.cache.Get(&poolKey, &pool)
+		found := apis.zonePoolApi.cache.Get(&poolKey, &pool)
 		require.True(t, found, "get pool %v", poolKey)
-		require.Equal(t, count, len(pool.Cloudlets))
+		require.Equal(t, count, len(pool.Zones))
 
 		// add duplicate should fail
-		_, err = apis.cloudletPoolApi.AddCloudletPoolMember(ctx, &member)
+		_, err = apis.zonePoolApi.AddZonePoolMember(ctx, &member)
 		require.NotNil(t, err)
 
 		// remove member from pool
-		_, err = apis.cloudletPoolApi.RemoveCloudletPoolMember(ctx, &member)
+		_, err = apis.zonePoolApi.RemoveZonePoolMember(ctx, &member)
 		require.Nil(t, err)
 		count--
-		found = apis.cloudletPoolApi.cache.Get(&poolKey, &pool)
+		found = apis.zonePoolApi.cache.Get(&poolKey, &pool)
 		require.True(t, found, "get pool %v", poolKey)
-		require.Equal(t, count, len(pool.Cloudlets))
+		require.Equal(t, count, len(pool.Zones))
 
 		// use update to set members for next test
 		poolUpdate := pool
-		poolUpdate.Cloudlets = append(poolUpdate.Cloudlets, member.Cloudlet)
-		poolUpdate.Fields = []string{edgeproto.CloudletPoolFieldCloudlets}
-		_, err = apis.cloudletPoolApi.UpdateCloudletPool(ctx, &poolUpdate)
+		poolUpdate.Zones = append(poolUpdate.Zones, &member.Zone)
+		poolUpdate.Fields = []string{edgeproto.ZonePoolFieldZones}
+		_, err = apis.zonePoolApi.UpdateZonePool(ctx, &poolUpdate)
 		require.Nil(t, err)
 		count++
-		found = apis.cloudletPoolApi.cache.Get(&poolKey, &pool)
+		found = apis.zonePoolApi.cache.Get(&poolKey, &pool)
 		require.True(t, found, "get pool %v", poolKey)
-		require.Equal(t, count, len(pool.Cloudlets))
+		require.Equal(t, count, len(pool.Zones))
 
 		// add cloudlet that doesn't exist, should fail
-		_, err = apis.cloudletPoolApi.AddCloudletPoolMember(ctx, &member)
+		_, err = apis.zonePoolApi.AddZonePoolMember(ctx, &member)
 		require.NotNil(t, err)
 	}
 }

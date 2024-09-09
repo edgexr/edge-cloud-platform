@@ -31,7 +31,6 @@ type AllDeleteDataGen interface {
 	AutoProvPolicyDeleteDataGen
 	AutoScalePolicyDeleteDataGen
 	CloudletDeleteDataGen
-	CloudletPoolDeleteDataGen
 	ClusterInstDeleteDataGen
 	FlavorDeleteDataGen
 	GPUDriverDeleteDataGen
@@ -40,6 +39,8 @@ type AllDeleteDataGen interface {
 	ResTagTableDeleteDataGen
 	TrustPolicyDeleteDataGen
 	VMPoolDeleteDataGen
+	ZoneDeleteDataGen
+	ZonePoolDeleteDataGen
 }
 
 func allDeleteChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen AllDeleteDataGen) {
@@ -48,7 +49,6 @@ func allDeleteChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Al
 	deleteAutoProvPolicyChecks(t, ctx, all, dataGen)
 	deleteAutoScalePolicyChecks(t, ctx, all, dataGen)
 	deleteCloudletChecks(t, ctx, all, dataGen)
-	deleteCloudletPoolChecks(t, ctx, all, dataGen)
 	deleteClusterInstChecks(t, ctx, all, dataGen)
 	deleteFlavorChecks(t, ctx, all, dataGen)
 	deleteGPUDriverChecks(t, ctx, all, dataGen)
@@ -57,48 +57,50 @@ func allDeleteChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen Al
 	deleteResTagTableChecks(t, ctx, all, dataGen)
 	deleteTrustPolicyChecks(t, ctx, all, dataGen)
 	deleteVMPoolChecks(t, ctx, all, dataGen)
+	deleteZoneChecks(t, ctx, all, dataGen)
+	deleteZonePoolChecks(t, ctx, all, dataGen)
 }
 
 type AllAddRefsDataGen interface {
 	GetAddAppAlertPolicyTestObj() (*edgeproto.AppAlertPolicy, *testSupportData)
 	GetAddAppAutoProvPolicyTestObj() (*edgeproto.AppAutoProvPolicy, *testSupportData)
-	GetAddAutoProvPolicyCloudletTestObj() (*edgeproto.AutoProvPolicyCloudlet, *testSupportData)
-	GetAddCloudletPoolMemberTestObj() (*edgeproto.CloudletPoolMember, *testSupportData)
+	GetAddAutoProvPolicyZoneTestObj() (*edgeproto.AutoProvPolicyZone, *testSupportData)
 	GetAddCloudletResMappingTestObj() (*edgeproto.CloudletResMap, *testSupportData)
+	GetAddZonePoolMemberTestObj() (*edgeproto.ZonePoolMember, *testSupportData)
 	GetCreateAppTestObj() (*edgeproto.App, *testSupportData)
 	GetCreateAppInstTestObj() (*edgeproto.AppInst, *testSupportData)
 	GetCreateAutoProvPolicyTestObj() (*edgeproto.AutoProvPolicy, *testSupportData)
 	GetCreateCloudletTestObj() (*edgeproto.Cloudlet, *testSupportData)
-	GetCreateCloudletPoolTestObj() (*edgeproto.CloudletPool, *testSupportData)
 	GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, *testSupportData)
 	GetCreateNetworkTestObj() (*edgeproto.Network, *testSupportData)
 	GetCreateTrustPolicyExceptionTestObj() (*edgeproto.TrustPolicyException, *testSupportData)
+	GetCreateZonePoolTestObj() (*edgeproto.ZonePool, *testSupportData)
 	GetUpdateAppTestObj() (*edgeproto.App, *testSupportData)
 	GetUpdateAutoProvPolicyTestObj() (*edgeproto.AutoProvPolicy, *testSupportData)
 	GetUpdateCloudletTestObj() (*edgeproto.Cloudlet, *testSupportData)
-	GetUpdateCloudletPoolTestObj() (*edgeproto.CloudletPool, *testSupportData)
 	GetUpdateClusterInstTestObj() (*edgeproto.ClusterInst, *testSupportData)
+	GetUpdateZonePoolTestObj() (*edgeproto.ZonePool, *testSupportData)
 }
 
 func allAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen AllAddRefsDataGen) {
 	AddAppAlertPolicyAddRefsChecks(t, ctx, all, dataGen)
 	AddAppAutoProvPolicyAddRefsChecks(t, ctx, all, dataGen)
-	AddAutoProvPolicyCloudletAddRefsChecks(t, ctx, all, dataGen)
-	AddCloudletPoolMemberAddRefsChecks(t, ctx, all, dataGen)
+	AddAutoProvPolicyZoneAddRefsChecks(t, ctx, all, dataGen)
 	AddCloudletResMappingAddRefsChecks(t, ctx, all, dataGen)
+	AddZonePoolMemberAddRefsChecks(t, ctx, all, dataGen)
 	CreateAppAddRefsChecks(t, ctx, all, dataGen)
 	CreateAppInstAddRefsChecks(t, ctx, all, dataGen)
 	CreateAutoProvPolicyAddRefsChecks(t, ctx, all, dataGen)
 	CreateCloudletAddRefsChecks(t, ctx, all, dataGen)
-	CreateCloudletPoolAddRefsChecks(t, ctx, all, dataGen)
 	CreateClusterInstAddRefsChecks(t, ctx, all, dataGen)
 	CreateNetworkAddRefsChecks(t, ctx, all, dataGen)
 	CreateTrustPolicyExceptionAddRefsChecks(t, ctx, all, dataGen)
+	CreateZonePoolAddRefsChecks(t, ctx, all, dataGen)
 	UpdateAppAddRefsChecks(t, ctx, all, dataGen)
 	UpdateAutoProvPolicyAddRefsChecks(t, ctx, all, dataGen)
 	UpdateCloudletAddRefsChecks(t, ctx, all, dataGen)
-	UpdateCloudletPoolAddRefsChecks(t, ctx, all, dataGen)
 	UpdateClusterInstAddRefsChecks(t, ctx, all, dataGen)
+	UpdateZonePoolAddRefsChecks(t, ctx, all, dataGen)
 }
 
 // AlertPolicyStoreTracker wraps around the usual

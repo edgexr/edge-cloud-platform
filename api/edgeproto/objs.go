@@ -83,6 +83,9 @@ func (a *AllData) Sort() {
 	sort.Slice(a.Apps[:], func(i, j int) bool {
 		return a.Apps[i].Key.GetKeyString() < a.Apps[j].Key.GetKeyString()
 	})
+	sort.Slice(a.Zones[:], func(i, j int) bool {
+		return a.Zones[i].Key.GetKeyString() < a.Zones[j].Key.GetKeyString()
+	})
 	sort.Slice(a.Cloudlets[:], func(i, j int) bool {
 		return a.Cloudlets[i].Key.GetKeyString() < a.Cloudlets[j].Key.GetKeyString()
 	})
@@ -111,8 +114,8 @@ func (a *AllData) Sort() {
 			return a.CloudletInfos[i].ResourcesSnapshot.VmAppInsts[ii].GetKeyString() < a.CloudletInfos[i].ResourcesSnapshot.VmAppInsts[jj].GetKeyString()
 		})
 	}
-	sort.Slice(a.CloudletPools[:], func(i, j int) bool {
-		return a.CloudletPools[i].Key.GetKeyString() < a.CloudletPools[j].Key.GetKeyString()
+	sort.Slice(a.ZonePools[:], func(i, j int) bool {
+		return a.ZonePools[i].Key.GetKeyString() < a.ZonePools[j].Key.GetKeyString()
 	})
 	sort.Slice(a.AutoScalePolicies[:], func(i, j int) bool {
 		return a.AutoScalePolicies[i].Key.GetKeyString() < a.AutoScalePolicies[j].Key.GetKeyString()
@@ -123,11 +126,11 @@ func (a *AllData) Sort() {
 	sort.Slice(a.TrustPolicies[:], func(i, j int) bool {
 		return a.TrustPolicies[i].Key.GetKeyString() < a.TrustPolicies[j].Key.GetKeyString()
 	})
-	sort.Slice(a.AutoProvPolicyCloudlets[:], func(i, j int) bool {
-		if a.AutoProvPolicyCloudlets[i].Key.GetKeyString() == a.AutoProvPolicyCloudlets[j].Key.GetKeyString() {
-			return a.AutoProvPolicyCloudlets[i].CloudletKey.GetKeyString() < a.AutoProvPolicyCloudlets[j].CloudletKey.GetKeyString()
+	sort.Slice(a.AutoProvPolicyZones[:], func(i, j int) bool {
+		if a.AutoProvPolicyZones[i].Key.GetKeyString() == a.AutoProvPolicyZones[j].Key.GetKeyString() {
+			return a.AutoProvPolicyZones[i].ZoneKey.GetKeyString() < a.AutoProvPolicyZones[j].ZoneKey.GetKeyString()
 		}
-		return a.AutoProvPolicyCloudlets[i].Key.GetKeyString() < a.AutoProvPolicyCloudlets[j].Key.GetKeyString()
+		return a.AutoProvPolicyZones[i].Key.GetKeyString() < a.AutoProvPolicyZones[j].Key.GetKeyString()
 	})
 	sort.Slice(a.ResTagTables[:], func(i, j int) bool {
 		return a.ResTagTables[i].Key.GetKeyString() < a.ResTagTables[j].Key.GetKeyString()
@@ -455,6 +458,23 @@ func (s *Cloudlet) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
+func (key *ZoneKey) ValidateKey() error {
+	if !util.ValidName(key.Organization) {
+		return fmt.Errorf("Invalid zone organization name %s", key.Organization)
+	}
+	if !util.ValidName(key.Name) {
+		return errors.New("Invalid zone name")
+	}
+	return nil
+}
+
+func (s *Zone) Validate(fmap objstore.FieldMap) error {
+	if err := s.GetKey().ValidateKey(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *CloudletInfo) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
@@ -478,17 +498,17 @@ func (s *CloudletNode) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
-func (key *CloudletPoolKey) ValidateKey() error {
+func (key *ZonePoolKey) ValidateKey() error {
 	if !util.ValidName(key.Organization) {
-		return errors.New("Invalid cloudlet pool organization")
+		return errors.New("Invalid zone pool organization")
 	}
 	if !util.ValidName(key.Name) {
-		return fmt.Errorf("Invalid cloudlet pool name")
+		return fmt.Errorf("Invalid zone pool name")
 	}
 	return nil
 }
 
-func (s *CloudletPool) Validate(fmap objstore.FieldMap) error {
+func (s *ZonePool) Validate(fmap objstore.FieldMap) error {
 	if err := s.GetKey().ValidateKey(); err != nil {
 		return err
 	}
@@ -1128,8 +1148,8 @@ func CmpSortSlices() []cmp.Option {
 	opts = append(opts, cmpopts.SortSlices(CmpSortAppInstInfo))
 	opts = append(opts, cmpopts.SortSlices(CmpSortClusterInstInfo))
 	opts = append(opts, cmpopts.SortSlices(CmpSortNode))
-	opts = append(opts, cmpopts.SortSlices(CmpSortCloudletPool))
-	opts = append(opts, cmpopts.SortSlices(CmpSortCloudletPoolMember))
+	opts = append(opts, cmpopts.SortSlices(CmpSortZonePool))
+	opts = append(opts, cmpopts.SortSlices(CmpSortZonePoolMember))
 	opts = append(opts, cmpopts.SortSlices(CmpSortAutoScalePolicy))
 	opts = append(opts, cmpopts.SortSlices(CmpSortResTagTable))
 	opts = append(opts, cmpopts.SortSlices(CmpSortAppInstRefs))
@@ -1257,20 +1277,36 @@ func (s *App) GetAutoProvPolicys() map[PolicyKey]struct{} {
 	return policies
 }
 
-func (s *AutoProvPolicy) GetCloudletKeys() map[CloudletKey]struct{} {
-	keys := make(map[CloudletKey]struct{})
-	for _, cl := range s.Cloudlets {
-		keys[cl.Key] = struct{}{}
+func (s *AutoProvPolicy) GetZoneKeys() map[ZoneKey]struct{} {
+	keys := make(map[ZoneKey]struct{})
+	for _, key := range s.Zones {
+		keys[*key] = struct{}{}
 	}
 	return keys
 }
 
-func (s *CloudletPool) GetCloudletKeys() map[CloudletKey]struct{} {
-	keys := make(map[CloudletKey]struct{})
-	for _, key := range s.Cloudlets {
-		keys[key] = struct{}{}
+func (s *ZonePool) GetZoneKeys() map[ZoneKey]struct{} {
+	keys := make(map[ZoneKey]struct{})
+	for _, key := range s.Zones {
+		keys[*key] = struct{}{}
 	}
 	return keys
+}
+
+func (s *ZoneKey) IsSet() bool {
+	return s.Name != "" || s.Organization != "" || s.FederatedOrganization != ""
+}
+
+func (s *Cloudlet) GetZone() *ZoneKey {
+	if s.Zone == "" {
+		return &ZoneKey{}
+	}
+	key := ZoneKey{
+		Name:                  s.Zone,
+		Organization:          s.Key.Organization,
+		FederatedOrganization: s.Key.FederatedOrganization,
+	}
+	return &key
 }
 
 func (s *AppInst) GetClusterKey() *ClusterKey {
@@ -1388,9 +1424,9 @@ func (key *TrustPolicyExceptionKey) ValidateKey() error {
 		errstring := err.Error()
 		return fmt.Errorf("Invalid AppKey in TrustPolicyExceptionKey, " + errstring)
 	}
-	if err := key.CloudletPoolKey.ValidateKey(); err != nil {
+	if err := key.ZonePoolKey.ValidateKey(); err != nil {
 		errstring := err.Error()
-		return fmt.Errorf("Invalid CloudletPoolKey in TrustPolicyExceptionKey, " + errstring)
+		return fmt.Errorf("Invalid ZonePoolKey in TrustPolicyExceptionKey, " + errstring)
 	}
 	if key.Name == "" {
 		return fmt.Errorf("TrustPolicyException name cannot be empty")
@@ -1460,17 +1496,10 @@ func (s AllSelector) HasExplicit(str string) bool {
 	return found
 }
 
-// For tracking App + Cloudlet
-type AppCloudletKeyPair struct {
-	AppKey      AppKey
-	CloudletKey CloudletKey
-}
-
-func (s *AppInst) AppCloudletKeyPair() *AppCloudletKeyPair {
-	return &AppCloudletKeyPair{
-		AppKey:      s.AppKey,
-		CloudletKey: s.CloudletKey,
-	}
+// For tracking App + Zone
+type AppZoneKeyPair struct {
+	AppKey  AppKey
+	ZoneKey ZoneKey
 }
 
 func (s *AppInst) GetTags() map[string]string {
@@ -1484,6 +1513,19 @@ func (s *AppInst) AddTags(tags map[string]string) {
 	s.AppKey.AddTags(tags)
 	s.ClusterKey.AddTags(tags)
 	s.CloudletKey.AddTags(tags)
+	s.ZoneKey.AddTags(tags)
+}
+
+func (s *ClusterInst) GetTags() map[string]string {
+	tags := make(map[string]string)
+	s.AddTags(tags)
+	return tags
+}
+
+func (s *ClusterInst) AddTags(tags map[string]string) {
+	s.Key.AddTags(tags)
+	s.CloudletKey.AddTags(tags)
+	s.ZoneKey.AddTags(tags)
 }
 
 func (s *AppInst) AddAnnotationNoClobber(key, val string) bool {

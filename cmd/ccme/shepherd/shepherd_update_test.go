@@ -110,7 +110,7 @@ func TestShepherdUpdate(t *testing.T) {
 rule_files:
 - "/var/tmp/rulefile_*"
 scrape_configs:
-- job_name: MobiledgeX Monitoring
+- job_name: EdgeCloud Monitoring
   scrape_interval: 1s
   file_sd_configs:
   - files:
@@ -140,6 +140,9 @@ scrape_configs:
 		"cloudlet": "testcloudlet",
 		"cloudletorg": "testoperator",
 		"cloudletfedorg": "",
+		"zone": "testzone",
+		"zoneorg": "testoperator",
+		"zonefedorg": "",
 		"__metrics_path__":"/metrics/AppInstTest-"
 	}
 }]`
@@ -176,7 +179,7 @@ scrape_configs:
 rule_files:
 - "/var/tmp/rulefile_*"
 scrape_configs:
-- job_name: MobiledgeX Monitoring
+- job_name: EdgeCloud Monitoring
   scrape_interval: 1s
   file_sd_configs:
   - files:

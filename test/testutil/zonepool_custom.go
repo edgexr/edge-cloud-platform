@@ -21,8 +21,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
-func (s *DummyServer) AddCloudletPoolMember(ctx context.Context, in *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
-	cache := &s.CloudletPoolCache
+func (s *DummyServer) AddZonePoolMember(ctx context.Context, in *edgeproto.ZonePoolMember) (*edgeproto.Result, error) {
+	cache := &s.ZonePoolCache
 
 	cache.Mux.Lock()
 	defer cache.Mux.Unlock()
@@ -30,18 +30,18 @@ func (s *DummyServer) AddCloudletPoolMember(ctx context.Context, in *edgeproto.C
 	if !found {
 		return &edgeproto.Result{}, in.Key.NotFoundError()
 	}
-	for ii, _ := range data.Obj.Cloudlets {
-		if data.Obj.Cloudlets[ii].Matches(&in.Cloudlet) {
+	for ii, _ := range data.Obj.Zones {
+		if data.Obj.Zones[ii].Matches(&in.Zone) {
 			return &edgeproto.Result{}, fmt.Errorf("Already exists")
 		}
 	}
-	data.Obj.Cloudlets = append(data.Obj.Cloudlets, in.Cloudlet)
+	data.Obj.Zones = append(data.Obj.Zones, &in.Zone)
 
 	return &edgeproto.Result{}, nil
 }
 
-func (s *DummyServer) RemoveCloudletPoolMember(ctx context.Context, in *edgeproto.CloudletPoolMember) (*edgeproto.Result, error) {
-	cache := &s.CloudletPoolCache
+func (s *DummyServer) RemoveZonePoolMember(ctx context.Context, in *edgeproto.ZonePoolMember) (*edgeproto.Result, error) {
+	cache := &s.ZonePoolCache
 
 	cache.Mux.Lock()
 	defer cache.Mux.Unlock()
@@ -49,9 +49,9 @@ func (s *DummyServer) RemoveCloudletPoolMember(ctx context.Context, in *edgeprot
 	if !found {
 		return &edgeproto.Result{}, in.Key.NotFoundError()
 	}
-	for ii, cloudletKey := range data.Obj.Cloudlets {
-		if cloudletKey.Matches(&in.Cloudlet) {
-			data.Obj.Cloudlets = append(data.Obj.Cloudlets[:ii], data.Obj.Cloudlets[ii+1:]...)
+	for ii, zone := range data.Obj.Zones {
+		if zone.Matches(&in.Zone) {
+			data.Obj.Zones = append(data.Obj.Zones[:ii], data.Obj.Zones[ii+1:]...)
 			break
 		}
 	}

@@ -1437,48 +1437,49 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, Eac56710C013D954Db31Eeb306B514A4, or 0, 52, 53, 54, 55", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, Eac56710C013D954Db31Eeb306B514A4, 75883D14000640B2Ecf694Fe8Ef9192B, or 0, 52, 53, 54, 55, 56", true
 	}
 	return "", "", false
 }
 
 var ShowMethodNames = map[string]struct{}{
-	"ShowAlert":                     struct{}{},
-	"ShowAlertPolicy":               struct{}{},
-	"ShowSettings":                  struct{}{},
-	"ShowFlavor":                    struct{}{},
-	"ShowOperatorCode":              struct{}{},
-	"ShowResTagTable":               struct{}{},
-	"ShowAutoScalePolicy":           struct{}{},
-	"ShowTrustPolicy":               struct{}{},
-	"ShowApp":                       struct{}{},
-	"ShowCloudletsForAppDeployment": struct{}{},
-	"ShowAppInst":                   struct{}{},
-	"ShowAppInstInfo":               struct{}{},
-	"ShowAppInstMetrics":            struct{}{},
-	"ShowPlatformFeatures":          struct{}{},
-	"ShowGPUDriver":                 struct{}{},
-	"ShowCloudlet":                  struct{}{},
-	"ShowCloudletInfo":              struct{}{},
-	"ShowCloudletMetrics":           struct{}{},
-	"ShowCloudletPool":              struct{}{},
-	"ShowVMPool":                    struct{}{},
-	"ShowClusterInst":               struct{}{},
-	"ShowClusterInstInfo":           struct{}{},
-	"ShowAutoProvPolicy":            struct{}{},
-	"ShowTrustPolicyException":      struct{}{},
-	"ShowNetwork":                   struct{}{},
-	"ShowCloudletRefs":              struct{}{},
-	"ShowClusterRefs":               struct{}{},
-	"ShowAppInstRefs":               struct{}{},
-	"ShowRateLimitSettings":         struct{}{},
-	"ShowFlowRateLimitSettings":     struct{}{},
-	"ShowMaxReqsRateLimitSettings":  struct{}{},
-	"ShowCloudletNode":              struct{}{},
-	"ShowController":                struct{}{},
-	"ShowNode":                      struct{}{},
-	"ShowDevice":                    struct{}{},
-	"ShowDeviceReport":              struct{}{},
+	"ShowAlert":                    struct{}{},
+	"ShowAlertPolicy":              struct{}{},
+	"ShowSettings":                 struct{}{},
+	"ShowFlavor":                   struct{}{},
+	"ShowOperatorCode":             struct{}{},
+	"ShowResTagTable":              struct{}{},
+	"ShowAutoScalePolicy":          struct{}{},
+	"ShowTrustPolicy":              struct{}{},
+	"ShowApp":                      struct{}{},
+	"ShowZonesForAppDeployment":    struct{}{},
+	"ShowAppInst":                  struct{}{},
+	"ShowAppInstInfo":              struct{}{},
+	"ShowAppInstMetrics":           struct{}{},
+	"ShowPlatformFeatures":         struct{}{},
+	"ShowGPUDriver":                struct{}{},
+	"ShowCloudlet":                 struct{}{},
+	"ShowCloudletInfo":             struct{}{},
+	"ShowCloudletMetrics":          struct{}{},
+	"ShowZone":                     struct{}{},
+	"ShowZonePool":                 struct{}{},
+	"ShowVMPool":                   struct{}{},
+	"ShowClusterInst":              struct{}{},
+	"ShowClusterInstInfo":          struct{}{},
+	"ShowAutoProvPolicy":           struct{}{},
+	"ShowTrustPolicyException":     struct{}{},
+	"ShowNetwork":                  struct{}{},
+	"ShowCloudletRefs":             struct{}{},
+	"ShowClusterRefs":              struct{}{},
+	"ShowAppInstRefs":              struct{}{},
+	"ShowRateLimitSettings":        struct{}{},
+	"ShowFlowRateLimitSettings":    struct{}{},
+	"ShowMaxReqsRateLimitSettings": struct{}{},
+	"ShowCloudletNode":             struct{}{},
+	"ShowController":               struct{}{},
+	"ShowNode":                     struct{}{},
+	"ShowDevice":                   struct{}{},
+	"ShowDeviceReport":             struct{}{},
 }
 
 func IsShow(cmd string) bool {
@@ -1502,8 +1503,6 @@ var AllKeyTags = []string{
 	"cloudletfedorg",
 	"cloudletnode",
 	"cloudletorg",
-	"cloudletpool",
-	"cloudletpoolorg",
 	"cluster",
 	"clusterorg",
 	"controlleraddr",
@@ -1528,6 +1527,11 @@ var AllKeyTags = []string{
 	"uniqueidtype",
 	"vmpool",
 	"vmpoolorg",
+	"zone",
+	"zonefedorg",
+	"zoneorg",
+	"zonepool",
+	"zonepoolorg",
 }
 
 var AllKeyTagsMap = map[string]struct{}{
@@ -1546,8 +1550,6 @@ var AllKeyTagsMap = map[string]struct{}{
 	"cloudletfedorg":      struct{}{},
 	"cloudletnode":        struct{}{},
 	"cloudletorg":         struct{}{},
-	"cloudletpool":        struct{}{},
-	"cloudletpoolorg":     struct{}{},
 	"cluster":             struct{}{},
 	"clusterorg":          struct{}{},
 	"controlleraddr":      struct{}{},
@@ -1572,12 +1574,17 @@ var AllKeyTagsMap = map[string]struct{}{
 	"uniqueidtype":        struct{}{},
 	"vmpool":              struct{}{},
 	"vmpoolorg":           struct{}{},
+	"zone":                struct{}{},
+	"zonefedorg":          struct{}{},
+	"zoneorg":             struct{}{},
+	"zonepool":            struct{}{},
+	"zonepoolorg":         struct{}{},
 }
 
 // References generated from the refers_to and tracks_refs_by protogen options
 func GetReferencesMap() map[string][]string {
 	refs := make(map[string][]string)
-	refs["AllData"] = []string{"AlertPolicy", "App", "AutoProvPolicy", "AutoScalePolicy", "Cloudlet", "CloudletPool", "ClusterInst", "Flavor", "GPUDriver", "Network", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
+	refs["AllData"] = []string{"AlertPolicy", "App", "AutoProvPolicy", "AutoScalePolicy", "Cloudlet", "ClusterInst", "Flavor", "GPUDriver", "Network", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool", "Zone", "ZonePool"}
 	refs["App"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
 	refs["AppAlertPolicy"] = []string{"AlertPolicy", "App"}
 	refs["AppAutoProvPolicy"] = []string{"App", "AutoProvPolicy"}
@@ -1585,24 +1592,24 @@ func GetReferencesMap() map[string][]string {
 	refs["AppInstKeyV1"] = []string{"ClusterInst"}
 	refs["AppInstKeyV2"] = []string{"Cloudlet"}
 	refs["AppInstRefs"] = []string{"AppInst"}
-	refs["AutoProvPolicy"] = []string{"Cloudlet"}
-	refs["AutoProvPolicyCloudlet"] = []string{"AutoProvPolicy", "Cloudlet"}
+	refs["AutoProvPolicy"] = []string{"Zone"}
+	refs["AutoProvPolicyZone"] = []string{"AutoProvPolicy", "Zone"}
 	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
-	refs["CloudletPool"] = []string{"Cloudlet"}
-	refs["CloudletPoolMember"] = []string{"Cloudlet", "CloudletPool"}
 	refs["CloudletRefs"] = []string{"AppInst", "ClusterInst"}
 	refs["CloudletResMap"] = []string{"Cloudlet", "ResTagTable"}
 	refs["ClusterInst"] = []string{"AutoScalePolicy", "Cloudlet", "Flavor", "Network"}
 	refs["ClusterInstKeyV1"] = []string{"Cloudlet"}
 	refs["ClusterInstKeyV2"] = []string{"Cloudlet"}
 	refs["ClusterRefs"] = []string{"AppInst"}
-	refs["DeploymentCloudletRequest"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
+	refs["DeploymentZoneRequest"] = []string{"AlertPolicy", "AutoProvPolicy", "Flavor"}
 	refs["GPUConfig"] = []string{"GPUDriver"}
 	refs["Network"] = []string{"Cloudlet"}
 	refs["NetworkKey"] = []string{"Cloudlet"}
-	refs["TPEInstanceKey"] = []string{"App", "CloudletPool"}
-	refs["TrustPolicyException"] = []string{"App", "CloudletPool"}
-	refs["TrustPolicyExceptionKey"] = []string{"App", "CloudletPool"}
+	refs["TPEInstanceKey"] = []string{"App", "ZonePool"}
+	refs["TrustPolicyException"] = []string{"App", "ZonePool"}
+	refs["TrustPolicyExceptionKey"] = []string{"App", "ZonePool"}
+	refs["ZonePool"] = []string{"Zone"}
+	refs["ZonePoolMember"] = []string{"Zone", "ZonePool"}
 	return refs
 }
 func (m *Alert) Size() (n int) {

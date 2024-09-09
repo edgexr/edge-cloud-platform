@@ -61,61 +61,63 @@ func TestAutoProvPolicyApi(t *testing.T) {
 
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	cloudletData := testutil.CloudletData()
+	zoneData := testutil.ZoneData()
 	testutil.InternalAutoProvPolicyTest(t, "cud", apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, zoneData)
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, cloudletData)
 
-	// test adding cloudlet to policy
-	pc := edgeproto.AutoProvPolicyCloudlet{}
+	// test adding zone to policy
+	pc := edgeproto.AutoProvPolicyZone{}
 	pc.Key = testutil.AutoProvPolicyData()[0].Key
-	pc.CloudletKey = cloudletData[0].Key
+	pc.ZoneKey = zoneData[0].Key
 
-	_, err := apis.autoProvPolicyApi.AddAutoProvPolicyCloudlet(ctx, &pc)
-	require.Nil(t, err, "add auto prov policy cloudlet")
+	_, err := apis.autoProvPolicyApi.AddAutoProvPolicyZone(ctx, &pc)
+	require.Nil(t, err, "add auto prov policy zone")
 	policy := edgeproto.AutoProvPolicy{}
 	found := apis.autoProvPolicyApi.cache.Get(&pc.Key, &policy)
 	require.True(t, found, "get auto prov policy %v", pc.Key)
-	require.Equal(t, 1, len(policy.Cloudlets))
-	require.Equal(t, pc.CloudletKey, policy.Cloudlets[0].Key)
+	require.Equal(t, 1, len(policy.Zones))
+	require.Equal(t, pc.ZoneKey, *policy.Zones[0])
 
-	// test adding another cloudlet to policy
-	pc2 := edgeproto.AutoProvPolicyCloudlet{}
+	// test adding another zone to policy
+	pc2 := edgeproto.AutoProvPolicyZone{}
 	pc2.Key = testutil.AutoProvPolicyData()[0].Key
-	pc2.CloudletKey = cloudletData[1].Key
+	pc2.ZoneKey = zoneData[1].Key
 
-	_, err = apis.autoProvPolicyApi.AddAutoProvPolicyCloudlet(ctx, &pc2)
-	require.Nil(t, err, "add auto prov policy cloudlet")
+	_, err = apis.autoProvPolicyApi.AddAutoProvPolicyZone(ctx, &pc2)
+	require.Nil(t, err, "add auto prov policy zone")
 	found = apis.autoProvPolicyApi.cache.Get(&pc2.Key, &policy)
 	require.True(t, found, "get auto prov policy %v", pc2.Key)
-	require.Equal(t, 2, len(policy.Cloudlets))
-	require.Equal(t, pc2.CloudletKey, policy.Cloudlets[1].Key)
+	require.Equal(t, 2, len(policy.Zones))
+	require.Equal(t, pc2.ZoneKey, *policy.Zones[1])
 
-	// delete cloudlet should fail if it is used by policy
-	deleteCloudlet := cloudletData[1]
-	err = apis.cloudletApi.DeleteCloudlet(&deleteCloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	// delete zone should fail if it is used by policy
+	deleteZone := zoneData[1]
+	_, err = apis.zoneApi.DeleteZone(ctx, &deleteZone)
 	require.NotNil(t, err)
-	require.Equal(t, `Cloudlet in use by AutoProvPolicy {"organization":"AtlanticInc","name":"auto-prov-policy"}`, err.Error())
+	require.Equal(t, `zone in use by AutoProvPolicy {"organization":"AtlanticInc","name":"auto-prov-policy"}`, err.Error())
 
-	// remove cloudlet from policy
-	_, err = apis.autoProvPolicyApi.RemoveAutoProvPolicyCloudlet(ctx, &pc)
-	require.Nil(t, err, "remove auto prov policy cloudlet")
+	// remove zone from policy
+	_, err = apis.autoProvPolicyApi.RemoveAutoProvPolicyZone(ctx, &pc)
+	require.Nil(t, err, "remove auto prov policy zone")
 	found = apis.autoProvPolicyApi.cache.Get(&pc.Key, &policy)
 	require.True(t, found, "get auto prov policy %v", pc.Key)
-	require.Equal(t, 1, len(policy.Cloudlets))
-	require.Equal(t, pc2.CloudletKey, policy.Cloudlets[0].Key)
+	require.Equal(t, 1, len(policy.Zones))
+	require.Equal(t, pc2.ZoneKey, *policy.Zones[0])
 
-	// remove last cloudlet from policy
-	_, err = apis.autoProvPolicyApi.RemoveAutoProvPolicyCloudlet(ctx, &pc2)
-	require.Nil(t, err, "remove auto prov policy cloudlet")
+	// remove last zone from policy
+	_, err = apis.autoProvPolicyApi.RemoveAutoProvPolicyZone(ctx, &pc2)
+	require.Nil(t, err, "remove auto prov policy zone")
 	found = apis.autoProvPolicyApi.cache.Get(&pc2.Key, &policy)
 	require.True(t, found, "get auto prov policy %v", pc2.Key)
-	require.Equal(t, 0, len(policy.Cloudlets))
+	require.Equal(t, 0, len(policy.Zones))
 
-	// try to add policy for non-existent cloudlet
-	pc.CloudletKey.Name = ""
-	_, err = apis.autoProvPolicyApi.AddAutoProvPolicyCloudlet(ctx, &pc)
+	// try to add policy for non-existent zone
+	pc.ZoneKey.Name = ""
+	_, err = apis.autoProvPolicyApi.AddAutoProvPolicyZone(ctx, &pc)
 	require.NotNil(t, err)
 
 	// try to add a policy with min > max
@@ -194,13 +196,13 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 	app2 := app
 	app2.Key.Name = "manual"
 
-	numCloudlets1 := 6
-	pt1 := newAutoProvPolicyTest("policy1", app.Key.Organization, numCloudlets1, &flavor, apis)
+	numZones1 := 6
+	pt1 := newAutoProvPolicyTest("policy1", app.Key.Organization, numZones1, &flavor, apis)
 	pt1.policy.MinActiveInstances = 2
 	pt1.policy.MaxInstances = 4
 
-	numCloudlets2 := 10
-	pt2 := newAutoProvPolicyTest("policy2", app.Key.Organization, numCloudlets2, &flavor, apis)
+	numZones2 := 10
+	pt2 := newAutoProvPolicyTest("policy2", app.Key.Organization, numZones2, &flavor, apis)
 	pt2.policy.MinActiveInstances = 5
 	pt2.policy.MaxInstances = 8
 
@@ -224,13 +226,11 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 	_, err = apis.appApi.CreateApp(ctx, &app2)
 	require.Nil(t, err)
 
-	updateCloudlets := func(pt *autoProvPolicyTest, list []*edgeproto.AutoProvCloudlet) {
-		pt.policy.Cloudlets = list
+	updateZones := func(pt *autoProvPolicyTest, list []*edgeproto.ZoneKey) {
+		pt.policy.Zones = list
 		pt.policy.Fields = []string{
-			edgeproto.AutoProvPolicyFieldCloudlets,
-			edgeproto.AutoProvPolicyFieldCloudletsKey,
-			edgeproto.AutoProvPolicyFieldCloudletsKeyOrganization,
-			edgeproto.AutoProvPolicyFieldCloudletsKeyName}
+			edgeproto.AutoProvPolicyFieldZones,
+		}
 		_, err = apis.autoProvPolicyApi.UpdateAutoProvPolicy(ctx, &pt.policy)
 		require.Nil(t, err)
 	}
@@ -274,12 +274,12 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 		pt2.goDoAppInsts(t, ctx, &app, cloudcommon.Create, cloudcommon.AutoProvReasonMinMax)
 		pt2.expectAppInsts(t, ctx, &app, int(pt2.policy.MinActiveInstances))
 
-		// create instances manually on all cloudlets
+		// create instances manually on all Zones
 		pt1.goDoAppInsts(t, ctx, &app, cloudcommon.Create, "")
-		pt1.expectAppInsts(t, ctx, &app, numCloudlets1)
+		pt1.expectAppInsts(t, ctx, &app, numZones1)
 
 		pt2.goDoAppInsts(t, ctx, &app, cloudcommon.Create, "")
-		pt2.expectAppInsts(t, ctx, &app, numCloudlets2)
+		pt2.expectAppInsts(t, ctx, &app, numZones2)
 
 		// spawn threads to delete AppInsts on every cloudlet
 		// the checks should limit the deletes to MaxInstances
@@ -298,30 +298,30 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 
 		// *** Check Orphaned Reason ***
 
-		// create instances manually on all cloudlets
+		// create instances manually on all Zones
 		pt1.goDoAppInsts(t, ctx, &app, cloudcommon.Create, "")
-		pt1.expectAppInsts(t, ctx, &app, numCloudlets1)
+		pt1.expectAppInsts(t, ctx, &app, numZones1)
 
 		pt2.goDoAppInsts(t, ctx, &app, cloudcommon.Create, "")
-		pt2.expectAppInsts(t, ctx, &app, numCloudlets2)
+		pt2.expectAppInsts(t, ctx, &app, numZones2)
 
-		// remove cloudlets from policies
+		// remove Zones from policies
 		rmCount1 := 3
-		pt1cloudletsSave := pt1.policy.Cloudlets
-		updateCloudlets(pt1, pt1.policy.Cloudlets[rmCount1:])
+		pt1ZonesSave := pt1.policy.Zones
+		updateZones(pt1, pt1.policy.Zones[rmCount1:])
 
 		rmCount2 := 7
-		pt2cloudletsSave := pt2.policy.Cloudlets
-		updateCloudlets(pt2, pt2.policy.Cloudlets[rmCount2:])
+		pt2ZonesSave := pt2.policy.Zones
+		updateZones(pt2, pt2.policy.Zones[rmCount2:])
 
 		// spawn threads to delete
 		// this should delete all the AppInsts that are on removed
-		// cloudlets, but leave the rest untouched.
+		// Zones, but leave the rest untouched.
 		pt1.goDoAppInsts(t, ctx, &app, cloudcommon.Delete, cloudcommon.AutoProvReasonOrphaned)
-		pt1.expectAppInsts(t, ctx, &app, numCloudlets1-rmCount1)
+		pt1.expectAppInsts(t, ctx, &app, numZones1-rmCount1)
 
 		pt2.goDoAppInsts(t, ctx, &app, cloudcommon.Delete, cloudcommon.AutoProvReasonOrphaned)
-		pt2.expectAppInsts(t, ctx, &app, numCloudlets2-rmCount2)
+		pt2.expectAppInsts(t, ctx, &app, numZones2-rmCount2)
 
 		// remove all AppInsts for clean up
 		pt1.goDoAppInsts(t, ctx, &app, cloudcommon.Delete, "")
@@ -335,28 +335,28 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 		pt3.expectAppInsts(t, ctx, &app, 0)
 		// Reason Demand
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Create, cloudcommon.AutoProvReasonDemand)
-		pt3.expectAppInsts(t, ctx, &app, len(pt3.cloudlets))
+		pt3.expectAppInsts(t, ctx, &app, len(pt3.zones))
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Delete, "")
 		pt3.expectAppInsts(t, ctx, &app, 0)
 		// Reason MinMax
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Create, cloudcommon.AutoProvReasonMinMax)
-		pt3.expectAppInsts(t, ctx, &app, len(pt3.cloudlets))
+		pt3.expectAppInsts(t, ctx, &app, len(pt3.zones))
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Delete, "")
 		pt3.expectAppInsts(t, ctx, &app, 0)
 		// Manual create should not limit them
 		// create two per cloudlet
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Create, "")
 		pt3.goDoAppInsts(t, ctx, &app2, cloudcommon.Create, "")
-		pt3.expectAppInsts(t, ctx, &app, len(pt3.cloudlets))
-		pt3.expectAppInsts(t, ctx, &app2, len(pt3.cloudlets))
+		pt3.expectAppInsts(t, ctx, &app, len(pt3.zones))
+		pt3.expectAppInsts(t, ctx, &app2, len(pt3.zones))
 		pt3.goDoAppInsts(t, ctx, &app, cloudcommon.Delete, "")
 		pt3.goDoAppInsts(t, ctx, &app2, cloudcommon.Delete, "")
 		pt3.expectAppInsts(t, ctx, &app, 0)
 		pt3.expectAppInsts(t, ctx, &app2, 0)
 
-		// restore cloudlets to policies
-		updateCloudlets(pt1, pt1cloudletsSave)
-		updateCloudlets(pt2, pt2cloudletsSave)
+		// restore Zones to policies
+		updateZones(pt1, pt1ZonesSave)
+		updateZones(pt2, pt2ZonesSave)
 
 		// remove all AppInsts to prep for next iteration (as if done by user)
 		pt1.goDoAppInsts(t, ctx, &app, cloudcommon.Delete, "")
@@ -378,6 +378,7 @@ func testApiChecks(t *testing.T, ctx context.Context, apis *AllApis) {
 type autoProvPolicyTest struct {
 	apis          *AllApis
 	policy        edgeproto.AutoProvPolicy
+	zones         []edgeproto.Zone
 	cloudlets     []edgeproto.Cloudlet
 	cloudletInfos []edgeproto.CloudletInfo
 	cloudletKeys  map[edgeproto.CloudletKey]int
@@ -389,19 +390,23 @@ func newAutoProvPolicyTest(name, org string, count int, flavor *edgeproto.Flavor
 	s.apis = apis
 	s.policy.Key.Name = name
 	s.policy.Key.Organization = org
+	s.zones = make([]edgeproto.Zone, count, count)
 	s.cloudlets = make([]edgeproto.Cloudlet, count, count)
 	s.cloudletInfos = make([]edgeproto.CloudletInfo, count, count)
 	s.cloudletKeys = make(map[edgeproto.CloudletKey]int)
 	for ii, _ := range s.cloudlets {
-		s.cloudlets[ii].Key.Name = fmt.Sprintf("%s-%d", name, ii)
+		cname := fmt.Sprintf("%s-%d", name, ii)
+		s.zones[ii].Key.Name = cname
+		s.zones[ii].Key.Organization = "op"
+		s.cloudlets[ii].Key.Name = cname
 		s.cloudlets[ii].Key.Organization = "op"
 		s.cloudlets[ii].NumDynamicIps = 20
 		s.cloudlets[ii].Location.Latitude = 1
 		s.cloudlets[ii].Location.Longitude = 1
 		s.cloudlets[ii].CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 		s.cloudlets[ii].PlatformType = platform.PlatformTypeFake
-		s.policy.Cloudlets = append(s.policy.Cloudlets,
-			&edgeproto.AutoProvCloudlet{Key: s.cloudlets[ii].Key})
+		s.cloudlets[ii].Zone = cname
+		s.policy.Zones = append(s.policy.Zones, &s.zones[ii].Key)
 		s.cloudletKeys[s.cloudlets[ii].Key] = ii
 	}
 	for ii, _ := range s.cloudletInfos {
@@ -440,6 +445,10 @@ func newAutoProvPolicyTest(name, org string, count int, flavor *edgeproto.Flavor
 }
 
 func (s *autoProvPolicyTest) create(t *testing.T, ctx context.Context) {
+	for ii, _ := range s.zones {
+		_, err := s.apis.zoneApi.CreateZone(ctx, &s.zones[ii])
+		require.Nil(t, err)
+	}
 	for ii, _ := range s.cloudlets {
 		err := s.apis.cloudletApi.CreateCloudlet(&s.cloudlets[ii], testutil.NewCudStreamoutCloudlet(ctx))
 		require.Nil(t, err)
@@ -461,6 +470,10 @@ func (s *autoProvPolicyTest) delete(t *testing.T, ctx context.Context) {
 	}
 	for ii, _ := range s.cloudletInfos {
 		s.apis.cloudletInfoApi.Delete(ctx, &s.cloudletInfos[ii], 0)
+	}
+	for ii, _ := range s.zones {
+		_, err := s.apis.zoneApi.DeleteZone(ctx, &s.zones[ii])
+		require.Nil(t, err)
 	}
 }
 
@@ -491,7 +504,7 @@ func (s *autoProvPolicyTest) goDoAppInsts(t *testing.T, ctx context.Context, app
 			inst := edgeproto.AppInst{}
 			inst.Key.Name = app.Key.Name + "inst" + strconv.Itoa(ii) + "-" + cloudcommon.GetCloudletKeyHash(&s.cloudlets[ii].Key)
 			inst.Key.Organization = app.Key.Organization
-			inst.CloudletKey = s.cloudlets[ii].Key
+			inst.ZoneKey = s.zones[ii].Key
 			inst.AppKey = app.Key
 			var err error
 			if action == cloudcommon.Create {

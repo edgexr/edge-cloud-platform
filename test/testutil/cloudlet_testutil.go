@@ -1421,28 +1421,6 @@ func (r *Run) CloudletApi_CloudletKey(data *[]edgeproto.CloudletKey, dataMap int
 				}
 				*outp = append(*outp, *out)
 			}
-		case "showflavorsforcloudlet":
-			out, err := r.client.ShowFlavorsForCloudlet(r.ctx, obj)
-			if err != nil {
-				r.logErr(fmt.Sprintf("CloudletApi_CloudletKey[%d]", ii), err)
-			} else {
-				outp, ok := dataOut.(*[][]edgeproto.FlavorKey)
-				if !ok {
-					panic(fmt.Sprintf("RunCloudletApi_CloudletKey expected dataOut type *[][]edgeproto.FlavorKey, but was %T", dataOut))
-				}
-				*outp = append(*outp, out)
-			}
-		case "getorganizationsoncloudlet":
-			out, err := r.client.GetOrganizationsOnCloudlet(r.ctx, obj)
-			if err != nil {
-				r.logErr(fmt.Sprintf("CloudletApi_CloudletKey[%d]", ii), err)
-			} else {
-				outp, ok := dataOut.(*[][]edgeproto.Organization)
-				if !ok {
-					panic(fmt.Sprintf("RunCloudletApi_CloudletKey expected dataOut type *[][]edgeproto.Organization, but was %T", dataOut))
-				}
-				*outp = append(*outp, out)
-			}
 		case "revokeaccesskey":
 			out, err := r.client.RevokeAccessKey(r.ctx, obj)
 			if err != nil {
@@ -1590,6 +1568,37 @@ func (r *Run) CloudletApi_FlavorMatch(data *[]edgeproto.FlavorMatch, dataMap int
 					panic(fmt.Sprintf("RunCloudletApi_FlavorMatch expected dataOut type *[]edgeproto.FlavorMatch, but was %T", dataOut))
 				}
 				*outp = append(*outp, *out)
+			}
+		}
+	}
+}
+
+func (r *Run) CloudletApi_ZoneKey(data *[]edgeproto.ZoneKey, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for ZoneKey", "mode", r.Mode)
+	for ii, objD := range *data {
+		obj := &objD
+		switch r.Mode {
+		case "showflavorsforzone":
+			out, err := r.client.ShowFlavorsForZone(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("CloudletApi_ZoneKey[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[][]edgeproto.FlavorKey)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletApi_ZoneKey expected dataOut type *[][]edgeproto.FlavorKey, but was %T", dataOut))
+				}
+				*outp = append(*outp, out)
+			}
+		case "getorganizationsonzone":
+			out, err := r.client.GetOrganizationsOnZone(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("CloudletApi_ZoneKey[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[][]edgeproto.Organization)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletApi_ZoneKey expected dataOut type *[][]edgeproto.Organization, but was %T", dataOut))
+				}
+				*outp = append(*outp, out)
 			}
 		}
 	}
@@ -2223,18 +2232,18 @@ func FlavorKeyReadStream(stream FlavorKeyStream) ([]edgeproto.FlavorKey, error) 
 	return output, nil
 }
 
-func (s *ApiClient) ShowFlavorsForCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.FlavorKey, error) {
+func (s *ApiClient) ShowFlavorsForZone(ctx context.Context, in *edgeproto.ZoneKey) ([]edgeproto.FlavorKey, error) {
 	api := edgeproto.NewCloudletApiClient(s.Conn)
-	stream, err := api.ShowFlavorsForCloudlet(ctx, in)
+	stream, err := api.ShowFlavorsForZone(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 	return FlavorKeyReadStream(stream)
 }
 
-func (s *CliClient) ShowFlavorsForCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.FlavorKey, error) {
+func (s *CliClient) ShowFlavorsForZone(ctx context.Context, in *edgeproto.ZoneKey) ([]edgeproto.FlavorKey, error) {
 	output := []edgeproto.FlavorKey{}
-	args := append(s.BaseArgs, "controller", "ShowFlavorsForCloudlet")
+	args := append(s.BaseArgs, "controller", "ShowFlavorsForZone")
 	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
 	return output, err
 }
@@ -2258,18 +2267,18 @@ func OrganizationReadStream(stream OrganizationStream) ([]edgeproto.Organization
 	return output, nil
 }
 
-func (s *ApiClient) GetOrganizationsOnCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.Organization, error) {
+func (s *ApiClient) GetOrganizationsOnZone(ctx context.Context, in *edgeproto.ZoneKey) ([]edgeproto.Organization, error) {
 	api := edgeproto.NewCloudletApiClient(s.Conn)
-	stream, err := api.GetOrganizationsOnCloudlet(ctx, in)
+	stream, err := api.GetOrganizationsOnZone(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 	return OrganizationReadStream(stream)
 }
 
-func (s *CliClient) GetOrganizationsOnCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.Organization, error) {
+func (s *CliClient) GetOrganizationsOnZone(ctx context.Context, in *edgeproto.ZoneKey) ([]edgeproto.Organization, error) {
 	output := []edgeproto.Organization{}
-	args := append(s.BaseArgs, "controller", "GetOrganizationsOnCloudlet")
+	args := append(s.BaseArgs, "controller", "GetOrganizationsOnZone")
 	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
 	return output, err
 }
@@ -2324,8 +2333,8 @@ type CloudletApiClient interface {
 	AddCloudletAllianceOrg(ctx context.Context, in *edgeproto.CloudletAllianceOrg) (*edgeproto.Result, error)
 	RemoveCloudletAllianceOrg(ctx context.Context, in *edgeproto.CloudletAllianceOrg) (*edgeproto.Result, error)
 	FindFlavorMatch(ctx context.Context, in *edgeproto.FlavorMatch) (*edgeproto.FlavorMatch, error)
-	ShowFlavorsForCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.FlavorKey, error)
-	GetOrganizationsOnCloudlet(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.Organization, error)
+	ShowFlavorsForZone(ctx context.Context, in *edgeproto.ZoneKey) ([]edgeproto.FlavorKey, error)
+	GetOrganizationsOnZone(ctx context.Context, in *edgeproto.ZoneKey) ([]edgeproto.Organization, error)
 	RevokeAccessKey(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error)
 	GenerateAccessKey(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error)
 	GetCloudletGPUDriverLicenseConfig(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error)

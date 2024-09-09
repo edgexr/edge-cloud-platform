@@ -53,32 +53,32 @@ type NodeMgr struct {
 	iTlsCAFile   string
 	VaultAddr    string
 
-	MyNode             edgeproto.Node
-	NodeCache          RegionNodeCache
-	Debug              DebugNode
-	VaultConfig        *vault.Config
-	Region             string
-	InternalPki        internalPki
-	InternalDomain     string
-	OSClient           *opensearch.Client
-	esEvents           [][]byte
-	esEventsMux        sync.Mutex
-	esWriteSignal      chan bool
-	esEventsDone       chan struct{}
-	ESWroteEvents      uint64
-	tlsClientIssuer    string
-	commonName         string
-	commonNamePrefix   string
-	DeploymentName     string
-	DeploymentTag      string
-	AccessKeyClient    AccessKeyClient
-	AccessApiClient    edgeproto.CloudletAccessApiClient
-	accessApiConn      *grpc.ClientConn // here so crm and cloudlet-dme can close it
-	CloudletPoolLookup CloudletPoolLookup
-	CloudletLookup     CloudletLookup
-	testTransport      http.RoundTripper // for unit tests
-	ValidDomains       string
-	cachesLinkToStore  bool
+	MyNode            edgeproto.Node
+	NodeCache         RegionNodeCache
+	Debug             DebugNode
+	VaultConfig       *vault.Config
+	Region            string
+	InternalPki       internalPki
+	InternalDomain    string
+	OSClient          *opensearch.Client
+	esEvents          [][]byte
+	esEventsMux       sync.Mutex
+	esWriteSignal     chan bool
+	esEventsDone      chan struct{}
+	ESWroteEvents     uint64
+	tlsClientIssuer   string
+	commonName        string
+	commonNamePrefix  string
+	DeploymentName    string
+	DeploymentTag     string
+	AccessKeyClient   AccessKeyClient
+	AccessApiClient   edgeproto.CloudletAccessApiClient
+	accessApiConn     *grpc.ClientConn // here so crm and cloudlet-dme can close it
+	ZonePoolLookup    ZonePoolLookup
+	CloudletLookup    CloudletLookup
+	testTransport     http.RoundTripper // for unit tests
+	ValidDomains      string
+	cachesLinkToStore bool
 
 	unitTestMode bool
 }
@@ -142,7 +142,7 @@ func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context
 	s.MyNode.ContainerVersion = opts.containerVersion
 	s.Region = opts.region
 	s.tlsClientIssuer = tlsClientIssuer
-	s.CloudletPoolLookup = opts.cloudletPoolLookup
+	s.ZonePoolLookup = opts.zonePoolLookup
 	s.CloudletLookup = opts.cloudletLookup
 	s.testTransport = opts.testTransport
 	s.cachesLinkToStore = opts.cachesLinkToStore
@@ -201,11 +201,11 @@ func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context
 	// start pki refresh after logging initialized
 	s.InternalPki.start()
 
-	if s.CloudletPoolLookup == nil {
+	if s.ZonePoolLookup == nil {
 		// single region lookup for events
-		cPoolLookup := &CloudletPoolCache{}
-		cPoolLookup.Init()
-		s.CloudletPoolLookup = cPoolLookup
+		zPoolLookup := &ZonePoolCache{}
+		zPoolLookup.Init()
+		s.ZonePoolLookup = zPoolLookup
 	}
 
 	if s.CloudletLookup == nil {
@@ -285,19 +285,19 @@ func (s *NodeMgr) UpdateNodeProps(ctx context.Context, props map[string]string) 
 }
 
 type NodeOptions struct {
-	name               string
-	cloudletKey        edgeproto.CloudletKey
-	updateMyNode       bool
-	containerVersion   string
-	region             string
-	vaultConfig        *vault.Config
-	esUrls             string
-	parentSpan         string
-	cloudletPoolLookup CloudletPoolLookup
-	cloudletLookup     CloudletLookup
-	haRole             process.HARole
-	testTransport      http.RoundTripper
-	cachesLinkToStore  bool // caches link direct to objstore, not updated over notify
+	name              string
+	cloudletKey       edgeproto.CloudletKey
+	updateMyNode      bool
+	containerVersion  string
+	region            string
+	vaultConfig       *vault.Config
+	esUrls            string
+	parentSpan        string
+	zonePoolLookup    ZonePoolLookup
+	cloudletLookup    CloudletLookup
+	haRole            process.HARole
+	testTransport     http.RoundTripper
+	cachesLinkToStore bool // caches link direct to objstore, not updated over notify
 }
 
 type CloudletInPoolFunc func(region, key edgeproto.CloudletKey) bool
@@ -336,8 +336,8 @@ func WithParentSpan(parentSpan string) NodeOp {
 	return func(opts *NodeOptions) { opts.parentSpan = parentSpan }
 }
 
-func WithCloudletPoolLookup(cloudletPoolLookup CloudletPoolLookup) NodeOp {
-	return func(opts *NodeOptions) { opts.cloudletPoolLookup = cloudletPoolLookup }
+func WithZonePoolLookup(zonePoolLookup ZonePoolLookup) NodeOp {
+	return func(opts *NodeOptions) { opts.zonePoolLookup = zonePoolLookup }
 }
 
 func WithCloudletLookup(cloudletLookup CloudletLookup) NodeOp {
@@ -363,20 +363,20 @@ func (s *NodeMgr) UpdateMyNode(ctx context.Context) {
 func (s *NodeMgr) RegisterClient(client *notify.Client) {
 	client.RegisterSendNodeCache(&s.NodeCache)
 	s.Debug.RegisterClient(client)
-	// MC notify handling of CloudletPoolCache is done outside of nodemgr.
+	// MC notify handling of ZonePoolCache is done outside of nodemgr.
 	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && !s.cachesLinkToStore {
-		cache := s.CloudletPoolLookup.GetCloudletPoolCache(s.Region)
-		client.RegisterRecvCloudletPoolCache(cache)
+		cache := s.ZonePoolLookup.GetZonePoolCache(s.Region)
+		client.RegisterRecvZonePoolCache(cache)
 	}
 }
 
 func (s *NodeMgr) RegisterServer(server *notify.ServerMgr) {
 	server.RegisterRecvNodeCache(&s.NodeCache)
 	s.Debug.RegisterServer(server)
-	// MC notify handling of CloudletPoolCache is done outside of nodemgr.
+	// MC notify handling of ZonePoolCache is done outside of nodemgr.
 	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && s.MyNode.Key.Type != NodeTypeController && s.MyNode.Key.Type != NodeTypeCCRM {
-		cache := s.CloudletPoolLookup.GetCloudletPoolCache(s.Region)
-		server.RegisterSendCloudletPoolCache(cache)
+		cache := s.ZonePoolLookup.GetZonePoolCache(s.Region)
+		server.RegisterSendZonePoolCache(cache)
 	}
 }
 

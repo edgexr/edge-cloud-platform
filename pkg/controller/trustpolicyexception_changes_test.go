@@ -40,9 +40,9 @@ func TestRunTPEChange(t *testing.T) {
 	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	cplookup := &node.CloudletPoolCache{}
+	cplookup := &node.ZonePoolCache{}
 	cplookup.Init()
-	nodeMgr.CloudletPoolLookup = cplookup
+	nodeMgr.ZonePoolLookup = cplookup
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
@@ -60,21 +60,25 @@ func TestRunTPEChange(t *testing.T) {
 	// trust policy
 	trustPolicy := testutil.TrustPolicyData()[0]
 	trustPolicy.Key.Organization = operOrg
+	// zone
+	zone := testutil.ZoneData()[0]
+	zone.Key.Organization = operOrg
 	// cloudlet
 	cloudlet := testutil.CloudletData()[0]
 	cloudlet.CrmOnEdge = true
 	cloudlet.Key.Organization = operOrg
 	cloudlet.ResTagMap = nil
 	cloudlet.GpuConfig = edgeproto.GPUConfig{}
+	cloudlet.Zone = zone.Key.Name
 	cloudlet.TrustPolicy = trustPolicy.Key.Name
 	// cloudlet pool
-	cloudletPool := edgeproto.CloudletPool{
-		Key: edgeproto.CloudletPoolKey{
+	zonePool := edgeproto.ZonePool{
+		Key: edgeproto.ZonePoolKey{
 			Name:         "pool",
 			Organization: operOrg,
 		},
-		Cloudlets: []edgeproto.CloudletKey{
-			cloudlet.Key,
+		Zones: []*edgeproto.ZoneKey{
+			&zone.Key,
 		},
 	}
 	// trusted app
@@ -83,7 +87,7 @@ func TestRunTPEChange(t *testing.T) {
 	// tpe
 	tpe := testutil.TrustPolicyExceptionData()[0]
 	tpe.Key.AppKey = app.Key
-	tpe.Key.CloudletPoolKey = cloudletPool.Key
+	tpe.Key.ZonePoolKey = zonePool.Key
 	tpe.State = edgeproto.TrustPolicyExceptionState_TRUST_POLICY_EXCEPTION_STATE_ACTIVE
 	// clusterInst
 	ci := edgeproto.ClusterInst{}
@@ -102,8 +106,9 @@ func TestRunTPEChange(t *testing.T) {
 
 	// write objects to store
 	apis.trustPolicyApi.store.Put(ctx, &trustPolicy, datasync.SyncWait)
+	apis.zoneApi.store.Put(ctx, &zone, datasync.SyncWait)
 	apis.cloudletApi.store.Put(ctx, &cloudlet, datasync.SyncWait)
-	apis.cloudletPoolApi.store.Put(ctx, &cloudletPool, datasync.SyncWait)
+	apis.zonePoolApi.store.Put(ctx, &zonePool, datasync.SyncWait)
 	apis.appApi.store.Put(ctx, &app, datasync.SyncWait)
 	apis.trustPolicyExceptionApi.store.Put(ctx, &tpe, datasync.SyncWait)
 	apis.clusterInstApi.store.Put(ctx, &ci, datasync.SyncWait)
@@ -196,17 +201,17 @@ func TestRunTPEChange(t *testing.T) {
 	apis.cloudletApi.store.Put(ctx, &cloudlet, datasync.SyncWait)
 	requireState(true)
 
-	// test changing cloudletPool membership
-	cloudletPool.Cloudlets = nil
-	apis.cloudletPoolApi.store.Put(ctx, &cloudletPool, datasync.SyncWait)
+	// test changing zonePool membership
+	zonePool.Zones = nil
+	apis.zonePoolApi.store.Put(ctx, &zonePool, datasync.SyncWait)
 	requireState(false)
-	cloudletPool.Cloudlets = []edgeproto.CloudletKey{cloudlet.Key}
-	apis.cloudletPoolApi.store.Put(ctx, &cloudletPool, datasync.SyncWait)
+	zonePool.Zones = []*edgeproto.ZoneKey{&zone.Key}
+	apis.zonePoolApi.store.Put(ctx, &zonePool, datasync.SyncWait)
 	requireState(true)
 	// delete and recreate
-	apis.cloudletPoolApi.store.Delete(ctx, &cloudletPool, datasync.SyncWait)
+	apis.zonePoolApi.store.Delete(ctx, &zonePool, datasync.SyncWait)
 	requireDeleted()
-	apis.cloudletPoolApi.store.Put(ctx, &cloudletPool, datasync.SyncWait)
+	apis.zonePoolApi.store.Put(ctx, &zonePool, datasync.SyncWait)
 	requireState(true)
 
 	// set all the object states to result in disabled TPE state
@@ -218,8 +223,8 @@ func TestRunTPEChange(t *testing.T) {
 	apis.clusterInstApi.store.Put(ctx, &ci, datasync.SyncWait)
 	cloudlet.TrustPolicy = ""
 	apis.cloudletApi.store.Put(ctx, &cloudlet, datasync.SyncWait)
-	cloudletPool.Cloudlets = nil
-	apis.cloudletPoolApi.store.Put(ctx, &cloudletPool, datasync.SyncWait)
+	zonePool.Zones = nil
+	apis.zonePoolApi.store.Put(ctx, &zonePool, datasync.SyncWait)
 	requireState(false)
 
 	// Now test all enable changes in parallel.
@@ -259,8 +264,8 @@ func TestRunTPEChange(t *testing.T) {
 	}()
 	go func() {
 		defer wg.Done()
-		cloudletPool.Cloudlets = []edgeproto.CloudletKey{cloudlet.Key}
-		apis.cloudletPoolApi.store.Put(ctx, &cloudletPool, datasync.SyncWait)
+		zonePool.Zones = []*edgeproto.ZoneKey{&zone.Key}
+		apis.zonePoolApi.store.Put(ctx, &zonePool, datasync.SyncWait)
 		err := apis.trustPolicyExceptionApi.runTPEChange(ctx, tpe.Key, ai.Key, ci.Key, cloudlet.Key)
 		require.Nil(t, err)
 	}()

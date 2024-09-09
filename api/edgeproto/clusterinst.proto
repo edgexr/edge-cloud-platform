@@ -72,6 +72,8 @@ message ClusterInst {
   ClusterKey key = 2 [(gogoproto.nullable) = false];
   // Cloudlet on which the cluster is deployed
   CloudletKey cloudlet_key = 41 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
+  // Zone on which the instance is deployed
+  ZoneKey zone_key = 43 [(gogoproto.nullable) = false];
   // Flavor of the k8s node 
   FlavorKey flavor = 3 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.refers_to) = "Flavor"];
   // Liveness of instance (see Liveness)
@@ -146,6 +148,8 @@ message ClusterInst {
   uint32 compatibility_version = 40 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // Annotations
   map<string, string> annotations = 42;
+  // database version model ID
+  int32 db_model_id = 44 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;
@@ -155,10 +159,9 @@ message ClusterInst {
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_filter_cloudlet_key) = true;
-  option (protogen.noconfig) = "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,DeletePrepare,DnsLabel,Fqdn,StaticFqdn,CompatibilityVersion";
-  option (protogen.not_required) = "CloudletKey.FederatedOrganization";
+  option (protogen.noconfig) = "Liveness,Auto,MasterNodeFlavor,NodeFlavor,ExternalVolumeSize,AllocatedIp,ReservedBy,State,Errors,Resources,AvailabilityZone,CreatedAt,UpdatedAt,OptRes,ReservationEndedAt,DeletePrepare,DnsLabel,Fqdn,StaticFqdn,CompatibilityVersion,CloudletKey";
   option (protogen.alias) = "cluster=Key.Name,cloudlet=CloudletKey.Name,cloudletorg=CloudletKey.Organization,federatedorg=CloudletKey.FederatedOrganization,clusterorg=Key.Organization,flavor=Flavor.Name";
-  option (protogen.mc2_target_cloudlet) = "CloudletKey";
+  option (protogen.mc2_target_zone) = "ZoneKey";
   option (protogen.uses_org) = "custom";
 }
 

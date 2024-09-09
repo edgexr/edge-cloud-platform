@@ -81,6 +81,7 @@ type ProxyScrapePoint struct {
 	ClusterKey         edgeproto.ClusterKey
 	AppKey             edgeproto.AppKey
 	CloudletKey        edgeproto.CloudletKey
+	ZoneKey            edgeproto.ZoneKey
 	FailedChecksCount  int
 	App                string
 	ContainerName      string
@@ -268,6 +269,7 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 			Key:           appInst.Key,
 			ClusterKey:    appInst.ClusterKey,
 			CloudletKey:   appInst.CloudletKey,
+			ZoneKey:       appInst.ZoneKey,
 			AppKey:        appInst.AppKey,
 			App:           k8smgmt.NormalizeName(appInst.Key.Name),
 			ContainerName: dockermgmt.GetContainerName(appInst),

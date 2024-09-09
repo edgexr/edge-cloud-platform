@@ -134,19 +134,11 @@ func (s *DeleteDataGen) GetCloudletTestObj() (*edgeproto.Cloudlet, *testSupportD
 	supportData.PlatformFeatures = []edgeproto.PlatformFeatures{testutil.PlatformFeaturesData()[0]}
 	return &obj, supportData
 }
-func (s *DeleteDataGen) GetAutoProvPolicyCloudletsRef(key *edgeproto.CloudletKey) (*edgeproto.AutoProvPolicy, *testSupportData) {
+func (s *DeleteDataGen) GetAutoProvPolicyZonesRef(key *edgeproto.ZoneKey) (*edgeproto.AutoProvPolicy, *testSupportData) {
 	ref := testutil.AutoProvPolicyData()[0]
-	ref.Cloudlets = []*edgeproto.AutoProvCloudlet{
-		&edgeproto.AutoProvCloudlet{
-			Key: *key,
-		},
+	ref.Zones = []*edgeproto.ZoneKey{
+		key,
 	}
-	return &ref, noSupportData
-}
-func (s *DeleteDataGen) GetCloudletPoolCloudletsRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletPool, *testSupportData) {
-	ref := testutil.CloudletPoolData()[0]
-	ref.Key.Organization = key.Organization
-	ref.Cloudlets = []edgeproto.CloudletKey{*key}
 	return &ref, noSupportData
 }
 func (s *DeleteDataGen) GetNetworkKeyCloudletKeyRef(key *edgeproto.CloudletKey) (*edgeproto.Network, *testSupportData) {
@@ -178,25 +170,40 @@ func (s *DeleteDataGen) GetCloudletAppInstVmAppInstsRef(key *edgeproto.CloudletK
 	return &ref, supportData
 }
 
-// CloudletPool
-func (s *DeleteDataGen) GetCloudletPoolTestObj() (*edgeproto.CloudletPool, *testSupportData) {
-	obj := testutil.CloudletPoolData()[0]
+// Zone
+func (s *DeleteDataGen) GetZoneTestObj() (*edgeproto.Zone, *testSupportData) {
+	obj := testutil.ZoneData()[0]
+	supportData := &testSupportData{}
+	return &obj, supportData
+}
+func (s *DeleteDataGen) GetZonePoolZonesRef(key *edgeproto.ZoneKey) (*edgeproto.ZonePool, *testSupportData) {
+	ref := testutil.ZonePoolData()[0]
+	ref.Key.Organization = key.Organization
+	ref.Zones = []*edgeproto.ZoneKey{key}
+	return &ref, noSupportData
+}
+
+// ZonePool
+func (s *DeleteDataGen) GetZonePoolTestObj() (*edgeproto.ZonePool, *testSupportData) {
+	obj := testutil.ZonePoolData()[0]
 	return &obj, noSupportData
 }
-func (s *DeleteDataGen) GetTrustPolicyExceptionKeyCloudletPoolKeyRef(key *edgeproto.CloudletPoolKey) (*edgeproto.TrustPolicyException, *testSupportData) {
+func (s *DeleteDataGen) GetTrustPolicyExceptionKeyZonePoolKeyRef(key *edgeproto.ZonePoolKey) (*edgeproto.TrustPolicyException, *testSupportData) {
 	ref := testutil.TrustPolicyExceptionData()[0]
-	ref.Key.CloudletPoolKey = *key
+	ref.Key.ZonePoolKey = *key
 	return &ref, noSupportData
 }
 
 // ClusterInst
 func (s *DeleteDataGen) GetClusterInstTestObj() (*edgeproto.ClusterInst, *testSupportData) {
+	cloudletKey := testutil.CloudletData()[0].Key
 	obj := testutil.ClusterInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
+	obj.CloudletKey = cloudletKey // specify cloudletKey, bypassing Zone
 	cloudlet := edgeproto.Cloudlet{}
-	cloudlet.Key = obj.CloudletKey
+	cloudlet.Key = cloudletKey
 	cloudletInfo := edgeproto.CloudletInfo{}
-	cloudletInfo.Key = obj.CloudletKey
+	cloudletInfo.Key = cloudletKey
 	cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_READY
 	supportData := &testSupportData{}
 	supportData.Cloudlets = []edgeproto.Cloudlet{cloudlet}

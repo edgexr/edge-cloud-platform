@@ -53,7 +53,7 @@ func AppHideTags(in *edgeproto.App) {
 	}
 }
 
-func DeploymentCloudletRequestHideTags(in *edgeproto.DeploymentCloudletRequest) {
+func DeploymentZoneRequestHideTags(in *edgeproto.DeploymentZoneRequest) {
 	if cli.HideTags == "" {
 		return
 	}
@@ -558,45 +558,45 @@ func RemoveAppAlertPolicys(c *cli.Command, data []edgeproto.AppAlertPolicy, err 
 	}
 }
 
-var ShowCloudletsForAppDeploymentCmd = &cli.Command{
-	Use:          "ShowCloudletsForAppDeployment",
-	OptionalArgs: strings.Join(append(DeploymentCloudletRequestRequiredArgs, DeploymentCloudletRequestOptionalArgs...), " "),
-	AliasArgs:    strings.Join(DeploymentCloudletRequestAliasArgs, " "),
-	SpecialArgs:  &DeploymentCloudletRequestSpecialArgs,
-	Comments:     DeploymentCloudletRequestComments,
-	ReqData:      &edgeproto.DeploymentCloudletRequest{},
-	ReplyData:    &edgeproto.CloudletKey{},
-	Run:          runShowCloudletsForAppDeployment,
+var ShowZonesForAppDeploymentCmd = &cli.Command{
+	Use:          "ShowZonesForAppDeployment",
+	OptionalArgs: strings.Join(append(DeploymentZoneRequestRequiredArgs, DeploymentZoneRequestOptionalArgs...), " "),
+	AliasArgs:    strings.Join(DeploymentZoneRequestAliasArgs, " "),
+	SpecialArgs:  &DeploymentZoneRequestSpecialArgs,
+	Comments:     DeploymentZoneRequestComments,
+	ReqData:      &edgeproto.DeploymentZoneRequest{},
+	ReplyData:    &edgeproto.ZoneKey{},
+	Run:          runShowZonesForAppDeployment,
 }
 
-func runShowCloudletsForAppDeployment(c *cli.Command, args []string) error {
+func runShowZonesForAppDeployment(c *cli.Command, args []string) error {
 	if cli.SilenceUsage {
 		c.CobraCmd.SilenceUsage = true
 	}
-	obj := c.ReqData.(*edgeproto.DeploymentCloudletRequest)
+	obj := c.ReqData.(*edgeproto.DeploymentZoneRequest)
 	_, err := c.ParseInput(args)
 	if err != nil {
 		return err
 	}
-	return ShowCloudletsForAppDeployment(c, obj)
+	return ShowZonesForAppDeployment(c, obj)
 }
 
-func ShowCloudletsForAppDeployment(c *cli.Command, in *edgeproto.DeploymentCloudletRequest) error {
+func ShowZonesForAppDeployment(c *cli.Command, in *edgeproto.DeploymentZoneRequest) error {
 	if AppApiCmd == nil {
 		return fmt.Errorf("AppApi client not initialized")
 	}
 	ctx := context.Background()
-	stream, err := AppApiCmd.ShowCloudletsForAppDeployment(ctx, in)
+	stream, err := AppApiCmd.ShowZonesForAppDeployment(ctx, in)
 	if err != nil {
 		errstr := err.Error()
 		st, ok := status.FromError(err)
 		if ok {
 			errstr = st.Message()
 		}
-		return fmt.Errorf("ShowCloudletsForAppDeployment failed: %s", errstr)
+		return fmt.Errorf("ShowZonesForAppDeployment failed: %s", errstr)
 	}
 
-	objs := make([]*edgeproto.CloudletKey, 0)
+	objs := make([]*edgeproto.ZoneKey, 0)
 	for {
 		obj, err := stream.Recv()
 		if err == io.EOF {
@@ -608,7 +608,7 @@ func ShowCloudletsForAppDeployment(c *cli.Command, in *edgeproto.DeploymentCloud
 			if ok {
 				errstr = st.Message()
 			}
-			return fmt.Errorf("ShowCloudletsForAppDeployment recv failed: %s", errstr)
+			return fmt.Errorf("ShowZonesForAppDeployment recv failed: %s", errstr)
 		}
 		if cli.OutputStream {
 			c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
@@ -624,13 +624,13 @@ func ShowCloudletsForAppDeployment(c *cli.Command, in *edgeproto.DeploymentCloud
 }
 
 // this supports "Create" and "Delete" commands on ApplicationData
-func ShowCloudletsForAppDeployments(c *cli.Command, data []edgeproto.DeploymentCloudletRequest, err *error) {
+func ShowZonesForAppDeployments(c *cli.Command, data []edgeproto.DeploymentZoneRequest, err *error) {
 	if *err != nil {
 		return
 	}
 	for ii, _ := range data {
-		fmt.Printf("ShowCloudletsForAppDeployment %v\n", data[ii])
-		myerr := ShowCloudletsForAppDeployment(c, &data[ii])
+		fmt.Printf("ShowZonesForAppDeployment %v\n", data[ii])
+		myerr := ShowZonesForAppDeployment(c, &data[ii])
 		if myerr != nil {
 			*err = myerr
 			break
@@ -647,7 +647,7 @@ var AppApiCmds = []*cobra.Command{
 	RemoveAppAutoProvPolicyCmd.GenCmd(),
 	AddAppAlertPolicyCmd.GenCmd(),
 	RemoveAppAlertPolicyCmd.GenCmd(),
-	ShowCloudletsForAppDeploymentCmd.GenCmd(),
+	ShowZonesForAppDeploymentCmd.GenCmd(),
 }
 
 var AppKeyRequiredArgs = []string{}
@@ -873,8 +873,8 @@ var AppAlertPolicyComments = map[string]string{
 	"alertpolicyname": "Alert name",
 }
 var AppAlertPolicySpecialArgs = map[string]string{}
-var DeploymentCloudletRequestRequiredArgs = []string{}
-var DeploymentCloudletRequestOptionalArgs = []string{
+var DeploymentZoneRequestRequiredArgs = []string{}
+var DeploymentZoneRequestOptionalArgs = []string{
 	"app.fields",
 	"app.key.organization",
 	"appname",
@@ -926,11 +926,11 @@ var DeploymentCloudletRequestOptionalArgs = []string{
 	"dryrundeploy",
 	"numnodes",
 }
-var DeploymentCloudletRequestAliasArgs = []string{
+var DeploymentZoneRequestAliasArgs = []string{
 	"appname=app.key.name",
 	"appvers=app.key.version",
 }
-var DeploymentCloudletRequestComments = map[string]string{
+var DeploymentZoneRequestComments = map[string]string{
 	"app.fields":              "Fields are used for the Update API to specify which fields to apply",
 	"app.key.organization":    "App developer organization",
 	"appname":                 "App name",
@@ -984,10 +984,10 @@ var DeploymentCloudletRequestComments = map[string]string{
 	"app.envvars":                                    "Environment variables",
 	"app.secretenvvars":                              "Environment variables with sensitive information, stored in encrypted storage",
 	"app.updatelistaction":                           "For updating list and map fields, set to add, remove, or replace to define how to resolve specified entries against existing entries",
-	"dryrundeploy":                                   "Attempt to qualify cloudlet resources for deployment",
+	"dryrundeploy":                                   "Attempt to qualify zones resources for deployment",
 	"numnodes":                                       "Optional number of worker VMs in dry run K8s Cluster, default = 2",
 }
-var DeploymentCloudletRequestSpecialArgs = map[string]string{
+var DeploymentZoneRequestSpecialArgs = map[string]string{
 	"app.alertpolicies":    "StringArray",
 	"app.autoprovpolicies": "StringArray",
 	"app.commandargs":      "StringArray",

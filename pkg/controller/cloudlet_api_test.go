@@ -191,6 +191,7 @@ func TestCloudletApi(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverTest(t, "cud", apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletTest(t, "cud", apis.cloudletApi, cloudletData)
 
 	// test invalid location values
@@ -215,6 +216,7 @@ func TestCloudletApi(t *testing.T) {
 	testBadLat(t, ctx, &cl, []float64{90.1, -90.1, -1323213, 1232334}, "update", apis)
 	testBadLong(t, ctx, &cl, []float64{180.1, -180.1, -1323213, 1232334}, "update", apis)
 
+	testCloudletZoneRef(t, ctx, apis)
 	testCloudletDnsLabel(t, ctx, apis)
 
 	// Resource Mapping tests
@@ -225,7 +227,7 @@ func TestCloudletApi(t *testing.T) {
 	testCloudletStates(t, ctx, apis)
 	testManualBringup(t, ctx, apis)
 
-	testShowFlavorsForCloudlet(t, ctx, apis)
+	testShowFlavorsForZone(t, ctx, apis)
 	testAllianceOrgs(t, ctx, apis)
 	testCloudletEdgeboxOnly(t, ctx, cloudletData[2], apis)
 }
@@ -884,33 +886,34 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 	})
 }
 
-func testShowFlavorsForCloudlet(t *testing.T, ctx context.Context, apis *AllApis) {
+func testShowFlavorsForZone(t *testing.T, ctx context.Context, apis *AllApis) {
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	// Use a clouldet with no ResourceTagMap
 	cCldApi := testutil.NewInternalCloudletApi(apis.cloudletApi)
-	cld := testutil.CloudletData()[1]
+	zone := testutil.ZoneData()[1]
+	zkey := &zone.Key
 
-	show := testutil.ShowFlavorsForCloudlet{}
+	show := testutil.ShowFlavorsForZone{}
 	show.Init()
 
-	err := cCldApi.ShowFlavorsForCloudlet(ctx, &cld.Key, &show)
+	err := cCldApi.ShowFlavorsForZone(ctx, zkey, &show)
 	require.Nil(t, err)
 	require.Equal(t, 2, len(show.Data))
 
 	// Show flavors for a chosen operator.
 	show.Init()
-	cld.Key.Name = ""
+	zone.Key.Name = ""
 
-	err = cCldApi.ShowFlavorsForCloudlet(ctx, &cld.Key, &show)
+	err = cCldApi.ShowFlavorsForZone(ctx, zkey, &show)
 	require.Nil(t, err)
 	require.Equal(t, 5, len(show.Data))
 
 	// Show flavors for a chosen cloudlet name.
 	show.Init()
-	cld = testutil.CloudletData()[1]
-	cld.Key.Organization = ""
+	zone = testutil.ZoneData()[1]
+	zone.Key.Organization = ""
 
-	err = cCldApi.ShowFlavorsForCloudlet(ctx, &cld.Key, &show)
+	err = cCldApi.ShowFlavorsForZone(ctx, zkey, &show)
 	require.Nil(t, err)
 	require.Equal(t, 2, len(show.Data))
 }
@@ -996,11 +999,11 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 
 	cAppApi := testutil.NewInternalAppApi(apis.appApi)
 
-	show := testutil.ShowCloudletsForAppDeployment{}
+	show := testutil.ShowZonesForAppDeployment{}
 	show.Init()
 
 	app := testutil.AppData()[2]
-	request := edgeproto.DeploymentCloudletRequest{
+	request := edgeproto.DeploymentZoneRequest{
 		App:          &app,
 		DryRunDeploy: false,
 	}
@@ -1013,6 +1016,7 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 
@@ -1026,9 +1030,9 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 		require.Nil(t, err, "Create ClusterInst")
 	}
 
-	err := cAppApi.ShowCloudletsForAppDeployment(ctx, &filter, &show)
-	require.Nil(t, err, "ShowCloudletsForAppDeployment")
-	require.Equal(t, 4, len(show.Data), "SHowCloudletsForAppDeployment")
+	err := cAppApi.ShowZonesForAppDeployment(ctx, &filter, &show)
+	require.Nil(t, err, "ShowZonesForAppDeployment")
+	require.Equal(t, 5, len(show.Data), "ShowZonesForAppDeployment")
 
 	for k, v := range show.Data {
 		fmt.Printf("\t next k: %s v: %+v flavor %s \n", k, v, filter.App.DefaultFlavor)
@@ -1038,22 +1042,22 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	// TODO: create sets of OS flavors to attach to our CloudletInfo objs  as substitues for whats there in test_data.go
 	// for more complex matching.
 	app.DefaultFlavor = testutil.FlavorData()[2].Key // 3 = x1.large 4 = x1.tiny.gpu 2 = x1.medium
-	err = cAppApi.ShowCloudletsForAppDeployment(ctx, &filter, &show)
-	require.Nil(t, err, "ShowCloudletsForAppDeployment")
-	require.Equal(t, 3, len(show.Data), "SHowCloudletsForAppDeployment")
+	err = cAppApi.ShowZonesForAppDeployment(ctx, &filter, &show)
+	require.Nil(t, err, "ShowZonesForAppDeployment")
+	require.Equal(t, 4, len(show.Data), "ShowZonesForAppDeployment")
 
 	show.Init()
 	app.DefaultFlavor = testutil.FlavorData()[3].Key // 3 = x1.large 4 = x1.tiny.gpu 2 = x1.medium
-	err = cAppApi.ShowCloudletsForAppDeployment(ctx, &filter, &show)
-	require.Nil(t, err, "ShowCloudletsForAppDeployment")
-	require.Equal(t, 1, len(show.Data), "SHowCloudletsForAppDeployment")
+	err = cAppApi.ShowZonesForAppDeployment(ctx, &filter, &show)
+	require.Nil(t, err, "ShowZonesForAppDeployment")
+	require.Equal(t, 1, len(show.Data), "ShowZonesForAppDeployment")
 	show.Init()
 
 	filter.DryRunDeploy = true
 
-	err = cAppApi.ShowCloudletsForAppDeployment(ctx, &filter, &show)
-	require.Nil(t, err, "ShowCloudletsForAppDeployment")
-	require.Equal(t, 1, len(show.Data), "ShowCloudletsForAppDeployment DryRun=True")
+	err = cAppApi.ShowZonesForAppDeployment(ctx, &filter, &show)
+	require.Nil(t, err, "ShowZonesForAppDeployment")
+	require.Equal(t, 1, len(show.Data), "ShowZonesForAppDeployment DryRun=True")
 	// TODO: Increase cloudlets refs such that San Jose can no longer support the App deployment
 	dummy.Stop()
 }
@@ -1068,12 +1072,14 @@ func testCloudletDnsLabel(t *testing.T, ctx context.Context, apis *AllApis) {
 	cl0.Key.Organization = "def"
 	cl0.ResTagMap = nil
 	cl0.GpuConfig = edgeproto.GPUConfig{}
+	cl0.Zone = ""
 
 	cl1 := data[1]
 	cl1.Key.Name = "ab,c"
 	cl1.Key.Organization = "d,ef"
 	cl1.ResTagMap = nil
 	cl1.GpuConfig = edgeproto.GPUConfig{}
+	cl1.Zone = ""
 
 	dnsLabel0 := "abc-def"
 	dnsLabel1 := "abc-def1"
@@ -1124,4 +1130,52 @@ func testCloudletEdgeboxOnly(t *testing.T, ctx context.Context, cloudlet edgepro
 	require.Nil(t, err)
 	// clean up
 	err = apis.cloudletApi.DeleteCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+}
+
+func testCloudletZoneRef(t *testing.T, ctx context.Context, apis *AllApis) {
+	cloudlet := testutil.CloudletData()[0]
+
+	// create fails if refers to missing zone
+	cloudlet.Key.Name = "test-zone-ref"
+	cloudlet.Zone = "invalid-zone"
+	err := apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Zone")
+	require.Contains(t, err.Error(), "not found")
+
+	// update fails if refers to missing zone
+	zone := edgeproto.Zone{}
+	zone.Key.Name = "valid-zone"
+	zone.Key.Organization = cloudlet.Key.Organization
+	zone2 := edgeproto.Zone{}
+	zone2.Key.Name = "valid-zone2"
+	zone2.Key.Organization = cloudlet.Key.Organization
+	// create valid zones
+	_, err = apis.zoneApi.CreateZone(ctx, &zone)
+	require.Nil(t, err)
+	_, err = apis.zoneApi.CreateZone(ctx, &zone2)
+	require.Nil(t, err)
+	// create cloudlet with valid zone
+	cloudlet.Zone = zone.Key.Name
+	err = apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	// update to invalid zone must fail
+	cloudlet.Zone = "invalid-zone"
+	cloudlet.Fields = []string{edgeproto.CloudletFieldZone}
+	err = apis.cloudletApi.UpdateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Zone")
+	require.Contains(t, err.Error(), "not found")
+	// update to a different valid zone should succeed
+	cloudlet.Zone = zone2.Key.Name
+	cloudlet.Fields = []string{edgeproto.CloudletFieldZone}
+	err = apis.cloudletApi.UpdateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	// cleanup
+	err = apis.cloudletApi.DeleteCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	_, err = apis.zoneApi.DeleteZone(ctx, &zone)
+	require.Nil(t, err)
+	_, err = apis.zoneApi.DeleteZone(ctx, &zone2)
+	require.Nil(t, err)
 }

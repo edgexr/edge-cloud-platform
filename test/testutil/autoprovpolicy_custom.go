@@ -20,10 +20,10 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
-func (s *DummyServer) AddAutoProvPolicyCloudlet(ctx context.Context, cloudlet *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+func (s *DummyServer) AddAutoProvPolicyZone(ctx context.Context, cloudlet *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error) {
 	return &edgeproto.Result{}, nil
 }
 
-func (s *DummyServer) RemoveAutoProvPolicyCloudlet(ctx context.Context, cloudlet *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+func (s *DummyServer) RemoveAutoProvPolicyZone(ctx context.Context, cloudlet *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error) {
 	return &edgeproto.Result{}, nil
 }

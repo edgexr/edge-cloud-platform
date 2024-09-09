@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	edgeproto "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
 // GetStructMap converts the object to a StructMap.
@@ -29,14 +31,9 @@ func GetStructMap(obj interface{}, ops ...GetStructMapOp) (*MapData, error) {
 	}
 
 	// convert fields to map for easy lookup
-	fmap := make(map[string]struct{})
-	for _, f := range opts.fieldFlags {
-		// adds all parent fields as well
-		tags := strings.Split(f, ".")
-		for ii := len(tags); ii >= 0; ii-- {
-			tag := strings.Join(tags[:ii], ".")
-			fmap[tag] = struct{}{}
-		}
+	var fmap *edgeproto.FieldMap
+	if opts.fieldFlags != nil && len(opts.fieldFlags) > 0 {
+		fmap = edgeproto.MakeFieldMap(opts.fieldFlags)
 	}
 
 	data := getStructMap(fmap, []string{}, reflect.ValueOf(obj), opts)
@@ -53,7 +50,7 @@ func GetStructMap(obj interface{}, ops ...GetStructMapOp) (*MapData, error) {
 	return nil, fmt.Errorf("GetStructMap object is not a struct")
 }
 
-func getStructMap(fmap map[string]struct{}, parentFields []string, v reflect.Value, opts *GetStructMapOptions) interface{} {
+func getStructMap(fmap *edgeproto.FieldMap, parentFields []string, v reflect.Value, opts *GetStructMapOptions) interface{} {
 	if v.Kind() == reflect.Ptr {
 		if v.IsNil() {
 			return nil
@@ -81,14 +78,14 @@ func getStructMap(fmap map[string]struct{}, parentFields []string, v reflect.Val
 			}
 
 			subFields := []string{}
-			if len(fmap) > 0 {
+			if fmap != nil {
 				// protobuf field tag is needed
 				ptag, ok := getProtoTag(sf)
 				if !ok {
 					continue
 				}
 				ftag := strings.Join(append(parentFields, ptag), ".")
-				if _, found := fmap[ftag]; !found {
+				if !fmap.HasOrHasChild(ftag) {
 					continue
 				}
 				subFields = append(parentFields, ptag)

@@ -29,6 +29,7 @@ var VersionHash_UpgradeFuncs = []VersionUpgrade{
 	{53, "14ae4c721c1bace6e8379d0061a72a77", UpgradeCrmOnEdge, "UpgradeCrmOnEdge"},
 	{54, "eff9d3a6c74fd02840efce05d1984e8d", AddStaticFqdn, "AddStaticFqdn"},
 	{55, "eac56710c013d954db31eeb306b514a4", InstanceKeysRegionScopedName, "InstanceKeysRegionScopedName"},
+	{56, "75883d14000640b2ecf694fe8ef9192b", ZoneFeature, "ZoneFeature"},
 }
 
 // Auto-generated code: DO NOT EDIT

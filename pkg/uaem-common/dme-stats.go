@@ -187,13 +187,15 @@ func ApiStatToMetric(ts *types.Timestamp, key *StatKey, stat *ApiStat) *edgeprot
 	metric.Timestamp = *ts
 	metric.Name = cloudcommon.DmeApiMeasurement
 	metric.AddKeyTags(&key.AppKey)
-	metric.AddKeyTags(&MyCloudletKey)
 	metric.AddTag(cloudcommon.MetricTagDmeId, *ScaleID)
 	metric.AddTag(cloudcommon.MetricTagMethod, key.Method)
 	metric.AddIntVal("reqs", stat.reqs)
 	metric.AddIntVal("errs", stat.errs)
-	metric.AddStringVal("foundCloudlet", key.CloudletFound.Name)
-	metric.AddStringVal("foundOperator", key.CloudletFound.Organization)
+	metric.AddStringVal(cloudcommon.MetricTagFoundAppInstName, key.AppInstFound.Name)
+	metric.AddStringVal(cloudcommon.MetricTagFoundAppInstOrg, key.AppInstFound.Organization)
+	metric.AddStringVal(cloudcommon.MetricTagFoundZoneName, key.ZoneFound.Name)
+	metric.AddStringVal(cloudcommon.MetricTagFoundZoneOrg, key.ZoneFound.Organization)
+	metric.AddStringVal(cloudcommon.MetricTagFoundOperator, key.Carrier)
 	stat.latency.AddToMetric(&metric)
 	return &metric
 }

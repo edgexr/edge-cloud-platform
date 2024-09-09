@@ -102,6 +102,7 @@ func TestEvents(t *testing.T) {
 	kafkaProducer := mocks.NewAsyncProducer(t, producerConfig)
 	prod := producer{
 		producer: kafkaProducer,
+		address:  "fake-address",
 	}
 	cloudletKey := edgeproto.CloudletKey{
 		Organization: operOrg,
@@ -154,20 +155,26 @@ func TestEvents(t *testing.T) {
 	ts = ts.Add(time.Minute)
 	nodeMgr.EventAtTime(ctx, "delete AppInst", org, "event", keyTags, fmt.Errorf("failed, random failure"), ts, "the reason", "just because")
 
-	// add cloudlet to cloudlet pool
-	pool := edgeproto.CloudletPool{
-		Key: edgeproto.CloudletPoolKey{
+	// add cloudlet to zone pool
+	cloudlet := edgeproto.Cloudlet{
+		Key:          cloudletKey,
+		Zone:         "zone1",
+		KafkaCluster: prod.address,
+	}
+	nodeMgr.CloudletLookup.GetCloudletCache(NoRegion).Update(ctx, &cloudlet, 0)
+	pool := edgeproto.ZonePool{
+		Key: edgeproto.ZonePoolKey{
 			Organization: operOrg,
 			Name:         "pool1",
 		},
-		Cloudlets: []edgeproto.CloudletKey{cloudletKey},
+		Zones: []*edgeproto.ZoneKey{cloudlet.GetZone()},
 	}
-	nodeMgr.CloudletPoolLookup.GetCloudletPoolCache(NoRegion).Update(ctx, &pool, 0)
-	cpc, ok := nodeMgr.CloudletPoolLookup.(*CloudletPoolCache)
+	nodeMgr.ZonePoolLookup.GetZonePoolCache(NoRegion).Update(ctx, &pool, 0)
+	cpc, ok := nodeMgr.ZonePoolLookup.(*ZonePoolCache)
 	require.True(t, ok)
-	require.True(t, cpc.PoolsByCloudlet.HasRef(cloudletKey))
+	require.True(t, cpc.PoolsByZone.HasRef(*cloudlet.GetZone()))
 
-	// event with two allowed orgs, developer and operator due to CloudletPool
+	// event with two allowed orgs, developer and operator due to ZonePool
 	ts = ts.Add(time.Minute)
 	keyTags[edgeproto.CloudletKeyTagName] = cloudlet1Name
 	kafkaProducer.ExpectInputWithCheckerFunctionAndSucceed(getKmsg) // private cloudlet event
@@ -547,7 +554,7 @@ func TestEvents(t *testing.T) {
 	require.Nil(t, err)
 	fmt.Printf("%s\n", string(out))
 
-	// search by operator org for CloudletPool-based Cloudlet events
+	// search by operator org for ZonePool-based Cloudlet events
 	es = search
 	es.Match.Orgs = []string{operOrg}
 	events, err = nodeMgr.ShowEvents(ctx, &es)

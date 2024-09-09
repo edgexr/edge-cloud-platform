@@ -100,7 +100,7 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 		info = edgeproto.CloudletInfo{
 			Key: in.Key,
 		}
-		oldState := in.State
+		oldState := dme.CloudletState_CLOUDLET_STATE_NOT_PRESENT
 		if s.store.STMGet(stm, &in.Key, &info) {
 			oldState = info.State
 		}
@@ -437,38 +437,42 @@ func (s *CloudletInfoApi) getCloudletState(key *edgeproto.CloudletKey) dme.Cloud
 	return dme.CloudletState_CLOUDLET_STATE_NOT_PRESENT
 }
 
-func (s *CloudletInfoApi) checkCloudletReady(cctx *CallContext, stm concurrency.STM, key *edgeproto.CloudletKey, action cloudcommon.Action) error {
-	if cctx != nil && (ignoreCRM(cctx) || cctx.SkipCloudletReadyCheck) {
-		return nil
-	}
-	// Get tracked state, it could be that cloudlet has initiated
-	// upgrade but cloudletInfo is yet to transition to it
+func (s *CloudletInfoApi) checkCloudletReadySTM(cctx *CallContext, stm concurrency.STM, key *edgeproto.CloudletKey, action cloudcommon.Action) error {
 	cloudlet := edgeproto.Cloudlet{}
 	if !s.all.cloudletApi.store.STMGet(stm, key, &cloudlet) {
 		return key.NotFoundError()
-	}
-	if action == cloudcommon.Delete && (cloudlet.DeletePrepare || cloudlet.State == edgeproto.TrackedState_DELETE_PREPARE) {
-		return key.BeingDeletedError()
-	}
-	if cloudlet.State == edgeproto.TrackedState_UPDATE_REQUESTED ||
-		cloudlet.State == edgeproto.TrackedState_UPDATING {
-		return fmt.Errorf("Cloudlet %v is upgrading", key)
-	}
-	if cloudlet.MaintenanceState != dme.MaintenanceState_NORMAL_OPERATION {
-		return errors.New("Cloudlet under maintenance, please try again later")
-	}
-
-	if cloudlet.State == edgeproto.TrackedState_UPDATE_ERROR {
-		return fmt.Errorf("Cloudlet %v is in failed upgrade state, please upgrade it manually", key)
 	}
 	info := edgeproto.CloudletInfo{}
 	if !s.all.cloudletInfoApi.store.STMGet(stm, key, &info) {
 		return fmt.Errorf("CloudletInfo not found for Cloudlet %s", key.GetKeyString())
 	}
+	return s.checkCloudletReady(cctx, &cloudlet, &info, action)
+}
+
+func (s *CloudletInfoApi) checkCloudletReady(cctx *CallContext, cloudlet *edgeproto.Cloudlet, info *edgeproto.CloudletInfo, action cloudcommon.Action) error {
+	if cctx != nil && (ignoreCRM(cctx) || cctx.SkipCloudletReadyCheck) {
+		return nil
+	}
+	// Get tracked state, it could be that cloudlet has initiated
+	// upgrade but cloudletInfo is yet to transition to it
+	if action == cloudcommon.Delete && (cloudlet.DeletePrepare || cloudlet.State == edgeproto.TrackedState_DELETE_PREPARE) {
+		return cloudlet.Key.BeingDeletedError()
+	}
+	if cloudlet.State == edgeproto.TrackedState_UPDATE_REQUESTED ||
+		cloudlet.State == edgeproto.TrackedState_UPDATING {
+		return fmt.Errorf("cloudlet %s is upgrading", cloudlet.Key.GetKeyString())
+	}
+	if cloudlet.MaintenanceState != dme.MaintenanceState_NORMAL_OPERATION {
+		return errors.New("cloudlet under maintenance, please try again later")
+	}
+
+	if cloudlet.State == edgeproto.TrackedState_UPDATE_ERROR {
+		return fmt.Errorf("cloudlet %s is in failed upgrade state, please upgrade it manually", cloudlet.Key.GetKeyString())
+	}
 	if info.State == dme.CloudletState_CLOUDLET_STATE_READY {
 		return nil
 	}
-	return fmt.Errorf("Cloudlet %v not ready, state is %s", key,
+	return fmt.Errorf("cloudlet %s not ready, state is %s", cloudlet.Key.GetKeyString(),
 		dme.CloudletState_name[int32(info.State)])
 }
 

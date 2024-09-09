@@ -40,7 +40,7 @@ type AutoProvStats struct {
 }
 
 type AutoProvStatsShard struct {
-	appCloudletCounts map[edgeproto.AppCloudletKey]*AutoProvCounts
+	appCloudletCounts map[edgeproto.AppZoneKeyPair]*AutoProvCounts
 	mux               sync.Mutex
 }
 
@@ -58,7 +58,7 @@ func InitAutoProvStats(intervalSec, offsetSec float64, numShards uint, nodeKey *
 	s.nodeKey = *nodeKey
 	s.shards = make([]AutoProvStatsShard, s.numShards, s.numShards)
 	for ii, _ := range s.shards {
-		s.shards[ii].appCloudletCounts = make(map[edgeproto.AppCloudletKey]*AutoProvCounts)
+		s.shards[ii].appCloudletCounts = make(map[edgeproto.AppZoneKeyPair]*AutoProvCounts)
 	}
 	autoProvStats = &s
 	return &s
@@ -106,10 +106,10 @@ func (s *AutoProvStats) UpdateSettings(intervalSec float64) {
 	}
 }
 
-func (s *AutoProvStats) Increment(ctx context.Context, appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey, policy *AutoProvPolicy) {
-	key := edgeproto.AppCloudletKey{
-		AppKey:      *appKey,
-		CloudletKey: *cloudletKey,
+func (s *AutoProvStats) Increment(ctx context.Context, appKey *edgeproto.AppKey, zoneKey *edgeproto.ZoneKey, policy *AutoProvPolicy) {
+	key := edgeproto.AppZoneKeyPair{
+		AppKey:  *appKey,
+		ZoneKey: *zoneKey,
 	}
 	idx := util.GetShardIndex(key, s.numShards)
 	shard := &s.shards[idx]
@@ -130,10 +130,10 @@ func (s *AutoProvStats) Increment(ctx context.Context, appKey *edgeproto.AppKey,
 			DmeNodeName: s.nodeKey.Name,
 			Counts: []*edgeproto.AutoProvCount{
 				{
-					AppKey:      *appKey,
-					CloudletKey: *cloudletKey,
-					Count:       stats.count,
-					ProcessNow:  true,
+					AppKey:     *appKey,
+					ZoneKey:    *zoneKey,
+					Count:      stats.count,
+					ProcessNow: true,
 				},
 			},
 		}
@@ -165,9 +165,9 @@ func (s *AutoProvStats) RunNotify() {
 						continue
 					}
 					apCount := edgeproto.AutoProvCount{
-						AppKey:      key.AppKey,
-						CloudletKey: key.CloudletKey,
-						Count:       stats.count,
+						AppKey:  key.AppKey,
+						ZoneKey: key.ZoneKey,
+						Count:   stats.count,
 					}
 					stats.lastCount = stats.count
 					sendCounts.Counts = append(sendCounts.Counts, &apCount)
