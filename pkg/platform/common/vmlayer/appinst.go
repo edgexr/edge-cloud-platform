@@ -218,12 +218,6 @@ func (v *VMPlatform) setupVMAppRootLBAndNode(ctx context.Context, clusterInst *e
 		return err
 	}
 
-	// Why? This is done in SetupRootLB
-	//	err = v.proxyCerts.SetupTLSCerts(ctx, orchVals.lbName, orchVals.lbName, client)
-	//	if err != nil {
-	//		return err
-	//	}
-
 	// clusterInst is empty but that is ok here
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {

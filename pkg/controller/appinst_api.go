@@ -2393,6 +2393,12 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst URI is up to date.")
 			return nil
 		}
+		if appInst.State != edgeproto.TrackedState_READY {
+			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("AppInst %s is not ready - skipping", appInst.Key.Name)})
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst is not ready - skipping", "appinst", appInst)
+			return nil
+		}
+
 		// Store previous URI, so we can update this with CCRM
 		log.SpanLog(ctx, log.DebugLevelApi, "Updating AppInst URI", "old FQDN", appInst.Uri, "new", getAppInstFQDN(&appInst, cloudlet))
 		appInst.AddAnnotation(cloudcommon.AnnotationPreviousDNSName, appInst.Uri)

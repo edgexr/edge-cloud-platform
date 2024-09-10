@@ -2076,12 +2076,17 @@ func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *e
 			log.SpanLog(ctx, log.DebugLevelApi, "Cluster deleted before DNS update", "cluster", key)
 			return nil
 		}
+		if clusterInst.Fqdn == getClusterInstFQDN(&clusterInst, cloudlet) {
+			log.SpanLog(ctx, log.DebugLevelApi, "Cluster fqnd is up to date.")
+			return nil
+		}
 		if clusterInst.DeletePrepare {
 			log.SpanLog(ctx, log.DebugLevelApi, "Cluster is currently being deleted", "cluster", key)
 			return nil
 		}
-		if clusterInst.Fqdn == getClusterInstFQDN(&clusterInst, cloudlet) {
-			log.SpanLog(ctx, log.DebugLevelApi, "Cluster fqnd is up to date.")
+		if clusterInst.State != edgeproto.TrackedState_READY {
+			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Cluster %s is not ready - skipping", clusterInst.Key.Name)})
+			log.SpanLog(ctx, log.DebugLevelApi, "Cluster is not ready - skipping", "clusterinst", clusterInst)
 			return nil
 		}
 
