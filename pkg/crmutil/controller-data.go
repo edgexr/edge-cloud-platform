@@ -627,9 +627,6 @@ func (cd *CRMHandler) CloudletDNSChanged(ctx context.Context, pf platform.Platfo
 		if err != nil {
 			return err
 		}
-
-		// TODO -this doesn't send anything back for some reason...
-		updateCloudletCallback(edgeproto.UpdateTask, fmt.Sprintf("1. Updating Cloudlet DNS in CRM - %s", new.Key.Name))
 		err = pf.ChangeCloudletDNS(ctx, new, oldDNS, updateCloudletCallback)
 		if err != nil {
 			err := fmt.Errorf("update failed: %s", err)

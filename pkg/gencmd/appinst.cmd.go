@@ -877,6 +877,7 @@ var AppInstOptionalArgs = []string{
 var AppInstAliasArgs = []string{
 	"appinstname=key.name",
 	"appinstorg=key.organization",
+	"apporg=appkey.organization",
 	"appname=appkey.name",
 	"appvers=appkey.version",
 	"cluster=clusterkey.name",
@@ -890,7 +891,7 @@ var AppInstComments = map[string]string{
 	"fields":                         "Fields are used for the Update API to specify which fields to apply",
 	"appinstname":                    "App Instance name",
 	"appinstorg":                     "App Instance organization",
-	"appkey.organization":            "App developer organization",
+	"apporg":                         "App developer organization",
 	"appname":                        "App name",
 	"appvers":                        "App version",
 	"cluster":                        "Cluster name",

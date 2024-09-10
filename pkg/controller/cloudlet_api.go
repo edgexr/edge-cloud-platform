@@ -2645,8 +2645,6 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
 
 	// Step 1 - update rootLb fqdn
-	// Does our current DNS app root name match what the clouldet alredy have?
-	// TODO - why does the streaming not work for cloudlet crm update
 	if cloudlet.RootLbFqdn == getCloudletRootLBFQDN(&cloudlet) {
 		cb.Send(&edgeproto.Result{Message: "Cloudlet rootLB is already set correctly"})
 		log.SpanLog(ctx, log.DebugLevelApi, "Current cloudlet fqdn already contains appDNSRoot suffix - nothing to do")
