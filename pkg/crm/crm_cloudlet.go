@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -41,12 +40,6 @@ func (s *CRMData) cloudletChanged(ctx context.Context, old *edgeproto.Cloudlet, 
 			new.Fields = old.GetDiffFields(new).Fields()
 			if old.State != new.State {
 				log.SpanLog(ctx, log.DebugLevelApi, "crm cloudlet state trans", "old", old.State, "new", new.State, "fields", new.Fields)
-			}
-			// Special case for dns update - only possible if appinst exists
-			oldDNS, ok := new.Annotations[cloudcommon.AnnotationPreviousDNSName]
-			if ok && oldDNS == old.RootLbFqdn {
-				_ = s.CloudletDNSChanged(ctx, s.cloudletKey, old, new, responseSender)
-				return
 			}
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "crm cloudlet changed", "old", old, "new", new)

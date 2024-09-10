@@ -200,17 +200,10 @@ type NeedsUpdate struct {
 	AppInstRuntime bool
 }
 
-func (cd *CRMHandler) ClusterInstDNSChanged(ctx context.Context, target *edgeproto.CloudletKey, old *edgeproto.ClusterInst, new *edgeproto.ClusterInst, sender edgeproto.ClusterInstInfoSender) (reterr error) {
+func (cd *CRMHandler) clusterInstDNSChanged(ctx context.Context, pf platform.Platform, oldFQDN string, new *edgeproto.ClusterInst, sender edgeproto.ClusterInstInfoSender) (reterr error) {
 	var err error
 
-	fmap := edgeproto.MakeFieldMap(new.Fields)
-	log.SpanLog(ctx, log.DebugLevelInfra, "ClusterInstChange for DNS", "key", new.Key, "old dns", old.Fqdn, "new dns", new.Fqdn)
-
-	if !fmap.Has(edgeproto.ClusterInstFieldFqdn) {
-		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
-		sender.SendState(edgeproto.TrackedState_READY)
-		return nil
-	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "ClusterInstChange for DNS", "key", new.Key, "old dns", oldFQDN, "new dns", new.Fqdn)
 
 	updateClusterCacheCallback := sender.SendStatusIgnoreErr
 	// reset status messages
@@ -218,17 +211,13 @@ func (cd *CRMHandler) ClusterInstDNSChanged(ctx context.Context, target *edgepro
 	if err != nil {
 		return err
 	}
-	pf, err := cd.getPlatform(ctx, target)
-	if err != nil {
-		return err
-	}
-	err = pf.ChangeClusterInstDNS(ctx, new, old.Fqdn, updateClusterCacheCallback)
+	err = pf.ChangeClusterInstDNS(ctx, new, oldFQDN, updateClusterCacheCallback)
 	if err != nil {
 		err := fmt.Errorf("update failed: %s", err)
 		sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "ClusterInstChange for DNS done", "key", new.Key, "old dns", old.Fqdn, "new dns", new.Fqdn)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ClusterInstChange for DNS done", "key", new.Key, "old dns", oldFQDN, "new dns", new.Fqdn)
 	sender.SendState(edgeproto.TrackedState_READY)
 	return nil
 }
@@ -238,7 +227,13 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 
 	fmap := edgeproto.MakeFieldMap(new.Fields)
 
-	if !fmap.Has(edgeproto.ClusterInstFieldState) {
+	dnsUpdate := false
+	oldFQDN, ok := new.Annotations[cloudcommon.AnnotationPreviousDNSName]
+	if fmap.Has(edgeproto.ClusterInstFieldFqdn) && ok && oldFQDN != new.Fqdn {
+		dnsUpdate = true
+	}
+
+	if !fmap.Has(edgeproto.ClusterInstFieldState) && !dnsUpdate {
 		return nu, nil
 	}
 
@@ -249,6 +244,12 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 	pf, err := cd.getPlatform(ctx, target)
 	if err != nil {
 		return nu, err
+	}
+
+	// Special case for dns update
+	if dnsUpdate {
+		_ = cd.clusterInstDNSChanged(ctx, pf, oldFQDN, new, sender)
+		return nu, nil
 	}
 
 	if new.State == edgeproto.TrackedState_CREATE_REQUESTED ||
@@ -369,53 +370,41 @@ func (cd *CRMHandler) CloudletHasTrustPolicy(ctx context.Context, cloudletKey *e
 	return true, nil
 }
 
-func (cd *CRMHandler) AppInstDNSChanged(ctx context.Context, target *edgeproto.CloudletKey, old *edgeproto.AppInst, new *edgeproto.AppInst, sender edgeproto.AppInstInfoSender) (reterr error) {
+func (cd *CRMHandler) appInstDNSChanged(ctx context.Context, pf platform.Platform, app *edgeproto.App, oldURI string, new *edgeproto.AppInst, sender edgeproto.AppInstInfoSender) (reterr error) {
 	var err error
 
-	fmap := edgeproto.MakeFieldMap(new.Fields)
 	updateAppCacheCallback := sender.SendStatusIgnoreErr
-	log.SpanLog(ctx, log.DebugLevelInfra, "AppInstDNSChanged", "key", new.Key, "old dns", old.Uri, "new dns", new.Uri)
-
-	if !fmap.Has(edgeproto.AppInstFieldUri) {
-		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
-		updateAppCacheCallback(edgeproto.UpdateTask, fmt.Sprintf("Nothing changed - %s", new.Key.Name))
-		sender.SendState(edgeproto.TrackedState_READY)
-		return nil
-	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "AppInstDNSChanged", "key", new.Key, "old dns", oldURI, "new dns", new.Uri)
 
 	// reset status messages
 	err = sender.SendState(edgeproto.TrackedState_UPDATING, edgeproto.WithSenderResetStatus())
 	if err != nil {
 		return err
 	}
-	pf, err := cd.getPlatform(ctx, target)
-	if err != nil {
-		return err
-	}
-
-	app := edgeproto.App{}
-	found := cd.AppCache.Get(&new.AppKey, &app)
-	if !found {
-		log.SpanLog(ctx, log.DebugLevelInfra, "App not found for AppInst", "key", new.Key)
-		return new.AppKey.NotFoundError()
-	}
-	err = pf.ChangeAppInstDNS(ctx, &app, new, old.Uri, updateAppCacheCallback)
+	err = pf.ChangeAppInstDNS(ctx, app, new, oldURI, updateAppCacheCallback)
 	if err != nil {
 		err := fmt.Errorf("update failed: %s", err)
 		sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "AppInstDNSChanged done", "key", new.Key, "old dns", old.Uri, "new dns", new.Uri)
+	log.SpanLog(ctx, log.DebugLevelInfra, "AppInstDNSChanged done", "key", new.Key, "old dns", oldURI, "new dns", new.Uri)
 	sender.SendState(edgeproto.TrackedState_READY)
 	return nil
 }
 
 func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.CloudletKey, new *edgeproto.AppInst, sender edgeproto.AppInstInfoSender) (nu NeedsUpdate, reterr error) {
+	var err error
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "appInstChanged", "new", new)
 
-	var err error
 	fmap := edgeproto.MakeFieldMap(new.Fields)
-	if !fmap.Has(edgeproto.AppInstFieldState) {
+	dnsUpdate := false
+	oldURI, ok := new.Annotations[cloudcommon.AnnotationPreviousDNSName]
+	if fmap.Has(edgeproto.AppInstFieldUri) && ok && oldURI != new.Uri {
+		dnsUpdate = true
+	}
+
+	if !fmap.Has(edgeproto.AppInstFieldState) && !dnsUpdate {
 		return nu, nil
 	}
 
@@ -429,6 +418,12 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 	pf, err := cd.getPlatform(ctx, target)
 	if err != nil {
 		return nu, err
+	}
+
+	// Special case for dns update
+	if dnsUpdate {
+		_ = cd.appInstDNSChanged(ctx, pf, &app, oldURI, new, sender)
+		return
 	}
 
 	trackChange := app.Deployment == cloudcommon.DeploymentTypeVM || platform.TrackK8sAppInst(ctx, &app, pf.GetFeatures())
@@ -618,44 +613,29 @@ func (cd *CRMHandler) appInstInfoRuntime(ctx context.Context, sender edgeproto.A
 	})
 }
 
-func (cd *CRMHandler) CloudletDNSChanged(ctx context.Context, target *edgeproto.CloudletKey, old *edgeproto.Cloudlet, new *edgeproto.Cloudlet, sender edgeproto.CloudletInfoSender) (reterr error) {
+func (cd *CRMHandler) CloudletDNSChanged(ctx context.Context, pf platform.Platform, oldDNS string, new *edgeproto.Cloudlet, sender edgeproto.CloudletInfoSender) (reterr error) {
 	var err error
 
 	fmap := edgeproto.MakeFieldMap(new.Fields)
-	log.SpanLog(ctx, log.DebugLevelInfra, "CloudletDNSChanged", "key", target, "old dns", old.RootLbFqdn, "new dns", new.RootLbFqdn)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CloudletDNSChanged", "key", new.Key, "old dns", oldDNS, "new dns", new.RootLbFqdn)
 
 	if !fmap.Has(edgeproto.CloudletFieldRootLbFqdn) {
 		log.SpanLog(ctx, log.DebugLevelApi, "Nothing changed")
-		// TODO - same as what we do at the end - consolidate
-		sender.SendUpdate(func(info *edgeproto.CloudletInfo) error {
-			info.Fields = []string{
-				edgeproto.CloudletInfoFieldState,
-				edgeproto.CloudletInfoFieldStatus,
-			}
-			info.State = dme.CloudletState_CLOUDLET_STATE_READY
-			info.Status.StatusReset()
-			return nil
-		})
-		return nil
-	}
+	} else {
+		updateCloudletCallback := sender.SendStatusIgnoreErr
+		err = sender.SendState(dme.CloudletState_CLOUDLET_STATE_UPGRADE, edgeproto.WithSenderResetStatus())
+		if err != nil {
+			return err
+		}
 
-	updateCloudletCallback := sender.SendStatusIgnoreErr
-	err = sender.SendState(dme.CloudletState_CLOUDLET_STATE_UPGRADE, edgeproto.WithSenderResetStatus())
-	if err != nil {
-		return err
-	}
-
-	pf, err := cd.getPlatform(ctx, target)
-	if err != nil {
-		return err
-	}
-	// TODO -this doesn't send anything back for some reason...
-	updateCloudletCallback(edgeproto.UpdateTask, fmt.Sprintf("3. Updating Cloudlet DNS in CRM - %s", new.Key.Name))
-	err = pf.ChangeCloudletDNS(ctx, new, old.RootLbFqdn, updateCloudletCallback)
-	if err != nil {
-		err := fmt.Errorf("update failed: %s", err)
-		sender.SendState(dme.CloudletState(edgeproto.TrackedState_UPDATE_ERROR), edgeproto.WithStateError(err))
-		return err
+		// TODO -this doesn't send anything back for some reason...
+		updateCloudletCallback(edgeproto.UpdateTask, fmt.Sprintf("3. Updating Cloudlet DNS in CRM - %s", new.Key.Name))
+		err = pf.ChangeCloudletDNS(ctx, new, oldDNS, updateCloudletCallback)
+		if err != nil {
+			err := fmt.Errorf("update failed: %s", err)
+			sender.SendState(dme.CloudletState(edgeproto.TrackedState_UPDATE_ERROR), edgeproto.WithStateError(err))
+			return err
+		}
 	}
 	sender.SendUpdate(func(info *edgeproto.CloudletInfo) error {
 		info.Fields = []string{
@@ -675,14 +655,22 @@ func (cd *CRMHandler) CloudletChanged(ctx context.Context, target *edgeproto.Clo
 		log.SpanLog(ctx, log.DebugLevelInfra, "cloudletChanged ignoring CCRM state", "cloudlet", new)
 		return
 	}
+
 	// do request
 	log.SpanLog(ctx, log.DebugLevelInfra, "cloudletChanged", "cloudlet", new)
 	pf, err := cd.getPlatform(ctx, target)
 	if err != nil {
 		return err
 	}
-	fmap := edgeproto.MakeFieldMap(new.Fields)
 
+	// Special case for dns update
+	oldDNS, ok := new.Annotations[cloudcommon.AnnotationPreviousDNSName]
+	if ok && oldDNS != new.RootLbFqdn {
+		_ = cd.CloudletDNSChanged(ctx, pf, oldDNS, new, sender)
+		return
+	}
+
+	fmap := edgeproto.MakeFieldMap(new.Fields)
 	// for federated cloudlet, set cloudletinfo object if it is empty
 	if new.Key.FederatedOrganization != "" {
 		err = sender.SendUpdate(func(info *edgeproto.CloudletInfo) error {

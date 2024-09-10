@@ -1166,46 +1166,8 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "maintenance mode")
-
-	// Update cloudlet maintenance mode
-	// TODO - 1160 - 1203 is duplicate code, should fix this
-	stateTransitions := map[dme.MaintenanceState]dme.MaintenanceState{
-		dme.MaintenanceState_FAILOVER_REQUESTED:    dme.MaintenanceState_FAILOVER_DONE,
-		dme.MaintenanceState_CRM_REQUESTED:         dme.MaintenanceState_CRM_UNDER_MAINTENANCE,
-		dme.MaintenanceState_NORMAL_OPERATION_INIT: dme.MaintenanceState_NORMAL_OPERATION,
-	}
-
-	cancel := apis.cloudletApi.cache.WatchKey(&cloudlet.Key, func(ctx context.Context) {
-		cl := edgeproto.Cloudlet{}
-		if !apis.cloudletApi.cache.Get(&cloudlet.Key, &cl) {
-			return
-		}
-		switch cl.MaintenanceState {
-		case dme.MaintenanceState_FAILOVER_REQUESTED:
-			info := edgeproto.AutoProvInfo{}
-			if !apis.autoProvInfoApi.cache.Get(&cloudlet.Key, &info) {
-				info.Key = cloudlet.Key
-			}
-			info.MaintenanceState = stateTransitions[cl.MaintenanceState]
-			apis.autoProvInfoApi.cache.Update(ctx, &info, 0)
-		case dme.MaintenanceState_CRM_REQUESTED:
-			fallthrough
-		case dme.MaintenanceState_NORMAL_OPERATION_INIT:
-			info := edgeproto.CloudletInfo{}
-			if !apis.cloudletInfoApi.cache.Get(&cloudlet.Key, &info) {
-				info.Key = cloudlet.Key
-			}
-			info.MaintenanceState = stateTransitions[cl.MaintenanceState]
-			apis.cloudletInfoApi.cache.Update(ctx, &info, 0)
-		}
-	})
-
-	defer cancel()
-
-	cloudlet.MaintenanceState = dme.MaintenanceState_MAINTENANCE_START
-	cloudlet.Fields = append(cloudlet.Fields, edgeproto.CloudletFieldMaintenanceState)
-	err = apis.cloudletApi.UpdateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
-	require.Nil(t, err, fmt.Sprintf("update cloudlet maintenance state"))
+	err = apis.cloudletApi.setMaintenanceState(ctx, &cloudlet.Key, dme.MaintenanceState_UNDER_MAINTENANCE, ctx, "none")
+	require.Nil(t, err, "update cloudlet maintenance state")
 
 	eMock.verifyEvent(t, "cloudlet maintenance start", []node.EventTag{
 		node.EventTag{

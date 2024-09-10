@@ -18,7 +18,6 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -69,11 +68,6 @@ func (s *CRMData) appInstChanged(ctx context.Context, old *edgeproto.AppInst, ne
 				new.Fields = edgeproto.AppInstAllFields
 			} else {
 				new.Fields = old.GetDiffFields(new).Fields()
-				oldDNS, ok := new.Annotations[cloudcommon.AnnotationPreviousDNSName]
-				if ok && oldDNS == old.Uri {
-					_ = s.AppInstDNSChanged(ctx, s.cloudletKey, old, new, responseSender)
-					return
-				}
 			}
 			needsUpdate, err := s.AppInstChanged(ctx, s.cloudletKey, new, responseSender)
 			if err == nil && needsUpdate.Resources {
