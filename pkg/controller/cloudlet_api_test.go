@@ -1150,8 +1150,7 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	ok := apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
 	require.True(t, ok)
 	require.Equal(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
-
-	// Add some clusterInsts, appInsts
+	// Add clusterInst
 	clusterInst := testutil.ClusterInstData()[5]
 	clusterInst.CloudletKey = cloudlet.Key
 	err = apis.clusterInstApi.CreateClusterInst(&clusterInst, testutil.NewCudStreamoutClusterInst(ctx))
@@ -1160,6 +1159,51 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	ok = apis.clusterInstApi.store.Get(ctx, &clusterInst.Key, &clusterObj)
 	require.True(t, ok)
 	originalFqdn := clusterObj.Fqdn
+
+	// add regual app/appinst
+	app := testutil.AppData()[1]
+	_, err = apis.appApi.CreateApp(ctx, &app)
+	require.Nil(t, err, "Create App")
+	regAppInstName := "changednsregularapp"
+	appInst := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         regAppInstName,
+			Organization: clusterInst.Key.Organization,
+		},
+		AppKey:      app.Key,
+		CloudletKey: cloudlet.Key,
+		ClusterKey:  clusterInst.Key,
+		CloudletLoc: cloudlet.Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
+	}
+	err = apis.appInstApi.CreateAppInst(&appInst, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err, "Create AppInst")
+	ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+	require.True(t, ok)
+	origUri := appInst.Uri
+
+	// add internal app/appinst
+	app = testutil.AppData()[7]
+	_, err = apis.appApi.CreateApp(ctx, &app)
+	require.Nil(t, err, "Create Internal App")
+	internalAppInstName := "changednsinternallapp"
+	appInst = edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         internalAppInstName,
+			Organization: clusterInst.Key.Organization,
+		},
+		AppKey:      app.Key,
+		CloudletKey: cloudlet.Key,
+		ClusterKey:  clusterInst.Key,
+		CloudletLoc: cloudlet.Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
+	}
+	err = apis.appInstApi.CreateAppInst(&appInst, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err, "Create Internal AppInst")
+	ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+	require.True(t, ok)
+	require.Empty(t, appInst.Uri)
+
 	// Set up a different appDNSRoot
 	*appDNSRoot = "new.and.improved.dns.com"
 	// Cloudlet has to be in maintenance mode
@@ -1177,29 +1221,53 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	})
 	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
-	// check new fqdn
-	cloudletObj = edgeproto.Cloudlet{}
-	ok = apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
-	require.True(t, ok)
-	require.Contains(t, cloudletObj.RootLbFqdn, *appDNSRoot)
-	// at this point static and current fqdns should be different
-	require.NotEqual(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
-	updatedRootLbFqdn := cloudletObj.RootLbFqdn
-	ok = apis.clusterInstApi.store.Get(ctx, &clusterInst.Key, &clusterObj)
-	require.True(t, ok)
-	require.NotEqual(t, clusterObj.Fqdn, originalFqdn)
-	require.Contains(t, clusterObj.Fqdn, *appDNSRoot)
+
+	updatedRootLbFqdn := ""
+	checkDNS := func() {
+		// check new fqdn
+		cloudletObj = edgeproto.Cloudlet{}
+		ok = apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
+		require.True(t, ok)
+		require.Contains(t, cloudletObj.RootLbFqdn, *appDNSRoot)
+		// at this point static and current fqdns should be different
+		require.NotEqual(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
+		if updatedRootLbFqdn == "" {
+			updatedRootLbFqdn = cloudletObj.RootLbFqdn
+		} else {
+			// This is test of the second run - check that nothing changed
+			require.Equal(t, cloudletObj.RootLbFqdn, updatedRootLbFqdn)
+		}
+		annotationDNS, ok := cloudletObj.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.True(t, ok)
+		require.Equal(t, cloudletObj.StaticRootLbFqdn, annotationDNS)
+		ok = apis.clusterInstApi.store.Get(ctx, &clusterInst.Key, &clusterObj)
+		require.True(t, ok)
+		require.NotEqual(t, clusterObj.Fqdn, originalFqdn)
+		require.Contains(t, clusterObj.Fqdn, *appDNSRoot)
+		annotationDNS, ok = clusterObj.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.True(t, ok)
+		require.Equal(t, originalFqdn, annotationDNS)
+		// Check regular app
+		appInst.Key.Name = regAppInstName
+		ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+		require.True(t, ok)
+		require.NotEqual(t, appInst.Uri, origUri)
+		require.Contains(t, appInst.Uri, *appDNSRoot)
+		annotationDNS, ok = appInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.True(t, ok)
+		require.Equal(t, origUri, annotationDNS)
+		// Check internal app - no changes
+		appInst.Key.Name = internalAppInstName
+		ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+		require.True(t, ok)
+		require.Empty(t, appInst.Uri)
+		_, ok = appInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.False(t, ok)
+	}
+	checkDNS()
+
 	// Repeat update should result in the same fqdn
 	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
-	ok = apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
-	require.True(t, ok)
-	require.Contains(t, cloudletObj.RootLbFqdn, *appDNSRoot)
-	require.Equal(t, cloudletObj.RootLbFqdn, updatedRootLbFqdn)
-	require.NotEqual(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
-	// TODO - check appinst.Uri handling
-	// TODO - add handling of non-ready apps
-	// TODO - check that we don't update non-ready clusters
-	// TODO - check we don't update internal apps
-	// TODO - check annotaions on cloudlet/appinst/clusterinst for old uri
+	checkDNS()
 }
