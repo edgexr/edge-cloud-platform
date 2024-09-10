@@ -217,7 +217,6 @@ func (cd *CRMHandler) clusterInstDNSChanged(ctx context.Context, pf platform.Pla
 		sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
 		return err
 	}
-	updateClusterCacheCallback(edgeproto.UpdateTask, "2. CLUSTER UPDATE")
 	log.SpanLog(ctx, log.DebugLevelInfra, "ClusterInstChange for DNS done", "key", new.Key, "old dns", oldFQDN, "new dns", new.Fqdn)
 	sender.SendState(edgeproto.TrackedState_READY)
 	return nil
@@ -388,7 +387,6 @@ func (cd *CRMHandler) appInstDNSChanged(ctx context.Context, pf platform.Platfor
 		sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
 		return err
 	}
-	updateAppCacheCallback(edgeproto.UpdateTask, "3. APPINST UPDATE")
 	log.SpanLog(ctx, log.DebugLevelInfra, "AppInstDNSChanged done", "key", new.Key, "old dns", oldURI, "new dns", new.Uri)
 	sender.SendState(edgeproto.TrackedState_READY)
 	return nil
