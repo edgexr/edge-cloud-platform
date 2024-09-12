@@ -271,6 +271,8 @@ func (s *streamoutAppInst) Context() context.Context {
 
 func (s *AutoProvPolicyApi) configureZones(stm concurrency.STM, policy *edgeproto.AutoProvPolicy) error {
 	// make sure Zones exist and location is copied
+	// check for duplicates
+	dups := map[edgeproto.ZoneKey]struct{}{}
 	for ii, _ := range policy.Zones {
 		zone := edgeproto.Zone{}
 		if !s.all.zoneApi.store.STMGet(stm, policy.Zones[ii], &zone) {
@@ -279,6 +281,10 @@ func (s *AutoProvPolicyApi) configureZones(stm concurrency.STM, policy *edgeprot
 		if zone.DeletePrepare {
 			return zone.Key.BeingDeletedError()
 		}
+		if _, found := dups[zone.Key] {
+			return fmt.Errorf("duplicate zone %s in list", zone.Key.GetKeyString())
+		}
+		dups[zone.Key] = struct{}{}
 	}
 	return nil
 }
