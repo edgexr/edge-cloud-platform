@@ -192,7 +192,7 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 			// only vm with load balancers need to be handled
 			continue
 		}
-		appLbName := appinst.Uri
+		appLbName := appinst.StaticUri
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetAllCloudletVMs handle VM appinst with LB", "key", k, "appLbName", appLbName)
 		appLbClient, err := v.GetSSHClientForServer(ctx, appLbName, v.VMProperties.GetCloudletExternalNetwork(), pc.WithCachedIp(true))
 		if err != nil {

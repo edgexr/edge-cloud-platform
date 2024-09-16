@@ -131,7 +131,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	var vms []*VMRequestSpec
 	orchVals.externalServerName = appVmName
 
-	orchVals.lbName = appInst.Uri
+	orchVals.lbName = appInst.StaticUri
 	orchVals.externalServerName = orchVals.lbName
 	orchVals.newSubnetNames = v.GetVMAppSubnetNames(appVmName)
 	nets := make(map[string]NetworkType)
@@ -724,7 +724,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
 		}
 		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
-		lbName := appInst.Uri
+		lbName := appInst.StaticUri
 		nodeKey := edgeproto.CloudletNodeKey{
 			Name:        lbName,
 			CloudletKey: clusterInst.CloudletKey,
@@ -911,31 +911,15 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 	}
 }
 
-func (v *VMPlatform) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPlatform) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, oldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "ChangeAppInstDNS", "app", app, "appinst", appInst, "oldURI", oldURI)
 	// only VM-type deployment require any work
 	if app.Deployment != cloudcommon.DeploymentTypeVM {
 		return nil
 	}
-	// Add a new DNS entry for appInst
-	rootLBDetail, err := v.VMProvider.GetServerDetail(ctx, appInst.Uri)
-	if err != nil {
-		return fmt.Errorf("failed to get server detail for VMApp rootLB %s, %s", appInst.Uri, err)
-	}
-
-	updateCallback(edgeproto.UpdateTask, "Setting Up Load Balancer")
-	pp := edgeproto.TrustPolicy{}
-	err = v.SetupRootLB(ctx, appInst.Uri, appInst.Uri, &appInst.CloudletKey, &pp, rootLBDetail, appInst.EnableIpv6, updateCallback)
-	if err != nil {
-		return err
-	}
-
-	// Now delete old DNS entry
-	updateCallback(edgeproto.UpdateTask, "Deleting old DNS")
-	if err := v.VMProperties.CommonPf.DeleteDNSRecords(ctx, OldURI); err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete DNS record", "uri", OldURI, "err", err)
-	}
-
-	return nil
+	updateCallback(edgeproto.UpdateTask, "Updating Cluster FQDN")
+	rootLBName := appInst.StaticUri
+	return v.updateRootLbDNSEntry(ctx, rootLBName, appInst.Uri, oldURI, updateCallback)
 }
 
 func (v *VMPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {

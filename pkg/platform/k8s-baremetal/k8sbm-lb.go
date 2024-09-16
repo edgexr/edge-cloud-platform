@@ -33,7 +33,7 @@ type LbInfo struct {
 func (k *K8sBareMetalPlatform) GetLbName(ctx context.Context, appInst *edgeproto.AppInst) string {
 	lbName := k.sharedLBName
 	if appInst.DedicatedIp {
-		return appInst.Uri
+		return appInst.StaticUri
 	}
 	return lbName
 }

@@ -2084,7 +2084,9 @@ func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *e
 			log.SpanLog(ctx, log.DebugLevelApi, "Cluster is currently being deleted", "cluster", key)
 			return nil
 		}
-		if clusterInst.State != edgeproto.TrackedState_READY {
+
+		// Could be in an update error after an unsuccessful dns update
+		if clusterInst.State != edgeproto.TrackedState_READY && clusterInst.State != edgeproto.TrackedState_UPDATE_ERROR {
 			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Cluster %s is not ready - skipping", clusterInst.Key.Name)})
 			log.SpanLog(ctx, log.DebugLevelApi, "Cluster is not ready - skipping", "clusterinst", clusterInst)
 			return nil
@@ -2104,6 +2106,37 @@ func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *e
 		log.SpanLog(ctx, log.DebugLevelApi, "Failed to update clusterinst in etcd", "err", err)
 		return err
 	}
+
+	// Revert cluster to old state if update failed
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		undoErr := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			clusterInst := edgeproto.ClusterInst{}
+			if !s.store.STMGet(stm, key, &clusterInst) {
+				log.SpanLog(ctx, log.DebugLevelApi, "Cluster deleted before DNS update", "cluster", key)
+				return nil
+			}
+			if clusterInst.DeletePrepare {
+				log.SpanLog(ctx, log.DebugLevelApi, "Cluster is currently being deleted", "cluster", key)
+				return nil
+			}
+			oldFqdn, ok := clusterInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
+			if !ok {
+				log.SpanLog(ctx, log.DebugLevelApi, "no previous fqdn is set")
+				return fmt.Errorf("no previous fqdn set for %s", clusterInst.Key.Name)
+			}
+			delete(clusterInst.Annotations, cloudcommon.AnnotationPreviousDNSName)
+			clusterInst.Fqdn = oldFqdn
+			clusterInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
+			s.store.STMPut(stm, &clusterInst)
+			return nil
+		})
+		if undoErr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "Failed to undo dns update", "key", key, "err", undoErr)
+		}
+	}()
 
 	// Nothing changed
 	if !needUpdate {

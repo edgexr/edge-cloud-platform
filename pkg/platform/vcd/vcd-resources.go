@@ -254,7 +254,7 @@ func (v *VcdPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cl
 func (v *VcdPlatform) VmAppChangedCallback(ctx context.Context, appInst *edgeproto.AppInst, newState edgeproto.TrackedState) {
 	log.SpanLog(ctx, log.DebugLevelMetrics, "VmAppChangedCallback", "appInstKey", appInst.Key, "newState", newState)
 	if v.GetHrefCacheEnabled() && newState != edgeproto.TrackedState_READY {
-		vmName := appInst.Uri
+		vmName := appInst.StaticUri
 		v.DeleteVmHrefFromCache(ctx, vmName)
 		// delete using old format also
 		altVmName := oldGetAppFQN(&appInst.AppKey)

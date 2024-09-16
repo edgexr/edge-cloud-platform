@@ -2679,7 +2679,6 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 		// TODO - this right now only works for crm running on the cloudlet, add a handler api for ccrm case
 		reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CreateCloudletTimeout.TimeDuration())
 		defer reqCancel()
-
 		successMsg := fmt.Sprintf("Cloudlet %s FQDN updated successfully", key.Name)
 		if cloudlet.CrmOnEdge {
 			// Wait for cloudlet to finish updating DNS entries
@@ -2690,6 +2689,27 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 				successMsg, cb.Send,
 				edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
 			if err != nil {
+				// revert the fqdn back to the original state
+				undoErr := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+					if !s.store.STMGet(stm, key, &cloudlet) {
+						// got deleted in the meantime
+						return nil
+					}
+					oldFqdn, ok := cloudlet.Annotations[cloudcommon.AnnotationPreviousDNSName]
+					if !ok {
+						log.SpanLog(ctx, log.DebugLevelApi, "no previous fqdn is set")
+						return fmt.Errorf("no previous rootLB fqdn set for %s", cloudlet.Key.Name)
+					}
+					delete(cloudlet.Annotations, cloudcommon.AnnotationPreviousDNSName)
+					cloudlet.RootLbFqdn = oldFqdn
+					cloudlet.UpdatedAt = dme.TimeToTimestamp(time.Now())
+					s.store.STMPut(stm, &cloudlet)
+					return nil
+				})
+				if undoErr != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "Failed to undo dns update", "key", key, "err", undoErr)
+				}
+
 				cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Failed to update cloudlet RootLB fqdn - %s", err.Error())})
 				return err
 			}
@@ -2709,7 +2729,7 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	for ii := range clustersToUpdate {
 		err := s.all.clusterInstApi.updateRootLbFQDN(&clustersToUpdate[ii].Key, &cloudlet, inCb)
 		if err != nil {
-			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Failed to update Cluster FQDN - %s", err.Error())})
+			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Failed to update Cluster(%s) FQDN - %s", clustersToUpdate[ii].Key.Name, err.Error())})
 			return err
 		}
 	}
@@ -2727,7 +2747,7 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	for ii := range appinstsToUpdate {
 		err := s.all.appInstApi.updateURI(&appinstsToUpdate[ii].Key, &cloudlet, inCb)
 		if err != nil {
-			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Failed to update AppInst URI - %s", err.Error())})
+			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Failed to update AppInst(%s) URI - %s", appinstsToUpdate[ii].Key.Name, err.Error())})
 		}
 	}
 	cb.Send(&edgeproto.Result{Message: "DNS Migration complete"})

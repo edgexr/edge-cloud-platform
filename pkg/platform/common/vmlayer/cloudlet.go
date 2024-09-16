@@ -26,6 +26,7 @@ import (
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 )
@@ -304,21 +305,56 @@ func (v *VMPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 	return nil
 }
 
-func (v *VMPlatform) ChangeCloudletDNS(ctx context.Context, cloudlet *edgeproto.Cloudlet, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
-	var err error
+func (v *VMPlatform) updateRootLbDNSEntry(ctx context.Context, rootLBName, rootLBFQDN, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "updateRootLbDNSEntry", "rootLBName", rootLBName, "rootLBFQDN", rootLBFQDN, "oldFqdn", oldFqdn)
+
+	sd, err := v.VMProvider.GetServerDetail(ctx, rootLBName)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "rootlb doesn't exist", "rootLb", rootLBName, "err", err)
+		return err
+	}
+
+	client, err := v.GetSSHClientForServer(ctx, rootLBName, v.VMProperties.GetCloudletExternalNetwork(), pc.WithUser(infracommon.SSHUser), pc.WithCachedIp(true))
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cannot get rootlb client", "rootLb", rootLBName, "fqdn", rootLBFQDN, "err", err)
+		return err
+	}
+
+	rootLBIPs, err := v.GetExternalIPFromServerName(ctx, rootLBName, WithServerDetail(sd))
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "cannot get rootLb external IP", "rootLb", rootLBName, "fqdn", rootLBFQDN, "err", err)
+		return fmt.Errorf("cannot get rootLB IP %sv", err)
+	}
 
 	// Set up new dns registration before removing the old one
-	err = v.initRootLB(ctx, v.VMProperties.CommonPf.PlatformConfig, ActionUpdate, updateCallback)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Updating FQDN/Certs", "fqdn", rootLBFQDN, "ips", rootLBIPs)
+	updateCallback(edgeproto.UpdateTask, "Updating RootLB FQDN")
+	if err = v.ActivateFQDNs(ctx, rootLBFQDN, rootLBIPs.IPV4(), rootLBIPs.IPV6()); err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to activate fqdn", "fqdn", rootLBFQDN, "IPs", rootLBIPs, "err", err)
+		return err
+	}
+	updateCallback(edgeproto.UpdateTask, "Setting up TLS Certs on RootLB")
+	err = v.proxyCerts.SetupTLSCerts(ctx, rootLBFQDN, rootLBName, client)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "Unable to update shared lb dns", "cloudlet", cloudlet.Key, "oldFqdn", oldFqdn)
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to setup tls certs", "fqdn", rootLBFQDN, "rootLb", rootLBName, "err", err)
 		return err
 	}
 
 	// now delete old dns entry
+	log.SpanLog(ctx, log.DebugLevelInfra, "Deleting old DNS entry", "oldFqdn", oldFqdn)
+	updateCallback(edgeproto.UpdateTask, "Deleting old DNS")
 	if err = v.VMProperties.CommonPf.DeleteDNSRecords(ctx, oldFqdn); err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete old sharedRootLB DNS record", "fqdn", oldFqdn, "err", err)
+		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Failed to delete old fqdn - %s. Delete manually", oldFqdn))
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete DNS record", "fqdn", oldFqdn, "err", err)
 	}
 	return nil
+}
+
+func (v *VMPlatform) ChangeCloudletDNS(ctx context.Context, cloudlet *edgeproto.Cloudlet, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "ChangeCloudletDNS", "cloudlet", cloudlet, "oldFqdn", oldFqdn)
+	updateCallback(edgeproto.UpdateTask, "Updating shared rootLb FQDN")
+	rootLBName := v.VMProperties.SharedRootLBName
+	return v.updateRootLbDNSEntry(ctx, rootLBName, cloudlet.RootLbFqdn, oldFqdn, updateCallback)
 }
 
 func (v *VMPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {

@@ -120,19 +120,11 @@ func ParseClusterNodePrefix(name string) (bool, uint32) {
 }
 
 func (v *VMPlatform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
-	// first create new dns and update certs
-	err := v.UpdateClusterInst(ctx, clusterInst, updateCallback)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "Unable to update cluster dns entries", "cluster", clusterInst.Key, "oldFqdn", oldFqdn)
-		return err
-	}
-	// now delete old stale dns entry
-	dedicatedRootLB := clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED
-	if dedicatedRootLB {
-		updateCallback(edgeproto.UpdateTask, "Deleting old DNS")
-		if err := v.VMProperties.CommonPf.DeleteDNSRecords(ctx, oldFqdn); err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete DNS record", "fqdn", oldFqdn, "err", err)
-		}
+	log.SpanLog(ctx, log.DebugLevelApi, "ChangeClusterInstDNS", "cluster", clusterInst, "oldFqdn", oldFqdn)
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+		updateCallback(edgeproto.UpdateTask, "Updating Cluster FQDN")
+		rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
+		return v.updateRootLbDNSEntry(ctx, rootLBName, clusterInst.Fqdn, oldFqdn, updateCallback)
 	}
 	return nil
 }
