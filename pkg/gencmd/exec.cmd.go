@@ -419,7 +419,7 @@ var ExecRequestOptionalArgs = []string{
 	"edgeturnproxyaddr",
 	"cloudletorg",
 	"cloudlet",
-	"cloudletkey.federatedorganization",
+	"federatedorg",
 }
 var ExecRequestAliasArgs = []string{
 	"appinstname=appinstkey.name",
@@ -433,29 +433,30 @@ var ExecRequestAliasArgs = []string{
 	"follow=log.follow",
 	"cloudletorg=cloudletkey.organization",
 	"cloudlet=cloudletkey.name",
+	"federatedorg=cloudletkey.federatedorganization",
 }
 var ExecRequestComments = map[string]string{
-	"appinstname":                       "App Instance name",
-	"appinstorg":                        "App Instance organization",
-	"containerid":                       "ContainerId is the name or ID of the target container, if applicable",
-	"offer":                             "Offer",
-	"answer":                            "Answer",
-	"err":                               "Any error message",
-	"command":                           "Command or Shell",
-	"nodetype":                          "Type of Cloudlet Mgmt Node",
-	"nodename":                          "Name of Cloudlet Mgmt Node",
-	"since":                             "Show logs since either a duration ago (5s, 2m, 3h) or a timestamp (RFC3339)",
-	"tail":                              "Show only a recent number of lines",
-	"timestamps":                        "Show timestamps",
-	"follow":                            "Stream data",
-	"console.url":                       "VM Console URL",
-	"timeout":                           "Timeout",
-	"accessurl":                         "Access URL",
-	"edgeturnaddr":                      "EdgeTurn Server Address",
-	"edgeturnproxyaddr":                 "EdgeTurn Proxy Address",
-	"cloudletorg":                       "Organization of the cloudlet site",
-	"cloudlet":                          "Name of the cloudlet",
-	"cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"appinstname":       "App Instance name",
+	"appinstorg":        "App Instance organization",
+	"containerid":       "ContainerId is the name or ID of the target container, if applicable",
+	"offer":             "Offer",
+	"answer":            "Answer",
+	"err":               "Any error message",
+	"command":           "Command or Shell",
+	"nodetype":          "Type of Cloudlet Mgmt Node",
+	"nodename":          "Name of Cloudlet Mgmt Node",
+	"since":             "Show logs since either a duration ago (5s, 2m, 3h) or a timestamp (RFC3339)",
+	"tail":              "Show only a recent number of lines",
+	"timestamps":        "Show timestamps",
+	"follow":            "Stream data",
+	"console.url":       "VM Console URL",
+	"timeout":           "Timeout",
+	"accessurl":         "Access URL",
+	"edgeturnaddr":      "EdgeTurn Server Address",
+	"edgeturnproxyaddr": "EdgeTurn Proxy Address",
+	"cloudletorg":       "Organization of the cloudlet site",
+	"cloudlet":          "Name of the cloudlet",
+	"federatedorg":      "Federated operator organization who shared this cloudlet",
 }
 var ExecRequestSpecialArgs = map[string]string{}
 var RunCommandRequiredArgs = []string{
@@ -466,9 +467,6 @@ var RunCommandRequiredArgs = []string{
 var RunCommandOptionalArgs = []string{
 	"containerid",
 	"edgeturnproxyaddr",
-	"cloudletorg",
-	"cloudlet",
-	"cloudletkey.federatedorganization",
 }
 var RunConsoleRequiredArgs = []string{
 	"appinstname",
@@ -476,9 +474,6 @@ var RunConsoleRequiredArgs = []string{
 }
 var RunConsoleOptionalArgs = []string{
 	"edgeturnproxyaddr",
-	"cloudletorg",
-	"cloudlet",
-	"cloudletkey.federatedorganization",
 }
 var ShowLogsRequiredArgs = []string{
 	"appinstname",
@@ -491,20 +486,15 @@ var ShowLogsOptionalArgs = []string{
 	"timestamps",
 	"follow",
 	"edgeturnproxyaddr",
-	"cloudletorg",
-	"cloudlet",
-	"cloudletkey.federatedorganization",
 }
 var AccessCloudletRequiredArgs = []string{
 	"cloudletorg",
 	"cloudlet",
 }
 var AccessCloudletOptionalArgs = []string{
-	"appinstname",
-	"appinstorg",
 	"command",
 	"nodetype",
 	"nodename",
 	"edgeturnproxyaddr",
-	"cloudletkey.federatedorganization",
+	"federatedorg",
 }

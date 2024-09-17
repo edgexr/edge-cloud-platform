@@ -17,6 +17,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -99,6 +100,55 @@ func (s *PlatformFeaturesApi) DeletePlatformFeatures(ctx context.Context, in *ed
 		return &edgeproto.Result{}, fmt.Errorf("PlatformType in use by Cloudlets %s", strings.Join(keys, ", "))
 	}
 	return s.store.Delete(ctx, in, s.sync.SyncWait)
+}
+
+func (s *PlatformFeaturesApi) ShowPlatformFeaturesForZone(key *edgeproto.ZoneKey, cb edgeproto.PlatformFeaturesApi_ShowPlatformFeaturesForZoneServer) error {
+	ctx := cb.Context()
+	// collect matching zone keys
+	zoneKeys := map[edgeproto.ZoneKey]struct{}{}
+	filter := edgeproto.Zone{
+		Key: *key,
+	}
+	err := s.all.zoneApi.cache.Show(&filter, func(zone *edgeproto.Zone) error {
+		zoneKeys[zone.Key] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	// collect platform types for matching zones
+	platforms := map[string]struct{}{}
+	err = s.all.cloudletApi.cache.Show(&edgeproto.Cloudlet{}, func(cloudlet *edgeproto.Cloudlet) error {
+		zoneKey := cloudlet.GetZone()
+		if zoneKey.IsSet() {
+			if _, found := zoneKeys[*zoneKey]; found {
+				platforms[cloudlet.PlatformType] = struct{}{}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	// get all the platform features
+	pfs := []*edgeproto.PlatformFeatures{}
+	for pftype := range platforms {
+		pf, err := s.GetCloudletFeatures(ctx, pftype)
+		if err != nil {
+			return err
+		}
+		pfs = append(pfs, pf)
+	}
+	// sort for deterministic output
+	sort.Slice(pfs, func(i, j int) bool {
+		return pfs[i].PlatformType < pfs[j].PlatformType
+	})
+	for _, pf := range pfs {
+		if err := cb.Send(pf); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *PlatformFeaturesApi) GetCloudletFeatures(ctx context.Context, platformType string) (*edgeproto.PlatformFeatures, error) {

@@ -228,6 +228,7 @@ func TestCloudletApi(t *testing.T) {
 	testManualBringup(t, ctx, apis)
 
 	testShowFlavorsForZone(t, ctx, apis)
+	testShowPlatformFeaturesForZone(t, ctx, apis)
 	testAllianceOrgs(t, ctx, apis)
 	testCloudletEdgeboxOnly(t, ctx, cloudletData[2], apis)
 }
@@ -916,6 +917,29 @@ func testShowFlavorsForZone(t *testing.T, ctx context.Context, apis *AllApis) {
 	err = cCldApi.ShowFlavorsForZone(ctx, zkey, &show)
 	require.Nil(t, err)
 	require.Equal(t, 2, len(show.Data))
+}
+
+func testShowPlatformFeaturesForZone(t *testing.T, ctx context.Context, apis *AllApis) {
+	// Show features for specific zone (single cloudlet in zone)
+	show := testutil.NewShowServerStream[*edgeproto.PlatformFeatures](ctx)
+
+	zones := testutil.ZoneData()
+	err := apis.platformFeaturesApi.ShowPlatformFeaturesForZone(&zones[0].Key, show)
+	require.Nil(t, err)
+	require.Equal(t, 1, len(show.Data))
+	require.Equal(t, "fake", show.Data[0].PlatformType)
+
+	// Show features for operator
+	show = testutil.NewShowServerStream[*edgeproto.PlatformFeatures](ctx)
+	filter := edgeproto.ZoneKey{
+		Organization: testutil.OperatorData()[2],
+	}
+	// operatorData[2] yields CloudletData[3] (fake) and CloudletData[4] (fakesinglecluster)
+	err = apis.platformFeaturesApi.ShowPlatformFeaturesForZone(&filter, show)
+	require.Nil(t, err)
+	require.Equal(t, 2, len(show.Data))
+	require.Equal(t, "fake", show.Data[0].PlatformType)
+	require.Equal(t, "fakesinglecluster", show.Data[1].PlatformType)
 }
 
 func testAllianceOrgs(t *testing.T, ctx context.Context, apis *AllApis) {

@@ -281,7 +281,7 @@ func (s *AutoProvPolicyApi) configureZones(stm concurrency.STM, policy *edgeprot
 		if zone.DeletePrepare {
 			return zone.Key.BeingDeletedError()
 		}
-		if _, found := dups[zone.Key] {
+		if _, found := dups[zone.Key]; found {
 			return fmt.Errorf("duplicate zone %s in list", zone.Key.GetKeyString())
 		}
 		dups[zone.Key] = struct{}{}

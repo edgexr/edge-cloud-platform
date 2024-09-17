@@ -296,9 +296,91 @@ func DeletePlatformFeaturess(c *cli.Command, data []edgeproto.PlatformFeatures, 
 	}
 }
 
+var ShowPlatformFeaturesForZoneCmd = &cli.Command{
+	Use:          "ShowPlatformFeaturesForZone",
+	RequiredArgs: strings.Join(ShowPlatformFeaturesForZoneRequiredArgs, " "),
+	OptionalArgs: strings.Join(ShowPlatformFeaturesForZoneOptionalArgs, " "),
+	AliasArgs:    strings.Join(ZoneKeyAliasArgs, " "),
+	SpecialArgs:  &ZoneKeySpecialArgs,
+	Comments:     ZoneKeyComments,
+	ReqData:      &edgeproto.ZoneKey{},
+	ReplyData:    &edgeproto.PlatformFeatures{},
+	Run:          runShowPlatformFeaturesForZone,
+}
+
+func runShowPlatformFeaturesForZone(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.ZoneKey)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowPlatformFeaturesForZone(c, obj)
+}
+
+func ShowPlatformFeaturesForZone(c *cli.Command, in *edgeproto.ZoneKey) error {
+	if PlatformFeaturesApiCmd == nil {
+		return fmt.Errorf("PlatformFeaturesApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := PlatformFeaturesApiCmd.ShowPlatformFeaturesForZone(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowPlatformFeaturesForZone failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.PlatformFeatures, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowPlatformFeaturesForZone recv failed: %s", errstr)
+		}
+		if cli.OutputStream {
+			c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+			continue
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowPlatformFeaturesForZones(c *cli.Command, data []edgeproto.ZoneKey, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowPlatformFeaturesForZone %v\n", data[ii])
+		myerr := ShowPlatformFeaturesForZone(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var PlatformFeaturesApiCmds = []*cobra.Command{
 	ShowPlatformFeaturesCmd.GenCmd(),
 	DeletePlatformFeaturesCmd.GenCmd(),
+	ShowPlatformFeaturesForZoneCmd.GenCmd(),
 }
 
 var GPUDriverApiCmd edgeproto.GPUDriverApiClient
@@ -3291,6 +3373,12 @@ var CloudletMetricsComments = map[string]string{
 	"foo": "what goes here?",
 }
 var CloudletMetricsSpecialArgs = map[string]string{}
+var ShowPlatformFeaturesForZoneRequiredArgs = []string{}
+var ShowPlatformFeaturesForZoneOptionalArgs = []string{
+	"zoneorg",
+	"zone",
+	"federatororg",
+}
 var UpdateGPUDriverRequiredArgs = []string{
 	"gpudrivername",
 }

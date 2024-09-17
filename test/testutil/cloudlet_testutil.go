@@ -1025,6 +1025,26 @@ func (r *Run) PlatformFeaturesApi(data *[]edgeproto.PlatformFeatures, dataMap in
 	}
 }
 
+func (r *Run) PlatformFeaturesApi_ZoneKey(data *[]edgeproto.ZoneKey, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for ZoneKey", "mode", r.Mode)
+	for ii, objD := range *data {
+		obj := &objD
+		switch r.Mode {
+		case "showplatformfeaturesforzone":
+			out, err := r.client.ShowPlatformFeaturesForZone(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("PlatformFeaturesApi_ZoneKey[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[][]edgeproto.PlatformFeatures)
+				if !ok {
+					panic(fmt.Sprintf("RunPlatformFeaturesApi_ZoneKey expected dataOut type *[][]edgeproto.PlatformFeatures, but was %T", dataOut))
+				}
+				*outp = append(*outp, out)
+			}
+		}
+	}
+}
+
 func (s *DummyServer) ShowPlatformFeatures(in *edgeproto.PlatformFeatures, server edgeproto.PlatformFeaturesApi_ShowPlatformFeaturesServer) error {
 	var err error
 	obj := &edgeproto.PlatformFeatures{}
@@ -1867,9 +1887,26 @@ func (s *CliClient) DeletePlatformFeatures(ctx context.Context, in *edgeproto.Pl
 	return &out, err
 }
 
+func (s *ApiClient) ShowPlatformFeaturesForZone(ctx context.Context, in *edgeproto.ZoneKey) ([]edgeproto.PlatformFeatures, error) {
+	api := edgeproto.NewPlatformFeaturesApiClient(s.Conn)
+	stream, err := api.ShowPlatformFeaturesForZone(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return PlatformFeaturesReadStream(stream)
+}
+
+func (s *CliClient) ShowPlatformFeaturesForZone(ctx context.Context, in *edgeproto.ZoneKey) ([]edgeproto.PlatformFeatures, error) {
+	output := []edgeproto.PlatformFeatures{}
+	args := append(s.BaseArgs, "controller", "ShowPlatformFeaturesForZone")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
 type PlatformFeaturesApiClient interface {
 	ShowPlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) ([]edgeproto.PlatformFeatures, error)
 	DeletePlatformFeatures(ctx context.Context, in *edgeproto.PlatformFeatures) (*edgeproto.Result, error)
+	ShowPlatformFeaturesForZone(ctx context.Context, in *edgeproto.ZoneKey) ([]edgeproto.PlatformFeatures, error)
 }
 
 func (s *ApiClient) CreateGPUDriver(ctx context.Context, in *edgeproto.GPUDriver) ([]edgeproto.Result, error) {

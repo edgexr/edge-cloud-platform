@@ -1026,7 +1026,8 @@ func (s *searchAppInst) searchAppInsts(ctx context.Context, carrier string, appI
 	for _, i := range appInsts {
 		d := DistanceBetween(*s.loc, i.Location) + s.padDistance(carrier)
 		usable := IsAppInstUsable(i)
-		log.SpanLog(ctx, log.DebugLevelDmereq, "found cloudlet at",
+		log.SpanLog(ctx, log.DebugLevelDmereq, "found appinst",
+			"appinst", i.key,
 			"carrier", carrier,
 			"latitude", i.Location.Latitude,
 			"longitude", i.Location.Longitude,

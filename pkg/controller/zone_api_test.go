@@ -18,9 +18,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestZoneApi(t *testing.T) {
@@ -41,5 +43,20 @@ func TestZoneApi(t *testing.T) {
 	defer sync.Done()
 
 	testutil.InternalZoneTest(t, "cud", apis.zoneApi, testutil.ZoneData())
+
+	// test that showPlatformFeaturesForZone does not crash with missing data
+	show := testutil.NewShowServerStream[*edgeproto.PlatformFeatures](ctx)
+	err := apis.platformFeaturesApi.ShowPlatformFeaturesForZone(&edgeproto.ZoneKey{}, show)
+	require.Nil(t, err)
+	require.Equal(t, 0, len(show.Data))
+	// test that showPlatformFeaturesForZone does not crash with missing zone
+	show = testutil.NewShowServerStream[*edgeproto.PlatformFeatures](ctx)
+	filter := edgeproto.ZoneKey{
+		Name: "missing",
+	}
+	err = apis.platformFeaturesApi.ShowPlatformFeaturesForZone(&filter, show)
+	require.Nil(t, err)
+	require.Equal(t, 0, len(show.Data))
+
 	dummy.Stop()
 }

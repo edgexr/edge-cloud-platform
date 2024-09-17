@@ -21,6 +21,7 @@ import (
 	"io"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"google.golang.org/grpc"
 )
 
@@ -87,6 +88,10 @@ func (s *DummyServer) GetCloudletGPUDriverLicenseConfig(ctx context.Context, in 
 	return &edgeproto.Result{}, nil
 }
 
+func (s *DummyServer) ShowPlatformFeaturesForZone(key *edgeproto.ZoneKey, cb edgeproto.PlatformFeaturesApi_ShowPlatformFeaturesForZoneServer) error {
+	return nil
+}
+
 // minimal bits not currently generated for flavorkey.proto to stream flavorKey objs
 // for ShowFlavorsForZone cli
 type ShowFlavorsForZone struct {
@@ -139,4 +144,44 @@ func (x *CloudletCommonApi) ShowFlavorsForZone(ctx context.Context, filter *edge
 		showData.ReadStream(stream, err)
 		return err
 	}
+}
+
+type RecvServerStream[Obj objstore.Obj] interface {
+	Recv() (Obj, error)
+}
+
+type ShowServerStream[Obj objstore.Obj] struct {
+	grpc.ServerStream
+	Data []Obj
+	Ctx  context.Context
+}
+
+func NewShowServerStream[Obj objstore.Obj](ctx context.Context) *ShowServerStream[Obj] {
+	return &ShowServerStream[Obj]{
+		Ctx: ctx,
+	}
+}
+
+func (s *ShowServerStream[Obj]) Send(obj Obj) error {
+	s.Data = append(s.Data, obj)
+	return nil
+}
+
+func (s *ShowServerStream[Obj]) Context() context.Context {
+	return s.Ctx
+}
+
+func (s *ShowServerStream[Obj]) ReadStream(stream RecvServerStream[Obj]) error {
+	s.Data = []Obj{}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		s.Data = append(s.Data, obj)
+	}
+	return nil
 }
