@@ -409,6 +409,37 @@ func removeAppInstFromRefs(appInstKey *edgeproto.AppInstKey, appInstRefs *[]edge
 	return refsChanged
 }
 
+// getAppInstURI get the Uri for the application instance.
+// Takes into account how the app is deployed and features of a given cloudlet
+func getAppInstURI(ctx context.Context, appInst *edgeproto.AppInst, app *edgeproto.App, clusterInst *edgeproto.ClusterInst, cloudlet *edgeproto.Cloudlet, cloudletFeatures *edgeproto.PlatformFeatures) string {
+	// Internal apps, or apps that don't have ports exposed don't need uri
+	ports, _ := edgeproto.ParseAppPorts(app.AccessPorts)
+	if app.InternalPorts || len(ports) == 0 {
+		return ""
+	}
+
+	// Default to dedicated IP
+	uri := getAppInstFQDN(appInst, cloudlet)
+
+	// uri is specific to appinst if it has dedicated IP
+	if appInst.DedicatedIp {
+		return uri
+	}
+
+	ipaccess := edgeproto.IpAccess_IP_ACCESS_SHARED
+	if cloudcommon.IsClusterInstReqd(app) {
+		ipaccess = clusterInst.IpAccess
+	}
+	if ipaccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
+		// uri points to cloudlet shared root LB
+		uri = cloudlet.RootLbFqdn
+	} else if !isIPAllocatedPerService(ctx, cloudlet.PlatformType, cloudletFeatures, appInst.CloudletKey.Organization) {
+		// dedicated access in which IP is that of the LB
+		uri = clusterInst.Fqdn
+	}
+	return uri
+}
+
 // createAppInstInternal is used to create dynamic app insts internally,
 // bypassing static assignment.
 func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppInst, inCb edgeproto.AppInstApi_CreateAppInstServer) (reterr error) {
@@ -1092,8 +1123,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			initCloudletRefs(&cloudletRefs, &in.CloudletKey)
 		}
 
-		in.Uri = getAppInstFQDN(in, &cloudlet)
-		in.StaticUri = in.Uri
 		ports, _ := edgeproto.ParseAppPorts(app.AccessPorts)
 		if !cloudcommon.IsClusterInstReqd(&app) {
 			for ii := range ports {
@@ -1105,10 +1134,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				ports[ii].PublicPort = ports[ii].InternalPort
 			}
 		} else if ipaccess == edgeproto.IpAccess_IP_ACCESS_SHARED && !app.InternalPorts {
-			// uri points to cloudlet shared root LB
-			in.Uri = cloudlet.RootLbFqdn
-			in.StaticUri = in.Uri
-
 			if cloudletRefs.RootLbPorts == nil {
 				cloudletRefs.RootLbPorts = make(map[int32]int32)
 			}
@@ -1150,7 +1175,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 					return errors.New("no free external ports")
 				}
 				ports[ii].PublicPort = eport
-				existingProtoBits, _ := cloudletRefs.RootLbPorts[eport]
+				existingProtoBits := cloudletRefs.RootLbPorts[eport]
 				cloudletRefs.RootLbPorts[eport] = addProtocol(protocolBits, existingProtoBits)
 
 				cloudletRefsChanged = true
@@ -1166,24 +1191,10 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				if err = s.checkPortOverlapDedicatedLB(stm, ports, &in.Key, &clusterKey); !cctx.Undo && err != nil {
 					return err
 				}
-				// dedicated access in which IP is that of the LB
-				in.Uri = clusterInst.Fqdn
-				in.StaticUri = in.Uri
 				for ii := range ports {
 					ports[ii].PublicPort = ports[ii].InternalPort
 				}
 			}
-		}
-		if app.InternalPorts || len(ports) == 0 {
-			// older CRMs require app URI regardless of external access to AppInst
-			if cloudletCompatibilityVersion >= cloudcommon.CRMCompatibilitySharedRootLBFQDN {
-				// no external access to AppInst, no need for URI
-				in.Uri = ""
-				in.StaticUri = ""
-			}
-		}
-		if err := cloudcommon.CheckFQDNLengths("", in.Uri); err != nil {
-			return err
 		}
 		if len(ports) > 0 {
 			in.MappedPorts = ports
@@ -1203,6 +1214,11 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		} else {
 			in.State = edgeproto.TrackedState_CREATE_REQUESTED
 		}
+		in.Uri = getAppInstURI(ctx, in, &app, &clusterInst, &cloudlet, cloudletFeatures)
+		if err := cloudcommon.CheckFQDNLengths("", in.Uri); err != nil {
+			return err
+		}
+		in.StaticUri = in.Uri
 		s.store.STMPut(stm, in)
 		return nil
 	})
@@ -2393,7 +2409,25 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst is internal.")
 			return nil
 		}
-		if appInst.Uri == getAppInstFQDN(&appInst, cloudlet) {
+		app := edgeproto.App{}
+		if !s.all.appApi.store.STMGet(stm, &appInst.AppKey, &app) {
+			return appInst.AppKey.NotFoundError()
+		}
+		clusterInst := edgeproto.ClusterInst{}
+		if cloudcommon.IsClusterInstReqd(&app) {
+			if !s.all.clusterInstApi.store.STMGet(stm, appInst.GetClusterKey(), &clusterInst) {
+				return errors.New("ClusterInst does not exist for App")
+			}
+		}
+		cloudletFeatures, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		if err != nil {
+			return fmt.Errorf("Failed to get features for platform: %s", err)
+		}
+		newURI := getAppInstURI(ctx, &appInst, &app, &clusterInst, cloudlet, cloudletFeatures)
+		if err := cloudcommon.CheckFQDNLengths("", appInst.Uri); err != nil {
+			return err
+		}
+		if appInst.Uri == newURI {
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst URI is up to date.")
 			return nil
 		}
@@ -2408,7 +2442,7 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 		// Store previous URI, so we can update this with CCRM
 		log.SpanLog(ctx, log.DebugLevelApi, "Updating AppInst URI", "old FQDN", appInst.Uri, "new", getAppInstFQDN(&appInst, cloudlet))
 		appInst.AddAnnotation(cloudcommon.AnnotationPreviousDNSName, appInst.Uri)
-		appInst.Uri = getAppInstFQDN(&appInst, cloudlet)
+		appInst.Uri = newURI
 		appInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
 		appInst.State = edgeproto.TrackedState_UPDATE_REQUESTED
 		s.store.STMPut(stm, &appInst)

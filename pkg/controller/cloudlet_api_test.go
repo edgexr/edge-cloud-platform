@@ -1150,15 +1150,22 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	ok := apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
 	require.True(t, ok)
 	require.Equal(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
-	// Add clusterInst
+	// add dedicated clusterInst
 	clusterInst := testutil.ClusterInstData()[5]
 	clusterInst.CloudletKey = cloudlet.Key
 	err = apis.clusterInstApi.CreateClusterInst(&clusterInst, testutil.NewCudStreamoutClusterInst(ctx))
-	require.Nil(t, err, "Create ClusterInst")
+	require.Nil(t, err, "Create Dedicated ClusterInst")
 	clusterObj := edgeproto.ClusterInst{}
 	ok = apis.clusterInstApi.store.Get(ctx, &clusterInst.Key, &clusterObj)
 	require.True(t, ok)
 	originalFqdn := clusterObj.Fqdn
+	// add shared clusterInst
+	clusterInstShared := testutil.ClusterInstData()[6]
+	clusterInstShared.CloudletKey = cloudlet.Key
+	err = apis.clusterInstApi.CreateClusterInst(&clusterInstShared, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err, "Create Shared ClusterInst")
+	ok = apis.clusterInstApi.store.Get(ctx, &clusterInstShared.Key, &clusterObj)
+	require.True(t, ok)
 
 	// add regual app/appinst
 	app := testutil.AppData()[1]
@@ -1180,7 +1187,7 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	require.Nil(t, err, "Create AppInst")
 	ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
 	require.True(t, ok)
-	origUri := appInst.Uri
+	origURI := appInst.Uri
 
 	// add internal app/appinst
 	app = testutil.AppData()[7]
@@ -1203,6 +1210,24 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
 	require.True(t, ok)
 	require.Empty(t, appInst.Uri)
+
+	app = testutil.AppData()[1]
+	regAppInstSharedAccName := "changednsregularsharedapp"
+	appInst = edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         regAppInstSharedAccName,
+			Organization: clusterInstShared.Key.Organization,
+		},
+		AppKey:      app.Key,
+		CloudletKey: cloudlet.Key,
+		ClusterKey:  clusterInstShared.Key,
+		CloudletLoc: cloudlet.Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
+	}
+	err = apis.appInstApi.CreateAppInst(&appInst, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err, "Create AppInst with shared access")
+	ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+	require.True(t, ok)
 
 	// Set up a different appDNSRoot
 	*appDNSRoot = "new.and.improved.dns.com"
@@ -1251,11 +1276,13 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 		appInst.Key.Name = regAppInstName
 		ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
 		require.True(t, ok)
-		require.NotEqual(t, appInst.Uri, origUri)
+		require.NotEqual(t, appInst.Uri, origURI)
 		require.Contains(t, appInst.Uri, *appDNSRoot)
+		// check that it has uri that matches the cluster fqdn
+		require.Equal(t, clusterObj.Fqdn, appInst.Uri)
 		annotationDNS, ok = appInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
 		require.True(t, ok)
-		require.Equal(t, origUri, annotationDNS)
+		require.Equal(t, origURI, annotationDNS)
 		// Check internal app - no changes
 		appInst.Key.Name = internalAppInstName
 		ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
@@ -1263,6 +1290,15 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 		require.Empty(t, appInst.Uri)
 		_, ok = appInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
 		require.False(t, ok)
+		// check shared access appInst
+		appInst.Key.Name = regAppInstSharedAccName
+		ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+		require.True(t, ok)
+		require.Contains(t, appInst.Uri, *appDNSRoot)
+		// check that it has uri that matches the sharedRootLb fqdn
+		require.Equal(t, cloudletObj.RootLbFqdn, appInst.Uri)
+		_, ok = appInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.True(t, ok)
 	}
 	checkDNS()
 
