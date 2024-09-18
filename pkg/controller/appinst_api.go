@@ -421,21 +421,18 @@ func getAppInstURI(ctx context.Context, appInst *edgeproto.AppInst, app *edgepro
 	// Default to dedicated IP
 	uri := getAppInstFQDN(appInst, cloudlet)
 
-	// uri is specific to appinst if it has dedicated IP
-	if appInst.DedicatedIp {
+	// uri is specific to appinst if it has dedicated IP, or no cluster
+	if !cloudcommon.IsClusterInstReqd(app) || appInst.DedicatedIp {
 		return uri
 	}
-
-	ipaccess := edgeproto.IpAccess_IP_ACCESS_SHARED
-	if cloudcommon.IsClusterInstReqd(app) {
-		ipaccess = clusterInst.IpAccess
-	}
-	if ipaccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
 		// uri points to cloudlet shared root LB
 		uri = cloudlet.RootLbFqdn
-	} else if !isIPAllocatedPerService(ctx, cloudlet.PlatformType, cloudletFeatures, appInst.CloudletKey.Organization) {
-		// dedicated access in which IP is that of the LB
-		uri = clusterInst.Fqdn
+	} else {
+		if !isIPAllocatedPerService(ctx, cloudlet.PlatformType, cloudletFeatures, appInst.CloudletKey.Organization) {
+			// dedicated access in which IP is that of the LB
+			uri = clusterInst.Fqdn
+		}
 	}
 	return uri
 }
