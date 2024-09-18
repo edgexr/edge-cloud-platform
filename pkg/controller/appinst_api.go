@@ -418,23 +418,22 @@ func getAppInstURI(ctx context.Context, appInst *edgeproto.AppInst, app *edgepro
 		return ""
 	}
 
-	// Default to dedicated IP
-	uri := getAppInstFQDN(appInst, cloudlet)
-
 	// uri is specific to appinst if it has dedicated IP, or no cluster
 	if !cloudcommon.IsClusterInstReqd(app) || appInst.DedicatedIp {
-		return uri
+		return getAppInstFQDN(appInst, cloudlet)
 	}
+
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
 		// uri points to cloudlet shared root LB
-		uri = cloudlet.RootLbFqdn
-	} else {
-		if !isIPAllocatedPerService(ctx, cloudlet.PlatformType, cloudletFeatures, appInst.CloudletKey.Organization) {
-			// dedicated access in which IP is that of the LB
-			uri = clusterInst.Fqdn
-		}
+		return cloudlet.RootLbFqdn
 	}
-	return uri
+	if !isIPAllocatedPerService(ctx, cloudlet.PlatformType, cloudletFeatures, appInst.CloudletKey.Organization) {
+		// dedicated access in which IP is that of the LB
+		return clusterInst.Fqdn
+	}
+
+	// Default to dedicated IP
+	return getAppInstFQDN(appInst, cloudlet)
 }
 
 // createAppInstInternal is used to create dynamic app insts internally,
