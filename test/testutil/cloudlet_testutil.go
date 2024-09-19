@@ -1474,6 +1474,17 @@ func (r *Run) CloudletApi_CloudletKey(data *[]edgeproto.CloudletKey, dataMap int
 				}
 				*outp = append(*outp, *out)
 			}
+		case "changecloudletdns":
+			out, err := r.client.ChangeCloudletDNS(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("CloudletApi_CloudletKey[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[][]edgeproto.Result)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletApi_CloudletKey expected dataOut type *[][]edgeproto.Result, but was %T", dataOut))
+				}
+				*outp = append(*outp, out)
+			}
 		}
 	}
 }
@@ -2356,6 +2367,22 @@ func (s *CliClient) GetCloudletGPUDriverLicenseConfig(ctx context.Context, in *e
 	return &out, err
 }
 
+func (s *ApiClient) ChangeCloudletDNS(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.Result, error) {
+	api := edgeproto.NewCloudletApiClient(s.Conn)
+	stream, err := api.ChangeCloudletDNS(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return ResultReadStream(stream)
+}
+
+func (s *CliClient) ChangeCloudletDNS(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.Result, error) {
+	output := []edgeproto.Result{}
+	args := append(s.BaseArgs, "controller", "ChangeCloudletDNS")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
 type CloudletApiClient interface {
 	CreateCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error)
 	DeleteCloudlet(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.Result, error)
@@ -2375,6 +2402,7 @@ type CloudletApiClient interface {
 	RevokeAccessKey(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error)
 	GenerateAccessKey(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error)
 	GetCloudletGPUDriverLicenseConfig(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.Result, error)
+	ChangeCloudletDNS(ctx context.Context, in *edgeproto.CloudletKey) ([]edgeproto.Result, error)
 }
 
 type CloudletInfoStream interface {

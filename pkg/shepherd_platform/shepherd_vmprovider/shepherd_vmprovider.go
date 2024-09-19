@@ -219,7 +219,7 @@ func (s *ShepherdPlatform) GetVmAppRootLbClient(ctx context.Context, appInst *ed
 	if result == vmlayer.OperationNewlyInitialized {
 		defer s.VMPlatform.VMProvider.InitOperationContext(ctx, vmlayer.OperationInitComplete)
 	}
-	rootLBName := appInst.Uri
+	rootLBName := appInst.StaticUri
 	client, err := s.VMPlatform.GetNodePlatformClient(ctx, &edgeproto.CloudletMgmtNode{Name: rootLBName}, pc.WithCachedIp(false))
 	if err != nil {
 		return nil, err

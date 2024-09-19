@@ -51,6 +51,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_k8sbm"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_vmprovider"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_xind"
+	"github.com/edgexr/edge-cloud-platform/pkg/syncdata"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/edgexr/edge-cloud-platform/pkg/version"
@@ -645,6 +646,7 @@ func start() {
 		PlatformInitConfig: pf.PlatformInitConfig{
 			AccessApi:      accessApi,
 			CloudletSSHKey: cloudletssh.NewSSHKey(accessApi),
+			SyncFactory:    syncdata.NewMutexSyncFactory(),
 		},
 	}
 

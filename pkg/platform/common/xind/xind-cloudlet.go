@@ -43,6 +43,11 @@ func (s *Xind) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet,
 	return nil
 }
 
+func (s *Xind) ChangeCloudletDNS(ctx context.Context, cloudlet *edgeproto.Cloudlet, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "update xind Cloudlet dns", "key", cloudlet.Key)
+	return nil
+}
+
 func (s *Xind) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "update xind TrustPolicy", "policy", TrustPolicy)
 	return nil

@@ -78,6 +78,10 @@ func (k *K8sBareMetalPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edg
 	return fmt.Errorf("UpdateCloudlet TODO")
 }
 
+func (s *K8sBareMetalPlatform) ChangeCloudletDNS(ctx context.Context, cloudlet *edgeproto.Cloudlet, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("ChangeCloudletDNS TODO")
+}
+
 func (k *K8sBareMetalPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {
 	return fmt.Errorf("UpdateTrustPolicy TODO")
 }

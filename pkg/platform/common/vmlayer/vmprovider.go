@@ -314,7 +314,7 @@ func (v *VMPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []e
 	for _, vmAppInst := range vmAppInsts {
 		mgmt_nodes = append(mgmt_nodes, edgeproto.CloudletMgmtNode{
 			Type: cloudcommon.NodeTypeDedicatedRootLB.String(),
-			Name: vmAppInst.Uri,
+			Name: vmAppInst.StaticUri,
 		})
 	}
 	return mgmt_nodes, nil

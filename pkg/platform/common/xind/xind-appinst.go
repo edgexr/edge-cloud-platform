@@ -225,6 +225,10 @@ func (s *Xind) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Cluster
 	return fmt.Errorf("UpdateAppInst not supported for deployment: %s", DeploymentType)
 }
 
+func (v *Xind) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("ChangeAppInstDNS not supported")
+}
+
 func (s *Xind) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 	clientType := cloudcommon.GetAppClientType(app)
 	client, err := s.GetClusterPlatformClient(ctx, clusterInst, clientType)

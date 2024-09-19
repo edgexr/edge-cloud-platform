@@ -92,6 +92,10 @@ func (s *DummyServer) ShowPlatformFeaturesForZone(key *edgeproto.ZoneKey, cb edg
 	return nil
 }
 
+func (s *DummyServer) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgeproto.CloudletApi_ChangeCloudletDNSServer) error {
+	return nil
+}
+
 // minimal bits not currently generated for flavorkey.proto to stream flavorKey objs
 // for ShowFlavorsForZone cli
 type ShowFlavorsForZone struct {

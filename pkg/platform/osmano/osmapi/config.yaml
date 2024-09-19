@@ -1,0 +1,5 @@
+package: osmapi
+generate:
+  models: true
+  client: true
+output: osm-generated.go

@@ -190,3 +190,7 @@ func (s *K8sOperator) SetPowerState(ctx context.Context, app *edgeproto.App, app
 }
 
 func (s *K8sOperator) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {}
+
+func (v *K8sOperator) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("Updating DNS is not supported")
+}

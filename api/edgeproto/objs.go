@@ -1549,3 +1549,38 @@ func (s *ClusterInst) AddAnnotationNoClobber(key, val string) bool {
 	s.Annotations[key] = val
 	return true
 }
+
+func (s *Cloudlet) AddAnnotationNoClobber(key, val string) bool {
+	if s.Annotations == nil {
+		s.Annotations = map[string]string{}
+	}
+	if _, ok := s.Annotations[key]; ok {
+		return false
+	}
+	s.Annotations[key] = val
+	return true
+}
+
+func (s *AppInst) AddAnnotation(key, val string) bool {
+	if s.Annotations == nil {
+		s.Annotations = map[string]string{}
+	}
+	s.Annotations[key] = val
+	return true
+}
+
+func (s *ClusterInst) AddAnnotation(key, val string) bool {
+	if s.Annotations == nil {
+		s.Annotations = map[string]string{}
+	}
+	s.Annotations[key] = val
+	return true
+}
+
+func (s *Cloudlet) AddAnnotation(key, val string) bool {
+	if s.Annotations == nil {
+		s.Annotations = map[string]string{}
+	}
+	s.Annotations[key] = val
+	return true
+}

@@ -836,7 +836,7 @@ func (v *VMPlatform) GetDedicatedRootLBClients(ctx context.Context) (map[string]
 		if _, ok := apps[appInst.AppKey]; !ok {
 			continue
 		}
-		lbName := appInst.Uri
+		lbName := appInst.StaticUri
 		client, err := v.GetSSHClientForServer(ctx, lbName, v.VMProperties.GetCloudletExternalNetwork())
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to get rootLB client for VM app instance", "key", k, "error", err)
@@ -845,7 +845,7 @@ func (v *VMPlatform) GetDedicatedRootLBClients(ctx context.Context) (map[string]
 		}
 		rootLBClients[lbName] = platform.RootLBClient{
 			Client: client,
-			FQDN:   appInst.Uri,
+			FQDN:   appInst.StaticUri,
 		}
 	}
 	return rootLBClients, nil

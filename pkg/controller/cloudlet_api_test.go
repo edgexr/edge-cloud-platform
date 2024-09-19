@@ -218,6 +218,7 @@ func TestCloudletApi(t *testing.T) {
 
 	testCloudletZoneRef(t, ctx, apis)
 	testCloudletDnsLabel(t, ctx, apis)
+	testChangeCloudletDNS(t, ctx, apis)
 
 	// Resource Mapping tests
 	testResMapKeysApi(t, ctx, &cl, apis)
@@ -288,6 +289,7 @@ func forceCloudletInfoState(ctx context.Context, key *edgeproto.CloudletKey, sta
 	apis.cloudletInfoApi.Update(ctx, &info, 0)
 }
 
+// Not used?
 func forceCloudletInfoMaintenanceState(ctx context.Context, key *edgeproto.CloudletKey, state dme.MaintenanceState, apis *AllApis) {
 	info := edgeproto.CloudletInfo{}
 	if !apis.cloudletInfoApi.cache.Get(key, &info) {
@@ -1202,4 +1204,184 @@ func testCloudletZoneRef(t *testing.T, ctx context.Context, apis *AllApis) {
 	require.Nil(t, err)
 	_, err = apis.zoneApi.DeleteZone(ctx, &zone2)
 	require.Nil(t, err)
+}
+
+func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
+	// For now CRM off edge is unsupported
+	err := apis.cloudletApi.ChangeCloudletDNS(&testutil.CloudletData()[0].Key, testutil.NewCudStreamoutCloudlet(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "unsupported")
+
+	// Create a cloudlet to test with
+	cloudlet := testutil.CloudletData()[2]
+	cloudlet.Key.Name = "cloudletDNSUpdate"
+	err = apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	info := testutil.CloudletInfoData()[2]
+	info.Key = cloudlet.Key
+	info.State = dme.CloudletState_CLOUDLET_STATE_READY
+	apis.cloudletInfoApi.Update(ctx, &info, 0)
+	err = waitForState(&cloudlet.Key, edgeproto.TrackedState_READY, apis)
+	require.Nil(t, err, "cloudlet obj created")
+	// check that static fqdn and running match
+	cloudletObj := edgeproto.Cloudlet{}
+	ok := apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
+	require.True(t, ok)
+	require.Equal(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
+	// add dedicated clusterInst
+	clusterInst := testutil.ClusterInstData()[5]
+	clusterInst.CloudletKey = cloudlet.Key
+	err = apis.clusterInstApi.CreateClusterInst(&clusterInst, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err, "Create Dedicated ClusterInst")
+	clusterObj := edgeproto.ClusterInst{}
+	ok = apis.clusterInstApi.store.Get(ctx, &clusterInst.Key, &clusterObj)
+	require.True(t, ok)
+	originalFqdn := clusterObj.Fqdn
+	// add shared clusterInst
+	clusterInstShared := testutil.ClusterInstData()[6]
+	clusterInstShared.CloudletKey = cloudlet.Key
+	err = apis.clusterInstApi.CreateClusterInst(&clusterInstShared, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err, "Create Shared ClusterInst")
+	ok = apis.clusterInstApi.store.Get(ctx, &clusterInstShared.Key, &clusterObj)
+	require.True(t, ok)
+
+	// add regual app/appinst
+	app := testutil.AppData()[1]
+	_, err = apis.appApi.CreateApp(ctx, &app)
+	require.Nil(t, err, "Create App")
+	regAppInstName := "changednsregularapp"
+	appInst := edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         regAppInstName,
+			Organization: clusterInst.Key.Organization,
+		},
+		AppKey:      app.Key,
+		CloudletKey: cloudlet.Key,
+		ClusterKey:  clusterInst.Key,
+		CloudletLoc: cloudlet.Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
+	}
+	err = apis.appInstApi.CreateAppInst(&appInst, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err, "Create AppInst")
+	ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+	require.True(t, ok)
+	origURI := appInst.Uri
+
+	// add internal app/appinst
+	app = testutil.AppData()[7]
+	_, err = apis.appApi.CreateApp(ctx, &app)
+	require.Nil(t, err, "Create Internal App")
+	internalAppInstName := "changednsinternallapp"
+	appInst = edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         internalAppInstName,
+			Organization: clusterInst.Key.Organization,
+		},
+		AppKey:      app.Key,
+		CloudletKey: cloudlet.Key,
+		ClusterKey:  clusterInst.Key,
+		CloudletLoc: cloudlet.Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
+	}
+	err = apis.appInstApi.CreateAppInst(&appInst, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err, "Create Internal AppInst")
+	ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+	require.True(t, ok)
+	require.Empty(t, appInst.Uri)
+
+	app = testutil.AppData()[1]
+	regAppInstSharedAccName := "changednsregularsharedapp"
+	appInst = edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         regAppInstSharedAccName,
+			Organization: clusterInstShared.Key.Organization,
+		},
+		AppKey:      app.Key,
+		CloudletKey: cloudlet.Key,
+		ClusterKey:  clusterInstShared.Key,
+		CloudletLoc: cloudlet.Location,
+		PowerState:  edgeproto.PowerState_POWER_ON,
+	}
+	err = apis.appInstApi.CreateAppInst(&appInst, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err, "Create AppInst with shared access")
+	ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+	require.True(t, ok)
+
+	// Set up a different appDNSRoot
+	*appDNSRoot = "new.and.improved.dns.com"
+	// Cloudlet has to be in maintenance mode
+	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "maintenance mode")
+	err = apis.cloudletApi.setMaintenanceState(ctx, &cloudlet.Key, dme.MaintenanceState_UNDER_MAINTENANCE, ctx, "none")
+	require.Nil(t, err, "update cloudlet maintenance state")
+
+	eMock.verifyEvent(t, "cloudlet maintenance start", []node.EventTag{
+		node.EventTag{
+			Key:   "maintenance-state",
+			Value: "UNDER_MAINTENANCE",
+		},
+	})
+	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+
+	updatedRootLbFqdn := ""
+	checkDNS := func() {
+		// check new fqdn
+		cloudletObj = edgeproto.Cloudlet{}
+		ok = apis.cloudletApi.store.Get(ctx, &cloudlet.Key, &cloudletObj)
+		require.True(t, ok)
+		require.Contains(t, cloudletObj.RootLbFqdn, *appDNSRoot)
+		// at this point static and current fqdns should be different
+		require.NotEqual(t, cloudletObj.RootLbFqdn, cloudletObj.StaticRootLbFqdn)
+		if updatedRootLbFqdn == "" {
+			updatedRootLbFqdn = cloudletObj.RootLbFqdn
+		} else {
+			// This is test of the second run - check that nothing changed
+			require.Equal(t, cloudletObj.RootLbFqdn, updatedRootLbFqdn)
+		}
+		annotationDNS, ok := cloudletObj.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.True(t, ok)
+		require.Equal(t, cloudletObj.StaticRootLbFqdn, annotationDNS)
+		ok = apis.clusterInstApi.store.Get(ctx, &clusterInst.Key, &clusterObj)
+		require.True(t, ok)
+		require.NotEqual(t, clusterObj.Fqdn, originalFqdn)
+		require.Contains(t, clusterObj.Fqdn, *appDNSRoot)
+		annotationDNS, ok = clusterObj.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.True(t, ok)
+		require.Equal(t, originalFqdn, annotationDNS)
+		// Check regular app
+		appInst.Key.Name = regAppInstName
+		ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+		require.True(t, ok)
+		require.NotEqual(t, appInst.Uri, origURI)
+		require.Contains(t, appInst.Uri, *appDNSRoot)
+		// check that it has uri that matches the cluster fqdn
+		require.Equal(t, clusterObj.Fqdn, appInst.Uri)
+		annotationDNS, ok = appInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.True(t, ok)
+		require.Equal(t, origURI, annotationDNS)
+		// Check internal app - no changes
+		appInst.Key.Name = internalAppInstName
+		ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+		require.True(t, ok)
+		require.Empty(t, appInst.Uri)
+		_, ok = appInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.False(t, ok)
+		// check shared access appInst
+		appInst.Key.Name = regAppInstSharedAccName
+		ok = apis.appInstApi.store.Get(ctx, &appInst.Key, &appInst)
+		require.True(t, ok)
+		require.Contains(t, appInst.Uri, *appDNSRoot)
+		// check that it has uri that matches the sharedRootLb fqdn
+		require.Equal(t, cloudletObj.RootLbFqdn, appInst.Uri)
+		_, ok = appInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
+		require.True(t, ok)
+	}
+	checkDNS()
+
+	// Repeat update should result in the same fqdn
+	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	checkDNS()
 }

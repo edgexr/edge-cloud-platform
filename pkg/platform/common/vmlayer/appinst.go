@@ -131,7 +131,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	var vms []*VMRequestSpec
 	orchVals.externalServerName = appVmName
 
-	orchVals.lbName = appInst.Uri
+	orchVals.lbName = appInst.StaticUri
 	orchVals.externalServerName = orchVals.lbName
 	orchVals.newSubnetNames = v.GetVMAppSubnetNames(appVmName)
 	nets := make(map[string]NetworkType)
@@ -217,10 +217,7 @@ func (v *VMPlatform) setupVMAppRootLBAndNode(ctx context.Context, clusterInst *e
 	if err != nil {
 		return err
 	}
-	err = v.proxyCerts.SetupTLSCerts(ctx, orchVals.lbName, orchVals.lbName, client)
-	if err != nil {
-		return err
-	}
+
 	// clusterInst is empty but that is ok here
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {
@@ -727,7 +724,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 			return fmt.Errorf("DeleteVMAppInst error: %v", err)
 		}
 		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
-		lbName := appInst.Uri
+		lbName := appInst.StaticUri
 		nodeKey := edgeproto.CloudletNodeKey{
 			Name:        lbName,
 			CloudletKey: clusterInst.CloudletKey,
@@ -912,6 +909,17 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 	default:
 		return fmt.Errorf("UpdateAppInst not supported for deployment: %s", app.Deployment)
 	}
+}
+
+func (v *VMPlatform) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, oldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "ChangeAppInstDNS", "app", app, "appinst", appInst, "oldURI", oldURI)
+	// only VM-type deployment require any work
+	if app.Deployment != cloudcommon.DeploymentTypeVM {
+		return nil
+	}
+	updateCallback(edgeproto.UpdateTask, "Updating Cluster FQDN")
+	rootLBName := appInst.StaticUri
+	return v.updateRootLbDNSEntry(ctx, rootLBName, appInst.Uri, oldURI, updateCallback)
 }
 
 func (v *VMPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
