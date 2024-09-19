@@ -2059,3 +2059,104 @@ func (s *ClusterInstApi) deleteCloudletSingularCluster(stm concurrency.STM, key 
 	s.dnsLabelStore.STMDel(stm, key, clusterInst.DnsLabel)
 	s.all.clusterRefsApi.deleteRef(stm, clusterKey)
 }
+
+func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *edgeproto.Cloudlet, inCb edgeproto.ClusterInstApi_UpdateClusterInstServer) (reterr error) {
+	ctx := inCb.Context()
+	cctx := DefCallContext()
+
+	log.SpanLog(ctx, log.DebugLevelApi, "updateRootLbFQDN", "cluster", key, "cloudlet", cloudlet)
+
+	clusterKey := key
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, clusterKey.StreamKey(), inCb)
+
+	needUpdate := false
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
+		clusterInst := edgeproto.ClusterInst{}
+		if !s.store.STMGet(stm, key, &clusterInst) {
+			log.SpanLog(ctx, log.DebugLevelApi, "Cluster deleted before DNS update", "cluster", key)
+			return nil
+		}
+		if clusterInst.Fqdn == getClusterInstFQDN(&clusterInst, cloudlet) {
+			log.SpanLog(ctx, log.DebugLevelApi, "Cluster fqnd is up to date.")
+			return nil
+		}
+		if clusterInst.DeletePrepare {
+			log.SpanLog(ctx, log.DebugLevelApi, "Cluster is currently being deleted", "cluster", key)
+			return nil
+		}
+
+		// Could be in an update error after an unsuccessful dns update
+		if clusterInst.State != edgeproto.TrackedState_READY && clusterInst.State != edgeproto.TrackedState_UPDATE_ERROR {
+			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Cluster %s is not ready - skipping", clusterInst.Key.Name)})
+			log.SpanLog(ctx, log.DebugLevelApi, "Cluster is not ready - skipping", "clusterinst", clusterInst)
+			return nil
+		}
+
+		// save old dns fqdn, so it can be updated in CCRM
+		log.SpanLog(ctx, log.DebugLevelApi, "Updating DNS for cluster", "old FQDN", clusterInst.Fqdn, "new", getClusterInstFQDN(&clusterInst, cloudlet))
+		clusterInst.AddAnnotation(cloudcommon.AnnotationPreviousDNSName, clusterInst.Fqdn)
+		clusterInst.Fqdn = getClusterInstFQDN(&clusterInst, cloudlet)
+		clusterInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
+		clusterInst.State = edgeproto.TrackedState_UPDATE_REQUESTED
+		s.store.STMPut(stm, &clusterInst)
+		needUpdate = true
+		return nil
+	})
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "Failed to update clusterinst in etcd", "err", err)
+		return err
+	}
+
+	// Revert cluster to old state if update failed
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		undoErr := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			clusterInst := edgeproto.ClusterInst{}
+			if !s.store.STMGet(stm, key, &clusterInst) {
+				log.SpanLog(ctx, log.DebugLevelApi, "Cluster deleted before DNS update", "cluster", key)
+				return nil
+			}
+			if clusterInst.DeletePrepare {
+				log.SpanLog(ctx, log.DebugLevelApi, "Cluster is currently being deleted", "cluster", key)
+				return nil
+			}
+			oldFqdn, ok := clusterInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
+			if !ok {
+				log.SpanLog(ctx, log.DebugLevelApi, "no previous fqdn is set")
+				return fmt.Errorf("no previous fqdn set for %s", clusterInst.Key.Name)
+			}
+			delete(clusterInst.Annotations, cloudcommon.AnnotationPreviousDNSName)
+			clusterInst.Fqdn = oldFqdn
+			clusterInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
+			s.store.STMPut(stm, &clusterInst)
+			return nil
+		})
+		if undoErr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "Failed to undo dns update", "key", key, "err", undoErr)
+		}
+	}()
+
+	// Nothing changed
+	if !needUpdate {
+		return nil
+	}
+	sendObj, err := s.startClusterInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		s.stopClusterInstStream(ctx, cctx, key, sendObj, reterr, NoCleanupStream)
+	}()
+
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateClusterInstTimeout.TimeDuration())
+	defer reqCancel()
+
+	successMsg := fmt.Sprintf("Cluster %s updated successfully", key.Name)
+	return edgeproto.WaitForClusterInstInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
+		UpdateClusterInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
+		successMsg, cb.Send,
+		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+	)
+}

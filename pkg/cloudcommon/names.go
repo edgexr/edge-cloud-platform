@@ -257,6 +257,7 @@ const (
 const (
 	AnnotationCloudletScopedName = "cloudlet-scoped-name"
 	AnnotationBadUpgrade55Name   = "bad-upgrade55-name"
+	AnnotationPreviousDNSName    = "previous-dns-name"
 )
 
 var InstanceUp = "UP"

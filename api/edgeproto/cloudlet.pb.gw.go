@@ -868,6 +868,31 @@ func local_request_CloudletApi_GetCloudletGPUDriverLicenseConfig_0(ctx context.C
 
 }
 
+func request_CloudletApi_ChangeCloudletDNS_0(ctx context.Context, marshaler runtime.Marshaler, client CloudletApiClient, req *http.Request, pathParams map[string]string) (CloudletApi_ChangeCloudletDNSClient, runtime.ServerMetadata, error) {
+	var protoReq CloudletKey
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	stream, err := client.ChangeCloudletDNS(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+
+}
+
 func request_CloudletInfoApi_ShowCloudletInfo_0(ctx context.Context, marshaler runtime.Marshaler, client CloudletInfoApiClient, req *http.Request, pathParams map[string]string) (CloudletInfoApi_ShowCloudletInfoClient, runtime.ServerMetadata, error) {
 	var protoReq CloudletInfo
 	var metadata runtime.ServerMetadata
@@ -1376,6 +1401,13 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 		forward_CloudletApi_GetCloudletGPUDriverLicenseConfig_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
+	})
+
+	mux.Handle("POST", pattern_CloudletApi_ChangeCloudletDNS_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
 	})
 
 	return nil
@@ -2141,6 +2173,26 @@ func RegisterCloudletApiHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
+	mux.Handle("POST", pattern_CloudletApi_ChangeCloudletDNS_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_CloudletApi_ChangeCloudletDNS_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_CloudletApi_ChangeCloudletDNS_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -2180,6 +2232,8 @@ var (
 	pattern_CloudletApi_GenerateAccessKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"generate", "cloudletaccesskey"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_CloudletApi_GetCloudletGPUDriverLicenseConfig_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"get", "cloudlet", "gpudriverlicenseconfig"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_CloudletApi_ChangeCloudletDNS_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"change", "cloudlet", "dns"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -2218,6 +2272,8 @@ var (
 	forward_CloudletApi_GenerateAccessKey_0 = runtime.ForwardResponseMessage
 
 	forward_CloudletApi_GetCloudletGPUDriverLicenseConfig_0 = runtime.ForwardResponseMessage
+
+	forward_CloudletApi_ChangeCloudletDNS_0 = runtime.ForwardResponseStream
 )
 
 // RegisterCloudletInfoApiHandlerFromEndpoint is same as RegisterCloudletInfoApiHandler but

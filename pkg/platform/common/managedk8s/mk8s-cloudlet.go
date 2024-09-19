@@ -102,6 +102,10 @@ func (m *ManagedK8sPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgep
 	return nil
 }
 
+func (s *ManagedK8sPlatform) ChangeCloudletDNS(ctx context.Context, cloudlet *edgeproto.Cloudlet, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return nil
+}
+
 func (m *ManagedK8sPlatform) UpdateTrustPolicy(ctx context.Context, TrustPolicy *edgeproto.TrustPolicy) error {
 	log.DebugLog(log.DebugLevelInfra, "update ManagedK8sPlatform TrustPolicy", "policy", TrustPolicy)
 	return fmt.Errorf("UpdateTrustPolicy not supported on managed k8s platform: %s", m.Type)

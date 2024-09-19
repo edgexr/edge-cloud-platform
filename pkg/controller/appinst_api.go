@@ -409,6 +409,33 @@ func removeAppInstFromRefs(appInstKey *edgeproto.AppInstKey, appInstRefs *[]edge
 	return refsChanged
 }
 
+// getAppInstURI get the Uri for the application instance.
+// Takes into account how the app is deployed and features of a given cloudlet
+func getAppInstURI(ctx context.Context, appInst *edgeproto.AppInst, app *edgeproto.App, clusterInst *edgeproto.ClusterInst, cloudlet *edgeproto.Cloudlet, cloudletFeatures *edgeproto.PlatformFeatures) string {
+	// Internal apps, or apps that don't have ports exposed don't need uri
+	ports, _ := edgeproto.ParseAppPorts(app.AccessPorts)
+	if app.InternalPorts || len(ports) == 0 {
+		return ""
+	}
+
+	// uri is specific to appinst if it has dedicated IP, or no cluster
+	if !cloudcommon.IsClusterInstReqd(app) || appInst.DedicatedIp {
+		return getAppInstFQDN(appInst, cloudlet)
+	}
+
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
+		// uri points to cloudlet shared root LB
+		return cloudlet.RootLbFqdn
+	}
+	if !isIPAllocatedPerService(ctx, cloudlet.PlatformType, cloudletFeatures, appInst.CloudletKey.Organization) {
+		// dedicated access in which IP is that of the LB
+		return clusterInst.Fqdn
+	}
+
+	// Default to dedicated IP
+	return getAppInstFQDN(appInst, cloudlet)
+}
+
 // createAppInstInternal is used to create dynamic app insts internally,
 // bypassing static assignment.
 func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppInst, inCb edgeproto.AppInstApi_CreateAppInstServer) (reterr error) {
@@ -1092,7 +1119,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			initCloudletRefs(&cloudletRefs, &in.CloudletKey)
 		}
 
-		in.Uri = getAppInstFQDN(in, &cloudlet)
 		ports, _ := edgeproto.ParseAppPorts(app.AccessPorts)
 		if !cloudcommon.IsClusterInstReqd(&app) {
 			for ii := range ports {
@@ -1104,9 +1130,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				ports[ii].PublicPort = ports[ii].InternalPort
 			}
 		} else if ipaccess == edgeproto.IpAccess_IP_ACCESS_SHARED && !app.InternalPorts {
-			// uri points to cloudlet shared root LB
-			in.Uri = cloudlet.RootLbFqdn
-
 			if cloudletRefs.RootLbPorts == nil {
 				cloudletRefs.RootLbPorts = make(map[int32]int32)
 			}
@@ -1148,7 +1171,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 					return errors.New("no free external ports")
 				}
 				ports[ii].PublicPort = eport
-				existingProtoBits, _ := cloudletRefs.RootLbPorts[eport]
+				existingProtoBits := cloudletRefs.RootLbPorts[eport]
 				cloudletRefs.RootLbPorts[eport] = addProtocol(protocolBits, existingProtoBits)
 
 				cloudletRefsChanged = true
@@ -1164,22 +1187,10 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				if err = s.checkPortOverlapDedicatedLB(stm, ports, &in.Key, &clusterKey); !cctx.Undo && err != nil {
 					return err
 				}
-				// dedicated access in which IP is that of the LB
-				in.Uri = clusterInst.Fqdn
 				for ii := range ports {
 					ports[ii].PublicPort = ports[ii].InternalPort
 				}
 			}
-		}
-		if app.InternalPorts || len(ports) == 0 {
-			// older CRMs require app URI regardless of external access to AppInst
-			if cloudletCompatibilityVersion >= cloudcommon.CRMCompatibilitySharedRootLBFQDN {
-				// no external access to AppInst, no need for URI
-				in.Uri = ""
-			}
-		}
-		if err := cloudcommon.CheckFQDNLengths("", in.Uri); err != nil {
-			return err
 		}
 		if len(ports) > 0 {
 			in.MappedPorts = ports
@@ -1199,6 +1210,11 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		} else {
 			in.State = edgeproto.TrackedState_CREATE_REQUESTED
 		}
+		in.Uri = getAppInstURI(ctx, in, &app, &clusterInst, &cloudlet, cloudletFeatures)
+		if err := cloudcommon.CheckFQDNLengths("", in.Uri); err != nil {
+			return err
+		}
+		in.StaticUri = in.Uri
 		s.store.STMPut(stm, in)
 		return nil
 	})
@@ -1357,7 +1373,6 @@ func (s *AppInstApi) updateCloudletResourcesMetric(ctx context.Context, in *edge
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to generate cloudlet resource usage metric", "clusterKey", in.Key, "err", resErr)
 		}
 	}
-	return
 }
 
 func (s *AppInstApi) updateAppInstStore(ctx context.Context, in *edgeproto.AppInst) error {
@@ -1544,7 +1559,7 @@ func (s *AppInstApi) RefreshAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstA
 	}
 
 	vmAppIpv6Enabled := false
-	for instkey, _ := range instances {
+	for instkey := range instances {
 		go func(k edgeproto.AppInstKey) {
 			log.SpanLog(ctx, log.DebugLevelApi, "updating AppInst", "key", k)
 			updated, err := s.refreshAppInstInternal(DefCallContext(), k, appKey, cb, in.ForceUpdate, vmAppIpv6Enabled, nil)
@@ -1781,7 +1796,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if hasRefs && clusterInstReqd && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED && !app.InternalPorts && !in.DedicatedIp {
 			// shared root load balancer
 			log.SpanLog(ctx, log.DebugLevelApi, "refs", "AppInst", in)
-			for ii, _ := range in.MappedPorts {
+			for ii := range in.MappedPorts {
 
 				p := in.MappedPorts[ii].PublicPort
 				protocol, err := getProtocolBitMap(in.MappedPorts[ii].Proto)
@@ -1954,9 +1969,8 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			}
 			return err
 		}
-		if err == nil {
-			s.updateCloudletResourcesMetric(ctx, in)
-		}
+		s.updateCloudletResourcesMetric(ctx, in)
+
 	}
 	// delete clusterinst afterwards if it was auto-created and nobody is left using it
 	// this is retained for old autoclusters that are not reservable,
@@ -2307,7 +2321,7 @@ func setPortFQDNPrefixes(in *edgeproto.AppInst, app *edgeproto.App) error {
 		if err != nil {
 			return fmt.Errorf("invalid kubernetes deployment yaml, %s", err.Error())
 		}
-		for ii, _ := range in.MappedPorts {
+		for ii := range in.MappedPorts {
 			setPortFQDNPrefix(&in.MappedPorts[ii], objs)
 			if err := cloudcommon.CheckFQDNLengths(in.MappedPorts[ii].FqdnPrefix, in.Uri); err != nil {
 				return err
@@ -2370,6 +2384,118 @@ func (s *AppInstApi) RecordAppInstEvent(ctx context.Context, appInst *edgeproto.
 		metric.AddStringVal(cloudcommon.MetricTagFlavor, appInst.Flavor.Name)
 	}
 	services.events.AddMetric(&metric)
+}
+
+func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cloudlet, inCb edgeproto.AppInstApi_UpdateAppInstServer) (reterr error) {
+	ctx := inCb.Context()
+	cctx := DefCallContext()
+
+	log.SpanLog(ctx, log.DebugLevelApi, "updateURI", "appinst", key, "cloudlet", cloudlet)
+	streamCb, cb := s.all.streamObjApi.newStream(ctx, cctx, key.StreamKey(), inCb)
+
+	needUpdate := false
+	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
+		appInst := edgeproto.AppInst{}
+		if !s.store.STMGet(stm, key, &appInst) {
+			// deleted in the meantime
+			log.SpanLog(ctx, log.DebugLevelApi, "Appinst deleted before DNS update", "appinst", key)
+			return nil
+		}
+		if appInst.Uri == "" {
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst is internal.")
+			return nil
+		}
+		app := edgeproto.App{}
+		if !s.all.appApi.store.STMGet(stm, &appInst.AppKey, &app) {
+			return appInst.AppKey.NotFoundError()
+		}
+		clusterInst := edgeproto.ClusterInst{}
+		if cloudcommon.IsClusterInstReqd(&app) {
+			if !s.all.clusterInstApi.store.STMGet(stm, appInst.GetClusterKey(), &clusterInst) {
+				return errors.New("ClusterInst does not exist for App")
+			}
+		}
+		cloudletFeatures, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		if err != nil {
+			return fmt.Errorf("Failed to get features for platform: %s", err)
+		}
+		newURI := getAppInstURI(ctx, &appInst, &app, &clusterInst, cloudlet, cloudletFeatures)
+		if err := cloudcommon.CheckFQDNLengths("", appInst.Uri); err != nil {
+			return err
+		}
+		if appInst.Uri == newURI {
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst URI is up to date.")
+			return nil
+		}
+
+		// Could be in an update error after an unsuccessful dns update
+		if appInst.State != edgeproto.TrackedState_READY && appInst.State != edgeproto.TrackedState_UPDATE_ERROR {
+			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("AppInst %s is not ready - skipping", appInst.Key.Name)})
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst is not ready - skipping", "appinst", appInst)
+			return nil
+		}
+
+		// Store previous URI, so we can update this with CCRM
+		log.SpanLog(ctx, log.DebugLevelApi, "Updating AppInst URI", "old FQDN", appInst.Uri, "new", getAppInstFQDN(&appInst, cloudlet))
+		appInst.AddAnnotation(cloudcommon.AnnotationPreviousDNSName, appInst.Uri)
+		appInst.Uri = newURI
+		appInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
+		appInst.State = edgeproto.TrackedState_UPDATE_REQUESTED
+		s.store.STMPut(stm, &appInst)
+		needUpdate = true
+		return nil
+	})
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "Failed to update appinst in etcd", "err", err)
+		return err
+	}
+	// Revert cluster to old state if update failed
+	defer func() {
+		if reterr == nil {
+			return
+		}
+		undoErr := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			appInst := edgeproto.AppInst{}
+			if !s.store.STMGet(stm, key, &appInst) {
+				// deleted in the meantime
+				log.SpanLog(ctx, log.DebugLevelApi, "Appinst deleted before DNS update", "appinst", key)
+				return nil
+			}
+			oldURI, ok := appInst.Annotations[cloudcommon.AnnotationPreviousDNSName]
+			if !ok {
+				log.SpanLog(ctx, log.DebugLevelApi, "no previous uri is set")
+				return fmt.Errorf("no previous uri set for %s", appInst.Key.Name)
+			}
+			delete(appInst.Annotations, cloudcommon.AnnotationPreviousDNSName)
+			appInst.Uri = oldURI
+			appInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
+			s.store.STMPut(stm, &appInst)
+			return nil
+		})
+		if undoErr != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "Failed to undo dns update", "key", key, "err", undoErr)
+		}
+	}()
+
+	// No need to dispatch to CRM
+	if !needUpdate {
+		return nil
+	}
+	sendObj, err := s.startAppInstStream(ctx, cctx, streamCb, modRev)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		s.stopAppInstStream(ctx, cctx, key, sendObj, reterr, NoCleanupStream)
+	}()
+	reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateAppInstTimeout.TimeDuration())
+	defer reqCancel()
+
+	successMsg := fmt.Sprintf("AppInst %s updated successfully", key.Name)
+	return edgeproto.WaitForAppInstInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
+		UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
+		successMsg, cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+
 }
 
 func clusterInstReservationEvent(ctx context.Context, eventName string, appInst *edgeproto.AppInst) {

@@ -290,3 +290,7 @@ func (k *K8sBareMetalPlatform) GetContainerCommand(ctx context.Context, clusterI
 
 func (s *K8sBareMetalPlatform) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {
 }
+
+func (v *K8sBareMetalPlatform) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("Updating DNS is not supported")
+}

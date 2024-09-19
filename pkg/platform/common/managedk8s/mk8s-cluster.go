@@ -119,6 +119,10 @@ func (m *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst 
 	return fmt.Errorf("Update cluster inst not implemented")
 }
 
+func (s *ManagedK8sPlatform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	return fmt.Errorf("cluster dns change not implemented")
+}
+
 func (m *ManagedK8sPlatform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResourcesSnapshot, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletInfraResources")
 	var resources edgeproto.InfraResourcesSnapshot

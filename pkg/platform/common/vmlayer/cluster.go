@@ -119,6 +119,16 @@ func ParseClusterNodePrefix(name string) (bool, uint32) {
 	return true, uint32(num)
 }
 
+func (v *VMPlatform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "ChangeClusterInstDNS", "cluster", clusterInst, "oldFqdn", oldFqdn)
+	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+		updateCallback(edgeproto.UpdateTask, "Updating Cluster FQDN")
+		rootLBName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
+		return v.updateRootLbDNSEntry(ctx, rootLBName, clusterInst.Fqdn, oldFqdn, updateCallback)
+	}
+	return nil
+}
+
 func (v *VMPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	var err error
 	var result OperationInitResult
