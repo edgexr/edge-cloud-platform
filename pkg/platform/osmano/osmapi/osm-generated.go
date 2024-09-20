@@ -178,7 +178,7 @@ const (
 // Alarm Alarm Information
 type Alarm struct {
 	// Id Identifier of the Alarm.
-	Id openapi_types.UUID `json:"_id"`
+	Uid openapi_types.UUID `json:"_id"`
 
 	// Action Action to be taken.
 	Action *string `json:"action,omitempty"`
@@ -284,10 +284,10 @@ type ArrayOfWimInfo = []WimInfo
 // AttachDetachProfile defines model for AttachDetachProfile.
 type AttachDetachProfile struct {
 	AddProfile *[]struct {
-		Id *string `json:"_id,omitempty"`
+		Uid *string `json:"_id,omitempty"`
 	} `json:"add_profile,omitempty"`
 	RemoveProfile *[]struct {
-		Id *string `json:"_id,omitempty"`
+		Uid *string `json:"_id,omitempty"`
 	} `json:"remove_profile,omitempty"`
 }
 
@@ -315,7 +315,7 @@ type CancelNSLCMOpOccRequestCancelMode string
 type CloneKsu struct {
 	Name    *string `json:"name,omitempty"`
 	Profile *struct {
-		Id          *string `json:"_id,omitempty"`
+		Uid          *string `json:"_id,omitempty"`
 		ProfileType *string `json:"profile_type,omitempty"`
 	} `json:"profile,omitempty"`
 }
@@ -359,8 +359,8 @@ type CreateK8sRepoRequest struct {
 	Url         string      `json:"url"`
 }
 
-// CreateNSinstanceContentResponse defines model for CreateNSinstanceContentResponse.
-type CreateNSinstanceContentResponse struct {
+// CreateNSinstanceContentResp defines model for CreateNSinstanceContentResp.
+type CreateNSinstanceContentResp struct {
 	Id        *openapi_types.UUID `json:"id,omitempty"`
 	NslcmopId *openapi_types.UUID `json:"nslcmop_id,omitempty"`
 }
@@ -479,7 +479,7 @@ type CreateWimRequest struct {
 // DeleteMultipleKsu defines model for DeleteMultipleKsu.
 type DeleteMultipleKsu struct {
 	Ksus *[]struct {
-		Id *string `json:"_id,omitempty"`
+		Uid *string `json:"_id,omitempty"`
 	} `json:"ksus,omitempty"`
 }
 
@@ -1018,7 +1018,7 @@ type K8sClusterDeploymentMethods struct {
 
 // K8sClusterInfo defines model for K8sClusterInfo.
 type K8sClusterInfo struct {
-	Id                *openapi_types.UUID          `json:"_id,omitempty"`
+	Uid                *openapi_types.UUID          `json:"_id,omitempty"`
 	Cni               *[]string                    `json:"cni,omitempty"`
 	Credentials       *map[string]interface{}      `json:"credentials,omitempty"`
 	DeploymentMethods *K8sClusterDeploymentMethods `json:"deployment_methods,omitempty"`
@@ -1037,7 +1037,7 @@ type K8sClusterNetList = []map[string]interface{}
 
 // K8sRepoInfo defines model for K8sRepoInfo.
 type K8sRepoInfo struct {
-	Id *openapi_types.UUID `json:"_id,omitempty"`
+	Uid *openapi_types.UUID `json:"_id,omitempty"`
 
 	// CaFile verify certificates of HTTPS-enabled servers using this CA bundle
 	CaFile *string `json:"ca-file,omitempty"`
@@ -1076,7 +1076,7 @@ type Ksu struct {
 	Description *string `json:"description,omitempty"`
 	Name        *string `json:"name,omitempty"`
 	Oka         *[]struct {
-		Id             *string                 `json:"_id,omitempty"`
+		Uid             *string                 `json:"_id,omitempty"`
 		SwCatalogPath  *string                 `json:"sw_catalog_path,omitempty"`
 		Transformation *map[string]interface{} `json:"transformation,omitempty"`
 	} `json:"oka,omitempty"`
@@ -1089,7 +1089,7 @@ type Ksu struct {
 // MoveKsu defines model for MoveKsu.
 type MoveKsu struct {
 	Profile *struct {
-		Id          *string `json:"_id,omitempty"`
+		Uid          *string `json:"_id,omitempty"`
 		ProfileType *string `json:"profile_type,omitempty"`
 	} `json:"profile,omitempty"`
 }
@@ -1109,12 +1109,12 @@ type MultipleKsu struct {
 		Description *string `json:"description,omitempty"`
 		Name        *string `json:"name,omitempty"`
 		Oka         *[]struct {
-			Id             *string                 `json:"_id,omitempty"`
+			Uid             *string                 `json:"_id,omitempty"`
 			SwCatalogPath  *string                 `json:"sw_catalog_path,omitempty"`
 			Transformation *map[string]interface{} `json:"transformation,omitempty"`
 		} `json:"oka,omitempty"`
 		Profile *struct {
-			Id          *string `json:"_id,omitempty"`
+			Uid          *string `json:"_id,omitempty"`
 			ProfileType *string `json:"profile_type,omitempty"`
 		} `json:"profile,omitempty"`
 	} `json:"ksus,omitempty"`
@@ -1157,7 +1157,7 @@ type NSinstanceMigrateRequest struct {
 // http://osm-download.etsi.org/ftp/osm-doc/nsi.html
 type NetSliceInstance struct {
 	// Id Identifier of the NetSlice instance.
-	Id openapi_types.UUID `json:"_id"`
+	Uid openapi_types.UUID `json:"_id"`
 
 	// Description Human readable description of the NetSlice instance.
 	Description *string `json:"description,omitempty"`
@@ -1180,7 +1180,7 @@ type NetSliceTemplate = string
 // additionalParamsForNs.
 type NsConfigTemplateInfo struct {
 	// Id Identifier of the inboarded Ns config template resource.
-	Id *openapi_types.UUID `json:"_id,omitempty"`
+	Uid *openapi_types.UUID `json:"_id,omitempty"`
 
 	// Config It includes instantiation parameters such as
 	// vld, vnf, additionalParamforVnf.
@@ -1204,7 +1204,7 @@ type NsDescriptor = string
 // http://osm-download.etsi.org/ftp/osm-doc/nsr.html
 type NsInstance struct {
 	// Id Identifier of the NS instance.
-	Id openapi_types.UUID `json:"_id"`
+	Uid openapi_types.UUID `json:"_id"`
 
 	// Description Human readable description of the NS instance.
 	Description *string `json:"description,omitempty"`
@@ -1223,7 +1223,7 @@ type NsInstanceSubscriptionFilter struct {
 
 // NsLcmOpOcc defines model for NsLcmOpOcc.
 type NsLcmOpOcc struct {
-	Id                    *openapi_types.UUID `json:"_id,omitempty"`
+	Uid                    *openapi_types.UUID `json:"_id,omitempty"`
 	DetailedStatus        *string             `json:"detailed-status,omitempty"`
 	Id                    *openapi_types.UUID `json:"id,omitempty"`
 	IsAutomaticInvocation *bool               `json:"isAutomaticInvocation,omitempty"`
@@ -1272,7 +1272,7 @@ type NsPmJobReportInfo struct {
 type NsdInfo struct {
 	// Id Identifier of the onboarded individual NS descriptor
 	// resource. This identifier is allocated by the NFVO.
-	Id openapi_types.UUID `json:"_id"`
+	Uid openapi_types.UUID `json:"_id"`
 
 	// Description Description of the onboarded NSD.
 	// This information is copied from the NSD content.
@@ -1315,7 +1315,7 @@ type NsiActionRequest struct {
 
 // NsiLcmOpOcc defines model for NsiLcmOpOcc.
 type NsiLcmOpOcc struct {
-	Id                    *openapi_types.UUID `json:"_id,omitempty"`
+	Uid                    *openapi_types.UUID `json:"_id,omitempty"`
 	DetailedStatus        *string             `json:"detailed-status,omitempty"`
 	Id                    *openapi_types.UUID `json:"id,omitempty"`
 	IsAutomaticInvocation *bool               `json:"isAutomaticInvocation,omitempty"`
@@ -1343,7 +1343,7 @@ type NsiLcmOpOcc struct {
 type NslcmSubscriptionInfo struct {
 	CallbackUri    *string                 `json:"CallbackUri,omitempty"`
 	Admin          *map[string]interface{} `json:"_admin,omitempty"`
-	Id             *openapi_types.UUID     `json:"_id,omitempty"`
+	Uid             *openapi_types.UUID     `json:"_id,omitempty"`
 	Authentication *Authenticationschema   `json:"authentication,omitempty"`
 	Filter         *map[string]interface{} `json:"filter,omitempty"`
 	SchemaVersion  *string                 `json:"schema_version,omitempty"`
@@ -1403,7 +1403,7 @@ type NslcmsubschemaOperationTypes string
 // http://osm-download.etsi.org/ftp/osm-doc/nst.html
 type NstInfo struct {
 	// Id NetSlice Template Identifier
-	Id *openapi_types.UUID `json:"_id,omitempty"`
+	Uid *openapi_types.UUID `json:"_id,omitempty"`
 
 	// Id Human readable NetSlice Template Identifier
 	Id *string `json:"id,omitempty"`
@@ -1461,7 +1461,7 @@ type PasswordExpiryInfo struct {
 
 // PduInfo defines model for PduInfo.
 type PduInfo struct {
-	Id          *openapi_types.UUID `json:"_id,omitempty"`
+	Uid          *openapi_types.UUID `json:"_id,omitempty"`
 	Description *string             `json:"description,omitempty"`
 	Interfaces  *PduInterfaces      `json:"interfaces,omitempty"`
 	Name        *string             `json:"name,omitempty"`
@@ -1507,7 +1507,7 @@ type ProfileInfo struct {
 
 // ProjectInfo defines model for ProjectInfo.
 type ProjectInfo struct {
-	Id     *openapi_types.UUID `json:"_id,omitempty"`
+	Uid     *openapi_types.UUID `json:"_id,omitempty"`
 	Name   *string             `json:"name,omitempty"`
 	Quotas *QuotasInfo         `json:"quotas,omitempty"`
 }
@@ -1543,7 +1543,7 @@ type QuotasInfo struct {
 
 // RoleInfo defines model for RoleInfo.
 type RoleInfo struct {
-	Id   *openapi_types.UUID `json:"_id,omitempty"`
+	Uid   *openapi_types.UUID `json:"_id,omitempty"`
 	Name *string             `json:"name,omitempty"`
 
 	// Permissions Permissions keys must follow the syntax 'main_topic[:subtopic[:id[:component|action|etc]]]'
@@ -1596,13 +1596,13 @@ type SdnBasicPropertiesType string
 
 // SdnExtraProperties defines model for SdnExtraProperties.
 type SdnExtraProperties struct {
-	Id            *openapi_types.UUID `json:"_id,omitempty"`
+	Uid            *openapi_types.UUID `json:"_id,omitempty"`
 	SchemaVersion *string             `json:"schema_version,omitempty"`
 }
 
 // SdnInfo defines model for SdnInfo.
 type SdnInfo struct {
-	Id            *openapi_types.UUID `json:"_id,omitempty"`
+	Uid            *openapi_types.UUID `json:"_id,omitempty"`
 	Description   *string             `json:"description,omitempty"`
 	Dpid          *string             `json:"dpid,omitempty"`
 	Ip            *string             `json:"ip,omitempty"`
@@ -1643,7 +1643,7 @@ type TerminateNsiRequest struct {
 
 // TokenInfo defines model for TokenInfo.
 type TokenInfo struct {
-	Id          *string             `json:"_id,omitempty"`
+	Uid          *string             `json:"_id,omitempty"`
 	Admin       *bool               `json:"admin,omitempty"`
 	AdminShow   *bool               `json:"admin_show,omitempty"`
 	Expires     *float32            `json:"expires,omitempty"`
@@ -1703,7 +1703,7 @@ type UpgradeClusterInfo struct {
 
 // UserInfo defines model for UserInfo.
 type UserInfo struct {
-	Id                  *openapi_types.UUID `json:"_id,omitempty"`
+	Uid                  *openapi_types.UUID `json:"_id,omitempty"`
 	Password            *string             `json:"password,omitempty"`
 	ProjectRoleMappings *[]struct {
 		Project     *openapi_types.UUID `json:"project,omitempty"`
@@ -1717,7 +1717,7 @@ type UserInfo struct {
 
 // VcaInfo defines model for VcaInfo.
 type VcaInfo struct {
-	Id             *openapi_types.UUID     `json:"_id,omitempty"`
+	Uid             *openapi_types.UUID     `json:"_id,omitempty"`
 	Cacert         *string                 `json:"cacert,omitempty"`
 	Description    *string                 `json:"description,omitempty"`
 	Endpoints      *string                 `json:"endpoints,omitempty"`
@@ -1735,7 +1735,7 @@ type VcaInfo struct {
 
 // VimInfo defines model for VimInfo.
 type VimInfo struct {
-	Id            *openapi_types.UUID     `json:"_id,omitempty"`
+	Uid            *openapi_types.UUID     `json:"_id,omitempty"`
 	Config        *map[string]interface{} `json:"config,omitempty"`
 	Datacenter    *string                 `json:"datacenter,omitempty"`
 	Description   *string                 `json:"description,omitempty"`
@@ -1763,7 +1763,7 @@ type VnfDescriptor = string
 // For a full specification of the VNF Instance see:
 // http://osm-download.etsi.org/ftp/osm-doc/vnfr.html
 type VnfInstanceInfo struct {
-	Id *openapi_types.UUID `json:"_id,omitempty"`
+	Uid *openapi_types.UUID `json:"_id,omitempty"`
 	Id *openapi_types.UUID `json:"id,omitempty"`
 }
 
@@ -1776,7 +1776,7 @@ type VnfPackage = openapi_types.File
 // http://osm-download.etsi.org/ftp/osm-doc/vnfd.html
 type VnfPkgInfo struct {
 	// Id Identifier of the VNF package. This identifier is allocated by the NFVO.
-	Id openapi_types.UUID `json:"_id"`
+	Uid openapi_types.UUID `json:"_id"`
 
 	// Description VNF Package description
 	Description *string `json:"description,omitempty"`
@@ -1805,7 +1805,7 @@ type VnfPkgInfoModifications struct {
 
 // WimInfo defines model for WimInfo.
 type WimInfo struct {
-	Id            *openapi_types.UUID     `json:"_id,omitempty"`
+	Uid            *openapi_types.UUID     `json:"_id,omitempty"`
 	Config        *map[string]interface{} `json:"config,omitempty"`
 	Description   *string                 `json:"description,omitempty"`
 	Name          *string                 `json:"name,omitempty"`
@@ -20171,8 +20171,8 @@ func (r GetNSinstancesContentResponse) StatusCode() int {
 type CreateNSinstanceContentResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON201      *CreateNSinstanceContentResponse
-	YAML201      *CreateNSinstanceContentResponse
+	JSON201      *CreateNSinstanceContentResp
+	YAML201      *CreateNSinstanceContentResp
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -40425,7 +40425,7 @@ func ParseCreateNSinstanceContentResponse(rsp *http.Response) (*CreateNSinstance
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
-		var dest CreateNSinstanceContentResponse
+		var dest CreateNSinstanceContentResp
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -40516,7 +40516,7 @@ func ParseCreateNSinstanceContentResponse(rsp *http.Response) (*CreateNSinstance
 		response.JSONDefault = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 201:
-		var dest CreateNSinstanceContentResponse
+		var dest CreateNSinstanceContentResp
 		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
