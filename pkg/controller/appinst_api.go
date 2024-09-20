@@ -481,7 +481,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	reservedAutoClusterId := -1
 	var reservedCluster *edgeproto.ClusterInst
 	var cloudletFeatures *edgeproto.PlatformFeatures
-	cloudletCompatibilityVersion := uint32(0)
 	var cloudletPlatformType string
 	var cloudletLoc dme.Loc
 	var platformSupportsIPV6 bool
@@ -512,7 +511,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		sidecarApp = false
 		reservedAutoClusterId = -1
 		reservedCluster = nil
-		cloudletCompatibilityVersion = 0
 		platformSupportsIPV6 = false
 		in.DeepCopyIn(&inCopy)
 
