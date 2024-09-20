@@ -2288,10 +2288,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateNSinstanceContentResponse'
+                $ref: '#/components/schemas/CreateNSinstanceContentResp'
             application/yaml:
               schema:
-                $ref: '#/components/schemas/CreateNSinstanceContentResponse'
+                $ref: '#/components/schemas/CreateNSinstanceContentResp'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -9582,7 +9582,7 @@ components:
       additionalProperties: false
     # CreateNSinstanceContentRequest:
       # Substituted by InstantiateNsRequest
-    CreateNSinstanceContentResponse:
+    CreateNSinstanceContentResp:
       type: object
       properties:
         id:
