@@ -2078,7 +2078,7 @@ func (s *CloudletApi) UsesFlavor(key *edgeproto.FlavorKey) *edgeproto.CloudletKe
 	return nil
 }
 
-func (s *CloudletApi) UsesResTagTable(key *edgeproto.ResTagTableKey) *edgeproto.CloudletKey {
+func (s *CloudletApi) CloudletsUsingResTagTable(key *edgeproto.ResTagTableKey) *edgeproto.CloudletKey {
 	s.cache.Mux.Lock()
 	defer s.cache.Mux.Unlock()
 	for ck, data := range s.cache.Objs {
@@ -2092,7 +2092,7 @@ func (s *CloudletApi) UsesResTagTable(key *edgeproto.ResTagTableKey) *edgeproto.
 	return nil
 }
 
-func (s *CloudletApi) UsesZone(zoneKey *edgeproto.ZoneKey) []string {
+func (s *CloudletApi) CloudletsUsingZone(zoneKey *edgeproto.ZoneKey) []string {
 	s.cache.Mux.Lock()
 	defer s.cache.Mux.Unlock()
 	uses := []string{}

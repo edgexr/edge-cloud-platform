@@ -40,7 +40,7 @@ message Zone {
     string description = 3;
     // Zone-specific flavors
     repeated FlavorInfo infra_flavors = 4 [(protogen.backend) = true];
-    // Geo location, used for Federation
+    // Geo location, used for Federation and UI display
     distributed_match_engine.Loc location = 5 [(gogoproto.nullable) = false];
     // Universally unique object ID
     string obj_id = 89 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];

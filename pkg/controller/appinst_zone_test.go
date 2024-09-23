@@ -187,6 +187,7 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 
 	// Docker app with serverless config
 	// should find only reservD cluster
+	// Just tests that docker behaves the same way regardless of AllowServerless
 	app.Deployment = cloudcommon.DeploymentTypeDocker
 	app.AllowServerless = true
 	pclos, err = apis.appInstApi.getPotentialCloudlets(ctx, cctx, ai, app)

@@ -103,7 +103,7 @@ func (s *ZoneApi) DeleteZone(ctx context.Context, in *edgeproto.Zone) (res *edge
 		}
 		return &edgeproto.Result{}, fmt.Errorf("zone in use by AutoProvPolicy %s", strings.Join(strs, ", "))
 	}
-	cloudlets := s.all.cloudletApi.UsesZone(&in.Key)
+	cloudlets := s.all.cloudletApi.CloudletsUsingZone(&in.Key)
 	if len(cloudlets) > 0 {
 		return &edgeproto.Result{}, fmt.Errorf("zone in use by cloudlets %s", strings.Join(cloudlets, ", "))
 	}

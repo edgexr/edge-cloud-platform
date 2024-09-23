@@ -1139,6 +1139,7 @@ func CmpSortSlices() []cmp.Option {
 	opts := []cmp.Option{}
 	opts = append(opts, cmpopts.SortSlices(CmpSortApp))
 	opts = append(opts, cmpopts.SortSlices(CmpSortAppInst))
+	opts = append(opts, cmpopts.SortSlices(CmpSortZone))
 	opts = append(opts, cmpopts.SortSlices(CmpSortCloudlet))
 	opts = append(opts, cmpopts.SortSlices(CmpSortOperatorCode))
 	opts = append(opts, cmpopts.SortSlices(CmpSortClusterInst))

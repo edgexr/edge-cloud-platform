@@ -51,7 +51,7 @@ type Zone struct {
 	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	// Zone-specific flavors
 	InfraFlavors []*FlavorInfo `protobuf:"bytes,4,rep,name=infra_flavors,json=infraFlavors,proto3" json:"infra_flavors,omitempty"`
-	// Geo location, used for Federation
+	// Geo location, used for Federation and UI display
 	Location distributed_match_engine.Loc `protobuf:"bytes,5,opt,name=location,proto3" json:"location"`
 	// Universally unique object ID
 	ObjId string `protobuf:"bytes,89,opt,name=obj_id,json=objId,proto3" json:"obj_id,omitempty"`

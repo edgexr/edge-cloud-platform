@@ -92,6 +92,9 @@ func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContex
 		reasonsStr := skipReasons.String()
 		if in.ClusterKey.Name != "" {
 			if reasonsStr == "" {
+				// if this happens, there's a problem with the validatePotentialCloudlet
+				// function
+				log.SpanLog(ctx, log.DebugLevelApi, "unexpected empty reason for no potential cloudlets")
 				return nil, fmt.Errorf("cannot deploy to cluster %s", in.ClusterKey.Name)
 			} else {
 				return nil, fmt.Errorf("cannot deploy to cluster %s, %s", in.ClusterKey.Name, reasonsStr)
@@ -153,8 +156,16 @@ func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallCo
 			return nil, ServerlessOnly, errors.New(ServerlessOnly)
 		}
 		if pc.cloudlet.SingleKubernetesClusterOwner != "" && pc.cloudlet.SingleKubernetesClusterOwner != in.Key.Organization {
-			// this one we don't give a reason since they don't have permissions.
-			return nil, NoSkipReason, fmt.Errorf("single kubernetes cluster mismatched owner, appinst owner is %s but cluster owner is %s", in.Key.Organization, pc.cloudlet.SingleKubernetesClusterOwner)
+			// no permission for cluster
+			err := fmt.Errorf("single kubernetes cluster mismatched owner, appinst owner is %s but cluster owner is %s", in.Key.Organization, pc.cloudlet.SingleKubernetesClusterOwner)
+			if in.ClusterKey.Name != "" {
+				// return the reason that they cannot use this cluster
+				return nil, MTClusterOrgInvalid, err
+			} else {
+				// we're just skipping it as an option, don't expose any details
+				// of other org's clusters
+				return nil, NoSkipReason, err
+			}
 		}
 	}
 	err = validateImageTypeForPlatform(ctx, app.ImageType, pc.cloudlet.PlatformType, pc.features)

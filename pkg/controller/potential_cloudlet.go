@@ -57,6 +57,7 @@ const (
 	NoSupportNetworks                      = "site does not support additional networks"
 	NoSupportSharedIPAccess                = "site does not support shared IP access"
 	NoSupportDedicatedIPAccess             = "site does not support dedicated IP access"
+	MTClusterOrgInvalid                    = "invalid organization for multi-tenant cluster"
 )
 
 type SkipReasons map[SkipReason]struct{}
@@ -78,6 +79,11 @@ func (s SkipReasons) String() string {
 	sort.Strings(reasons)
 	return strings.Join(reasons, ", ")
 }
+
+const (
+	ResourceWeightVCPU uint64 = 1000
+	ResourceWeightRAM  uint64 = 1
+)
 
 // resourceScore gets a score which represents the available resources
 // on a cloudlet. A higher score means more available resources.
@@ -135,8 +141,3 @@ func (a PotentialInstCloudletsByResource) Less(i, j int) bool {
 	}
 	return iscore > jscore
 }
-
-const (
-	ResourceWeightVCPU uint64 = 1000
-	ResourceWeightRAM  uint64 = 1
-)

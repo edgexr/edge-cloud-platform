@@ -115,7 +115,7 @@ func (s *ResTagTableApi) DeleteResTagTable(ctx context.Context, in *edgeproto.Re
 		}
 	}()
 
-	if k := s.all.cloudletApi.UsesResTagTable(&in.Key); k != nil {
+	if k := s.all.cloudletApi.CloudletsUsingResTagTable(&in.Key); k != nil {
 		return &edgeproto.Result{}, fmt.Errorf("ResTagTable in use by Cloudlet %s", k.GetKeyString())
 	}
 	return s.store.Delete(ctx, in, s.sync.SyncWait)
