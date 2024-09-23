@@ -2,6 +2,7 @@ package localhost
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -49,10 +50,13 @@ func getWorkingDir(key *edgeproto.CloudletKey) string {
 	return "/tmp/" + key.Name
 }
 
-func (s *Platform) getClient() *pc.LocalClient {
+func (s *Platform) getClient() (*pc.LocalClient, error) {
+	if s.platformConfig == nil {
+		return nil, errors.New("localhost platform not initialized")
+	}
 	return &pc.LocalClient{
 		WorkingDir: getWorkingDir(s.platformConfig.CloudletKey),
-	}
+	}, nil
 }
 
 func (s *Platform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, flavor *edgeproto.Flavor, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
@@ -74,7 +78,10 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 }
 
 func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
-	client := s.getClient()
+	client, err := s.getClient()
+	if err != nil {
+		return err
+	}
 	switch clusterInst.Deployment {
 	case cloudcommon.DeploymentTypeDocker:
 		// just going to use localhost
@@ -107,7 +114,10 @@ func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto
 }
 
 func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	client := s.getClient()
+	client, err := s.getClient()
+	if err != nil {
+		return err
+	}
 	switch clusterInst.Deployment {
 	case cloudcommon.DeploymentTypeDocker:
 		// just going to use localhost
@@ -131,7 +141,10 @@ func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto
 }
 
 func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) (reterr error) {
-	client := s.getClient()
+	client, err := s.getClient()
+	if err != nil {
+		return err
+	}
 	switch app.Deployment {
 	case cloudcommon.DeploymentTypeDocker:
 		// just going to use localhost
@@ -183,7 +196,10 @@ func (s *Platform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 }
 
 func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	client := s.getClient()
+	client, err := s.getClient()
+	if err != nil {
+		return err
+	}
 	switch app.Deployment {
 	case cloudcommon.DeploymentTypeDocker:
 		// just going to use localhost
@@ -228,7 +244,10 @@ func (s *Platform) getAppInstProxy(clusterInst *edgeproto.ClusterInst, appInst *
 }
 
 func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
-	client := s.getClient()
+	client, err := s.getClient()
+	if err != nil {
+		return nil, err
+	}
 	switch clusterInst.Deployment {
 	case cloudcommon.DeploymentTypeDocker:
 		// just going to use localhost
@@ -244,11 +263,11 @@ func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto
 }
 
 func (s *Platform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
-	return s.getClient(), nil
+	return s.getClient()
 }
 
 func (s *Platform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode, ops ...pc.SSHClientOp) (ssh.Client, error) {
-	return s.getClient(), nil
+	return s.getClient()
 }
 
 func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
