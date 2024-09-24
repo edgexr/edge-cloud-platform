@@ -13,7 +13,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/cloudflare/cloudflare-go v0.13.4 // indirect
 	github.com/codeskyblue/go-sh v0.0.0-20170112005953-b097669b1569
-	github.com/creack/pty v1.1.11
+	github.com/creack/pty v1.1.18
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc
 	github.com/go-openapi/errors v0.20.3
@@ -167,7 +167,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/sequential v0.5.0 // indirect
-	github.com/moby/term v0.0.0-20221105221325-4eb28fa6025c // indirect
+	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
@@ -210,7 +210,7 @@ require (
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gotest.tools/v3 v3.0.3 // indirect
+	gotest.tools/v3 v3.5.0 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect

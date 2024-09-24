@@ -654,7 +654,6 @@ components:
 
     AppId:
       type: string
-      format: uuid
       description: |
         A globally unique identifier associated with the application.
         Edge Cloud Platform generates this identifier when the
@@ -662,7 +661,6 @@ components:
 
     AppInstanceId:
       type: string
-      format: uuid
       description: |
         A globally unique identifier associated with a running
         instance of an application.
@@ -910,7 +908,6 @@ components:
 
     EdgeCloudZoneId:
       type: string
-      format: uuid
       description: |
         Unique identifier created by the Edge Cloud Platform to identify an
         Edge Cloud Zone within an Edge Cloud.
@@ -1094,8 +1091,6 @@ components:
         A global unique identifier associated with a Kubernetes cluster
         infrastructure.
       type: string
-      format: uuid
-      example: "642f6105-7015-4af1-a4d1-e1ecb8437abc"
 
     KubernetesResources:
       description: Definition of Kubernetes Cluster Infrastructure.

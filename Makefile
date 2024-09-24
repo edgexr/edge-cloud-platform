@@ -92,6 +92,9 @@ addlicense:
 		-ignore pkg/platform/common/vmlayer/TestSetupIptablesRulesForRootLB-expected.sh \
 		-ignore pkg/proxy/test-envoy-config-expected.yaml \
 		-ignore pkg/proxy/test-envoy-sds-expected.yaml \
+		-ignore api/nbi/openapi/Edge-Application-Management.yaml \
+		-ignore api/nbi/openapi/Edge-Application-Management-official.yaml \
+		-ignore api/nbi/generated.go \
 		.
 
 lint:

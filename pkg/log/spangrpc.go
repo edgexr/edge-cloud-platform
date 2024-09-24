@@ -17,10 +17,13 @@ package log
 import (
 	"context"
 	"io"
+	"net/http"
 	strings "strings"
 	"time"
 
+	"github.com/labstack/echo/v4"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 	grpc "google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -100,4 +103,49 @@ func (s *loggedClientStream) RecvMsg(m any) error {
 		SpanLog(s.ctx, DebugLevelApi, "grpc client stream failed", "method", s.method, "dur", time.Since(s.startTime), "err", err)
 	}
 	return err
+}
+
+// StartSpanHTTP is a server middleware that starts a span for the incoming request
+// and adds it to the http.Request's context.
+// If the sender sent a parent span, it creates a child span to continue the trace.
+func StartSpanHTTP(r *http.Request) *http.Request {
+	linenoOpt := WithSpanLineno(GetLineno(2))
+	carrier := opentracing.HTTPHeadersCarrier(r.Header)
+	spanCtx, err := tracer.Extract(opentracing.HTTPHeaders, carrier)
+	var span opentracing.Span
+	if err == nil {
+		opts := []opentracing.StartSpanOption{
+			ext.RPCServerOption(spanCtx),
+			linenoOpt,
+		}
+		span = StartSpan(DebugLevelApi, r.RequestURI, opts...)
+	} else {
+		span = StartSpan(DebugLevelApi, r.RequestURI)
+	}
+	return r.WithContext(ContextWithSpan(r.Context(), span))
+}
+
+// EchoTraceHandler is an echo server middleware to ensure a span trace is present.
+func EchoTraceHandler(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		r := StartSpanHTTP(c.Request())
+		c.SetRequest(r)
+		return next(c)
+	}
+}
+
+func EchoAuditLogger(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		req := c.Request()
+		ctx := req.Context()
+		start := time.Now()
+		SpanLog(ctx, DebugLevelApi, "echo api start", "method", req.Method, "path", req.RequestURI)
+		err := next(c)
+		if err == nil {
+			SpanLog(ctx, DebugLevelApi, "echo api done", "method", req.Method, "path", req.RequestURI, "dur", time.Since(start))
+		} else {
+			SpanLog(ctx, DebugLevelApi, "echo api failed", "method", req.Method, "path", req.RequestURI, "dur", time.Since(start), "err", err)
+		}
+		return err
+	}
 }
