@@ -20,42 +20,42 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
-// CloudletPoolLookup interface used by events to determine if cloudlet
-// is in a CloudletPool for proper RBAC marking of events.
-type CloudletPoolLookup interface {
-	InPool(region string, key edgeproto.CloudletKey) bool
-	GetCloudletPoolCache(region string) *edgeproto.CloudletPoolCache
+// ZonePoolLookup interface used by events to determine if cloudlet
+// is in a ZonePool for proper RBAC marking of events.
+type ZonePoolLookup interface {
+	InPool(region string, key edgeproto.ZoneKey) bool
+	GetZonePoolCache(region string) *edgeproto.ZonePoolCache
 	Dumpable() map[string]interface{}
 }
 
-type CloudletPoolCache struct {
-	cache           edgeproto.CloudletPoolCache
-	PoolsByCloudlet edgeproto.CloudletPoolByCloudletKey
+type ZonePoolCache struct {
+	cache       edgeproto.ZonePoolCache
+	PoolsByZone edgeproto.ZonePoolByZoneKey
 }
 
-func (s *CloudletPoolCache) Init() {
-	edgeproto.InitCloudletPoolCache(&s.cache)
-	s.PoolsByCloudlet.Init()
+func (s *ZonePoolCache) Init() {
+	edgeproto.InitZonePoolCache(&s.cache)
+	s.PoolsByZone.Init()
 	s.cache.AddUpdatedCb(s.updatedPool)
 	s.cache.AddDeletedCb(s.deletedPool)
 }
 
-func (s *CloudletPoolCache) updatedPool(ctx context.Context, old, new *edgeproto.CloudletPool) {
-	s.PoolsByCloudlet.Updated(old, new)
+func (s *ZonePoolCache) updatedPool(ctx context.Context, old, new *edgeproto.ZonePool) {
+	s.PoolsByZone.Updated(old, new)
 }
 
-func (s *CloudletPoolCache) deletedPool(ctx context.Context, old *edgeproto.CloudletPool) {
-	s.PoolsByCloudlet.Deleted(old)
+func (s *ZonePoolCache) deletedPool(ctx context.Context, old *edgeproto.ZonePool) {
+	s.PoolsByZone.Deleted(old)
 }
 
-func (s *CloudletPoolCache) Dumpable() map[string]interface{} {
-	return s.PoolsByCloudlet.Dumpable()
+func (s *ZonePoolCache) Dumpable() map[string]interface{} {
+	return s.PoolsByZone.Dumpable()
 }
 
-func (s *CloudletPoolCache) InPool(region string, key edgeproto.CloudletKey) bool {
-	return s.PoolsByCloudlet.HasRef(key)
+func (s *ZonePoolCache) InPool(region string, key edgeproto.ZoneKey) bool {
+	return s.PoolsByZone.HasRef(key)
 }
 
-func (s *CloudletPoolCache) GetCloudletPoolCache(region string) *edgeproto.CloudletPoolCache {
+func (s *ZonePoolCache) GetZonePoolCache(region string) *edgeproto.ZonePoolCache {
 	return &s.cache
 }

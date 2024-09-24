@@ -128,7 +128,7 @@ func (s *CCRMHandler) InitConnectivity(client *notify.Client, kvstore objstore.K
 	s.caches.ClusterInstInfoCache.InitSync(sync)
 	s.caches.AppInstInfoCache.InitSync(sync)
 	nodeMgr.CloudletLookup.GetCloudletCache(nodeMgr.Region).InitSync(sync)
-	nodeMgr.CloudletPoolLookup.GetCloudletPoolCache(nodeMgr.Region).InitSync(sync)
+	nodeMgr.ZonePoolLookup.GetZonePoolCache(nodeMgr.Region).InitSync(sync)
 
 	// notify handlers
 	if client != nil {

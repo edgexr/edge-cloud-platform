@@ -73,9 +73,9 @@ func StartDummyCCRM(ctx context.Context, vaultConfig *vault.Config, kvstore objs
 	nodeMgr.VaultConfig = vaultConfig
 	nodeMgr.MyNode.Key.Type = node.NodeTypeCCRM
 	nodeMgr.Debug.Init(&nodeMgr)
-	cplookup := &node.CloudletPoolCache{}
+	cplookup := &node.ZonePoolCache{}
 	cplookup.Init()
-	nodeMgr.CloudletPoolLookup = cplookup
+	nodeMgr.ZonePoolLookup = cplookup
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
@@ -125,9 +125,16 @@ func (d *CCRMDummy) NewPlatform() platform.Platform {
 	return f
 }
 
+type fakeSetFailure interface {
+	SetSimulateAppCreateFailure(state bool)
+	SetSimulateAppDeleteFailure(state bool)
+	SetSimulateClusterCreateFailure(state bool)
+	SetSimulateClusterDeleteFailure(state bool)
+}
+
 func (d *CCRMDummy) SetSimulateAppCreateFailure(state bool) {
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
-		if f, ok := fp.(*fake.Platform); ok {
+		if f, ok := fp.(fakeSetFailure); ok {
 			f.SetSimulateAppCreateFailure(state)
 		}
 	}
@@ -135,7 +142,7 @@ func (d *CCRMDummy) SetSimulateAppCreateFailure(state bool) {
 
 func (d *CCRMDummy) SetSimulateAppDeleteFailure(state bool) {
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
-		if f, ok := fp.(*fake.Platform); ok {
+		if f, ok := fp.(fakeSetFailure); ok {
 			f.SetSimulateAppDeleteFailure(state)
 		}
 	}
@@ -143,7 +150,7 @@ func (d *CCRMDummy) SetSimulateAppDeleteFailure(state bool) {
 
 func (d *CCRMDummy) SetSimulateClusterCreateFailure(state bool) {
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
-		if f, ok := fp.(*fake.Platform); ok {
+		if f, ok := fp.(fakeSetFailure); ok {
 			f.SetSimulateClusterCreateFailure(state)
 		}
 	}
@@ -151,7 +158,7 @@ func (d *CCRMDummy) SetSimulateClusterCreateFailure(state bool) {
 
 func (d *CCRMDummy) SetSimulateClusterDeleteFailure(state bool) {
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
-		if f, ok := fp.(*fake.Platform); ok {
+		if f, ok := fp.(fakeSetFailure); ok {
 			f.SetSimulateClusterDeleteFailure(state)
 		}
 	}

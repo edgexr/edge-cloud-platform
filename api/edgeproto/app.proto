@@ -321,10 +321,10 @@ message AppAlertPolicy {
   option (protogen.also_required) = "AppKey.Name,AppKey.Version,AppKey.Organization,AlertPolicy";
 }
 
-message DeploymentCloudletRequest {
-   // Discover potential App Cloudlets
+message DeploymentZoneRequest {
+   // Discover potential App Zones
    App app = 1;
-   // Attempt to qualify cloudlet resources for deployment
+   // Attempt to qualify zones resources for deployment
    bool dry_run_deploy = 2;
    // Optional number of worker VMs in dry run K8s Cluster, default = 2
    uint32 num_nodes = 3;
@@ -408,13 +408,13 @@ service AppApi {
     option (protogen.mc2_api) = "ResourceApps,ActionManage,AppKey.Organization";
     option (protogen.input_required) = true;
   }
-  // Discover cloudlets supporting deployments of App.DefaultFlavor
-  rpc ShowCloudletsForAppDeployment(DeploymentCloudletRequest) returns (stream CloudletKey) {
+  // Discover zones supporting deployments of App.DefaultFlavor
+  rpc ShowZonesForAppDeployment(DeploymentZoneRequest) returns (stream ZoneKey) {
    option (google.api.http) =  {
-     post: "/showmapping/deploymentcloudlets"
+     post: "/showmapping/deploymentzones"
      body: "*"
     };
-    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,";
+    option (protogen.mc2_api) = "ResourceZones,ActionView,";
     option (protogen.mc2_custom_authz) = true;
     option (protogen.stream_out_incremental) = true;
   }

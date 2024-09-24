@@ -54,6 +54,7 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
@@ -61,7 +62,7 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	testutil.InternalAppCreate(t, apis.appApi, testutil.AppData())
 	testutil.InternalClusterInstCreate(t, apis.clusterInstApi, testutil.ClusterInstData())
 	testutil.InternalAppInstCreate(t, apis.appInstApi, testutil.AppInstData())
-	testutil.InternalCloudletPoolTest(t, "cud", apis.cloudletPoolApi, testutil.CloudletPoolData())
+	testutil.InternalZonePoolTest(t, "cud", apis.zonePoolApi, testutil.ZonePoolData())
 
 	// CUD for Trust Policy Exception
 	testutil.InternalTrustPolicyExceptionTest(t, "cud", apis.trustPolicyExceptionApi, testutil.TrustPolicyExceptionData())
@@ -79,7 +80,7 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 				Name:         "Pillimo Go!",
 				Version:      "1.0.1",
 			},
-			CloudletPoolKey: edgeproto.CloudletPoolKey{
+			ZonePoolKey: edgeproto.ZonePoolKey{
 				Organization: testutil.OperatorData()[2],
 				Name:         "test-and-dev",
 			},
@@ -107,7 +108,7 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 				Name:         "Pillimo Go!",
 				Version:      "1.0.0",
 			},
-			CloudletPoolKey: edgeproto.CloudletPoolKey{
+			ZonePoolKey: edgeproto.ZonePoolKey{
 				Organization: testutil.OperatorData()[2],
 				Name:         "test-and-dev",
 			},
@@ -126,7 +127,7 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 				Name:         "Pillimo Go!",
 				Version:      "1.0.0",
 			},
-			CloudletPoolKey: edgeproto.CloudletPoolKey{
+			ZonePoolKey: edgeproto.ZonePoolKey{
 				Organization: testutil.OperatorData()[2],
 				Name:         "test-and-dev",
 			},
@@ -173,14 +174,14 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "New state must be either Active or Rejected")
 
-	// test that TPE update with non-existent CloudletPoolKey Organization, fails
+	// test that TPE update with non-existent ZonePoolKey Organization, fails
 	tpeData.Fields = []string{
-		edgeproto.TrustPolicyExceptionFieldKeyCloudletPoolKeyOrganization,
-		edgeproto.TrustPolicyExceptionFieldKeyCloudletPoolKey}
-	tpeData.Key.CloudletPoolKey.Organization = "MarsCloudletPoolOrg"
+		edgeproto.TrustPolicyExceptionFieldKeyZonePoolKeyOrganization,
+		edgeproto.TrustPolicyExceptionFieldKeyZonePoolKey}
+	tpeData.Key.ZonePoolKey.Organization = "MarsZonePoolOrg"
 	_, err = apis.trustPolicyExceptionApi.UpdateTrustPolicyException(ctx, &tpeData)
 	require.NotNil(t, err)
-	strCloudOrgErr := "TrustPolicyException key {\"app_key\":{\"organization\":\"AtlanticInc\",\"name\":\"Pillimo Go!\",\"version\":\"1.0.0\"},\"cloudlet_pool_key\":{\"organization\":\"MarsCloudletPoolOrg\",\"name\":\"test-and-dev\"},\"name\":\"someapp-tpe2\"} not found"
+	strCloudOrgErr := "TrustPolicyException key {\"app_key\":{\"organization\":\"AtlanticInc\",\"name\":\"Pillimo Go!\",\"version\":\"1.0.0\"},\"zone_pool_key\":{\"organization\":\"MarsZonePoolOrg\",\"name\":\"test-and-dev\"},\"name\":\"someapp-tpe2\"} not found"
 	require.Equal(t, err.Error(), strCloudOrgErr)
 
 	// test that TPE update with non-existent AppKey Organization, fails
@@ -190,19 +191,19 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	tpeData.Key.AppKey.Organization = "MarsAppOrg"
 	_, err = apis.trustPolicyExceptionApi.UpdateTrustPolicyException(ctx, &tpeData)
 	require.NotNil(t, err)
-	strAppOrgErr := "TrustPolicyException key {\"app_key\":{\"organization\":\"MarsAppOrg\",\"name\":\"Pillimo Go!\",\"version\":\"1.0.0\"},\"cloudlet_pool_key\":{\"organization\":\"MarsCloudletPoolOrg\",\"name\":\"test-and-dev\"},\"name\":\"someapp-tpe2\"} not found"
+	strAppOrgErr := "TrustPolicyException key {\"app_key\":{\"organization\":\"MarsAppOrg\",\"name\":\"Pillimo Go!\",\"version\":\"1.0.0\"},\"zone_pool_key\":{\"organization\":\"MarsZonePoolOrg\",\"name\":\"test-and-dev\"},\"name\":\"someapp-tpe2\"} not found"
 	require.Equal(t, err.Error(), strAppOrgErr)
 
 	// State related tests - end, restore everything
 	tpeData.Key.AppKey.Organization = testutil.DevData()[0]
 	tpeData.Fields = []string{}
-	// test that TPE create when specified CloudletPool does not exist, fails
-	tpeData.Key.CloudletPoolKey.Organization = "Mission Mars"
+	// test that TPE create when specified ZonePool does not exist, fails
+	tpeData.Key.ZonePoolKey.Organization = "Mission Mars"
 	_, err = apis.trustPolicyExceptionApi.CreateTrustPolicyException(ctx, &tpeData)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), tpeData.Key.CloudletPoolKey.NotFoundError().Error())
+	require.Contains(t, err.Error(), tpeData.Key.ZonePoolKey.NotFoundError().Error())
 	// Restore tpeData Key to original values
-	tpeData.Key.CloudletPoolKey.Organization = testutil.OperatorData()[2]
+	tpeData.Key.ZonePoolKey.Organization = testutil.OperatorData()[2]
 
 	// test that TPE create when specified App does not exist, fails
 	tpeData.Key.AppKey.Organization = testutil.DevData()[2]
@@ -231,7 +232,7 @@ func TestTrustPolicyExceptionApi(t *testing.T) {
 	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData()[3],
 		testutil.TrustPolicyExceptionErrorData()[3].Key.AppKey.NotFoundError().Error())
 	expectCreatePolicyExceptionError(t, ctx, apis, &testutil.TrustPolicyExceptionErrorData()[4],
-		testutil.TrustPolicyExceptionErrorData()[4].Key.CloudletPoolKey.NotFoundError().Error())
+		testutil.TrustPolicyExceptionErrorData()[4].Key.ZonePoolKey.NotFoundError().Error())
 
 	dummy.Stop()
 }

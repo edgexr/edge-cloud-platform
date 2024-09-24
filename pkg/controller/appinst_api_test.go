@@ -142,6 +142,7 @@ func TestAppInstApi(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
@@ -150,7 +151,7 @@ func TestAppInstApi(t *testing.T) {
 	testutil.InternalClusterInstCreate(t, apis.clusterInstApi, testutil.ClusterInstData())
 	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsData())
 	clusterInstCnt := len(apis.clusterInstApi.cache.Objs)
-	require.Equal(t, len(testutil.ClusterInstData()), clusterInstCnt)
+	require.Equal(t, len(testutil.ClusterInstData())+testutil.GetDefaultClusterCount(), clusterInstCnt)
 
 	// Set responder to fail. This should clean up the object after
 	// the fake crm returns a failure. If it doesn't, the next test to
@@ -187,14 +188,20 @@ func TestAppInstApi(t *testing.T) {
 	RequireAppInstPortConsistency = true
 	require.Equal(t, 0, len(apis.appInstApi.cache.Objs))
 	require.Equal(t, clusterInstCnt, len(apis.clusterInstApi.cache.Objs))
+	// delete refs for single k8s cloudlet, because it normally only
+	// gets cleaned up on cloudlet delete, but that messes up the check here
+	singleClusterRefs := edgeproto.CloudletRefs{}
+	singleClusterRefs.Key = testutil.CloudletData()[4].Key
+	_, err := apis.cloudletRefsApi.store.Delete(ctx, &singleClusterRefs, apis.cloudletRefsApi.sync.SyncWait)
+	require.Nil(t, err)
 	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsData())
 
 	testutil.InternalAppInstTest(t, "cud", apis.appInstApi, testutil.AppInstData(), testutil.WithCreatedAppInstTestData(testutil.CreatedAppInstData()))
 	InternalAppInstCachedFieldsTest(t, ctx, apis)
 	// check cluster insts created (includes explicit and auto)
 	testutil.InternalClusterInstTest(t, "show", apis.clusterInstApi,
-		append(testutil.ClusterInstData(), testutil.ClusterInstAutoData()...))
-	require.Equal(t, len(testutil.ClusterInstData())+len(testutil.ClusterInstAutoData()), len(apis.clusterInstApi.cache.Objs))
+		append(testutil.CreatedClusterInstData(), testutil.ClusterInstAutoData()...))
+	require.Equal(t, len(testutil.CreatedClusterInstData())+len(testutil.ClusterInstAutoData()), len(apis.clusterInstApi.cache.Objs))
 
 	// after app insts create, check that cloudlet refs data is correct.
 	// Note this refs data is a second set after app insts were created.
@@ -204,7 +211,7 @@ func TestAppInstApi(t *testing.T) {
 	// ensure two appinsts of same app cannot deploy to same cluster
 	dup := testutil.AppInstData()[0]
 	dup.Key.Name = "dup"
-	err := apis.appInstApi.CreateAppInst(&dup, testutil.NewCudStreamoutAppInst(ctx))
+	err = apis.appInstApi.CreateAppInst(&dup, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err, "create duplicate instance of app in cluster")
 	require.Contains(t, err.Error(), "cannot deploy another instance of App")
 
@@ -484,6 +491,7 @@ func TestAutoClusterInst(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, testutil.CloudletData())
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
@@ -558,9 +566,10 @@ func TestAutoClusterInst(t *testing.T) {
 
 	// create auto-cluster AppInsts
 	appInst := testutil.AppInstData()[0]
-	appInst.AppKey = testutil.AppData()[1].Key // does not support multi-tenant
+	appInst.AppKey = testutil.AppData()[1].Key   // does not support multi-tenant
+	appInst.ZoneKey = testutil.ZoneData()[0].Key // resolves to cloudletData[0]
 	appInst.ClusterKey = edgeproto.ClusterKey{}
-	cloudletKey := appInst.CloudletKey
+	cloudletKey := testutil.CloudletData()[0].Key
 	createAutoClusterAppInst(appInst, 0)
 	checkReservedIds(cloudletKey, 1)
 	createAutoClusterAppInst(appInst, 1)
@@ -599,7 +608,7 @@ func TestAutoClusterInst(t *testing.T) {
 
 	// Autocluster AppInst with AutoDelete delete option should fail
 	autoDeleteAppInst := testutil.AppInstData()[10]
-	autoDeleteAppInst.ClusterKey.Name = ""
+	autoDeleteAppInst.ClusterKey = edgeproto.ClusterKey{}
 	err = apis.appInstApi.CreateAppInst(&autoDeleteAppInst, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err, "create autodelete appInst")
 	require.Contains(t, err.Error(), "Sidecar AppInst (AutoDelete App) must specify the Cluster name and organization to deploy to")
@@ -761,6 +770,18 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllApis, appDnsRoot string) {
 	var err error
 	var found bool
+	zoneMT := edgeproto.Zone{
+		Key: edgeproto.ZoneKey{
+			Organization: "unittest",
+			Name:         "singlek8sMT",
+		},
+	}
+	zoneST := edgeproto.Zone{
+		Key: edgeproto.ZoneKey{
+			Organization: "unittest",
+			Name:         "singlek8sST",
+		},
+	}
 	// Single kubernetes cloudlets can be either multi-tenant,
 	// or dedicated to a particular organization (which removes all
 	// of the multi-tenant deployment restrictions on namespaces, etc).
@@ -777,6 +798,7 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 		},
 		PlatformType: platform.PlatformTypeFakeSingleCluster,
 		CrmOverride:  edgeproto.CRMOverride_IGNORE_CRM,
+		Zone:         zoneMT.Key.Name,
 	}
 	cloudletMTInfo := edgeproto.CloudletInfo{
 		Key:                  cloudletMT.Key,
@@ -790,6 +812,7 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	cloudletST := cloudletMT
 	cloudletST.Key.Name = "singlek8sST"
 	cloudletST.SingleKubernetesClusterOwner = stOrg
+	cloudletST.Zone = zoneST.Key.Name
 	cloudletSTInfo := cloudletMTInfo
 	cloudletSTInfo.Key = cloudletST.Key
 
@@ -800,16 +823,20 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 
 	setupTests := []struct {
 		desc         string
+		zone         *edgeproto.Zone
 		cloudlet     *edgeproto.Cloudlet
 		cloudletInfo *edgeproto.CloudletInfo
 		clusterKey   *edgeproto.ClusterKey
 		ownerOrg     string
 		mt           bool
 	}{
-		{"mt setup", &cloudletMT, &cloudletMTInfo, mtClustKey, "", true},
-		{"st setup", &cloudletST, &cloudletSTInfo, stClustKey, stOrg, false},
+		{"mt setup", &zoneMT, &cloudletMT, &cloudletMTInfo, mtClustKey, "", true},
+		{"st setup", &zoneST, &cloudletST, &cloudletSTInfo, stClustKey, stOrg, false},
 	}
 	for _, test := range setupTests {
+		// create zone
+		_, err = apis.zoneApi.CreateZone(ctx, test.zone)
+		require.Nil(t, err)
 		// create cloudlet
 		err = apis.cloudletApi.CreateCloudlet(test.cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 		require.Nil(t, err, test.desc)
@@ -844,7 +871,7 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	appInstCreateTests := []struct {
 		desc        string
 		aiIdx       int
-		cloudlet    *edgeproto.Cloudlet
+		zone        *edgeproto.Zone
 		clusterOrg  string
 		clusterName string
 		dedicatedIp bool
@@ -852,68 +879,68 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 		errStr      string
 	}{{
 		"MT non-serverless app",
-		3, &cloudletMT, mtOrg, "", notDedicatedIp, "",
-		"Target cloudlet platform only supports serverless Apps",
+		3, &zoneMT, "", "", notDedicatedIp, "",
+		"platform only supports serverless apps",
 	}, {
 		"MT bad cluster org",
-		0, &cloudletMT, "foo", "", notDedicatedIp, "",
-		"Cluster organization must be set to " + mtOrg + " or left blank",
+		0, &zoneMT, "foo", mtClust, notDedicatedIp, "",
+		"{\"name\":\"defaultclust-9eb6c80d\",\"organization\":\"foo\"} not found",
 	}, {
 		"MT bad cluster name",
-		0, &cloudletMT, mtOrg, "foo", notDedicatedIp, "",
-		"Cluster name for single kubernetes cluster cloudlet must be set to " + mtClust + " or left blank",
+		0, &zoneMT, mtOrg, "foo", notDedicatedIp, "",
+		"{\"name\":\"foo\",\"organization\":\"edgecloudorg\"} not found",
 	}, {
 		"ST bad cluster org", 0,
-		&cloudletST, "foo", "", notDedicatedIp, "",
-		"Cluster organization must be set to " + stOrg + " or left blank",
+		&zoneST, "foo", stClust, notDedicatedIp, "",
+		"{\"name\":\"defaultclust-8efb050a\",\"organization\":\"foo\"} not found",
 	}, {
 		"ST bad cluster name", 0,
-		&cloudletST, stOrg, "foo", notDedicatedIp, "",
-		"Cluster name for single kubernetes cluster cloudlet must be set to " + stClust + " or left blank",
+		&zoneST, stOrg, "foo", notDedicatedIp, "",
+		"{\"name\":\"foo\",\"organization\":\"AtlanticInc\"} not found",
 	}, {
 		"MT specified correct cluster",
-		0, &cloudletMT, mtOrg, mtClust, notDedicatedIp,
+		0, &zoneMT, mtOrg, mtClust, notDedicatedIp,
 		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT any clust name blank org",
-		0, &cloudletMT, "", "", notDedicatedIp,
+		0, &zoneMT, "", "", notDedicatedIp,
 		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST specified correct cluster",
-		0, &cloudletST, stOrg, stClust, notDedicatedIp,
+		0, &zoneST, stOrg, stClust, notDedicatedIp,
 		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST blank clust name blank org",
-		0, &cloudletST, "", "", notDedicatedIp,
+		0, &zoneST, "", "", notDedicatedIp,
 		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT blank clust name dedicated",
-		0, &cloudletMT, mtOrg, "", dedicatedIp,
+		0, &zoneMT, "", "", dedicatedIp,
 		"pillimogo1-atlanticinc.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST blank clust name dedicated",
-		0, &cloudletST, stOrg, "", dedicatedIp,
+		0, &zoneST, "", "", dedicatedIp,
 		"pillimogo1-atlanticinc.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"VM App",
-		11, &cloudletST, "", "", notDedicatedIp, "",
-		"Cannot deploy vm app to single kubernetes cloudlet",
+		11, &zoneST, "", "", notDedicatedIp, "",
+		"no available edge sites in zone, some sites were skipped because platform only supports kubernetes",
 	}, {
 		"VM App",
-		11, &cloudletMT, "", "", notDedicatedIp, "",
-		"Cannot deploy vm app to single kubernetes cloudlet",
+		11, &zoneMT, "", "", notDedicatedIp, "",
+		"no available edge sites in zone, some sites were skipped because platform only supports kubernetes",
 	}, {
 		"Docker App",
-		17, &cloudletST, "", "", notDedicatedIp, "",
-		"Cannot deploy docker app to single kubernetes cloudlet",
+		17, &zoneST, "", "", notDedicatedIp, "",
+		"no available edge sites in zone, some sites were skipped because platform only supports kubernetes",
 	}, {
 		"Docker App",
-		17, &cloudletMT, "", "", notDedicatedIp, "",
-		"Cannot deploy docker app to single kubernetes cloudlet",
+		17, &zoneMT, "", "", notDedicatedIp, "",
+		"no available edge sites in zone, some sites were skipped because platform only supports kubernetes",
 	}}
 	for _, test := range appInstCreateTests {
 		ai := testutil.AppInstData()[test.aiIdx]
-		ai.CloudletKey = test.cloudlet.Key
+		ai.ZoneKey = test.zone.Key
 		ai.ClusterKey.Name = test.clusterName
 		ai.ClusterKey.Organization = test.clusterOrg
 		ai.DedicatedIp = test.dedicatedIp
@@ -936,10 +963,11 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	cleanupTests := []struct {
 		desc     string
 		cloudlet *edgeproto.Cloudlet
+		zone     *edgeproto.Zone
 		ownerOrg string
 	}{
-		{"mt cleanup test", &cloudletMT, ""},
-		{"st cleanup test", &cloudletST, stOrg},
+		{"mt cleanup test", &cloudletMT, &zoneMT, ""},
+		{"st cleanup test", &cloudletST, &zoneST, stOrg},
 	}
 	for _, test := range cleanupTests {
 		clusterKey := cloudcommon.GetDefaultClustKey(test.cloudlet.Key, test.ownerOrg)

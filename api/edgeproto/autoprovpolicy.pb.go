@@ -26,6 +26,7 @@ import (
 	io "io"
 	math "math"
 	math_bits "math/bits"
+	"sort"
 	strings "strings"
 )
 
@@ -51,7 +52,7 @@ type AutoProvPolicy struct {
 	// Number of intervals to check before triggering deployment
 	DeployIntervalCount uint32 `protobuf:"varint,4,opt,name=deploy_interval_count,json=deployIntervalCount,proto3" json:"deploy_interval_count,omitempty"`
 	// Allowed deployment locations
-	Cloudlets []*AutoProvCloudlet `protobuf:"bytes,5,rep,name=cloudlets,proto3" json:"cloudlets,omitempty"`
+	Zones []*ZoneKey `protobuf:"bytes,5,rep,name=zones,proto3" json:"zones,omitempty"`
 	// Minimum number of active instances for High-Availability
 	MinActiveInstances uint32 `protobuf:"varint,6,opt,name=min_active_instances,json=minActiveInstances,proto3" json:"min_active_instances,omitempty"`
 	// Maximum number of instances (active or not)
@@ -97,53 +98,12 @@ func (m *AutoProvPolicy) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AutoProvPolicy proto.InternalMessageInfo
 
-// AutoProvCloudlet stores the potential cloudlet and location for DME lookup
-type AutoProvCloudlet struct {
-	// Cloudlet key
-	Key CloudletKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
-	// Cloudlet location
-	Loc distributed_match_engine.Loc `protobuf:"bytes,2,opt,name=loc,proto3" json:"loc"`
-}
-
-func (m *AutoProvCloudlet) Reset()         { *m = AutoProvCloudlet{} }
-func (m *AutoProvCloudlet) String() string { return proto.CompactTextString(m) }
-func (*AutoProvCloudlet) ProtoMessage()    {}
-func (*AutoProvCloudlet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_199b84e2b69e837c, []int{1}
-}
-func (m *AutoProvCloudlet) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *AutoProvCloudlet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_AutoProvCloudlet.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *AutoProvCloudlet) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AutoProvCloudlet.Merge(m, src)
-}
-func (m *AutoProvCloudlet) XXX_Size() int {
-	return m.Size()
-}
-func (m *AutoProvCloudlet) XXX_DiscardUnknown() {
-	xxx_messageInfo_AutoProvCloudlet.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AutoProvCloudlet proto.InternalMessageInfo
-
-// AutoProvCount is used to send potential cloudlet and location counts from DME to Controller
+// AutoProvCount is used to send potential zone and location counts from DME to Controller
 type AutoProvCount struct {
 	// Target app
 	AppKey AppKey `protobuf:"bytes,1,opt,name=app_key,json=appKey,proto3" json:"app_key"`
-	// Target cloudlet
-	CloudletKey CloudletKey `protobuf:"bytes,2,opt,name=cloudlet_key,json=cloudletKey,proto3" json:"cloudlet_key"`
+	// Target zone
+	ZoneKey ZoneKey `protobuf:"bytes,2,opt,name=zone_key,json=zoneKey,proto3" json:"zone_key"`
 	// FindCloudlet client count
 	Count uint64 `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
 	// Process count immediately
@@ -154,7 +114,7 @@ func (m *AutoProvCount) Reset()         { *m = AutoProvCount{} }
 func (m *AutoProvCount) String() string { return proto.CompactTextString(m) }
 func (*AutoProvCount) ProtoMessage()    {}
 func (*AutoProvCount) Descriptor() ([]byte, []int) {
-	return fileDescriptor_199b84e2b69e837c, []int{2}
+	return fileDescriptor_199b84e2b69e837c, []int{1}
 }
 func (m *AutoProvCount) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -183,7 +143,7 @@ func (m *AutoProvCount) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AutoProvCount proto.InternalMessageInfo
 
-// AutoProvCounts is used to send potential cloudlet and location counts from DME to Controller
+// AutoProvCounts is used to send potential zone and location counts from DME to Controller
 type AutoProvCounts struct {
 	// DME node name
 	DmeNodeName string `protobuf:"bytes,1,opt,name=dme_node_name,json=dmeNodeName,proto3" json:"dme_node_name,omitempty"`
@@ -197,7 +157,7 @@ func (m *AutoProvCounts) Reset()         { *m = AutoProvCounts{} }
 func (m *AutoProvCounts) String() string { return proto.CompactTextString(m) }
 func (*AutoProvCounts) ProtoMessage()    {}
 func (*AutoProvCounts) Descriptor() ([]byte, []int) {
-	return fileDescriptor_199b84e2b69e837c, []int{3}
+	return fileDescriptor_199b84e2b69e837c, []int{2}
 }
 func (m *AutoProvCounts) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -226,26 +186,26 @@ func (m *AutoProvCounts) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AutoProvCounts proto.InternalMessageInfo
 
-// AutoProvPolicyCloudlet is used to add and remove Cloudlets from the Auto Provisioning Policy
-type AutoProvPolicyCloudlet struct {
+// AutoProvPolicyZone is used to add and remove Zones from the Auto Provisioning Policy
+type AutoProvPolicyZone struct {
 	// Unique policy identifier key
 	Key PolicyKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
-	// Cloudlet identifier key
-	CloudletKey CloudletKey `protobuf:"bytes,2,opt,name=cloudlet_key,json=cloudletKey,proto3" json:"cloudlet_key"`
+	// Zone identifier key
+	ZoneKey ZoneKey `protobuf:"bytes,2,opt,name=zone_key,json=zoneKey,proto3" json:"zone_key"`
 }
 
-func (m *AutoProvPolicyCloudlet) Reset()         { *m = AutoProvPolicyCloudlet{} }
-func (m *AutoProvPolicyCloudlet) String() string { return proto.CompactTextString(m) }
-func (*AutoProvPolicyCloudlet) ProtoMessage()    {}
-func (*AutoProvPolicyCloudlet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_199b84e2b69e837c, []int{4}
+func (m *AutoProvPolicyZone) Reset()         { *m = AutoProvPolicyZone{} }
+func (m *AutoProvPolicyZone) String() string { return proto.CompactTextString(m) }
+func (*AutoProvPolicyZone) ProtoMessage()    {}
+func (*AutoProvPolicyZone) Descriptor() ([]byte, []int) {
+	return fileDescriptor_199b84e2b69e837c, []int{3}
 }
-func (m *AutoProvPolicyCloudlet) XXX_Unmarshal(b []byte) error {
+func (m *AutoProvPolicyZone) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *AutoProvPolicyCloudlet) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *AutoProvPolicyZone) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_AutoProvPolicyCloudlet.Marshal(b, m, deterministic)
+		return xxx_messageInfo_AutoProvPolicyZone.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -255,18 +215,19 @@ func (m *AutoProvPolicyCloudlet) XXX_Marshal(b []byte, deterministic bool) ([]by
 		return b[:n], nil
 	}
 }
-func (m *AutoProvPolicyCloudlet) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AutoProvPolicyCloudlet.Merge(m, src)
+func (m *AutoProvPolicyZone) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_AutoProvPolicyZone.Merge(m, src)
 }
-func (m *AutoProvPolicyCloudlet) XXX_Size() int {
+func (m *AutoProvPolicyZone) XXX_Size() int {
 	return m.Size()
 }
-func (m *AutoProvPolicyCloudlet) XXX_DiscardUnknown() {
-	xxx_messageInfo_AutoProvPolicyCloudlet.DiscardUnknown(m)
+func (m *AutoProvPolicyZone) XXX_DiscardUnknown() {
+	xxx_messageInfo_AutoProvPolicyZone.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AutoProvPolicyCloudlet proto.InternalMessageInfo
+var xxx_messageInfo_AutoProvPolicyZone proto.InternalMessageInfo
 
+// AutoProvInfo notifies the controller when cloudlet maintenance failover is done.
 type AutoProvInfo struct {
 	// Fields are used for the Update API to specify which fields to apply
 	Fields []string `protobuf:"bytes,1,rep,name=fields,proto3" json:"fields,omitempty"`
@@ -286,7 +247,7 @@ func (m *AutoProvInfo) Reset()         { *m = AutoProvInfo{} }
 func (m *AutoProvInfo) String() string { return proto.CompactTextString(m) }
 func (*AutoProvInfo) ProtoMessage()    {}
 func (*AutoProvInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_199b84e2b69e837c, []int{5}
+	return fileDescriptor_199b84e2b69e837c, []int{4}
 }
 func (m *AutoProvInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -317,96 +278,92 @@ var xxx_messageInfo_AutoProvInfo proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*AutoProvPolicy)(nil), "edgeproto.AutoProvPolicy")
-	proto.RegisterType((*AutoProvCloudlet)(nil), "edgeproto.AutoProvCloudlet")
 	proto.RegisterType((*AutoProvCount)(nil), "edgeproto.AutoProvCount")
 	proto.RegisterType((*AutoProvCounts)(nil), "edgeproto.AutoProvCounts")
-	proto.RegisterType((*AutoProvPolicyCloudlet)(nil), "edgeproto.AutoProvPolicyCloudlet")
+	proto.RegisterType((*AutoProvPolicyZone)(nil), "edgeproto.AutoProvPolicyZone")
 	proto.RegisterType((*AutoProvInfo)(nil), "edgeproto.AutoProvInfo")
 }
 
 func init() { proto.RegisterFile("autoprovpolicy.proto", fileDescriptor_199b84e2b69e837c) }
 
 var fileDescriptor_199b84e2b69e837c = []byte{
-	// 1256 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0x41, 0x6c, 0x1b, 0x45,
-	0x17, 0xce, 0xc4, 0x6e, 0x6a, 0x4f, 0x92, 0x2a, 0xd9, 0xba, 0xf9, 0x27, 0x69, 0xea, 0xe4, 0xdf,
-	0x0a, 0x14, 0x15, 0x6b, 0x1d, 0xa5, 0x2a, 0x42, 0x91, 0x5a, 0x94, 0xa4, 0x02, 0x45, 0x21, 0xa5,
-	0xda, 0x42, 0x91, 0x38, 0xb0, 0x9a, 0xec, 0xbe, 0xb8, 0xab, 0xee, 0xce, 0xac, 0x76, 0xc7, 0x4e,
-	0xcd, 0x09, 0xb8, 0xc0, 0xb1, 0x6a, 0x2f, 0x55, 0x4f, 0x1c, 0x38, 0x20, 0xb8, 0xa0, 0x9e, 0x80,
-	0x53, 0xc5, 0x29, 0x17, 0x50, 0x25, 0x2e, 0x9c, 0x50, 0x49, 0x39, 0xa0, 0x9c, 0x2a, 0xd5, 0xf6,
-	0x0d, 0x09, 0xed, 0xec, 0xae, 0x77, 0xe3, 0xda, 0x55, 0x68, 0xb8, 0xcd, 0x9b, 0xf7, 0x3e, 0xcf,
-	0x37, 0xdf, 0xbc, 0xf7, 0xad, 0x71, 0x89, 0xd6, 0x05, 0xf7, 0x7c, 0xde, 0xf0, 0xb8, 0x63, 0x9b,
-	0x4d, 0xcd, 0xf3, 0xb9, 0xe0, 0x4a, 0x11, 0xac, 0x1a, 0xc8, 0xe5, 0xcc, 0x6c, 0x8d, 0xf3, 0x9a,
-	0x03, 0x55, 0xea, 0xd9, 0x55, 0xca, 0x18, 0x17, 0x54, 0xd8, 0x9c, 0x05, 0x51, 0xe1, 0xcc, 0x98,
-	0x0f, 0x41, 0xdd, 0x11, 0x71, 0x74, 0x46, 0x70, 0xee, 0x04, 0x55, 0x19, 0xd4, 0x80, 0x75, 0x17,
-	0x71, 0xba, 0x54, 0xe3, 0x35, 0x2e, 0x97, 0xd5, 0x70, 0x15, 0xef, 0x9e, 0x0a, 0x19, 0x04, 0x26,
-	0x75, 0x20, 0x4b, 0x61, 0x66, 0xd2, 0x74, 0x78, 0xdd, 0x72, 0x40, 0xdc, 0x84, 0x64, 0xab, 0x48,
-	0x3d, 0x2f, 0xcd, 0xd6, 0x03, 0x01, 0xbe, 0xcd, 0x82, 0xe4, 0xf0, 0x71, 0xcb, 0x85, 0xaa, 0xc3,
-	0xcd, 0x38, 0x3c, 0x19, 0x86, 0xd4, 0xf3, 0x4c, 0xee, 0xba, 0x3c, 0x61, 0x30, 0x17, 0x5f, 0x46,
-	0x46, 0x5b, 0xf5, 0xed, 0xaa, 0xb0, 0x5d, 0x08, 0x04, 0x75, 0xe3, 0xdf, 0x55, 0xff, 0xce, 0xe3,
-	0x13, 0x2b, 0x75, 0xc1, 0xaf, 0xfa, 0xbc, 0x71, 0x55, 0xd2, 0x51, 0xa6, 0xf0, 0xc8, 0xb6, 0x0d,
-	0x8e, 0x15, 0x10, 0x34, 0x9f, 0x5b, 0x28, 0xea, 0x71, 0xa4, 0x54, 0x70, 0xee, 0x26, 0x34, 0xc9,
-	0xf0, 0x3c, 0x5a, 0x18, 0x5d, 0x2a, 0x69, 0x5d, 0xc5, 0xb4, 0x08, 0xb7, 0x01, 0xcd, 0xd5, 0xfc,
-	0xee, 0xef, 0x73, 0x43, 0x7a, 0x58, 0xa6, 0x68, 0xf8, 0xa4, 0x05, 0x9e, 0xc3, 0x9b, 0x86, 0xe9,
-	0xd8, 0xc0, 0x84, 0x61, 0xf2, 0x3a, 0x13, 0x24, 0x37, 0x8f, 0x16, 0xc6, 0xf5, 0xc9, 0x28, 0xb5,
-	0x26, 0x33, 0x6b, 0x61, 0x42, 0x79, 0x03, 0x9f, 0x8a, 0xeb, 0x6d, 0x26, 0xc0, 0x6f, 0x50, 0x27,
-	0x46, 0xe4, 0x43, 0xc4, 0x6a, 0xfe, 0x8b, 0x16, 0x41, 0x7a, 0xfc, 0x93, 0xeb, 0x71, 0x45, 0x84,
-	0x7c, 0x1b, 0x17, 0x13, 0xe9, 0x02, 0x72, 0x6c, 0x3e, 0xb7, 0x30, 0xba, 0x74, 0x3a, 0xc3, 0x2e,
-	0xb9, 0xdd, 0x5a, 0x5c, 0xb3, 0x3a, 0xb6, 0xdf, 0x21, 0x85, 0x24, 0xd2, 0x53, 0xac, 0xb2, 0x88,
-	0x4b, 0xae, 0xcd, 0x0c, 0x6a, 0x0a, 0xbb, 0x01, 0x46, 0xa8, 0x34, 0x65, 0x26, 0x04, 0x64, 0x44,
-	0x72, 0x56, 0x5c, 0x9b, 0xad, 0xc8, 0xd4, 0x7a, 0x92, 0x51, 0xce, 0xe2, 0x71, 0x97, 0xde, 0xca,
-	0x94, 0x1e, 0x97, 0xa5, 0x63, 0x2e, 0xbd, 0x95, 0x16, 0x2d, 0xe1, 0x53, 0x75, 0xd6, 0x4f, 0x8b,
-	0x82, 0x2c, 0x3e, 0x99, 0x24, 0xb3, 0x6a, 0xbc, 0x8e, 0xff, 0xd7, 0xc5, 0xf4, 0xe8, 0x51, 0x94,
-	0xa8, 0xee, 0x4f, 0x1e, 0xd4, 0xe2, 0x35, 0x7c, 0xc2, 0x02, 0x07, 0x04, 0x18, 0x9e, 0x0f, 0x1e,
-	0xf5, 0x81, 0xe0, 0x79, 0xb4, 0x50, 0x58, 0xcd, 0x7f, 0x1d, 0xca, 0x37, 0x1e, 0xe5, 0xae, 0x46,
-	0xa9, 0xe5, 0x4f, 0xd1, 0x5f, 0xcf, 0x08, 0x7a, 0xfa, 0x8c, 0xa0, 0x4f, 0x5a, 0x04, 0xdd, 0x6e,
-	0x11, 0x74, 0xaf, 0x45, 0xd0, 0x9d, 0x36, 0x39, 0x93, 0xa8, 0x13, 0x2c, 0x9f, 0xd5, 0xde, 0xe1,
-	0x66, 0xe5, 0x72, 0x16, 0x77, 0xbf, 0x4d, 0x5e, 0x61, 0xd4, 0x85, 0x8b, 0x1b, 0xd0, 0xd4, 0xae,
-	0x50, 0x17, 0x2a, 0xd4, 0xf3, 0xb8, 0x5f, 0x93, 0xf1, 0xbb, 0x7e, 0x8d, 0x32, 0xfb, 0x63, 0x39,
-	0x33, 0x0f, 0x3a, 0x64, 0xe2, 0x26, 0x34, 0x2f, 0x66, 0xf7, 0x7e, 0xea, 0x90, 0xd1, 0xe4, 0xd7,
-	0x37, 0xa0, 0xa9, 0x36, 0xf1, 0x44, 0xef, 0x03, 0x29, 0x5a, 0xd4, 0x68, 0x48, 0x36, 0xda, 0x54,
-	0xe6, 0x29, 0x33, 0xc0, 0x6c, 0xab, 0x5d, 0xc0, 0x39, 0x87, 0x9b, 0x71, 0x63, 0x9e, 0xd1, 0x2c,
-	0x3b, 0x10, 0xbe, 0xbd, 0x55, 0x17, 0x60, 0x19, 0x2e, 0x15, 0xe6, 0x0d, 0x03, 0x58, 0xcd, 0x66,
-	0x10, 0xde, 0x24, 0x81, 0x39, 0xdc, 0x54, 0x7f, 0x40, 0x78, 0xbc, 0x7b, 0xb6, 0x54, 0x6f, 0x11,
-	0x1f, 0xa7, 0x9e, 0x67, 0xa4, 0x87, 0x4f, 0x66, 0xfb, 0xc8, 0xf3, 0xd2, 0x73, 0x47, 0xa8, 0x8c,
-	0x94, 0x37, 0xf1, 0x58, 0xd2, 0x3f, 0x46, 0x3a, 0x1c, 0x2f, 0xe6, 0x3c, 0x6a, 0xa6, 0x5b, 0x4a,
-	0x09, 0x1f, 0x4b, 0x07, 0x23, 0xaf, 0x47, 0x81, 0x32, 0x87, 0x47, 0x3d, 0x9f, 0x9b, 0x10, 0x04,
-	0x06, 0xe3, 0x3b, 0x72, 0x04, 0x0a, 0x3a, 0x8e, 0xb7, 0xae, 0xf0, 0x1d, 0xf5, 0x3b, 0x94, 0x8e,
-	0xad, 0xe4, 0x1e, 0x28, 0x2a, 0x0e, 0x0d, 0xc1, 0x60, 0xdc, 0x02, 0x23, 0x7c, 0x1e, 0x79, 0x85,
-	0xa2, 0x3e, 0x6a, 0xb9, 0x70, 0x85, 0x5b, 0x10, 0x3e, 0x94, 0x72, 0x09, 0x17, 0xbb, 0x06, 0x10,
-	0x73, 0x9d, 0xd1, 0x22, 0x8b, 0xd0, 0x12, 0x8b, 0xd0, 0xde, 0x4b, 0x2a, 0x62, 0xbe, 0x29, 0x44,
-	0x59, 0xc4, 0x23, 0x92, 0x60, 0x40, 0x72, 0x72, 0xce, 0x48, 0xbf, 0x39, 0x0b, 0x0b, 0xf4, 0xb8,
-	0x6e, 0xb9, 0xf0, 0xb0, 0x45, 0xd0, 0xd3, 0x16, 0x19, 0x52, 0x1f, 0x0e, 0xe3, 0xa9, 0x83, 0x4e,
-	0xd3, 0x7d, 0xf0, 0x4b, 0xd9, 0x07, 0xef, 0xef, 0x2c, 0x53, 0xfb, 0x1d, 0xd2, 0x63, 0x54, 0x69,
-	0x03, 0x6c, 0xfc, 0xab, 0x57, 0x98, 0xc8, 0xce, 0xff, 0x73, 0x2f, 0xb2, 0x7c, 0x0f, 0xdd, 0x6f,
-	0x93, 0xbb, 0xe8, 0x50, 0x1d, 0x5e, 0x49, 0x80, 0x17, 0x33, 0x07, 0x44, 0x88, 0x24, 0x13, 0xc2,
-	0xb2, 0xc9, 0x03, 0xf0, 0x6d, 0xb0, 0xc0, 0xa7, 0x02, 0xac, 0xde, 0xaa, 0xb7, 0x92, 0x44, 0xb6,
-	0x5c, 0xfd, 0x76, 0x18, 0x8f, 0x25, 0x1a, 0xac, 0xb3, 0x6d, 0x3e, 0xd0, 0xaa, 0xb5, 0xac, 0x55,
-	0x1f, 0x62, 0x82, 0x5e, 0xc5, 0x45, 0xc6, 0x85, 0xbd, 0xdd, 0x34, 0x6c, 0x4b, 0x76, 0x62, 0x6e,
-	0xb5, 0x78, 0xe7, 0xc1, 0xf4, 0x31, 0xc6, 0x4d, 0xd7, 0xd3, 0x0b, 0x51, 0x6e, 0xdd, 0x52, 0x3e,
-	0xc0, 0x93, 0x2e, 0x0d, 0xfd, 0x88, 0x85, 0xd6, 0x66, 0x04, 0x82, 0x0a, 0x90, 0xdd, 0x79, 0x62,
-	0xe9, 0xdc, 0xe0, 0xb9, 0xdb, 0x4c, 0x21, 0xd7, 0x42, 0x84, 0x3e, 0xe1, 0xf6, 0xec, 0x28, 0xb3,
-	0xb8, 0x68, 0x72, 0xd7, 0x0b, 0x5d, 0xc6, 0x92, 0x1e, 0x5e, 0xd4, 0xd3, 0x8d, 0xf0, 0x9a, 0xe0,
-	0xfb, 0xdc, 0x0f, 0xad, 0x58, 0x5e, 0x33, 0x8a, 0x96, 0x67, 0x7b, 0xfd, 0xeb, 0x71, 0x8b, 0xa0,
-	0x07, 0x1d, 0x92, 0x67, 0x9c, 0xc1, 0xd2, 0xcf, 0x05, 0x3c, 0x79, 0xb0, 0x63, 0x56, 0x3c, 0x5b,
-	0xf9, 0x05, 0xe1, 0xd2, 0x9a, 0x0f, 0x54, 0x40, 0xcf, 0x67, 0x6f, 0xba, 0x4f, 0x2f, 0x47, 0xa9,
-	0x99, 0xac, 0x0d, 0xe8, 0xf2, 0xfb, 0xaf, 0x7e, 0x8e, 0xf6, 0x5b, 0xe4, 0x82, 0x0e, 0x01, 0xaf,
-	0xfb, 0x26, 0x5c, 0x86, 0x06, 0x38, 0xdc, 0x03, 0x3f, 0x02, 0x54, 0xc2, 0xef, 0x04, 0x67, 0x9b,
-	0x94, 0xd1, 0x1a, 0x54, 0x7a, 0x5f, 0xfd, 0x51, 0x9b, 0xa0, 0xbd, 0x36, 0x99, 0xdc, 0xb4, 0x59,
-	0x38, 0x98, 0x41, 0x65, 0x93, 0xde, 0x92, 0x8b, 0x6f, 0x3a, 0x64, 0xa2, 0xb7, 0xf8, 0xb3, 0x5f,
-	0xff, 0xbc, 0x3b, 0x7c, 0x5a, 0x9d, 0xaa, 0x9a, 0x92, 0x73, 0xf5, 0xe0, 0xbf, 0x97, 0x65, 0x74,
-	0x4e, 0xf9, 0x12, 0xe1, 0x52, 0xe4, 0xcf, 0x47, 0xba, 0xd0, 0x87, 0x2f, 0x7d, 0x9f, 0x2e, 0xc5,
-	0xe8, 0xeb, 0xd2, 0x87, 0xe2, 0x57, 0x08, 0x97, 0xde, 0xf7, 0xac, 0xa3, 0x6a, 0xfe, 0xd1, 0x91,
-	0x24, 0xef, 0xd2, 0xac, 0x4b, 0x26, 0xfd, 0x69, 0x2a, 0xd7, 0x6e, 0xf0, 0x9d, 0xc3, 0x93, 0x1c,
-	0x9c, 0x52, 0xaf, 0xef, 0xb7, 0xc8, 0xf9, 0x17, 0x93, 0xbd, 0x6e, 0xc3, 0x4e, 0x7f, 0x35, 0xa7,
-	0xd5, 0x52, 0x35, 0xb8, 0xc1, 0x77, 0x9e, 0x27, 0xb9, 0x88, 0x94, 0x1f, 0x11, 0x9e, 0x5e, 0xb1,
-	0xac, 0x01, 0x5e, 0xfa, 0xff, 0x81, 0x94, 0x92, 0x92, 0x7e, 0xd2, 0xd6, 0x5e, 0x5a, 0xda, 0xdd,
-	0x36, 0x41, 0x5d, 0x79, 0xe7, 0xd5, 0xd3, 0x55, 0x6a, 0x59, 0x3d, 0xb4, 0x13, 0x2b, 0x0c, 0x35,
-	0xfe, 0x1e, 0xe1, 0x59, 0x1d, 0x5c, 0xde, 0x80, 0xff, 0x94, 0xff, 0xd6, 0x91, 0xf8, 0x4b, 0xee,
-	0x73, 0xea, 0x4c, 0xd5, 0x77, 0x07, 0x53, 0x5f, 0x9d, 0xdd, 0xfd, 0xa3, 0x3c, 0xb4, 0xbb, 0x57,
-	0x46, 0x8f, 0xf6, 0xca, 0xe8, 0xf1, 0x5e, 0x19, 0xdd, 0x7e, 0x52, 0x1e, 0x7a, 0xf4, 0xa4, 0x3c,
-	0xf4, 0xdb, 0x93, 0xf2, 0xd0, 0xd6, 0x88, 0xe4, 0x73, 0xfe, 0x9f, 0x00, 0x00, 0x00, 0xff, 0xff,
-	0x49, 0xe3, 0xed, 0x8e, 0x60, 0x0c, 0x00, 0x00,
+	// 1206 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0x4d, 0x68, 0x1b, 0x47,
+	0x14, 0xd6, 0x58, 0xb2, 0x2d, 0x8d, 0xad, 0x10, 0x6d, 0x64, 0x67, 0xe2, 0x3a, 0x8a, 0x51, 0x69,
+	0x31, 0xa9, 0x90, 0x8c, 0x42, 0x4b, 0x71, 0x49, 0xc0, 0x76, 0x28, 0x98, 0xe0, 0x34, 0x6c, 0xda,
+	0x14, 0x72, 0xc8, 0x32, 0xd9, 0x7d, 0x56, 0x96, 0xec, 0xce, 0x2c, 0xbb, 0x23, 0x39, 0xca, 0xa5,
+	0xa5, 0x3d, 0xb4, 0xc7, 0x90, 0x1e, 0x5a, 0x72, 0xea, 0xa1, 0x87, 0xd2, 0x3f, 0x4a, 0xa0, 0xf7,
+	0xd2, 0x93, 0x4f, 0x25, 0x90, 0x4b, 0x4f, 0x25, 0x75, 0x7a, 0x28, 0x3e, 0x05, 0x22, 0xe9, 0x5c,
+	0x66, 0x76, 0x57, 0x5a, 0xa9, 0x72, 0x30, 0x71, 0x6f, 0xfb, 0xde, 0xfb, 0xde, 0xea, 0x7b, 0xdf,
+	0xbe, 0xef, 0x09, 0x17, 0x69, 0x53, 0x70, 0xcf, 0xe7, 0x2d, 0x8f, 0x3b, 0xb6, 0xd9, 0xae, 0x7a,
+	0x3e, 0x17, 0x5c, 0xcb, 0x81, 0xd5, 0x00, 0xf5, 0xb8, 0xb0, 0xd8, 0xe0, 0xbc, 0xe1, 0x40, 0x8d,
+	0x7a, 0x76, 0x8d, 0x32, 0xc6, 0x05, 0x15, 0x36, 0x67, 0x41, 0x08, 0x5c, 0x98, 0xf5, 0x21, 0x68,
+	0x3a, 0x22, 0x8a, 0x4e, 0x0b, 0xce, 0x9d, 0xa0, 0xa6, 0x82, 0x06, 0xb0, 0xfe, 0x43, 0x54, 0x2e,
+	0x36, 0x78, 0x83, 0xab, 0xc7, 0x9a, 0x7c, 0x8a, 0xb2, 0x73, 0x92, 0x41, 0x60, 0x52, 0x07, 0x92,
+	0x14, 0x16, 0x0a, 0xa6, 0xc3, 0x9b, 0x96, 0x03, 0xe2, 0x36, 0xc4, 0xa9, 0x1c, 0xf5, 0xbc, 0x41,
+	0xb5, 0x19, 0x08, 0xf0, 0x6d, 0x16, 0xc4, 0x3f, 0x9e, 0xb7, 0x5c, 0xa8, 0x39, 0xdc, 0x8c, 0xc2,
+	0x13, 0x32, 0xa4, 0x9e, 0x67, 0x72, 0xd7, 0xe5, 0x31, 0x83, 0x33, 0xd1, 0x30, 0x2a, 0xba, 0xd9,
+	0xdc, 0xae, 0x09, 0xdb, 0x85, 0x40, 0x50, 0x37, 0x7a, 0x6f, 0xf9, 0x71, 0x06, 0x1f, 0x5b, 0x6b,
+	0x0a, 0x7e, 0xc5, 0xe7, 0xad, 0x2b, 0x8a, 0x8e, 0x36, 0x8f, 0xa7, 0xb6, 0x6d, 0x70, 0xac, 0x80,
+	0xa0, 0xa5, 0xf4, 0x72, 0x4e, 0x8f, 0x22, 0xad, 0x82, 0xd3, 0xb7, 0xa1, 0x4d, 0x26, 0x96, 0xd0,
+	0xf2, 0x4c, 0xbd, 0x58, 0xed, 0x2b, 0x56, 0x0d, 0xfb, 0x2e, 0x41, 0x7b, 0x3d, 0xb3, 0xfb, 0xe7,
+	0x99, 0x94, 0x2e, 0x61, 0x5a, 0x15, 0x9f, 0xb0, 0xc0, 0x73, 0x78, 0xdb, 0x30, 0x1d, 0x1b, 0x98,
+	0x30, 0x4c, 0xde, 0x64, 0x82, 0xa4, 0x97, 0xd0, 0x72, 0x5e, 0x2f, 0x84, 0xa5, 0x0d, 0x55, 0xd9,
+	0x90, 0x05, 0xed, 0x6d, 0x3c, 0x17, 0xe1, 0x6d, 0x26, 0xc0, 0x6f, 0x51, 0x27, 0xea, 0xc8, 0xc8,
+	0x8e, 0xf5, 0xcc, 0xe7, 0x1d, 0x82, 0xf4, 0xe8, 0x95, 0x9b, 0x11, 0x22, 0xec, 0xac, 0xe3, 0xc9,
+	0xbb, 0x9c, 0x41, 0x40, 0x26, 0x97, 0xd2, 0xcb, 0x33, 0x75, 0x2d, 0xc1, 0xec, 0x3a, 0x67, 0x20,
+	0x79, 0x65, 0xf7, 0x7b, 0x24, 0x23, 0x03, 0x3d, 0x84, 0x6a, 0x2b, 0xb8, 0xe8, 0xda, 0xcc, 0xa0,
+	0xa6, 0xb0, 0x5b, 0x60, 0x48, 0x51, 0x29, 0x33, 0x21, 0x20, 0x53, 0x8a, 0x9e, 0xe6, 0xda, 0x6c,
+	0x4d, 0x95, 0x36, 0xe3, 0x8a, 0xf6, 0x2a, 0xce, 0xbb, 0xf4, 0x4e, 0x02, 0x3a, 0xad, 0xa0, 0xb3,
+	0x2e, 0xbd, 0x33, 0x00, 0xd5, 0xf1, 0x5c, 0x93, 0x8d, 0x1b, 0x3b, 0xab, 0xc0, 0x27, 0xe2, 0x62,
+	0x72, 0xf0, 0xb7, 0xf0, 0xc9, 0x7e, 0xcf, 0xc8, 0xe8, 0x39, 0xd5, 0xd5, 0x7f, 0xe5, 0xf0, 0xd8,
+	0x6f, 0xe0, 0x63, 0x16, 0x38, 0x20, 0xc0, 0xf0, 0x7c, 0xf0, 0xa8, 0x0f, 0x04, 0x2f, 0xa1, 0xe5,
+	0xec, 0x7a, 0xe6, 0x5b, 0xa9, 0x54, 0x3e, 0xac, 0x5d, 0x09, 0x4b, 0xab, 0xee, 0x3f, 0xcf, 0x09,
+	0x7a, 0xf6, 0x9c, 0xa0, 0x8f, 0x3b, 0x04, 0xdd, 0xeb, 0x10, 0xf4, 0x55, 0x87, 0xa0, 0xfb, 0x5d,
+	0x92, 0xbf, 0x98, 0x84, 0x3d, 0xe8, 0x92, 0xd7, 0x18, 0x75, 0xe1, 0xfc, 0x25, 0x68, 0x57, 0x2f,
+	0x53, 0x17, 0x2a, 0xd4, 0xf3, 0xb8, 0xdf, 0x50, 0xf1, 0x7b, 0x7e, 0x83, 0x32, 0xfb, 0xae, 0x72,
+	0xc3, 0xc3, 0x1e, 0x39, 0x7e, 0x1b, 0xda, 0xe7, 0x93, 0xb9, 0xdf, 0x7a, 0x64, 0x3a, 0xd2, 0xbb,
+	0xfc, 0x23, 0xc2, 0xf9, 0x78, 0xab, 0x42, 0xb6, 0x2b, 0x78, 0x9a, 0x7a, 0x9e, 0x21, 0x17, 0x08,
+	0xa9, 0x05, 0x2a, 0x24, 0x3e, 0xd3, 0x9a, 0xe7, 0x0d, 0xb6, 0x67, 0x8a, 0xaa, 0x48, 0x3b, 0x87,
+	0xb3, 0xf2, 0x5b, 0x19, 0x83, 0x9d, 0x1b, 0xf7, 0x65, 0xc3, 0x9e, 0xe9, 0xbb, 0x61, 0xa8, 0x15,
+	0xf1, 0xe4, 0x60, 0xcf, 0x32, 0x7a, 0x18, 0x68, 0x67, 0xf0, 0x8c, 0xe7, 0x73, 0x13, 0x82, 0xc0,
+	0x60, 0x7c, 0x47, 0x6d, 0x54, 0x56, 0xc7, 0x51, 0xea, 0x32, 0xdf, 0x29, 0xff, 0x8c, 0x06, 0x2e,
+	0x50, 0x7c, 0x03, 0xad, 0x8c, 0xa5, 0xbf, 0x0c, 0xc6, 0x2d, 0x30, 0xa4, 0x26, 0x8a, 0x76, 0x4e,
+	0x9f, 0xb1, 0x5c, 0xb8, 0xcc, 0x2d, 0x90, 0xea, 0x68, 0x17, 0x70, 0xae, 0xef, 0xa7, 0x88, 0xe3,
+	0x42, 0x35, 0x74, 0x5c, 0x35, 0x76, 0x5c, 0xf5, 0xfd, 0x18, 0x11, 0x71, 0x1d, 0xb4, 0x68, 0x2b,
+	0x78, 0x4a, 0x11, 0x0c, 0x48, 0x5a, 0xad, 0x2e, 0x49, 0x6a, 0x92, 0xa4, 0xa3, 0x47, 0xb8, 0xd5,
+	0xec, 0xaf, 0x1d, 0x82, 0x9e, 0x75, 0x48, 0xaa, 0xfc, 0xe5, 0x04, 0xd6, 0x86, 0x8d, 0x2b, 0x25,
+	0xd1, 0x2e, 0x84, 0x26, 0x45, 0x2f, 0x30, 0xe9, 0xfc, 0x7e, 0x8f, 0x8c, 0x78, 0x7e, 0x60, 0xdb,
+	0x77, 0x0e, 0xa5, 0xfa, 0x6c, 0xec, 0xa7, 0x21, 0xf5, 0x57, 0x3f, 0x45, 0x0f, 0xba, 0xe4, 0xa3,
+	0x43, 0x6d, 0x50, 0x45, 0xf6, 0x9c, 0x8f, 0xde, 0x17, 0x22, 0x65, 0x46, 0x42, 0xe3, 0xe4, 0x10,
+	0x7c, 0x1b, 0x2c, 0xf0, 0xa9, 0x00, 0x2b, 0x89, 0x78, 0x37, 0x4e, 0x26, 0xa1, 0xe5, 0xef, 0x27,
+	0xf0, 0x6c, 0x3c, 0xde, 0x26, 0xdb, 0xe6, 0x07, 0x1e, 0xb4, 0x6a, 0xf2, 0xa0, 0xcd, 0x27, 0xc6,
+	0xdc, 0x88, 0x2e, 0xf1, 0xc8, 0x49, 0x7b, 0x1d, 0xe7, 0x18, 0x17, 0xf6, 0x76, 0xdb, 0xb0, 0x2d,
+	0xb5, 0x60, 0xe9, 0xf5, 0xdc, 0xfd, 0x87, 0xa7, 0x26, 0x19, 0x37, 0x5d, 0x4f, 0xcf, 0x86, 0xb5,
+	0x4d, 0x4b, 0xfb, 0x10, 0x17, 0x5c, 0x2a, 0xad, 0xcc, 0xe4, 0x55, 0x30, 0x02, 0x41, 0x05, 0xa8,
+	0xa5, 0x3b, 0x56, 0x3f, 0x5b, 0xb5, 0xec, 0x40, 0xf8, 0xf6, 0xcd, 0xa6, 0x00, 0xcb, 0x70, 0xa9,
+	0x30, 0x6f, 0x19, 0xc0, 0x1a, 0x36, 0x83, 0xea, 0xd6, 0xa0, 0xe5, 0xaa, 0xec, 0xd0, 0x8f, 0xbb,
+	0x23, 0x19, 0x6d, 0x11, 0xe7, 0x4c, 0xee, 0x7a, 0xd2, 0xb1, 0x96, 0xba, 0x76, 0x39, 0x7d, 0x90,
+	0x90, 0x63, 0x82, 0xef, 0x73, 0x5f, 0x5e, 0x31, 0x35, 0x66, 0x18, 0xad, 0x2e, 0x8e, 0x7a, 0xff,
+	0x49, 0x87, 0xa0, 0x87, 0x3d, 0x92, 0x61, 0x9c, 0x41, 0xfd, 0x97, 0x2c, 0x2e, 0x0c, 0x2f, 0xc3,
+	0x9a, 0x67, 0x6b, 0xbf, 0x23, 0x5c, 0xdc, 0xf0, 0x81, 0x0a, 0x18, 0xf9, 0x73, 0x38, 0x35, 0x66,
+	0x45, 0xc3, 0xd2, 0x42, 0xd2, 0xd1, 0xba, 0xfa, 0x97, 0x2c, 0x7f, 0x86, 0xf6, 0x3b, 0xe4, 0x4d,
+	0x1d, 0x02, 0xde, 0xf4, 0x4d, 0xb8, 0x08, 0x2d, 0x70, 0xb8, 0x07, 0x7e, 0xd8, 0x50, 0x91, 0x27,
+	0x96, 0xb3, 0x2d, 0xca, 0x68, 0x03, 0x2a, 0xa3, 0x5f, 0xfc, 0x51, 0x97, 0xa0, 0xbd, 0x2e, 0x29,
+	0x6c, 0xd9, 0x4c, 0xfa, 0x2d, 0xa8, 0x6c, 0xd1, 0x3b, 0xea, 0xe1, 0xbb, 0x1e, 0x39, 0x3e, 0x0a,
+	0xfe, 0xe4, 0xf1, 0xdf, 0x5f, 0x4c, 0xbc, 0x52, 0x9e, 0xaf, 0x99, 0x8a, 0x73, 0x6d, 0xf8, 0x3f,
+	0x7e, 0x15, 0x9d, 0xd5, 0xbe, 0x46, 0xb8, 0x18, 0xde, 0xba, 0x23, 0x0d, 0x74, 0xfd, 0xa5, 0xe7,
+	0xe9, 0x53, 0x0c, 0x0f, 0xf3, 0x18, 0x8a, 0xdf, 0x20, 0x5c, 0xfc, 0xc0, 0xb3, 0x8e, 0xaa, 0xf9,
+	0x8d, 0x23, 0x49, 0xde, 0xa7, 0xd9, 0x54, 0x4c, 0xc6, 0xd3, 0xd4, 0xae, 0xde, 0xe2, 0x3b, 0x87,
+	0x27, 0x79, 0x70, 0xa9, 0x7c, 0x6d, 0xbf, 0x43, 0xce, 0xbd, 0x98, 0xec, 0x35, 0x1b, 0x76, 0xc6,
+	0xab, 0x79, 0xaa, 0x5c, 0xac, 0x05, 0xb7, 0xf8, 0xce, 0x7f, 0x49, 0xae, 0x20, 0xed, 0x27, 0x84,
+	0xe7, 0xd6, 0x2c, 0x6b, 0xcc, 0x89, 0x3c, 0x7d, 0x20, 0x1d, 0x59, 0x1e, 0x27, 0xa9, 0xf9, 0xd2,
+	0x92, 0xee, 0x76, 0x09, 0xea, 0xcb, 0xba, 0x58, 0x3e, 0x59, 0xa3, 0x96, 0x35, 0x42, 0x57, 0x9e,
+	0x3d, 0xa9, 0xeb, 0x0f, 0x08, 0x13, 0x1d, 0x5c, 0xde, 0x82, 0xff, 0x85, 0xf3, 0x8d, 0x23, 0x71,
+	0xee, 0xaf, 0x81, 0xef, 0x8e, 0xa7, 0xbb, 0xbe, 0xb8, 0xfb, 0x57, 0x29, 0xb5, 0xbb, 0x57, 0x42,
+	0x8f, 0xf6, 0x4a, 0xe8, 0xc9, 0x5e, 0x09, 0xdd, 0x7b, 0x5a, 0x4a, 0x3d, 0x7a, 0x5a, 0x4a, 0xfd,
+	0xf1, 0xb4, 0x94, 0xba, 0x39, 0xa5, 0xb8, 0x9c, 0xfb, 0x37, 0x00, 0x00, 0xff, 0xff, 0xbe, 0xe2,
+	0x1b, 0x85, 0x6e, 0x0b, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -429,10 +386,10 @@ type AutoProvPolicyApiClient interface {
 	UpdateAutoProvPolicy(ctx context.Context, in *AutoProvPolicy, opts ...grpc.CallOption) (*Result, error)
 	// Show Auto Provisioning Policies. Any fields specified will be used to filter results.
 	ShowAutoProvPolicy(ctx context.Context, in *AutoProvPolicy, opts ...grpc.CallOption) (AutoProvPolicyApi_ShowAutoProvPolicyClient, error)
-	// Add a Cloudlet to the Auto Provisioning Policy
-	AddAutoProvPolicyCloudlet(ctx context.Context, in *AutoProvPolicyCloudlet, opts ...grpc.CallOption) (*Result, error)
-	// Remove a Cloudlet from the Auto Provisioning Policy
-	RemoveAutoProvPolicyCloudlet(ctx context.Context, in *AutoProvPolicyCloudlet, opts ...grpc.CallOption) (*Result, error)
+	// Add a Zone to the Auto Provisioning Policy
+	AddAutoProvPolicyZone(ctx context.Context, in *AutoProvPolicyZone, opts ...grpc.CallOption) (*Result, error)
+	// Remove a Zone from the Auto Provisioning Policy
+	RemoveAutoProvPolicyZone(ctx context.Context, in *AutoProvPolicyZone, opts ...grpc.CallOption) (*Result, error)
 }
 
 type autoProvPolicyApiClient struct {
@@ -502,18 +459,18 @@ func (x *autoProvPolicyApiShowAutoProvPolicyClient) Recv() (*AutoProvPolicy, err
 	return m, nil
 }
 
-func (c *autoProvPolicyApiClient) AddAutoProvPolicyCloudlet(ctx context.Context, in *AutoProvPolicyCloudlet, opts ...grpc.CallOption) (*Result, error) {
+func (c *autoProvPolicyApiClient) AddAutoProvPolicyZone(ctx context.Context, in *AutoProvPolicyZone, opts ...grpc.CallOption) (*Result, error) {
 	out := new(Result)
-	err := c.cc.Invoke(ctx, "/edgeproto.AutoProvPolicyApi/AddAutoProvPolicyCloudlet", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/edgeproto.AutoProvPolicyApi/AddAutoProvPolicyZone", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *autoProvPolicyApiClient) RemoveAutoProvPolicyCloudlet(ctx context.Context, in *AutoProvPolicyCloudlet, opts ...grpc.CallOption) (*Result, error) {
+func (c *autoProvPolicyApiClient) RemoveAutoProvPolicyZone(ctx context.Context, in *AutoProvPolicyZone, opts ...grpc.CallOption) (*Result, error) {
 	out := new(Result)
-	err := c.cc.Invoke(ctx, "/edgeproto.AutoProvPolicyApi/RemoveAutoProvPolicyCloudlet", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/edgeproto.AutoProvPolicyApi/RemoveAutoProvPolicyZone", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -530,10 +487,10 @@ type AutoProvPolicyApiServer interface {
 	UpdateAutoProvPolicy(context.Context, *AutoProvPolicy) (*Result, error)
 	// Show Auto Provisioning Policies. Any fields specified will be used to filter results.
 	ShowAutoProvPolicy(*AutoProvPolicy, AutoProvPolicyApi_ShowAutoProvPolicyServer) error
-	// Add a Cloudlet to the Auto Provisioning Policy
-	AddAutoProvPolicyCloudlet(context.Context, *AutoProvPolicyCloudlet) (*Result, error)
-	// Remove a Cloudlet from the Auto Provisioning Policy
-	RemoveAutoProvPolicyCloudlet(context.Context, *AutoProvPolicyCloudlet) (*Result, error)
+	// Add a Zone to the Auto Provisioning Policy
+	AddAutoProvPolicyZone(context.Context, *AutoProvPolicyZone) (*Result, error)
+	// Remove a Zone from the Auto Provisioning Policy
+	RemoveAutoProvPolicyZone(context.Context, *AutoProvPolicyZone) (*Result, error)
 }
 
 // UnimplementedAutoProvPolicyApiServer can be embedded to have forward compatible implementations.
@@ -552,11 +509,11 @@ func (*UnimplementedAutoProvPolicyApiServer) UpdateAutoProvPolicy(ctx context.Co
 func (*UnimplementedAutoProvPolicyApiServer) ShowAutoProvPolicy(req *AutoProvPolicy, srv AutoProvPolicyApi_ShowAutoProvPolicyServer) error {
 	return status.Errorf(codes.Unimplemented, "method ShowAutoProvPolicy not implemented")
 }
-func (*UnimplementedAutoProvPolicyApiServer) AddAutoProvPolicyCloudlet(ctx context.Context, req *AutoProvPolicyCloudlet) (*Result, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddAutoProvPolicyCloudlet not implemented")
+func (*UnimplementedAutoProvPolicyApiServer) AddAutoProvPolicyZone(ctx context.Context, req *AutoProvPolicyZone) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddAutoProvPolicyZone not implemented")
 }
-func (*UnimplementedAutoProvPolicyApiServer) RemoveAutoProvPolicyCloudlet(ctx context.Context, req *AutoProvPolicyCloudlet) (*Result, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveAutoProvPolicyCloudlet not implemented")
+func (*UnimplementedAutoProvPolicyApiServer) RemoveAutoProvPolicyZone(ctx context.Context, req *AutoProvPolicyZone) (*Result, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveAutoProvPolicyZone not implemented")
 }
 
 func RegisterAutoProvPolicyApiServer(s *grpc.Server, srv AutoProvPolicyApiServer) {
@@ -638,38 +595,38 @@ func (x *autoProvPolicyApiShowAutoProvPolicyServer) Send(m *AutoProvPolicy) erro
 	return x.ServerStream.SendMsg(m)
 }
 
-func _AutoProvPolicyApi_AddAutoProvPolicyCloudlet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AutoProvPolicyCloudlet)
+func _AutoProvPolicyApi_AddAutoProvPolicyZone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AutoProvPolicyZone)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AutoProvPolicyApiServer).AddAutoProvPolicyCloudlet(ctx, in)
+		return srv.(AutoProvPolicyApiServer).AddAutoProvPolicyZone(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/edgeproto.AutoProvPolicyApi/AddAutoProvPolicyCloudlet",
+		FullMethod: "/edgeproto.AutoProvPolicyApi/AddAutoProvPolicyZone",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AutoProvPolicyApiServer).AddAutoProvPolicyCloudlet(ctx, req.(*AutoProvPolicyCloudlet))
+		return srv.(AutoProvPolicyApiServer).AddAutoProvPolicyZone(ctx, req.(*AutoProvPolicyZone))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AutoProvPolicyCloudlet)
+func _AutoProvPolicyApi_RemoveAutoProvPolicyZone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AutoProvPolicyZone)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AutoProvPolicyApiServer).RemoveAutoProvPolicyCloudlet(ctx, in)
+		return srv.(AutoProvPolicyApiServer).RemoveAutoProvPolicyZone(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/edgeproto.AutoProvPolicyApi/RemoveAutoProvPolicyCloudlet",
+		FullMethod: "/edgeproto.AutoProvPolicyApi/RemoveAutoProvPolicyZone",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AutoProvPolicyApiServer).RemoveAutoProvPolicyCloudlet(ctx, req.(*AutoProvPolicyCloudlet))
+		return srv.(AutoProvPolicyApiServer).RemoveAutoProvPolicyZone(ctx, req.(*AutoProvPolicyZone))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -691,12 +648,12 @@ var _AutoProvPolicyApi_serviceDesc = grpc.ServiceDesc{
 			Handler:    _AutoProvPolicyApi_UpdateAutoProvPolicy_Handler,
 		},
 		{
-			MethodName: "AddAutoProvPolicyCloudlet",
-			Handler:    _AutoProvPolicyApi_AddAutoProvPolicyCloudlet_Handler,
+			MethodName: "AddAutoProvPolicyZone",
+			Handler:    _AutoProvPolicyApi_AddAutoProvPolicyZone_Handler,
 		},
 		{
-			MethodName: "RemoveAutoProvPolicyCloudlet",
-			Handler:    _AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_Handler,
+			MethodName: "RemoveAutoProvPolicyZone",
+			Handler:    _AutoProvPolicyApi_RemoveAutoProvPolicyZone_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -759,10 +716,10 @@ func (m *AutoProvPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x30
 	}
-	if len(m.Cloudlets) > 0 {
-		for iNdEx := len(m.Cloudlets) - 1; iNdEx >= 0; iNdEx-- {
+	if len(m.Zones) > 0 {
+		for iNdEx := len(m.Zones) - 1; iNdEx >= 0; iNdEx-- {
 			{
-				size, err := m.Cloudlets[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				size, err := m.Zones[iNdEx].MarshalToSizedBuffer(dAtA[:i])
 				if err != nil {
 					return 0, err
 				}
@@ -805,49 +762,6 @@ func (m *AutoProvPolicy) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AutoProvCloudlet) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *AutoProvCloudlet) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *AutoProvCloudlet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	{
-		size, err := m.Loc.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintAutoprovpolicy(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0x12
-	{
-		size, err := m.Key.MarshalToSizedBuffer(dAtA[:i])
-		if err != nil {
-			return 0, err
-		}
-		i -= size
-		i = encodeVarintAutoprovpolicy(dAtA, i, uint64(size))
-	}
-	i--
-	dAtA[i] = 0xa
-	return len(dAtA) - i, nil
-}
-
 func (m *AutoProvCount) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -884,7 +798,7 @@ func (m *AutoProvCount) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		dAtA[i] = 0x18
 	}
 	{
-		size, err := m.CloudletKey.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.ZoneKey.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -960,7 +874,7 @@ func (m *AutoProvCounts) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AutoProvPolicyCloudlet) Marshal() (dAtA []byte, err error) {
+func (m *AutoProvPolicyZone) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -970,18 +884,18 @@ func (m *AutoProvPolicyCloudlet) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AutoProvPolicyCloudlet) MarshalTo(dAtA []byte) (int, error) {
+func (m *AutoProvPolicyZone) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *AutoProvPolicyCloudlet) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *AutoProvPolicyZone) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
 	{
-		size, err := m.CloudletKey.MarshalToSizedBuffer(dAtA[:i])
+		size, err := m.ZoneKey.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -1106,11 +1020,31 @@ func (m *AutoProvPolicy) Matches(o *AutoProvPolicy, fopts ...MatchOpt) bool {
 			return false
 		}
 	}
-	if !opts.Filter || o.Cloudlets != nil {
-		if len(m.Cloudlets) == 0 && len(o.Cloudlets) > 0 || len(m.Cloudlets) > 0 && len(o.Cloudlets) == 0 {
+	if !opts.Filter || o.Zones != nil {
+		if len(m.Zones) == 0 && len(o.Zones) > 0 || len(m.Zones) > 0 && len(o.Zones) == 0 {
 			return false
-		} else if m.Cloudlets != nil && o.Cloudlets != nil {
-			if !opts.Filter && len(m.Cloudlets) != len(o.Cloudlets) {
+		} else if m.Zones != nil && o.Zones != nil {
+			if !opts.Filter && len(m.Zones) != len(o.Zones) {
+				return false
+			}
+			if opts.SortArrayedKeys {
+				sort.Slice(m.Zones, func(i, j int) bool {
+					return m.Zones[i].GetKeyString() < m.Zones[j].GetKeyString()
+				})
+				sort.Slice(o.Zones, func(i, j int) bool {
+					return o.Zones[i].GetKeyString() < o.Zones[j].GetKeyString()
+				})
+			}
+			found := 0
+			for oIndex, _ := range o.Zones {
+				for mIndex, _ := range m.Zones {
+					if m.Zones[mIndex].Matches(o.Zones[oIndex], fopts...) {
+						found++
+						break
+					}
+				}
+			}
+			if found != len(o.Zones) {
 				return false
 			}
 		}
@@ -1150,22 +1084,10 @@ const AutoProvPolicyFieldKeyOrganization = "2.1"
 const AutoProvPolicyFieldKeyName = "2.2"
 const AutoProvPolicyFieldDeployClientCount = "3"
 const AutoProvPolicyFieldDeployIntervalCount = "4"
-const AutoProvPolicyFieldCloudlets = "5"
-const AutoProvPolicyFieldCloudletsKey = "5.1"
-const AutoProvPolicyFieldCloudletsKeyOrganization = "5.1.1"
-const AutoProvPolicyFieldCloudletsKeyName = "5.1.2"
-const AutoProvPolicyFieldCloudletsKeyFederatedOrganization = "5.1.3"
-const AutoProvPolicyFieldCloudletsLoc = "5.2"
-const AutoProvPolicyFieldCloudletsLocLatitude = "5.2.1"
-const AutoProvPolicyFieldCloudletsLocLongitude = "5.2.2"
-const AutoProvPolicyFieldCloudletsLocHorizontalAccuracy = "5.2.3"
-const AutoProvPolicyFieldCloudletsLocVerticalAccuracy = "5.2.4"
-const AutoProvPolicyFieldCloudletsLocAltitude = "5.2.5"
-const AutoProvPolicyFieldCloudletsLocCourse = "5.2.6"
-const AutoProvPolicyFieldCloudletsLocSpeed = "5.2.7"
-const AutoProvPolicyFieldCloudletsLocTimestamp = "5.2.8"
-const AutoProvPolicyFieldCloudletsLocTimestampSeconds = "5.2.8.1"
-const AutoProvPolicyFieldCloudletsLocTimestampNanos = "5.2.8.2"
+const AutoProvPolicyFieldZones = "5"
+const AutoProvPolicyFieldZonesOrganization = "5.1"
+const AutoProvPolicyFieldZonesName = "5.2"
+const AutoProvPolicyFieldZonesFederatedOrganization = "5.3"
 const AutoProvPolicyFieldMinActiveInstances = "6"
 const AutoProvPolicyFieldMaxInstances = "7"
 const AutoProvPolicyFieldUndeployClientCount = "8"
@@ -1177,18 +1099,9 @@ var AutoProvPolicyAllFields = []string{
 	AutoProvPolicyFieldKeyName,
 	AutoProvPolicyFieldDeployClientCount,
 	AutoProvPolicyFieldDeployIntervalCount,
-	AutoProvPolicyFieldCloudletsKeyOrganization,
-	AutoProvPolicyFieldCloudletsKeyName,
-	AutoProvPolicyFieldCloudletsKeyFederatedOrganization,
-	AutoProvPolicyFieldCloudletsLocLatitude,
-	AutoProvPolicyFieldCloudletsLocLongitude,
-	AutoProvPolicyFieldCloudletsLocHorizontalAccuracy,
-	AutoProvPolicyFieldCloudletsLocVerticalAccuracy,
-	AutoProvPolicyFieldCloudletsLocAltitude,
-	AutoProvPolicyFieldCloudletsLocCourse,
-	AutoProvPolicyFieldCloudletsLocSpeed,
-	AutoProvPolicyFieldCloudletsLocTimestampSeconds,
-	AutoProvPolicyFieldCloudletsLocTimestampNanos,
+	AutoProvPolicyFieldZonesOrganization,
+	AutoProvPolicyFieldZonesName,
+	AutoProvPolicyFieldZonesFederatedOrganization,
 	AutoProvPolicyFieldMinActiveInstances,
 	AutoProvPolicyFieldMaxInstances,
 	AutoProvPolicyFieldUndeployClientCount,
@@ -1197,51 +1110,33 @@ var AutoProvPolicyAllFields = []string{
 }
 
 var AutoProvPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
-	AutoProvPolicyFieldKeyOrganization:                   struct{}{},
-	AutoProvPolicyFieldKeyName:                           struct{}{},
-	AutoProvPolicyFieldDeployClientCount:                 struct{}{},
-	AutoProvPolicyFieldDeployIntervalCount:               struct{}{},
-	AutoProvPolicyFieldCloudletsKeyOrganization:          struct{}{},
-	AutoProvPolicyFieldCloudletsKeyName:                  struct{}{},
-	AutoProvPolicyFieldCloudletsKeyFederatedOrganization: struct{}{},
-	AutoProvPolicyFieldCloudletsLocLatitude:              struct{}{},
-	AutoProvPolicyFieldCloudletsLocLongitude:             struct{}{},
-	AutoProvPolicyFieldCloudletsLocHorizontalAccuracy:    struct{}{},
-	AutoProvPolicyFieldCloudletsLocVerticalAccuracy:      struct{}{},
-	AutoProvPolicyFieldCloudletsLocAltitude:              struct{}{},
-	AutoProvPolicyFieldCloudletsLocCourse:                struct{}{},
-	AutoProvPolicyFieldCloudletsLocSpeed:                 struct{}{},
-	AutoProvPolicyFieldCloudletsLocTimestampSeconds:      struct{}{},
-	AutoProvPolicyFieldCloudletsLocTimestampNanos:        struct{}{},
-	AutoProvPolicyFieldMinActiveInstances:                struct{}{},
-	AutoProvPolicyFieldMaxInstances:                      struct{}{},
-	AutoProvPolicyFieldUndeployClientCount:               struct{}{},
-	AutoProvPolicyFieldUndeployIntervalCount:             struct{}{},
-	AutoProvPolicyFieldDeletePrepare:                     struct{}{},
+	AutoProvPolicyFieldKeyOrganization:            struct{}{},
+	AutoProvPolicyFieldKeyName:                    struct{}{},
+	AutoProvPolicyFieldDeployClientCount:          struct{}{},
+	AutoProvPolicyFieldDeployIntervalCount:        struct{}{},
+	AutoProvPolicyFieldZonesOrganization:          struct{}{},
+	AutoProvPolicyFieldZonesName:                  struct{}{},
+	AutoProvPolicyFieldZonesFederatedOrganization: struct{}{},
+	AutoProvPolicyFieldMinActiveInstances:         struct{}{},
+	AutoProvPolicyFieldMaxInstances:               struct{}{},
+	AutoProvPolicyFieldUndeployClientCount:        struct{}{},
+	AutoProvPolicyFieldUndeployIntervalCount:      struct{}{},
+	AutoProvPolicyFieldDeletePrepare:              struct{}{},
 })
 
 var AutoProvPolicyAllFieldsStringMap = map[string]string{
-	AutoProvPolicyFieldKeyOrganization:                   "Key Organization",
-	AutoProvPolicyFieldKeyName:                           "Key Name",
-	AutoProvPolicyFieldDeployClientCount:                 "Deploy Client Count",
-	AutoProvPolicyFieldDeployIntervalCount:               "Deploy Interval Count",
-	AutoProvPolicyFieldCloudletsKeyOrganization:          "Cloudlets Key Organization",
-	AutoProvPolicyFieldCloudletsKeyName:                  "Cloudlets Key Name",
-	AutoProvPolicyFieldCloudletsKeyFederatedOrganization: "Cloudlets Key Federated Organization",
-	AutoProvPolicyFieldCloudletsLocLatitude:              "Cloudlets Loc Latitude",
-	AutoProvPolicyFieldCloudletsLocLongitude:             "Cloudlets Loc Longitude",
-	AutoProvPolicyFieldCloudletsLocHorizontalAccuracy:    "Cloudlets Loc Horizontal Accuracy",
-	AutoProvPolicyFieldCloudletsLocVerticalAccuracy:      "Cloudlets Loc Vertical Accuracy",
-	AutoProvPolicyFieldCloudletsLocAltitude:              "Cloudlets Loc Altitude",
-	AutoProvPolicyFieldCloudletsLocCourse:                "Cloudlets Loc Course",
-	AutoProvPolicyFieldCloudletsLocSpeed:                 "Cloudlets Loc Speed",
-	AutoProvPolicyFieldCloudletsLocTimestampSeconds:      "Cloudlets Loc Timestamp Seconds",
-	AutoProvPolicyFieldCloudletsLocTimestampNanos:        "Cloudlets Loc Timestamp Nanos",
-	AutoProvPolicyFieldMinActiveInstances:                "Min Active Instances",
-	AutoProvPolicyFieldMaxInstances:                      "Max Instances",
-	AutoProvPolicyFieldUndeployClientCount:               "Undeploy Client Count",
-	AutoProvPolicyFieldUndeployIntervalCount:             "Undeploy Interval Count",
-	AutoProvPolicyFieldDeletePrepare:                     "Delete Prepare",
+	AutoProvPolicyFieldKeyOrganization:            "Key Organization",
+	AutoProvPolicyFieldKeyName:                    "Key Name",
+	AutoProvPolicyFieldDeployClientCount:          "Deploy Client Count",
+	AutoProvPolicyFieldDeployIntervalCount:        "Deploy Interval Count",
+	AutoProvPolicyFieldZonesOrganization:          "Zones Organization",
+	AutoProvPolicyFieldZonesName:                  "Zones Name",
+	AutoProvPolicyFieldZonesFederatedOrganization: "Zones Federated Organization",
+	AutoProvPolicyFieldMinActiveInstances:         "Min Active Instances",
+	AutoProvPolicyFieldMaxInstances:               "Max Instances",
+	AutoProvPolicyFieldUndeployClientCount:        "Undeploy Client Count",
+	AutoProvPolicyFieldUndeployIntervalCount:      "Undeploy Interval Count",
+	AutoProvPolicyFieldDeletePrepare:              "Delete Prepare",
 }
 
 func (m *AutoProvPolicy) IsKeyField(s string) bool {
@@ -1263,83 +1158,27 @@ func (m *AutoProvPolicy) DiffFields(o *AutoProvPolicy, fields *FieldMap) {
 	if m.DeployIntervalCount != o.DeployIntervalCount {
 		fields.Set(AutoProvPolicyFieldDeployIntervalCount)
 	}
-	if m.Cloudlets != nil && o.Cloudlets != nil {
-		if len(m.Cloudlets) != len(o.Cloudlets) {
-			fields.Set(AutoProvPolicyFieldCloudlets)
+	if m.Zones != nil && o.Zones != nil {
+		if len(m.Zones) != len(o.Zones) {
+			fields.Set(AutoProvPolicyFieldZones)
 		} else {
-			for i0 := 0; i0 < len(m.Cloudlets); i0++ {
-				if m.Cloudlets[i0].Key.Organization != o.Cloudlets[i0].Key.Organization {
-					fields.Set(AutoProvPolicyFieldCloudletsKeyOrganization)
-					fields.Set(AutoProvPolicyFieldCloudletsKey)
-					fields.Set(AutoProvPolicyFieldCloudlets)
+			for i0 := 0; i0 < len(m.Zones); i0++ {
+				if m.Zones[i0].Organization != o.Zones[i0].Organization {
+					fields.Set(AutoProvPolicyFieldZonesOrganization)
+					fields.Set(AutoProvPolicyFieldZones)
 				}
-				if m.Cloudlets[i0].Key.Name != o.Cloudlets[i0].Key.Name {
-					fields.Set(AutoProvPolicyFieldCloudletsKeyName)
-					fields.Set(AutoProvPolicyFieldCloudletsKey)
-					fields.Set(AutoProvPolicyFieldCloudlets)
+				if m.Zones[i0].Name != o.Zones[i0].Name {
+					fields.Set(AutoProvPolicyFieldZonesName)
+					fields.Set(AutoProvPolicyFieldZones)
 				}
-				if m.Cloudlets[i0].Key.FederatedOrganization != o.Cloudlets[i0].Key.FederatedOrganization {
-					fields.Set(AutoProvPolicyFieldCloudletsKeyFederatedOrganization)
-					fields.Set(AutoProvPolicyFieldCloudletsKey)
-					fields.Set(AutoProvPolicyFieldCloudlets)
-				}
-				if m.Cloudlets[i0].Loc.Latitude != o.Cloudlets[i0].Loc.Latitude {
-					fields.Set(AutoProvPolicyFieldCloudletsLocLatitude)
-					fields.Set(AutoProvPolicyFieldCloudletsLoc)
-					fields.Set(AutoProvPolicyFieldCloudlets)
-				}
-				if m.Cloudlets[i0].Loc.Longitude != o.Cloudlets[i0].Loc.Longitude {
-					fields.Set(AutoProvPolicyFieldCloudletsLocLongitude)
-					fields.Set(AutoProvPolicyFieldCloudletsLoc)
-					fields.Set(AutoProvPolicyFieldCloudlets)
-				}
-				if m.Cloudlets[i0].Loc.HorizontalAccuracy != o.Cloudlets[i0].Loc.HorizontalAccuracy {
-					fields.Set(AutoProvPolicyFieldCloudletsLocHorizontalAccuracy)
-					fields.Set(AutoProvPolicyFieldCloudletsLoc)
-					fields.Set(AutoProvPolicyFieldCloudlets)
-				}
-				if m.Cloudlets[i0].Loc.VerticalAccuracy != o.Cloudlets[i0].Loc.VerticalAccuracy {
-					fields.Set(AutoProvPolicyFieldCloudletsLocVerticalAccuracy)
-					fields.Set(AutoProvPolicyFieldCloudletsLoc)
-					fields.Set(AutoProvPolicyFieldCloudlets)
-				}
-				if m.Cloudlets[i0].Loc.Altitude != o.Cloudlets[i0].Loc.Altitude {
-					fields.Set(AutoProvPolicyFieldCloudletsLocAltitude)
-					fields.Set(AutoProvPolicyFieldCloudletsLoc)
-					fields.Set(AutoProvPolicyFieldCloudlets)
-				}
-				if m.Cloudlets[i0].Loc.Course != o.Cloudlets[i0].Loc.Course {
-					fields.Set(AutoProvPolicyFieldCloudletsLocCourse)
-					fields.Set(AutoProvPolicyFieldCloudletsLoc)
-					fields.Set(AutoProvPolicyFieldCloudlets)
-				}
-				if m.Cloudlets[i0].Loc.Speed != o.Cloudlets[i0].Loc.Speed {
-					fields.Set(AutoProvPolicyFieldCloudletsLocSpeed)
-					fields.Set(AutoProvPolicyFieldCloudletsLoc)
-					fields.Set(AutoProvPolicyFieldCloudlets)
-				}
-				if m.Cloudlets[i0].Loc.Timestamp != nil && o.Cloudlets[i0].Loc.Timestamp != nil {
-					if m.Cloudlets[i0].Loc.Timestamp.Seconds != o.Cloudlets[i0].Loc.Timestamp.Seconds {
-						fields.Set(AutoProvPolicyFieldCloudletsLocTimestampSeconds)
-						fields.Set(AutoProvPolicyFieldCloudletsLocTimestamp)
-						fields.Set(AutoProvPolicyFieldCloudletsLoc)
-						fields.Set(AutoProvPolicyFieldCloudlets)
-					}
-					if m.Cloudlets[i0].Loc.Timestamp.Nanos != o.Cloudlets[i0].Loc.Timestamp.Nanos {
-						fields.Set(AutoProvPolicyFieldCloudletsLocTimestampNanos)
-						fields.Set(AutoProvPolicyFieldCloudletsLocTimestamp)
-						fields.Set(AutoProvPolicyFieldCloudletsLoc)
-						fields.Set(AutoProvPolicyFieldCloudlets)
-					}
-				} else if (m.Cloudlets[i0].Loc.Timestamp != nil && o.Cloudlets[i0].Loc.Timestamp == nil) || (m.Cloudlets[i0].Loc.Timestamp == nil && o.Cloudlets[i0].Loc.Timestamp != nil) {
-					fields.Set(AutoProvPolicyFieldCloudletsLocTimestamp)
-					fields.Set(AutoProvPolicyFieldCloudletsLoc)
-					fields.Set(AutoProvPolicyFieldCloudlets)
+				if m.Zones[i0].FederatedOrganization != o.Zones[i0].FederatedOrganization {
+					fields.Set(AutoProvPolicyFieldZonesFederatedOrganization)
+					fields.Set(AutoProvPolicyFieldZones)
 				}
 			}
 		}
-	} else if (m.Cloudlets != nil && o.Cloudlets == nil) || (m.Cloudlets == nil && o.Cloudlets != nil) {
-		fields.Set(AutoProvPolicyFieldCloudlets)
+	} else if (m.Zones != nil && o.Zones == nil) || (m.Zones == nil && o.Zones != nil) {
+		fields.Set(AutoProvPolicyFieldZones)
 	}
 	if m.MinActiveInstances != o.MinActiveInstances {
 		fields.Set(AutoProvPolicyFieldMinActiveInstances)
@@ -1365,28 +1204,16 @@ func (m *AutoProvPolicy) GetDiffFields(o *AutoProvPolicy) *FieldMap {
 }
 
 var UpdateAutoProvPolicyFieldsMap = NewFieldMap(map[string]struct{}{
-	AutoProvPolicyFieldDeployClientCount:                 struct{}{},
-	AutoProvPolicyFieldDeployIntervalCount:               struct{}{},
-	AutoProvPolicyFieldCloudlets:                         struct{}{},
-	AutoProvPolicyFieldCloudletsKey:                      struct{}{},
-	AutoProvPolicyFieldCloudletsKeyOrganization:          struct{}{},
-	AutoProvPolicyFieldCloudletsKeyName:                  struct{}{},
-	AutoProvPolicyFieldCloudletsKeyFederatedOrganization: struct{}{},
-	AutoProvPolicyFieldCloudletsLoc:                      struct{}{},
-	AutoProvPolicyFieldCloudletsLocLatitude:              struct{}{},
-	AutoProvPolicyFieldCloudletsLocLongitude:             struct{}{},
-	AutoProvPolicyFieldCloudletsLocHorizontalAccuracy:    struct{}{},
-	AutoProvPolicyFieldCloudletsLocVerticalAccuracy:      struct{}{},
-	AutoProvPolicyFieldCloudletsLocAltitude:              struct{}{},
-	AutoProvPolicyFieldCloudletsLocCourse:                struct{}{},
-	AutoProvPolicyFieldCloudletsLocSpeed:                 struct{}{},
-	AutoProvPolicyFieldCloudletsLocTimestamp:             struct{}{},
-	AutoProvPolicyFieldCloudletsLocTimestampSeconds:      struct{}{},
-	AutoProvPolicyFieldCloudletsLocTimestampNanos:        struct{}{},
-	AutoProvPolicyFieldMinActiveInstances:                struct{}{},
-	AutoProvPolicyFieldMaxInstances:                      struct{}{},
-	AutoProvPolicyFieldUndeployClientCount:               struct{}{},
-	AutoProvPolicyFieldUndeployIntervalCount:             struct{}{},
+	AutoProvPolicyFieldDeployClientCount:          struct{}{},
+	AutoProvPolicyFieldDeployIntervalCount:        struct{}{},
+	AutoProvPolicyFieldZones:                      struct{}{},
+	AutoProvPolicyFieldZonesOrganization:          struct{}{},
+	AutoProvPolicyFieldZonesName:                  struct{}{},
+	AutoProvPolicyFieldZonesFederatedOrganization: struct{}{},
+	AutoProvPolicyFieldMinActiveInstances:         struct{}{},
+	AutoProvPolicyFieldMaxInstances:               struct{}{},
+	AutoProvPolicyFieldUndeployClientCount:        struct{}{},
+	AutoProvPolicyFieldUndeployIntervalCount:      struct{}{},
 })
 
 func (m *AutoProvPolicy) ValidateUpdateFields() error {
@@ -1418,31 +1245,31 @@ func (m *AutoProvPolicy) Clone() *AutoProvPolicy {
 	return cp
 }
 
-func (m *AutoProvPolicy) AddCloudlets(vals ...*AutoProvCloudlet) int {
+func (m *AutoProvPolicy) AddZones(vals ...*ZoneKey) int {
 	changes := 0
 	cur := make(map[string]struct{})
-	for _, v := range m.Cloudlets {
-		cur[v.GetKey().GetKeyString()] = struct{}{}
+	for _, v := range m.Zones {
+		cur[v.GetKeyString()] = struct{}{}
 	}
 	for _, v := range vals {
-		if _, found := cur[v.GetKey().GetKeyString()]; found {
+		if _, found := cur[v.GetKeyString()]; found {
 			continue // duplicate
 		}
-		m.Cloudlets = append(m.Cloudlets, v)
+		m.Zones = append(m.Zones, v)
 		changes++
 	}
 	return changes
 }
 
-func (m *AutoProvPolicy) RemoveCloudlets(vals ...*AutoProvCloudlet) int {
+func (m *AutoProvPolicy) RemoveZones(vals ...*ZoneKey) int {
 	changes := 0
 	remove := make(map[string]struct{})
 	for _, v := range vals {
-		remove[v.GetKey().GetKeyString()] = struct{}{}
+		remove[v.GetKeyString()] = struct{}{}
 	}
-	for i := len(m.Cloudlets); i >= 0; i-- {
-		if _, found := remove[m.Cloudlets[i].GetKey().GetKeyString()]; found {
-			m.Cloudlets = append(m.Cloudlets[:i], m.Cloudlets[i+1:]...)
+	for i := len(m.Zones); i >= 0; i-- {
+		if _, found := remove[m.Zones[i].GetKeyString()]; found {
+			m.Zones = append(m.Zones[:i], m.Zones[i+1:]...)
 			changes++
 		}
 	}
@@ -1480,20 +1307,20 @@ func (m *AutoProvPolicy) CopyInFields(src *AutoProvPolicy) int {
 		}
 	}
 	if fmap.HasOrHasChild("5") {
-		if src.Cloudlets != nil {
+		if src.Zones != nil {
 			if updateListAction == "add" {
-				changed += m.AddCloudlets(src.Cloudlets...)
+				changed += m.AddZones(src.Zones...)
 			} else if updateListAction == "remove" {
-				changed += m.RemoveCloudlets(src.Cloudlets...)
+				changed += m.RemoveZones(src.Zones...)
 			} else {
-				m.Cloudlets = make([]*AutoProvCloudlet, 0)
-				for k0, _ := range src.Cloudlets {
-					m.Cloudlets = append(m.Cloudlets, src.Cloudlets[k0].Clone())
+				m.Zones = make([]*ZoneKey, 0)
+				for k0, _ := range src.Zones {
+					m.Zones = append(m.Zones, src.Zones[k0].Clone())
 				}
 				changed++
 			}
-		} else if m.Cloudlets != nil {
-			m.Cloudlets = nil
+		} else if m.Zones != nil {
+			m.Zones = nil
 			changed++
 		}
 	}
@@ -1534,15 +1361,15 @@ func (m *AutoProvPolicy) DeepCopyIn(src *AutoProvPolicy) {
 	m.Key.DeepCopyIn(&src.Key)
 	m.DeployClientCount = src.DeployClientCount
 	m.DeployIntervalCount = src.DeployIntervalCount
-	if src.Cloudlets != nil {
-		m.Cloudlets = make([]*AutoProvCloudlet, len(src.Cloudlets), len(src.Cloudlets))
-		for ii, s := range src.Cloudlets {
-			var tmp_s AutoProvCloudlet
+	if src.Zones != nil {
+		m.Zones = make([]*ZoneKey, len(src.Zones), len(src.Zones))
+		for ii, s := range src.Zones {
+			var tmp_s ZoneKey
 			tmp_s.DeepCopyIn(s)
-			m.Cloudlets[ii] = &tmp_s
+			m.Zones[ii] = &tmp_s
 		}
 	} else {
-		m.Cloudlets = nil
+		m.Zones = nil
 	}
 	m.MinActiveInstances = src.MinActiveInstances
 	m.MaxInstances = src.MaxInstances
@@ -2170,41 +1997,41 @@ func (c *AutoProvPolicyCache) UsesOrg(org string) bool {
 	return false
 }
 
-type AutoProvPolicyByCloudletKey struct {
-	CloudletKeys map[CloudletKey]map[PolicyKey]struct{}
-	Mux          util.Mutex
+type AutoProvPolicyByZoneKey struct {
+	ZoneKeys map[ZoneKey]map[PolicyKey]struct{}
+	Mux      util.Mutex
 }
 
-func (s *AutoProvPolicyByCloudletKey) Init() {
-	s.CloudletKeys = make(map[CloudletKey]map[PolicyKey]struct{})
+func (s *AutoProvPolicyByZoneKey) Init() {
+	s.ZoneKeys = make(map[ZoneKey]map[PolicyKey]struct{})
 }
 
-func (s *AutoProvPolicyByCloudletKey) Updated(old *AutoProvPolicy, new *AutoProvPolicy) map[CloudletKey]struct{} {
+func (s *AutoProvPolicyByZoneKey) Updated(old *AutoProvPolicy, new *AutoProvPolicy) map[ZoneKey]struct{} {
 	// the below func must be implemented by the user:
-	// AutoProvPolicy.GetCloudletKeys() map[CloudletKey]struct{}
-	oldCloudletKeys := make(map[CloudletKey]struct{})
+	// AutoProvPolicy.GetZoneKeys() map[ZoneKey]struct{}
+	oldZoneKeys := make(map[ZoneKey]struct{})
 	if old != nil {
-		oldCloudletKeys = old.GetCloudletKeys()
+		oldZoneKeys = old.GetZoneKeys()
 	}
-	newCloudletKeys := new.GetCloudletKeys()
+	newZoneKeys := new.GetZoneKeys()
 
-	for lookup, _ := range oldCloudletKeys {
-		if _, found := newCloudletKeys[lookup]; found {
-			delete(oldCloudletKeys, lookup)
-			delete(newCloudletKeys, lookup)
+	for lookup, _ := range oldZoneKeys {
+		if _, found := newZoneKeys[lookup]; found {
+			delete(oldZoneKeys, lookup)
+			delete(newZoneKeys, lookup)
 		}
 	}
 
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 
-	changed := make(map[CloudletKey]struct{})
-	for lookup, _ := range oldCloudletKeys {
+	changed := make(map[ZoneKey]struct{})
+	for lookup, _ := range oldZoneKeys {
 		// remove
 		s.removeRef(lookup, old.GetKeyVal())
 		changed[lookup] = struct{}{}
 	}
-	for lookup, _ := range newCloudletKeys {
+	for lookup, _ := range newZoneKeys {
 		// add
 		s.addRef(lookup, new.GetKeyVal())
 		changed[lookup] = struct{}{}
@@ -2212,62 +2039,62 @@ func (s *AutoProvPolicyByCloudletKey) Updated(old *AutoProvPolicy, new *AutoProv
 	return changed
 }
 
-func (s *AutoProvPolicyByCloudletKey) Deleted(old *AutoProvPolicy) {
-	oldCloudletKeys := old.GetCloudletKeys()
+func (s *AutoProvPolicyByZoneKey) Deleted(old *AutoProvPolicy) {
+	oldZoneKeys := old.GetZoneKeys()
 
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 
-	for lookup, _ := range oldCloudletKeys {
+	for lookup, _ := range oldZoneKeys {
 		s.removeRef(lookup, old.GetKeyVal())
 	}
 }
 
-func (s *AutoProvPolicyByCloudletKey) addRef(lookup CloudletKey, key PolicyKey) {
-	PolicyKeys, found := s.CloudletKeys[lookup]
+func (s *AutoProvPolicyByZoneKey) addRef(lookup ZoneKey, key PolicyKey) {
+	PolicyKeys, found := s.ZoneKeys[lookup]
 	if !found {
 		PolicyKeys = make(map[PolicyKey]struct{})
-		s.CloudletKeys[lookup] = PolicyKeys
+		s.ZoneKeys[lookup] = PolicyKeys
 	}
 	PolicyKeys[key] = struct{}{}
 }
 
-func (s *AutoProvPolicyByCloudletKey) removeRef(lookup CloudletKey, key PolicyKey) {
-	PolicyKeys, found := s.CloudletKeys[lookup]
+func (s *AutoProvPolicyByZoneKey) removeRef(lookup ZoneKey, key PolicyKey) {
+	PolicyKeys, found := s.ZoneKeys[lookup]
 	if found {
 		delete(PolicyKeys, key)
 		if len(PolicyKeys) == 0 {
-			delete(s.CloudletKeys, lookup)
+			delete(s.ZoneKeys, lookup)
 		}
 	}
 }
 
-func (s *AutoProvPolicyByCloudletKey) Find(lookup CloudletKey) []PolicyKey {
+func (s *AutoProvPolicyByZoneKey) Find(lookup ZoneKey) []PolicyKey {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 
 	list := []PolicyKey{}
-	for k, _ := range s.CloudletKeys[lookup] {
+	for k, _ := range s.ZoneKeys[lookup] {
 		list = append(list, k)
 	}
 	return list
 }
 
-func (s *AutoProvPolicyByCloudletKey) HasRef(lookup CloudletKey) bool {
+func (s *AutoProvPolicyByZoneKey) HasRef(lookup ZoneKey) bool {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 
-	_, found := s.CloudletKeys[lookup]
+	_, found := s.ZoneKeys[lookup]
 	return found
 }
 
 // Convert to dumpable format. JSON cannot marshal maps with struct keys.
-func (s *AutoProvPolicyByCloudletKey) Dumpable() map[string]interface{} {
+func (s *AutoProvPolicyByZoneKey) Dumpable() map[string]interface{} {
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 
 	dat := make(map[string]interface{})
-	for lookup, keys := range s.CloudletKeys {
+	for lookup, keys := range s.ZoneKeys {
 		keystrs := make(map[string]interface{})
 		for k, _ := range keys {
 			keystrs[k.GetKeyString()] = struct{}{}
@@ -2303,7 +2130,7 @@ func (m *AutoProvPolicy) ValidateEnums() error {
 	if err := m.Key.ValidateEnums(); err != nil {
 		return err
 	}
-	for _, e := range m.Cloudlets {
+	for _, e := range m.Zones {
 		if err := e.ValidateEnums(); err != nil {
 			return err
 		}
@@ -2313,115 +2140,11 @@ func (m *AutoProvPolicy) ValidateEnums() error {
 
 func (s *AutoProvPolicy) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
-	if s.Cloudlets != nil {
-		for ii := 0; ii < len(s.Cloudlets); ii++ {
-			s.Cloudlets[ii].ClearTagged(tags)
+	if s.Zones != nil {
+		for ii := 0; ii < len(s.Zones); ii++ {
+			s.Zones[ii].ClearTagged(tags)
 		}
 	}
-}
-
-func (m *AutoProvCloudlet) Clone() *AutoProvCloudlet {
-	cp := &AutoProvCloudlet{}
-	cp.DeepCopyIn(m)
-	return cp
-}
-
-func (m *AutoProvCloudlet) CopyInFields(src *AutoProvCloudlet) int {
-	changed := 0
-	if m.Key.Organization != src.Key.Organization {
-		m.Key.Organization = src.Key.Organization
-		changed++
-	}
-	if m.Key.Name != src.Key.Name {
-		m.Key.Name = src.Key.Name
-		changed++
-	}
-	if m.Key.FederatedOrganization != src.Key.FederatedOrganization {
-		m.Key.FederatedOrganization = src.Key.FederatedOrganization
-		changed++
-	}
-	if m.Loc.Latitude != src.Loc.Latitude {
-		m.Loc.Latitude = src.Loc.Latitude
-		changed++
-	}
-	if m.Loc.Longitude != src.Loc.Longitude {
-		m.Loc.Longitude = src.Loc.Longitude
-		changed++
-	}
-	if m.Loc.HorizontalAccuracy != src.Loc.HorizontalAccuracy {
-		m.Loc.HorizontalAccuracy = src.Loc.HorizontalAccuracy
-		changed++
-	}
-	if m.Loc.VerticalAccuracy != src.Loc.VerticalAccuracy {
-		m.Loc.VerticalAccuracy = src.Loc.VerticalAccuracy
-		changed++
-	}
-	if m.Loc.Altitude != src.Loc.Altitude {
-		m.Loc.Altitude = src.Loc.Altitude
-		changed++
-	}
-	if m.Loc.Course != src.Loc.Course {
-		m.Loc.Course = src.Loc.Course
-		changed++
-	}
-	if m.Loc.Speed != src.Loc.Speed {
-		m.Loc.Speed = src.Loc.Speed
-		changed++
-	}
-	if src.Loc.Timestamp != nil {
-		if m.Loc.Timestamp == nil {
-			m.Loc.Timestamp = &distributed_match_engine.Timestamp{}
-		}
-		if m.Loc.Timestamp.Seconds != src.Loc.Timestamp.Seconds {
-			m.Loc.Timestamp.Seconds = src.Loc.Timestamp.Seconds
-			changed++
-		}
-		if m.Loc.Timestamp.Nanos != src.Loc.Timestamp.Nanos {
-			m.Loc.Timestamp.Nanos = src.Loc.Timestamp.Nanos
-			changed++
-		}
-	} else if m.Loc.Timestamp != nil {
-		m.Loc.Timestamp = nil
-		changed++
-	}
-	return changed
-}
-
-func (m *AutoProvCloudlet) DeepCopyIn(src *AutoProvCloudlet) {
-	m.Key.DeepCopyIn(&src.Key)
-	m.Loc = src.Loc
-}
-
-func (m *AutoProvCloudlet) GetObjKey() objstore.ObjKey {
-	return m.GetKey()
-}
-
-func (m *AutoProvCloudlet) GetKey() *CloudletKey {
-	return &m.Key
-}
-
-func (m *AutoProvCloudlet) GetKeyVal() CloudletKey {
-	return m.Key
-}
-
-func (m *AutoProvCloudlet) SetKey(key *CloudletKey) {
-	m.Key = *key
-}
-
-func CmpSortAutoProvCloudlet(a AutoProvCloudlet, b AutoProvCloudlet) bool {
-	return a.Key.GetKeyString() < b.Key.GetKeyString()
-}
-
-// Helper method to check that enums have valid values
-func (m *AutoProvCloudlet) ValidateEnums() error {
-	if err := m.Key.ValidateEnums(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *AutoProvCloudlet) ClearTagged(tags map[string]struct{}) {
-	s.Key.ClearTagged(tags)
 }
 
 func (m *AutoProvCount) Clone() *AutoProvCount {
@@ -2444,16 +2167,16 @@ func (m *AutoProvCount) CopyInFields(src *AutoProvCount) int {
 		m.AppKey.Version = src.AppKey.Version
 		changed++
 	}
-	if m.CloudletKey.Organization != src.CloudletKey.Organization {
-		m.CloudletKey.Organization = src.CloudletKey.Organization
+	if m.ZoneKey.Organization != src.ZoneKey.Organization {
+		m.ZoneKey.Organization = src.ZoneKey.Organization
 		changed++
 	}
-	if m.CloudletKey.Name != src.CloudletKey.Name {
-		m.CloudletKey.Name = src.CloudletKey.Name
+	if m.ZoneKey.Name != src.ZoneKey.Name {
+		m.ZoneKey.Name = src.ZoneKey.Name
 		changed++
 	}
-	if m.CloudletKey.FederatedOrganization != src.CloudletKey.FederatedOrganization {
-		m.CloudletKey.FederatedOrganization = src.CloudletKey.FederatedOrganization
+	if m.ZoneKey.FederatedOrganization != src.ZoneKey.FederatedOrganization {
+		m.ZoneKey.FederatedOrganization = src.ZoneKey.FederatedOrganization
 		changed++
 	}
 	if m.Count != src.Count {
@@ -2469,7 +2192,7 @@ func (m *AutoProvCount) CopyInFields(src *AutoProvCount) int {
 
 func (m *AutoProvCount) DeepCopyIn(src *AutoProvCount) {
 	m.AppKey.DeepCopyIn(&src.AppKey)
-	m.CloudletKey.DeepCopyIn(&src.CloudletKey)
+	m.ZoneKey.DeepCopyIn(&src.ZoneKey)
 	m.Count = src.Count
 	m.ProcessNow = src.ProcessNow
 }
@@ -2479,7 +2202,7 @@ func (m *AutoProvCount) ValidateEnums() error {
 	if err := m.AppKey.ValidateEnums(); err != nil {
 		return err
 	}
-	if err := m.CloudletKey.ValidateEnums(); err != nil {
+	if err := m.ZoneKey.ValidateEnums(); err != nil {
 		return err
 	}
 	return nil
@@ -2487,7 +2210,7 @@ func (m *AutoProvCount) ValidateEnums() error {
 
 func (s *AutoProvCount) ClearTagged(tags map[string]struct{}) {
 	s.AppKey.ClearTagged(tags)
-	s.CloudletKey.ClearTagged(tags)
+	s.ZoneKey.ClearTagged(tags)
 }
 
 func (m *AutoProvCounts) Clone() *AutoProvCounts {
@@ -2598,13 +2321,13 @@ func (s *AutoProvCounts) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
-func (m *AutoProvPolicyCloudlet) Clone() *AutoProvPolicyCloudlet {
-	cp := &AutoProvPolicyCloudlet{}
+func (m *AutoProvPolicyZone) Clone() *AutoProvPolicyZone {
+	cp := &AutoProvPolicyZone{}
 	cp.DeepCopyIn(m)
 	return cp
 }
 
-func (m *AutoProvPolicyCloudlet) CopyInFields(src *AutoProvPolicyCloudlet) int {
+func (m *AutoProvPolicyZone) CopyInFields(src *AutoProvPolicyZone) int {
 	changed := 0
 	if m.Key.Organization != src.Key.Organization {
 		m.Key.Organization = src.Key.Organization
@@ -2614,60 +2337,60 @@ func (m *AutoProvPolicyCloudlet) CopyInFields(src *AutoProvPolicyCloudlet) int {
 		m.Key.Name = src.Key.Name
 		changed++
 	}
-	if m.CloudletKey.Organization != src.CloudletKey.Organization {
-		m.CloudletKey.Organization = src.CloudletKey.Organization
+	if m.ZoneKey.Organization != src.ZoneKey.Organization {
+		m.ZoneKey.Organization = src.ZoneKey.Organization
 		changed++
 	}
-	if m.CloudletKey.Name != src.CloudletKey.Name {
-		m.CloudletKey.Name = src.CloudletKey.Name
+	if m.ZoneKey.Name != src.ZoneKey.Name {
+		m.ZoneKey.Name = src.ZoneKey.Name
 		changed++
 	}
-	if m.CloudletKey.FederatedOrganization != src.CloudletKey.FederatedOrganization {
-		m.CloudletKey.FederatedOrganization = src.CloudletKey.FederatedOrganization
+	if m.ZoneKey.FederatedOrganization != src.ZoneKey.FederatedOrganization {
+		m.ZoneKey.FederatedOrganization = src.ZoneKey.FederatedOrganization
 		changed++
 	}
 	return changed
 }
 
-func (m *AutoProvPolicyCloudlet) DeepCopyIn(src *AutoProvPolicyCloudlet) {
+func (m *AutoProvPolicyZone) DeepCopyIn(src *AutoProvPolicyZone) {
 	m.Key.DeepCopyIn(&src.Key)
-	m.CloudletKey.DeepCopyIn(&src.CloudletKey)
+	m.ZoneKey.DeepCopyIn(&src.ZoneKey)
 }
 
-func (m *AutoProvPolicyCloudlet) GetObjKey() objstore.ObjKey {
+func (m *AutoProvPolicyZone) GetObjKey() objstore.ObjKey {
 	return m.GetKey()
 }
 
-func (m *AutoProvPolicyCloudlet) GetKey() *PolicyKey {
+func (m *AutoProvPolicyZone) GetKey() *PolicyKey {
 	return &m.Key
 }
 
-func (m *AutoProvPolicyCloudlet) GetKeyVal() PolicyKey {
+func (m *AutoProvPolicyZone) GetKeyVal() PolicyKey {
 	return m.Key
 }
 
-func (m *AutoProvPolicyCloudlet) SetKey(key *PolicyKey) {
+func (m *AutoProvPolicyZone) SetKey(key *PolicyKey) {
 	m.Key = *key
 }
 
-func CmpSortAutoProvPolicyCloudlet(a AutoProvPolicyCloudlet, b AutoProvPolicyCloudlet) bool {
+func CmpSortAutoProvPolicyZone(a AutoProvPolicyZone, b AutoProvPolicyZone) bool {
 	return a.Key.GetKeyString() < b.Key.GetKeyString()
 }
 
 // Helper method to check that enums have valid values
-func (m *AutoProvPolicyCloudlet) ValidateEnums() error {
+func (m *AutoProvPolicyZone) ValidateEnums() error {
 	if err := m.Key.ValidateEnums(); err != nil {
 		return err
 	}
-	if err := m.CloudletKey.ValidateEnums(); err != nil {
+	if err := m.ZoneKey.ValidateEnums(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *AutoProvPolicyCloudlet) ClearTagged(tags map[string]struct{}) {
+func (s *AutoProvPolicyZone) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
-	s.CloudletKey.ClearTagged(tags)
+	s.ZoneKey.ClearTagged(tags)
 }
 
 func (m *AutoProvInfo) Matches(o *AutoProvInfo, fopts ...MatchOpt) bool {
@@ -3687,8 +3410,6 @@ func IgnoreAutoProvInfoFields(taglist string) cmp.Option {
 }
 
 func (m *AutoProvPolicy) IsValidArgsForCreateAutoProvPolicy() error {
-	if m.Cloudlets != nil {
-	}
 	if m.DeletePrepare != false {
 		return fmt.Errorf("Invalid field specified: DeletePrepare, this field is only for internal use")
 	}
@@ -3696,8 +3417,6 @@ func (m *AutoProvPolicy) IsValidArgsForCreateAutoProvPolicy() error {
 }
 
 func (m *AutoProvPolicy) IsValidArgsForDeleteAutoProvPolicy() error {
-	if m.Cloudlets != nil {
-	}
 	if m.DeletePrepare != false {
 		return fmt.Errorf("Invalid field specified: DeletePrepare, this field is only for internal use")
 	}
@@ -3705,19 +3424,17 @@ func (m *AutoProvPolicy) IsValidArgsForDeleteAutoProvPolicy() error {
 }
 
 func (m *AutoProvPolicy) IsValidArgsForUpdateAutoProvPolicy() error {
-	if m.Cloudlets != nil {
-	}
 	if m.DeletePrepare != false {
 		return fmt.Errorf("Invalid field specified: DeletePrepare, this field is only for internal use")
 	}
 	return nil
 }
 
-func (m *AutoProvPolicyCloudlet) IsValidArgsForAddAutoProvPolicyCloudlet() error {
+func (m *AutoProvPolicyZone) IsValidArgsForAddAutoProvPolicyZone() error {
 	return nil
 }
 
-func (m *AutoProvPolicyCloudlet) IsValidArgsForRemoveAutoProvPolicyCloudlet() error {
+func (m *AutoProvPolicyZone) IsValidArgsForRemoveAutoProvPolicyZone() error {
 	return nil
 }
 
@@ -3741,8 +3458,8 @@ func (m *AutoProvPolicy) Size() (n int) {
 	if m.DeployIntervalCount != 0 {
 		n += 1 + sovAutoprovpolicy(uint64(m.DeployIntervalCount))
 	}
-	if len(m.Cloudlets) > 0 {
-		for _, e := range m.Cloudlets {
+	if len(m.Zones) > 0 {
+		for _, e := range m.Zones {
 			l = e.Size()
 			n += 1 + l + sovAutoprovpolicy(uint64(l))
 		}
@@ -3765,19 +3482,6 @@ func (m *AutoProvPolicy) Size() (n int) {
 	return n
 }
 
-func (m *AutoProvCloudlet) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = m.Key.Size()
-	n += 1 + l + sovAutoprovpolicy(uint64(l))
-	l = m.Loc.Size()
-	n += 1 + l + sovAutoprovpolicy(uint64(l))
-	return n
-}
-
 func (m *AutoProvCount) Size() (n int) {
 	if m == nil {
 		return 0
@@ -3786,7 +3490,7 @@ func (m *AutoProvCount) Size() (n int) {
 	_ = l
 	l = m.AppKey.Size()
 	n += 1 + l + sovAutoprovpolicy(uint64(l))
-	l = m.CloudletKey.Size()
+	l = m.ZoneKey.Size()
 	n += 1 + l + sovAutoprovpolicy(uint64(l))
 	if m.Count != 0 {
 		n += 1 + sovAutoprovpolicy(uint64(m.Count))
@@ -3818,7 +3522,7 @@ func (m *AutoProvCounts) Size() (n int) {
 	return n
 }
 
-func (m *AutoProvPolicyCloudlet) Size() (n int) {
+func (m *AutoProvPolicyZone) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -3826,7 +3530,7 @@ func (m *AutoProvPolicyCloudlet) Size() (n int) {
 	_ = l
 	l = m.Key.Size()
 	n += 1 + l + sovAutoprovpolicy(uint64(l))
-	l = m.CloudletKey.Size()
+	l = m.ZoneKey.Size()
 	n += 1 + l + sovAutoprovpolicy(uint64(l))
 	return n
 }
@@ -4006,7 +3710,7 @@ func (m *AutoProvPolicy) Unmarshal(dAtA []byte) error {
 			}
 		case 5:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Cloudlets", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Zones", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4033,8 +3737,8 @@ func (m *AutoProvPolicy) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Cloudlets = append(m.Cloudlets, &AutoProvCloudlet{})
-			if err := m.Cloudlets[len(m.Cloudlets)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			m.Zones = append(m.Zones, &ZoneKey{})
+			if err := m.Zones[len(m.Zones)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4155,122 +3859,6 @@ func (m *AutoProvPolicy) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AutoProvCloudlet) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowAutoprovpolicy
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: AutoProvCloudlet: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AutoProvCloudlet: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAutoprovpolicy
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Key.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Loc", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowAutoprovpolicy
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if err := m.Loc.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipAutoprovpolicy(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthAutoprovpolicy
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
 func (m *AutoProvCount) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
@@ -4335,7 +3923,7 @@ func (m *AutoProvCount) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CloudletKey", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ZoneKey", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4362,7 +3950,7 @@ func (m *AutoProvCount) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.CloudletKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ZoneKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -4575,7 +4163,7 @@ func (m *AutoProvCounts) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AutoProvPolicyCloudlet) Unmarshal(dAtA []byte) error {
+func (m *AutoProvPolicyZone) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4598,10 +4186,10 @@ func (m *AutoProvPolicyCloudlet) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AutoProvPolicyCloudlet: wiretype end group for non-group")
+			return fmt.Errorf("proto: AutoProvPolicyZone: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AutoProvPolicyCloudlet: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: AutoProvPolicyZone: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -4639,7 +4227,7 @@ func (m *AutoProvPolicyCloudlet) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CloudletKey", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ZoneKey", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -4666,7 +4254,7 @@ func (m *AutoProvPolicyCloudlet) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if err := m.CloudletKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ZoneKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

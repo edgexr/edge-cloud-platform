@@ -155,6 +155,10 @@ func genAppInstances(ctx context.Context, cnt int) ([]edgeproto.AppInst, map[str
 				Organization: fmt.Sprintf("Cloudletorg-%d", ii),
 				Name:         fmt.Sprintf("Cloudlet-%d", ii),
 			},
+			ZoneKey: edgeproto.ZoneKey{
+				Organization: fmt.Sprintf("Zoneorg-%d", ii),
+				Name:         fmt.Sprintf("Zone-%d", ii),
+			},
 			MappedPorts: ports,
 			State:       edgeproto.TrackedState_READY,
 		}

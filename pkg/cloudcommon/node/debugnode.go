@@ -46,7 +46,7 @@ const (
 	GetMemProfileCmd     = "get-mem-profile"
 	DisableSampleLog     = "disable-sample-logging"
 	EnableSampleLog      = "enable-sample-logging"
-	DumpCloudletPools    = "dump-cloudlet-pools"
+	DumpZonePools        = "dump-cloudlet-pools"
 	DumpStackTrace       = "dump-stack-trace"
 	DumpNotifyConns      = "dump-notify-state"
 )
@@ -97,9 +97,9 @@ func (s *DebugNode) Init(mgr *NodeMgr) {
 		})
 	s.AddDebugFunc(DisableSampleLog, disableSampledLogging)
 	s.AddDebugFunc(EnableSampleLog, enableSampledLogging)
-	s.AddDebugFunc(DumpCloudletPools,
+	s.AddDebugFunc(DumpZonePools,
 		func(ctx context.Context, req *edgeproto.DebugRequest) string {
-			dat := mgr.CloudletPoolLookup.Dumpable()
+			dat := mgr.ZonePoolLookup.Dumpable()
 			out, err := json.Marshal(dat)
 			if err != nil {
 				return err.Error()

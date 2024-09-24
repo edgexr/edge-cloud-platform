@@ -65,8 +65,9 @@ func TestStatDrops(t *testing.T) {
 			key.AppKey.Name = "app"
 			key.AppKey.Version = "1.0.0"
 			key.Method = "findCloudlet"
-			key.CloudletFound.Name = "UnitTest"
-			key.CloudletFound.Organization = "unittest"
+			key.AppInstFound.Name = "appInstName"
+			key.AppInstFound.Organization = "appInstOrg"
+			key.Carrier = "unittest"
 
 			ch := time.After(10 * notifyInterval)
 			done := false
@@ -123,8 +124,9 @@ func TestStatChanged(t *testing.T) {
 	key.AppKey.Name = "app"
 	key.AppKey.Version = "1.0.0"
 	key.Method = "findCloudlet"
-	key.CloudletFound.Name = "UnitTest"
-	key.CloudletFound.Organization = "unittest"
+	key.AppInstFound.Name = "appInstName"
+	key.AppInstFound.Organization = "appInstOrg"
+	key.Carrier = "unittest"
 
 	mux.Lock()
 	stats.RecordApiStatCall(&ApiStatCall{

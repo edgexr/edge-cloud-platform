@@ -560,7 +560,7 @@ func (v *VcdPlatform) ConfigureCloudletSecurityRules(ctx context.Context, egress
 }
 
 func (v *VcdPlatform) getTrustPolicyExceptionSecurityGroupName(tpeKey *edgeproto.TrustPolicyExceptionKey) string {
-	grpName := v.NameSanitize(tpeKey.Name + "-" + tpeKey.AppKey.Name + "-" + tpeKey.AppKey.Organization + "-" + tpeKey.AppKey.Version + "-" + tpeKey.CloudletPoolKey.Name + "-" + tpeKey.CloudletPoolKey.Organization)
+	grpName := v.NameSanitize(tpeKey.Name + "-" + tpeKey.AppKey.Name + "-" + tpeKey.AppKey.Organization + "-" + tpeKey.AppKey.Version + "-" + tpeKey.ZonePoolKey.Name + "-" + tpeKey.ZonePoolKey.Organization)
 	return grpName
 }
 

@@ -510,28 +510,31 @@ func (s *CloudletInfoCache) SetStatusStep(ctx context.Context, key *CloudletKey,
 	s.Update(ctx, &info, 0)
 }
 
-func (s *CloudletPoolCache) GetPoolsForCloudletKey(in *CloudletKey) []CloudletPoolKey {
-	var cloudletPoolKeys []CloudletPoolKey
+func (s *ZonePoolCache) GetPoolsForZoneKey(in *ZoneKey) []ZonePoolKey {
+	var zonePoolKeys []ZonePoolKey
+	if in == nil {
+		return zonePoolKeys
+	}
 
-	log.DebugLog(log.DebugLevelApi, "GetPoolsForCloudletKey()", "len(CloudletPoolCache.Objs):", len(s.Objs), "CloudletKey:", in)
+	log.DebugLog(log.DebugLevelApi, "GetPoolsForZoneKey()", "len(ZonePoolCache.Objs):", len(s.Objs), "ZoneKey:", in)
 
-	cloudletPoolKeyFilter := CloudletPoolKey{
+	zonePoolKeyFilter := ZonePoolKey{
 		Organization: in.Organization,
 	}
-	cloudletPoolFilter := CloudletPool{
-		Key:       cloudletPoolKeyFilter,
-		Cloudlets: []CloudletKey{*in},
+	zonePoolFilter := ZonePool{
+		Key:   zonePoolKeyFilter,
+		Zones: []*ZoneKey{in},
 	}
-	s.Show(&cloudletPoolFilter, func(obj *CloudletPool) error {
-		cloudletPoolKeys = append(cloudletPoolKeys, obj.Key)
-		log.DebugLog(log.DebugLevelApi, "GetPoolsForCloudletKey() found ", "CloudletPoolCache key:", obj.Key)
+	s.Show(&zonePoolFilter, func(obj *ZonePool) error {
+		zonePoolKeys = append(zonePoolKeys, obj.Key)
+		log.DebugLog(log.DebugLevelApi, "GetPoolsForZoneKey() found ", "ZonePoolCache key:", obj.Key)
 		return nil
 	})
 
-	if len(cloudletPoolKeys) == 0 {
-		log.DebugLog(log.DebugLevelApi, "GetPoolsForCloudletKey() not found ", "CloudletKey:", in)
+	if len(zonePoolKeys) == 0 {
+		log.DebugLog(log.DebugLevelApi, "GetPoolsForZoneKey() not found ", "CloudletKey:", in)
 	}
-	return cloudletPoolKeys
+	return zonePoolKeys
 }
 
 func (s *VMPoolInfoCache) SetState(ctx context.Context, key *VMPoolKey, state TrackedState) error {
@@ -594,17 +597,17 @@ func (s *TrustPolicyExceptionCache) GetForCloudlet(cloudlet *Cloudlet, cb func(d
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	for _, v := range s.Objs {
-		if cloudlet.Key.Organization == v.Obj.Key.CloudletPoolKey.Organization {
+		if cloudlet.Key.Organization == v.Obj.Key.ZonePoolKey.Organization {
 			cb(v.Clone())
 		}
 	}
 }
 
-func (s *TrustPolicyExceptionCache) GetForCloudletPool(key *CloudletPoolKey) []*TrustPolicyException {
+func (s *TrustPolicyExceptionCache) GetForZonePool(key *ZonePoolKey) []*TrustPolicyException {
 	tpeArray := []*TrustPolicyException{}
 	filter := TrustPolicyException{
 		Key: TrustPolicyExceptionKey{
-			CloudletPoolKey: *key,
+			ZonePoolKey: *key,
 		},
 	}
 	s.Show(&filter, func(tpe *TrustPolicyException) error {
@@ -694,4 +697,40 @@ func (s *ClusterInstInfo) GetStatus() *StatusInfo {
 
 func (s *CloudletInfo) GetStatus() *StatusInfo {
 	return &s.Status
+}
+
+func (s *CloudletCache) GetZoneFor(ckey *CloudletKey) *ZoneKey {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for _, v := range s.Objs {
+		if v.Obj.Key.Matches(ckey) {
+			return v.Obj.GetZone()
+		}
+	}
+	return &ZoneKey{}
+}
+
+func (s *CloudletCache) CloudletsForZone(zkey *ZoneKey) []CloudletKey {
+	keys := []CloudletKey{}
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for _, v := range s.Objs {
+		if v.Obj.GetZone().Matches(zkey) {
+			keys = append(keys, v.Obj.Key)
+		}
+	}
+	return keys
+}
+
+func (s *CloudletCache) ZonesForCloudlets() map[CloudletKey]ZoneKey {
+	zc := make(map[CloudletKey]ZoneKey)
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for _, v := range s.Objs {
+		zkey := v.Obj.GetZone()
+		if zkey.IsSet() {
+			zc[v.Obj.Key] = *zkey
+		}
+	}
+	return zc
 }

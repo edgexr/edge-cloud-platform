@@ -200,6 +200,7 @@ func testUpdateVMPool(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	cl := testutil.CloudletData()[1]
 	cl.CrmOnEdge = true
+	cl.Zone = ""
 	vmp := testutil.VMPoolData()[0]
 	cl.VmPool = vmp.Key.Name
 	cl.PlatformType = platform.PlatformTypeFakeVMPool

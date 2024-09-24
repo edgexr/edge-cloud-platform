@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -195,25 +196,6 @@ func validateAndDefaultIPAccess(ctx context.Context, clusterInst *edgeproto.Clus
 		}
 	}
 	return clusterInst.IpAccess, nil
-}
-
-func validateNumNodesForKubernetes(ctx context.Context, platformType string, features *edgeproto.PlatformFeatures, numnodes uint32) error {
-	log.SpanLog(ctx, log.DebugLevelApi, "validateNumNodesForKubernetes", "platformType", platformType, "numnodes", numnodes)
-	if features.NoClusterSupport {
-		// Special case for k8s baremetal because multi-tenanancy is
-		// managed by the platform, not the Controller. There is no
-		// real cluster, just pods, so numnodes is not used. Once we
-		// consolidate the code so that the Controller manages it,
-		// then there will no longer be any ClusterInst object created
-		// (it will be AppInst only), so this check can be removed.
-		if numnodes != 0 {
-			return fmt.Errorf("NumNodes must be 0 for %s", platformType)
-		}
-	}
-	if numnodes == 0 && features.KubernetesRequiresWorkerNodes {
-		return fmt.Errorf("NumNodes cannot be 0 for %s", platformType)
-	}
-	return nil
 }
 
 func (s *ClusterInstApi) startClusterInstStream(ctx context.Context, cctx *CallContext, streamCb *CbWrapper, modRev int64) (*streamSend, error) {
@@ -763,10 +745,14 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		return fmt.Errorf("ClusterInst Organization cannot be empty")
 	}
 	if in.CloudletKey.Name == "" {
-		return fmt.Errorf("Cloudlet name cannot be empty")
-	}
-	if in.CloudletKey.Organization == "" {
-		return fmt.Errorf("Cloudlet Organization name cannot be empty")
+		// internal tools, or undo may specify the cloudlet key.
+		// otherwise the zone must be specified.
+		if in.ZoneKey.Name == "" {
+			return fmt.Errorf("zone name must be specified")
+		}
+		if in.ZoneKey.Organization == "" {
+			return fmt.Errorf("zone organization must be specified")
+		}
 	}
 	if in.Key.Name == "" {
 		return fmt.Errorf("Cluster name cannot be empty")
@@ -827,12 +813,18 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	}
 	in.CompatibilityVersion = cloudcommon.GetClusterInstCompatibilityVersion()
 
+	// STM ends up modifying input data, but we need to reset those
+	// changes if STM reruns, because it may end up choosing a different
+	// cloudlet.
+	inCopy := edgeproto.ClusterInst{}
+	inCopy.DeepCopyIn(in)
+
 	nodeType := ""
 	crmOnEdge := false
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
-		if err := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &in.CloudletKey, cloudcommon.Create); err != nil {
-			return err
-		}
+		// reset input data if STM was rerun
+		in.DeepCopyIn(&inCopy)
+
 		if s.all.clusterInstApi.store.STMGet(stm, &in.Key, in) {
 			if !cctx.Undo && in.State != edgeproto.TrackedState_DELETE_ERROR && !ignoreTransient(cctx, in.State) {
 				if in.State == edgeproto.TrackedState_CREATE_ERROR {
@@ -851,6 +843,21 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if in.Liveness == edgeproto.Liveness_LIVENESS_UNKNOWN {
 			in.Liveness = edgeproto.Liveness_LIVENESS_STATIC
 		}
+		if len(in.Key.Name) > cloudcommon.MaxClusterNameLength {
+			return fmt.Errorf("Cluster name limited to %d characters", cloudcommon.MaxClusterNameLength)
+		}
+		potentialCloudlets, err := s.getPotentialCloudlets(ctx, cctx, in)
+		if err != nil {
+			return err
+		}
+		sort.Sort(PotentialInstCloudletsByResource(potentialCloudlets))
+		// TODO: if creating on the first cloudlet fails, we could walk the
+		// list and try subsequent cloudlets. For now we just try on the first one.
+		pc := potentialCloudlets[0]
+		in.CloudletKey = pc.cloudlet.Key
+		features := pc.features
+		log.SpanLog(ctx, log.DebugLevelApi, "chose cloudlet with most available resources", "cloudlet", pc.cloudlet.Key)
+
 		cloudlet := edgeproto.Cloudlet{}
 		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
 			return in.CloudletKey.NotFoundError()
@@ -858,27 +865,11 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if cloudlet.DeletePrepare {
 			return in.CloudletKey.BeingDeletedError()
 		}
-		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
-		if err != nil {
-			return fmt.Errorf("Failed to get features for platform: %s", err)
-		}
+		// set zone in case caller did not specify
+		in.ZoneKey = *cloudlet.GetZone()
+
 		nodeType = features.NodeType
 		crmOnEdge = cloudlet.CrmOnEdge
-		if features.IsSingleKubernetesCluster {
-			return fmt.Errorf("Single kubernetes cluster platform %s only supports AppInst creates", cloudlet.PlatformType)
-		}
-		if len(in.Key.Name) > cloudcommon.MaxClusterNameLength {
-			return fmt.Errorf("Cluster name limited to %d characters", cloudcommon.MaxClusterNameLength)
-		}
-		if features.SupportsKubernetesOnly && in.Deployment != cloudcommon.DeploymentTypeKubernetes {
-			return fmt.Errorf("Platform %s only supports kubernetes-based deployments", cloudlet.PlatformType)
-		}
-		if in.SharedVolumeSize != 0 && !features.SupportsSharedVolume {
-			return fmt.Errorf("Shared volumes not supported on %s", cloudlet.PlatformType)
-		}
-		if in.EnableIpv6 && !features.SupportsIpv6 {
-			return fmt.Errorf("cloudlet platform does not support IPv6")
-		}
 		if in.EnableIpv6 && in.Deployment == cloudcommon.DeploymentTypeKubernetes {
 			// TODO: need new base image, IPv6 podCIDR must be specified during
 			// kubeadm init. Apparently no way to convert after init.
@@ -888,22 +879,12 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 			// enable by default if supported
 			in.EnableIpv6 = features.SupportsIpv6
 		}
-		if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
-			err = validateNumNodesForKubernetes(ctx, cloudlet.PlatformType, features, in.NumNodes)
-			if err != nil {
-				return err
-			}
-		}
 		if err := s.validateClusterInstUpdates(ctx, stm, in); err != nil {
 			return err
 		}
 		info := edgeproto.CloudletInfo{}
 		if !s.all.cloudletInfoApi.store.STMGet(stm, &in.CloudletKey, &info) {
 			return fmt.Errorf("No resource information found for Cloudlet %s", in.CloudletKey)
-		}
-		if info.CompatibilityVersion < cloudcommon.CRMCompatibilityNewAppInstKey {
-			// not backwards compatible
-			return fmt.Errorf("Cloudlet %s CRM compatibility version is too old (%d), controller requires at least version %d, please upgrade Cloudlet CRM", in.CloudletKey.Name, info.CompatibilityVersion, cloudcommon.CRMCompatibilityNewAppInstKey)
 		}
 
 		refs := edgeproto.CloudletRefs{}
@@ -914,10 +895,6 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if in.Flavor.Name == "" {
 			return errors.New("No Flavor specified")
 		}
-		if in.MultiTenant && !features.SupportsMultiTenantCluster {
-			return fmt.Errorf("Cloudlet does not support multi-tenant Clusters")
-		}
-
 		platformFlavor := edgeproto.Flavor{}
 		if !s.all.flavorApi.store.STMGet(stm, &in.Flavor, &platformFlavor) {
 			return fmt.Errorf("flavor %s not found", in.Flavor.Name)
@@ -978,9 +955,6 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 			return err
 		}
 		for _, n := range in.Networks {
-			if !features.SupportsAdditionalNetworks {
-				return fmt.Errorf("Additional cluster networks not supported on platform: %s", cloudlet.PlatformType)
-			}
 			network := edgeproto.Network{}
 			networkKey := edgeproto.NetworkKey{
 				Name:        n,
@@ -1165,7 +1139,7 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 			}
 		}
 
-		if err := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &inbuf.CloudletKey, cloudcommon.Update); err != nil {
+		if err := s.all.cloudletInfoApi.checkCloudletReadySTM(cctx, stm, &inbuf.CloudletKey, cloudcommon.Update); err != nil {
 			return err
 		}
 
@@ -1424,7 +1398,7 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 		if !ignoreCRMTransient(cctx) && in.DeletePrepare {
 			return in.Key.BeingDeletedError()
 		}
-		if err := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &in.CloudletKey, cloudcommon.Delete); err != nil {
+		if err := s.all.cloudletInfoApi.checkCloudletReadySTM(cctx, stm, &in.CloudletKey, cloudcommon.Delete); err != nil {
 			return err
 		}
 		if err := validateDeleteState(cctx, "ClusterInst", in.State, in.Errors, cb.Send); err != nil {
@@ -1816,6 +1790,7 @@ func (s *ClusterInstApi) RecordClusterInstEvent(ctx context.Context, cluster *ed
 	metric.AddTag(edgeproto.CloudletKeyTagName, cluster.CloudletKey.Name)
 	metric.AddTag(edgeproto.ClusterKeyTagName, cluster.Key.Name)
 	metric.AddTag(edgeproto.ClusterKeyTagOrganization, cluster.Key.Organization)
+	cluster.ZoneKey.AddTagsByFunc(metric.AddTag)
 	metric.AddStringVal(cloudcommon.MetricTagEvent, string(event))
 	metric.AddStringVal(cloudcommon.MetricTagStatus, serverStatus)
 
@@ -1929,8 +1904,7 @@ func (s *StreamoutCb) Context() context.Context {
 }
 
 func (s *ClusterInstApi) createDefaultMultiTenantCluster(ctx context.Context, cloudletKey edgeproto.CloudletKey, features *edgeproto.PlatformFeatures) {
-	span, ctx := log.ChildSpan(ctx, log.DebugLevelApi, "Create default multi-tenant cluster")
-	defer span.Finish()
+	log.SpanLog(ctx, log.DebugLevelApi, "Create default multi-tenant cluster", "cloudlet", cloudletKey)
 
 	// find largest flavor
 	largest := edgeproto.Flavor{}
@@ -2039,6 +2013,7 @@ func (s *ClusterInstApi) createCloudletSingularCluster(stm concurrency.STM, clou
 	clusterInst.MultiTenant = multiTenant
 	clusterInst.State = edgeproto.TrackedState_READY
 	clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_SHARED
+	clusterInst.CloudletKey = cloudlet.Key
 	if err := s.setDnsLabel(stm, &clusterInst); err != nil {
 		return err
 	}

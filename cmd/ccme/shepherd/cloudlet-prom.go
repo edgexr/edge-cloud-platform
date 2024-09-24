@@ -65,6 +65,9 @@ var promTargetT = `
 		"` + edgeproto.CloudletKeyTagName + `": "{{.CloudletKey.Name}}",
 		"` + edgeproto.CloudletKeyTagOrganization + `": "{{.CloudletKey.Organization}}",
 		"` + edgeproto.CloudletKeyTagFederatedOrganization + `": "{{.CloudletKey.FederatedOrganization}}",
+		"` + edgeproto.ZoneKeyTagName + `": "{{.ZoneKey.Name}}",
+		"` + edgeproto.ZoneKeyTagOrganization + `": "{{.ZoneKey.Organization}}",
+		"` + edgeproto.ZoneKeyTagFederatedOrganization + `": "{{.ZoneKey.FederatedOrganization}}",
 		"__metrics_path__":"{{.EnvoyMetricsPath}}"
 	}
 }`
@@ -113,6 +116,7 @@ type targetData struct {
 	Key              edgeproto.AppInstKey
 	ClusterKey       edgeproto.ClusterKey
 	CloudletKey      edgeproto.CloudletKey
+	ZoneKey          edgeproto.ZoneKey
 	AppKey           edgeproto.AppKey
 	EnvoyMetricsPath string
 }
@@ -137,6 +141,7 @@ func getAppInstPrometheusTargetString(proxyScrapePoint *ProxyScrapePoint) (strin
 		AppKey:           proxyScrapePoint.AppKey,
 		ClusterKey:       proxyScrapePoint.ClusterKey,
 		CloudletKey:      proxyScrapePoint.CloudletKey,
+		ZoneKey:          proxyScrapePoint.ZoneKey,
 		EnvoyMetricsPath: "/metrics/" + shepherd_common.GetProxyKey(&proxyScrapePoint.Key),
 	}
 	buf := bytes.Buffer{}
@@ -367,8 +372,8 @@ func getAutoProvPolicy(ctx context.Context, appInst *edgeproto.AppInst, app *edg
 			continue
 		}
 		// Check if one of the cloudlets in the policy matches ours
-		for _, cloudlet := range policy.Cloudlets {
-			if cloudletKey.Matches(&cloudlet.Key) {
+		for _, key := range policy.Zones {
+			if appInst.ZoneKey.Matches(key) {
 				return &policy, true
 			}
 		}
@@ -413,9 +418,9 @@ func writePrometheusAlertRuleForAppInst(ctx context.Context, k interface{}) {
 		// auto-provisioned AppInst, check policy.
 		policy, found := getAutoProvPolicy(ctx, &appInst, &app)
 		if !found {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "No AutoProvPolicy found", "app", app.Key, "cloudlet", appInst.CloudletKey)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "No AutoProvPolicy found", "app", app.Key, "zone", appInst.ZoneKey)
 		} else {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Apply AutoProvPolicy", "app", app.Key, "cloudlet", appInst.CloudletKey, "policy", policy.Key)
+			log.SpanLog(ctx, log.DebugLevelMetrics, "Apply AutoProvPolicy", "app", app.Key, "zone", appInst.ZoneKey, "policy", policy.Key)
 			ruleGrp := autorules.GetAutoUndeployRules(ctx, settings, &appInst.Key, policy)
 			if ruleGrp != nil {
 				grps.Groups = append(grps.Groups, *ruleGrp)

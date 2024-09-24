@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sort"
 	"strings"
 	"time"
 
@@ -87,14 +88,22 @@ func (s *AppApi) CheckAppCompatibleWithTrustPolicy(ctx context.Context, ckey *ed
 	if !app.Trusted {
 		return fmt.Errorf("Non trusted app: %s not compatible with trust policy: %s", strings.TrimSpace(app.Key.String()), trustPolicy.Key.String())
 	}
+	var zkey *edgeproto.ZoneKey
+	cloudlet := edgeproto.Cloudlet{}
+	if s.all.cloudletApi.cache.Get(ckey, &cloudlet) {
+		zkey = cloudlet.GetZone()
+	}
 
 	allowedRules := []*edgeproto.SecurityRule{}
-	list := s.all.cloudletPoolApi.GetCloudletPoolKeysForCloudletKey(ckey)
-	for _, cloudletPoolKey := range list {
-		rules := s.all.trustPolicyExceptionApi.GetTrustPolicyExceptionRules(&cloudletPoolKey, &app.Key)
-		log.SpanLog(ctx, log.DebugLevelApi, "CheckAppCompatibleWithTrustPolicy() GetTrustPolicyExceptionRules returned", "rules", rules)
+	if zkey.IsSet() {
+		// cloudlet part of a zone
+		list := s.all.zonePoolApi.GetZonePoolKeysForZoneKey(zkey)
+		for _, zonePoolKey := range list {
+			rules := s.all.trustPolicyExceptionApi.GetTrustPolicyExceptionRules(&zonePoolKey, &app.Key)
+			log.SpanLog(ctx, log.DebugLevelApi, "CheckAppCompatibleWithTrustPolicy() GetTrustPolicyExceptionRules returned", "rules", rules)
 
-		allowedRules = append(allowedRules, rules...)
+			allowedRules = append(allowedRules, rules...)
+		}
 	}
 	// Combine the trustPolicy rules with the trustPolicyException rules.
 	for i, r := range trustPolicy.OutboundSecurityRules {
@@ -1102,7 +1111,7 @@ func (s *AppApi) tryDeployApp(ctx context.Context, stm concurrency.STM, app *edg
 	return fmt.Errorf("Unsupported deployment type %s\n", app.Deployment)
 }
 
-func (s *AppApi) ShowCloudletsForAppDeployment(in *edgeproto.DeploymentCloudletRequest, cb edgeproto.AppApi_ShowCloudletsForAppDeploymentServer) error {
+func (s *AppApi) ShowZonesForAppDeployment(in *edgeproto.DeploymentZoneRequest, cb edgeproto.AppApi_ShowZonesForAppDeploymentServer) error {
 	ctx := cb.Context()
 	var allclds = make(map[edgeproto.CloudletKey]string)
 	app := in.App
@@ -1148,15 +1157,17 @@ func (s *AppApi) ShowCloudletsForAppDeployment(in *edgeproto.DeploymentCloudletR
 		}
 		appInst.Flavor = app.DefaultFlavor
 
-		log.SpanLog(ctx, log.DebugLevelApi, "ShowCloudletsForAppDeployment dry run deployment")
+		log.SpanLog(ctx, log.DebugLevelApi, "ShowZonesForAppDeployment dry run deployment")
 		// For all remaining cloudlets, check available resources
-		err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-			for key, _ := range allclds {
+		for key, _ := range allclds {
+			keyOk := false
+			err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+				keyOk = false
 				appInst.VmFlavor = allclds[key]
 				cloudlet := edgeproto.Cloudlet{}
 				if !s.all.cloudletApi.store.STMGet(stm, &key, &cloudlet) {
-					log.SpanLog(ctx, log.DebugLevelApi, "ShowCloudletsForAppDeployment cloudlet not found", "cloudlet", key)
-					continue
+					log.SpanLog(ctx, log.DebugLevelApi, "ShowZonesForAppDeployment cloudlet not found", "cloudlet", key)
+					return nil
 				}
 				cloudletRefs := edgeproto.CloudletRefs{}
 				if !s.all.cloudletRefsApi.store.STMGet(stm, &key, &cloudletRefs) {
@@ -1164,24 +1175,35 @@ func (s *AppApi) ShowCloudletsForAppDeployment(in *edgeproto.DeploymentCloudletR
 				}
 				cloudletInfo := edgeproto.CloudletInfo{}
 				if !s.all.cloudletInfoApi.store.STMGet(stm, &key, &cloudletInfo) {
-					log.SpanLog(ctx, log.DebugLevelApi, "ShowCloudletsForAppDeployment cloudletinfo not found, skipping", "cloudlet", key)
-					delete(allclds, key)
-					continue
+					log.SpanLog(ctx, log.DebugLevelApi, "ShowZonesForAppDeployment cloudletinfo not found, skipping", "cloudlet", key)
+					return nil
 				}
 				err = s.tryDeployApp(ctx, stm, app, &appInst, &cloudlet, &cloudletInfo, &cloudletRefs, numNodes)
 				if err != nil {
-					delete(allclds, key)
 					log.SpanLog(ctx, log.DebugLevelApi, "DryRunDeploy failed for", "cloudlet", cloudlet.Key, "error", err)
-					continue
+					return nil
 				}
-				cb.Send(&key)
-				log.SpanLog(ctx, log.DebugLevelApi, "ShowCloudletsForAppDeployment dry run deployment succeeded for", "cloudlet", cloudlet.Key.Name)
+				keyOk = true
+				log.SpanLog(ctx, log.DebugLevelApi, "ShowZonesForAppDeployment dry run deployment succeeded for", "cloudlet", cloudlet.Key.Name)
+				return nil
+			})
+			if !keyOk {
+				delete(allclds, key)
 			}
-			return nil
-		})
+		}
 	}
+	zones := []*edgeproto.ZoneKey{}
 	for key, _ := range allclds {
-		cb.Send(&key)
+		zkey := s.all.cloudletApi.cache.GetZoneFor(&key)
+		if zkey.IsSet() {
+			zones = append(zones, zkey)
+		}
+	}
+	sort.Slice(zones, func(i, j int) bool {
+		return zones[i].GetKeyString() < zones[i].GetKeyString()
+	})
+	for _, zkey := range zones {
+		cb.Send(zkey)
 	}
 	return nil
 }

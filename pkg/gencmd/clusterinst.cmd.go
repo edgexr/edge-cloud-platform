@@ -62,6 +62,9 @@ func ClusterInstHideTags(in *edgeproto.ClusterInst) {
 	if _, found := tags["nocmp"]; found {
 		in.CompatibilityVersion = 0
 	}
+	if _, found := tags["nocmp"]; found {
+		in.DbModelId = 0
+	}
 }
 
 func ClusterInstInfoHideTags(in *edgeproto.ClusterInstInfo) {
@@ -590,9 +593,9 @@ var ClusterInstRequiredArgs = []string{
 	"clusterorg",
 }
 var ClusterInstOptionalArgs = []string{
-	"cloudletorg",
-	"cloudlet",
-	"federatedorg",
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
 	"flavor",
 	"crmoverride",
 	"ipaccess",
@@ -609,6 +612,7 @@ var ClusterInstOptionalArgs = []string{
 	"enableipv6",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=key.name",
@@ -625,6 +629,9 @@ var ClusterInstComments = map[string]string{
 	"cloudletorg":                       "Organization of the cloudlet site",
 	"cloudlet":                          "Name of the cloudlet",
 	"federatedorg":                      "Federated operator organization who shared this cloudlet",
+	"zonekey.organization":              "Organization owner of the Zone",
+	"zonekey.name":                      "Name of the Zone",
+	"zonekey.federatedorganization":     "Federated operator organization who shared this Zone",
 	"flavor":                            "Flavor name",
 	"liveness":                          "Liveness of instance (see Liveness), one of Unknown, Static, Dynamic, Autoprov",
 	"auto":                              "Auto is set to true when automatically created by back-end (internal use only)",
@@ -674,6 +681,7 @@ var ClusterInstComments = map[string]string{
 	"objid":                                    "Universally unique object ID",
 	"compatibilityversion":                     "internal compatibility version",
 	"annotations":                              "Annotations, specify annotations:empty=true to clear",
+	"dbmodelid":                                "database version model ID",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"annotations": "StringToString",
@@ -752,6 +760,9 @@ var UpdateClusterInstRequiredArgs = []string{
 	"clusterorg",
 }
 var UpdateClusterInstOptionalArgs = []string{
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
 	"crmoverride",
 	"numnodes",
 	"autoscalepolicy",
@@ -759,4 +770,5 @@ var UpdateClusterInstOptionalArgs = []string{
 	"enableipv6",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }

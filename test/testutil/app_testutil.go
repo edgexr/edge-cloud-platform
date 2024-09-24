@@ -512,17 +512,17 @@ func (r *Run) AppApi_AppAutoProvPolicy(data *[]edgeproto.AppAutoProvPolicy, data
 	}
 }
 
-func (r *Run) AppApi_DeploymentCloudletRequest(data *[]edgeproto.DeploymentCloudletRequest, dataMap interface{}, dataOut interface{}) {
-	log.DebugLog(log.DebugLevelApi, "API for DeploymentCloudletRequest", "mode", r.Mode)
+func (r *Run) AppApi_DeploymentZoneRequest(data *[]edgeproto.DeploymentZoneRequest, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for DeploymentZoneRequest", "mode", r.Mode)
 	if r.Mode == "show" {
-		obj := &edgeproto.DeploymentCloudletRequest{}
-		out, err := r.client.ShowCloudletsForAppDeployment(r.ctx, obj)
+		obj := &edgeproto.DeploymentZoneRequest{}
+		out, err := r.client.ShowZonesForAppDeployment(r.ctx, obj)
 		if err != nil {
-			r.logErr("AppApi_DeploymentCloudletRequest", err)
+			r.logErr("AppApi_DeploymentZoneRequest", err)
 		} else {
-			outp, ok := dataOut.(*[]edgeproto.CloudletKey)
+			outp, ok := dataOut.(*[]edgeproto.ZoneKey)
 			if !ok {
-				panic(fmt.Sprintf("RunAppApi_DeploymentCloudletRequest expected dataOut type *[]edgeproto.CloudletKey, but was %T", dataOut))
+				panic(fmt.Sprintf("RunAppApi_DeploymentZoneRequest expected dataOut type *[]edgeproto.ZoneKey, but was %T", dataOut))
 			}
 			*outp = append(*outp, out...)
 		}
@@ -532,13 +532,13 @@ func (r *Run) AppApi_DeploymentCloudletRequest(data *[]edgeproto.DeploymentCloud
 		obj := &objD
 		switch r.Mode {
 		case "showfiltered":
-			out, err := r.client.ShowCloudletsForAppDeployment(r.ctx, obj)
+			out, err := r.client.ShowZonesForAppDeployment(r.ctx, obj)
 			if err != nil {
-				r.logErr(fmt.Sprintf("AppApi_DeploymentCloudletRequest[%d]", ii), err)
+				r.logErr(fmt.Sprintf("AppApi_DeploymentZoneRequest[%d]", ii), err)
 			} else {
-				outp, ok := dataOut.(*[]edgeproto.CloudletKey)
+				outp, ok := dataOut.(*[]edgeproto.ZoneKey)
 				if !ok {
-					panic(fmt.Sprintf("RunAppApi_DeploymentCloudletRequest expected dataOut type *[]edgeproto.CloudletKey, but was %T", dataOut))
+					panic(fmt.Sprintf("RunAppApi_DeploymentZoneRequest expected dataOut type *[]edgeproto.ZoneKey, but was %T", dataOut))
 				}
 				*outp = append(*outp, out...)
 			}
@@ -713,37 +713,37 @@ func (s *CliClient) RemoveAppAlertPolicy(ctx context.Context, in *edgeproto.AppA
 	return &out, err
 }
 
-type CloudletKeyStream interface {
-	Recv() (*edgeproto.CloudletKey, error)
+type ZoneKeyStream interface {
+	Recv() (*edgeproto.ZoneKey, error)
 }
 
-func CloudletKeyReadStream(stream CloudletKeyStream) ([]edgeproto.CloudletKey, error) {
-	output := []edgeproto.CloudletKey{}
+func ZoneKeyReadStream(stream ZoneKeyStream) ([]edgeproto.ZoneKey, error) {
+	output := []edgeproto.ZoneKey{}
 	for {
 		obj, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return output, fmt.Errorf("read CloudletKey stream failed, %v", err)
+			return output, fmt.Errorf("read ZoneKey stream failed, %v", err)
 		}
 		output = append(output, *obj)
 	}
 	return output, nil
 }
 
-func (s *ApiClient) ShowCloudletsForAppDeployment(ctx context.Context, in *edgeproto.DeploymentCloudletRequest) ([]edgeproto.CloudletKey, error) {
+func (s *ApiClient) ShowZonesForAppDeployment(ctx context.Context, in *edgeproto.DeploymentZoneRequest) ([]edgeproto.ZoneKey, error) {
 	api := edgeproto.NewAppApiClient(s.Conn)
-	stream, err := api.ShowCloudletsForAppDeployment(ctx, in)
+	stream, err := api.ShowZonesForAppDeployment(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	return CloudletKeyReadStream(stream)
+	return ZoneKeyReadStream(stream)
 }
 
-func (s *CliClient) ShowCloudletsForAppDeployment(ctx context.Context, in *edgeproto.DeploymentCloudletRequest) ([]edgeproto.CloudletKey, error) {
-	output := []edgeproto.CloudletKey{}
-	args := append(s.BaseArgs, "controller", "ShowCloudletsForAppDeployment")
+func (s *CliClient) ShowZonesForAppDeployment(ctx context.Context, in *edgeproto.DeploymentZoneRequest) ([]edgeproto.ZoneKey, error) {
+	output := []edgeproto.ZoneKey{}
+	args := append(s.BaseArgs, "controller", "ShowZonesForAppDeployment")
 	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
 	return output, err
 }
@@ -757,5 +757,5 @@ type AppApiClient interface {
 	RemoveAppAutoProvPolicy(ctx context.Context, in *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error)
 	AddAppAlertPolicy(ctx context.Context, in *edgeproto.AppAlertPolicy) (*edgeproto.Result, error)
 	RemoveAppAlertPolicy(ctx context.Context, in *edgeproto.AppAlertPolicy) (*edgeproto.Result, error)
-	ShowCloudletsForAppDeployment(ctx context.Context, in *edgeproto.DeploymentCloudletRequest) ([]edgeproto.CloudletKey, error)
+	ShowZonesForAppDeployment(ctx context.Context, in *edgeproto.DeploymentZoneRequest) ([]edgeproto.ZoneKey, error)
 }

@@ -148,7 +148,7 @@ func TestAddRemove(t *testing.T) {
 				}
 				// carrier is the same either way
 				assert.Equal(t, rr.ReplyCarrier,
-					call.Key.CloudletFound.Organization, "findCloudletHAData[%d]", ii)
+					call.Key.ZoneFound.Organization, "findCloudletHAData[%d]", ii)
 			}
 		}
 		// we expect at least 35% of all replies to be for each cloudlet, with confidence of 99.8%
@@ -313,10 +313,14 @@ func runFindCloudlet(t *testing.T, rrs []uaemtest.FindCloudletRR, span opentraci
 			require.Equal(t, rr.Reply.Fqdn, reply.Fqdn,
 				"findCloudletData[%d]", ii)
 			// Check the filled in cloudlet details
+			require.Equal(t, rr.ReplyZone,
+				call.Key.ZoneFound.Name, "findCloudletData[%d]", ii)
 			require.Equal(t, rr.ReplyCarrier,
-				call.Key.CloudletFound.Organization, "findCloudletData[%d]", ii)
-			require.Equal(t, rr.ReplyCloudlet,
-				call.Key.CloudletFound.Name, "findCloudletData[%d]", ii)
+				call.Key.Carrier, "findCloudletData[%d]", ii)
+			require.Equal(t, rr.ReplyAppInstName,
+				call.Key.AppInstFound.Name, "findCloudletData[%d]", ii)
+			require.Equal(t, rr.ReplyAppInstOrg,
+				call.Key.AppInstFound.Organization, "findCloudletData[%d]", ii)
 		}
 	}
 }

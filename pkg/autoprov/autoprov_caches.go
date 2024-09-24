@@ -15,8 +15,8 @@
 package autoprov
 
 import (
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 )
 
@@ -25,6 +25,7 @@ type CacheData struct {
 	appInstCache        edgeproto.AppInstCache
 	appInstRefsCache    edgeproto.AppInstRefsCache
 	autoProvPolicyCache edgeproto.AutoProvPolicyCache
+	zoneCache           edgeproto.ZoneCache
 	cloudletCache       *edgeproto.CloudletCache
 	cloudletInfoCache   edgeproto.CloudletInfoCache
 	frClusterInsts      edgeproto.FreeReservableClusterInstCache
@@ -37,6 +38,7 @@ func (s *CacheData) init(nodeMgr *node.NodeMgr) {
 	edgeproto.InitAppInstCache(&s.appInstCache)
 	edgeproto.InitAppInstRefsCache(&s.appInstRefsCache)
 	edgeproto.InitAutoProvPolicyCache(&s.autoProvPolicyCache)
+	edgeproto.InitZoneCache(&s.zoneCache)
 	if nodeMgr != nil {
 		s.cloudletCache = nodeMgr.CloudletLookup.GetCloudletCache(node.NoRegion)
 	} else {
@@ -54,6 +56,7 @@ func (s *CacheData) initNotifyClient(client *notify.Client) {
 	notifyClient.RegisterRecvAppInstCache(&s.appInstCache)
 	notifyClient.RegisterRecvAppInstRefsCache(&s.appInstRefsCache)
 	notifyClient.RegisterRecvAutoProvPolicyCache(&s.autoProvPolicyCache)
+	notifyClient.RegisterRecvZoneCache(&s.zoneCache)
 	notifyClient.RegisterRecvCloudletCache(s.cloudletCache)
 	notifyClient.RegisterRecvCloudletInfoCache(&s.cloudletInfoCache)
 	notifyClient.RegisterRecv(notify.NewClusterInstRecv(&s.frClusterInsts))

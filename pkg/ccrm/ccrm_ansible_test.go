@@ -185,9 +185,9 @@ func TestAnsibleServer(t *testing.T) {
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	ccrm.nodeMgr.CloudletLookup = cloudletLookup
-	cloudletPoolLookup := &node.CloudletPoolCache{}
-	cloudletPoolLookup.Init()
-	ccrm.nodeMgr.CloudletPoolLookup = cloudletPoolLookup
+	zonePoolLookup := &node.ZonePoolCache{}
+	zonePoolLookup.Init()
+	ccrm.nodeMgr.ZonePoolLookup = zonePoolLookup
 
 	store := regiondata.InMemoryStore{}
 	store.Start()

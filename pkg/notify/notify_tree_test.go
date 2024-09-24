@@ -98,12 +98,12 @@ func TestNotifyTree(t *testing.T) {
 
 	// set ClusterInst and AppInst state to CREATE_REQUESTED so they get
 	// sent to the CRM.
-	for _, obj := range testutil.ClusterInstData() {
+	for _, obj := range testutil.CreatedClusterInstData() {
 		obj.State = edgeproto.TrackedState_CREATE_REQUESTED
 		top.handler.ClusterInstCache.Update(ctx, &obj, 0)
 	}
 	numAppInstData := 0
-	for _, obj := range testutil.AppInstData() {
+	for _, obj := range testutil.CreatedAppInstData() {
 		obj.State = edgeproto.TrackedState_CREATE_REQUESTED
 		top.handler.AppInstCache.Update(ctx, &obj, 0)
 		numAppInstData++
@@ -204,11 +204,11 @@ func TestNotifyTree(t *testing.T) {
 	fmt.Println("========== cleanup")
 
 	// Delete objects to make sure deletes propagate and are applied
-	for _, obj := range testutil.AppInstData() {
+	for _, obj := range testutil.CreatedAppInstData() {
 		top.handler.AppInstCache.Delete(ctx, &obj, 0)
 	}
 
-	for _, obj := range testutil.ClusterInstData() {
+	for _, obj := range testutil.CreatedClusterInstData() {
 		log.SpanLog(ctx, log.DebugLevelNotify, "deleting ClusterInst", "key", obj.Key)
 		top.handler.ClusterInstCache.Delete(ctx, &obj, 0)
 	}

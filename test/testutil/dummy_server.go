@@ -17,9 +17,11 @@ package testutil
 import (
 	"context"
 	fmt "fmt"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/oklog/ulid/v2"
 	"google.golang.org/grpc"
 )
 
@@ -31,11 +33,11 @@ const (
 )
 
 type CustomData struct {
-	OrgsOnCloudlet map[edgeproto.CloudletKey][]string
+	OrgsOnZone map[edgeproto.ZoneKey][]string
 }
 
 func (s *CustomData) Init() {
-	s.OrgsOnCloudlet = make(map[edgeproto.CloudletKey][]string)
+	s.OrgsOnZone = make(map[edgeproto.ZoneKey][]string)
 }
 
 func (s *DummyServer) SetDummyObjs(ctx context.Context, a Action, tag string, num int) {
@@ -65,24 +67,6 @@ func (s *DummyServer) SetDummyOrgObjs(ctx context.Context, a Action, org string,
 			s.AppCache.Delete(ctx, &app, int64(ii))
 		}
 
-		appinst := edgeproto.AppInst{}
-		appinst.Key.Organization = org
-		appinst.Key.Name = name
-		if a == Create {
-			s.AppInstCache.Update(ctx, &appinst, int64(ii))
-		} else if a == Delete {
-			s.AppInstCache.Delete(ctx, &appinst, int64(ii))
-		}
-
-		cinst := edgeproto.ClusterInst{}
-		cinst.Key.Organization = org
-		cinst.Key.Name = name
-		if a == Create {
-			s.ClusterInstCache.Update(ctx, &cinst, int64(ii))
-		} else if a == Delete {
-			s.ClusterInstCache.Delete(ctx, &cinst, int64(ii))
-		}
-
 		resTagTbl := edgeproto.ResTagTable{}
 		resTagTbl.Key.Name = name + "resTagTbl"
 		resTagTbl.Key.Organization = org
@@ -95,10 +79,33 @@ func (s *DummyServer) SetDummyOrgObjs(ctx context.Context, a Action, org string,
 			s.ResTagTableCache.Delete(ctx, &resTagTbl, int64(ii))
 		}
 
+		zone := edgeproto.Zone{}
+		zone.Key.Organization = org
+		zone.Key.Name = name
+		zone.ObjId = strings.ToLower(ulid.Make().String())
+		if a == Create {
+			s.ZoneCache.Update(ctx, &zone, int64(ii))
+		} else if a == Delete {
+			s.ZoneCache.Delete(ctx, &zone, int64(ii))
+		}
+
+		gpuDriver := edgeproto.GPUDriver{}
+		gpuDriver.Key.Name = name + "gpudriver"
+		gpuDriver.Key.Organization = org
+		if a == Create {
+			s.GPUDriverCache.Update(ctx, &gpuDriver, int64(ii))
+		} else if a == Delete {
+			s.GPUDriverCache.Delete(ctx, &gpuDriver, int64(ii))
+		}
+
 		cloudlet := edgeproto.Cloudlet{}
 		cloudlet.Key.Organization = org
 		cloudlet.Key.Name = name
+		cloudlet.Zone = zone.Key.Name
 		cloudlet.EnvVar = map[string]string{"key1": "val1"}
+		cloudlet.GpuConfig = edgeproto.GPUConfig{
+			Driver: gpuDriver.Key,
+		}
 		if a == Create {
 			s.CloudletCache.Update(ctx, &cloudlet, int64(ii))
 		} else if a == Delete {
@@ -121,18 +128,42 @@ func (s *DummyServer) SetDummyOrgObjs(ctx context.Context, a Action, org string,
 			s.CloudletInfoCache.Delete(ctx, &cloudletInfo, int64(ii))
 		}
 
-		pool := edgeproto.CloudletPool{}
+		cinst := edgeproto.ClusterInst{}
+		cinst.Key.Organization = org
+		cinst.Key.Name = name
+		cinst.CloudletKey = cloudlet.Key
+		cinst.ZoneKey = zone.Key
+		if a == Create {
+			s.ClusterInstCache.Update(ctx, &cinst, int64(ii))
+		} else if a == Delete {
+			s.ClusterInstCache.Delete(ctx, &cinst, int64(ii))
+		}
+
+		appinst := edgeproto.AppInst{}
+		appinst.Key.Organization = org
+		appinst.Key.Name = name
+		appinst.AppKey = app.Key
+		appinst.ClusterKey = cinst.Key
+		appinst.CloudletKey = cloudlet.Key
+		appinst.ZoneKey = zone.Key
+		if a == Create {
+			s.AppInstCache.Update(ctx, &appinst, int64(ii))
+		} else if a == Delete {
+			s.AppInstCache.Delete(ctx, &appinst, int64(ii))
+		}
+
+		pool := edgeproto.ZonePool{}
 		pool.Key.Name = name
 		pool.Key.Organization = org
-		pool.Cloudlets = []edgeproto.CloudletKey{
-			{Name: "cloudlet1", Organization: org},
-			{Name: "cloudlet2", Organization: org},
-			{Name: "cloudlet3", Organization: org},
+		pool.Zones = []*edgeproto.ZoneKey{
+			{Name: "zone1", Organization: org},
+			{Name: "zone2", Organization: org},
+			{Name: "zone3", Organization: org},
 		}
 		if a == Create {
-			s.CloudletPoolCache.Update(ctx, &pool, int64(ii))
+			s.ZonePoolCache.Update(ctx, &pool, int64(ii))
 		} else if a == Delete {
-			s.CloudletPoolCache.Delete(ctx, &pool, int64(ii))
+			s.ZonePoolCache.Delete(ctx, &pool, int64(ii))
 		}
 
 		vmpool := edgeproto.VMPool{}
@@ -142,15 +173,6 @@ func (s *DummyServer) SetDummyOrgObjs(ctx context.Context, a Action, org string,
 			s.VMPoolCache.Update(ctx, &vmpool, int64(ii))
 		} else if a == Delete {
 			s.VMPoolCache.Delete(ctx, &vmpool, int64(ii))
-		}
-
-		gpuDriver := edgeproto.GPUDriver{}
-		gpuDriver.Key.Name = name + "gpudriver"
-		gpuDriver.Key.Organization = org
-		if a == Create {
-			s.GPUDriverCache.Update(ctx, &gpuDriver, int64(ii))
-		} else if a == Delete {
-			s.GPUDriverCache.Delete(ctx, &gpuDriver, int64(ii))
 		}
 
 		autoprov := edgeproto.AutoProvPolicy{}

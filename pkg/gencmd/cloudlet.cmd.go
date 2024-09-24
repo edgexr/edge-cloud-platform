@@ -112,6 +112,9 @@ func CloudletHideTags(in *edgeproto.Cloudlet) {
 	if _, found := tags["nocmp"]; found {
 		in.ObjId = ""
 	}
+	if _, found := tags["nocmp"]; found {
+		in.DbModelId = 0
+	}
 }
 
 func CloudletInfoHideTags(in *edgeproto.CloudletInfo) {
@@ -293,9 +296,91 @@ func DeletePlatformFeaturess(c *cli.Command, data []edgeproto.PlatformFeatures, 
 	}
 }
 
+var ShowPlatformFeaturesForZoneCmd = &cli.Command{
+	Use:          "ShowPlatformFeaturesForZone",
+	RequiredArgs: strings.Join(ShowPlatformFeaturesForZoneRequiredArgs, " "),
+	OptionalArgs: strings.Join(ShowPlatformFeaturesForZoneOptionalArgs, " "),
+	AliasArgs:    strings.Join(ZoneKeyAliasArgs, " "),
+	SpecialArgs:  &ZoneKeySpecialArgs,
+	Comments:     ZoneKeyComments,
+	ReqData:      &edgeproto.ZoneKey{},
+	ReplyData:    &edgeproto.PlatformFeatures{},
+	Run:          runShowPlatformFeaturesForZone,
+}
+
+func runShowPlatformFeaturesForZone(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.ZoneKey)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowPlatformFeaturesForZone(c, obj)
+}
+
+func ShowPlatformFeaturesForZone(c *cli.Command, in *edgeproto.ZoneKey) error {
+	if PlatformFeaturesApiCmd == nil {
+		return fmt.Errorf("PlatformFeaturesApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := PlatformFeaturesApiCmd.ShowPlatformFeaturesForZone(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowPlatformFeaturesForZone failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.PlatformFeatures, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowPlatformFeaturesForZone recv failed: %s", errstr)
+		}
+		if cli.OutputStream {
+			c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+			continue
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowPlatformFeaturesForZones(c *cli.Command, data []edgeproto.ZoneKey, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowPlatformFeaturesForZone %v\n", data[ii])
+		myerr := ShowPlatformFeaturesForZone(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var PlatformFeaturesApiCmds = []*cobra.Command{
 	ShowPlatformFeaturesCmd.GenCmd(),
 	DeletePlatformFeaturesCmd.GenCmd(),
+	ShowPlatformFeaturesForZoneCmd.GenCmd(),
 }
 
 var GPUDriverApiCmd edgeproto.GPUDriverApiClient
@@ -1747,43 +1832,43 @@ func FindFlavorMatchs(c *cli.Command, data []edgeproto.FlavorMatch, err *error) 
 	}
 }
 
-var ShowFlavorsForCloudletCmd = &cli.Command{
-	Use:          "ShowFlavorsForCloudlet",
-	RequiredArgs: strings.Join(ShowFlavorsForCloudletRequiredArgs, " "),
-	OptionalArgs: strings.Join(ShowFlavorsForCloudletOptionalArgs, " "),
-	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
-	SpecialArgs:  &CloudletKeySpecialArgs,
-	Comments:     CloudletKeyComments,
-	ReqData:      &edgeproto.CloudletKey{},
+var ShowFlavorsForZoneCmd = &cli.Command{
+	Use:          "ShowFlavorsForZone",
+	RequiredArgs: strings.Join(ShowFlavorsForZoneRequiredArgs, " "),
+	OptionalArgs: strings.Join(ShowFlavorsForZoneOptionalArgs, " "),
+	AliasArgs:    strings.Join(ZoneKeyAliasArgs, " "),
+	SpecialArgs:  &ZoneKeySpecialArgs,
+	Comments:     ZoneKeyComments,
+	ReqData:      &edgeproto.ZoneKey{},
 	ReplyData:    &edgeproto.FlavorKey{},
-	Run:          runShowFlavorsForCloudlet,
+	Run:          runShowFlavorsForZone,
 }
 
-func runShowFlavorsForCloudlet(c *cli.Command, args []string) error {
+func runShowFlavorsForZone(c *cli.Command, args []string) error {
 	if cli.SilenceUsage {
 		c.CobraCmd.SilenceUsage = true
 	}
-	obj := c.ReqData.(*edgeproto.CloudletKey)
+	obj := c.ReqData.(*edgeproto.ZoneKey)
 	_, err := c.ParseInput(args)
 	if err != nil {
 		return err
 	}
-	return ShowFlavorsForCloudlet(c, obj)
+	return ShowFlavorsForZone(c, obj)
 }
 
-func ShowFlavorsForCloudlet(c *cli.Command, in *edgeproto.CloudletKey) error {
+func ShowFlavorsForZone(c *cli.Command, in *edgeproto.ZoneKey) error {
 	if CloudletApiCmd == nil {
 		return fmt.Errorf("CloudletApi client not initialized")
 	}
 	ctx := context.Background()
-	stream, err := CloudletApiCmd.ShowFlavorsForCloudlet(ctx, in)
+	stream, err := CloudletApiCmd.ShowFlavorsForZone(ctx, in)
 	if err != nil {
 		errstr := err.Error()
 		st, ok := status.FromError(err)
 		if ok {
 			errstr = st.Message()
 		}
-		return fmt.Errorf("ShowFlavorsForCloudlet failed: %s", errstr)
+		return fmt.Errorf("ShowFlavorsForZone failed: %s", errstr)
 	}
 
 	objs := make([]*edgeproto.FlavorKey, 0)
@@ -1798,7 +1883,7 @@ func ShowFlavorsForCloudlet(c *cli.Command, in *edgeproto.CloudletKey) error {
 			if ok {
 				errstr = st.Message()
 			}
-			return fmt.Errorf("ShowFlavorsForCloudlet recv failed: %s", errstr)
+			return fmt.Errorf("ShowFlavorsForZone recv failed: %s", errstr)
 		}
 		if cli.OutputStream {
 			c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
@@ -1814,13 +1899,13 @@ func ShowFlavorsForCloudlet(c *cli.Command, in *edgeproto.CloudletKey) error {
 }
 
 // this supports "Create" and "Delete" commands on ApplicationData
-func ShowFlavorsForCloudlets(c *cli.Command, data []edgeproto.CloudletKey, err *error) {
+func ShowFlavorsForZones(c *cli.Command, data []edgeproto.ZoneKey, err *error) {
 	if *err != nil {
 		return
 	}
 	for ii, _ := range data {
-		fmt.Printf("ShowFlavorsForCloudlet %v\n", data[ii])
-		myerr := ShowFlavorsForCloudlet(c, &data[ii])
+		fmt.Printf("ShowFlavorsForZone %v\n", data[ii])
+		myerr := ShowFlavorsForZone(c, &data[ii])
 		if myerr != nil {
 			*err = myerr
 			break
@@ -1828,43 +1913,43 @@ func ShowFlavorsForCloudlets(c *cli.Command, data []edgeproto.CloudletKey, err *
 	}
 }
 
-var GetOrganizationsOnCloudletCmd = &cli.Command{
-	Use:          "GetOrganizationsOnCloudlet",
-	RequiredArgs: strings.Join(CloudletKeyRequiredArgs, " "),
-	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
-	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
-	SpecialArgs:  &CloudletKeySpecialArgs,
-	Comments:     CloudletKeyComments,
-	ReqData:      &edgeproto.CloudletKey{},
+var GetOrganizationsOnZoneCmd = &cli.Command{
+	Use:          "GetOrganizationsOnZone",
+	RequiredArgs: strings.Join(ZoneKeyRequiredArgs, " "),
+	OptionalArgs: strings.Join(ZoneKeyOptionalArgs, " "),
+	AliasArgs:    strings.Join(ZoneKeyAliasArgs, " "),
+	SpecialArgs:  &ZoneKeySpecialArgs,
+	Comments:     ZoneKeyComments,
+	ReqData:      &edgeproto.ZoneKey{},
 	ReplyData:    &edgeproto.Organization{},
-	Run:          runGetOrganizationsOnCloudlet,
+	Run:          runGetOrganizationsOnZone,
 }
 
-func runGetOrganizationsOnCloudlet(c *cli.Command, args []string) error {
+func runGetOrganizationsOnZone(c *cli.Command, args []string) error {
 	if cli.SilenceUsage {
 		c.CobraCmd.SilenceUsage = true
 	}
-	obj := c.ReqData.(*edgeproto.CloudletKey)
+	obj := c.ReqData.(*edgeproto.ZoneKey)
 	_, err := c.ParseInput(args)
 	if err != nil {
 		return err
 	}
-	return GetOrganizationsOnCloudlet(c, obj)
+	return GetOrganizationsOnZone(c, obj)
 }
 
-func GetOrganizationsOnCloudlet(c *cli.Command, in *edgeproto.CloudletKey) error {
+func GetOrganizationsOnZone(c *cli.Command, in *edgeproto.ZoneKey) error {
 	if CloudletApiCmd == nil {
 		return fmt.Errorf("CloudletApi client not initialized")
 	}
 	ctx := context.Background()
-	stream, err := CloudletApiCmd.GetOrganizationsOnCloudlet(ctx, in)
+	stream, err := CloudletApiCmd.GetOrganizationsOnZone(ctx, in)
 	if err != nil {
 		errstr := err.Error()
 		st, ok := status.FromError(err)
 		if ok {
 			errstr = st.Message()
 		}
-		return fmt.Errorf("GetOrganizationsOnCloudlet failed: %s", errstr)
+		return fmt.Errorf("GetOrganizationsOnZone failed: %s", errstr)
 	}
 
 	objs := make([]*edgeproto.Organization, 0)
@@ -1879,7 +1964,7 @@ func GetOrganizationsOnCloudlet(c *cli.Command, in *edgeproto.CloudletKey) error
 			if ok {
 				errstr = st.Message()
 			}
-			return fmt.Errorf("GetOrganizationsOnCloudlet recv failed: %s", errstr)
+			return fmt.Errorf("GetOrganizationsOnZone recv failed: %s", errstr)
 		}
 		if cli.OutputStream {
 			c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
@@ -1895,13 +1980,13 @@ func GetOrganizationsOnCloudlet(c *cli.Command, in *edgeproto.CloudletKey) error
 }
 
 // this supports "Create" and "Delete" commands on ApplicationData
-func GetOrganizationsOnCloudlets(c *cli.Command, data []edgeproto.CloudletKey, err *error) {
+func GetOrganizationsOnZones(c *cli.Command, data []edgeproto.ZoneKey, err *error) {
 	if *err != nil {
 		return
 	}
 	for ii, _ := range data {
-		fmt.Printf("GetOrganizationsOnCloudlet %v\n", data[ii])
-		myerr := GetOrganizationsOnCloudlet(c, &data[ii])
+		fmt.Printf("GetOrganizationsOnZone %v\n", data[ii])
+		myerr := GetOrganizationsOnZone(c, &data[ii])
 		if myerr != nil {
 			*err = myerr
 			break
@@ -2175,8 +2260,8 @@ var CloudletApiCmds = []*cobra.Command{
 	AddCloudletAllianceOrgCmd.GenCmd(),
 	RemoveCloudletAllianceOrgCmd.GenCmd(),
 	FindFlavorMatchCmd.GenCmd(),
-	ShowFlavorsForCloudletCmd.GenCmd(),
-	GetOrganizationsOnCloudletCmd.GenCmd(),
+	ShowFlavorsForZoneCmd.GenCmd(),
+	GetOrganizationsOnZoneCmd.GenCmd(),
 	RevokeAccessKeyCmd.GenCmd(),
 	GenerateAccessKeyCmd.GenCmd(),
 	GetCloudletGPUDriverLicenseConfigCmd.GenCmd(),
@@ -2850,6 +2935,7 @@ var CloudletOptionalArgs = []string{
 	"location.latitude",
 	"location.longitude",
 	"location.altitude",
+	"zone",
 	"ipsupport",
 	"staticips",
 	"numdynamicips",
@@ -2894,6 +2980,10 @@ var CloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"federationconfig.federationcontextid",
+	"federationconfig.partnerfederationaddr",
+	"federationconfig.federationdbid",
+	"federationconfig.federationname",
 	"infraflavors:empty",
 	"infraflavors:#.name",
 	"infraflavors:#.vcpus",
@@ -2904,6 +2994,7 @@ var CloudletOptionalArgs = []string{
 	"crmonedge",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var CloudletAliasArgs = []string{
 	"cloudletorg=key.organization",
@@ -2923,6 +3014,7 @@ var CloudletComments = map[string]string{
 	"location.course":                        "Course (IOS) / bearing (Android) (degrees east relative to true north)",
 	"location.speed":                         "Speed (IOS) / velocity (Android) (meters/sec)",
 	"location.timestamp":                     "Timestamp",
+	"zone":                                   "Zone assignment, must be set to allow deployment to cloudlet",
 	"ipsupport":                              "Type of IP support provided by Cloudlet (see IpSupport), one of Unknown, Static, Dynamic",
 	"staticips":                              "List of static IPs for static IP support",
 	"numdynamicips":                          "Number of dynamic IPs available for dynamic IP support",
@@ -3021,6 +3113,7 @@ var CloudletComments = map[string]string{
 	"crmonedge":                              "CRM shall run on the edge site if true (required for restricted cloudlets), otherwise runs centrally (default)",
 	"objid":                                  "Universally unique object ID",
 	"annotations":                            "Annotations, specify annotations:empty=true to clear",
+	"dbmodelid":                              "database version model ID",
 }
 var CloudletSpecialArgs = map[string]string{
 	"accessvars":             "StringToString",
@@ -3365,6 +3458,12 @@ var CloudletMetricsComments = map[string]string{
 	"foo": "what goes here?",
 }
 var CloudletMetricsSpecialArgs = map[string]string{}
+var ShowPlatformFeaturesForZoneRequiredArgs = []string{}
+var ShowPlatformFeaturesForZoneOptionalArgs = []string{
+	"zoneorg",
+	"zone",
+	"federatororg",
+}
 var UpdateGPUDriverRequiredArgs = []string{
 	"gpudrivername",
 }
@@ -3418,6 +3517,7 @@ var CreateCloudletRequiredArgs = []string{
 var CreateCloudletOptionalArgs = []string{
 	"federatedorg",
 	"location.altitude",
+	"zone",
 	"ipsupport",
 	"staticips",
 	"timelimits.createclusterinsttimeout",
@@ -3460,6 +3560,10 @@ var CreateCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"federationconfig.federationcontextid",
+	"federationconfig.partnerfederationaddr",
+	"federationconfig.federationdbid",
+	"federationconfig.federationname",
 	"infraflavors:#.name",
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
@@ -3469,6 +3573,7 @@ var CreateCloudletOptionalArgs = []string{
 	"crmonedge",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var DeleteCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3479,6 +3584,7 @@ var DeleteCloudletOptionalArgs = []string{
 	"location.latitude",
 	"location.longitude",
 	"location.altitude",
+	"zone",
 	"ipsupport",
 	"staticips",
 	"numdynamicips",
@@ -3522,6 +3628,10 @@ var DeleteCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"federationconfig.federationcontextid",
+	"federationconfig.partnerfederationaddr",
+	"federationconfig.federationdbid",
+	"federationconfig.federationname",
 	"infraflavors:#.name",
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
@@ -3531,6 +3641,7 @@ var DeleteCloudletOptionalArgs = []string{
 	"crmonedge",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var UpdateCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3541,6 +3652,7 @@ var UpdateCloudletOptionalArgs = []string{
 	"location.latitude",
 	"location.longitude",
 	"location.altitude",
+	"zone",
 	"ipsupport",
 	"staticips",
 	"numdynamicips",
@@ -3573,6 +3685,10 @@ var UpdateCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"federationconfig.federationcontextid",
+	"federationconfig.partnerfederationaddr",
+	"federationconfig.federationdbid",
+	"federationconfig.federationname",
 	"infraflavors:empty",
 	"infraflavors:#.name",
 	"infraflavors:#.vcpus",
@@ -3582,6 +3698,7 @@ var UpdateCloudletOptionalArgs = []string{
 	"crmonedge",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var ShowCloudletRequiredArgs = []string{
 	"cloudletorg",
@@ -3592,6 +3709,7 @@ var ShowCloudletOptionalArgs = []string{
 	"location.latitude",
 	"location.longitude",
 	"location.altitude",
+	"zone",
 	"ipsupport",
 	"staticips",
 	"numdynamicips",
@@ -3635,6 +3753,10 @@ var ShowCloudletOptionalArgs = []string{
 	"singlekubernetesclusterowner",
 	"platformhighavailability",
 	"secondarynotifysrvaddr",
+	"federationconfig.federationcontextid",
+	"federationconfig.partnerfederationaddr",
+	"federationconfig.federationdbid",
+	"federationconfig.federationname",
 	"infraflavors:#.name",
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
@@ -3644,6 +3766,7 @@ var ShowCloudletOptionalArgs = []string{
 	"crmonedge",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var GetCloudletPropsRequiredArgs = []string{
 	"platformtype",
@@ -3665,9 +3788,9 @@ var GetCloudletResourceUsageOptionalArgs = []string{
 	"federatedorg",
 	"infrausage",
 }
-var ShowFlavorsForCloudletRequiredArgs = []string{}
-var ShowFlavorsForCloudletOptionalArgs = []string{
-	"cloudletorg",
-	"cloudlet",
+var ShowFlavorsForZoneRequiredArgs = []string{}
+var ShowFlavorsForZoneOptionalArgs = []string{
+	"zoneorg",
+	"zone",
 	"federatororg",
 }

@@ -73,16 +73,16 @@ type DummyController struct {
 	lis              *bufconn.Listener
 	failCreate       bool
 	failDelete       bool
-	failCreateInsts  map[edgeproto.AppCloudletKeyPair]struct{}
-	failDeleteInsts  map[edgeproto.AppCloudletKeyPair]struct{}
+	failCreateInsts  map[edgeproto.AppZoneKeyPair]struct{}
+	failDeleteInsts  map[edgeproto.AppZoneKeyPair]struct{}
 }
 
 func newDummyController(appInstCache *edgeproto.AppInstCache, appInstRefsCache *edgeproto.AppInstRefsCache) *DummyController {
 	d := DummyController{}
 	d.appInstCache = appInstCache
 	d.appInstRefsCache = appInstRefsCache
-	d.failCreateInsts = make(map[edgeproto.AppCloudletKeyPair]struct{})
-	d.failDeleteInsts = make(map[edgeproto.AppCloudletKeyPair]struct{})
+	d.failCreateInsts = make(map[edgeproto.AppZoneKeyPair]struct{})
+	d.failDeleteInsts = make(map[edgeproto.AppZoneKeyPair]struct{})
 	d.serv = grpc.NewServer(
 		grpc.UnaryInterceptor(cloudcommon.AuditUnaryInterceptor),
 		grpc.StreamInterceptor(cloudcommon.AuditStreamInterceptor),
@@ -127,13 +127,17 @@ func (s *DummyController) CreateAppInst(in *edgeproto.AppInst, server edgeproto.
 	if s.failCreate {
 		return fmt.Errorf("Some error")
 	}
-	failKey := edgeproto.AppCloudletKeyPair{
-		AppKey:      in.AppKey,
-		CloudletKey: in.CloudletKey,
+	failKey := edgeproto.AppZoneKeyPair{
+		AppKey:  in.AppKey,
+		ZoneKey: in.ZoneKey,
 	}
 	if _, found := s.failCreateInsts[failKey]; found {
 		return fmt.Errorf("Some error")
 	}
+	// one cloudlet per zone with same name
+	in.CloudletKey.Name = in.ZoneKey.Name
+	in.CloudletKey.Organization = in.ZoneKey.Organization
+
 	s.updateAppInst(server.Context(), in)
 	return nil
 }
@@ -147,9 +151,9 @@ func (s *DummyController) DeleteAppInst(in *edgeproto.AppInst, server edgeproto.
 	if s.failDelete {
 		return fmt.Errorf("Some error")
 	}
-	failKey := edgeproto.AppCloudletKeyPair{
-		AppKey:      in.AppKey,
-		CloudletKey: in.CloudletKey,
+	failKey := edgeproto.AppZoneKeyPair{
+		AppKey:  in.AppKey,
+		ZoneKey: in.ZoneKey,
 	}
 	if _, found := s.failDeleteInsts[failKey]; found {
 		return fmt.Errorf("Some error")
@@ -241,9 +245,9 @@ func (s *DummyController) dump() {
 	s.appInstRefsCache.Mux.Unlock()
 }
 
-func waitForRetryAppInsts(ctx context.Context, appKey edgeproto.AppKey, cloudletKey edgeproto.CloudletKey, checkFound bool) error {
+func waitForRetryAppInsts(ctx context.Context, appKey edgeproto.AppKey, zoneKey edgeproto.ZoneKey, checkFound bool) error {
 	for i := 0; i < 50; i++ {
-		found := retryTracker.hasFailure(ctx, appKey, cloudletKey)
+		found := retryTracker.hasFailure(ctx, appKey, zoneKey)
 		if checkFound == found {
 			log.SpanLog(ctx, log.DebugLevelInfo, "waitForRetryAppInsts: retry appInst found", "found", checkFound)
 			return nil
@@ -251,5 +255,5 @@ func waitForRetryAppInsts(ctx context.Context, appKey edgeproto.AppKey, cloudlet
 		time.Sleep(20 * time.Millisecond)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfo, "Timed out waiting for retryTracker to find appInstKey", "found", checkFound)
-	return fmt.Errorf("Timed out waiting for AppInst %v, %v to be found(%v) by retryTracker", appKey, cloudletKey, checkFound)
+	return fmt.Errorf("Timed out waiting for AppInst %v, %v to be found(%v) by retryTracker", appKey, zoneKey, checkFound)
 }

@@ -38,7 +38,7 @@ func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcomm
 	defer span.Finish()
 	ctx = log.ContextWithSpan(context.Background(), span)
 
-	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy "+action.String(), "AppInst", inst.Key, "reason", reason, "policyName", policyName)
+	log.SpanLog(ctx, log.DebugLevelApi, "auto-prov deploy "+action.String(), "AppInst", inst.Key, "zone", inst.ZoneKey, "reason", reason, "policyName", policyName)
 	if action != cloudcommon.Create && action != cloudcommon.Delete {
 		log.SpanLog(ctx, log.DebugLevelApi, "invalid action", "action", action.String())
 		return fmt.Errorf("invalid action")

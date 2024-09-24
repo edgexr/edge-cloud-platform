@@ -449,24 +449,14 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	// If a ClusterKey is specified, then the cluster must exist and
 	// be allowed to host the AppInst.
 	clusterSpecified := false
-	if in.ClusterKey.Name != "" {
-		clusterSpecified = true
-	}
-	freeClusterInsts := []edgeproto.ClusterKey{}
-	if !clusterSpecified {
-		// gather free reservable ClusterInsts for the target Cloudlet
-		s.all.clusterInstApi.cache.Mux.Lock()
-		for key, data := range s.all.clusterInstApi.cache.Objs {
-			if !in.CloudletKey.Matches(&data.Obj.CloudletKey) {
-				// not the target Cloudlet
-				continue
-			}
-			if data.Obj.Reservable && data.Obj.ReservedBy == "" {
-				// free reservable ClusterInst - we will double-check in STM
-				freeClusterInsts = append(freeClusterInsts, key)
-			}
+	if in.ClusterKey.Name != "" || in.ClusterKey.Organization != "" {
+		if in.ClusterKey.Organization == "" {
+			return fmt.Errorf("cluster organization must also be specified with cluster name")
 		}
-		s.all.clusterInstApi.cache.Mux.Unlock()
+		if in.ClusterKey.Name == "" {
+			return fmt.Errorf("cluster name must also be specified with cluster organization")
+		}
+		clusterSpecified = true
 	}
 
 	appInstKey := in.Key
@@ -491,7 +481,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	reservedAutoClusterId := -1
 	var reservedCluster *edgeproto.ClusterInst
 	var cloudletFeatures *edgeproto.PlatformFeatures
-	cloudletCompatibilityVersion := uint32(0)
 	var cloudletPlatformType string
 	var cloudletLoc dme.Loc
 	var platformSupportsIPV6 bool
@@ -509,6 +498,12 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 	}()
 
+	// STM ends up modifying input data, but we need to reset those
+	// changes if STM reruns, because it may end up choosing a different
+	// cloudlet.
+	inCopy := edgeproto.AppInst{}
+	inCopy.DeepCopyIn(in)
+
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		// reset modified state in case STM hits conflict and runs again
 		createCluster = false
@@ -516,8 +511,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		sidecarApp = false
 		reservedAutoClusterId = -1
 		reservedCluster = nil
-		cloudletCompatibilityVersion = 0
 		platformSupportsIPV6 = false
+		in.DeepCopyIn(&inCopy)
 
 		// lookup App so we can get flavor for reservable ClusterInst
 		var app edgeproto.App
@@ -556,36 +551,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if sidecarApp && (in.ClusterKey.Name == "" || in.ClusterKey.Organization == "") {
 			return fmt.Errorf("Sidecar AppInst (AutoDelete App) must specify the Cluster name and organization to deploy to")
 		}
-		// make sure cloudlet exists so we don't create refs for missing cloudlet
-		cloudlet := edgeproto.Cloudlet{}
-		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
-			return in.CloudletKey.NotFoundError()
-		}
-		if cloudlet.DeletePrepare {
-			return cloudlet.Key.BeingDeletedError()
-		}
-		crmOnEdge = cloudlet.CrmOnEdge
-		cloudletPlatformType = cloudlet.PlatformType
-		cloudletLoc = cloudlet.Location
-		info := edgeproto.CloudletInfo{}
-		if !s.all.cloudletInfoApi.store.STMGet(stm, &in.CloudletKey, &info) {
-			return fmt.Errorf("No resource information found for Cloudlet %s", in.CloudletKey)
-		}
-		cloudletCompatibilityVersion = info.CompatibilityVersion
-		cloudletFeatures, err = s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
-		if err != nil {
-			return fmt.Errorf("Failed to get features for platform: %s", err)
-		}
-		if in.DedicatedIp && !cloudletFeatures.SupportsAppInstDedicatedIp {
-			return fmt.Errorf("Target cloudlet platform does not support a per-AppInst dedicated IP")
-		}
-		platformSupportsIPV6 = cloudletFeatures.SupportsIpv6
-		if in.EnableIpv6 && !cloudletFeatures.SupportsIpv6 {
-			return fmt.Errorf("cloudlet platform does not support IPv6")
-		}
-		if !cloudcommon.IsClusterInstReqd(&app) && !in.EnableIpv6 {
-			// VM Apps default to the platform setting
-			in.EnableIpv6 = cloudletFeatures.SupportsIpv6
+		if err := s.all.autoProvPolicyApi.appInstCheck(ctx, stm, cloudcommon.Create, &app, in); err != nil {
+			return err
 		}
 		if s.store.STMGet(stm, &in.Key, in) {
 			if !cctx.Undo && in.State != edgeproto.TrackedState_DELETE_ERROR && !ignoreTransient(cctx, in.State) {
@@ -605,109 +572,105 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			}
 		}
 
-		if err := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &in.CloudletKey, cloudcommon.Create); err != nil {
+		// Since autoclusteripaccess is deprecated, set it to unknown
+		in.AutoClusterIpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
+		vmFlavor := edgeproto.Flavor{}
+		if !s.all.flavorApi.store.STMGet(stm, &in.Flavor, &vmFlavor) {
+			return in.Flavor.NotFoundError()
+		}
+		if vmFlavor.DeletePrepare {
+			return in.Flavor.BeingDeletedError()
+		}
+		if app.DeploymentManifest != "" {
+			err = cloudcommon.IsValidDeploymentManifestForFlavor(app.Deployment, app.DeploymentManifest, &vmFlavor)
+			if err != nil {
+				return fmt.Errorf("Invalid deployment manifest, %v", err)
+			}
+		}
+
+		// We need to determine which cloudlet in the target zone will
+		// host the instance.
+		potentialCloudlets, err := s.getPotentialCloudlets(ctx, cctx, in, &app)
+		if err != nil {
 			return err
 		}
-
-		if cloudletFeatures.IsSingleKubernetesCluster {
-			if app.Deployment != cloudcommon.DeploymentTypeKubernetes && app.Deployment != cloudcommon.DeploymentTypeHelm {
-				return fmt.Errorf("Cannot deploy %s app to single kubernetes cloudlet", app.Deployment)
+		if cloudcommon.IsClusterInstReqd(&app) {
+			// Check if we will use a pre-existing cluster.
+			// This may be a cluster specified by the caller, or it may
+			// be a system-provided reservable/multi-tenant cluster.
+			autoClusterType = ChooseAutoCluster
+			potentialClusters, err := s.getPotentialClusters(ctx, cctx, in, &app, potentialCloudlets)
+			if err != nil {
+				return err
 			}
-			defaultClusterKey := cloudcommon.GetDefaultClustKey(in.CloudletKey, cloudlet.SingleKubernetesClusterOwner)
-			// disable autocluster logic, since there's only one cluster
-			if in.ClusterKey.Name != "" && in.ClusterKey.Name != defaultClusterKey.Name {
-				// doesn't need to be specified, but if it is,
-				// it better be the one and only cluster name.
-				if !in.ClusterKey.Matches(defaultClusterKey) {
-					return fmt.Errorf("Cluster name for single kubernetes cluster cloudlet must be set to %s or left blank", defaultClusterKey.Name)
-				}
-			}
-			if in.ClusterKey.Organization != "" && in.ClusterKey.Organization != defaultClusterKey.Organization {
-				return fmt.Errorf("Cluster organization must be set to %s or left blank", defaultClusterKey.Organization)
-			}
-			// set cluster name
-			in.ClusterKey = *defaultClusterKey
-
-			if cloudlet.SingleKubernetesClusterOwner != "" {
-				autoClusterType = NoAutoCluster
-			} else {
-				// MT cluster
-				if !app.AllowServerless {
-					return fmt.Errorf("Target cloudlet platform only supports serverless Apps")
-				}
-				key := in.GetClusterKey()
-				clusterInst := edgeproto.ClusterInst{}
-				if !s.all.clusterInstApi.store.STMGet(stm, key, &clusterInst) {
-					return key.NotFoundError()
-				}
-				if clusterInst.DeletePrepare {
-					return key.BeingDeletedError()
-				}
-				err := useMultiTenantClusterInst(stm, ctx, in, &app, sidecarApp, &clusterInst)
-				if err != nil {
+			for _, pc := range potentialClusters {
+				clusterInst, err := s.usePotentialCluster(ctx, stm, in, &app, sidecarApp, pc)
+				if err != nil && pc.userSpecified {
+					// user specified this cluster, so this is a hard failure
 					return err
 				}
-				autoClusterType = MultiTenantAutoCluster
-			}
-		}
-
-		if cloudletCompatibilityVersion < cloudcommon.CRMCompatibilityNewAppInstKey {
-			// not backwards compatible
-			return fmt.Errorf("Cloudlet %s CRM compatibility version is too old (%d), controller requires at least version %d, please upgrade Cloudlet CRM", in.CloudletKey.Name, cloudletCompatibilityVersion, cloudcommon.CRMCompatibilityNewAppInstKey)
-		}
-
-		// Prefer multi-tenant autocluster over reservable autocluster.
-		if autoClusterType == ChooseAutoCluster && app.AllowServerless {
-			// if default multi-tenant cluster exists, target it
-			key := cloudcommon.GetDefaultMTClustKey(in.CloudletKey)
-			clusterInst := edgeproto.ClusterInst{}
-			if s.all.clusterInstApi.store.STMGet(stm, key, &clusterInst) {
-				if clusterInst.DeletePrepare {
-					return key.BeingDeletedError()
-				}
-				err := useMultiTenantClusterInst(stm, ctx, in, &app, sidecarApp, &clusterInst)
-				if err == nil {
-					autoClusterType = MultiTenantAutoCluster
-					in.ClusterKey = *key
-					in.EnableIpv6 = clusterInst.EnableIpv6
-				} else {
-					log.SpanLog(ctx, log.DebugLevelApi, "auto choose cluster not using multi-tenant cluster %s, %s", key.Name, err)
-				}
-			} else {
-				err = key.NotFoundError()
-			}
-			log.SpanLog(ctx, log.DebugLevelInfo, "try default multi-tenant cluster check", "key", key, "err", err)
-		}
-		// Check for reservable cluster as the autocluster target.
-		if autoClusterType == ChooseAutoCluster {
-			// search for free reservable ClusterInst
-			log.SpanLog(ctx, log.DebugLevelInfo, "reservable auto-cluster search", "key", in.Key)
-			// search for free ClusterInst
-			for _, key := range freeClusterInsts {
-				cibuf := edgeproto.ClusterInst{}
-				if !s.all.clusterInstApi.store.STMGet(stm, &key, &cibuf) {
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "failed to use potential cluster, will try another", "cluster", pc.existingCluster, "cloudlet", pc.cloudletKey, "err", err)
 					continue
 				}
-				if cibuf.DeletePrepare {
-					return key.BeingDeletedError()
-				}
-				if s.useReservableClusterInst(stm, ctx, in, &app, sidecarApp, &cibuf) == nil {
+				// ok to use
+				if clusterInst.MultiTenant {
+					cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Chose multi-tenant ClusterInst %s to deploy AppInst", clusterInst.Key.Name)})
+					autoClusterType = MultiTenantAutoCluster
+				} else if clusterInst.Reservable {
 					autoClusterType = ReservableAutoCluster
-					reservedCluster = &cibuf
-					in.ClusterKey = key
-					in.EnableIpv6 = cibuf.EnableIpv6
-					cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Chose reservable ClusterInst %s to deploy AppInst", cibuf.Key.Name)})
-					break
+					reservedCluster = clusterInst
+					cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Chose reservable ClusterInst %s to deploy AppInst", clusterInst.Key.Name)})
+				} else {
+					autoClusterType = NoAutoCluster
 				}
+				in.ClusterKey = pc.existingCluster
+				in.CloudletKey = pc.cloudletKey
+				in.EnableIpv6 = clusterInst.EnableIpv6
+				break
 			}
 		}
-		// Create reservable cluster if still no autocluster target
-		if autoClusterType == ChooseAutoCluster {
-			// No free reservable cluster found, create new one.
-			cloudletKey := &in.CloudletKey
+		if in.CloudletKey.Name == "" {
+			// No cloudlet chosen, we will choose one based on available resources.
+			// Sort potential cloudlets by available resources.
+			// TODO: filter this list based on the actual resource requirements
+			// for the instance.
+			sort.Sort(PotentialInstCloudletsByResource(potentialCloudlets))
+			in.CloudletKey = potentialCloudlets[0].cloudlet.Key
+		}
+
+		// validate chosen cloudlet
+		cloudlet := edgeproto.Cloudlet{}
+		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
+			return in.CloudletKey.NotFoundError()
+		}
+		if cloudlet.DeletePrepare {
+			return cloudlet.Key.BeingDeletedError()
+		}
+		cloudletFeatures, err = s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		if err != nil {
+			return fmt.Errorf("failed to get features for platform, %s", err)
+		}
+		// set zone in case caller did not specify
+		in.ZoneKey = *cloudlet.GetZone()
+
+		crmOnEdge = cloudlet.CrmOnEdge
+		cloudletPlatformType = cloudlet.PlatformType
+		cloudletLoc = cloudlet.Location
+		info := edgeproto.CloudletInfo{}
+		if !s.all.cloudletInfoApi.store.STMGet(stm, &in.CloudletKey, &info) {
+			return fmt.Errorf("No resource information found for Cloudlet %s", in.CloudletKey)
+		}
+		if !cloudcommon.IsClusterInstReqd(&app) && !in.EnableIpv6 {
+			// VM Apps default to the platform setting
+			in.EnableIpv6 = cloudletFeatures.SupportsIpv6
+		}
+
+		// if cluster still needed, set up to create new reservable autocluster
+		if cloudcommon.IsClusterInstReqd(&app) && autoClusterType == ChooseAutoCluster {
 			refs := edgeproto.CloudletRefs{}
-			if !s.all.cloudletRefsApi.store.STMGet(stm, cloudletKey, &refs) {
-				initCloudletRefs(&refs, cloudletKey)
+			if !s.all.cloudletRefsApi.store.STMGet(stm, &in.CloudletKey, &refs) {
+				initCloudletRefs(&refs, &in.CloudletKey)
 			}
 			// find and reserve a free id
 			id := 0
@@ -733,78 +696,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			log.SpanLog(ctx, log.DebugLevelApi, "Creating new auto-cluster", "key", in.GetClusterKey())
 		}
 
-		if autoClusterType == NoAutoCluster && cloudcommon.IsClusterInstReqd(&app) {
-			// Specified ClusterInst must exist
-			var clusterInst edgeproto.ClusterInst
-			if !s.all.clusterInstApi.store.STMGet(stm, in.GetClusterKey(), &clusterInst) {
-				return in.GetClusterKey().NotFoundError()
-			}
-			if clusterInst.DeletePrepare {
-				return in.GetClusterKey().BeingDeletedError()
-			}
-			if clusterInst.MultiTenant {
-				// multi-tenant base cluster
-				err := useMultiTenantClusterInst(stm, ctx, in, &app, sidecarApp, &clusterInst)
-				if err != nil {
-					return fmt.Errorf("Failed to use specified multi-tenant ClusterInst, %v", err)
-				}
-			} else if clusterInst.Reservable {
-				err := s.useReservableClusterInst(stm, ctx, in, &app, sidecarApp, &clusterInst)
-				if err != nil {
-					return fmt.Errorf("Failed to reserve specified reservable ClusterInst, %v", err)
-				}
-			}
-			if !sidecarApp && !clusterInst.Reservable && in.Key.Organization != in.Key.Organization {
-				return fmt.Errorf("Developer name mismatch between AppInst: %s and ClusterInst: %s", in.Key.Organization, in.ClusterKey.Organization)
-			}
-			in.EnableIpv6 = clusterInst.EnableIpv6
-			// cluster inst exists so we're good.
-		}
-
-		if cloudlet.TrustPolicy != "" {
-			if !app.Trusted {
-				return fmt.Errorf("Cannot start non trusted App on trusted cloudlet")
-			}
-			trustPolicy := edgeproto.TrustPolicy{}
-			tpKey := edgeproto.PolicyKey{
-				Name:         cloudlet.TrustPolicy,
-				Organization: cloudlet.Key.Organization,
-			}
-			if !s.all.trustPolicyApi.store.STMGet(stm, &tpKey, &trustPolicy) {
-				return errors.New("Trust Policy for cloudlet not found")
-			}
-			if trustPolicy.DeletePrepare {
-				return tpKey.BeingDeletedError()
-			}
-			err = s.all.appApi.CheckAppCompatibleWithTrustPolicy(ctx, &cloudlet.Key, &app, &trustPolicy)
-			if err != nil {
-				return fmt.Errorf("App is not compatible with cloudlet trust policy: %v", err)
-			}
-		}
-
-		// Since autoclusteripaccess is deprecated, set it to unknown
-		in.AutoClusterIpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
-
-		err = validateImageTypeForPlatform(ctx, app.ImageType, cloudlet.PlatformType, cloudletFeatures)
-		if err != nil {
-			return err
-		}
-
-		// Now that we have a cloudlet, and cloudletInfo, we can validate the flavor requested
-		vmFlavor := edgeproto.Flavor{}
-		if !s.all.flavorApi.store.STMGet(stm, &in.Flavor, &vmFlavor) {
-			return in.Flavor.NotFoundError()
-		}
-		if vmFlavor.DeletePrepare {
-			return in.Flavor.BeingDeletedError()
-		}
-		if app.DeploymentManifest != "" {
-			err = cloudcommon.IsValidDeploymentManifestForFlavor(app.Deployment, app.DeploymentManifest, &vmFlavor)
-			if err != nil {
-				return fmt.Errorf("Invalid deployment manifest, %v", err)
-			}
-		}
-
 		vmspec, verr := s.all.resTagTableApi.GetVMSpec(ctx, stm, vmFlavor, in.CloudletFlavor, cloudlet, info)
 		if verr != nil {
 			return verr
@@ -821,10 +712,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		// there may be direct access apps still defined, disallow them from being instantiated.
 		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_DIRECT {
 			return fmt.Errorf("Direct Access Apps are no longer supported, please re-create App as ACCESS_TYPE_LOAD_BALANCER")
-		}
-
-		if err := s.all.autoProvPolicyApi.appInstCheck(ctx, stm, cloudcommon.Create, &app, in); err != nil {
-			return err
 		}
 
 		refs := edgeproto.CloudletRefs{}
@@ -1008,10 +895,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		clusterInst.Key = clusterKey
 		clusterInst.CloudletKey = in.CloudletKey
 		clusterInst.Auto = true
-		if autoClusterType == ReservableAutoCluster {
-			clusterInst.Reservable = true
-			clusterInst.ReservedBy = in.Key.Organization
-		}
+		clusterInst.Reservable = true
+		clusterInst.ReservedBy = in.Key.Organization
 		log.SpanLog(ctx, log.DebugLevelApi,
 			"Create auto-ClusterInst",
 			"key", clusterInst.Key,
@@ -1422,7 +1307,7 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 			crmUpdateRequired = false
 		} else {
 			// check cloudlet state before updating
-			cloudletErr := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &curr.CloudletKey, cloudcommon.Update)
+			cloudletErr := s.all.cloudletInfoApi.checkCloudletReadySTM(cctx, stm, &curr.CloudletKey, cloudcommon.Update)
 			if crmUpdateRequired && cloudletErr != nil {
 				return cloudletErr
 			}
@@ -1767,7 +1652,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if err := validateDeleteState(cctx, "AppInst", in.State, in.Errors, cb.Send); err != nil {
 			return err
 		}
-		if err := s.all.cloudletInfoApi.checkCloudletReady(cctx, stm, &in.CloudletKey, cloudcommon.Delete); err != nil {
+		if err := s.all.cloudletInfoApi.checkCloudletReadySTM(cctx, stm, &in.CloudletKey, cloudcommon.Delete); err != nil {
 			return err
 		}
 
@@ -2370,6 +2255,7 @@ func (s *AppInstApi) RecordAppInstEvent(ctx context.Context, appInst *edgeproto.
 	metric.AddTag(edgeproto.AppInstKeyTagName, appInst.Key.Name)
 	metric.AddTag(edgeproto.AppInstKeyTagOrganization, appInst.Key.Organization)
 	metric.AddTag(cloudcommon.MetricTagOrg, appInst.Key.Organization)
+	appInst.ZoneKey.AddTagsByFunc(metric.AddTag)
 	metric.AddStringVal(cloudcommon.MetricTagEvent, string(event))
 	metric.AddStringVal(cloudcommon.MetricTagStatus, serverStatus)
 

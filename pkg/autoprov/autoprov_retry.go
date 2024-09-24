@@ -25,13 +25,13 @@ import (
 )
 
 type RetryTracker struct {
-	allFailures map[edgeproto.AppCloudletKeyPair]struct{}
+	allFailures map[edgeproto.AppZoneKeyPair]struct{}
 	mux         sync.Mutex
 }
 
 func newRetryTracker() *RetryTracker {
 	s := RetryTracker{}
-	s.allFailures = make(map[edgeproto.AppCloudletKeyPair]struct{})
+	s.allFailures = make(map[edgeproto.AppZoneKeyPair]struct{})
 	return &s
 }
 
@@ -40,7 +40,9 @@ func (s *RetryTracker) registerDeployResult(ctx context.Context, inst *edgeproto
 	// caused by the App config, or an issue with the Cloudlet, and
 	// nothing specific to autoclusters, whose configuration is
 	// derived from the App.
-	lookup := *inst.AppCloudletKeyPair()
+	lookup := edgeproto.AppZoneKeyPair{}
+	lookup.AppKey = inst.AppKey
+	lookup.ZoneKey = inst.ZoneKey
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -75,10 +77,10 @@ func (s *RetryTracker) doRetry(ctx context.Context, minmax *MinMaxChecker) {
 	}
 }
 
-func (s *RetryTracker) hasFailure(ctx context.Context, appKey edgeproto.AppKey, cloudletKey edgeproto.CloudletKey) bool {
-	key := edgeproto.AppCloudletKeyPair{}
+func (s *RetryTracker) hasFailure(ctx context.Context, appKey edgeproto.AppKey, zoneKey edgeproto.ZoneKey) bool {
+	key := edgeproto.AppZoneKeyPair{}
 	key.AppKey = appKey
-	key.CloudletKey = cloudletKey
+	key.ZoneKey = zoneKey
 
 	s.mux.Lock()
 	defer s.mux.Unlock()

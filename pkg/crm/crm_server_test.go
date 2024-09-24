@@ -57,11 +57,16 @@ trustpolicies:
       remotecidr: "0.0.0.0/0"
     - protocol: icmp
       remotecidr: "8.0.0.0/8"
+zones:
+- key:
+    organization: DMUUS
+    name: zone2
 cloudlets:
 - key:
     organization: DMUUS
     name: cloud2
   vmpool: vmpool1
+  zone: zone2
   trustpolicy: TrustPolicy1
   gpuconfig:
     driver:
@@ -228,12 +233,12 @@ gpudrivers:
 - key:
     name: gpudriver2
 
-cloudletpools:
+zonepools:
 - key:
     organization: DMUUS
-    name: cloud2-pool
-  cloudlets:
-  - name: cloud2
+    name: zone2-pool
+  zones:
+  - name: zone2
     organization: DMUUS
 
 networks:
@@ -255,9 +260,9 @@ trustpolicyexceptions:
       organization: Untomt
       name: VRmax
       version: 1.0.0
-    cloudletpoolkey:
+    zonepoolkey:
       organization: DMUUS
-      name: cloud2-pool
+      name: zone2-pool
     name: tpe1
   outboundsecurityrules:
   - protocol: tcp
@@ -269,9 +274,9 @@ trustpolicyexceptions:
       organization: Untomt
       name: VRmax
       version: 1.0.0
-    cloudletpoolkey:
+    zonepoolkey:
       organization: DMUUS
-      name: cloud2-pool
+      name: zone2-pool
     name: tpe2
   outboundsecurityrules:
   - protocol: udp
@@ -369,8 +374,8 @@ func TestCRM(t *testing.T) {
 		log.SpanLog(ctx, log.DebugLevelApi, "update AppInst", "ai", data.AppInstances[ii])
 		ctrlHandler.AppInstCache.Update(ctx, &data.AppInstances[ii], 0)
 	}
-	for ii := range data.CloudletPools {
-		ctrlHandler.CloudletPoolCache.Update(ctx, &data.CloudletPools[ii], 0)
+	for ii := range data.ZonePools {
+		ctrlHandler.ZonePoolCache.Update(ctx, &data.ZonePools[ii], 0)
 	}
 
 	for ii := range data.Networks {
@@ -430,8 +435,8 @@ func TestCRM(t *testing.T) {
 	for ii := range data.Flavors {
 		ctrlHandler.FlavorCache.Delete(ctx, &data.Flavors[ii], 0)
 	}
-	for ii := range data.CloudletPools {
-		ctrlHandler.CloudletPoolCache.Delete(ctx, &data.CloudletPools[ii], 0)
+	for ii := range data.ZonePools {
+		ctrlHandler.ZonePoolCache.Delete(ctx, &data.ZonePools[ii], 0)
 	}
 
 	for ii := range data.Networks {

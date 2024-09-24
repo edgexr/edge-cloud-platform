@@ -35,6 +35,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_test"
 	"github.com/gogo/protobuf/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Example output of resource-tracker
@@ -180,6 +181,10 @@ func TestCloudletStats(t *testing.T) {
 		Organization: "testoperator",
 		Name:         "testcloudlet",
 	}
+	zoneKey = edgeproto.ZoneKey{
+		Organization: cloudletKey.Organization,
+		Name:         "testzone",
+	}
 
 	// Test null handling
 	assert.Nil(t, MarshalCloudletMetrics(nil))
@@ -202,14 +207,23 @@ func TestCloudletStats(t *testing.T) {
 	assert.Equal(t, "cloudlet-ipusage", metrics[2].Name)
 	// Verify metric tags
 	for _, m := range metrics {
+		var cloudletName, cloudletOrg, zoneName, zoneOrg string
 		for _, v := range m.Tags {
-			if v.Name == "operator" {
-				assert.Equal(t, cloudletKey.Organization, v.Val)
-			}
-			if v.Name == "cloudlet" {
-				assert.Equal(t, cloudletKey.Name, v.Val)
+			switch v.Name {
+			case edgeproto.CloudletKeyTagOrganization:
+				cloudletOrg = v.Val
+			case edgeproto.CloudletKeyTagName:
+				cloudletName = v.Val
+			case edgeproto.ZoneKeyTagName:
+				zoneName = v.Val
+			case edgeproto.ZoneKeyTagOrganization:
+				zoneOrg = v.Val
 			}
 		}
+		require.Equal(t, cloudletKey.Name, cloudletName)
+		require.Equal(t, cloudletKey.Organization, cloudletOrg)
+		require.Equal(t, zoneKey.Name, zoneName)
+		require.Equal(t, zoneKey.Organization, zoneOrg)
 	}
 	// Verify metric values
 	for _, v := range metrics[0].Vals {

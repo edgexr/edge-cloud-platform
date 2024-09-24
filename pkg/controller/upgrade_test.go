@@ -328,9 +328,9 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	// Hence, fix a timezone for consistent comparison
 	time.Local = time.UTC
 
-	cplookup := &node.CloudletPoolCache{}
+	cplookup := &node.ZonePoolCache{}
 	cplookup.Init()
-	nodeMgr.CloudletPoolLookup = cplookup
+	nodeMgr.ZonePoolLookup = cplookup
 	cloudletLookup := &node.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup

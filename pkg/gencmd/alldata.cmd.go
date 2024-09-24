@@ -50,6 +50,19 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		for i1 := 0; i1 < len(in.PlatformFeatures[i0].ResourceQuotaProperties); i1++ {
 		}
 	}
+	for i0 := 0; i0 < len(in.Zones); i0++ {
+		for i1 := 0; i1 < len(in.Zones[i0].InfraFlavors); i1++ {
+		}
+		if _, found := tags["nocmp"]; found {
+			in.Zones[i0].ObjId = ""
+		}
+		if _, found := tags["timestamp"]; found {
+			in.Zones[i0].CreatedAt = distributed_match_engine.Timestamp{}
+		}
+		if _, found := tags["timestamp"]; found {
+			in.Zones[i0].UpdatedAt = distributed_match_engine.Timestamp{}
+		}
+	}
 	for i0 := 0; i0 < len(in.Cloudlets); i0++ {
 		if _, found := tags["nocmp"]; found {
 			in.Cloudlets[i0].Errors = nil
@@ -100,6 +113,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		if _, found := tags["nocmp"]; found {
 			in.Cloudlets[i0].ObjId = ""
 		}
+		if _, found := tags["nocmp"]; found {
+			in.Cloudlets[i0].DbModelId = 0
+		}
 	}
 	for i0 := 0; i0 < len(in.CloudletInfos); i0++ {
 		if _, found := tags["nocmp"]; found {
@@ -137,14 +153,14 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		for i1 := 0; i1 < len(in.CloudletInfos[i0].NodeInfos); i1++ {
 		}
 	}
-	for i0 := 0; i0 < len(in.CloudletPools); i0++ {
-		for i1 := 0; i1 < len(in.CloudletPools[i0].Cloudlets); i1++ {
+	for i0 := 0; i0 < len(in.ZonePools); i0++ {
+		for i1 := 0; i1 < len(in.ZonePools[i0].Zones); i1++ {
 		}
 		if _, found := tags["timestamp"]; found {
-			in.CloudletPools[i0].CreatedAt = distributed_match_engine.Timestamp{}
+			in.ZonePools[i0].CreatedAt = distributed_match_engine.Timestamp{}
 		}
 		if _, found := tags["timestamp"]; found {
-			in.CloudletPools[i0].UpdatedAt = distributed_match_engine.Timestamp{}
+			in.ZonePools[i0].UpdatedAt = distributed_match_engine.Timestamp{}
 		}
 	}
 	for i0 := 0; i0 < len(in.Networks); i0++ {
@@ -152,10 +168,10 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		}
 	}
 	for i0 := 0; i0 < len(in.AutoProvPolicies); i0++ {
-		for i1 := 0; i1 < len(in.AutoProvPolicies[i0].Cloudlets); i1++ {
+		for i1 := 0; i1 < len(in.AutoProvPolicies[i0].Zones); i1++ {
 		}
 	}
-	for i0 := 0; i0 < len(in.AutoProvPolicyCloudlets); i0++ {
+	for i0 := 0; i0 < len(in.AutoProvPolicyZones); i0++ {
 	}
 	for i0 := 0; i0 < len(in.AutoScalePolicies); i0++ {
 	}
@@ -186,6 +202,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		}
 		if _, found := tags["nocmp"]; found {
 			in.ClusterInsts[i0].CompatibilityVersion = 0
+		}
+		if _, found := tags["nocmp"]; found {
+			in.ClusterInsts[i0].DbModelId = 0
 		}
 	}
 	for i0 := 0; i0 < len(in.Apps); i0++ {
@@ -234,6 +253,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		}
 		if _, found := tags["nocmp"]; found {
 			in.AppInstances[i0].ObjId = ""
+		}
+		if _, found := tags["nocmp"]; found {
+			in.AppInstances[i0].DbModelId = 0
 		}
 	}
 	for i0 := 0; i0 < len(in.AppInstRefs); i0++ {
@@ -388,6 +410,28 @@ var AllDataOptionalArgs = []string{
 	"platformfeatures:#.resourcequotaproperties:#.units",
 	"platformfeatures:#.resourcequotaproperties:#.alertthreshold",
 	"platformfeatures:#.deleteprepare",
+	"zones:#.fields",
+	"zones:#.key.organization",
+	"zones:#.key.name",
+	"zones:#.key.federatedorganization",
+	"zones:#.description",
+	"zones:#.infraflavors:#.name",
+	"zones:#.infraflavors:#.vcpus",
+	"zones:#.infraflavors:#.ram",
+	"zones:#.infraflavors:#.disk",
+	"zones:#.infraflavors:#.propmap",
+	"zones:#.location.latitude",
+	"zones:#.location.longitude",
+	"zones:#.location.horizontalaccuracy",
+	"zones:#.location.verticalaccuracy",
+	"zones:#.location.altitude",
+	"zones:#.location.course",
+	"zones:#.location.speed",
+	"zones:#.location.timestamp",
+	"zones:#.objid",
+	"zones:#.deleteprepare",
+	"zones:#.createdat",
+	"zones:#.updatedat",
 	"cloudlets:#.fields",
 	"cloudlets:#.key.organization",
 	"cloudlets:#.key.name",
@@ -400,6 +444,7 @@ var AllDataOptionalArgs = []string{
 	"cloudlets:#.location.course",
 	"cloudlets:#.location.speed",
 	"cloudlets:#.location.timestamp",
+	"cloudlets:#.zone",
 	"cloudlets:#.ipsupport",
 	"cloudlets:#.staticips",
 	"cloudlets:#.numdynamicips",
@@ -496,6 +541,7 @@ var AllDataOptionalArgs = []string{
 	"cloudlets:#.crmonedge",
 	"cloudlets:#.objid",
 	"cloudlets:#.annotations",
+	"cloudlets:#.dbmodelid",
 	"cloudletinfos:#.fields",
 	"cloudletinfos:#.key.organization",
 	"cloudletinfos:#.key.name",
@@ -558,15 +604,15 @@ var AllDataOptionalArgs = []string{
 	"cloudletinfos:#.activecrminstance",
 	"cloudletinfos:#.standbycrm",
 	"cloudletinfos:#.releaseversion",
-	"cloudletpools:#.fields",
-	"cloudletpools:#.key.organization",
-	"cloudletpools:#.key.name",
-	"cloudletpools:#.cloudlets:#.organization",
-	"cloudletpools:#.cloudlets:#.name",
-	"cloudletpools:#.cloudlets:#.federatedorganization",
-	"cloudletpools:#.createdat",
-	"cloudletpools:#.updatedat",
-	"cloudletpools:#.deleteprepare",
+	"zonepools:#.fields",
+	"zonepools:#.key.organization",
+	"zonepools:#.key.name",
+	"zonepools:#.zones:#.organization",
+	"zonepools:#.zones:#.name",
+	"zonepools:#.zones:#.federatedorganization",
+	"zonepools:#.createdat",
+	"zonepools:#.updatedat",
+	"zonepools:#.deleteprepare",
 	"networks:#.fields",
 	"networks:#.key.cloudletkey.organization",
 	"networks:#.key.cloudletkey.name",
@@ -581,27 +627,19 @@ var AllDataOptionalArgs = []string{
 	"autoprovpolicies:#.key.name",
 	"autoprovpolicies:#.deployclientcount",
 	"autoprovpolicies:#.deployintervalcount",
-	"autoprovpolicies:#.cloudlets:#.key.organization",
-	"autoprovpolicies:#.cloudlets:#.key.name",
-	"autoprovpolicies:#.cloudlets:#.key.federatedorganization",
-	"autoprovpolicies:#.cloudlets:#.loc.latitude",
-	"autoprovpolicies:#.cloudlets:#.loc.longitude",
-	"autoprovpolicies:#.cloudlets:#.loc.horizontalaccuracy",
-	"autoprovpolicies:#.cloudlets:#.loc.verticalaccuracy",
-	"autoprovpolicies:#.cloudlets:#.loc.altitude",
-	"autoprovpolicies:#.cloudlets:#.loc.course",
-	"autoprovpolicies:#.cloudlets:#.loc.speed",
-	"autoprovpolicies:#.cloudlets:#.loc.timestamp",
+	"autoprovpolicies:#.zones:#.organization",
+	"autoprovpolicies:#.zones:#.name",
+	"autoprovpolicies:#.zones:#.federatedorganization",
 	"autoprovpolicies:#.minactiveinstances",
 	"autoprovpolicies:#.maxinstances",
 	"autoprovpolicies:#.undeployclientcount",
 	"autoprovpolicies:#.undeployintervalcount",
 	"autoprovpolicies:#.deleteprepare",
-	"autoprovpolicycloudlets:#.key.organization",
-	"autoprovpolicycloudlets:#.key.name",
-	"autoprovpolicycloudlets:#.cloudletkey.organization",
-	"autoprovpolicycloudlets:#.cloudletkey.name",
-	"autoprovpolicycloudlets:#.cloudletkey.federatedorganization",
+	"autoprovpolicyzones:#.key.organization",
+	"autoprovpolicyzones:#.key.name",
+	"autoprovpolicyzones:#.zonekey.organization",
+	"autoprovpolicyzones:#.zonekey.name",
+	"autoprovpolicyzones:#.zonekey.federatedorganization",
 	"autoscalepolicies:#.fields",
 	"autoscalepolicies:#.key.organization",
 	"autoscalepolicies:#.key.name",
@@ -622,6 +660,9 @@ var AllDataOptionalArgs = []string{
 	"clusterinsts:#.cloudletkey.organization",
 	"clusterinsts:#.cloudletkey.name",
 	"clusterinsts:#.cloudletkey.federatedorganization",
+	"clusterinsts:#.zonekey.organization",
+	"clusterinsts:#.zonekey.name",
+	"clusterinsts:#.zonekey.federatedorganization",
 	"clusterinsts:#.flavor.name",
 	"clusterinsts:#.liveness",
 	"clusterinsts:#.auto",
@@ -668,6 +709,7 @@ var AllDataOptionalArgs = []string{
 	"clusterinsts:#.objid",
 	"clusterinsts:#.compatibilityversion",
 	"clusterinsts:#.annotations",
+	"clusterinsts:#.dbmodelid",
 	"apps:#.fields",
 	"apps:#.key.organization",
 	"apps:#.key.name",
@@ -732,6 +774,9 @@ var AllDataOptionalArgs = []string{
 	"appinstances:#.cloudletkey.organization",
 	"appinstances:#.cloudletkey.name",
 	"appinstances:#.cloudletkey.federatedorganization",
+	"appinstances:#.zonekey.organization",
+	"appinstances:#.zonekey.name",
+	"appinstances:#.zonekey.federatedorganization",
 	"appinstances:#.cloudletloc.latitude",
 	"appinstances:#.cloudletloc.longitude",
 	"appinstances:#.cloudletloc.horizontalaccuracy",
@@ -784,6 +829,7 @@ var AllDataOptionalArgs = []string{
 	"appinstances:#.enableipv6",
 	"appinstances:#.objid",
 	"appinstances:#.annotations",
+	"appinstances:#.dbmodelid",
 	"appinstrefs:#.key.organization",
 	"appinstrefs:#.key.name",
 	"appinstrefs:#.key.version",
@@ -844,8 +890,8 @@ var AllDataOptionalArgs = []string{
 	"trustpolicyexceptions:#.key.appkey.organization",
 	"trustpolicyexceptions:#.key.appkey.name",
 	"trustpolicyexceptions:#.key.appkey.version",
-	"trustpolicyexceptions:#.key.cloudletpoolkey.organization",
-	"trustpolicyexceptions:#.key.cloudletpoolkey.name",
+	"trustpolicyexceptions:#.key.zonepoolkey.organization",
+	"trustpolicyexceptions:#.key.zonepoolkey.name",
 	"trustpolicyexceptions:#.key.name",
 	"trustpolicyexceptions:#.state",
 	"trustpolicyexceptions:#.outboundsecurityrules:#.protocol",
@@ -973,6 +1019,28 @@ var AllDataComments = map[string]string{
 	"platformfeatures:#.resourcequotaproperties:#.units":                         "Resource units",
 	"platformfeatures:#.resourcequotaproperties:#.alertthreshold":                "Generate alert when more than threshold percentage of resource is used",
 	"platformfeatures:#.deleteprepare":                                           "Preparing to be deleted",
+	"zones:#.fields":                                                             "Fields are used for the Update API to specify which fields to apply",
+	"zones:#.key.organization":                                                   "Organization owner of the Zone",
+	"zones:#.key.name":                                                           "Name of the Zone",
+	"zones:#.key.federatedorganization":                                          "Federated operator organization who shared this Zone",
+	"zones:#.description":                                                        "Description of Zone",
+	"zones:#.infraflavors:#.name":                                                "Name of the flavor on the Cloudlet",
+	"zones:#.infraflavors:#.vcpus":                                               "Number of VCPU cores on the Cloudlet",
+	"zones:#.infraflavors:#.ram":                                                 "Ram in MB on the Cloudlet",
+	"zones:#.infraflavors:#.disk":                                                "Amount of disk in GB on the Cloudlet",
+	"zones:#.infraflavors:#.propmap":                                             "OS Flavor Properties, if any",
+	"zones:#.location.latitude":                                                  "Latitude in WGS 84 coordinates",
+	"zones:#.location.longitude":                                                 "Longitude in WGS 84 coordinates",
+	"zones:#.location.horizontalaccuracy":                                        "Horizontal accuracy (radius in meters)",
+	"zones:#.location.verticalaccuracy":                                          "Vertical accuracy (meters)",
+	"zones:#.location.altitude":                                                  "On android only lat and long are guaranteed to be supplied Altitude in meters",
+	"zones:#.location.course":                                                    "Course (IOS) / bearing (Android) (degrees east relative to true north)",
+	"zones:#.location.speed":                                                     "Speed (IOS) / velocity (Android) (meters/sec)",
+	"zones:#.location.timestamp":                                                 "Timestamp",
+	"zones:#.objid":                                                              "Universally unique object ID",
+	"zones:#.deleteprepare":                                                      "Preparing to be deleted",
+	"zones:#.createdat":                                                          "Created at time",
+	"zones:#.updatedat":                                                          "Updated at time",
 	"cloudlets:#.fields":                                                         "Fields are used for the Update API to specify which fields to apply",
 	"cloudlets:#.key.organization":                                               "Organization of the cloudlet site",
 	"cloudlets:#.key.name":                                                       "Name of the cloudlet",
@@ -985,6 +1053,7 @@ var AllDataComments = map[string]string{
 	"cloudlets:#.location.course":                                                "Course (IOS) / bearing (Android) (degrees east relative to true north)",
 	"cloudlets:#.location.speed":                                                 "Speed (IOS) / velocity (Android) (meters/sec)",
 	"cloudlets:#.location.timestamp":                                             "Timestamp",
+	"cloudlets:#.zone":                                                           "Zone assignment, must be set to allow deployment to cloudlet",
 	"cloudlets:#.ipsupport":                                                      "Type of IP support provided by Cloudlet (see IpSupport), one of Unknown, Static, Dynamic",
 	"cloudlets:#.staticips":                                                      "List of static IPs for static IP support",
 	"cloudlets:#.numdynamicips":                                                  "Number of dynamic IPs available for dynamic IP support",
@@ -1081,6 +1150,7 @@ var AllDataComments = map[string]string{
 	"cloudlets:#.crmonedge":                                                      "CRM shall run on the edge site if true (required for restricted cloudlets), otherwise runs centrally (default)",
 	"cloudlets:#.objid":                                                          "Universally unique object ID",
 	"cloudlets:#.annotations":                                                    "Annotations",
+	"cloudlets:#.dbmodelid":                                                      "database version model ID",
 	"cloudletinfos:#.fields":                                                     "Fields are used for the Update API to specify which fields to apply",
 	"cloudletinfos:#.key.organization":                                           "Organization of the cloudlet site",
 	"cloudletinfos:#.key.name":                                                   "Name of the cloudlet",
@@ -1143,15 +1213,15 @@ var AllDataComments = map[string]string{
 	"cloudletinfos:#.activecrminstance":                                          "Active HA instance",
 	"cloudletinfos:#.standbycrm":                                                 "Denotes if info was reported by inactive",
 	"cloudletinfos:#.releaseversion":                                             "Cloudlet release version",
-	"cloudletpools:#.fields":                                                     "Fields are used for the Update API to specify which fields to apply",
-	"cloudletpools:#.key.organization":                                           "Name of the organization this pool belongs to",
-	"cloudletpools:#.key.name":                                                   "CloudletPool Name",
-	"cloudletpools:#.cloudlets:#.organization":                                   "Organization of the cloudlet site",
-	"cloudletpools:#.cloudlets:#.name":                                           "Name of the cloudlet",
-	"cloudletpools:#.cloudlets:#.federatedorganization":                          "Federated operator organization who shared this cloudlet",
-	"cloudletpools:#.createdat":                                                  "Created at time",
-	"cloudletpools:#.updatedat":                                                  "Updated at time",
-	"cloudletpools:#.deleteprepare":                                              "Preparing to be deleted",
+	"zonepools:#.fields":                                                         "Fields are used for the Update API to specify which fields to apply",
+	"zonepools:#.key.organization":                                               "Name of the organization this pool belongs to",
+	"zonepools:#.key.name":                                                       "ZonePool Name",
+	"zonepools:#.zones:#.organization":                                           "Organization owner of the Zone",
+	"zonepools:#.zones:#.name":                                                   "Name of the Zone",
+	"zonepools:#.zones:#.federatedorganization":                                  "Federated operator organization who shared this Zone",
+	"zonepools:#.createdat":                                                      "Created at time",
+	"zonepools:#.updatedat":                                                      "Updated at time",
+	"zonepools:#.deleteprepare":                                                  "Preparing to be deleted",
 	"networks:#.fields":                                                          "Fields are used for the Update API to specify which fields to apply",
 	"networks:#.key.cloudletkey.organization":                                    "Organization of the cloudlet site",
 	"networks:#.key.cloudletkey.name":                                            "Name of the cloudlet",
@@ -1166,27 +1236,19 @@ var AllDataComments = map[string]string{
 	"autoprovpolicies:#.key.name":                                                "Policy name",
 	"autoprovpolicies:#.deployclientcount":                                       "Minimum number of clients within the auto deploy interval to trigger deployment",
 	"autoprovpolicies:#.deployintervalcount":                                     "Number of intervals to check before triggering deployment",
-	"autoprovpolicies:#.cloudlets:#.key.organization":                            "Organization of the cloudlet site",
-	"autoprovpolicies:#.cloudlets:#.key.name":                                    "Name of the cloudlet",
-	"autoprovpolicies:#.cloudlets:#.key.federatedorganization":                   "Federated operator organization who shared this cloudlet",
-	"autoprovpolicies:#.cloudlets:#.loc.latitude":                                "Latitude in WGS 84 coordinates",
-	"autoprovpolicies:#.cloudlets:#.loc.longitude":                               "Longitude in WGS 84 coordinates",
-	"autoprovpolicies:#.cloudlets:#.loc.horizontalaccuracy":                      "Horizontal accuracy (radius in meters)",
-	"autoprovpolicies:#.cloudlets:#.loc.verticalaccuracy":                        "Vertical accuracy (meters)",
-	"autoprovpolicies:#.cloudlets:#.loc.altitude":                                "On android only lat and long are guaranteed to be supplied Altitude in meters",
-	"autoprovpolicies:#.cloudlets:#.loc.course":                                  "Course (IOS) / bearing (Android) (degrees east relative to true north)",
-	"autoprovpolicies:#.cloudlets:#.loc.speed":                                   "Speed (IOS) / velocity (Android) (meters/sec)",
-	"autoprovpolicies:#.cloudlets:#.loc.timestamp":                               "Timestamp",
+	"autoprovpolicies:#.zones:#.organization":                                    "Organization owner of the Zone",
+	"autoprovpolicies:#.zones:#.name":                                            "Name of the Zone",
+	"autoprovpolicies:#.zones:#.federatedorganization":                           "Federated operator organization who shared this Zone",
 	"autoprovpolicies:#.minactiveinstances":                                      "Minimum number of active instances for High-Availability",
 	"autoprovpolicies:#.maxinstances":                                            "Maximum number of instances (active or not)",
 	"autoprovpolicies:#.undeployclientcount":                                     "Number of active clients for the undeploy interval below which trigers undeployment, 0 (default) disables auto undeploy",
 	"autoprovpolicies:#.undeployintervalcount":                                   "Number of intervals to check before triggering undeployment",
 	"autoprovpolicies:#.deleteprepare":                                           "Preparing to be deleted",
-	"autoprovpolicycloudlets:#.key.organization":                                 "Name of the organization for the cluster that this policy will apply to",
-	"autoprovpolicycloudlets:#.key.name":                                         "Policy name",
-	"autoprovpolicycloudlets:#.cloudletkey.organization":                         "Organization of the cloudlet site",
-	"autoprovpolicycloudlets:#.cloudletkey.name":                                 "Name of the cloudlet",
-	"autoprovpolicycloudlets:#.cloudletkey.federatedorganization":                "Federated operator organization who shared this cloudlet",
+	"autoprovpolicyzones:#.key.organization":                                     "Name of the organization for the cluster that this policy will apply to",
+	"autoprovpolicyzones:#.key.name":                                             "Policy name",
+	"autoprovpolicyzones:#.zonekey.organization":                                 "Organization owner of the Zone",
+	"autoprovpolicyzones:#.zonekey.name":                                         "Name of the Zone",
+	"autoprovpolicyzones:#.zonekey.federatedorganization":                        "Federated operator organization who shared this Zone",
 	"autoscalepolicies:#.fields":                                                 "Fields are used for the Update API to specify which fields to apply",
 	"autoscalepolicies:#.key.organization":                                       "Name of the organization for the cluster that this policy will apply to",
 	"autoscalepolicies:#.key.name":                                               "Policy name",
@@ -1207,6 +1269,9 @@ var AllDataComments = map[string]string{
 	"clusterinsts:#.cloudletkey.organization":                                    "Organization of the cloudlet site",
 	"clusterinsts:#.cloudletkey.name":                                            "Name of the cloudlet",
 	"clusterinsts:#.cloudletkey.federatedorganization":                           "Federated operator organization who shared this cloudlet",
+	"clusterinsts:#.zonekey.organization":                                        "Organization owner of the Zone",
+	"clusterinsts:#.zonekey.name":                                                "Name of the Zone",
+	"clusterinsts:#.zonekey.federatedorganization":                               "Federated operator organization who shared this Zone",
 	"clusterinsts:#.flavor.name":                                                 "Flavor name",
 	"clusterinsts:#.liveness":                                                    "Liveness of instance (see Liveness), one of Unknown, Static, Dynamic, Autoprov",
 	"clusterinsts:#.auto":                                                        "Auto is set to true when automatically created by back-end (internal use only)",
@@ -1253,6 +1318,7 @@ var AllDataComments = map[string]string{
 	"clusterinsts:#.objid":                                                       "Universally unique object ID",
 	"clusterinsts:#.compatibilityversion":                                        "internal compatibility version",
 	"clusterinsts:#.annotations":                                                 "Annotations",
+	"clusterinsts:#.dbmodelid":                                                   "database version model ID",
 	"apps:#.fields":                                                              "Fields are used for the Update API to specify which fields to apply",
 	"apps:#.key.organization":                                                    "App developer organization",
 	"apps:#.key.name":                                                            "App name",
@@ -1317,6 +1383,9 @@ var AllDataComments = map[string]string{
 	"appinstances:#.cloudletkey.organization":                                    "Organization of the cloudlet site",
 	"appinstances:#.cloudletkey.name":                                            "Name of the cloudlet",
 	"appinstances:#.cloudletkey.federatedorganization":                           "Federated operator organization who shared this cloudlet",
+	"appinstances:#.zonekey.organization":                                        "Organization owner of the Zone",
+	"appinstances:#.zonekey.name":                                                "Name of the Zone",
+	"appinstances:#.zonekey.federatedorganization":                               "Federated operator organization who shared this Zone",
 	"appinstances:#.cloudletloc.latitude":                                        "Latitude in WGS 84 coordinates",
 	"appinstances:#.cloudletloc.longitude":                                       "Longitude in WGS 84 coordinates",
 	"appinstances:#.cloudletloc.horizontalaccuracy":                              "Horizontal accuracy (radius in meters)",
@@ -1369,6 +1438,7 @@ var AllDataComments = map[string]string{
 	"appinstances:#.enableipv6":                                                  "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting for VM Apps and auto-clusters, otherwise defaults to target cluster instance setting.",
 	"appinstances:#.objid":                                                       "Universally unique object ID",
 	"appinstances:#.annotations":                                                 "Annotations",
+	"appinstances:#.dbmodelid":                                                   "database version model ID",
 	"appinstrefs:#.key.organization":                                             "App developer organization",
 	"appinstrefs:#.key.name":                                                     "App name",
 	"appinstrefs:#.key.version":                                                  "App version",
@@ -1428,8 +1498,8 @@ var AllDataComments = map[string]string{
 	"trustpolicyexceptions:#.key.appkey.organization":                            "App developer organization",
 	"trustpolicyexceptions:#.key.appkey.name":                                    "App name",
 	"trustpolicyexceptions:#.key.appkey.version":                                 "App version",
-	"trustpolicyexceptions:#.key.cloudletpoolkey.organization":                   "Name of the organization this pool belongs to",
-	"trustpolicyexceptions:#.key.cloudletpoolkey.name":                           "CloudletPool Name",
+	"trustpolicyexceptions:#.key.zonepoolkey.organization":                       "Name of the organization this pool belongs to",
+	"trustpolicyexceptions:#.key.zonepoolkey.name":                               "ZonePool Name",
 	"trustpolicyexceptions:#.key.name":                                           "TrustPolicyExceptionKey name",
 	"trustpolicyexceptions:#.state":                                              "State of the exception within the approval process, one of Unknown, ApprovalRequested, Active, Rejected",
 	"trustpolicyexceptions:#.outboundsecurityrules:#.protocol":                   "TCP, UDP, ICMP",
@@ -1459,7 +1529,6 @@ var AllDataSpecialArgs = map[string]string{
 	"cloudletinfos:#.flavors:#.propmap":       "StringToString",
 	"cloudletinfos:#.properties":              "StringToString",
 	"cloudletinfos:#.status.msgs":             "StringArray",
-	"cloudletpools:#.fields":                  "StringArray",
 	"cloudlets:#.accessvars":                  "StringToString",
 	"cloudlets:#.allianceorgs":                "StringArray",
 	"cloudlets:#.annotations":                 "StringToString",
@@ -1488,4 +1557,7 @@ var AllDataSpecialArgs = map[string]string{
 	"vmpools:#.errors":                        "StringArray",
 	"vmpools:#.fields":                        "StringArray",
 	"vmpools:#.vms:#.flavor.propmap":          "StringToString",
+	"zonepools:#.fields":                      "StringArray",
+	"zones:#.fields":                          "StringArray",
+	"zones:#.infraflavors:#.propmap":          "StringToString",
 }

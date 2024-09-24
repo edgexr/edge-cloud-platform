@@ -72,6 +72,7 @@ func TestClusterInstApi(t *testing.T) {
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, cloudletData)
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
@@ -90,9 +91,10 @@ func TestClusterInstApi(t *testing.T) {
 	}
 	responder.SetSimulateClusterCreateFailure(false)
 	ccrm.SetSimulateClusterCreateFailure(false)
-	require.Equal(t, 0, len(apis.clusterInstApi.cache.Objs))
+	// 1 clusterInst is always present because of singlefakecloudlet, cloudletData[4]
+	require.Equal(t, 1, len(apis.clusterInstApi.cache.Objs))
 
-	testutil.InternalClusterInstTest(t, "cud", apis.clusterInstApi, testutil.ClusterInstData())
+	testutil.InternalClusterInstTest(t, "cud", apis.clusterInstApi, testutil.ClusterInstData(), testutil.WithCreatedClusterInstTestData(testutil.CreatedClusterInstData()))
 	// after cluster insts create, check that cloudlet refs data is correct.
 	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsData())
 
@@ -1002,6 +1004,7 @@ func TestDefaultMTCluster(t *testing.T) {
 	cloudlet.EnableDefaultServerlessCluster = true
 	cloudlet.GpuConfig = edgeproto.GPUConfig{}
 	cloudlet.ResTagMap = nil
+	cloudlet.Zone = ""
 	cloudletInfo := testutil.CloudletInfoData()[0]
 	cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_INIT
 	apis.cloudletInfoApi.Update(ctx, &cloudletInfo, 0)

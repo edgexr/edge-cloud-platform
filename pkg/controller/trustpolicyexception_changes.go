@@ -26,7 +26,7 @@ import (
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
-// TrustPolicyExceptions are tied to an App and a CloudletPool.
+// TrustPolicyExceptions are tied to an App and a ZonePool.
 // A TPE is only enabled for:
 // - cloudlets in the cloudletpool
 // - a cloudlet that has cloudlet.TrustPolicy set and is in the READY state
@@ -49,18 +49,25 @@ func (s *TrustPolicyExceptionApi) applyAllTPEsForAppInst(ctx context.Context, ap
 func (s *TrustPolicyExceptionApi) applyAllTPEsForCloudlet(ctx context.Context, cloudletKey edgeproto.CloudletKey) {
 	// A cloudlet may be part of many cloudlet pools,
 	// need cloudletpool key to get TPEs
-	log.SpanLog(ctx, log.DebugLevelApi, "applyTPEsForCloudlet", "cloudletKey", cloudletKey)
-	cloudletPoolList := s.all.cloudletPoolApi.cache.GetPoolsForCloudletKey(&cloudletKey)
-	for _, cloudletPoolKey := range cloudletPoolList {
-		s.applyAllTPEsForCloudletInPool(ctx, cloudletKey, cloudletPoolKey)
+	cloudlet := edgeproto.Cloudlet{}
+	if !s.all.cloudletApi.cache.Get(&cloudletKey, &cloudlet) {
+		return
+	}
+	zoneKey := cloudlet.GetZone()
+	log.SpanLog(ctx, log.DebugLevelApi, "applyTPEsForCloudlet", "cloudletKey", cloudletKey, "zoneKey", zoneKey)
+	if zoneKey.IsSet() {
+		zonePoolList := s.all.zonePoolApi.cache.GetPoolsForZoneKey(zoneKey)
+		for _, zonePoolKey := range zonePoolList {
+			s.applyAllTPEsForCloudletInPool(ctx, cloudletKey, zonePoolKey)
+		}
 	}
 }
 
 // If cloudlet pool memebership changes, update TPEs
-func (s *TrustPolicyExceptionApi) applyAllTPEsForCloudletInPool(ctx context.Context, cloudletKey edgeproto.CloudletKey, cloudletPoolKey edgeproto.CloudletPoolKey) {
-	// many TPEs may exist for a cloudlet pool
-	log.SpanLog(ctx, log.DebugLevelApi, "applyTPEsForCloudletInPool", "cloudletKey", cloudletKey, "cloudletPoolKey", cloudletPoolKey)
-	tpes := s.cache.GetForCloudletPool(&cloudletPoolKey)
+func (s *TrustPolicyExceptionApi) applyAllTPEsForCloudletInPool(ctx context.Context, cloudletKey edgeproto.CloudletKey, zonePoolKey edgeproto.ZonePoolKey) {
+	// many TPEs may exist for a zone pool
+	log.SpanLog(ctx, log.DebugLevelApi, "applyTPEsForCloudletInPool", "cloudletKey", cloudletKey, "zonePoolKey", zonePoolKey)
+	tpes := s.cache.GetForZonePool(&zonePoolKey)
 	for _, tpe := range tpes {
 		s.applyTPEForCloudlet(ctx, tpe.Key, cloudletKey)
 	}
@@ -68,13 +75,40 @@ func (s *TrustPolicyExceptionApi) applyAllTPEsForCloudletInPool(ctx context.Cont
 
 // If a TPE changes, update it
 func (s *TrustPolicyExceptionApi) applyTPE(ctx context.Context, key edgeproto.TrustPolicyExceptionKey) {
-	// TPE is specific to a cloudlet pool, apply to all cloudlets in pool
+	// TPE is specific to a zone pool, apply to all zones in pool
 	log.SpanLog(ctx, log.DebugLevelApi, "applyTPEChange", "tpeKey", key)
-	cloudletPool := edgeproto.CloudletPool{}
-	if s.all.cloudletPoolApi.cache.Get(&key.CloudletPoolKey, &cloudletPool) {
-		for _, cloudletKey := range cloudletPool.Cloudlets {
-			s.applyTPEForCloudlet(ctx, key, cloudletKey)
+	zonePool := edgeproto.ZonePool{}
+	if s.all.zonePoolApi.cache.Get(&key.ZonePoolKey, &zonePool) {
+		for _, zoneKey := range zonePool.Zones {
+			s.applyTPEForZone(ctx, key, *zoneKey)
 		}
+	}
+}
+
+func (s *TrustPolicyExceptionApi) applyAllTPEsForZoneInPool(ctx context.Context, zoneKey edgeproto.ZoneKey, zonePoolKey edgeproto.ZonePoolKey) {
+	log.SpanLog(ctx, log.DebugLevelApi, "applyTPEsForZoneInPool", "zoneKey", zoneKey, "zonePoolKey", zonePoolKey)
+	tpes := s.cache.GetForZonePool(&zonePoolKey)
+	for _, tpe := range tpes {
+		s.applyTPEForZone(ctx, tpe.Key, zoneKey)
+	}
+}
+
+// TPE applies to all cloudlets in a Zone
+func (s *TrustPolicyExceptionApi) applyTPEForZone(ctx context.Context, tpeKey edgeproto.TrustPolicyExceptionKey, zoneKey edgeproto.ZoneKey) {
+	log.SpanLog(ctx, log.DebugLevelApi, "applyCloudletTPEForZone", "tpeKey", tpeKey, "zoneKey", zoneKey)
+	cloudlets := []edgeproto.CloudletKey{}
+	filter := edgeproto.Cloudlet{}
+	filter.Key.Organization = zoneKey.Organization
+	filter.Key.FederatedOrganization = zoneKey.FederatedOrganization
+	s.all.cloudletApi.cache.Show(&filter, func(cloudlet *edgeproto.Cloudlet) error {
+		zone := cloudlet.GetZone()
+		if zone.IsSet() && zone.Matches(&zoneKey) {
+			cloudlets = append(cloudlets, cloudlet.Key)
+		}
+		return nil
+	})
+	for _, key := range cloudlets {
+		s.applyTPEForCloudlet(ctx, tpeKey, key)
 	}
 }
 
@@ -178,7 +212,7 @@ func (s *TrustPolicyExceptionApi) runTPEChange(ctx context.Context, tpeKey edgep
 			tpeState = edgeproto.TPEInstanceState{}
 			curTpe = &edgeproto.TrustPolicyException{}
 			cloudlet = &edgeproto.Cloudlet{}
-			cloudletPool := edgeproto.CloudletPool{}
+			zonePool := edgeproto.ZonePool{}
 			appInst := edgeproto.AppInst{}
 			clusterInst := edgeproto.ClusterInst{}
 			enable = true
@@ -206,8 +240,8 @@ func (s *TrustPolicyExceptionApi) runTPEChange(ctx context.Context, tpeKey edgep
 			if !s.all.cloudletApi.store.STMGet(stm, &cloudletKey, cloudlet) {
 				deleteReason = cloudletKey.NotFoundError()
 			}
-			if !s.all.cloudletPoolApi.store.STMGet(stm, &tpeKey.CloudletPoolKey, &cloudletPool) {
-				deleteReason = tpeKey.CloudletPoolKey.NotFoundError()
+			if !s.all.zonePoolApi.store.STMGet(stm, &tpeKey.ZonePoolKey, &zonePool) {
+				deleteReason = tpeKey.ZonePoolKey.NotFoundError()
 			}
 			if !s.all.appInstApi.store.STMGet(stm, &appInstKey, &appInst) {
 				deleteReason = appInstKey.NotFoundError()
@@ -231,8 +265,8 @@ func (s *TrustPolicyExceptionApi) runTPEChange(ctx context.Context, tpeKey edgep
 				curTpe.State,
 				clusterInst.IpAccess,
 				cloudlet.TrustPolicy,
-				&cloudletKey,
-				cloudletPool.Cloudlets,
+				cloudlet.GetZone(),
+				zonePool.Zones,
 			)
 			// Note that RunCount is used to trigger the CRM, as we
 			// need something that changes every iteration over the
@@ -285,8 +319,8 @@ func isTPEInstanceEnabled(
 	tpeState edgeproto.TrustPolicyExceptionState,
 	clusterInstIPAccess edgeproto.IpAccess,
 	cloudletTrustPolicy string,
-	cloudletKey *edgeproto.CloudletKey,
-	cloudletPoolMembers []edgeproto.CloudletKey,
+	zoneKey *edgeproto.ZoneKey,
+	zonePoolMembers []*edgeproto.ZoneKey,
 ) (bool, string) {
 	// TODO: do we care about cloudlet maintenance state or ready state?
 	if appInstState != edgeproto.TrackedState_READY {
@@ -301,15 +335,15 @@ func isTPEInstanceEnabled(
 	if cloudletTrustPolicy == "" {
 		return false, "cloudlet has no trust policy"
 	}
-	cloudletInPool := false
-	for _, key := range cloudletPoolMembers {
-		if key.Matches(cloudletKey) {
-			cloudletInPool = true
+	zoneInPool := false
+	for _, key := range zonePoolMembers {
+		if key.Matches(zoneKey) {
+			zoneInPool = true
 			break
 		}
 	}
-	if !cloudletInPool {
-		return false, "cloudlet not in trust policy exception cloudlet pool"
+	if !zoneInPool {
+		return false, "zone not in trust policy exception zone pool"
 	}
 	return true, ""
 }

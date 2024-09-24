@@ -117,7 +117,7 @@ func (e *EdgeEventsHandlerPlugin) SendAvailableAppInst(ctx context.Context, app 
 				}
 				// compare new appinst with current appinst to see which is better
 				// use client's carrier name to perform the search
-				foundList := uaemcommon.SearchAppInsts(ctx, clientinfo.carrier, app, &clientinfo.lastLoc, carrierData, 1)
+				foundList := uaemcommon.SearchAppInsts(ctx, clientinfo.carrier, app, &clientinfo.lastLoc, carrierData, 1, nil)
 				if foundList == nil || len(foundList) != 1 {
 					continue
 				}

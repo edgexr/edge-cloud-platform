@@ -57,9 +57,9 @@ func TestAppInstClientApi(t *testing.T) {
 	ctx := log.StartTestSpan(context.Background())
 	testSvcs := testinit(ctx, t)
 	defer testfinish(testSvcs)
-	cplookup := &node.CloudletPoolCache{}
+	cplookup := &node.ZonePoolCache{}
 	cplookup.Init()
-	nodeMgr.CloudletPoolLookup = cplookup
+	nodeMgr.ZonePoolLookup = cplookup
 
 	dummy := regiondata.InMemoryStore{}
 	dummy.Start()

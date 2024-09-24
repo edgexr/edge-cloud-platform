@@ -63,6 +63,9 @@ func AppInstHideTags(in *edgeproto.AppInst) {
 	if _, found := tags["nocmp"]; found {
 		in.ObjId = ""
 	}
+	if _, found := tags["nocmp"]; found {
+		in.DbModelId = 0
+	}
 }
 
 func AppInstInfoHideTags(in *edgeproto.AppInstInfo) {
@@ -855,9 +858,9 @@ var AppInstOptionalArgs = []string{
 	"appvers",
 	"cluster",
 	"clusterorg",
-	"cloudletorg",
-	"cloudlet",
-	"federatedorg",
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
 	"flavor",
 	"cloudletflavor",
 	"crmoverride",
@@ -873,6 +876,7 @@ var AppInstOptionalArgs = []string{
 	"enableipv6",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var AppInstAliasArgs = []string{
 	"appinstname=key.name",
@@ -899,6 +903,9 @@ var AppInstComments = map[string]string{
 	"cloudletorg":                    "Organization of the cloudlet site",
 	"cloudlet":                       "Name of the cloudlet",
 	"federatedorg":                   "Federated operator organization who shared this cloudlet",
+	"zonekey.organization":           "Organization owner of the Zone",
+	"zonekey.name":                   "Name of the Zone",
+	"zonekey.federatedorganization":  "Federated operator organization who shared this Zone",
 	"cloudletloc.latitude":           "Latitude in WGS 84 coordinates",
 	"cloudletloc.longitude":          "Longitude in WGS 84 coordinates",
 	"cloudletloc.horizontalaccuracy": "Horizontal accuracy (radius in meters)",
@@ -953,6 +960,7 @@ var AppInstComments = map[string]string{
 	"enableipv6":                     "Enable IPv6 addressing, requires platform and cloudlet support, defaults to platform setting for VM Apps and auto-clusters, otherwise defaults to target cluster instance setting.",
 	"objid":                          "Universally unique object ID",
 	"annotations":                    "Annotations, specify annotations:empty=true to clear",
+	"dbmodelid":                      "database version model ID",
 }
 var AppInstSpecialArgs = map[string]string{
 	"annotations":              "StringToString",
@@ -1161,9 +1169,9 @@ var CreateAppInstOptionalArgs = []string{
 	"appvers",
 	"cluster",
 	"clusterorg",
-	"cloudletorg",
-	"cloudlet",
-	"federatedorg",
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
 	"flavor",
 	"cloudletflavor",
 	"crmoverride",
@@ -1175,6 +1183,7 @@ var CreateAppInstOptionalArgs = []string{
 	"enableipv6",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1185,9 +1194,9 @@ var DeleteAppInstOptionalArgs = []string{
 	"appvers",
 	"cluster",
 	"clusterorg",
-	"cloudletorg",
-	"cloudlet",
-	"federatedorg",
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
 	"flavor",
 	"cloudletflavor",
 	"crmoverride",
@@ -1201,6 +1210,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"enableipv6",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1211,9 +1221,9 @@ var RefreshAppInstOptionalArgs = []string{
 	"appvers",
 	"cluster",
 	"clusterorg",
-	"cloudletorg",
-	"cloudlet",
-	"federatedorg",
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
 	"cloudletflavor",
 	"crmoverride",
 	"forceupdate",
@@ -1223,12 +1233,16 @@ var RefreshAppInstOptionalArgs = []string{
 	"enableipv6",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"appinstname",
 	"appinstorg",
 }
 var UpdateAppInstOptionalArgs = []string{
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
 	"cloudletflavor",
 	"crmoverride",
 	"configs:empty",
@@ -1240,4 +1254,5 @@ var UpdateAppInstOptionalArgs = []string{
 	"enableipv6",
 	"objid",
 	"annotations",
+	"dbmodelid",
 }

@@ -32,6 +32,7 @@ type AppInstWorker struct {
 	appKey      edgeproto.AppKey
 	clusterKey  edgeproto.ClusterKey
 	cloudletKey edgeproto.CloudletKey
+	zoneKey     edgeproto.ZoneKey // TODO: update if AppInst zonekey changes
 	interval    time.Duration
 	send        func(ctx context.Context, metric *edgeproto.Metric) bool
 	waitGrp     sync.WaitGroup
@@ -51,6 +52,7 @@ func NewAppInstWorker(ctx context.Context, interval time.Duration, send func(ctx
 	p.appKey = appinst.AppKey
 	p.clusterKey = appinst.ClusterKey
 	p.cloudletKey = appinst.CloudletKey
+	p.zoneKey = appinst.ZoneKey
 	log.SpanLog(ctx, log.DebugLevelMetrics, "NewAppInstWorker", "app", appinst)
 	return &p
 }
@@ -88,7 +90,7 @@ func (p *AppInstWorker) sendMetrics() {
 		return
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "metrics for app", "key", key, "metrics", stat)
-	appMetrics := MarshalAppMetrics(&key, &stat, "")
+	appMetrics := MarshalAppMetrics(&key, &stat, "", p.zoneKey)
 	for _, metric := range appMetrics {
 		p.send(context.Background(), metric)
 	}

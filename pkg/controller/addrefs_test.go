@@ -87,34 +87,34 @@ func (s *AddRefsDataGen) GetAddAppAutoProvPolicyTestObj() (*edgeproto.AppAutoPro
 	return &testObj, supportData
 }
 
-func (s *AddRefsDataGen) GetAddAutoProvPolicyCloudletTestObj() (*edgeproto.AutoProvPolicyCloudlet, *testSupportData) {
-	cloudlet := testutil.CloudletData()[0]
+func (s *AddRefsDataGen) GetAddAutoProvPolicyZoneTestObj() (*edgeproto.AutoProvPolicyZone, *testSupportData) {
+	zone := testutil.ZoneData()[0]
 	autoProvPolicy := testutil.AutoProvPolicyData()[0]
-	autoProvPolicy.Cloudlets = nil
+	autoProvPolicy.Zones = nil
 
-	testObj := edgeproto.AutoProvPolicyCloudlet{
-		Key:         autoProvPolicy.Key,
-		CloudletKey: cloudlet.Key,
+	testObj := edgeproto.AutoProvPolicyZone{
+		Key:     autoProvPolicy.Key,
+		ZoneKey: zone.Key,
 	}
 	supportData := &testSupportData{}
-	supportData.Cloudlets = []edgeproto.Cloudlet{cloudlet}
+	supportData.Zones = []edgeproto.Zone{zone}
 	supportData.AutoProvPolicies = []edgeproto.AutoProvPolicy{autoProvPolicy}
 	return &testObj, supportData
 }
 
-func (s *AddRefsDataGen) GetAddCloudletPoolMemberTestObj() (*edgeproto.CloudletPoolMember, *testSupportData) {
-	cloudlet := testutil.CloudletData()[0]
-	cloudletPool := testutil.CloudletPoolData()[0]
-	cloudletPool.Key.Organization = cloudlet.Key.Organization
-	cloudletPool.Cloudlets = nil
+func (s *AddRefsDataGen) GetAddZonePoolMemberTestObj() (*edgeproto.ZonePoolMember, *testSupportData) {
+	zone := testutil.ZoneData()[0]
+	zonePool := testutil.ZonePoolData()[0]
+	zonePool.Key.Organization = zone.Key.Organization
+	zonePool.Zones = nil
 
-	testObj := edgeproto.CloudletPoolMember{
-		Key:      cloudletPool.Key,
-		Cloudlet: cloudlet.Key,
+	testObj := edgeproto.ZonePoolMember{
+		Key:  zonePool.Key,
+		Zone: zone.Key,
 	}
 	supportData := &testSupportData{}
-	supportData.Cloudlets = []edgeproto.Cloudlet{cloudlet}
-	supportData.CloudletPools = []edgeproto.CloudletPool{cloudletPool}
+	supportData.Zones = []edgeproto.Zone{zone}
+	supportData.ZonePools = []edgeproto.ZonePool{zonePool}
 	return &testObj, supportData
 }
 
@@ -154,11 +154,13 @@ func (s *AddRefsDataGen) GetCreateAppTestObj() (*edgeproto.App, *testSupportData
 
 func (s *AddRefsDataGen) GetCreateAppInstTestObj() (*edgeproto.AppInst, *testSupportData) {
 	app := testutil.AppData()[0]
+	app.Deployment = cloudcommon.DeploymentTypeKubernetes
 	features := testutil.PlatformFeaturesData()[0]
 	cloudlet := testutil.CloudletData()[0]
 	cloudletInfo := testutil.CloudletInfoData()[0]
 	clusterInst := testutil.ClusterInstData()[0]
 	clusterInst.CloudletKey = cloudlet.Key
+	clusterInst.Deployment = cloudcommon.DeploymentTypeKubernetes
 	clusterInst.State = edgeproto.TrackedState_READY
 	flavor := testutil.FlavorData()[0]
 
@@ -181,17 +183,15 @@ func (s *AddRefsDataGen) GetCreateAppInstTestObj() (*edgeproto.AppInst, *testSup
 }
 
 func (s *AddRefsDataGen) GetCreateAutoProvPolicyTestObj() (*edgeproto.AutoProvPolicy, *testSupportData) {
-	cloudlet := testutil.CloudletData()[0]
+	zone := testutil.ZoneData()[0]
 
 	autoProvPolicy := testutil.AutoProvPolicyData()[0]
-	autoProvPolicy.Cloudlets = []*edgeproto.AutoProvCloudlet{
-		&edgeproto.AutoProvCloudlet{
-			Key: cloudlet.Key,
-		},
+	autoProvPolicy.Zones = []*edgeproto.ZoneKey{
+		&zone.Key,
 	}
 
 	supportData := &testSupportData{}
-	supportData.Cloudlets = []edgeproto.Cloudlet{cloudlet}
+	supportData.Zones = []edgeproto.Zone{zone}
 	return &autoProvPolicy, supportData
 }
 
@@ -211,6 +211,8 @@ func (s *AddRefsDataGen) GetCreateCloudletTestObj() (*edgeproto.Cloudlet, *testS
 	trustPolicy.Key.Organization = cloudlet.Key.Organization
 	gpuDriver := testutil.GPUDriverData()[0]
 	gpuDriver.Key.Organization = cloudlet.Key.Organization
+	zone := testutil.ZoneData()[0]
+	zone.Key.Organization = cloudlet.Key.Organization
 	vmpool := testutil.VMPoolData()[0]
 	vmpool.Key.Organization = cloudlet.Key.Organization
 
@@ -218,6 +220,7 @@ func (s *AddRefsDataGen) GetCreateCloudletTestObj() (*edgeproto.Cloudlet, *testS
 	cloudlet.ResTagMap = map[string]*edgeproto.ResTagTableKey{"gpu": &resTagTable.Key}
 	cloudlet.TrustPolicy = trustPolicy.Key.Name
 	cloudlet.GpuConfig.Driver = gpuDriver.Key
+	cloudlet.Zone = zone.Key.Name
 	cloudlet.VmPool = vmpool.Key.Name
 	cloudlet.PlatformType = platform.PlatformTypeFakeVMPool
 	cloudlet.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
@@ -227,21 +230,22 @@ func (s *AddRefsDataGen) GetCreateCloudletTestObj() (*edgeproto.Cloudlet, *testS
 	supportData.ResTagTables = []edgeproto.ResTagTable{resTagTable}
 	supportData.TrustPolicies = []edgeproto.TrustPolicy{trustPolicy}
 	supportData.GpuDrivers = []edgeproto.GPUDriver{gpuDriver}
+	supportData.Zones = []edgeproto.Zone{zone}
 	supportData.VmPools = []edgeproto.VMPool{vmpool}
 	supportData.PlatformFeatures = []edgeproto.PlatformFeatures{features}
 	return &cloudlet, supportData
 }
 
-func (s *AddRefsDataGen) GetCreateCloudletPoolTestObj() (*edgeproto.CloudletPool, *testSupportData) {
-	cloudlet := testutil.CloudletData()[0]
+func (s *AddRefsDataGen) GetCreateZonePoolTestObj() (*edgeproto.ZonePool, *testSupportData) {
+	zone := testutil.ZoneData()[0]
 
-	cloudletPool := testutil.CloudletPoolData()[0]
-	cloudletPool.Key.Organization = cloudlet.Key.Organization
-	cloudletPool.Cloudlets = []edgeproto.CloudletKey{cloudlet.Key}
+	zonePool := testutil.ZonePoolData()[0]
+	zonePool.Key.Organization = zone.Key.Organization
+	zonePool.Zones = []*edgeproto.ZoneKey{&zone.Key}
 
 	supportData := &testSupportData{}
-	supportData.Cloudlets = []edgeproto.Cloudlet{cloudlet}
-	return &cloudletPool, supportData
+	supportData.Zones = []edgeproto.Zone{zone}
+	return &zonePool, supportData
 }
 
 func (s *AddRefsDataGen) GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, *testSupportData) {
@@ -284,15 +288,15 @@ func (s *AddRefsDataGen) GetCreateNetworkTestObj() (*edgeproto.Network, *testSup
 }
 
 func (s *AddRefsDataGen) GetCreateTrustPolicyExceptionTestObj() (*edgeproto.TrustPolicyException, *testSupportData) {
-	cloudletPool := testutil.CloudletPoolData()[0]
+	zonePool := testutil.ZonePoolData()[0]
 	app := testutil.AppData()[0]
 
 	tpe := testutil.TrustPolicyExceptionData()[0]
 	tpe.Key.AppKey = app.Key
-	tpe.Key.CloudletPoolKey = cloudletPool.Key
+	tpe.Key.ZonePoolKey = zonePool.Key
 
 	supportData := &testSupportData{}
-	supportData.CloudletPools = []edgeproto.CloudletPool{cloudletPool}
+	supportData.ZonePools = []edgeproto.ZonePool{zonePool}
 	supportData.Apps = []edgeproto.App{app}
 	return &tpe, supportData
 }
@@ -335,15 +339,12 @@ func (s *AddRefsDataGen) GetUpdateAutoProvPolicyTestObj() (*edgeproto.AutoProvPo
 	testObj, supportData := s.GetCreateAutoProvPolicyTestObj()
 	// copy and clear refs
 	updatable := *testObj
-	updatable.Cloudlets = nil
+	updatable.Zones = nil
 
 	supportData.AutoProvPolicies = []edgeproto.AutoProvPolicy{updatable}
 
 	testObj.Fields = []string{
-		edgeproto.AutoProvPolicyFieldCloudlets,
-		edgeproto.AutoProvPolicyFieldCloudletsKey,
-		edgeproto.AutoProvPolicyFieldCloudletsKeyName,
-		edgeproto.AutoProvPolicyFieldCloudletsKeyOrganization,
+		edgeproto.AutoProvPolicyFieldZones,
 	}
 	return testObj, supportData
 }
@@ -369,15 +370,15 @@ func (s *AddRefsDataGen) GetUpdateCloudletTestObj() (*edgeproto.Cloudlet, *testS
 	return testObj, supportData
 }
 
-func (s *AddRefsDataGen) GetUpdateCloudletPoolTestObj() (*edgeproto.CloudletPool, *testSupportData) {
-	testObj, supportData := s.GetCreateCloudletPoolTestObj()
+func (s *AddRefsDataGen) GetUpdateZonePoolTestObj() (*edgeproto.ZonePool, *testSupportData) {
+	testObj, supportData := s.GetCreateZonePoolTestObj()
 	// copy and clear refs
 	updatable := *testObj
-	updatable.Cloudlets = nil
+	updatable.Zones = nil
 
-	supportData.CloudletPools = []edgeproto.CloudletPool{updatable}
+	supportData.ZonePools = []edgeproto.ZonePool{updatable}
 
-	testObj.Fields = []string{edgeproto.CloudletPoolFieldCloudlets}
+	testObj.Fields = []string{edgeproto.ZonePoolFieldZones}
 	return testObj, supportData
 }
 

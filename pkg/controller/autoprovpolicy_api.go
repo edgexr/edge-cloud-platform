@@ -40,8 +40,8 @@ type AutoProvPolicyApi struct {
 }
 
 type deployNowKey struct {
-	AppKey      edgeproto.AppKey
-	CloudletKey edgeproto.CloudletKey
+	AppKey  edgeproto.AppKey
+	ZoneKey edgeproto.ZoneKey
 }
 
 func NewAutoProvPolicyApi(sync *regiondata.Sync, all *AllApis) *AutoProvPolicyApi {
@@ -63,14 +63,14 @@ func (s *AutoProvPolicyApi) CreateAutoProvPolicy(ctx context.Context, in *edgepr
 	if err := in.Validate(nil); err != nil {
 		return &edgeproto.Result{}, err
 	}
-	if int(in.MinActiveInstances) > len(in.Cloudlets) {
-		return &edgeproto.Result{}, fmt.Errorf("Minimum Active Instances cannot be larger than the number of Cloudlets")
+	if int(in.MinActiveInstances) > len(in.Zones) {
+		return &edgeproto.Result{}, fmt.Errorf("Minimum Active Instances cannot be larger than the number of Zones")
 	}
 	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		if s.store.STMGet(stm, &in.Key, nil) {
 			return in.Key.ExistsError()
 		}
-		if err := s.configureCloudlets(stm, in); err != nil {
+		if err := s.configureZones(stm, in); err != nil {
 			return err
 		}
 		s.store.STMPut(stm, in)
@@ -93,7 +93,7 @@ func (s *AutoProvPolicyApi) UpdateAutoProvPolicy(ctx context.Context, in *edgepr
 		if changed == 0 {
 			return nil
 		}
-		if err := s.configureCloudlets(stm, &cur); err != nil {
+		if err := s.configureZones(stm, &cur); err != nil {
 			return err
 		}
 		s.store.STMPut(stm, &cur)
@@ -152,22 +152,20 @@ func (s *AutoProvPolicyApi) ShowAutoProvPolicy(in *edgeproto.AutoProvPolicy, cb 
 	return err
 }
 
-func (s *AutoProvPolicyApi) AddAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+func (s *AutoProvPolicyApi) AddAutoProvPolicyZone(ctx context.Context, in *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error) {
 	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		cur := edgeproto.AutoProvPolicy{}
 		if !s.store.STMGet(stm, &in.Key, &cur) {
 			return in.Key.NotFoundError()
 		}
 
-		provCloudlet := edgeproto.AutoProvCloudlet{}
-		provCloudlet.Key = in.CloudletKey
-		for ii, _ := range cur.Cloudlets {
-			if cur.Cloudlets[ii].Key.Matches(&in.CloudletKey) {
-				return fmt.Errorf("Cloudlet already part of policy")
+		for ii, _ := range cur.Zones {
+			if cur.Zones[ii].Matches(&in.ZoneKey) {
+				return fmt.Errorf("zone already part of policy")
 			}
 		}
-		cur.Cloudlets = append(cur.Cloudlets, &provCloudlet)
-		if err := s.configureCloudlets(stm, &cur); err != nil {
+		cur.Zones = append(cur.Zones, &in.ZoneKey)
+		if err := s.configureZones(stm, &cur); err != nil {
 			return err
 		}
 		s.store.STMPut(stm, &cur)
@@ -176,16 +174,16 @@ func (s *AutoProvPolicyApi) AddAutoProvPolicyCloudlet(ctx context.Context, in *e
 	return &edgeproto.Result{}, err
 }
 
-func (s *AutoProvPolicyApi) RemoveAutoProvPolicyCloudlet(ctx context.Context, in *edgeproto.AutoProvPolicyCloudlet) (*edgeproto.Result, error) {
+func (s *AutoProvPolicyApi) RemoveAutoProvPolicyZone(ctx context.Context, in *edgeproto.AutoProvPolicyZone) (*edgeproto.Result, error) {
 	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		cur := edgeproto.AutoProvPolicy{}
 		if !s.store.STMGet(stm, &in.Key, &cur) {
 			return in.Key.NotFoundError()
 		}
 		changed := false
-		for ii, cloudlet := range cur.Cloudlets {
-			if cloudlet.Key.Matches(&in.CloudletKey) {
-				cur.Cloudlets = append(cur.Cloudlets[:ii], cur.Cloudlets[ii+1:]...)
+		for ii, zoneKey := range cur.Zones {
+			if zoneKey.Matches(&in.ZoneKey) {
+				cur.Zones = append(cur.Zones[:ii], cur.Zones[ii+1:]...)
 				changed = true
 				break
 			}
@@ -214,8 +212,8 @@ func (s *AutoProvPolicyApi) RecvAutoProvCounts(ctx context.Context, msg *edgepro
 		target := msg.Counts[0]
 		log.SpanLog(ctx, log.DebugLevelMetrics, "auto-prov count recv immedate", "target", target)
 		deployNow := deployNowKey{
-			AppKey:      target.AppKey,
-			CloudletKey: target.CloudletKey,
+			AppKey:  target.AppKey,
+			ZoneKey: target.ZoneKey,
 		}
 		s.deployImmWorkers.NeedsWork(ctx, deployNow)
 		return
@@ -235,7 +233,7 @@ func (s *AutoProvPolicyApi) deployImmediate(ctx context.Context, k interface{}) 
 		return
 	}
 	log.SetContextTags(ctx, key.AppKey.GetTags())
-	log.SetContextTags(ctx, key.CloudletKey.GetTags())
+	log.SetContextTags(ctx, key.ZoneKey.GetTags())
 	log.SpanLog(ctx, log.DebugLevelApi, "deploy immediate", "key", key)
 	md := metadata.Pairs(
 		cloudcommon.CallerAutoProv, "",
@@ -244,9 +242,9 @@ func (s *AutoProvPolicyApi) deployImmediate(ctx context.Context, k interface{}) 
 		cloudcommon.AutoProvPolicyName, "dme-process-now")
 	ctx = metadata.NewIncomingContext(ctx, md)
 	appInst := edgeproto.AppInst{
-		Key:         cloudcommon.GetAutoProvAppInstKey(&key.AppKey, &key.CloudletKey),
-		AppKey:      key.AppKey,
-		CloudletKey: key.CloudletKey,
+		Key:     cloudcommon.GetAutoProvAppInstKey(&key.AppKey, &key.ZoneKey),
+		AppKey:  key.AppKey,
+		ZoneKey: key.ZoneKey,
 	}
 	stream := streamoutAppInst{
 		ctx:      ctx,
@@ -271,17 +269,22 @@ func (s *streamoutAppInst) Context() context.Context {
 	return s.ctx
 }
 
-func (s *AutoProvPolicyApi) configureCloudlets(stm concurrency.STM, policy *edgeproto.AutoProvPolicy) error {
-	// make sure cloudlets exist and location is copied
-	for ii, _ := range policy.Cloudlets {
-		cloudlet := edgeproto.Cloudlet{}
-		if !s.all.cloudletApi.store.STMGet(stm, &policy.Cloudlets[ii].Key, &cloudlet) {
-			return policy.Cloudlets[ii].Key.NotFoundError()
+func (s *AutoProvPolicyApi) configureZones(stm concurrency.STM, policy *edgeproto.AutoProvPolicy) error {
+	// make sure Zones exist and location is copied
+	// check for duplicates
+	dups := map[edgeproto.ZoneKey]struct{}{}
+	for ii, _ := range policy.Zones {
+		zone := edgeproto.Zone{}
+		if !s.all.zoneApi.store.STMGet(stm, policy.Zones[ii], &zone) {
+			return policy.Zones[ii].NotFoundError()
 		}
-		if cloudlet.DeletePrepare {
-			return cloudlet.Key.BeingDeletedError()
+		if zone.DeletePrepare {
+			return zone.Key.BeingDeletedError()
 		}
-		policy.Cloudlets[ii].Loc = cloudlet.Location
+		if _, found := dups[zone.Key]; found {
+			return fmt.Errorf("duplicate zone %s in list", zone.Key.GetKeyString())
+		}
+		dups[zone.Key] = struct{}{}
 	}
 	return nil
 }
@@ -298,7 +301,7 @@ func (s *AutoProvPolicyApi) configureCloudlets(stm concurrency.STM, policy *edge
 // AppInst associated with an App (because making a change to an AppInst
 // will update the refs, which will necessarily invalidate any further
 // API calls for that App). This is highly sub-optimal when we
-// should be able to create AppInsts on multiple Cloudlets (for the same
+// should be able to create AppInsts on multiple Zones (for the same
 // App) in parallel.
 // The second way we are using here is to validate the intent of the
 // API call. Based on the grpc metadata passed along with the API call,
@@ -313,7 +316,7 @@ func (s *AutoProvPolicyApi) configureCloudlets(stm concurrency.STM, policy *edge
 // to ensure that we do not create more than the min, or delete below
 // the max.
 func (s *AutoProvPolicyApi) appInstCheck(ctx context.Context, stm concurrency.STM, action cloudcommon.Action, app *edgeproto.App, inst *edgeproto.AppInst) error {
-	log.SpanLog(ctx, log.DebugLevelApi, "autoprov check", "inst", inst.Key)
+	log.SpanLog(ctx, log.DebugLevelApi, "autoprov check", "inst", inst.Key, "zone", inst.ZoneKey)
 	// Check caller from GRPC metadata
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -352,13 +355,13 @@ func (s *AutoProvPolicyApi) appInstCheck(ctx context.Context, stm concurrency.ST
 	s.all.appInstRefsApi.store.STMGet(stm, &app.Key, &refs)
 
 	if action == cloudcommon.Create {
-		// Make sure that no AppInst already exists on the Cloudlet.
-		// The goal of AutoProv is to provide Cloudlet redundancy and
-		// best service by distributing instances across Cloudlets, so we
+		// Make sure that no AppInst already exists on the Zone.
+		// The goal of AutoProv is to provide Zone redundancy and
+		// best service by distributing instances across Zones, so we
 		// avoid auto-provisioning AppInsts when one already exists on the
-		// Cloudlet. Additionally this avoids a race condition for the
+		// Zone. Additionally this avoids a race condition for the
 		// immediate deployment from DME where multiple clients may trigger
-		// multiple calls from the DME to deploy to the same cloudlet.
+		// multiple calls from the DME to deploy to the same zone.
 		// It does not matter if the existing AppInst was manually or
 		// automatically created.
 		for k, _ := range refs.Insts {
@@ -371,8 +374,8 @@ func (s *AutoProvPolicyApi) appInstCheck(ctx context.Context, stm concurrency.ST
 				log.SpanLog(ctx, log.DebugLevelApi, "unexpected missing AppInst from App refs", "appInst", instKey)
 				continue
 			}
-			if inst.CloudletKey.Matches(&refAppInst.CloudletKey) {
-				return fmt.Errorf("already an AppInst on Cloudlet %s", inst.CloudletKey.GetKeyString())
+			if inst.ZoneKey.Matches(&refAppInst.ZoneKey) {
+				return fmt.Errorf("already an AppInst on Zone %s", refAppInst.ZoneKey.GetKeyString())
 			}
 		}
 	}
@@ -395,7 +398,7 @@ func (s *AutoProvPolicyApi) appInstCheck(ctx context.Context, stm concurrency.ST
 
 // The intent is to satisfy client demand, so the only limitations
 // are to not exceed the min or max constraints on any of the
-// policies governing the target AppInst's Cloudlet.
+// policies governing the target AppInst's Zone.
 func (s *AutoProvPolicyApi) checkDemand(ctx context.Context, stm concurrency.STM, action cloudcommon.Action, app *edgeproto.App, inst *edgeproto.AppInst, refs *edgeproto.AppInstRefs) error {
 	onlineOnly := false
 	if action == cloudcommon.Delete {
@@ -415,7 +418,7 @@ func (s *AutoProvPolicyApi) checkDemand(ctx context.Context, stm concurrency.STM
 	// which is for any AppInst (regardless of online state).
 	// For delete, we are bounded by the MinActiveInstances value,
 	// which is for online AppInsts only.
-	countsByCloudlet, err := s.getAppInstCountsForAutoProv(ctx, stm, refs, onlineOnly)
+	countsByZone, err := s.getAppInstCountsForAutoProv(ctx, stm, refs, onlineOnly)
 	if err != nil {
 		return err
 	}
@@ -431,11 +434,11 @@ func (s *AutoProvPolicyApi) checkDemand(ctx context.Context, stm concurrency.STM
 		}
 		withinPolicy := false
 		count := 0
-		for _, apCloudlet := range policy.Cloudlets {
-			if apCloudlet.Key.Matches(&inst.CloudletKey) {
+		for _, zoneKey := range policy.Zones {
+			if zoneKey.Matches(&inst.ZoneKey) {
 				withinPolicy = true
 			}
-			count += countsByCloudlet[apCloudlet.Key]
+			count += countsByZone[*zoneKey]
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "autoprov check demand stats", "action", action.String(), "inst", inst.Key, "policy", pname, "count", count, "withinPolicy", withinPolicy, "min", policy.MinActiveInstances, "max", policy.MaxInstances)
 		if !withinPolicy {
@@ -467,7 +470,7 @@ func (s *AutoProvPolicyApi) checkMinMax(ctx context.Context, stm concurrency.STM
 	if action == cloudcommon.Create {
 		onlineOnly = true
 	}
-	countsByCloudlet, err := s.getAppInstCountsForAutoProv(ctx, stm, refs, onlineOnly)
+	countsByZone, err := s.getAppInstCountsForAutoProv(ctx, stm, refs, onlineOnly)
 	if err != nil {
 		return err
 	}
@@ -480,8 +483,8 @@ func (s *AutoProvPolicyApi) checkMinMax(ctx context.Context, stm concurrency.STM
 		return policyKey.NotFoundError()
 	}
 	count := 0
-	for _, apCloudlet := range policy.Cloudlets {
-		count += countsByCloudlet[apCloudlet.Key]
+	for _, zoneKey := range policy.Zones {
+		count += countsByZone[*zoneKey]
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "autoprov check minmax stats", "action", action.String(), "inst", inst.Key, "policy", policyName, "count", count, "min", policy.MinActiveInstances, "max", policy.MaxInstances)
 	if action == cloudcommon.Create && policy.MinActiveInstances > 0 {
@@ -514,17 +517,17 @@ func (s *AutoProvPolicyApi) checkOrphaned(ctx context.Context, stm concurrency.S
 		if !s.store.STMGet(stm, &policyKey, &policy) {
 			continue
 		}
-		for _, apCloudlet := range policy.Cloudlets {
-			if apCloudlet.Key.Matches(&inst.CloudletKey) {
-				return fmt.Errorf("AppInst %s on Cloudlet in policy %s on App, not orphaned", inst.Key.GetKeyString(), pname)
+		for _, zoneKey := range policy.Zones {
+			if zoneKey.Matches(&inst.ZoneKey) {
+				return fmt.Errorf("AppInst %s on Zone in policy %s on App, not orphaned", inst.Key.GetKeyString(), pname)
 			}
 		}
 	}
 	return nil
 }
 
-func (s *AutoProvPolicyApi) getAppInstCountsForAutoProv(ctx context.Context, stm concurrency.STM, refs *edgeproto.AppInstRefs, onlineOnly bool) (map[edgeproto.CloudletKey]int, error) {
-	countsByCloudlet := make(map[edgeproto.CloudletKey]int)
+func (s *AutoProvPolicyApi) getAppInstCountsForAutoProv(ctx context.Context, stm concurrency.STM, refs *edgeproto.AppInstRefs, onlineOnly bool) (map[edgeproto.ZoneKey]int, error) {
+	countsByZone := make(map[edgeproto.ZoneKey]int)
 
 	for k, _ := range refs.Insts {
 		instKey := edgeproto.AppInstKey{}
@@ -541,15 +544,15 @@ func (s *AutoProvPolicyApi) getAppInstCountsForAutoProv(ctx context.Context, stm
 		if onlineOnly {
 			online, err := s.autoProvAppInstOnline(ctx, stm, &instKey)
 			if err != nil {
-				return countsByCloudlet, err
+				return countsByZone, err
 			}
 			if !online {
 				continue
 			}
 		}
-		countsByCloudlet[inst.CloudletKey]++
+		countsByZone[inst.ZoneKey]++
 	}
-	return countsByCloudlet, nil
+	return countsByZone, nil
 }
 
 func (s *AutoProvPolicyApi) autoProvAppInstOnline(ctx context.Context, stm concurrency.STM, key *edgeproto.AppInstKey) (bool, error) {
@@ -568,14 +571,14 @@ func (s *AutoProvPolicyApi) autoProvAppInstOnline(ctx context.Context, stm concu
 	return cloudcommon.AutoProvAppInstOnline(&appInst, &cloudletInfo, &cloudlet), nil
 }
 
-func (s *AutoProvPolicyApi) UsesCloudlet(key *edgeproto.CloudletKey) []edgeproto.PolicyKey {
+func (s *AutoProvPolicyApi) UsesZone(key *edgeproto.ZoneKey) []edgeproto.PolicyKey {
 	policyKeys := []edgeproto.PolicyKey{}
 	s.cache.Mux.Lock()
 	defer s.cache.Mux.Unlock()
 	for policyKey, data := range s.cache.Objs {
 		policy := data.Obj
-		for _, autoProvCloudlet := range policy.Cloudlets {
-			if autoProvCloudlet.Key.Matches(key) {
+		for _, zkey := range policy.Zones {
+			if zkey.Matches(key) {
 				policyKeys = append(policyKeys, policyKey)
 				break
 			}

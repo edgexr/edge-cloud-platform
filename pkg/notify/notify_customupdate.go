@@ -174,7 +174,7 @@ func (s *GPUDriverSend) UpdateOk(ctx context.Context, gpuDriver *edgeproto.GPUDr
 func (s *TrustPolicyExceptionSend) UpdateOk(ctx context.Context, tpe *edgeproto.TrustPolicyException) bool {
 	if s.sendrecv.filterCloudletKeys {
 		for cKey, _ := range s.sendrecv.cloudletKeys {
-			if cKey.Organization != tpe.Key.CloudletPoolKey.Organization {
+			if cKey.Organization != tpe.Key.ZonePoolKey.Organization {
 				continue
 			}
 			return true

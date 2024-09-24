@@ -92,6 +92,31 @@ func local_request_PlatformFeaturesApi_DeletePlatformFeatures_0(ctx context.Cont
 
 }
 
+func request_PlatformFeaturesApi_ShowPlatformFeaturesForZone_0(ctx context.Context, marshaler runtime.Marshaler, client PlatformFeaturesApiClient, req *http.Request, pathParams map[string]string) (PlatformFeaturesApi_ShowPlatformFeaturesForZoneClient, runtime.ServerMetadata, error) {
+	var protoReq ZoneKey
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	stream, err := client.ShowPlatformFeaturesForZone(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+
+}
+
 func request_GPUDriverApi_CreateGPUDriver_0(ctx context.Context, marshaler runtime.Marshaler, client GPUDriverApiClient, req *http.Request, pathParams map[string]string) (GPUDriverApi_CreateGPUDriverClient, runtime.ServerMetadata, error) {
 	var protoReq GPUDriver
 	var metadata runtime.ServerMetadata
@@ -716,8 +741,8 @@ func local_request_CloudletApi_FindFlavorMatch_0(ctx context.Context, marshaler 
 
 }
 
-func request_CloudletApi_ShowFlavorsForCloudlet_0(ctx context.Context, marshaler runtime.Marshaler, client CloudletApiClient, req *http.Request, pathParams map[string]string) (CloudletApi_ShowFlavorsForCloudletClient, runtime.ServerMetadata, error) {
-	var protoReq CloudletKey
+func request_CloudletApi_ShowFlavorsForZone_0(ctx context.Context, marshaler runtime.Marshaler, client CloudletApiClient, req *http.Request, pathParams map[string]string) (CloudletApi_ShowFlavorsForZoneClient, runtime.ServerMetadata, error) {
+	var protoReq ZoneKey
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -728,7 +753,7 @@ func request_CloudletApi_ShowFlavorsForCloudlet_0(ctx context.Context, marshaler
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.ShowFlavorsForCloudlet(ctx, &protoReq)
+	stream, err := client.ShowFlavorsForZone(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -741,8 +766,8 @@ func request_CloudletApi_ShowFlavorsForCloudlet_0(ctx context.Context, marshaler
 
 }
 
-func request_CloudletApi_GetOrganizationsOnCloudlet_0(ctx context.Context, marshaler runtime.Marshaler, client CloudletApiClient, req *http.Request, pathParams map[string]string) (CloudletApi_GetOrganizationsOnCloudletClient, runtime.ServerMetadata, error) {
-	var protoReq CloudletKey
+func request_CloudletApi_GetOrganizationsOnZone_0(ctx context.Context, marshaler runtime.Marshaler, client CloudletApiClient, req *http.Request, pathParams map[string]string) (CloudletApi_GetOrganizationsOnZoneClient, runtime.ServerMetadata, error) {
+	var protoReq ZoneKey
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -753,7 +778,7 @@ func request_CloudletApi_GetOrganizationsOnCloudlet_0(ctx context.Context, marsh
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.GetOrganizationsOnCloudlet(ctx, &protoReq)
+	stream, err := client.GetOrganizationsOnZone(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -977,6 +1002,13 @@ func RegisterPlatformFeaturesApiHandlerServer(ctx context.Context, mux *runtime.
 
 		forward_PlatformFeaturesApi_DeletePlatformFeatures_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
+	})
+
+	mux.Handle("POST", pattern_PlatformFeaturesApi_ShowPlatformFeaturesForZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
 	})
 
 	return nil
@@ -1320,14 +1352,14 @@ func RegisterCloudletApiHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("POST", pattern_CloudletApi_ShowFlavorsForCloudlet_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_CloudletApi_ShowFlavorsForZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
 	})
 
-	mux.Handle("POST", pattern_CloudletApi_GetOrganizationsOnCloudlet_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_CloudletApi_GetOrganizationsOnZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -1523,6 +1555,26 @@ func RegisterPlatformFeaturesApiHandlerClient(ctx context.Context, mux *runtime.
 
 	})
 
+	mux.Handle("POST", pattern_PlatformFeaturesApi_ShowPlatformFeaturesForZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_PlatformFeaturesApi_ShowPlatformFeaturesForZone_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_PlatformFeaturesApi_ShowPlatformFeaturesForZone_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -1530,12 +1582,16 @@ var (
 	pattern_PlatformFeaturesApi_ShowPlatformFeatures_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "platformfeatures"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_PlatformFeaturesApi_DeletePlatformFeatures_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"delete", "platformfeatures"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_PlatformFeaturesApi_ShowPlatformFeaturesForZone_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"zone", "platformfeatures"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
 	forward_PlatformFeaturesApi_ShowPlatformFeatures_0 = runtime.ForwardResponseStream
 
 	forward_PlatformFeaturesApi_DeletePlatformFeatures_0 = runtime.ForwardResponseMessage
+
+	forward_PlatformFeaturesApi_ShowPlatformFeaturesForZone_0 = runtime.ForwardResponseStream
 )
 
 // RegisterGPUDriverApiHandlerFromEndpoint is same as RegisterGPUDriverApiHandler but
@@ -2073,7 +2129,7 @@ func RegisterCloudletApiHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
-	mux.Handle("POST", pattern_CloudletApi_ShowFlavorsForCloudlet_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_CloudletApi_ShowFlavorsForZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2082,18 +2138,18 @@ func RegisterCloudletApiHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_CloudletApi_ShowFlavorsForCloudlet_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_CloudletApi_ShowFlavorsForZone_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_CloudletApi_ShowFlavorsForCloudlet_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_CloudletApi_ShowFlavorsForZone_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_CloudletApi_GetOrganizationsOnCloudlet_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_CloudletApi_GetOrganizationsOnZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -2102,14 +2158,14 @@ func RegisterCloudletApiHandlerClient(ctx context.Context, mux *runtime.ServeMux
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_CloudletApi_GetOrganizationsOnCloudlet_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_CloudletApi_GetOrganizationsOnZone_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_CloudletApi_GetOrganizationsOnCloudlet_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_CloudletApi_GetOrganizationsOnZone_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -2223,9 +2279,9 @@ var (
 
 	pattern_CloudletApi_FindFlavorMatch_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"findmapping", "cloudlet"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_CloudletApi_ShowFlavorsForCloudlet_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"showmapping", "cloudletflavors"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_CloudletApi_ShowFlavorsForZone_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"showmapping", "zoneflavors"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_CloudletApi_GetOrganizationsOnCloudlet_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"get", "cloudlet", "organizations"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_CloudletApi_GetOrganizationsOnZone_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"get", "zones", "organizations"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_CloudletApi_RevokeAccessKey_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"revoke", "cloudletaccesskey"}, "", runtime.AssumeColonVerbOpt(true)))
 
@@ -2263,9 +2319,9 @@ var (
 
 	forward_CloudletApi_FindFlavorMatch_0 = runtime.ForwardResponseMessage
 
-	forward_CloudletApi_ShowFlavorsForCloudlet_0 = runtime.ForwardResponseStream
+	forward_CloudletApi_ShowFlavorsForZone_0 = runtime.ForwardResponseStream
 
-	forward_CloudletApi_GetOrganizationsOnCloudlet_0 = runtime.ForwardResponseStream
+	forward_CloudletApi_GetOrganizationsOnZone_0 = runtime.ForwardResponseStream
 
 	forward_CloudletApi_RevokeAccessKey_0 = runtime.ForwardResponseMessage
 

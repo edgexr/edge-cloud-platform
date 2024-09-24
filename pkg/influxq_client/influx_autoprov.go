@@ -19,12 +19,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gogo/protobuf/types"
-	"github.com/influxdata/influxdb/client/v2"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/influxsup"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/gogo/protobuf/types"
+	"github.com/influxdata/influxdb/client/v2"
 )
 
 func (q *InfluxQ) PushAutoProvCounts(ctx context.Context, msg *edgeproto.AutoProvCounts) error {
@@ -59,8 +59,8 @@ func AutoProvCountToPt(apCount *edgeproto.AutoProvCount, dmeid string, ts time.T
 	tags["apporg"] = apCount.AppKey.Organization
 	tags["app"] = apCount.AppKey.Name
 	tags["ver"] = apCount.AppKey.Version
-	tags["cloudletorg"] = apCount.CloudletKey.Organization
-	tags["cloudlet"] = apCount.CloudletKey.Name
+	tags["zoneorg"] = apCount.ZoneKey.Organization
+	tags["zone"] = apCount.ZoneKey.Name
 	tags["dmeid"] = dmeid
 	fields := make(map[string]interface{})
 	fields["count"] = int64(apCount.Count)
@@ -81,10 +81,10 @@ func ParseAutoProvCount(cols []string, values []interface{}) (*edgeproto.AutoPro
 			ap.AppKey.Name, err = influxsup.ConvString(val)
 		case "ver":
 			ap.AppKey.Version, err = influxsup.ConvString(val)
-		case "cloudletorg":
-			ap.CloudletKey.Organization, err = influxsup.ConvString(val)
-		case "cloudlet":
-			ap.CloudletKey.Name, err = influxsup.ConvString(val)
+		case "zoneorg":
+			ap.ZoneKey.Organization, err = influxsup.ConvString(val)
+		case "zone":
+			ap.ZoneKey.Name, err = influxsup.ConvString(val)
 		case "dmeid":
 			id, err = influxsup.ConvString(val)
 		case "count":

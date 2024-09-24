@@ -45,7 +45,7 @@ func TestNotifyOrder(t *testing.T) {
 	require.True(t, no.Less("AppInst", "AppInstRefs"))
 	require.True(t, no.Less("ClusterInst", "AppInstRefs"))
 	require.False(t, no.Less("AppInst", "App"))
-	require.False(t, no.Less("CloudletPool", "Flavor"))
+	require.False(t, no.Less("ZonePool", "Flavor"))
 	// nodes that don't exist should have order 0
 	require.False(t, no.Less("foo", "Flavor"))
 	require.True(t, no.Less("foo", "Cloudlet"))

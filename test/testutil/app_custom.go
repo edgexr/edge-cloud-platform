@@ -38,11 +38,11 @@ func (s *DummyServer) RemoveAppAlertPolicy(ctx context.Context, alert *edgeproto
 	return &edgeproto.Result{}, nil
 }
 
-func (s *DummyServer) ShowCloudletsForAppDeployment(*edgeproto.DeploymentCloudletRequest, edgeproto.AppApi_ShowCloudletsForAppDeploymentServer) error {
+func (s *DummyServer) ShowZonesForAppDeployment(*edgeproto.DeploymentZoneRequest, edgeproto.AppApi_ShowZonesForAppDeploymentServer) error {
 	return nil
 }
 
-func (s *DummyServer) ShowFlavorsForCloudlet(*edgeproto.CloudletKey, edgeproto.CloudletApi_ShowFlavorsForCloudletServer) error {
+func (s *DummyServer) ShowFlavorsForZone(*edgeproto.ZoneKey, edgeproto.CloudletApi_ShowFlavorsForZoneServer) error {
 	return nil
 }
 
@@ -52,31 +52,30 @@ func (s *DummyServer) HandleFedAppInstEvent(ctx context.Context, in *edgeproto.F
 
 // minimal bits not currently generated for cloudletkey.proto and app.proto
 // in support of CLI test for an rpc that streams cloudletkeys as its result
-//
-type ShowCloudletsForAppDeployment struct {
-	Data map[string]edgeproto.CloudletKey
+type ShowZonesForAppDeployment struct {
+	Data map[string]edgeproto.ZoneKey
 	grpc.ServerStream
 	Ctx context.Context
 }
 
-func (x *ShowCloudletsForAppDeployment) Init() {
-	x.Data = make(map[string]edgeproto.CloudletKey)
+func (x *ShowZonesForAppDeployment) Init() {
+	x.Data = make(map[string]edgeproto.ZoneKey)
 }
 
-func (x *ShowCloudletsForAppDeployment) Send(m *edgeproto.CloudletKey) error {
+func (x *ShowZonesForAppDeployment) Send(m *edgeproto.ZoneKey) error {
 	x.Data[m.Name] = *m
 	return nil
 }
 
-func (x *ShowCloudletsForAppDeployment) Context() context.Context {
+func (x *ShowZonesForAppDeployment) Context() context.Context {
 	return x.Ctx
 }
 
-var ShowCloudletsForAppDeploymentExtraCount = 0
+var ShowZonesForAppDeploymentExtraCount = 0
 
-func (x *ShowCloudletsForAppDeployment) ReadStream(stream edgeproto.AppApi_ShowCloudletsForAppDeploymentClient, err error) {
+func (x *ShowZonesForAppDeployment) ReadStream(stream edgeproto.AppApi_ShowZonesForAppDeploymentClient, err error) {
 
-	x.Data = make(map[string]edgeproto.CloudletKey)
+	x.Data = make(map[string]edgeproto.ZoneKey)
 	if err != nil {
 		return
 	}
@@ -92,14 +91,14 @@ func (x *ShowCloudletsForAppDeployment) ReadStream(stream edgeproto.AppApi_ShowC
 	}
 }
 
-func (x *AppCommonApi) ShowCloudletsForAppDeployment(ctx context.Context, filter *edgeproto.DeploymentCloudletRequest, showData *ShowCloudletsForAppDeployment) error {
+func (x *AppCommonApi) ShowZonesForAppDeployment(ctx context.Context, filter *edgeproto.DeploymentZoneRequest, showData *ShowZonesForAppDeployment) error {
 
 	if x.internal_api != nil {
 		showData.Ctx = ctx
-		return x.internal_api.ShowCloudletsForAppDeployment(filter, showData)
+		return x.internal_api.ShowZonesForAppDeployment(filter, showData)
 	} else {
 
-		stream, err := x.client_api.ShowCloudletsForAppDeployment(ctx, filter)
+		stream, err := x.client_api.ShowZonesForAppDeployment(ctx, filter)
 		showData.ReadStream(stream, err)
 		return err
 	}

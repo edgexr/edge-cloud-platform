@@ -527,6 +527,7 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 		AppKey:      platformApp.Key,
 		ClusterKey:  clusterInst.Key,
 		CloudletKey: clusterInst.CloudletKey,
+		ZoneKey:     clusterInst.ZoneKey,
 		Flavor:      clusterInst.Flavor,
 	}
 	if clusterSvcPlugin != nil {

@@ -160,8 +160,8 @@ func request_AutoProvPolicyApi_ShowAutoProvPolicy_0(ctx context.Context, marshal
 
 }
 
-func request_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0(ctx context.Context, marshaler runtime.Marshaler, client AutoProvPolicyApiClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AutoProvPolicyCloudlet
+func request_AutoProvPolicyApi_AddAutoProvPolicyZone_0(ctx context.Context, marshaler runtime.Marshaler, client AutoProvPolicyApiClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq AutoProvPolicyZone
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -172,13 +172,13 @@ func request_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0(ctx context.Context, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.AddAutoProvPolicyCloudlet(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.AddAutoProvPolicyZone(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0(ctx context.Context, marshaler runtime.Marshaler, server AutoProvPolicyApiServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AutoProvPolicyCloudlet
+func local_request_AutoProvPolicyApi_AddAutoProvPolicyZone_0(ctx context.Context, marshaler runtime.Marshaler, server AutoProvPolicyApiServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq AutoProvPolicyZone
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -189,13 +189,13 @@ func local_request_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0(ctx context.Con
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.AddAutoProvPolicyCloudlet(ctx, &protoReq)
+	msg, err := server.AddAutoProvPolicyZone(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0(ctx context.Context, marshaler runtime.Marshaler, client AutoProvPolicyApiClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AutoProvPolicyCloudlet
+func request_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0(ctx context.Context, marshaler runtime.Marshaler, client AutoProvPolicyApiClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq AutoProvPolicyZone
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -206,13 +206,13 @@ func request_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0(ctx context.Contex
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.RemoveAutoProvPolicyCloudlet(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.RemoveAutoProvPolicyZone(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0(ctx context.Context, marshaler runtime.Marshaler, server AutoProvPolicyApiServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq AutoProvPolicyCloudlet
+func local_request_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0(ctx context.Context, marshaler runtime.Marshaler, server AutoProvPolicyApiServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq AutoProvPolicyZone
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -223,7 +223,7 @@ func local_request_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0(ctx context.
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.RemoveAutoProvPolicyCloudlet(ctx, &protoReq)
+	msg, err := server.RemoveAutoProvPolicyZone(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -310,7 +310,7 @@ func RegisterAutoProvPolicyApiHandlerServer(ctx context.Context, mux *runtime.Se
 		return
 	})
 
-	mux.Handle("POST", pattern_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_AutoProvPolicyApi_AddAutoProvPolicyZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -321,7 +321,7 @@ func RegisterAutoProvPolicyApiHandlerServer(ctx context.Context, mux *runtime.Se
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_AutoProvPolicyApi_AddAutoProvPolicyZone_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -329,11 +329,11 @@ func RegisterAutoProvPolicyApiHandlerServer(ctx context.Context, mux *runtime.Se
 			return
 		}
 
-		forward_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_AutoProvPolicyApi_AddAutoProvPolicyZone_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -344,7 +344,7 @@ func RegisterAutoProvPolicyApiHandlerServer(ctx context.Context, mux *runtime.Se
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -352,7 +352,7 @@ func RegisterAutoProvPolicyApiHandlerServer(ctx context.Context, mux *runtime.Se
 			return
 		}
 
-		forward_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -477,7 +477,7 @@ func RegisterAutoProvPolicyApiHandlerClient(ctx context.Context, mux *runtime.Se
 
 	})
 
-	mux.Handle("POST", pattern_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_AutoProvPolicyApi_AddAutoProvPolicyZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -486,18 +486,18 @@ func RegisterAutoProvPolicyApiHandlerClient(ctx context.Context, mux *runtime.Se
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_AutoProvPolicyApi_AddAutoProvPolicyZone_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_AutoProvPolicyApi_AddAutoProvPolicyZone_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -506,14 +506,14 @@ func RegisterAutoProvPolicyApiHandlerClient(ctx context.Context, mux *runtime.Se
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -529,9 +529,9 @@ var (
 
 	pattern_AutoProvPolicyApi_ShowAutoProvPolicy_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "autoprovpolicy"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"add", "autoprovpolicycloudlet"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_AutoProvPolicyApi_AddAutoProvPolicyZone_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"add", "autoprovpolicyzone"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"rm", "autoprovpolicycloudlet"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"rm", "autoprovpolicyzone"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -543,7 +543,7 @@ var (
 
 	forward_AutoProvPolicyApi_ShowAutoProvPolicy_0 = runtime.ForwardResponseStream
 
-	forward_AutoProvPolicyApi_AddAutoProvPolicyCloudlet_0 = runtime.ForwardResponseMessage
+	forward_AutoProvPolicyApi_AddAutoProvPolicyZone_0 = runtime.ForwardResponseMessage
 
-	forward_AutoProvPolicyApi_RemoveAutoProvPolicyCloudlet_0 = runtime.ForwardResponseMessage
+	forward_AutoProvPolicyApi_RemoveAutoProvPolicyZone_0 = runtime.ForwardResponseMessage
 )

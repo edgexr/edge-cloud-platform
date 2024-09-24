@@ -40,57 +40,68 @@ func TestAutoProvStats(t *testing.T) {
 	}
 	carrier := "oper"
 
-	// cloudlets for policies
-	apCloudlets := []edgeproto.AutoProvCloudlet{
-		edgeproto.AutoProvCloudlet{
-			Key: edgeproto.CloudletKey{
-				Organization: carrier,
-				Name:         "1,1",
-			},
-			Loc: dme.Loc{
-				Latitude:  1,
-				Longitude: 1,
-			},
+	// zones for policies
+	zoneKeys := []*edgeproto.ZoneKey{{
+		Organization: carrier,
+		Name:         "zone1",
+	}, {
+		Organization: carrier,
+		Name:         "zone4",
+	}, {
+		Organization: carrier,
+		Name:         "zone8",
+	}}
+
+	cloudlets := []*edgeproto.Cloudlet{{
+		Key: edgeproto.CloudletKey{
+			Organization: carrier,
+			Name:         "1,1",
 		},
-		edgeproto.AutoProvCloudlet{
-			Key: edgeproto.CloudletKey{
-				Organization: carrier,
-				Name:         "4,4",
-			},
-			Loc: dme.Loc{
-				Latitude:  4,
-				Longitude: 4,
-			},
+		Location: dme.Loc{
+			Latitude:  1,
+			Longitude: 1,
 		},
-		edgeproto.AutoProvCloudlet{
-			Key: edgeproto.CloudletKey{
-				Organization: carrier,
-				Name:         "8,8",
-			},
-			Loc: dme.Loc{
-				Latitude:  8,
-				Longitude: 8,
-			},
+		Zone: zoneKeys[0].Name,
+	}, {
+		Key: edgeproto.CloudletKey{
+			Organization: carrier,
+			Name:         "4,4",
 		},
-	}
+		Location: dme.Loc{
+			Latitude:  4,
+			Longitude: 4,
+		},
+		Zone: zoneKeys[1].Name,
+	}, {
+		Key: edgeproto.CloudletKey{
+			Organization: carrier,
+			Name:         "8,8",
+		},
+		Location: dme.Loc{
+			Latitude:  8,
+			Longitude: 8,
+		},
+		Zone: zoneKeys[2].Name,
+	}}
 
 	// reservable ClusterInsts
 	clusterInsts := []edgeproto.ClusterInst{}
-	for _, cl := range apCloudlets {
+	for ii, zkey := range zoneKeys {
 		ci := edgeproto.ClusterInst{
 			Key: edgeproto.ClusterKey{
 				Name:         "clust",
 				Organization: edgeproto.OrganizationEdgeCloud,
 			},
-			CloudletKey: cl.Key,
+			ZoneKey:     *zkey,
+			CloudletKey: cloudlets[ii].Key,
 			Reservable:  true,
 		}
 		clusterInsts = append(clusterInsts, ci)
 	}
 
 	locs := []dme.Loc{}
-	for _, cl := range apCloudlets {
-		locs = append(locs, cl.Loc)
+	for _, cl := range cloudlets {
+		locs = append(locs, cl.Location)
 	}
 
 	policies := []edgeproto.AutoProvPolicy{
@@ -101,9 +112,9 @@ func TestAutoProvStats(t *testing.T) {
 			},
 			DeployClientCount:   2,
 			DeployIntervalCount: 2,
-			Cloudlets: []*edgeproto.AutoProvCloudlet{
-				&apCloudlets[0],
-				&apCloudlets[1],
+			Zones: []*edgeproto.ZoneKey{
+				zoneKeys[0],
+				zoneKeys[1],
 			},
 		},
 		edgeproto.AutoProvPolicy{
@@ -113,9 +124,9 @@ func TestAutoProvStats(t *testing.T) {
 			},
 			DeployClientCount:   2,
 			DeployIntervalCount: 2,
-			Cloudlets: []*edgeproto.AutoProvCloudlet{
-				&apCloudlets[1],
-				&apCloudlets[2],
+			Zones: []*edgeproto.ZoneKey{
+				zoneKeys[1],
+				zoneKeys[2],
 			},
 		},
 		edgeproto.AutoProvPolicy{
@@ -125,10 +136,10 @@ func TestAutoProvStats(t *testing.T) {
 			},
 			DeployClientCount:   2,
 			DeployIntervalCount: 2,
-			Cloudlets: []*edgeproto.AutoProvCloudlet{
-				&apCloudlets[0],
-				&apCloudlets[1],
-				&apCloudlets[2],
+			Zones: []*edgeproto.ZoneKey{
+				zoneKeys[0],
+				zoneKeys[1],
+				zoneKeys[2],
 			},
 		},
 	}
@@ -141,9 +152,9 @@ func TestAutoProvStats(t *testing.T) {
 			},
 			DeployClientCount:   2,
 			DeployIntervalCount: 1,
-			Cloudlets: []*edgeproto.AutoProvCloudlet{
-				&apCloudlets[0],
-				&apCloudlets[1],
+			Zones: []*edgeproto.ZoneKey{
+				zoneKeys[0],
+				zoneKeys[1],
 			},
 		},
 		edgeproto.AutoProvPolicy{
@@ -153,9 +164,9 @@ func TestAutoProvStats(t *testing.T) {
 			},
 			DeployClientCount:   2,
 			DeployIntervalCount: 1,
-			Cloudlets: []*edgeproto.AutoProvCloudlet{
-				&apCloudlets[1],
-				&apCloudlets[2],
+			Zones: []*edgeproto.ZoneKey{
+				zoneKeys[1],
+				zoneKeys[2],
 			},
 		},
 		edgeproto.AutoProvPolicy{
@@ -165,10 +176,10 @@ func TestAutoProvStats(t *testing.T) {
 			},
 			DeployClientCount:   2,
 			DeployIntervalCount: 1,
-			Cloudlets: []*edgeproto.AutoProvCloudlet{
-				&apCloudlets[0],
-				&apCloudlets[1],
-				&apCloudlets[2],
+			Zones: []*edgeproto.ZoneKey{
+				zoneKeys[0],
+				zoneKeys[1],
+				zoneKeys[2],
 			},
 		},
 	}
@@ -176,8 +187,9 @@ func TestAutoProvStats(t *testing.T) {
 	emptyTest := apStatsTestData{
 		app:                app,
 		carrier:            carrier,
-		expectedCounts:     make(map[edgeproto.CloudletKey]uint64),
-		expectedSendCounts: make(map[edgeproto.CloudletKey]uint64),
+		cloudlets:          cloudlets,
+		expectedCounts:     make(map[edgeproto.ZoneKey]uint64),
+		expectedSendCounts: make(map[edgeproto.ZoneKey]uint64),
 	}
 
 	// no policies means no stats
@@ -191,10 +203,10 @@ func TestAutoProvStats(t *testing.T) {
 	test = emptyTest
 	test.policies = append(policies, immPolicies...)
 	test.locs = locs
-	test.expectedCounts = map[edgeproto.CloudletKey]uint64{
-		apCloudlets[0].Key: 1, // req loc 1,1
-		apCloudlets[1].Key: 1, // req loc 4,4
-		apCloudlets[2].Key: 1, // req loc 8,8
+	test.expectedCounts = map[edgeproto.ZoneKey]uint64{
+		*zoneKeys[0]: 1, // req loc 1,1
+		*zoneKeys[1]: 1, // req loc 4,4
+		*zoneKeys[2]: 1, // req loc 8,8
 	}
 	test.run(t, ctx)
 
@@ -203,9 +215,9 @@ func TestAutoProvStats(t *testing.T) {
 	test.clusterInsts = clusterInsts
 	test.policies = policies[0:1]
 	test.locs = locs
-	test.expectedCounts = map[edgeproto.CloudletKey]uint64{
-		apCloudlets[0].Key: 1, // req loc 1,1
-		apCloudlets[1].Key: 2, // req loc 4,4 and 8,8
+	test.expectedCounts = map[edgeproto.ZoneKey]uint64{
+		*zoneKeys[0]: 1, // req loc 1,1
+		*zoneKeys[1]: 2, // req loc 4,4 and 8,8
 	}
 	test.run(t, ctx)
 
@@ -214,9 +226,9 @@ func TestAutoProvStats(t *testing.T) {
 	test.clusterInsts = clusterInsts
 	test.policies = policies[1:2]
 	test.locs = append(locs, locs...) // double requests
-	test.expectedCounts = map[edgeproto.CloudletKey]uint64{
-		apCloudlets[1].Key: 4, // req loc 1,1 and 4,4,
-		apCloudlets[2].Key: 2, // req loc 8,8
+	test.expectedCounts = map[edgeproto.ZoneKey]uint64{
+		*zoneKeys[1]: 4, // req loc 1,1 and 4,4,
+		*zoneKeys[2]: 2, // req loc 8,8
 	}
 	test.run(t, ctx)
 
@@ -225,10 +237,10 @@ func TestAutoProvStats(t *testing.T) {
 	test.clusterInsts = clusterInsts
 	test.policies = policies[2:3]
 	test.locs = locs
-	test.expectedCounts = map[edgeproto.CloudletKey]uint64{
-		apCloudlets[0].Key: 1, // req loc 1,1
-		apCloudlets[1].Key: 1, // req loc 4,4
-		apCloudlets[2].Key: 1, // req loc 8,8
+	test.expectedCounts = map[edgeproto.ZoneKey]uint64{
+		*zoneKeys[0]: 1, // req loc 1,1
+		*zoneKeys[1]: 1, // req loc 4,4
+		*zoneKeys[2]: 1, // req loc 8,8
 	}
 	test.run(t, ctx)
 
@@ -237,10 +249,10 @@ func TestAutoProvStats(t *testing.T) {
 	test.clusterInsts = clusterInsts
 	test.policies = policies
 	test.locs = locs
-	test.expectedCounts = map[edgeproto.CloudletKey]uint64{
-		apCloudlets[0].Key: 1, // req loc 1,1
-		apCloudlets[1].Key: 1, // req loc 4,4
-		apCloudlets[2].Key: 1, // req loc 8,8
+	test.expectedCounts = map[edgeproto.ZoneKey]uint64{
+		*zoneKeys[0]: 1, // req loc 1,1
+		*zoneKeys[1]: 1, // req loc 4,4
+		*zoneKeys[2]: 1, // req loc 8,8
 	}
 
 	// all policies (immediate policies should trigger sends)
@@ -248,15 +260,15 @@ func TestAutoProvStats(t *testing.T) {
 	test.clusterInsts = clusterInsts
 	test.policies = append(policies, immPolicies...)
 	test.locs = append(locs, locs...) // double requests
-	test.expectedCounts = map[edgeproto.CloudletKey]uint64{
-		apCloudlets[0].Key: 2,
-		apCloudlets[1].Key: 2,
-		apCloudlets[2].Key: 2,
+	test.expectedCounts = map[edgeproto.ZoneKey]uint64{
+		*zoneKeys[0]: 2,
+		*zoneKeys[1]: 2,
+		*zoneKeys[2]: 2,
 	}
-	test.expectedSendCounts = map[edgeproto.CloudletKey]uint64{
-		apCloudlets[0].Key: 2,
-		apCloudlets[1].Key: 2,
-		apCloudlets[2].Key: 2,
+	test.expectedSendCounts = map[edgeproto.ZoneKey]uint64{
+		*zoneKeys[0]: 2,
+		*zoneKeys[1]: 2,
+		*zoneKeys[2]: 2,
 	}
 	test.run(t, ctx)
 }
@@ -264,27 +276,34 @@ func TestAutoProvStats(t *testing.T) {
 type apStatsTestData struct {
 	app                edgeproto.App
 	carrier            string
+	cloudlets          []*edgeproto.Cloudlet
 	clusterInsts       []edgeproto.ClusterInst
 	policies           []edgeproto.AutoProvPolicy
 	locs               []dme.Loc
-	expectedCounts     map[edgeproto.CloudletKey]uint64
-	expectedSendCounts map[edgeproto.CloudletKey]uint64
+	expectedCounts     map[edgeproto.ZoneKey]uint64
+	expectedSendCounts map[edgeproto.ZoneKey]uint64
 }
 
 func (s *apStatsTestData) run(t *testing.T, ctx context.Context) {
 	// reset all data
-	actualSendCounts := make(map[edgeproto.CloudletKey]uint64)
+	actualSendCounts := make(map[edgeproto.ZoneKey]uint64)
 
 	eehandler := &EmptyEdgeEventsHandler{}
 	SetupMatchEngine(eehandler)
 	InitAutoProvStats(500, 0, 1, &edgeproto.NodeKey{}, func(ctx context.Context, counts *edgeproto.AutoProvCounts) bool {
 		require.Equal(t, 1, len(counts.Counts))
 		apCount := counts.Counts[0]
-		actualSendCounts[apCount.CloudletKey] = apCount.Count
+		actualSendCounts[apCount.ZoneKey] = apCount.Count
 		require.True(t, apCount.ProcessNow)
 		return true
 	})
 	apHandler := AutoProvPolicyHandler{}
+
+	// add cloudlets
+	for _, cloudlet := range s.cloudlets {
+		SetInstStateFromCloudlet(ctx, cloudlet)
+	}
+	require.Equal(t, len(s.cloudlets), len(DmeAppTbl.CloudletLocsByZone))
 
 	// add policies
 	for _, policy := range s.policies {
@@ -308,10 +327,10 @@ func (s *apStatsTestData) run(t *testing.T, ctx context.Context) {
 	}
 
 	// get actual stats
-	actualCounts := make(map[edgeproto.CloudletKey]uint64)
+	actualCounts := make(map[edgeproto.ZoneKey]uint64)
 	for ii, _ := range autoProvStats.shards {
 		for key, counts := range autoProvStats.shards[ii].appCloudletCounts {
-			actualCounts[key.CloudletKey] = counts.count
+			actualCounts[key.ZoneKey] = counts.count
 		}
 	}
 

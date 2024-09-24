@@ -60,7 +60,6 @@ func getFields(data map[string]interface{}, t reflect.Type, ns FieldNamespace, f
 			if sfType.Kind() != reflect.Slice {
 				continue
 			}
-			fields = append(fields, strings.Join(append(fvals, fval), "."))
 			// use map to eliminate duplicate fields
 			subfieldsMap := make(map[string]struct{})
 			for _, subdata := range subdataArr {

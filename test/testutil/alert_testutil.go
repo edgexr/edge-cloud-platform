@@ -337,7 +337,8 @@ type DummyServer struct {
 	GPUDriverCache                edgeproto.GPUDriverCache
 	CloudletCache                 edgeproto.CloudletCache
 	CloudletInfoCache             edgeproto.CloudletInfoCache
-	CloudletPoolCache             edgeproto.CloudletPoolCache
+	ZoneCache                     edgeproto.ZoneCache
+	ZonePoolCache                 edgeproto.ZonePoolCache
 	VMPoolCache                   edgeproto.VMPoolCache
 	VMPoolInfoCache               edgeproto.VMPoolInfoCache
 	ClusterInstCache              edgeproto.ClusterInstCache
@@ -382,7 +383,8 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitGPUDriverCache(&d.GPUDriverCache)
 	edgeproto.InitCloudletCache(&d.CloudletCache)
 	edgeproto.InitCloudletInfoCache(&d.CloudletInfoCache)
-	edgeproto.InitCloudletPoolCache(&d.CloudletPoolCache)
+	edgeproto.InitZoneCache(&d.ZoneCache)
+	edgeproto.InitZonePoolCache(&d.ZonePoolCache)
 	edgeproto.InitVMPoolCache(&d.VMPoolCache)
 	edgeproto.InitVMPoolInfoCache(&d.VMPoolInfoCache)
 	edgeproto.InitClusterInstCache(&d.ClusterInstCache)
@@ -417,7 +419,8 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterGPUDriverApiServer(server, d)
 	edgeproto.RegisterCloudletApiServer(server, d)
 	edgeproto.RegisterCloudletInfoApiServer(server, d)
-	edgeproto.RegisterCloudletPoolApiServer(server, d)
+	edgeproto.RegisterZoneApiServer(server, d)
+	edgeproto.RegisterZonePoolApiServer(server, d)
 	edgeproto.RegisterVMPoolApiServer(server, d)
 	edgeproto.RegisterClusterInstApiServer(server, d)
 	edgeproto.RegisterClusterInstInfoApiServer(server, d)
@@ -473,7 +476,8 @@ type Client interface {
 	CloudletApiClient
 	CloudletInfoApiClient
 	CloudletMetricsApiClient
-	CloudletPoolApiClient
+	ZoneApiClient
+	ZonePoolApiClient
 	VMPoolApiClient
 	ClusterInstApiClient
 	ClusterInstInfoApiClient
@@ -506,7 +510,8 @@ type InternalCUDAPIs interface {
 	GetAppInstApi() edgeproto.AppInstApiServer
 	GetGPUDriverApi() edgeproto.GPUDriverApiServer
 	GetCloudletApi() edgeproto.CloudletApiServer
-	GetCloudletPoolApi() edgeproto.CloudletPoolApiServer
+	GetZoneApi() edgeproto.ZoneApiServer
+	GetZonePoolApi() edgeproto.ZonePoolApiServer
 	GetVMPoolApi() edgeproto.VMPoolApiServer
 	GetClusterInstApi() edgeproto.ClusterInstApiServer
 	GetAutoProvPolicyApi() edgeproto.AutoProvPolicyApiServer

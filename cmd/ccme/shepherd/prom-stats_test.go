@@ -185,6 +185,10 @@ var (
 		Organization: "testoper",
 		Name:         "testcloudlet",
 	}
+	testZoneKey = edgeproto.ZoneKey{
+		Organization: "testoper",
+		Name:         "testzone",
+	}
 	testClusterKey = edgeproto.ClusterKey{
 		Name:         "testcluster",
 		Organization: "MobiledgeX",
@@ -506,7 +510,7 @@ func TestPromStats(t *testing.T) {
 
 	// Check callback is called
 	require.Equal(t, int(0), testMetricSent)
-	clusterMetricsData := testPromStats.MarshalClusterMetrics(clusterMetrics)
+	clusterMetricsData := testPromStats.MarshalClusterMetrics(clusterMetrics, testZoneKey)
 	testPromStats.send(ctx, clusterMetricsData[0])
 	require.Equal(t, int(1), testMetricSent)
 	// Test the autoprov cluster - marshalled clusterorg should be the same as apporg
@@ -518,8 +522,8 @@ func TestPromStats(t *testing.T) {
 		}
 	}
 	// Check null handling for Marshal functions
-	require.Nil(t, testPromStats.MarshalClusterMetrics(nil), "Nil metrics should marshal into a nil")
-	require.Nil(t, MarshalAppMetrics(&testAppKey, nil, ""), "Nil metrics should marshal into a nil")
+	require.Nil(t, testPromStats.MarshalClusterMetrics(nil, testZoneKey), "Nil metrics should marshal into a nil")
+	require.Nil(t, MarshalAppMetrics(&testAppKey, nil, "", testZoneKey), "Nil metrics should marshal into a nil")
 
 	testAppKey.Pod = "testPod2"
 	testAppKey.AppInstName = appInst2.Key.Name

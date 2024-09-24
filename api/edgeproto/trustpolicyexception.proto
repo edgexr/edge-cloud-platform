@@ -20,7 +20,7 @@ import "result.proto";
 import "tools/protogen/protogen.proto";
 import "gogoproto/gogo.proto";
 import "app.proto";
-import "cloudletpool.proto";
+import "zonepool.proto";
 import "trustpolicy.proto";
 import "appinst.proto";
 import "cluster.proto";
@@ -46,8 +46,8 @@ enum TrustPolicyExceptionState {
 message TrustPolicyExceptionKey {
   // App Key
   AppKey app_key = 1 [(gogoproto.nullable) = false, (protogen.keytag) = "appkey", (protogen.refers_to) = "App"];
-  // CloudletPool Key
-  CloudletPoolKey cloudlet_pool_key = 2  [(gogoproto.nullable) = false, (protogen.keytag) = "cloudletpoolkey", (protogen.refers_to) = "CloudletPool"];
+  // ZonePool Key
+  ZonePoolKey zone_pool_key = 2  [(gogoproto.nullable) = false, (protogen.keytag) = "zonepoolkey", (protogen.refers_to) = "ZonePool"];
   // TrustPolicyExceptionKey name
   string name = 3 [(protogen.keytag) = "name"]; 
   option (protogen.generate_matches) = true;
@@ -58,7 +58,7 @@ message TrustPolicyExceptionKey {
 message TrustPolicyException {
   // Fields are used for the Update API to specify which fields to apply
   repeated string fields = 1;
-  // Unique Key composed of App and CloudletPool key
+  // Unique Key composed of App and ZonePool key
   TrustPolicyExceptionKey key = 2 [(gogoproto.nullable) = false];
   // State of the exception within the approval process
   TrustPolicyExceptionState state = 3;
@@ -71,7 +71,7 @@ message TrustPolicyException {
   option (protogen.notify_cache) = true;
   option (protogen.notify_custom_update) = true;
   option (protogen.notify_filter_cloudlet_key) = true;
-  option (protogen.alias) = "name=Key.Name,appname=Key.AppKey.Name,apporg=Key.AppKey.Organization,appvers=Key.AppKey.Version,cloudletpoolorg=Key.CloudletPoolKey.Organization,cloudletpoolname=Key.CloudletPoolKey.Name";
+  option (protogen.alias) = "name=Key.Name,appname=Key.AppKey.Name,apporg=Key.AppKey.Organization,appvers=Key.AppKey.Version,zonepoolorg=Key.ZonePoolKey.Organization,zonepoolname=Key.ZonePoolKey.Name";
   option (protogen.uses_org) = "key=AppKey.Organization";
 }
 
@@ -93,8 +93,8 @@ service TrustPolicyExceptionApi {
       post: "/update/trustpolicyexception"
       body: "*"
     };
-    option (protogen.mc2_api) = "ResourceCloudletPools,ActionManage,Key.CloudletPoolKey.Organization";
-    option (protogen.mc2_api_requires_org) = "Key.CloudletPoolKey.Organization";
+    option (protogen.mc2_api) = "ResourceZonePools,ActionManage,Key.ZonePoolKey.Organization";
+    option (protogen.mc2_api_requires_org) = "Key.ZonePoolKey.Organization";
     option (protogen.mc2_custom_authz) = true;
   }
 

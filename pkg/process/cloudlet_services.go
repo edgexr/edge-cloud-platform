@@ -402,7 +402,7 @@ var prometheusConfig = `global:
 rule_files:
 - "/var/tmp/` + PrometheusRulesPrefix + `*"
 scrape_configs:
-- job_name: MobiledgeX Monitoring
+- job_name: EdgeCloud Monitoring
   scrape_interval: {{.ScrapeInterval}}
   file_sd_configs:
   - files:

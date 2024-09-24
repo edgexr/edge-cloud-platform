@@ -567,6 +567,15 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		if featuresCheck.DeletePrepare {
 			return featuresKey.BeingDeletedError()
 		}
+		if zoneKey := in.GetZone(); zoneKey.IsSet() {
+			zone := edgeproto.Zone{}
+			if !s.all.zoneApi.store.STMGet(stm, zoneKey, &zone) {
+				return zoneKey.NotFoundError()
+			}
+			if zone.DeletePrepare {
+				return zoneKey.BeingDeletedError()
+			}
+		}
 		if in.Flavor.Name != "" && in.Flavor.Name != cloudcommon.DefaultPlatformFlavorKey.Name {
 			if !s.all.flavorApi.store.STMGet(stm, &in.Flavor, &pfFlavor) {
 				return in.Flavor.NotFoundError()
@@ -681,6 +690,9 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	defer func() {
 		if reterr == nil {
 			s.all.clusterInstApi.updateCloudletResourcesMetric(ctx, &in.Key)
+			if in.Zone != "" {
+				s.updateZoneLocation(ctx, in.Key.Organization, "", in.Zone)
+			}
 		}
 	}()
 
@@ -1069,6 +1081,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 	var diffFields *edgeproto.FieldMap
 
 	var gpuDriver edgeproto.GPUDriver
+	var oldZone string
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		updateDefaultMultiTenantCluster = false
 		diffFields = edgeproto.NewFieldMap(nil)
@@ -1133,7 +1146,18 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 			}
 			crmUpdateReqd = true
 		}
-
+		if fmap.HasOrHasChild(edgeproto.CloudletFieldZone) && cur.Zone != in.Zone {
+			oldZone = cur.Zone
+			if zoneKey := in.GetZone(); zoneKey.IsSet() {
+				zone := edgeproto.Zone{}
+				if !s.all.zoneApi.store.STMGet(stm, zoneKey, &zone) {
+					return zoneKey.NotFoundError()
+				}
+				if zone.DeletePrepare {
+					return zoneKey.BeingDeletedError()
+				}
+			}
+		}
 		if in.GpuConfig.Driver.Name != "" {
 			if !s.all.gpuDriverApi.store.STMGet(stm, &in.GpuConfig.Driver, &gpuDriver) {
 				return fmt.Errorf("GPU driver %s not found", in.GpuConfig.Driver.String())
@@ -1324,6 +1348,11 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Update cloudlet is in progress: %s - %s Please use 'cloudlet show' to check current status", cloudletKey, err.Error())})
 		}
 		return err
+	}
+
+	if diffFields.Has(edgeproto.CloudletFieldZone) {
+		s.updateZoneForCloudlet(ctx, &in.Key)
+		s.updateZoneLocation(ctx, in.Key.Organization, oldZone, cur.Zone)
 	}
 
 	// since default maintenance state is NORMAL_OPERATION, it is better to check
@@ -1630,22 +1659,6 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	// ready check because it's not ready - it's being deleted.
 	cctx.SkipCloudletReadyCheck = true
 
-	autoProvPolicies := s.all.autoProvPolicyApi.UsesCloudlet(&in.Key)
-	if len(autoProvPolicies) > 0 {
-		strs := []string{}
-		for _, key := range autoProvPolicies {
-			strs = append(strs, key.GetKeyString())
-		}
-		return fmt.Errorf("Cloudlet in use by AutoProvPolicy %s", strings.Join(strs, ", "))
-	}
-	cloudletPoolKeys := s.all.cloudletPoolApi.UsesCloudlet(&in.Key)
-	if len(cloudletPoolKeys) > 0 {
-		strs := []string{}
-		for _, key := range cloudletPoolKeys {
-			strs = append(strs, key.GetKeyString())
-		}
-		return fmt.Errorf("Cloudlet in use by CloudletPool %s", strings.Join(strs, ", "))
-	}
 	if networkKey := s.all.networkApi.UsesCloudlet(&in.Key); networkKey != nil {
 		return fmt.Errorf("Cloudlet in use by Network %s", networkKey.GetKeyString())
 	}
@@ -2065,7 +2078,7 @@ func (s *CloudletApi) UsesFlavor(key *edgeproto.FlavorKey) *edgeproto.CloudletKe
 	return nil
 }
 
-func (s *CloudletApi) UsesResTagTable(key *edgeproto.ResTagTableKey) *edgeproto.CloudletKey {
+func (s *CloudletApi) CloudletsUsingResTagTable(key *edgeproto.ResTagTableKey) *edgeproto.CloudletKey {
 	s.cache.Mux.Lock()
 	defer s.cache.Mux.Unlock()
 	for ck, data := range s.cache.Objs {
@@ -2077,6 +2090,19 @@ func (s *CloudletApi) UsesResTagTable(key *edgeproto.ResTagTableKey) *edgeproto.
 		}
 	}
 	return nil
+}
+
+func (s *CloudletApi) CloudletsUsingZone(zoneKey *edgeproto.ZoneKey) []string {
+	s.cache.Mux.Lock()
+	defer s.cache.Mux.Unlock()
+	uses := []string{}
+	for _, data := range s.cache.Objs {
+		val := data.Obj
+		if val.Key.Organization == zoneKey.Organization && val.Key.FederatedOrganization == zoneKey.FederatedOrganization && zoneKey.Name == val.Zone {
+			uses = append(uses, val.Key.Name)
+		}
+	}
+	return uses
 }
 
 func (s *CloudletApi) GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error) {
@@ -2505,7 +2531,7 @@ func (s *CloudletApi) GetCloudletResourceQuotaProps(ctx context.Context, in *edg
 	return &props, nil
 }
 
-func (s *CloudletApi) ShowFlavorsForCloudlet(in *edgeproto.CloudletKey, cb edgeproto.CloudletApi_ShowFlavorsForCloudletServer) error {
+func (s *CloudletApi) ShowFlavorsForZone(in *edgeproto.ZoneKey, cb edgeproto.CloudletApi_ShowFlavorsForZoneServer) error {
 	ctx := cb.Context()
 	allMetaFlavors := make(map[edgeproto.FlavorKey]struct{})
 	flavorCache := &s.all.flavorApi.cache
@@ -2513,20 +2539,21 @@ func (s *CloudletApi) ShowFlavorsForCloudlet(in *edgeproto.CloudletKey, cb edgep
 		allMetaFlavors[*k] = struct{}{}
 	})
 	cloudletKeys := make(map[edgeproto.CloudletKey]struct{})
-	if in.ValidateKey() == nil {
-		// only one cloudlet specified
-		cloudletKeys[*in] = struct{}{}
-	} else {
-		// find all matching cloudlets
-		s.cache.GetAllKeys(ctx, func(k *edgeproto.CloudletKey, modRef int64) {
-			if k.Matches(in, edgeproto.MatchFilter()) {
-				cloudletKeys[*k] = struct{}{}
-			}
-		})
+	// find all matching cloudlets
+	filter := edgeproto.Cloudlet{
+		Key: edgeproto.CloudletKey{
+			Organization:          in.Organization,
+			FederatedOrganization: in.FederatedOrganization,
+		},
+		Zone: in.Name,
 	}
+	s.cache.Show(&filter, func(cloudlet *edgeproto.Cloudlet) error {
+		cloudletKeys[cloudlet.Key] = struct{}{}
+		return nil
+	})
 	flavors := make(map[edgeproto.FlavorKey]struct{})
 	for cloudletKey, _ := range cloudletKeys {
-		log.SpanLog(ctx, log.DebugLevelApi, "ShowFlavorsForCloudlet", "cloudletKey", cloudletKey)
+		log.SpanLog(ctx, log.DebugLevelApi, "ShowFlavorsForZone", "cloudletKey", cloudletKey)
 		for flavor, _ := range allMetaFlavors {
 			fm := edgeproto.FlavorMatch{
 				Key:        cloudletKey,
@@ -2537,7 +2564,7 @@ func (s *CloudletApi) ShowFlavorsForCloudlet(in *edgeproto.CloudletKey, cb edgep
 				continue
 			}
 			flavors[flavor] = struct{}{}
-			log.SpanLog(ctx, log.DebugLevelApi, "ShowFlavorsForCloudlet match", "metaflavor", flavor, "with", match.FlavorName, "on cloudlet", cloudletKey)
+			log.SpanLog(ctx, log.DebugLevelApi, "ShowFlavorsForZone match", "metaflavor", flavor, "with", match.FlavorName, "on cloudlet", cloudletKey)
 		}
 	}
 	// convert flavors to list so we can sort
@@ -2557,16 +2584,16 @@ func (s *CloudletApi) ShowFlavorsForCloudlet(in *edgeproto.CloudletKey, cb edgep
 	return nil
 }
 
-func (s *CloudletApi) GetOrganizationsOnCloudlet(in *edgeproto.CloudletKey, cb edgeproto.CloudletApi_GetOrganizationsOnCloudletServer) error {
+func (s *CloudletApi) GetOrganizationsOnZone(in *edgeproto.ZoneKey, cb edgeproto.CloudletApi_GetOrganizationsOnZoneServer) error {
 	orgs := make(map[string]struct{})
 	aiFilter := edgeproto.AppInst{}
-	aiFilter.CloudletKey = *in
+	aiFilter.ZoneKey = *in
 	s.all.appInstApi.cache.Show(&aiFilter, func(appInst *edgeproto.AppInst) error {
 		orgs[appInst.Key.Organization] = struct{}{}
 		return nil
 	})
 	ciFilter := edgeproto.ClusterInst{}
-	ciFilter.CloudletKey = *in
+	ciFilter.ZoneKey = *in
 	s.all.clusterInstApi.cache.Show(&ciFilter, func(clusterInst *edgeproto.ClusterInst) error {
 		orgs[clusterInst.Key.Organization] = struct{}{}
 		return nil
@@ -2623,6 +2650,133 @@ func (s *CloudletApi) updateDefaultMultiTenantClusterWorker(ctx context.Context,
 		s.all.clusterInstApi.createDefaultMultiTenantCluster(ctx, key, features)
 	} else {
 		s.all.clusterInstApi.deleteDefaultMultiTenantCluster(ctx, key)
+	}
+}
+
+func (s *CloudletApi) updateZoneForCloudlet(ctx context.Context, ckey *edgeproto.CloudletKey) {
+	// when zone for cloudlet changes, update the zonekey on all appinsts and
+	// clusterinsts for that cloudlet.
+	aiFilter := edgeproto.AppInst{
+		CloudletKey: *ckey,
+	}
+	aiKeys := []*edgeproto.AppInstKey{}
+	s.all.appInstApi.cache.Show(&aiFilter, func(obj *edgeproto.AppInst) error {
+		aiKeys = append(aiKeys, &obj.Key)
+		return nil
+	})
+	log.SpanLog(ctx, log.DebugLevelApi, "update zone for appinsts", "cloudlet", ckey)
+	for _, aikey := range aiKeys {
+		err := s.all.appInstApi.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			ai := edgeproto.AppInst{}
+			if !s.all.appInstApi.store.STMGet(stm, aikey, &ai) {
+				return nil
+			}
+			if !ai.CloudletKey.Matches(ckey) {
+				return nil
+			}
+			cloudlet := edgeproto.Cloudlet{}
+			if !s.all.cloudletApi.store.STMGet(stm, ckey, &cloudlet) {
+				return nil
+			}
+			zoneKey := cloudlet.GetZone()
+			if ai.ZoneKey.Matches(zoneKey) {
+				// no change
+				return nil
+			}
+			ai.ZoneKey = *zoneKey
+			s.all.appInstApi.store.STMPut(stm, &ai)
+			return nil
+		})
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to update zone for app inst", "appinst", aikey, "err", err)
+		}
+	}
+	ciFilter := edgeproto.ClusterInst{
+		CloudletKey: *ckey,
+	}
+	ciKeys := []*edgeproto.ClusterKey{}
+	s.all.clusterInstApi.cache.Show(&ciFilter, func(obj *edgeproto.ClusterInst) error {
+		ciKeys = append(ciKeys, &obj.Key)
+		return nil
+	})
+	log.SpanLog(ctx, log.DebugLevelApi, "update zone for clusterinsts", "cloudlet", ckey)
+	for _, cikey := range ciKeys {
+		err := s.all.clusterInstApi.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			ci := edgeproto.ClusterInst{}
+			if !s.all.clusterInstApi.store.STMGet(stm, cikey, &ci) {
+				return nil
+			}
+			if !ci.CloudletKey.Matches(ckey) {
+				return nil
+			}
+			cloudlet := edgeproto.Cloudlet{}
+			if !s.all.cloudletApi.store.STMGet(stm, ckey, &cloudlet) {
+				return nil
+			}
+			zoneKey := cloudlet.GetZone()
+			if ci.ZoneKey.Matches(zoneKey) {
+				// no change
+				return nil
+			}
+			ci.ZoneKey = *zoneKey
+			s.all.clusterInstApi.store.STMPut(stm, &ci)
+			return nil
+		})
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to update zone for cluster inst", "clusterinst", cikey, "err", err)
+		}
+	}
+}
+
+func (s *CloudletApi) updateZoneLocation(ctx context.Context, org string, oldZone, newZone string) {
+	filter := edgeproto.Cloudlet{}
+	filter.Key.Organization = org
+	locations := map[edgeproto.ZoneKey][]dme.Loc{}
+	// We need to potentially update two zones, the zone the cloudlet used to
+	// be assigned to, and the new zone the cloudlet is now assigned
+	err := s.cache.Show(&filter, func(cloudlet *edgeproto.Cloudlet) error {
+		if cloudlet.Zone != "" && (cloudlet.Zone == oldZone || cloudlet.Zone == newZone) {
+			zoneKey := cloudlet.GetZone()
+			locations[*zoneKey] = append(locations[*zoneKey], cloudlet.Location)
+		}
+		return nil
+	})
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to update zone location", "operator", org, "err", err)
+	}
+	for _, zoneName := range []string{oldZone, newZone} {
+		zkey := edgeproto.ZoneKey{
+			Name:         zoneName,
+			Organization: org,
+		}
+		err := s.all.zoneApi.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+			zone := edgeproto.Zone{}
+			if !s.all.zoneApi.store.STMGet(stm, &zkey, &zone) {
+				return nil
+			}
+			if zone.DeletePrepare {
+				return nil
+			}
+			locs, ok := locations[zkey]
+			if !ok {
+				zone.Location = dme.Loc{}
+			} else {
+				var lat, long float64
+				for _, loc := range locs {
+					lat += loc.Latitude
+					long += loc.Longitude
+				}
+				lat /= float64(len(locs))
+				long /= float64(len(locs))
+				zone.Location.Latitude = lat
+				zone.Location.Longitude = long
+			}
+			s.all.zoneApi.store.STMPut(stm, &zone)
+			return nil
+		})
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to update zone location", "operator", org, "err", err)
+		}
 	}
 }
 

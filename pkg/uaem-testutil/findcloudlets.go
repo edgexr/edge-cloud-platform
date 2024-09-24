@@ -17,12 +17,14 @@ package dmetest
 import dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 
 type FindCloudletRR struct {
-	Reg            dme.RegisterClientRequest
-	Req            dme.FindCloudletRequest
-	Reply          dme.FindCloudletReply
-	ReplyCarrier   string
-	ReplyCloudlet  string
-	ReplyAlternate dme.FindCloudletReply
+	Reg              dme.RegisterClientRequest
+	Req              dme.FindCloudletRequest
+	Reply            dme.FindCloudletReply
+	ReplyZone        string
+	ReplyCarrier     string
+	ReplyAppInstName string
+	ReplyAppInstOrg  string
+	ReplyAlternate   dme.FindCloudletReply
 }
 
 type GetAppInstListRR struct {
@@ -50,8 +52,10 @@ var FindCloudletData = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[2].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[2].CarrierName,
-		ReplyCloudlet: Cloudlets[2].Name,
+		ReplyZone:        Cloudlets[2].Zone,
+		ReplyCarrier:     Cloudlets[2].CarrierName,
+		ReplyAppInstName: makeAppInstName("Untomt", &Cloudlets[2]),
+		ReplyAppInstOrg:  "Untomt",
 	},
 	FindCloudletRR{
 		Reg: dme.RegisterClientRequest{
@@ -70,8 +74,10 @@ var FindCloudletData = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[1].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[1].CarrierName,
-		ReplyCloudlet: Cloudlets[1].Name,
+		ReplyZone:        Cloudlets[1].Zone,
+		ReplyCarrier:     Cloudlets[1].CarrierName,
+		ReplyAppInstName: makeAppInstName("Untomt", &Cloudlets[1]),
+		ReplyAppInstOrg:  "Untomt",
 	},
 	FindCloudletRR{
 		Reg: dme.RegisterClientRequest{
@@ -104,8 +110,10 @@ var FindCloudletData = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[2].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[2].CarrierName,
-		ReplyCloudlet: Cloudlets[2].Name,
+		ReplyZone:        Cloudlets[2].Zone,
+		ReplyCarrier:     Cloudlets[2].CarrierName,
+		ReplyAppInstName: makeAppInstName("Untomt", &Cloudlets[2]),
+		ReplyAppInstOrg:  "Untomt",
 	},
 	FindCloudletRR{
 		Reg: dme.RegisterClientRequest{
@@ -122,8 +130,10 @@ var FindCloudletData = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[1].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[1].CarrierName,
-		ReplyCloudlet: Cloudlets[1].Name,
+		ReplyZone:        Cloudlets[1].Zone,
+		ReplyCarrier:     Cloudlets[1].CarrierName,
+		ReplyAppInstName: makeAppInstName("Pillimo-go", &Cloudlets[1]),
+		ReplyAppInstOrg:  "Atlantic Labs",
 	},
 	FindCloudletRR{
 		Reg: dme.RegisterClientRequest{
@@ -140,8 +150,10 @@ var FindCloudletData = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[1].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[1].CarrierName,
-		ReplyCloudlet: Cloudlets[1].Name,
+		ReplyZone:        Cloudlets[1].Zone,
+		ReplyCarrier:     Cloudlets[1].CarrierName,
+		ReplyAppInstName: makeAppInstName("HarryPotter-go", &Cloudlets[1]),
+		ReplyAppInstOrg:  "Atlantic Labs",
 	},
 	FindCloudletRR{
 		Reg: dme.RegisterClientRequest{
@@ -158,8 +170,10 @@ var FindCloudletData = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[3].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[3].CarrierName,
-		ReplyCloudlet: Cloudlets[3].Name,
+		ReplyZone:        Cloudlets[3].Zone,
+		ReplyCarrier:     Cloudlets[3].CarrierName,
+		ReplyAppInstName: makeAppInstName("Ever", &Cloudlets[3]),
+		ReplyAppInstOrg:  "Ever.AI",
 	},
 	FindCloudletRR{
 		Reg: dme.RegisterClientRequest{
@@ -176,8 +190,10 @@ var FindCloudletData = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[3].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[3].CarrierName,
-		ReplyCloudlet: Cloudlets[3].Name,
+		ReplyZone:        Cloudlets[3].Zone,
+		ReplyCarrier:     Cloudlets[3].CarrierName,
+		ReplyAppInstName: makeAppInstName("Ever", &Cloudlets[3]),
+		ReplyAppInstOrg:  "Ever.AI",
 	},
 	FindCloudletRR{
 		Reg: dme.RegisterClientRequest{
@@ -194,8 +210,10 @@ var FindCloudletData = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[2].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[2].CarrierName,
-		ReplyCloudlet: Cloudlets[2].Name,
+		ReplyZone:        Cloudlets[2].Zone,
+		ReplyCarrier:     Cloudlets[2].CarrierName,
+		ReplyAppInstName: makeAppInstName("Ever", &Cloudlets[2]),
+		ReplyAppInstOrg:  "Ever.AI",
 	},
 }
 
@@ -215,8 +233,10 @@ var FindCloudletAllianceOrg = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[1].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  "DMUUS", // real cloudlet is GDDT, but treat as DMUUS
-		ReplyCloudlet: Cloudlets[1].Name,
+		ReplyZone:        Cloudlets[1].Zone,
+		ReplyCarrier:     "DMUUS", // real cloudlet is GDDT, but treat as DMUUS
+		ReplyAppInstName: makeAppInstName("HarryPotter-go", &Cloudlets[1]),
+		ReplyAppInstOrg:  "Atlantic Labs",
 	},
 }
 
@@ -236,8 +256,10 @@ var FindCloudletNoAllianceOrg = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[3].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[3].CarrierName,
-		ReplyCloudlet: Cloudlets[3].Name,
+		ReplyZone:        Cloudlets[3].Zone,
+		ReplyCarrier:     Cloudlets[3].CarrierName,
+		ReplyAppInstName: makeAppInstName("HarryPotter-go", &Cloudlets[3]),
+		ReplyAppInstOrg:  "Atlantic Labs",
 	},
 }
 
@@ -257,8 +279,10 @@ var FindCloudletHAData = []FindCloudletRR{
 			CloudletLocation: &Cloudlets[4].Location,
 			Status:           1,
 		},
-		ReplyCarrier:  Cloudlets[4].CarrierName,
-		ReplyCloudlet: Cloudlets[4].Name,
+		ReplyZone:        Cloudlets[4].Zone,
+		ReplyCarrier:     Cloudlets[4].CarrierName,
+		ReplyAppInstName: makeAppInstName("Ever", &Cloudlets[4]),
+		ReplyAppInstOrg:  "Ever.AI",
 		ReplyAlternate: dme.FindCloudletReply{
 			Fqdn:             Cloudlets[5].Uri,
 			CloudletLocation: &Cloudlets[5].Location,

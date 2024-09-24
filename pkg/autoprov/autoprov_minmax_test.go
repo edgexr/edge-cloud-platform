@@ -46,25 +46,21 @@ func TestChoose(t *testing.T) {
 	app := edgeproto.App{}
 	app.Key.Name = "app"
 	policy := testutil.AutoProvPolicyData()[0]
-	cloudlets := make([]edgeproto.Cloudlet, 3, 3)
-	cloudlets[0].Key.Name = "A"
-	cloudlets[1].Key.Name = "B"
-	cloudlets[2].Key.Name = "C"
+	zones := make([]edgeproto.Zone, 3, 3)
+	zones[0].Key.Name = "A"
+	zones[1].Key.Name = "B"
+	zones[2].Key.Name = "C"
 	potentialAppInsts := []edgeproto.AppInstKey{}
 	potentialCreate := []*potentialCreateSite{}
-	for _, cloudlet := range cloudlets {
-		policy.Cloudlets = append(policy.Cloudlets,
-			&edgeproto.AutoProvCloudlet{
-				Key: cloudlet.Key,
-				Loc: cloudlet.Location,
-			})
+	for _, zone := range zones {
+		policy.Zones = append(policy.Zones, &zone.Key)
 		aiKey := edgeproto.AppInstKey{}
 		aiKey.Name = app.Key.Name
 		aiKey.Organization = app.Key.Organization
 		potentialAppInsts = append(potentialAppInsts, aiKey)
 		pc := &potentialCreateSite{
-			cloudletKey: cloudlet.Key,
-			hasFree:     0,
+			zoneKey: zone.Key,
+			hasFree: 0,
 		}
 		potentialCreate = append(potentialCreate, pc)
 	}
@@ -72,7 +68,7 @@ func TestChoose(t *testing.T) {
 	app.AutoProvPolicies = []string{policy.Key.Name}
 	// app stats
 	appStats := apAppStats{}
-	appStats.cloudlets = make(map[edgeproto.CloudletKey]*apCloudletStats)
+	appStats.zones = make(map[edgeproto.ZoneKey]*apCloudletStats)
 	autoProvAggr.allStats[app.Key] = &appStats
 
 	// the sortPotentialCreate and chooseDelete functions may modify the passed in
@@ -98,16 +94,16 @@ func TestChoose(t *testing.T) {
 	require.Equal(t, potentialCreate, results)
 
 	// zero stats
-	for _, cloudlet := range cloudlets {
-		appStats.cloudlets[cloudlet.Key] = &apCloudletStats{}
+	for _, cloudlet := range zones {
+		appStats.zones[cloudlet.Key] = &apCloudletStats{}
 	}
 	results = appChecker.sortPotentialCreate(ctx, clone(potentialCreate))
 	require.Equal(t, potentialCreate, results)
 
 	// later cloudlets should be preferred
-	appStats.cloudlets[cloudlets[0].Key].count = 2
-	appStats.cloudlets[cloudlets[1].Key].count = 4
-	appStats.cloudlets[cloudlets[2].Key].count = 6
+	appStats.zones[zones[0].Key].count = 2
+	appStats.zones[zones[1].Key].count = 4
+	appStats.zones[zones[2].Key].count = 6
 	reverse := []*potentialCreateSite{
 		potentialCreate[2],
 		potentialCreate[1],
@@ -117,9 +113,9 @@ func TestChoose(t *testing.T) {
 	require.Equal(t, reverse, results)
 
 	// change stats to change order
-	appStats.cloudlets[cloudlets[0].Key].count = 2
-	appStats.cloudlets[cloudlets[1].Key].count = 6
-	appStats.cloudlets[cloudlets[2].Key].count = 5
+	appStats.zones[zones[0].Key].count = 2
+	appStats.zones[zones[1].Key].count = 6
+	appStats.zones[zones[2].Key].count = 5
 	expected := []*potentialCreateSite{
 		potentialCreate[1],
 		potentialCreate[2],
@@ -494,15 +490,15 @@ func TestAppChecker(t *testing.T) {
 	// remove cloudlets from policy - will delete all
 	// auto-provisioned AppInsts regardless of min because they are on
 	// cloudlets not specified by any policy.
-	cloudletsSave := pt1.policy.Cloudlets
-	pt1.policy.Cloudlets = nil
+	zonesSave := pt1.policy.Zones
+	pt1.policy.Zones = nil
 	pt1.updatePolicy(ctx)
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, 0)
 	require.Nil(t, err)
 
 	// set cloudlets back
-	pt1.policy.Cloudlets = cloudletsSave
+	pt1.policy.Zones = zonesSave
 	pt1.updatePolicy(ctx)
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
@@ -523,7 +519,7 @@ func TestAppChecker(t *testing.T) {
 	require.Nil(t, err)
 
 	// remove cloudlets (no change since controller still disallowing changes)
-	pt1.policy.Cloudlets = nil
+	pt1.policy.Zones = nil
 	pt1.updatePolicy(ctx)
 	minmax.CheckApp(ctx, app.Key)
 	err = dc.waitForAppInsts(ctx, int(pt1.policy.MinActiveInstances))
@@ -624,9 +620,9 @@ func TestAppChecker(t *testing.T) {
 	// no AppInsts to start
 	require.Equal(t, 0, dc.appInstCache.GetCount())
 	// test blacklisting by causing inst[0] create to fail
-	failCreateKey := edgeproto.AppCloudletKeyPair{
-		AppKey:      appRetry.Key,
-		CloudletKey: pt3.cloudlets[0].Key,
+	failCreateKey := edgeproto.AppZoneKeyPair{
+		AppKey:  appRetry.Key,
+		ZoneKey: pt3.zones[0].Key,
 	}
 	insts = pt3.getAppInsts(&appRetry.Key, dc)
 	dc.failCreateInsts[failCreateKey] = struct{}{}
@@ -636,7 +632,7 @@ func TestAppChecker(t *testing.T) {
 	minmax.CheckApp(ctx, appRetry.Key)
 	// appinst create should fail on first cloudlet, and it should be marked,
 	// but minmax will run create on next best potential cloudlet (inst[1])
-	err = waitForRetryAppInsts(ctx, failCreateKey.AppKey, failCreateKey.CloudletKey, true)
+	err = waitForRetryAppInsts(ctx, failCreateKey.AppKey, failCreateKey.ZoneKey, true)
 	require.Nil(t, err)
 	err = dc.waitForAppInsts(ctx, 1)
 	require.Nil(t, err)
@@ -659,7 +655,7 @@ func TestAppChecker(t *testing.T) {
 	require.Nil(t, err)
 	// clear out retry
 	retryTracker.doRetry(ctx, minmax)
-	err = waitForRetryAppInsts(ctx, failCreateKey.AppKey, failCreateKey.CloudletKey, false)
+	err = waitForRetryAppInsts(ctx, failCreateKey.AppKey, failCreateKey.ZoneKey, false)
 	require.Nil(t, err)
 	// with retry cleared, minmax will attempt to create on inst[0] again
 	minmax.CheckApp(ctx, appRetry.Key)
@@ -679,6 +675,7 @@ func TestAppChecker(t *testing.T) {
 
 type policyTest struct {
 	policy        edgeproto.AutoProvPolicy
+	zones         []edgeproto.Zone
 	cloudlets     []edgeproto.Cloudlet
 	cloudletInfos []edgeproto.CloudletInfo
 	clusterInsts  []edgeproto.ClusterInst
@@ -688,25 +685,32 @@ type policyTest struct {
 func makePolicyTest(name string, count uint32, caches *CacheData) *policyTest {
 	s := policyTest{}
 	s.policy.Key.Name = name
+	s.zones = make([]edgeproto.Zone, count, count)
 	s.cloudlets = make([]edgeproto.Cloudlet, count, count)
 	s.cloudletInfos = make([]edgeproto.CloudletInfo, count, count)
 	s.clusterInsts = make([]edgeproto.ClusterInst, count, count)
 	s.caches = caches
 	for ii, _ := range s.cloudlets {
-		s.cloudlets[ii].Key.Name = fmt.Sprintf("%s_%d", name, ii)
+		cname := fmt.Sprintf("%s_%d", name, ii)
+		s.zones[ii].Key.Name = cname
+		s.cloudlets[ii].Key.Name = cname
+		s.cloudlets[ii].Zone = cname
 		s.cloudletInfos[ii].Key = s.cloudlets[ii].Key
 		s.cloudletInfos[ii].State = dme.CloudletState_CLOUDLET_STATE_READY
 		s.clusterInsts[ii].CloudletKey = s.cloudlets[ii].Key
 		s.clusterInsts[ii].Reservable = true
 		s.clusterInsts[ii].Key.Organization = edgeproto.OrganizationEdgeCloud
-		s.policy.Cloudlets = append(s.policy.Cloudlets,
-			&edgeproto.AutoProvCloudlet{Key: s.cloudlets[ii].Key})
+		s.policy.Zones = append(s.policy.Zones, &s.zones[ii].Key)
 	}
 	return &s
 }
 
 func (s *policyTest) updateClusterInsts(ctx context.Context) {
 	// objects must be copied before being put in the cache.
+	for ii, _ := range s.zones {
+		obj := s.zones[ii]
+		s.caches.zoneCache.Update(ctx, &obj, 0)
+	}
 	for ii, _ := range s.cloudlets {
 		obj := s.cloudlets[ii]
 		s.caches.cloudletCache.Update(ctx, &obj, 0)
@@ -769,6 +773,7 @@ func (s *policyTest) getManualAppInsts(key *edgeproto.AppKey) []edgeproto.AppIns
 				Organization: key.Organization,
 			},
 			AppKey:      *key,
+			ZoneKey:     s.zones[idx].Key,
 			CloudletKey: s.cloudlets[idx].Key,
 		}
 		insts = append(insts, inst)

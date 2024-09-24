@@ -113,7 +113,7 @@ func IsAppInstBeingDeletedError(err error) bool {
 
 // Generate unique and recognizable name for autoprov deployed instances.
 // Only one auto-provisioned instance per app is allowed per cloudlet.
-func GetAutoProvAppInstKey(appKey *edgeproto.AppKey, cloudletKey *edgeproto.CloudletKey) edgeproto.AppInstKey {
+func GetAutoProvAppInstKey(appKey *edgeproto.AppKey, zoneKey *edgeproto.ZoneKey) edgeproto.AppInstKey {
 	// AppInst name must unique within region. We could append
 	// a random string but that would make unit/regression testing difficult
 	// as the names would become random. We could append the cloudlet info
@@ -121,7 +121,7 @@ func GetAutoProvAppInstKey(appKey *edgeproto.AppKey, cloudletKey *edgeproto.Clou
 	// So we append a subset of the cloudlet key's sha hash to allow for
 	// a deterministic name tied to the target cloudlet, but without
 	// cloudlet identifying info.
-	name := AutoProvPrefix + "-" + appKey.Name + appKey.Version + "-" + GetCloudletKeyHash(cloudletKey)
+	name := AutoProvPrefix + "-" + appKey.Name + appKey.Version + "-" + GetZoneKeyHash(zoneKey)
 	return edgeproto.AppInstKey{
 		Name:         util.DNSSanitize(name),
 		Organization: appKey.Organization,

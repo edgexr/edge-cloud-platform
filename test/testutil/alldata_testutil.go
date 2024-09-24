@@ -28,12 +28,13 @@ type AllDataOut struct {
 	TrustPolicies              [][]edgeproto.Result
 	GpuDrivers                 [][]edgeproto.Result
 	PlatformFeatures           []edgeproto.Result
+	Zones                      []edgeproto.Result
 	Cloudlets                  [][]edgeproto.Result
 	CloudletInfos              []edgeproto.Result
-	CloudletPools              []edgeproto.Result
+	ZonePools                  []edgeproto.Result
 	Networks                   [][]edgeproto.Result
 	AutoProvPolicies           []edgeproto.Result
-	AutoProvPolicyCloudlets    []edgeproto.Result
+	AutoProvPolicyZones        []edgeproto.Result
 	AutoScalePolicies          []edgeproto.Result
 	IdleReservableClusterInsts *edgeproto.Result
 	ClusterInsts               [][]edgeproto.Result
@@ -68,18 +69,20 @@ func RunAllDataApis(run *Run, in *edgeproto.AllData, inMap map[string]interface{
 	apicb("gpudrivers")
 	run.PlatformFeaturesApi(&in.PlatformFeatures, inMap["platformfeatures"], &out.PlatformFeatures)
 	apicb("platformfeatures")
+	run.ZoneApi(&in.Zones, inMap["zones"], &out.Zones)
+	apicb("zones")
 	run.CloudletApi(&in.Cloudlets, inMap["cloudlets"], &out.Cloudlets)
 	apicb("cloudlets")
 	run.CloudletInfoApi(&in.CloudletInfos, inMap["cloudletinfos"], &out.CloudletInfos)
 	apicb("cloudletinfos")
-	run.CloudletPoolApi(&in.CloudletPools, inMap["cloudletpools"], &out.CloudletPools)
-	apicb("cloudletpools")
+	run.ZonePoolApi(&in.ZonePools, inMap["zonepools"], &out.ZonePools)
+	apicb("zonepools")
 	run.NetworkApi(&in.Networks, inMap["networks"], &out.Networks)
 	apicb("networks")
 	run.AutoProvPolicyApi(&in.AutoProvPolicies, inMap["autoprovpolicies"], &out.AutoProvPolicies)
 	apicb("autoprovpolicies")
-	run.AutoProvPolicyApi_AutoProvPolicyCloudlet(&in.AutoProvPolicyCloudlets, inMap["autoprovpolicycloudlets"], &out.AutoProvPolicyCloudlets)
-	apicb("autoprovpolicycloudlets")
+	run.AutoProvPolicyApi_AutoProvPolicyZone(&in.AutoProvPolicyZones, inMap["autoprovpolicyzones"], &out.AutoProvPolicyZones)
+	apicb("autoprovpolicyzones")
 	run.AutoScalePolicyApi(&in.AutoScalePolicies, inMap["autoscalepolicies"], &out.AutoScalePolicies)
 	apicb("autoscalepolicies")
 	run.ClusterInstApi_IdleReservableClusterInsts(in.IdleReservableClusterInsts, inMap["idlereservableclusterinsts"], &out.IdleReservableClusterInsts)
@@ -124,18 +127,20 @@ func RunAllDataReverseApis(run *Run, in *edgeproto.AllData, inMap map[string]int
 	run.ClusterInstApi_IdleReservableClusterInsts(in.IdleReservableClusterInsts, inMap["idlereservableclusterinsts"], &out.IdleReservableClusterInsts)
 	apicb("autoscalepolicies")
 	run.AutoScalePolicyApi(&in.AutoScalePolicies, inMap["autoscalepolicies"], &out.AutoScalePolicies)
-	apicb("autoprovpolicycloudlets")
-	run.AutoProvPolicyApi_AutoProvPolicyCloudlet(&in.AutoProvPolicyCloudlets, inMap["autoprovpolicycloudlets"], &out.AutoProvPolicyCloudlets)
+	apicb("autoprovpolicyzones")
+	run.AutoProvPolicyApi_AutoProvPolicyZone(&in.AutoProvPolicyZones, inMap["autoprovpolicyzones"], &out.AutoProvPolicyZones)
 	apicb("autoprovpolicies")
 	run.AutoProvPolicyApi(&in.AutoProvPolicies, inMap["autoprovpolicies"], &out.AutoProvPolicies)
 	apicb("networks")
 	run.NetworkApi(&in.Networks, inMap["networks"], &out.Networks)
-	apicb("cloudletpools")
-	run.CloudletPoolApi(&in.CloudletPools, inMap["cloudletpools"], &out.CloudletPools)
+	apicb("zonepools")
+	run.ZonePoolApi(&in.ZonePools, inMap["zonepools"], &out.ZonePools)
 	apicb("cloudletinfos")
 	run.CloudletInfoApi(&in.CloudletInfos, inMap["cloudletinfos"], &out.CloudletInfos)
 	apicb("cloudlets")
 	run.CloudletApi(&in.Cloudlets, inMap["cloudlets"], &out.Cloudlets)
+	apicb("zones")
+	run.ZoneApi(&in.Zones, inMap["zones"], &out.Zones)
 	apicb("platformfeatures")
 	run.PlatformFeaturesApi(&in.PlatformFeatures, inMap["platformfeatures"], &out.PlatformFeatures)
 	apicb("gpudrivers")
@@ -176,14 +181,17 @@ func RunAllDataShowApis(run *Run, in *edgeproto.AllData, selector edgeproto.AllS
 	if selector.Has("platformfeatures") {
 		run.PlatformFeaturesApi(&in.PlatformFeatures, nil, &out.PlatformFeatures)
 	}
+	if selector.Has("zones") {
+		run.ZoneApi(&in.Zones, nil, &out.Zones)
+	}
 	if selector.Has("cloudlets") {
 		run.CloudletApi(&in.Cloudlets, nil, &out.Cloudlets)
 	}
 	if selector.Has("cloudletinfos") {
 		run.CloudletInfoApi(&in.CloudletInfos, nil, &out.CloudletInfos)
 	}
-	if selector.Has("cloudletpools") {
-		run.CloudletPoolApi(&in.CloudletPools, nil, &out.CloudletPools)
+	if selector.Has("zonepools") {
+		run.ZonePoolApi(&in.ZonePools, nil, &out.ZonePools)
 	}
 	if selector.Has("networks") {
 		run.NetworkApi(&in.Networks, nil, &out.Networks)
@@ -236,8 +244,9 @@ func DeleteAllAllDataInternal(t *testing.T, ctx context.Context, apis InternalCU
 	InternalAutoScalePolicyDeleteAll(t, ctx, apis.GetAutoScalePolicyApi(), in.AutoScalePolicies)
 	InternalAutoProvPolicyDeleteAll(t, ctx, apis.GetAutoProvPolicyApi(), in.AutoProvPolicies)
 	InternalNetworkDeleteAll(t, ctx, apis.GetNetworkApi(), in.Networks)
-	InternalCloudletPoolDeleteAll(t, ctx, apis.GetCloudletPoolApi(), in.CloudletPools)
+	InternalZonePoolDeleteAll(t, ctx, apis.GetZonePoolApi(), in.ZonePools)
 	InternalCloudletDeleteAll(t, ctx, apis.GetCloudletApi(), in.Cloudlets)
+	InternalZoneDeleteAll(t, ctx, apis.GetZoneApi(), in.Zones)
 	InternalGPUDriverDeleteAll(t, ctx, apis.GetGPUDriverApi(), in.GpuDrivers)
 	InternalTrustPolicyDeleteAll(t, ctx, apis.GetTrustPolicyApi(), in.TrustPolicies)
 	InternalResTagTableDeleteAll(t, ctx, apis.GetResTagTableApi(), in.ResTagTables)

@@ -86,20 +86,20 @@ func CreateTrustPolicyExceptionAddRefsChecks(t *testing.T, ctx context.Context, 
 		require.Nil(t, err)
 	}
 	{
-		// set delete_prepare on referenced CloudletPool
-		ref := supportData.getOneCloudletPool()
-		require.NotNil(t, ref, "support data must include one referenced CloudletPool")
+		// set delete_prepare on referenced ZonePool
+		ref := supportData.getOneZonePool()
+		require.NotNil(t, ref, "support data must include one referenced ZonePool")
 		ref.DeletePrepare = true
-		_, err = all.cloudletPoolApi.store.Put(ctx, ref, all.cloudletPoolApi.sync.SyncWait)
+		_, err = all.zonePoolApi.store.Put(ctx, ref, all.zonePoolApi.sync.SyncWait)
 		require.Nil(t, err)
 		// api call must fail with object being deleted
 		testObj, _ = dataGen.GetCreateTrustPolicyExceptionTestObj()
 		_, err = all.trustPolicyExceptionApi.CreateTrustPolicyException(ctx, testObj)
-		require.NotNil(t, err, "CreateTrustPolicyException must fail with CloudletPool.DeletePrepare set")
+		require.NotNil(t, err, "CreateTrustPolicyException must fail with ZonePool.DeletePrepare set")
 		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
-		// reset delete_prepare on referenced CloudletPool
+		// reset delete_prepare on referenced ZonePool
 		ref.DeletePrepare = false
-		_, err = all.cloudletPoolApi.store.Put(ctx, ref, all.cloudletPoolApi.sync.SyncWait)
+		_, err = all.zonePoolApi.store.Put(ctx, ref, all.zonePoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 
@@ -109,8 +109,8 @@ func CreateTrustPolicyExceptionAddRefsChecks(t *testing.T, ctx context.Context, 
 	defer trustPolicyExceptionApiUnwrap()
 	appApiStore, appApiUnwrap := wrapAppTrackerStore(all.appApi)
 	defer appApiUnwrap()
-	cloudletPoolApiStore, cloudletPoolApiUnwrap := wrapCloudletPoolTrackerStore(all.cloudletPoolApi)
-	defer cloudletPoolApiUnwrap()
+	zonePoolApiStore, zonePoolApiUnwrap := wrapZonePoolTrackerStore(all.zonePoolApi)
+	defer zonePoolApiUnwrap()
 
 	// CreateTrustPolicyException should succeed if no references are in delete_prepare
 	testObj, _ = dataGen.GetCreateTrustPolicyExceptionTestObj()
@@ -120,8 +120,8 @@ func CreateTrustPolicyExceptionAddRefsChecks(t *testing.T, ctx context.Context, 
 	require.NotNil(t, trustPolicyExceptionApiStore.putSTM, "CreateTrustPolicyException put TrustPolicyException must be done in STM")
 	require.NotNil(t, appApiStore.getSTM, "CreateTrustPolicyException check App ref must be done in STM")
 	require.Equal(t, trustPolicyExceptionApiStore.putSTM, appApiStore.getSTM, "CreateTrustPolicyException check App ref must be done in same STM as TrustPolicyException put")
-	require.NotNil(t, cloudletPoolApiStore.getSTM, "CreateTrustPolicyException check CloudletPool ref must be done in STM")
-	require.Equal(t, trustPolicyExceptionApiStore.putSTM, cloudletPoolApiStore.getSTM, "CreateTrustPolicyException check CloudletPool ref must be done in same STM as TrustPolicyException put")
+	require.NotNil(t, zonePoolApiStore.getSTM, "CreateTrustPolicyException check ZonePool ref must be done in STM")
+	require.Equal(t, trustPolicyExceptionApiStore.putSTM, zonePoolApiStore.getSTM, "CreateTrustPolicyException check ZonePool ref must be done in same STM as TrustPolicyException put")
 
 	// clean up
 	// delete created test obj
