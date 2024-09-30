@@ -173,13 +173,13 @@ type AdditionalStorage = []struct {
 // AppId A globally unique identifier associated with the application.
 // Edge Cloud Platform generates this identifier when the
 // Application is submitted.
-type AppId = openapi_types.UUID
+type AppId = string
 
 // AppInstanceId A globally unique identifier associated with a running
 // instance of an application.
 // Edge Cloud Platform generates this identifier when the
 // instantiation in the Edge Cloud Zone is successful.
-type AppInstanceId = openapi_types.UUID
+type AppInstanceId = string
 
 // AppInstanceInfo Information about the application instance.
 type AppInstanceInfo struct {
@@ -442,7 +442,7 @@ type EdgeCloudZone struct {
 
 // EdgeCloudZoneId Unique identifier created by the Edge Cloud Platform to identify an
 // Edge Cloud Zone within an Edge Cloud.
-type EdgeCloudZoneId = openapi_types.UUID
+type EdgeCloudZoneId = string
 
 // EdgeCloudZoneName Human readable name of the geographical zone of
 // the Edge Cloud. Defined by the Edge Cloud Provider.
@@ -547,7 +547,7 @@ type K8sNetworkingAdditionalNetworksInterfaceType string
 
 // KubernetesClusterRef A global unique identifier associated with a Kubernetes cluster
 // infrastructure.
-type KubernetesClusterRef = openapi_types.UUID
+type KubernetesClusterRef = string
 
 // KubernetesResources Definition of Kubernetes Cluster Infrastructure.
 type KubernetesResources struct {

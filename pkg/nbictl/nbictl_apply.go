@@ -12,6 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml openapi/Edge-Application-Management.yaml
+package nbictl
 
-package nbi
+import (
+	"context"
+
+	"github.com/edgexr/edge-cloud-platform/api/nbi"
+)
+
+func ApplyAll(ctx context.Context, client *nbi.ClientWithResponses, data *ApplyData) []APIErr {
+	return nil
+}

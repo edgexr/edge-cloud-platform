@@ -33,6 +33,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/nbi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
@@ -50,6 +51,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/labstack/echo/v4"
 	yaml "github.com/mobiledgex/yaml/v2"
 	"google.golang.org/grpc"
 )
@@ -65,12 +67,11 @@ var apiAddr = flag.String("apiAddr", "127.0.0.1:55001", "API listener address")
 // external API Addr is registered with etcd so other controllers can connect
 // directly to this controller.
 var externalApiAddr = flag.String("externalApiAddr", "", "External API listener address if behind proxy/LB. Defaults to apiAddr")
-var httpAddr = flag.String("httpAddr", "127.0.0.1:8091", "HTTP listener address")
+var httpAddr = flag.String("httpAddr", "127.0.0.1:8901", "HTTP listener address")
 var notifyAddr = flag.String("notifyAddr", "127.0.0.1:50001", "Notify listener address")
 var notifyRootAddrs = flag.String("notifyRootAddrs", "", "Comma separated list of notifyroots")
 var notifyParentAddrs = flag.String("notifyParentAddrs", "", "Comma separated list of notify parents")
 var accessApiAddr = flag.String("accessApiAddr", "127.0.0.1:41001", "listener address for external services with access key")
-
 var edgeTurnAddr = flag.String("edgeTurnAddr", "127.0.0.1:6080", "Address to EdgeTurn Server")
 var edgeTurnProxyAddr = flag.String("edgeTurnProxyAddr", "127.0.0.1:8443", "Address to EdgeTurn Server")
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
@@ -547,12 +548,21 @@ func startServices() error {
 	if err != nil {
 		return fmt.Errorf("Failed to create grpc gateway, %v", err)
 	}
-	mux.Handle("/", gw)
+	mux.Handle(cloudcommon.ControllerEdgeprotoRESTPath, gw)
 	// Suppress contant stream of TLS error logs due to LB health check. There is discussion in the community
 	//to get rid of some of these logs, but as of now this a the way around it.   We could miss other logs here but
 	// the excessive error logs are drowning out everthing else.
 	var nullLogger baselog.Logger
 	nullLogger.SetOutput(io.Discard)
+
+	nbiApis := NewNBIAPI(allApis)
+	e := echo.New()
+	e.Use(log.EchoTraceHandler, log.EchoAuditLogger)
+	e.HideBanner = true
+	nbiHandler := nbi.NewStrictHandler(nbiApis, []nbi.StrictMiddlewareFunc{})
+	nbi.RegisterHandlersWithBaseURL(e, nbiHandler, cloudcommon.NBIRootPath)
+	// note that the trailing / is needed to do sub-path matching
+	mux.Handle(cloudcommon.NBIRootPath+"/", e)
 
 	httpServer := &http.Server{
 		Addr:      *httpAddr,
