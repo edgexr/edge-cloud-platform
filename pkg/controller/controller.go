@@ -548,7 +548,7 @@ func startServices() error {
 	if err != nil {
 		return fmt.Errorf("Failed to create grpc gateway, %v", err)
 	}
-	mux.Handle("/edgeproto/v1/", gw)
+	mux.Handle(cloudcommon.ControllerEdgeprotoRESTPath, gw)
 	// Suppress contant stream of TLS error logs due to LB health check. There is discussion in the community
 	//to get rid of some of these logs, but as of now this a the way around it.   We could miss other logs here but
 	// the excessive error logs are drowning out everthing else.
@@ -560,8 +560,9 @@ func startServices() error {
 	e.Use(log.EchoTraceHandler, log.EchoAuditLogger)
 	e.HideBanner = true
 	nbiHandler := nbi.NewStrictHandler(nbiApis, []nbi.StrictMiddlewareFunc{})
-	nbi.RegisterHandlersWithBaseURL(e, nbiHandler, "/edge-application-management/vwip")
-	mux.Handle("/edge-application-management/vwip/", e)
+	nbi.RegisterHandlersWithBaseURL(e, nbiHandler, cloudcommon.NBIRootPath)
+	// note that the trailing / is needed to do sub-path matching
+	mux.Handle(cloudcommon.NBIRootPath+"/", e)
 
 	httpServer := &http.Server{
 		Addr:      *httpAddr,

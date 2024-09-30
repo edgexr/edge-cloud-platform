@@ -22,6 +22,7 @@ import (
 	"net/http"
 
 	"github.com/edgexr/edge-cloud-platform/api/nbi"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 )
 
 type AppInst struct {
@@ -47,7 +48,7 @@ type APIErr struct {
 }
 
 func getURL(addr string) string {
-	return addr + "/edge-application-management/vwip"
+	return addr + cloudcommon.NBIRootPath
 }
 
 func BasicClient(addr, bearerToken string, skipVerify bool) (*nbi.ClientWithResponses, error) {

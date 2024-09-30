@@ -224,6 +224,8 @@ var CustomMetric = "custom-metric"
 var VmRegPath = "/storage/v1/artifacts"
 var VmRegPullPath = "/storage/v1/pull"
 var VmRegHeaderMD5 = "X-Checksum-Md5"
+var ControllerEdgeprotoRESTPath = "/edgeproto/v1"
+var NBIRootPath = "/edge-application-management/vwip"
 
 // Map used to identify which metrics should go to persistent_metrics db. Value represents the measurement creation status
 var EdgeEventsMetrics = map[string]struct{}{
