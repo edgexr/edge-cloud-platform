@@ -162,19 +162,24 @@ func (m *ManagedK8sPlatform) UpdateAppInst(ctx context.Context, clusterInst *edg
 
 func (m *ManagedK8sPlatform) SetupKconf(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
 	targetFile := k8smgmt.GetKconfName(clusterInst)
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetupKconf", "targetFile", targetFile)
 
 	if _, err := os.Stat(targetFile); err == nil {
 		// already exists
 		return nil
 	}
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
-	if err := m.Provider.GetCredentials(ctx, clusterName); err != nil {
-		return fmt.Errorf("unable to get credentials %v", err)
+	return m.SetupClusterKconf(ctx, clusterName, targetFile)
+}
+
+func (m *ManagedK8sPlatform) SetupClusterKconf(ctx context.Context, clusterName, targetFile string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "SetupKconf", "cluster", clusterName, "targetFile", targetFile)
+	kconfData, err := m.Provider.GetCredentials(ctx, clusterName)
+	if err != nil {
+		return fmt.Errorf("unable to get cluster %s credentials %v", clusterName, err)
 	}
-	src := infracommon.DefaultKubeconfig()
-	if err := infracommon.CopyFile(src, targetFile); err != nil {
-		return fmt.Errorf("can't copy %s, %v", src, err)
+	err = os.WriteFile(targetFile, kconfData, KconfPerms)
+	if err != nil {
+		return fmt.Errorf("failed to write cluster %s kubeconfig %s, %s", clusterName, targetFile, err)
 	}
 	return nil
 }

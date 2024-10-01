@@ -17,6 +17,7 @@ package gcp
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -74,13 +75,26 @@ func (g *GCPPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName s
 }
 
 // GetCredentials retrieves kubeconfig credentials from gcloud.
-func (g *GCPPlatform) GetCredentials(ctx context.Context, clusterName string) error {
-	out, err := infracommon.Sh(g.accessVars).Command("gcloud", "container", "clusters", "get-credentials", clusterName).CombinedOutput()
+func (g *GCPPlatform) GetCredentials(ctx context.Context, clusterName string) ([]byte, error) {
+	kconf := "/tmp/" + clusterName + ".kubeconfig"
+	envVars := make(map[string]string)
+	for k, v := range g.accessVars {
+		envVars[k] = v
+	}
+	envVars["KUBECONFIG"] = kconf
+	out, err := infracommon.Sh(envVars).Command("gcloud", "container", "clusters", "get-credentials", clusterName).CombinedOutput()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in GetCredentials", "out", string(out), "err", err)
-		return fmt.Errorf("Error in GetCredential: %s - %v", string(out), err)
+		return nil, fmt.Errorf("get credential failed: %s - %v", string(out), err)
 	}
-	return nil
+	defer func() {
+		os.Remove(kconf)
+	}()
+	data, err := os.ReadFile(kconf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file %s, %s", kconf, err)
+	}
+	return data, nil
 }
 
 func (g *GCPPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {

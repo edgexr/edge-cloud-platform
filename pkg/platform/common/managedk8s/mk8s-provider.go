@@ -16,6 +16,7 @@ package managedk8s
 
 import (
 	"context"
+	"io/fs"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -32,7 +33,7 @@ type ManagedK8sProvider interface {
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
 	SetProperties(props *infracommon.InfraProperties) error
 	Login(ctx context.Context) error
-	GetCredentials(ctx context.Context, clusterName string) error
+	GetCredentials(ctx context.Context, clusterName string) ([]byte, error)
 	NameSanitize(name string) string
 	CreateClusterPrerequisites(ctx context.Context, clusterName string) error
 	RunClusterCreateCommand(ctx context.Context, clusterName string, numNodes uint32, flavor string) error
@@ -42,6 +43,8 @@ type ManagedK8sProvider interface {
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
 }
+
+const KconfPerms fs.FileMode = 0644
 
 // ManagedK8sPlatform contains info needed by all Managed Kubernetes Providers
 type ManagedK8sPlatform struct {
