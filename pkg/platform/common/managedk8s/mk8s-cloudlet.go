@@ -50,7 +50,7 @@ func (m *ManagedK8sPlatform) getCloudletClusterName(cloudlet *edgeproto.Cloudlet
 func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, flavor *edgeproto.Flavor, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet", "cloudlet", cloudlet)
 	cloudletResourcesCreated := false
-	if cloudlet.Deployment != cloudcommon.DeploymentTypeKubernetes {
+	if cloudlet.Deployment != cloudcommon.DeploymentTypeKubernetes && cloudlet.CrmOnEdge {
 		return cloudletResourcesCreated, fmt.Errorf("Only kubernetes deployment supported for cloudlet platform: %s", m.Type)
 	}
 	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
@@ -76,26 +76,30 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
-	// at this point we can communicate to the cloudlet so ensure full delete happens on error
-	cloudletResourcesCreated = true
+	if cloudlet.CrmOnEdge {
+		// at this point we can communicate to the cloudlet so ensure full delete happens on error
+		cloudletResourcesCreated = true
 
-	// Find the closest matching vmspec
-	cli := edgeproto.CloudletInfo{}
-	cli.Key = cloudlet.Key
-	cli.Flavors = info.Flavors
-	vmsp, err := vmspec.GetVMSpec(ctx, *flavor, cli, nil)
-	if err != nil {
-		return cloudletResourcesCreated, err
-	}
-	// create the cluster to run the platform
-	kconf := fmt.Sprintf("%s.%s.kubeconfig", cloudlet.Key.Name, "platform")
-	client := &pc.LocalClient{}
-	err = m.createClusterInstInternal(ctx, client, cloudletClusterName, kconf, 1, vmsp.FlavorName, updateCallback)
-	if err != nil {
-		return cloudletResourcesCreated, err
+		// Find the closest matching vmspec
+		cli := edgeproto.CloudletInfo{}
+		cli.Key = cloudlet.Key
+		cli.Flavors = info.Flavors
+		vmsp, err := vmspec.GetVMSpec(ctx, *flavor, cli, nil)
+		if err != nil {
+			return cloudletResourcesCreated, err
+		}
+		// create the cluster to run the platform
+		kconf := fmt.Sprintf("%s.%s.kubeconfig", cloudlet.Key.Name, "platform")
+		client := &pc.LocalClient{}
+		err = m.createClusterInstInternal(ctx, client, cloudletClusterName, kconf, 1, vmsp.FlavorName, updateCallback)
+		if err != nil {
+			return cloudletResourcesCreated, err
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet success")
+		return cloudletResourcesCreated, m.CreatePlatformApp(ctx, "crm-"+cloudletClusterName, kconf, platCfg.AccessApi, pfConfig)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet success")
-	return cloudletResourcesCreated, m.CreatePlatformApp(ctx, "crm-"+cloudletClusterName, kconf, platCfg.AccessApi, pfConfig)
+	return cloudletResourcesCreated, nil
 }
 
 func (m *ManagedK8sPlatform) UpdateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -134,8 +138,11 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 	if err != nil {
 		return err
 	}
-	cloudletClusterName := m.getCloudletClusterName(cloudlet)
-	return m.deleteClusterInstInternal(ctx, cloudletClusterName, updateCallback)
+	if cloudlet.CrmOnEdge {
+		cloudletClusterName := m.getCloudletClusterName(cloudlet)
+		return m.deleteClusterInstInternal(ctx, cloudletClusterName, updateCallback)
+	}
+	return nil
 }
 
 func (v *ManagedK8sPlatform) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, accessApi platform.AccessApi, updateCallback edgeproto.CacheUpdateCallback) error {

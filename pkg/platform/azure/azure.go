@@ -16,12 +16,15 @@ package azure
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"os"
+	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/codeskyblue/go-sh"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -37,6 +40,7 @@ const AzureMaxResourceGroupNameLen int = 80
 type AzurePlatform struct {
 	properties *infracommon.InfraProperties
 	accessVars map[string]string
+	creds      *azidentity.DefaultAzureCredential
 }
 
 type AZName struct {
@@ -74,72 +78,121 @@ func (o *AzurePlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		AccessVars:                    AccessVarProps,
 		Properties:                    azureProps,
 		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,
+		RequiresCrmOffEdge:            true,
 	}
 }
 
 func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "GatherCloudletInfo")
+	location := a.GetAzureLocation()
+	log.SpanLog(ctx, log.DebugLevelInfra, "GatherCloudletInfo", "location", location, "resourceGroup", a.accessVars[AZURE_RESOURCE_GROUP])
 	if err := a.Login(ctx); err != nil {
 		return err
 	}
+	subscriptionID := a.accessVars[AZURE_SUBSCRIPTION_ID]
+	clientFactory, err := armcompute.NewClientFactory(subscriptionID, a.creds, nil)
+	if err != nil {
+		return err
+	}
 
-	var limits []AZLimit
-	out, err := infracommon.Sh(a.accessVars).Command("az", "vm", "list-usage", "--location", a.GetAzureLocation(), sh.Dir("/tmp")).CombinedOutput()
-	if err != nil {
-		err = fmt.Errorf("cannot get limits from azure, %s, %s", out, err.Error())
-		return err
-	}
-	err = json.Unmarshal(out, &limits)
-	if err != nil {
-		err = fmt.Errorf("cannot unmarshal, %v", err)
-		return err
-	}
-	for _, l := range limits {
-		if l.LocalName == "Total Regional vCPUs" {
-			vcpus, err := strconv.Atoi(l.Limit)
-			if err != nil {
-				err = fmt.Errorf("failed to parse azure output, %s", err.Error())
-				return err
+	usagePager := clientFactory.NewUsageClient().NewListPager(location, nil)
+	for usagePager.More() {
+		page, err := usagePager.NextPage(ctx)
+		if err != nil {
+			return err
+		}
+		for _, v := range page.Value {
+			if v.CurrentValue == nil || v.Limit == nil || v.Name == nil || v.Name.LocalizedValue == nil {
+				continue
 			}
-			info.OsMaxVcores = uint64(vcpus)
-			info.OsMaxRam = uint64(4 * vcpus)
-			info.OsMaxVolGb = uint64(500 * vcpus)
+			if *v.Name.LocalizedValue == "Total Regional vCPUs" {
+				vcpus := uint64(*v.Limit)
+				info.OsMaxVcores = uint64(vcpus)
+				info.OsMaxRam = uint64(4 * vcpus)
+				info.OsMaxVolGb = uint64(500 * vcpus)
+				break
+			}
+		}
+		if info.OsMaxVcores > 0 {
 			break
 		}
 	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "got limits", "location", location, "vcpus", info.OsMaxVcores)
 
-	/*
-	* We will not support all Azure flavors, only selected ones:
-	* https://azure.microsoft.com/en-in/pricing/details/virtual-machines/series/
-	 */
-	var vmsizes []AZFlavor
-	out, err = infracommon.Sh(a.accessVars).Command("az", "vm", "list-sizes",
-		"--location", a.GetAzureLocation(),
-		"--query", "[].{"+
-			"Name:name,"+
-			"VCPUs:numberOfCores,"+
-			"RAM:memoryInMb, Disk:resourceDiskSizeInMb"+
-			"}[?starts_with(Name,'Standard_DS')]|[?ends_with(Name,'v2')]",
-		sh.Dir("/tmp")).CombinedOutput()
-	if err != nil {
-		err = fmt.Errorf("cannot get vm-sizes from azure, %s, %s", out, err.Error())
-		return err
-	}
-	err = json.Unmarshal(out, &vmsizes)
-	if err != nil {
-		err = fmt.Errorf("cannot unmarshal, %v", err)
-		return err
-	}
-	for _, f := range vmsizes {
-		info.Flavors = append(
-			info.Flavors,
-			&edgeproto.FlavorInfo{
-				Name:  f.Name,
-				Vcpus: uint64(f.VCPUs),
-				Ram:   uint64(f.RAM),
-				Disk:  uint64(f.Disk),
-			},
-		)
+	// We will not support all Azure flavors, only selected ones:
+	// https://azure.microsoft.com/en-in/pricing/details/virtual-machines/series/
+	skuPager := clientFactory.NewResourceSKUsClient().NewListPager(&armcompute.ResourceSKUsClientListOptions{
+		Filter: to.Ptr("location eq '" + location + "'"),
+	})
+	for skuPager.More() {
+		page, err := skuPager.NextPage(ctx)
+		if err != nil {
+			return err
+		}
+		for _, v := range page.Value {
+			if v.ResourceType == nil || v.Name == nil || v.Family == nil {
+				continue
+			}
+			if *v.ResourceType != "virtualMachines" {
+				continue
+			}
+			// we only allow standard DSv3 sizes and NC GPUs
+			// newer v4/v5 DS sizes have no local storage by default.
+			if *v.Family != "standardDSv3Family" && !strings.HasPrefix(*v.Family, "Standard NC") {
+				continue
+			}
+			flavor := &edgeproto.FlavorInfo{
+				Name: *v.Name,
+			}
+			for _, cap := range v.Capabilities {
+				if cap.Name == nil || cap.Value == nil {
+					continue
+				}
+				if *cap.Name == "vCPUs" {
+					num, err := strconv.ParseUint(*cap.Value, 10, 64)
+					if err != nil {
+						return fmt.Errorf("failed to parse %s value %s for flavor %s, %s", *cap.Name, *cap.Value, *v.Name, err)
+					}
+					flavor.Vcpus = num
+				}
+				if *cap.Name == "MemoryGB" {
+					num, err := strconv.ParseFloat(*cap.Value, 64)
+					if err != nil {
+						return fmt.Errorf("failed to parse %s value %s for flavor %s, %s", *cap.Name, *cap.Value, *v.Name, err)
+					}
+					flavor.Ram = uint64(1024 * num)
+				}
+				if *cap.Name == "MaxResourceVolumeMB" {
+					num, err := strconv.ParseUint(*cap.Value, 10, 64)
+					if err != nil {
+						return fmt.Errorf("failed to parse %s value %s for flavor %s, %s", *cap.Name, *cap.Value, *v.Name, err)
+					}
+					flavor.Disk = uint64(num / 1023)
+				}
+				if *cap.Name == "GPUs" {
+					num, err := strconv.ParseUint(*cap.Value, 10, 64)
+					if err != nil {
+						return fmt.Errorf("failed to parse %s value %s for flavor %s, %s", *cap.Name, *cap.Value, *v.Name, err)
+					}
+					flavor.PropMap = map[string]string{
+						"gpu": fmt.Sprintf("gpu:%d", num),
+					}
+				}
+				// There is no indication of how much GPU VRAM is available,
+				// nor what type of GPU.
+			}
+			info.Flavors = append(info.Flavors, flavor)
+		}
+		sort.Slice(info.Flavors, func(i, j int) bool {
+			fi := info.Flavors[i]
+			fj := info.Flavors[j]
+			if fi.Vcpus == fj.Vcpus {
+				return fi.Ram < fj.Ram
+			}
+			return fi.Vcpus < fj.Vcpus
+		})
+		for _, flavor := range info.Flavors {
+			log.SpanLog(ctx, log.DebugLevelInfra, "got flavor", "name", flavor.Name, "vcpus", flavor.Vcpus, "ramMB", flavor.Ram, "diskGB", flavor.Disk, "propmap", flavor.PropMap)
+		}
 	}
 	return nil
 }
@@ -159,20 +212,36 @@ func (a *AzurePlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts 
 // Login logs into azure
 func (a *AzurePlatform) Login(ctx context.Context) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "doing azure login")
-	user := a.GetAzureUser()
-	pass := a.GetAzurePass()
-	if user == "" || pass == "" {
-		return fmt.Errorf("Missing azure credentials")
+	clientID := a.accessVars[AZURE_CLIENT_ID]
+	clientSecret := a.accessVars[AZURE_CLIENT_SECRET]
+	tenantID := a.accessVars[AZURE_TENANT_ID]
+	subscriptionID := a.accessVars[AZURE_SUBSCRIPTION_ID]
+	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
+	if clientID == "" {
+		return fmt.Errorf("missing %s", AZURE_CLIENT_ID)
 	}
-	out, err := infracommon.Sh(a.accessVars).Command("az", "login", "--username", user, "--password", pass).CombinedOutput()
+	if clientSecret == "" {
+		return fmt.Errorf("missing %s", AZURE_CLIENT_SECRET)
+	}
+	if tenantID == "" {
+		return fmt.Errorf("missing tenant ID")
+	}
+	if subscriptionID == "" {
+		return fmt.Errorf("missing subscription ID")
+	}
+	if resourceGroup == "" {
+		return fmt.Errorf("missing resource group name")
+	}
+	// only way to pass in service principal credentials is via env vars.
+	os.Setenv("AZURE_TENANT_ID", tenantID)
+	os.Setenv("AZURE_CLIENT_ID", clientID)
+	os.Setenv("AZURE_CLIENT_SECRET", clientSecret)
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
 	if err != nil {
-		return fmt.Errorf("Login Failed: %s %v", out, err)
+		return err
 	}
+	a.creds = cred
 	return nil
-}
-
-func (a *AzurePlatform) GetResourceGroupForCluster(clusterName string) string {
-	return clusterName
 }
 
 func (a *AzurePlatform) NameSanitize(clusterName string) string {
@@ -180,11 +249,8 @@ func (a *AzurePlatform) NameSanitize(clusterName string) string {
 	// clustername to the resource group name plus several other characters:
 	// MC_clustername_rgname_region.
 	clusterName = strings.NewReplacer(".", "").Replace(clusterName)
-	regionNameLen := len(a.GetAzureLocation())
-	fixedPartLen := 5 // "MC_" and 2 underscores
-	allowedLenForcluster := (AzureMaxResourceGroupNameLen - fixedPartLen - regionNameLen) / 2
-	if len(clusterName) > allowedLenForcluster {
-		clusterName = clusterName[:allowedLenForcluster]
+	if len(clusterName) > AzureMaxResourceGroupNameLen {
+		clusterName = clusterName[:AzureMaxResourceGroupNameLen]
 	}
 	return clusterName
 }

@@ -168,6 +168,9 @@ func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallCo
 			}
 		}
 	}
+	if features.SupportsKubernetesOnly && app.Deployment != cloudcommon.DeploymentTypeKubernetes {
+		return nil, KubernetesOnly, fmt.Errorf("app deployment %s but cloudlet only supports kubernetes", app.Deployment)
+	}
 	err = validateImageTypeForPlatform(ctx, app.ImageType, pc.cloudlet.PlatformType, pc.features)
 	if err != nil {
 		return nil, UnsupportedImageType, err

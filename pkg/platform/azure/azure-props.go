@@ -22,42 +22,58 @@ import (
 )
 
 const (
-	AZURE_USER     = "AZURE_USER"
-	AZURE_PASSWORD = "AZURE_PASSWORD"
+	AZURE_CLIENT_ID       = "AZURE_CLIENT_ID"
+	AZURE_CLIENT_SECRET   = "AZURE_CLIENT_SECRET"
+	AZURE_SUBSCRIPTION_ID = "AZURE_SUBSCRIPTION_ID"
+	AZURE_TENANT_ID       = "AZURE_TENANT_ID"
+	AZURE_RESOURCE_GROUP  = "AZURE_RESOURCE_GROUP"
+	AZURE_LOCATION        = "AZURE_LOCATION"
 )
 
+// Azure authentication is done using a service principal
+
 var AccessVarProps = map[string]*edgeproto.PropertyInfo{
-	AZURE_USER: {
-		Name:      "Azure user name",
+	AZURE_CLIENT_ID: {
+		Name:      "Azure application ID of an Azure service principal, requires roles \"Reader\" and \"Azure Kubernetes Service Contributor\", see https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles. Recommend scoping to a resource group.",
 		Mandatory: true,
 	},
-	AZURE_PASSWORD: {
-		Name:      "Azure user password",
+	AZURE_CLIENT_SECRET: {
+		Name:      "Password of the Azure service principal",
+		Mandatory: true,
+	},
+	AZURE_SUBSCRIPTION_ID: {
+		Name:      "Azure subscription ID",
+		Mandatory: true,
+	},
+	AZURE_TENANT_ID: {
+		Name:      "Azure tenant ID",
+		Mandatory: true,
+	},
+	AZURE_RESOURCE_GROUP: {
+		Name:      "Azure resource group in which to create resources, must already exist",
 		Mandatory: true,
 	},
 }
 
 var azureProps = map[string]*edgeproto.PropertyInfo{
-	"MEX_AZURE_LOCATION": {
-		Name:        "Azure Location",
-		Description: "Azure Location",
+	AZURE_LOCATION: {
+		Name:        "Azure geo-location of Cloudlet, i.e. \"westus\"",
+		Description: "Azure geo-location of Cloudlet, i.e. \"westus\"",
 		Mandatory:   true,
 	},
 }
 
 func (a *AzurePlatform) GetAzureLocation() string {
-	val, _ := a.properties.GetValue("MEX_AZURE_LOCATION")
+	val, _ := a.properties.GetValue(AZURE_LOCATION)
 	return val
 }
 
 func (a *AzurePlatform) GetAzureUser() string {
-	val, _ := a.accessVars[AZURE_USER]
-	return val
+	return a.accessVars[AZURE_CLIENT_ID]
 }
 
 func (a *AzurePlatform) GetAzurePass() string {
-	val, _ := a.accessVars[AZURE_PASSWORD]
-	return val
+	return a.accessVars[AZURE_CLIENT_SECRET]
 }
 
 func (a *AzurePlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {

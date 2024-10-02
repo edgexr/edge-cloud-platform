@@ -1681,7 +1681,7 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		}
 	}
 
-	if !ignoreCRMState(cctx) && in.InfraApiAccess != edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
+	ccrmDelete := func() error {
 		// send delete to CCRM
 		reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateCloudletTimeout.TimeDuration())
 		defer reqCancel()
@@ -1702,9 +1702,17 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			s.all.cloudletInfoApi.UpdateRPC(ctx, info)
 			return nil
 		})
+		return err
+	}
+	if !ignoreCRMState(cctx) && in.InfraApiAccess != edgeproto.InfraApiAccess_RESTRICTED_ACCESS {
+		err := ccrmDelete()
 		if err != nil {
-			// if we are ignoring CRM errors, or if there were no resources created, proceed with deletion
-			if cctx.Override == edgeproto.CRMOverride_IGNORE_CRM_ERRORS || !cloudletResourcesCreated {
+			// if we are ignoring CRM errors, or if there were no resources created, proceed with deletion.
+			// If this was an undo, continue anyway. This allows
+			// for us to clean up if the platform code hits an error
+			// during platform.InitCommon(), which will happen in
+			// ccrm.ApplyCloudlet() on both create and delete.
+			if cctx.Override == edgeproto.CRMOverride_IGNORE_CRM_ERRORS || !cloudletResourcesCreated || cctx.Undo {
 				cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Delete Cloudlet ignoring CRM failure: %s", err.Error())})
 				err = nil
 			} else {

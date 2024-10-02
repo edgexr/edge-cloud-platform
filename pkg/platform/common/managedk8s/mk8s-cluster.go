@@ -17,15 +17,12 @@ package managedk8s
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -64,33 +61,14 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in creating cluster prereqs", "err", err)
 		return err
 	}
-	// rename any existing kubeconfig to .save
-	infracommon.BackupKubeconfig(ctx, client)
 	if err = m.Provider.RunClusterCreateCommand(ctx, clusterName, numNodes, flavor); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in creating cluster", "err", err)
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create done")
 
-	if err = m.Provider.GetCredentials(ctx, clusterName); err != nil {
-		return err
-	}
-	kconfFile := infracommon.DefaultKubeconfig()
-	start := time.Now()
-	for {
-		// make sure the kubeconf is present and of nonzero length.  If not keep
-		// waiting for it to show up to MaxKubeCredentialsWait
-		finfo, err := os.Stat(kconfFile)
-		if err == nil && finfo.Size() > 0 {
-			break
-		}
-		time.Sleep(time.Second * 1)
-		elapsed := time.Since(start)
-		if elapsed >= (MaxKubeCredentialsWait) {
-			return fmt.Errorf("Could not find kubeconfig file after GetCredentials: %s", kconfFile)
-		}
-	}
-	if err = pc.CopyFile(client, kconfFile, kconf); err != nil {
+	err = m.SetupClusterKconf(ctx, clusterName, kconf)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -112,6 +90,9 @@ func (m *ManagedK8sPlatform) DeleteClusterInst(ctx context.Context, clusterInst 
 
 func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clusterName string, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleteClusterInstInternal", "clusterName", clusterName)
+	if err := m.Provider.Login(ctx); err != nil {
+		return err
+	}
 	return m.Provider.RunClusterDeleteCommand(ctx, clusterName)
 }
 

@@ -17,14 +17,28 @@ package azure
 import (
 	"context"
 	"fmt"
-	"strings"
+	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice/v6"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 )
 
 const NotFound = "could not be found"
+
+func (a *AzurePlatform) getManagedClusterClient(ctx context.Context) (*armcontainerservice.ManagedClustersClient, error) {
+	subscriptionID := a.accessVars[AZURE_SUBSCRIPTION_ID]
+	containerserviceClientFactory, err := armcontainerservice.NewClientFactory(subscriptionID, a.creds, nil)
+	if err != nil {
+		return nil, err
+	}
+	managedClustersClient := containerserviceClientFactory.NewManagedClustersClient()
+	return managedClustersClient, nil
+}
 
 // CreateResourceGroup creates azure resource group
 func (a *AzurePlatform) CreateResourceGroup(ctx context.Context, group, location string) error {
@@ -40,56 +54,102 @@ func (a *AzurePlatform) CreateResourceGroup(ctx context.Context, group, location
 // CreateClusterPrerequisites executes CreateResourceGroup to create a resource group
 func (a *AzurePlatform) CreateClusterPrerequisites(ctx context.Context, clusterName string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterPrerequisites", "clusterName", clusterName)
-	rg := a.GetResourceGroupForCluster(clusterName)
-	err := a.CreateResourceGroup(ctx, rg, a.GetAzureLocation())
-	if err != nil {
-		return err
-	}
+	// Optionally create resource group if it doesn't exist.
+	// For now we require that it already exists.
 	return nil
 }
 
 // RunClusterCreateCommand creates a kubernetes cluster on azure
 func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, numNodes uint32, flavor string) error {
-	rg := a.GetResourceGroupForCluster(clusterName)
-	log.SpanLog(ctx, log.DebugLevelInfra, "RunClusterCreateCommand", "clusterName", clusterName, "rgName", rg)
-	numNodesStr := fmt.Sprintf("%d", numNodes)
-	out, err := infracommon.Sh(a.accessVars).Command("az", "aks", "create", "--resource-group", rg,
-		"--name", clusterName, "--generate-ssh-keys",
-		"--node-vm-size", flavor,
-		"--node-count", numNodesStr).CombinedOutput()
+	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
+	log.SpanLog(ctx, log.DebugLevelInfra, "Create Cluster", "clusterName", clusterName, "resourcegroup", resourceGroup)
+	managedClustersClient, err := a.getManagedClusterClient(ctx)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Error in aks create", "out", string(out), "err", err)
-		return fmt.Errorf("Error in aks create: %s - %v", string(out), err)
+		return err
 	}
+	start := time.Now()
+
+	managedCluster := armcontainerservice.ManagedCluster{
+		Location: to.Ptr(a.GetAzureLocation()),
+		Properties: &armcontainerservice.ManagedClusterProperties{
+			KubernetesVersion: nil,
+			AgentPoolProfiles: []*armcontainerservice.ManagedClusterAgentPoolProfile{{
+				Name:   to.Ptr("agentpool"),
+				Count:  to.Ptr[int32](int32(numNodes)),
+				VMSize: to.Ptr(flavor),
+				OSType: to.Ptr(armcontainerservice.OSTypeLinux),
+				Type:   to.Ptr(armcontainerservice.AgentPoolTypeVirtualMachineScaleSets),
+				Mode:   to.Ptr(armcontainerservice.AgentPoolModeSystem),
+			}},
+			ServicePrincipalProfile: &armcontainerservice.ManagedClusterServicePrincipalProfile{
+				ClientID: to.Ptr(a.accessVars[AZURE_CLIENT_ID]),
+				Secret:   to.Ptr(a.accessVars[AZURE_CLIENT_SECRET]),
+			},
+			EnableRBAC: to.Ptr[bool](true),
+			DNSPrefix:  to.Ptr(clusterName),
+		},
+	}
+	pollerResp, err := managedClustersClient.BeginCreateOrUpdate(ctx, resourceGroup, clusterName, managedCluster, nil)
+	if err != nil {
+		if azerr, ok := err.(*azcore.ResponseError); ok {
+			return fmt.Errorf("failed to create cluster (%s), %s", azerr.ErrorCode, azerr.Error())
+		}
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create in progress", "cluster", clusterName)
+	_, err = pollerResp.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 15 * time.Second,
+	})
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create finished", "cluster", clusterName, "took", time.Since(start).String())
 	return nil
 }
 
 // RunClusterDeleteCommand removes the kubernetes cluster on azure
 func (a *AzurePlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "RunClusterDeleteCommand", "clusterName", clusterName)
-	rg := a.GetResourceGroupForCluster(clusterName)
-	out, err := infracommon.Sh(a.accessVars).Command("az", "group", "delete", "--name", rg, "--yes", "--no-wait").CombinedOutput()
+	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
+	log.SpanLog(ctx, log.DebugLevelInfra, "Delete Cluster", "clusterName", clusterName, "resourceGroup", resourceGroup)
+	managedClustersClient, err := a.getManagedClusterClient(ctx)
 	if err != nil {
-		if strings.Contains(string(out), NotFound) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Cluster already gone", "out", out, "err", err)
-			return nil
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "Error in aks delete", "out", string(out), "err", err)
-		return fmt.Errorf("Error in aks delete: %s - %v", string(out), err)
+		return err
 	}
+	start := time.Now()
+
+	pollerResp, err := managedClustersClient.BeginDelete(ctx, resourceGroup, clusterName, nil)
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "cluster delete in progress", "cluster", clusterName)
+	_, err = pollerResp.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
+		Frequency: 15 * time.Second,
+	})
+	if err != nil {
+		return err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "cluster delete finished", "cluster", clusterName, "took", time.Since(start).String())
 	return nil
 }
 
 // GetCredentials retrieves kubeconfig credentials from azure for the cluster just created
-func (a *AzurePlatform) GetCredentials(ctx context.Context, clusterName string) error {
+func (a *AzurePlatform) GetCredentials(ctx context.Context, clusterName string) ([]byte, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCredentials", "clusterName", clusterName)
-	rg := a.GetResourceGroupForCluster(clusterName)
-	out, err := infracommon.Sh(a.accessVars).Command("az", "aks", "get-credentials", "--resource-group", rg, "--name", clusterName).CombinedOutput()
+	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
+	managedClustersClient, err := a.getManagedClusterClient(ctx)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Error in Azure GetCredentials", "out", string(out), "err", err)
-		return fmt.Errorf("Error in GetCredentials: %s - %v", string(out), err)
+		return nil, err
 	}
-	return nil
+	creds, err := managedClustersClient.ListClusterAdminCredentials(ctx, resourceGroup, clusterName, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(creds.Kubeconfigs) == 0 {
+		return nil, fmt.Errorf("no kubeconfig credentials found for cluster " + clusterName)
+	}
+	// Note: although comments for azure sdk code say the data is
+	// base64 encoded, the actual values from Azure are not.
+	return creds.Kubeconfigs[0].Value, nil
 }
 
 func (a *AzurePlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
