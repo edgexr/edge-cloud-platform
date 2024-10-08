@@ -256,6 +256,8 @@ message App {
   map<string, string> secret_env_vars = 48;
   // For updating list and map fields, set to 'add', 'remove', or 'replace' to define how to resolve specified entries against existing entries
   string update_list_action = 49;
+  // Vendor-specific data
+  map<string, string> tags = 100;
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

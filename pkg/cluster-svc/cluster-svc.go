@@ -663,7 +663,10 @@ func appInstToAlertLabels(appInst *edgeproto.AppInst) map[string]string {
 
 func createNFSAutoProvAppInstIfRequired(ctx context.Context, dialOpts grpc.DialOption, inst *edgeproto.ClusterInst) error {
 	if inst.SharedVolumeSize != 0 {
-		return createAppInstCommon(ctx, dialOpts, inst, nil, nil, &NFSAutoProvisionApp)
+		// In case this is an inference cluster, we create nfs provisioner in the CRM
+		if _, ok := inst.Tags[cloudcommon.TagsInferenceService]; !ok {
+			return createAppInstCommon(ctx, dialOpts, inst, nil, nil, &NFSAutoProvisionApp)
+		}
 	}
 	return nil
 }

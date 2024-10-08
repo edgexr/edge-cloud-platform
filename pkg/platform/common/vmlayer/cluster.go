@@ -24,6 +24,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
@@ -534,14 +535,14 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 			return err
 		}
 	}
-
+	var masterIPs ServerIPs
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		elapsed := time.Since(start)
 		// subtract elapsed time from total time to get remaining time
 		timeout -= elapsed
 		updateCallback(edgeproto.UpdateTask, "Waiting for Cluster to Initialize")
 		k8sTime := time.Now()
-		masterIPs, err := v.waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, timeout)
+		masterIPs, err = v.waitClusterReady(ctx, clusterInst, rootLBName, updateCallback, timeout)
 		if err != nil {
 			return err
 		}
@@ -593,6 +594,29 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 			}
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Skip setting up GPU driver on Cluster nodes")
+		}
+	}
+
+	if _, ok := clusterInst.Tags[cloudcommon.TagsInferenceService]; ok {
+		// TODO - Do set up RAG yamls - create another file like gpu.go
+		if clusterInst.Deployment == cloudcommon.DeploymentTypeKubernetes {
+			// fist set up nfs provisioning with sufficient amount of storage
+			deploymentVars := deployvars.DeploymentReplaceVars{
+				Deployment: deployvars.CrmReplaceVars{
+					ClusterIp:   masterIPs.IPV4ExternalAddr(),
+					ClusterIPV6: masterIPs.IPV6ExternalAddr(),
+				},
+			}
+			ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
+
+			err := v.SetupNfsProfvisionerOperator(ctx, client, clusterInst, updateCallback, action)
+			if err != nil {
+				return err
+			}
+			// setup inference stack
+			v.SetupInferenceStack(ctx, client, clusterInst, updateCallback, action)
+		} else {
+			return fmt.Errorf("Unsupported deployment for inference - %s", clusterInst.Deployment)
 		}
 	}
 

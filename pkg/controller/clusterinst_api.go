@@ -801,7 +801,6 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 		if in.SharedVolumeSize != 0 {
 			return fmt.Errorf("SharedVolumeSize not supported for deployment type %s", cloudcommon.DeploymentTypeDocker)
-
 		}
 	} else {
 		return fmt.Errorf("Invalid deployment type %s for ClusterInst", in.Deployment)
@@ -812,6 +811,11 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		in.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
 	}
 	in.CompatibilityVersion = cloudcommon.GetClusterInstCompatibilityVersion()
+
+	// For inference services we need at least 100G volume
+	if _, ok := in.Tags[cloudcommon.TagsInferenceService]; ok && in.SharedVolumeSize < 100 {
+		in.SharedVolumeSize = 100
+	}
 
 	// STM ends up modifying input data, but we need to reset those
 	// changes if STM reruns, because it may end up choosing a different

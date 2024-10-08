@@ -726,6 +726,7 @@ var AppOptionalArgs = []string{
 	"envvars",
 	"secretenvvars",
 	"updatelistaction",
+	"tags",
 }
 var AppAliasArgs = []string{
 	"apporg=key.organization",
@@ -789,6 +790,7 @@ var AppComments = map[string]string{
 	"envvars":                           "Environment variables, specify envvars:empty=true to clear",
 	"secretenvvars":                     "Environment variables with sensitive information, stored in encrypted storage, specify secretenvvars:empty=true to clear",
 	"updatelistaction":                  "For updating list and map fields, set to add, remove, or replace to define how to resolve specified entries against existing entries",
+	"tags":                              "Vendor-specific data, specify tags:empty=true to clear",
 }
 var AppSpecialArgs = map[string]string{
 	"alertpolicies":    "StringArray",
@@ -797,6 +799,7 @@ var AppSpecialArgs = map[string]string{
 	"envvars":          "StringToString",
 	"fields":           "StringArray",
 	"secretenvvars":    "StringToString",
+	"tags":             "StringToString",
 }
 var ServerlessConfigRequiredArgs = []string{}
 var ServerlessConfigOptionalArgs = []string{
@@ -923,6 +926,7 @@ var DeploymentZoneRequestOptionalArgs = []string{
 	"app.envvars",
 	"app.secretenvvars",
 	"app.updatelistaction",
+	"app.tags",
 	"dryrundeploy",
 	"numnodes",
 }
@@ -984,6 +988,7 @@ var DeploymentZoneRequestComments = map[string]string{
 	"app.envvars":                                    "Environment variables",
 	"app.secretenvvars":                              "Environment variables with sensitive information, stored in encrypted storage",
 	"app.updatelistaction":                           "For updating list and map fields, set to add, remove, or replace to define how to resolve specified entries against existing entries",
+	"app.tags":                                       "Vendor-specific data",
 	"dryrundeploy":                                   "Attempt to qualify zones resources for deployment",
 	"numnodes":                                       "Optional number of worker VMs in dry run K8s Cluster, default = 2",
 }
@@ -994,6 +999,7 @@ var DeploymentZoneRequestSpecialArgs = map[string]string{
 	"app.envvars":          "StringToString",
 	"app.fields":           "StringArray",
 	"app.secretenvvars":    "StringToString",
+	"app.tags":             "StringToString",
 }
 var CreateAppRequiredArgs = []string{
 	"apporg",
@@ -1044,6 +1050,7 @@ var CreateAppOptionalArgs = []string{
 	"globalid",
 	"envvars",
 	"secretenvvars",
+	"tags",
 }
 var DeleteAppRequiredArgs = []string{
 	"apporg",
@@ -1094,6 +1101,7 @@ var DeleteAppOptionalArgs = []string{
 	"globalid",
 	"envvars",
 	"secretenvvars",
+	"tags",
 }
 var ShowAppRequiredArgs = []string{
 	"apporg",
@@ -1144,4 +1152,5 @@ var ShowAppOptionalArgs = []string{
 	"globalid",
 	"envvars",
 	"secretenvvars",
+	"tags",
 }

@@ -877,6 +877,7 @@ var AppInstOptionalArgs = []string{
 	"objid",
 	"annotations",
 	"dbmodelid",
+	"tags",
 }
 var AppInstAliasArgs = []string{
 	"appinstname=key.name",
@@ -961,6 +962,7 @@ var AppInstComments = map[string]string{
 	"objid":                          "Universally unique object ID",
 	"annotations":                    "Annotations, specify annotations:empty=true to clear",
 	"dbmodelid":                      "database version model ID",
+	"tags":                           "Vendor-specific data, specify tags:empty=true to clear",
 }
 var AppInstSpecialArgs = map[string]string{
 	"annotations":              "StringToString",
@@ -968,6 +970,7 @@ var AppInstSpecialArgs = map[string]string{
 	"fields":                   "StringArray",
 	"internalporttolbip":       "StringToString",
 	"runtimeinfo.containerids": "StringArray",
+	"tags":                     "StringToString",
 }
 var AppInstRuntimeRequiredArgs = []string{}
 var AppInstRuntimeOptionalArgs = []string{
@@ -1184,6 +1187,7 @@ var CreateAppInstOptionalArgs = []string{
 	"objid",
 	"annotations",
 	"dbmodelid",
+	"tags",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1211,6 +1215,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"objid",
 	"annotations",
 	"dbmodelid",
+	"tags",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1234,6 +1239,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"objid",
 	"annotations",
 	"dbmodelid",
+	"tags",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1255,4 +1261,5 @@ var UpdateAppInstOptionalArgs = []string{
 	"objid",
 	"annotations",
 	"dbmodelid",
+	"tags",
 }

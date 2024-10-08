@@ -613,6 +613,7 @@ var ClusterInstOptionalArgs = []string{
 	"objid",
 	"annotations",
 	"dbmodelid",
+	"tags",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=key.name",
@@ -682,12 +683,14 @@ var ClusterInstComments = map[string]string{
 	"compatibilityversion":                     "internal compatibility version",
 	"annotations":                              "Annotations, specify annotations:empty=true to clear",
 	"dbmodelid":                                "database version model ID",
+	"tags":                                     "Vendor-specific data, specify tags:empty=true to clear",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"annotations": "StringToString",
 	"errors":      "StringArray",
 	"fields":      "StringArray",
 	"networks":    "StringArray",
+	"tags":        "StringToString",
 }
 var IdleReservableClusterInstsRequiredArgs = []string{}
 var IdleReservableClusterInstsOptionalArgs = []string{
@@ -771,4 +774,5 @@ var UpdateClusterInstOptionalArgs = []string{
 	"objid",
 	"annotations",
 	"dbmodelid",
+	"tags",
 }

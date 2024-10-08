@@ -389,6 +389,30 @@ func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.Acces
 	return nil
 }
 
+func ApplyManifest(ctx context.Context, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, filename string, mf string) error {
+	configDir := getConfigDirName(names)
+	configName := filename
+	err := pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
+	if err != nil {
+		return err
+	}
+	file := configDir + "/" + configName
+	log.SpanLog(ctx, log.DebugLevelInfra, "writing config file", "file", file, "kubeManifest", mf)
+	err = pc.WriteFile(client, file, mf, "K8s Deployment", pc.NoSudo)
+	if err != nil {
+		return err
+	}
+	cmd := fmt.Sprintf("kubectl %s apply -f %s ", names.KconfArg, file)
+
+	log.SpanLog(ctx, log.DebugLevelInfra, "running kubectl", "cmd", cmd)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("error running kubectl command %s: %s, %v", cmd, out, err)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "done kubectl mf apply", "manifest", mf)
+	return nil
+}
+
 func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, action string) error {
 	if action == createManifest && names.MultitenantNamespace != "" {
 		err := CreateMultitenantNamespace(ctx, client, names)
@@ -421,6 +445,11 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 		selector = fmt.Sprintf("-l %s=%s", ConfigLabel, getConfigLabel(names))
 	}
 	cmd := fmt.Sprintf("kubectl %s apply -f %s --prune %s", names.KconfArg, configDir, selector)
+	// For inference services - don't prune cluster-specific apps
+	if _, ok := app.Tags[cloudcommon.TagsInferenceService]; ok {
+		cmd = fmt.Sprintf("kubectl %s apply -f %s", names.KconfArg, configDir)
+	}
+
 	log.SpanLog(ctx, log.DebugLevelInfra, "running kubectl", "action", action, "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil && strings.Contains(string(out), `pruning nonNamespaced object /v1, Kind=Namespace: namespaces "kube-system" is forbidden: this namespace may not be deleted`) {
@@ -434,7 +463,6 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "done kubectl", "action", action)
 	return nil
-
 }
 
 func CreateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
