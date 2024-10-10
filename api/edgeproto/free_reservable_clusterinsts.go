@@ -91,21 +91,23 @@ func (s *FreeReservableClusterInstCache) Prune(ctx context.Context, validKeys ma
 
 func (s *FreeReservableClusterInstCache) Flush(ctx context.Context, notifyId int64) {}
 
-func (s *FreeReservableClusterInstCache) GetForCloudlet(key *CloudletKey, deployment, flavor string, deploymentTransformFunc func(string) string) *ClusterKey {
+func (s *FreeReservableClusterInstCache) GetForCloudlet(ctx context.Context, key *CloudletKey, deployment string, kr *KubernetesResources, nr *NodeResources, deploymentTransformFunc func(string) string) []*ClusterInst {
 	// need a transform func to avoid import cycle
 	deployment = deploymentTransformFunc(deployment)
 	s.Mux.Lock()
 	defer s.Mux.Unlock()
 	cinsts, found := s.InstsByCloudlet[*key]
-	log.DebugLog(log.DebugLevelDmereq, "GetForCloudlet", "key", *key, "found", found, "num-insts", len(cinsts))
+	log.SpanLog(ctx, log.DebugLevelDmereq, "GetForCloudlet", "key", *key, "found", found, "num-insts", len(cinsts))
+	matched := []*ClusterInst{}
 	if found && len(cinsts) > 0 {
-		for key, clust := range cinsts {
-			if deployment == clust.Deployment && flavor == clust.Flavor.Name {
-				return &key
+		for _, clust := range cinsts {
+			if deployment != clust.Deployment {
+				continue
 			}
+			matched = append(matched, clust.Clone())
 		}
 	}
-	return nil
+	return matched
 }
 
 func (s *FreeReservableClusterInstCache) GetCount() int {

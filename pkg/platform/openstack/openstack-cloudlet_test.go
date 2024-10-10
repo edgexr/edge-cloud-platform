@@ -157,9 +157,11 @@ func TestOpenstackLive(t *testing.T) {
 			PublicPort:   5678,
 			Tls:          true,
 		}},
-		Uri:                  os.Getenv("USER") + "-functest-dockerapp-uri",
-		UniqueId:             os.Getenv("USER") + "-functest-dockerapp-unique-id",
-		VmFlavor:             flavor,
+		Uri:      os.Getenv("USER") + "-functest-dockerapp-uri",
+		UniqueId: os.Getenv("USER") + "-functest-dockerapp-unique-id",
+		NodeResources: &edgeproto.NodeResources{
+			InfraNodeFlavor: flavor,
+		},
 		EnableIpv6:           false,
 		CompatibilityVersion: cloudcommon.GetAppInstCompatibilityVersion(),
 	}
@@ -294,7 +296,9 @@ runcmd:
 			CloudletKey: cloudlet.Key,
 			Uri:         os.Getenv("USER") + "-functest-vmappinst-uri",       // security group name
 			UniqueId:    os.Getenv("USER") + "-functest-vmappinst-unique-id", // used for heat stack name
-			VmFlavor:    flavor,
+			NodeResources: &edgeproto.NodeResources{
+				InfraNodeFlavor: flavor,
+			},
 			MappedPorts: []distributed_match_engine.AppPort{{
 				Proto:        distributed_match_engine.LProto_L_PROTO_TCP,
 				InternalPort: 5677,

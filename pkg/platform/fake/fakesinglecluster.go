@@ -15,6 +15,8 @@
 package fake
 
 import (
+	"context"
+
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
@@ -33,4 +35,19 @@ func (s *PlatformSingleCluster) GetFeatures() *edgeproto.PlatformFeatures {
 	features.IsSingleKubernetesCluster = true
 	features.SupportsAppInstDedicatedIp = true
 	return features
+}
+
+func (s *PlatformSingleCluster) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
+	s.Platform.GatherCloudletInfo(ctx, info)
+	numNodes := uint64(10)
+	info.NodePools = []*edgeproto.NodePool{{
+		Name:     "cpupool",
+		NumNodes: uint32(numNodes),
+		NodeResources: &edgeproto.NodeResources{
+			Vcpus: info.OsMaxVcores / numNodes,
+			Ram:   info.OsMaxRam / numNodes,
+			Disk:  info.OsMaxVolGb / numNodes,
+		},
+	}}
+	return nil
 }

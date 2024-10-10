@@ -210,7 +210,7 @@ func getVcdResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, resource
 		log.SpanLog(ctx, log.DebugLevelInfra, "getVcdResources", "vmRes", vmRes)
 
 		// Number of Instances = Number of resources
-		vRes.VmsUsed += 1
+		vRes.VmsUsed += uint64(vmRes.Count)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "getVcdResources", "vRes", vRes)
 	return &vRes

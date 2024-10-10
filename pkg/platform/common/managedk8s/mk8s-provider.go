@@ -85,7 +85,9 @@ func (m *ManagedK8sPlatform) GetInitHAConditionalCompatibilityVersion(ctx contex
 }
 
 func (m *ManagedK8sPlatform) GetFeatures() *edgeproto.PlatformFeatures {
-	return m.Provider.GetFeatures()
+	features := m.Provider.GetFeatures()
+	features.RequiresCrmOffEdge = true
+	return features
 }
 
 func (m *ManagedK8sPlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {

@@ -23,8 +23,8 @@ import (
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
-	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/stretchr/testify/require"
 )
@@ -49,6 +49,23 @@ var testFlavor2 = edgeproto.Flavor{
 	Disk:  1,
 	OptResMap: map[string]string{
 		"gpu": "pci:1",
+	},
+}
+
+var testKubernetesResources = edgeproto.KubernetesResources{
+	CpuPool: &edgeproto.NodePoolResources{
+		TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+		TotalMemory: 1024,
+	},
+}
+
+var testKubernetesResources2 = edgeproto.KubernetesResources{
+	GpuPool: &edgeproto.NodePoolResources{
+		TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+		TotalMemory: 1024,
+		TotalOptRes: map[string]string{
+			"gpu": "somegpuspec:1",
+		},
 	},
 }
 
@@ -254,7 +271,7 @@ func TestDeploymentManifest(t *testing.T) {
 			InternalPort: int32(3333),
 		},
 	}
-	err = IsValidDeploymentManifest(DeploymentTypeKubernetes, "", svcManifest, ports, &testFlavor)
+	err = IsValidDeploymentManifest(DeploymentTypeKubernetes, "", svcManifest, ports, &testKubernetesResources)
 	require.Nil(t, err, "valid k8s svc manifest")
 
 	// clusterIP should not be considered while validating access ports
@@ -262,23 +279,23 @@ func TestDeploymentManifest(t *testing.T) {
 		Proto:        dme.LProto_L_PROTO_TCP,
 		InternalPort: int32(1111),
 	})
-	err = IsValidDeploymentManifest(DeploymentTypeKubernetes, "", svcManifest, ports, &testFlavor)
+	err = IsValidDeploymentManifest(DeploymentTypeKubernetes, "", svcManifest, ports, &testKubernetesResources)
 	require.NotNil(t, err, "invalid k8s svc manifest")
 	require.Contains(t, err.Error(), "tcp:1111 defined in AccessPorts but missing from kubernetes manifest")
 
 	// gpu flavor with rescount as 1
-	flavor := &testFlavor2
+	flavor := &testKubernetesResources2
 
 	manifestResCnt1 := gpuBaseDeploymentManifest + gpuSubManifest
-	err = IsValidDeploymentManifestForFlavor(DeploymentTypeKubernetes, manifestResCnt1, flavor)
+	err = IsValidDeploymentManifestForResources(DeploymentTypeKubernetes, manifestResCnt1, flavor)
 	require.Nil(t, err, "valid gpu deployment manifest")
 
 	manifestResCnt2 := gpuBaseDeploymentManifest + gpuSubManifest + gpuSubManifest
-	err = IsValidDeploymentManifestForFlavor(DeploymentTypeKubernetes, manifestResCnt2, flavor)
+	err = IsValidDeploymentManifestForResources(DeploymentTypeKubernetes, manifestResCnt2, flavor)
 	require.NotNil(t, err, "invalid gpu deployment manifest")
 	require.Contains(t, err.Error(), "GPU resource limit (value:2) exceeds flavor specified count 1")
 
-	flavor.OptResMap["gpu"] = "pci:4"
-	err = IsValidDeploymentManifestForFlavor(DeploymentTypeKubernetes, manifestResCnt2, flavor)
+	flavor.GpuPool.TotalOptRes["gpu"] = "pci:4"
+	err = IsValidDeploymentManifestForResources(DeploymentTypeKubernetes, manifestResCnt2, flavor)
 	require.Nil(t, err, "valid gpu deployment manifest")
 }

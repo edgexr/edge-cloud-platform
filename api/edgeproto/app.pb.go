@@ -442,7 +442,7 @@ type App struct {
 	RequiredOutboundConnections []SecurityRule `protobuf:"bytes,38,rep,name=required_outbound_connections,json=requiredOutboundConnections,proto3" json:"required_outbound_connections"`
 	// App is allowed to deploy as serverless containers
 	AllowServerless bool `protobuf:"varint,39,opt,name=allow_serverless,json=allowServerless,proto3" json:"allow_serverless,omitempty"`
-	// Configuration when deployed as serverless containers
+	// (_deprecated_) Replaced by KubernetesResources
 	ServerlessConfig *ServerlessConfig `protobuf:"bytes,40,opt,name=serverless_config,json=serverlessConfig,proto3" json:"serverless_config,omitempty"`
 	// OS Type for VM Apps
 	VmAppOsType VmAppOsType `protobuf:"varint,41,opt,name=vm_app_os_type,json=vmAppOsType,proto3,enum=edgeproto.VmAppOsType" json:"vm_app_os_type,omitempty"`
@@ -460,6 +460,12 @@ type App struct {
 	SecretEnvVars map[string]string `protobuf:"bytes,48,rep,name=secret_env_vars,json=secretEnvVars,proto3" json:"secret_env_vars,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// For updating list and map fields, set to 'add', 'remove', or 'replace' to define how to resolve specified entries against existing entries
 	UpdateListAction string `protobuf:"bytes,49,opt,name=update_list_action,json=updateListAction,proto3" json:"update_list_action,omitempty"`
+	// Universally unique object ID
+	ObjId string `protobuf:"bytes,50,opt,name=obj_id,json=objId,proto3" json:"obj_id,omitempty"`
+	// Kubernetes required resources for kubernetes deployments
+	KubernetesResources *KubernetesResources `protobuf:"bytes,51,opt,name=kubernetes_resources,json=kubernetesResources,proto3" json:"kubernetes_resources,omitempty"`
+	// Required resources for VM/Docker deployments
+	NodeResources *NodeResources `protobuf:"bytes,52,opt,name=node_resources,json=nodeResources,proto3" json:"node_resources,omitempty"`
 }
 
 func (m *App) Reset()         { *m = App{} }
@@ -728,169 +734,174 @@ func init() {
 func init() { proto.RegisterFile("app.proto", fileDescriptor_e0f9056a14b86d47) }
 
 var fileDescriptor_e0f9056a14b86d47 = []byte{
-	// 2590 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x58, 0x4d, 0x6c, 0x1b, 0xc7,
-	0xf5, 0xd7, 0x4a, 0xd4, 0x07, 0x87, 0x12, 0xb5, 0x1a, 0xcb, 0xf6, 0xe8, 0xc3, 0xb2, 0x4c, 0x3b,
-	0xf9, 0x2b, 0x8a, 0x4c, 0xda, 0xce, 0x3f, 0x4e, 0xa2, 0xff, 0x3f, 0x45, 0x56, 0x22, 0x25, 0xab,
-	0xa2, 0x49, 0x66, 0xa9, 0x8f, 0xb8, 0x68, 0xb1, 0x18, 0xef, 0x8e, 0xa8, 0x85, 0xf6, 0x63, 0xbc,
-	0x1f, 0x74, 0x99, 0x53, 0x51, 0xa0, 0x87, 0x16, 0x45, 0x11, 0xa4, 0x40, 0x5b, 0x04, 0x05, 0xda,
-	0x22, 0x28, 0x9a, 0x63, 0x9a, 0x4b, 0x8b, 0x1c, 0x7b, 0x32, 0x72, 0x28, 0x02, 0xf4, 0x52, 0xf4,
-	0x10, 0xb4, 0x49, 0x0e, 0x85, 0x4e, 0x05, 0x22, 0x09, 0x45, 0x4f, 0xc5, 0xcc, 0xec, 0x92, 0x4b,
-	0x4a, 0x06, 0x6a, 0x27, 0x40, 0x6f, 0xfb, 0x7e, 0xef, 0xcd, 0x9b, 0x37, 0x6f, 0xde, 0x7b, 0xf3,
-	0x23, 0x41, 0x1a, 0x53, 0x9a, 0xa7, 0x9e, 0x1b, 0xb8, 0x30, 0x4d, 0x8c, 0x06, 0xe1, 0x9f, 0xd3,
-	0xb3, 0x0d, 0xd7, 0x6d, 0x58, 0xa4, 0x80, 0xa9, 0x59, 0xc0, 0x8e, 0xe3, 0x06, 0x38, 0x30, 0x5d,
-	0xc7, 0x17, 0x86, 0xd3, 0xa3, 0x1e, 0xf1, 0x43, 0x2b, 0x88, 0xa4, 0x09, 0xdd, 0x72, 0x43, 0xc3,
-	0x22, 0xc1, 0x01, 0x69, 0xc5, 0x50, 0xe0, 0x85, 0x7e, 0x40, 0x5d, 0xcb, 0xd4, 0x63, 0xe8, 0x52,
-	0xe0, 0xba, 0x96, 0x5f, 0xe0, 0x42, 0x83, 0x38, 0xed, 0x8f, 0xd8, 0xe5, 0x9e, 0x85, 0x9b, 0xae,
-	0x17, 0x49, 0x63, 0x06, 0xd1, 0x4d, 0x1b, 0x5b, 0x91, 0x38, 0xd9, 0x70, 0x1b, 0x2e, 0xff, 0x2c,
-	0xb0, 0xaf, 0xb6, 0x91, 0x4d, 0x0a, 0x96, 0xab, 0x0b, 0x31, 0xf7, 0x7d, 0x09, 0x0c, 0x29, 0x94,
-	0x6e, 0x92, 0x16, 0xcc, 0x83, 0x51, 0xd7, 0x6b, 0x60, 0xc7, 0x7c, 0x93, 0x87, 0x8d, 0xa4, 0x79,
-	0x69, 0x21, 0xbd, 0x02, 0x3e, 0x3c, 0x41, 0x43, 0x98, 0x52, 0xd7, 0x6b, 0xa8, 0x5d, 0x7a, 0x38,
-	0x03, 0x52, 0x0e, 0xb6, 0x09, 0xea, 0xe7, 0x76, 0xc3, 0x1f, 0x9e, 0xa0, 0x01, 0x4c, 0xa9, 0xca,
-	0x41, 0x78, 0x0d, 0x0c, 0x37, 0x89, 0xe7, 0x33, 0x3f, 0x03, 0x5d, 0x7e, 0x9a, 0xc4, 0x53, 0x63,
-	0xd5, 0xf2, 0xe8, 0xdf, 0xbf, 0x40, 0xd2, 0x3f, 0xbf, 0x40, 0xd2, 0xfb, 0xbf, 0xbc, 0x2c, 0xe5,
-	0x5e, 0x06, 0x60, 0xd5, 0x75, 0xf6, 0xcc, 0xc6, 0x9a, 0x69, 0x11, 0x08, 0x41, 0xea, 0xc0, 0x74,
-	0x0c, 0x11, 0x86, 0xca, 0xbf, 0xe1, 0x05, 0x30, 0xa4, 0x73, 0x0b, 0xb1, 0xa9, 0x1a, 0x49, 0xb9,
-	0xf7, 0xcf, 0x81, 0x01, 0x85, 0x52, 0xa6, 0xdf, 0x33, 0x89, 0x65, 0xf8, 0x48, 0x9a, 0x1f, 0x60,
-	0x7a, 0x21, 0xc1, 0xe7, 0xc0, 0xc0, 0x01, 0x69, 0xf1, 0x45, 0x99, 0x5b, 0x13, 0xf9, 0xf6, 0x8d,
-	0xe5, 0xc5, 0xd1, 0x57, 0x52, 0x8f, 0x3e, 0xb9, 0xdc, 0xa7, 0x32, 0x1b, 0x78, 0x15, 0x00, 0xd3,
-	0xc6, 0x0d, 0xa2, 0x51, 0x1c, 0xec, 0xa3, 0x14, 0x8f, 0x3d, 0xf5, 0xde, 0x11, 0x92, 0xd4, 0x34,
-	0xc7, 0x6b, 0x38, 0xd8, 0x87, 0x2f, 0xc4, 0x46, 0x41, 0x8b, 0x12, 0x34, 0x38, 0x2f, 0x2d, 0x64,
-	0x6f, 0x4d, 0x26, 0xdc, 0x6e, 0x30, 0xe5, 0x56, 0x8b, 0x92, 0x68, 0x11, 0xfb, 0x84, 0x57, 0xc0,
-	0x28, 0xd6, 0x75, 0xe2, 0xfb, 0x1a, 0x75, 0xbd, 0xc0, 0x47, 0xc3, 0xfc, 0x08, 0x19, 0x81, 0xd5,
-	0x18, 0x04, 0x37, 0x41, 0xd6, 0x20, 0x7b, 0x38, 0xb4, 0x02, 0x4d, 0xdc, 0x2c, 0x4a, 0xf3, 0x90,
-	0x93, 0xbe, 0xd7, 0xb8, 0x82, 0x45, 0x9d, 0x3d, 0x3c, 0x41, 0x43, 0x42, 0xe4, 0xf1, 0x8f, 0x45,
-	0x6b, 0x05, 0x04, 0x6f, 0x82, 0x71, 0x1c, 0x06, 0xfb, 0x1a, 0x0d, 0xef, 0x5b, 0xa6, 0xae, 0xb1,
-	0x04, 0x8c, 0xf2, 0xe3, 0xa4, 0xdf, 0xfe, 0x60, 0x6a, 0xd0, 0x71, 0x75, 0x9b, 0xaa, 0x63, 0xcc,
-	0xa2, 0xc6, 0x0d, 0x58, 0x09, 0x20, 0x30, 0xac, 0xbb, 0xb6, 0x8d, 0x1d, 0x03, 0x8d, 0xf1, 0xe8,
-	0x62, 0x91, 0x05, 0x1f, 0x7d, 0x6a, 0xd8, 0x6b, 0xf8, 0x28, 0xcf, 0xf3, 0x9b, 0x89, 0x30, 0xc5,
-	0x6b, 0xf8, 0x70, 0x1e, 0x64, 0x12, 0x45, 0x8f, 0xb2, 0xd1, 0xf1, 0x3a, 0x10, 0xbc, 0x06, 0x80,
-	0x41, 0xa8, 0xe5, 0xb6, 0x6c, 0xe2, 0x04, 0x68, 0x3c, 0x91, 0xdb, 0x04, 0x0e, 0x5f, 0x04, 0xe7,
-	0x3a, 0x92, 0x66, 0x63, 0xc7, 0xdc, 0x23, 0x7e, 0x80, 0xe4, 0x84, 0x39, 0xec, 0x18, 0xdc, 0x8d,
-	0xf4, 0xf0, 0x25, 0x30, 0x99, 0x58, 0xd6, 0x20, 0x0e, 0xf1, 0x70, 0xe0, 0x7a, 0x68, 0x22, 0xb1,
-	0x2e, 0xe1, 0x78, 0x3d, 0x36, 0x80, 0x37, 0xc0, 0x24, 0x76, 0x0c, 0xcf, 0x35, 0x0d, 0x8d, 0x62,
-	0xfd, 0x80, 0x5d, 0x2b, 0xaf, 0x6b, 0xc8, 0x0f, 0x00, 0x23, 0x5d, 0x4d, 0xa8, 0x2a, 0xac, 0xb8,
-	0xf3, 0x60, 0xd8, 0x20, 0x96, 0xe6, 0xd2, 0x00, 0x4d, 0xf2, 0xbb, 0x3f, 0x9f, 0xb8, 0x9f, 0x22,
-	0xb1, 0x48, 0x20, 0x2e, 0x7f, 0xc8, 0x20, 0x56, 0x95, 0x06, 0xb0, 0xc0, 0xd2, 0xca, 0x0a, 0xd5,
-	0x47, 0xe7, 0xe7, 0x07, 0x16, 0x32, 0x5d, 0xf6, 0x9d, 0x92, 0x57, 0x63, 0x2b, 0xb8, 0x04, 0xa0,
-	0xaf, 0x63, 0x8b, 0x68, 0x0f, 0xcd, 0x60, 0x5f, 0xd3, 0xad, 0xd0, 0x0f, 0x88, 0x87, 0x2e, 0xcc,
-	0x4b, 0x0b, 0x23, 0xaa, 0xcc, 0x35, 0xbb, 0x66, 0xb0, 0xbf, 0x2a, 0x70, 0xf8, 0x0c, 0xc8, 0x9a,
-	0x4e, 0x40, 0x3c, 0x07, 0x5b, 0x51, 0x69, 0x5d, 0xe4, 0x96, 0x63, 0x31, 0x2a, 0x8a, 0xeb, 0x19,
-	0x30, 0xe2, 0x91, 0xa6, 0xc9, 0x7b, 0x12, 0xf5, 0x16, 0x42, 0x5b, 0x05, 0xaf, 0x82, 0x31, 0x77,
-	0x6f, 0xcf, 0xd4, 0x4d, 0x6c, 0x69, 0x7b, 0x0f, 0x0c, 0x07, 0x4d, 0xf1, 0x3c, 0x8c, 0xc6, 0xe0,
-	0xda, 0x03, 0xc3, 0x61, 0x8d, 0x66, 0x1b, 0x2f, 0xfa, 0xa1, 0x8d, 0xa6, 0x45, 0x23, 0x0a, 0x09,
-	0x2e, 0x00, 0x19, 0x87, 0x81, 0xab, 0x51, 0xcf, 0x6d, 0x6a, 0x62, 0x92, 0xa1, 0x59, 0x6e, 0x91,
-	0x65, 0x78, 0xcd, 0x73, 0x9b, 0x35, 0x8e, 0xc2, 0xdb, 0x20, 0xaa, 0x7c, 0xd1, 0x43, 0x97, 0x4e,
-	0xe5, 0x51, 0xe1, 0x5a, 0x9e, 0x47, 0x80, 0xdb, 0xdf, 0xf0, 0x79, 0xd6, 0x22, 0x2c, 0xc3, 0x1a,
-	0xf5, 0x08, 0xc5, 0x1e, 0x41, 0x97, 0xd9, 0x61, 0xa3, 0x0b, 0x1e, 0x13, 0xba, 0x9a, 0x50, 0xc1,
-	0xd7, 0x00, 0xec, 0x09, 0xc7, 0x24, 0x3e, 0x9a, 0x67, 0xb5, 0xbb, 0x02, 0x0f, 0x4f, 0x50, 0x56,
-	0xe9, 0x0a, 0x4a, 0x95, 0xbb, 0x82, 0x34, 0x89, 0x0f, 0xaf, 0x03, 0x18, 0x10, 0x9b, 0x5a, 0x38,
-	0x20, 0x9a, 0x41, 0x2c, 0xd3, 0x36, 0xd9, 0x4d, 0x5c, 0xe1, 0x47, 0x9a, 0x88, 0x35, 0xc5, 0x58,
-	0x01, 0x73, 0x60, 0xcc, 0x3f, 0x30, 0xa9, 0xb6, 0xaf, 0x47, 0x37, 0x91, 0x13, 0x5d, 0xc0, 0xc0,
-	0x3b, 0xba, 0xb8, 0x87, 0x7b, 0x00, 0xe8, 0x1e, 0xc1, 0x01, 0x31, 0x34, 0x1c, 0xa0, 0xab, 0xbc,
-	0xc1, 0xaf, 0xe6, 0x0d, 0xd3, 0x0f, 0x3c, 0xf3, 0x7e, 0xc8, 0x60, 0x1b, 0x07, 0xfa, 0xbe, 0x46,
-	0x9c, 0x86, 0xe9, 0x90, 0xfc, 0x96, 0x69, 0x13, 0x3f, 0xc0, 0x36, 0x5d, 0x39, 0xcf, 0x8e, 0xf8,
-	0xf6, 0x07, 0x53, 0xe9, 0x20, 0x86, 0x78, 0xdb, 0xa7, 0x23, 0x6f, 0x4a, 0xc0, 0x5c, 0x87, 0xd4,
-	0x88, 0x5d, 0x5f, 0xfb, 0xf2, 0xae, 0x23, 0x6f, 0x4a, 0xc0, 0x46, 0x03, 0x7f, 0x9e, 0x88, 0x81,
-	0x9e, 0xe1, 0xd5, 0x15, 0x8b, 0x10, 0x83, 0x4b, 0x1e, 0x79, 0x10, 0x9a, 0x1e, 0x31, 0x34, 0x37,
-	0x0c, 0xee, 0xbb, 0xa1, 0x63, 0x68, 0xba, 0xeb, 0x38, 0x44, 0x17, 0x93, 0xe0, 0x59, 0x5e, 0xf3,
-	0x17, 0x13, 0x77, 0x5b, 0x27, 0x7a, 0xe8, 0x99, 0x41, 0x4b, 0x0d, 0x2d, 0x12, 0x0d, 0xdf, 0x99,
-	0xd8, 0x47, 0x35, 0x72, 0xb1, 0xda, 0xf1, 0x00, 0x9f, 0x03, 0x32, 0xb6, 0x2c, 0xf7, 0xa1, 0xe6,
-	0x13, 0xaf, 0x49, 0x3c, 0x8b, 0xf8, 0x3e, 0xfa, 0x1f, 0x1e, 0xc5, 0x38, 0xc7, 0xeb, 0x6d, 0x18,
-	0xde, 0x01, 0x13, 0x1d, 0x23, 0x2d, 0x7a, 0x2d, 0x16, 0x78, 0x26, 0x66, 0xba, 0x22, 0x88, 0x6d,
-	0x44, 0xff, 0xa9, 0xb2, 0xdf, 0x83, 0xc0, 0xff, 0x03, 0xd9, 0xa6, 0xad, 0x61, 0x4a, 0x35, 0x37,
-	0x2a, 0xd2, 0xe7, 0x78, 0x91, 0x5e, 0x48, 0xb8, 0xd9, 0xb1, 0x15, 0x4a, 0xab, 0xa2, 0x4a, 0x33,
-	0xcd, 0x8e, 0x00, 0x6f, 0x83, 0x2c, 0xb6, 0x88, 0x17, 0x74, 0xaa, 0x6e, 0x91, 0x57, 0xdd, 0xf8,
-	0xe1, 0x09, 0xca, 0x28, 0x4c, 0x13, 0x95, 0xdc, 0x18, 0x6e, 0x0b, 0xac, 0xde, 0xca, 0xe0, 0xdc,
-	0x03, 0xd7, 0xd7, 0x7c, 0xe2, 0xb3, 0x66, 0x64, 0x85, 0xbb, 0x67, 0x5a, 0x04, 0x3d, 0xcf, 0x77,
-	0x9e, 0x4d, 0xec, 0xfc, 0xba, 0xeb, 0xd7, 0x85, 0x51, 0x4d, 0xd8, 0xa8, 0x13, 0x0f, 0x7a, 0x21,
-	0xf8, 0x35, 0x30, 0x99, 0xf4, 0x66, 0x84, 0x9e, 0x78, 0xda, 0x97, 0xe6, 0xa5, 0x85, 0x81, 0x95,
-	0xd1, 0x7f, 0x7d, 0x72, 0x79, 0xa4, 0x18, 0x61, 0x2a, 0xec, 0x2c, 0x8f, 0x31, 0x78, 0x05, 0xa4,
-	0x1b, 0x96, 0x7b, 0x1f, 0x5b, 0x9a, 0x69, 0xa0, 0xeb, 0x89, 0x41, 0x3a, 0x22, 0xe0, 0x0d, 0x03,
-	0xde, 0x06, 0x23, 0xc4, 0x69, 0x6a, 0x4d, 0xec, 0xf9, 0xa8, 0xc0, 0x2f, 0x7a, 0xa6, 0xfb, 0x7d,
-	0xcd, 0x97, 0x9c, 0xe6, 0x0e, 0xf6, 0xfc, 0x92, 0x13, 0x78, 0x2d, 0x75, 0x98, 0x08, 0x09, 0x6e,
-	0x80, 0x71, 0x9f, 0xe8, 0x1e, 0x09, 0xb4, 0xf6, 0xf2, 0x1b, 0x7c, 0xf9, 0x95, 0x9e, 0xe5, 0x75,
-	0x6e, 0xd5, 0xe5, 0x64, 0xcc, 0x4f, 0x62, 0x6c, 0x5a, 0x8a, 0x3a, 0xd5, 0x2c, 0xd3, 0x0f, 0x34,
-	0xcc, 0x8b, 0x06, 0xdd, 0xe4, 0x9d, 0x27, 0x0b, 0x4d, 0xd9, 0xf4, 0x03, 0x85, 0xe3, 0xd3, 0xcb,
-	0x60, 0x34, 0xe9, 0x0c, 0xca, 0x82, 0x1b, 0x08, 0x9a, 0xc1, 0x29, 0xc0, 0x24, 0x18, 0x6c, 0x62,
-	0x2b, 0x8c, 0x98, 0x8d, 0x2a, 0x84, 0xe5, 0xfe, 0x97, 0xa5, 0xe9, 0xd7, 0x00, 0x3c, 0x1d, 0xce,
-	0x93, 0x78, 0x58, 0xfe, 0x5c, 0x62, 0x94, 0xe7, 0x1f, 0x5f, 0x20, 0xe9, 0x3b, 0x47, 0x48, 0x7a,
-	0xeb, 0x08, 0x49, 0x3f, 0x3b, 0x42, 0xd2, 0x23, 0xd6, 0x7d, 0xc7, 0xe8, 0xa5, 0x62, 0x72, 0x7a,
-	0x2d, 0xad, 0xc6, 0x7d, 0xbd, 0xb4, 0x1d, 0xb7, 0xe1, 0x52, 0x91, 0xbf, 0x28, 0x4b, 0xdd, 0x73,
-	0xeb, 0x9d, 0x63, 0xf4, 0x2d, 0x4c, 0x29, 0x7b, 0xb5, 0x5e, 0xdd, 0x24, 0xad, 0x3c, 0x7b, 0xa4,
-	0x96, 0x04, 0xd7, 0xf2, 0x39, 0xb0, 0x23, 0xf8, 0xd6, 0x92, 0xe0, 0x71, 0x1c, 0xaa, 0x26, 0xa8,
-	0xdc, 0x52, 0x44, 0x1c, 0x04, 0xe7, 0x78, 0xb5, 0x98, 0xa4, 0x11, 0xdc, 0xd9, 0x07, 0x27, 0x48,
-	0x3e, 0x20, 0xad, 0x57, 0x93, 0x8b, 0xfe, 0x70, 0x82, 0x90, 0xd8, 0x7e, 0x93, 0xb4, 0x96, 0xbb,
-	0x03, 0xfa, 0x7a, 0x6a, 0x64, 0x46, 0x9e, 0x55, 0xa7, 0x63, 0x32, 0xe3, 0xef, 0x63, 0x36, 0x1d,
-	0x9a, 0xae, 0x15, 0xda, 0x44, 0xf3, 0xcd, 0x37, 0x49, 0xee, 0xb7, 0x12, 0x90, 0x7b, 0x9b, 0x10,
-	0x5e, 0x07, 0x83, 0x4d, 0x9d, 0x86, 0x3e, 0xcf, 0x65, 0x37, 0x53, 0xdb, 0x36, 0x88, 0x7e, 0xfb,
-	0x7f, 0xa3, 0x61, 0x21, 0xac, 0x58, 0xe2, 0x3d, 0x6c, 0xf3, 0x24, 0xa7, 0x54, 0xf6, 0xc9, 0x68,
-	0x8a, 0x6d, 0x3a, 0x9a, 0x47, 0xa8, 0x65, 0xea, 0xd8, 0xe7, 0xdc, 0x73, 0x4c, 0xcd, 0xd8, 0xa6,
-	0xa3, 0x46, 0x10, 0x7c, 0x05, 0x80, 0x06, 0x0d, 0xe3, 0xc9, 0x90, 0x3a, 0xc5, 0xaf, 0xd6, 0x69,
-	0x28, 0xa2, 0x89, 0xf6, 0x4a, 0x37, 0x62, 0x20, 0x17, 0x80, 0x74, 0x5b, 0x0b, 0x9f, 0x05, 0x29,
-	0x3e, 0x14, 0x24, 0xde, 0x9a, 0xb0, 0xdb, 0x03, 0x1f, 0x08, 0x5c, 0xcf, 0x6a, 0xc1, 0x76, 0x0d,
-	0x62, 0xc5, 0xb5, 0xc0, 0x05, 0x78, 0x11, 0x0c, 0x3b, 0xa1, 0xad, 0x35, 0x68, 0xc8, 0x63, 0x1c,
-	0x54, 0x87, 0x9c, 0xd0, 0x5e, 0xa7, 0x61, 0x7c, 0xa6, 0x54, 0xfb, 0x4c, 0xb9, 0x9f, 0xf6, 0x83,
-	0x09, 0x85, 0xd2, 0xee, 0x0c, 0xc3, 0x97, 0xc0, 0x30, 0x1b, 0x4d, 0x71, 0xe1, 0x9d, 0x49, 0x6b,
-	0x33, 0x87, 0x27, 0x88, 0xf1, 0x62, 0x7e, 0x0e, 0x46, 0xbe, 0x19, 0xc7, 0xfb, 0xff, 0x33, 0x9e,
-	0x68, 0x41, 0xe1, 0xcf, 0x7a, 0x11, 0x7b, 0x9e, 0xed, 0xe5, 0x1f, 0x48, 0xef, 0x1c, 0xa3, 0x52,
-	0x5c, 0x6c, 0x62, 0x9f, 0xee, 0x7a, 0x8b, 0xb0, 0x9e, 0x92, 0x8b, 0xd0, 0x64, 0x01, 0x7d, 0x74,
-	0x8c, 0xba, 0x1c, 0xf4, 0x2c, 0x3c, 0x63, 0x45, 0x4f, 0xd9, 0xe7, 0xde, 0xed, 0x07, 0x59, 0x96,
-	0x99, 0xce, 0x38, 0x7d, 0xfa, 0xb4, 0xdc, 0x02, 0xa3, 0x89, 0x81, 0x1d, 0xa7, 0xe4, 0xd4, 0xb8,
-	0xce, 0x74, 0xc6, 0x75, 0x6b, 0xf9, 0x5d, 0x96, 0x0c, 0xfc, 0x95, 0x24, 0x63, 0x89, 0xfb, 0x15,
-	0x7b, 0x0b, 0x6f, 0x9d, 0x7d, 0x3e, 0x3a, 0x46, 0xcb, 0x4f, 0x9a, 0xa8, 0xce, 0xea, 0xdc, 0xef,
-	0xfa, 0xc1, 0xf9, 0x62, 0x9b, 0xf7, 0x7e, 0xc3, 0x75, 0x88, 0x4a, 0x1e, 0x84, 0x8c, 0x32, 0xcf,
-	0x03, 0xf6, 0x8b, 0x2d, 0x4a, 0x54, 0xb6, 0x3b, 0x51, 0x2a, 0x53, 0xc1, 0x6b, 0x20, 0x6b, 0x78,
-	0x2d, 0xcd, 0x0b, 0x1d, 0x4d, 0x50, 0x67, 0x9e, 0x97, 0x11, 0x75, 0xd4, 0xf0, 0x5a, 0x6a, 0xe8,
-	0x08, 0xb7, 0x70, 0x06, 0xa4, 0x59, 0x31, 0x3b, 0xae, 0x41, 0xe2, 0x96, 0x1b, 0x71, 0x42, 0xbb,
-	0xc2, 0xe4, 0xe5, 0xdf, 0xb3, 0xc9, 0xb6, 0xc9, 0x26, 0x79, 0xf7, 0x74, 0x63, 0x48, 0x67, 0xc2,
-	0x31, 0xa9, 0x33, 0xe5, 0x22, 0x6b, 0x3e, 0xe9, 0x28, 0xcd, 0x9f, 0x9a, 0x76, 0x24, 0x91, 0xf3,
-	0xfc, 0x59, 0x49, 0xcf, 0x7f, 0x15, 0x53, 0x6f, 0xf1, 0x87, 0x12, 0x48, 0xb7, 0x7f, 0xca, 0xc1,
-	0x0b, 0x00, 0x6e, 0xdc, 0x55, 0xd6, 0x4b, 0xda, 0xd6, 0xbd, 0x5a, 0x49, 0xdb, 0xae, 0x6c, 0x56,
-	0xaa, 0xbb, 0x15, 0xb9, 0x0f, 0x9e, 0x07, 0x13, 0x09, 0xbc, 0x58, 0x5d, 0xdd, 0x2c, 0xa9, 0xb2,
-	0x04, 0xcf, 0x81, 0xf1, 0x04, 0xfc, 0xfa, 0x6a, 0x75, 0x57, 0xee, 0xef, 0x01, 0xef, 0x94, 0xca,
-	0x77, 0xe5, 0x01, 0x08, 0x41, 0x36, 0x01, 0x56, 0x77, 0xd6, 0xe4, 0xd4, 0x29, 0x4c, 0x91, 0x07,
-	0x17, 0x7f, 0x24, 0x81, 0x89, 0x53, 0xcf, 0x3e, 0x73, 0xf9, 0x7a, 0xb5, 0xae, 0x55, 0xaa, 0x5a,
-	0x4d, 0xdd, 0xa8, 0xaa, 0x1b, 0x5b, 0xf7, 0xe4, 0xbe, 0x18, 0x2c, 0x57, 0x77, 0xb5, 0xb2, 0xb2,
-	0x55, 0xaa, 0xac, 0xde, 0x93, 0x25, 0x38, 0x05, 0xce, 0x33, 0x70, 0xeb, 0x8e, 0x5a, 0xdd, 0x5e,
-	0xbf, 0x53, 0xdb, 0xde, 0xd2, 0x8a, 0xd5, 0xdd, 0x8a, 0x56, 0x97, 0xfb, 0x1f, 0xa7, 0x62, 0xd1,
-	0x3d, 0x46, 0x55, 0x96, 0x53, 0x8b, 0xbf, 0x91, 0x40, 0x26, 0xc1, 0x80, 0x58, 0x26, 0x76, 0xee,
-	0x6a, 0x4a, 0xad, 0xa6, 0x55, 0xeb, 0x89, 0x04, 0x9d, 0x03, 0xe3, 0x1d, 0xb8, 0xbc, 0x51, 0xd9,
-	0x7e, 0x43, 0x96, 0x20, 0x02, 0x93, 0x1d, 0x70, 0x77, 0xa3, 0x52, 0xac, 0xee, 0xd6, 0xb5, 0x9b,
-	0x37, 0xe4, 0x7e, 0x38, 0x0d, 0x2e, 0x9c, 0xd6, 0xdc, 0xba, 0x71, 0xf3, 0x96, 0x3c, 0xf0, 0x58,
-	0xdd, 0x6d, 0x39, 0xf5, 0x58, 0xdd, 0x2b, 0xf2, 0xe0, 0xe2, 0x4d, 0x00, 0x3a, 0xbf, 0xcb, 0x58,
-	0x72, 0x2b, 0x55, 0x4d, 0xd9, 0xde, 0xaa, 0x6a, 0xc5, 0x52, 0xb9, 0xb4, 0x55, 0x92, 0xfb, 0xe0,
-	0x38, 0xc8, 0x24, 0x01, 0x69, 0xf1, 0x00, 0x80, 0xce, 0x4f, 0x10, 0xf8, 0x2c, 0xc8, 0x29, 0xab,
-	0xab, 0xa5, 0x7a, 0x3d, 0xba, 0xe5, 0xd2, 0x9a, 0xb2, 0x5d, 0xde, 0xd2, 0xd6, 0xaa, 0xaa, 0x56,
-	0x2c, 0xd5, 0xca, 0xd5, 0x7b, 0x77, 0x4b, 0x95, 0x2d, 0xb9, 0x8f, 0x15, 0x49, 0x97, 0xdd, 0x86,
-	0x5a, 0x5a, 0xdd, 0x92, 0x25, 0x78, 0x09, 0x4c, 0x25, 0xf1, 0x72, 0x55, 0x29, 0x6a, 0x2b, 0x4a,
-	0x59, 0xa9, 0xac, 0x96, 0x54, 0xb9, 0x7f, 0xb1, 0x0e, 0x86, 0xa3, 0x57, 0x03, 0x4e, 0x80, 0xb1,
-	0xf5, 0xda, 0xb6, 0x30, 0xab, 0x54, 0x2b, 0x2c, 0x36, 0x19, 0x8c, 0xb6, 0x21, 0xa5, 0xc2, 0xae,
-	0x32, 0x69, 0xb4, 0xb3, 0x5e, 0xdb, 0x96, 0xfb, 0xbb, 0x8c, 0x6a, 0xab, 0x1b, 0xf2, 0xc0, 0xad,
-	0x3f, 0x02, 0xfe, 0xdf, 0x8e, 0x42, 0x4d, 0xc8, 0x2a, 0x59, 0x34, 0x9b, 0x42, 0x29, 0xec, 0x69,
-	0xf5, 0xe9, 0xe4, 0x8c, 0x54, 0xf9, 0x9f, 0x54, 0xb9, 0x6f, 0x1e, 0x1e, 0xa1, 0x45, 0x95, 0xf8,
-	0x6e, 0xe8, 0xe9, 0x6c, 0x8d, 0xbf, 0x24, 0xe8, 0xd3, 0x5d, 0xec, 0xe0, 0x06, 0x59, 0xea, 0xed,
-	0xa5, 0x8f, 0x8f, 0x91, 0xf4, 0x97, 0x63, 0x24, 0x6f, 0xf7, 0xb0, 0xad, 0xef, 0xfe, 0xe9, 0xf3,
-	0x1f, 0xf7, 0xcb, 0xb9, 0x4c, 0x41, 0xfc, 0x46, 0x29, 0x60, 0x4a, 0x97, 0xa5, 0x45, 0x1e, 0x8e,
-	0xb8, 0x8f, 0xff, 0x52, 0x38, 0xe2, 0x67, 0x62, 0x1c, 0xce, 0xb7, 0x41, 0x5a, 0x58, 0xfe, 0x87,
-	0xd1, 0xdc, 0x79, 0xf2, 0x68, 0xda, 0x3b, 0x0b, 0x3e, 0x1a, 0xef, 0xfc, 0x3d, 0x09, 0x0c, 0xd7,
-	0xf7, 0xdd, 0x87, 0x67, 0x6d, 0xdc, 0x23, 0xe7, 0xde, 0x38, 0x3c, 0x42, 0x0b, 0x67, 0xec, 0xba,
-	0x63, 0x92, 0x87, 0x4f, 0x96, 0x81, 0x6c, 0x2e, 0x5d, 0xf0, 0xf7, 0xdd, 0x87, 0x51, 0x14, 0x37,
-	0x24, 0xf8, 0x0b, 0x09, 0x4c, 0x2a, 0x86, 0x71, 0x9a, 0x66, 0xcc, 0x76, 0x07, 0xd1, 0xad, 0x3d,
-	0x2b, 0x37, 0x3b, 0x87, 0x47, 0xe8, 0xfa, 0xe3, 0x73, 0x73, 0xc6, 0x63, 0xf5, 0x28, 0x4e, 0xcf,
-	0x4c, 0xee, 0x42, 0x01, 0x1b, 0x06, 0x8b, 0x8a, 0xb1, 0x0e, 0x46, 0x50, 0xc4, 0x83, 0xc8, 0x32,
-	0xf5, 0x6b, 0x09, 0x5c, 0x54, 0x89, 0xed, 0x36, 0xc9, 0x57, 0x10, 0xe4, 0xbd, 0xa7, 0x0f, 0x72,
-	0x2e, 0x37, 0x55, 0xf0, 0x78, 0x1c, 0x67, 0xc7, 0xf9, 0x13, 0x09, 0x4c, 0x44, 0x99, 0x4c, 0xd0,
-	0x92, 0xa9, 0x9e, 0x08, 0x3b, 0xaa, 0xb3, 0xc2, 0xab, 0x3f, 0x7d, 0x78, 0x28, 0x77, 0xae, 0x9d,
-	0xc3, 0x0e, 0xa3, 0x60, 0x81, 0xfd, 0x5c, 0x02, 0x93, 0x9d, 0x04, 0x3e, 0x75, 0x6c, 0x5f, 0xf2,
-	0x7e, 0x13, 0xa9, 0xeb, 0x0e, 0xef, 0x57, 0x12, 0x98, 0x62, 0x9d, 0xc0, 0xf8, 0x89, 0xbf, 0xe6,
-	0x7a, 0x0a, 0xa5, 0x1d, 0xd2, 0x02, 0xe7, 0xbb, 0xfe, 0x60, 0x3b, 0x83, 0xcb, 0x4c, 0x27, 0x09,
-	0x38, 0xc3, 0x37, 0x49, 0x2b, 0x57, 0x3e, 0x3c, 0x42, 0x53, 0x71, 0xac, 0xdc, 0x71, 0xb2, 0x65,
-	0xde, 0x3b, 0x46, 0x52, 0xbb, 0x35, 0xaf, 0xe4, 0x66, 0x79, 0x4b, 0xd8, 0x98, 0x52, 0xd3, 0x69,
-	0x14, 0x3a, 0x7f, 0x14, 0xbe, 0xc9, 0xd6, 0xf1, 0x2e, 0x59, 0x99, 0x7d, 0xf4, 0xb7, 0xb9, 0xbe,
-	0x47, 0x9f, 0xce, 0x49, 0x1f, 0x7f, 0x3a, 0x27, 0xfd, 0xf5, 0xd3, 0x39, 0xe9, 0xad, 0xcf, 0xe6,
-	0xfa, 0x3e, 0xfe, 0x6c, 0xae, 0xef, 0xcf, 0x9f, 0xcd, 0xf5, 0xdd, 0x1f, 0xe2, 0x9b, 0xbf, 0xf0,
-	0xef, 0x00, 0x00, 0x00, 0xff, 0xff, 0x93, 0xcc, 0xc2, 0xd7, 0x1c, 0x18, 0x00, 0x00,
+	// 2672 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x58, 0x4d, 0x6c, 0x24, 0x47,
+	0xf5, 0x77, 0xfb, 0x7b, 0xca, 0x9e, 0x71, 0xbb, 0xd6, 0xbb, 0x5b, 0xfe, 0x58, 0xaf, 0x77, 0x76,
+	0x93, 0xbf, 0xe3, 0x78, 0xed, 0x5d, 0x27, 0xd9, 0x24, 0xfe, 0x13, 0x48, 0xdb, 0x1e, 0x7b, 0x8d,
+	0xbd, 0x33, 0xb3, 0xed, 0xaf, 0x2c, 0x02, 0x95, 0xca, 0xdd, 0xe5, 0x71, 0xc7, 0xfd, 0x51, 0xdb,
+	0x1f, 0xb3, 0x4c, 0x4e, 0x08, 0x89, 0x03, 0x08, 0xa1, 0x28, 0x48, 0x80, 0x22, 0x24, 0x40, 0x11,
+	0x22, 0x47, 0xc8, 0x05, 0x94, 0x23, 0xa7, 0x55, 0x0e, 0x28, 0x12, 0x17, 0xc4, 0x21, 0x82, 0x24,
+	0x07, 0xe4, 0x13, 0x52, 0x6c, 0x0b, 0x71, 0x42, 0x55, 0xd5, 0x3d, 0xd3, 0x33, 0xf6, 0x4a, 0xec,
+	0x66, 0x25, 0x6e, 0x55, 0xbf, 0xf7, 0xea, 0xd5, 0xab, 0x57, 0xef, 0xbd, 0xfa, 0x75, 0x83, 0x0c,
+	0x61, 0x6c, 0x86, 0xf9, 0x5e, 0xe8, 0xc1, 0x0c, 0x35, 0x2b, 0x54, 0x0c, 0x47, 0xc6, 0x2a, 0x9e,
+	0x57, 0xb1, 0xe9, 0x2c, 0x61, 0xd6, 0x2c, 0x71, 0x5d, 0x2f, 0x24, 0xa1, 0xe5, 0xb9, 0x81, 0x54,
+	0x1c, 0xe9, 0xf7, 0x69, 0x10, 0xd9, 0x61, 0x3c, 0x1b, 0x34, 0x6c, 0x2f, 0x32, 0x6d, 0x1a, 0x1e,
+	0xd0, 0x5a, 0x02, 0x85, 0x7e, 0x14, 0x84, 0xcc, 0xb3, 0x2d, 0x23, 0x81, 0x2e, 0x85, 0x9e, 0x67,
+	0x07, 0xb3, 0x62, 0x52, 0xa1, 0x6e, 0x7d, 0x90, 0x98, 0xdc, 0xb3, 0x49, 0xd5, 0xf3, 0xe3, 0xd9,
+	0x80, 0x4f, 0x03, 0x2f, 0xf2, 0x0d, 0x9a, 0xec, 0x98, 0x35, 0xa9, 0x61, 0x39, 0xc4, 0x8e, 0xa7,
+	0x43, 0x15, 0xaf, 0xe2, 0x89, 0xe1, 0x2c, 0x1f, 0xd5, 0x95, 0x1c, 0x3a, 0x6b, 0x7b, 0x86, 0x9c,
+	0xe6, 0xbf, 0xaf, 0x80, 0x6e, 0x8d, 0xb1, 0x35, 0x5a, 0x83, 0x33, 0xa0, 0xdf, 0xf3, 0x2b, 0xc4,
+	0xb5, 0xde, 0x12, 0xe7, 0x40, 0xca, 0x84, 0x32, 0x99, 0x59, 0x00, 0x1f, 0x9e, 0xa0, 0x6e, 0xc2,
+	0x98, 0xe7, 0x57, 0xf4, 0x26, 0x39, 0x1c, 0x05, 0x9d, 0x2e, 0x71, 0x28, 0x6a, 0x17, 0x7a, 0x3d,
+	0x1f, 0x9e, 0xa0, 0x0e, 0xc2, 0x98, 0x2e, 0x40, 0x78, 0x0d, 0xf4, 0x54, 0xa9, 0x1f, 0x70, 0x3b,
+	0x1d, 0x4d, 0x76, 0xaa, 0xd4, 0xd7, 0x13, 0xd1, 0x7c, 0xff, 0x3f, 0xbe, 0x40, 0xca, 0xbf, 0xbe,
+	0x40, 0xca, 0x6f, 0x7f, 0x79, 0x59, 0xc9, 0xbf, 0x02, 0xc0, 0xa2, 0xe7, 0xee, 0x59, 0x95, 0x65,
+	0xcb, 0xa6, 0x10, 0x82, 0xce, 0x03, 0xcb, 0x35, 0xa5, 0x1b, 0xba, 0x18, 0xc3, 0x0b, 0xa0, 0xdb,
+	0x10, 0x1a, 0x72, 0x53, 0x3d, 0x9e, 0xe5, 0x0f, 0x87, 0x40, 0x87, 0xc6, 0x18, 0x97, 0xef, 0x59,
+	0xd4, 0x36, 0x03, 0xa4, 0x4c, 0x74, 0x70, 0xb9, 0x9c, 0xc1, 0xe7, 0x40, 0xc7, 0x01, 0xad, 0x89,
+	0x45, 0x7d, 0x73, 0x83, 0x33, 0xf5, 0x2b, 0x9c, 0x91, 0x47, 0x5f, 0xe8, 0x7c, 0xf8, 0xc9, 0xe5,
+	0x36, 0x9d, 0xeb, 0xc0, 0xab, 0x00, 0x58, 0x0e, 0xa9, 0x50, 0xcc, 0x48, 0xb8, 0x8f, 0x3a, 0x85,
+	0xef, 0x9d, 0xef, 0x1f, 0x21, 0x45, 0xcf, 0x08, 0xbc, 0x4c, 0xc2, 0x7d, 0xf8, 0x42, 0xa2, 0x14,
+	0xd6, 0x18, 0x45, 0x5d, 0x13, 0xca, 0x64, 0x6e, 0x6e, 0x28, 0x65, 0x76, 0x95, 0x0b, 0x37, 0x6b,
+	0x8c, 0xc6, 0x8b, 0xf8, 0x10, 0x5e, 0x01, 0xfd, 0xc4, 0x30, 0x68, 0x10, 0x60, 0xe6, 0xf9, 0x61,
+	0x80, 0x7a, 0xc4, 0x11, 0xfa, 0x24, 0x56, 0xe6, 0x10, 0x5c, 0x03, 0x39, 0x93, 0xee, 0x91, 0xc8,
+	0x0e, 0xb1, 0xbc, 0x6a, 0x94, 0x11, 0x2e, 0xa7, 0x6d, 0x2f, 0x0b, 0x01, 0xf7, 0x3a, 0x77, 0x78,
+	0x82, 0xba, 0xe5, 0x54, 0xf8, 0x9f, 0x8d, 0xd7, 0x4a, 0x08, 0xde, 0x04, 0x03, 0x24, 0x0a, 0xf7,
+	0x31, 0x8b, 0x76, 0x6d, 0xcb, 0xc0, 0x3c, 0x00, 0xfd, 0xe2, 0x38, 0x99, 0x77, 0x3e, 0x18, 0xee,
+	0x72, 0x3d, 0xc3, 0x61, 0x7a, 0x96, 0x6b, 0x94, 0x85, 0x02, 0x4f, 0x01, 0x04, 0x7a, 0x0c, 0xcf,
+	0x71, 0x88, 0x6b, 0xa2, 0xac, 0xf0, 0x2e, 0x99, 0x72, 0xe7, 0xe3, 0x21, 0x26, 0x7e, 0x25, 0x40,
+	0x33, 0x22, 0xbe, 0x7d, 0x31, 0xa6, 0xf9, 0x95, 0x00, 0x4e, 0x80, 0xbe, 0x54, 0x15, 0xa0, 0x5c,
+	0x7c, 0xbc, 0x06, 0x04, 0xaf, 0x01, 0x60, 0x52, 0x66, 0x7b, 0x35, 0x87, 0xba, 0x21, 0x1a, 0x48,
+	0xc5, 0x36, 0x85, 0xc3, 0x97, 0xc0, 0xb9, 0xc6, 0x0c, 0x3b, 0xc4, 0xb5, 0xf6, 0x68, 0x10, 0x22,
+	0x35, 0xa5, 0x0e, 0x1b, 0x0a, 0x77, 0x62, 0x39, 0x7c, 0x19, 0x0c, 0xa5, 0x96, 0x55, 0xa8, 0x4b,
+	0x7d, 0x12, 0x7a, 0x3e, 0x1a, 0x4c, 0xad, 0x4b, 0x19, 0x5e, 0x49, 0x14, 0xe0, 0x0d, 0x30, 0x44,
+	0x5c, 0xd3, 0xf7, 0x2c, 0x13, 0x33, 0x62, 0x1c, 0xf0, 0x6b, 0x15, 0x79, 0x0d, 0xc5, 0x01, 0x60,
+	0x2c, 0x2b, 0x4b, 0x51, 0x91, 0x27, 0xf7, 0x0c, 0xe8, 0x31, 0xa9, 0x8d, 0x3d, 0x16, 0xa2, 0x21,
+	0x71, 0xf7, 0xe7, 0x53, 0xf7, 0xb3, 0x44, 0x6d, 0x1a, 0xca, 0xcb, 0xef, 0x36, 0xa9, 0x5d, 0x62,
+	0x21, 0x9c, 0xe5, 0x61, 0xe5, 0x89, 0x1a, 0xa0, 0xf3, 0x13, 0x1d, 0x93, 0x7d, 0x4d, 0xfa, 0x8d,
+	0x94, 0xd7, 0x13, 0x2d, 0x38, 0x0d, 0x60, 0x60, 0x10, 0x9b, 0xe2, 0x07, 0x56, 0xb8, 0x8f, 0x0d,
+	0x3b, 0x0a, 0x42, 0xea, 0xa3, 0x0b, 0x13, 0xca, 0x64, 0xaf, 0xae, 0x0a, 0xc9, 0x8e, 0x15, 0xee,
+	0x2f, 0x4a, 0x1c, 0x3e, 0x03, 0x72, 0x96, 0x1b, 0x52, 0xdf, 0x25, 0x76, 0x9c, 0x5a, 0x17, 0x85,
+	0x66, 0x36, 0x41, 0x65, 0x72, 0x3d, 0x03, 0x7a, 0x7d, 0x5a, 0xb5, 0x44, 0x4d, 0xa2, 0xd6, 0x44,
+	0xa8, 0x8b, 0xe0, 0x55, 0x90, 0xf5, 0xf6, 0xf6, 0x2c, 0xc3, 0x22, 0x36, 0xde, 0xbb, 0x6f, 0xba,
+	0x68, 0x58, 0xc4, 0xa1, 0x3f, 0x01, 0x97, 0xef, 0x9b, 0x2e, 0x2f, 0x34, 0xc7, 0x7c, 0x29, 0x88,
+	0x1c, 0x34, 0x22, 0x0b, 0x51, 0xce, 0xe0, 0x24, 0x50, 0x49, 0x14, 0x7a, 0x98, 0xf9, 0x5e, 0x15,
+	0xcb, 0xd6, 0x86, 0xc6, 0x84, 0x46, 0x8e, 0xe3, 0x65, 0xdf, 0xab, 0x96, 0x05, 0x0a, 0x6f, 0x81,
+	0x38, 0xf3, 0x65, 0x0d, 0x5d, 0x3a, 0x15, 0x47, 0x4d, 0x48, 0x45, 0x1c, 0x01, 0xa9, 0x8f, 0xe1,
+	0xf3, 0xbc, 0x44, 0x78, 0x84, 0x31, 0xf3, 0x29, 0x23, 0x3e, 0x45, 0x97, 0xf9, 0x61, 0xe3, 0x0b,
+	0xce, 0x4a, 0x59, 0x59, 0x8a, 0xe0, 0xeb, 0x00, 0xb6, 0xb8, 0x63, 0xd1, 0x00, 0x4d, 0xf0, 0xdc,
+	0x5d, 0x80, 0x87, 0x27, 0x28, 0xa7, 0x35, 0x39, 0xa5, 0xab, 0x4d, 0x4e, 0x5a, 0x34, 0x80, 0xd7,
+	0x01, 0x0c, 0xa9, 0xc3, 0x6c, 0x12, 0x52, 0x6c, 0x52, 0xdb, 0x72, 0x2c, 0x7e, 0x13, 0x57, 0xc4,
+	0x91, 0x06, 0x13, 0xc9, 0x52, 0x22, 0x80, 0x79, 0x90, 0x0d, 0x0e, 0x2c, 0x86, 0xf7, 0x8d, 0xf8,
+	0x26, 0xf2, 0xb2, 0x0a, 0x38, 0x78, 0xdb, 0x90, 0xf7, 0x70, 0x0f, 0x00, 0xc3, 0xa7, 0x24, 0xa4,
+	0x26, 0x26, 0x21, 0xba, 0x2a, 0x0a, 0xfc, 0xea, 0x8c, 0x69, 0x05, 0xa1, 0x6f, 0xed, 0x46, 0x1c,
+	0x76, 0x48, 0x68, 0xec, 0x63, 0xea, 0x56, 0x2c, 0x97, 0xce, 0x6c, 0x5a, 0x0e, 0x0d, 0x42, 0xe2,
+	0xb0, 0x85, 0xf3, 0xfc, 0x88, 0xef, 0x7c, 0x30, 0x9c, 0x09, 0x13, 0x48, 0x94, 0x7d, 0x26, 0xb6,
+	0xa6, 0x85, 0xdc, 0x74, 0xc4, 0xcc, 0xc4, 0xf4, 0xb5, 0x2f, 0x6f, 0x3a, 0xb6, 0xa6, 0x85, 0xbc,
+	0x35, 0x88, 0xf7, 0x8a, 0x9a, 0xe8, 0x19, 0x91, 0x5d, 0xc9, 0x14, 0x12, 0x70, 0xc9, 0xa7, 0xf7,
+	0x23, 0xcb, 0xa7, 0x26, 0xf6, 0xa2, 0x70, 0xd7, 0x8b, 0x5c, 0x13, 0x1b, 0x9e, 0xeb, 0x52, 0x43,
+	0x76, 0x82, 0x67, 0x45, 0xce, 0x5f, 0x4c, 0xdd, 0xed, 0x06, 0x35, 0x22, 0xdf, 0x0a, 0x6b, 0x7a,
+	0x64, 0xd3, 0xb8, 0xf9, 0x8e, 0x26, 0x36, 0x4a, 0xb1, 0x89, 0xc5, 0x86, 0x05, 0xf8, 0x1c, 0x50,
+	0x89, 0x6d, 0x7b, 0x0f, 0x70, 0x40, 0xfd, 0x2a, 0xf5, 0x6d, 0x1a, 0x04, 0xe8, 0xff, 0x84, 0x17,
+	0x03, 0x02, 0xdf, 0xa8, 0xc3, 0xf0, 0x36, 0x18, 0x6c, 0x28, 0xe1, 0xf8, 0xb5, 0x98, 0x14, 0x91,
+	0x18, 0x6d, 0xf2, 0x20, 0xd1, 0x91, 0xf5, 0xa7, 0xab, 0x41, 0x0b, 0x02, 0xff, 0x1f, 0xe4, 0xaa,
+	0x0e, 0x26, 0x8c, 0x61, 0x2f, 0x4e, 0xd2, 0xe7, 0x44, 0x92, 0x5e, 0x48, 0x99, 0xd9, 0x76, 0x34,
+	0xc6, 0x4a, 0x32, 0x4b, 0xfb, 0xaa, 0x8d, 0x09, 0xbc, 0x05, 0x72, 0xc4, 0xa6, 0x7e, 0xd8, 0xc8,
+	0xba, 0x29, 0x91, 0x75, 0x03, 0x87, 0x27, 0xa8, 0x4f, 0xe3, 0x92, 0x38, 0xe5, 0xb2, 0xa4, 0x3e,
+	0xe1, 0xf9, 0xb6, 0x0e, 0xce, 0xdd, 0xf7, 0x02, 0x1c, 0xd0, 0x80, 0x17, 0x23, 0x4f, 0xdc, 0x3d,
+	0xcb, 0xa6, 0xe8, 0x79, 0xb1, 0xf3, 0x58, 0x6a, 0xe7, 0xbb, 0x5e, 0xb0, 0x21, 0x95, 0xca, 0x52,
+	0x47, 0x1f, 0xbc, 0xdf, 0x0a, 0xc1, 0xaf, 0x82, 0xa1, 0xb4, 0x35, 0x33, 0xf2, 0xe5, 0xd3, 0x3e,
+	0x3d, 0xa1, 0x4c, 0x76, 0x2c, 0xf4, 0xff, 0xfb, 0x93, 0xcb, 0xbd, 0x4b, 0x31, 0xa6, 0xc3, 0xc6,
+	0xf2, 0x04, 0x83, 0x57, 0x40, 0xa6, 0x62, 0x7b, 0xbb, 0xc4, 0xc6, 0x96, 0x89, 0xae, 0xa7, 0x1a,
+	0x69, 0xaf, 0x84, 0x57, 0x4d, 0x78, 0x0b, 0xf4, 0x52, 0xb7, 0x8a, 0xab, 0xc4, 0x0f, 0xd0, 0xac,
+	0xb8, 0xe8, 0xd1, 0xe6, 0xf7, 0x75, 0xa6, 0xe0, 0x56, 0xb7, 0x89, 0x1f, 0x14, 0xdc, 0xd0, 0xaf,
+	0xe9, 0x3d, 0x54, 0xce, 0xe0, 0x2a, 0x18, 0x08, 0xa8, 0xe1, 0xd3, 0x10, 0xd7, 0x97, 0xdf, 0x10,
+	0xcb, 0xaf, 0xb4, 0x2c, 0xdf, 0x10, 0x5a, 0x4d, 0x46, 0xb2, 0x41, 0x1a, 0xe3, 0xdd, 0x52, 0xe6,
+	0x29, 0xb6, 0xad, 0x20, 0xc4, 0x44, 0x24, 0x0d, 0xba, 0x29, 0x2a, 0x4f, 0x95, 0x92, 0x75, 0x2b,
+	0x08, 0x35, 0x81, 0xc3, 0x6b, 0xa0, 0xdb, 0xdb, 0x7d, 0x93, 0x1f, 0x68, 0x4e, 0x1c, 0x28, 0x1b,
+	0xa7, 0x7e, 0xdc, 0x08, 0xbb, 0xbc, 0xdd, 0x37, 0x57, 0x4d, 0x78, 0x17, 0x0c, 0x1d, 0x44, 0xbb,
+	0xd4, 0x77, 0x69, 0x48, 0x03, 0x5c, 0x67, 0x5a, 0xe8, 0x05, 0x91, 0x49, 0xe3, 0x29, 0x1f, 0xd7,
+	0xea, 0x6a, 0x7a, 0xa2, 0xa5, 0x9f, 0x3b, 0x38, 0x0d, 0xc2, 0xaf, 0x81, 0x9c, 0xeb, 0x99, 0x34,
+	0x65, 0xec, 0x45, 0x61, 0x0c, 0xa5, 0x8c, 0x15, 0x3d, 0x93, 0x36, 0xcc, 0x64, 0xdd, 0xf4, 0x74,
+	0x64, 0x1e, 0xf4, 0xa7, 0xc3, 0x00, 0x55, 0xc9, 0x6a, 0x24, 0x41, 0x12, 0xe4, 0x65, 0x08, 0x74,
+	0x55, 0x89, 0x1d, 0xc5, 0x9c, 0x4c, 0x97, 0x93, 0xf9, 0xf6, 0x57, 0x94, 0x91, 0xd7, 0x01, 0x3c,
+	0x1d, 0xc8, 0xc7, 0xb1, 0x30, 0xff, 0xb9, 0xc2, 0xc9, 0xda, 0x3f, 0xbf, 0x40, 0xca, 0x77, 0x8e,
+	0x90, 0xf2, 0xf6, 0x11, 0x52, 0x7e, 0x76, 0x84, 0x94, 0x87, 0x3c, 0x78, 0xc7, 0xe8, 0xe5, 0xa5,
+	0x74, 0xdf, 0x9d, 0x5e, 0x4c, 0x3a, 0xd2, 0xf4, 0x56, 0xd2, 0x40, 0xa6, 0x97, 0xc4, 0x5b, 0x38,
+	0xdd, 0xdc, 0x71, 0xdf, 0x3d, 0x46, 0xdf, 0x22, 0x8c, 0xf1, 0xf7, 0xf6, 0xb5, 0x35, 0x5a, 0x9b,
+	0xe1, 0xcf, 0xeb, 0xb4, 0x64, 0x89, 0x81, 0x00, 0xb6, 0x25, 0x53, 0x9c, 0x96, 0x0c, 0x54, 0x40,
+	0xa5, 0x14, 0x09, 0x9d, 0x8e, 0x29, 0x8f, 0x64, 0x4b, 0xaf, 0x2d, 0xa5, 0x09, 0x90, 0x30, 0xf6,
+	0xc1, 0x09, 0x52, 0x0f, 0x68, 0xed, 0xb5, 0xf4, 0xa2, 0x3f, 0x9e, 0x20, 0x24, 0xb7, 0x5f, 0xa3,
+	0xb5, 0xf9, 0x66, 0x87, 0xbe, 0xde, 0xd9, 0x3b, 0xaa, 0x8e, 0xe9, 0x23, 0x09, 0x0d, 0x0b, 0xf6,
+	0x09, 0xef, 0x6b, 0x55, 0xcf, 0x8e, 0x1c, 0x8a, 0x03, 0xeb, 0x2d, 0x9a, 0xff, 0x9d, 0x02, 0xd4,
+	0xd6, 0xf6, 0x01, 0xaf, 0x83, 0xae, 0xaa, 0xc1, 0xa2, 0x40, 0xc4, 0xb2, 0x99, 0x63, 0x6e, 0x99,
+	0xd4, 0xb8, 0xf5, 0x62, 0xdc, 0xe6, 0xa4, 0x16, 0x0f, 0xbc, 0x4f, 0x1c, 0x11, 0xe4, 0x4e, 0x9d,
+	0x0f, 0x39, 0xc1, 0x72, 0x2c, 0x17, 0xfb, 0x94, 0xd9, 0x96, 0x41, 0x02, 0xc1, 0x9a, 0xb3, 0x7a,
+	0x9f, 0x63, 0xb9, 0x7a, 0x0c, 0xc1, 0x57, 0x01, 0xa8, 0xb0, 0x28, 0xe9, 0x69, 0x9d, 0xa7, 0x98,
+	0xe1, 0x0a, 0x8b, 0xa4, 0x37, 0xf1, 0x5e, 0x99, 0x4a, 0x02, 0xe4, 0x43, 0x90, 0xa9, 0x4b, 0xe1,
+	0xb3, 0xa0, 0x53, 0xb4, 0x33, 0x45, 0x34, 0x15, 0xd8, 0x6c, 0x41, 0xb4, 0x32, 0x21, 0xe7, 0xb9,
+	0xe0, 0x78, 0x26, 0xb5, 0x93, 0x5c, 0x10, 0x13, 0x78, 0x11, 0xf4, 0xb8, 0x91, 0x83, 0x2b, 0x2c,
+	0x12, 0x3e, 0x76, 0xe9, 0xdd, 0x6e, 0xe4, 0xac, 0xb0, 0x28, 0x39, 0x53, 0x67, 0xfd, 0x4c, 0xf9,
+	0x9f, 0xb6, 0x83, 0x41, 0x8d, 0xb1, 0xe6, 0x08, 0xc3, 0x97, 0x41, 0x0f, 0x6f, 0xaa, 0x49, 0xe2,
+	0x9d, 0x49, 0xc8, 0xfb, 0x0e, 0x4f, 0x10, 0x67, 0xf4, 0xe2, 0x1c, 0xfc, 0xb3, 0x81, 0xb3, 0xd3,
+	0xaf, 0x9c, 0x41, 0x2e, 0xe4, 0xc7, 0xc7, 0x59, 0x6f, 0x79, 0x0b, 0xe1, 0x98, 0xff, 0x81, 0xf2,
+	0xee, 0x31, 0x2a, 0x24, 0xc9, 0x26, 0xf7, 0x69, 0xce, 0xb7, 0x18, 0x6b, 0x49, 0xb9, 0x18, 0x4d,
+	0x27, 0xd0, 0x47, 0xc7, 0xa8, 0xc9, 0x40, 0xcb, 0xc2, 0x33, 0x56, 0xb4, 0xa4, 0x7d, 0xfe, 0xbd,
+	0x76, 0x90, 0xe3, 0x91, 0x69, 0x3c, 0x04, 0x4f, 0x1e, 0x96, 0x39, 0xd0, 0x9f, 0x7a, 0x6a, 0x92,
+	0x90, 0x9c, 0x7a, 0x68, 0xfa, 0x1a, 0x0f, 0x4d, 0x6d, 0xfe, 0x3d, 0x1e, 0x0c, 0xf2, 0x54, 0x82,
+	0x31, 0x2d, 0xec, 0xca, 0xbd, 0xa5, 0xb5, 0xc6, 0x3e, 0x1f, 0x1d, 0xa3, 0xf9, 0xc7, 0x0d, 0x54,
+	0x63, 0x75, 0xfe, 0xf7, 0xed, 0xe0, 0xfc, 0x52, 0x9d, 0xb1, 0x7f, 0xc3, 0x73, 0xa9, 0x4e, 0xef,
+	0x47, 0x9c, 0xec, 0x4f, 0x00, 0xfe, 0xad, 0x19, 0x07, 0x2a, 0xd7, 0x1c, 0x28, 0x9d, 0x8b, 0xe0,
+	0x35, 0x90, 0x33, 0xfd, 0x1a, 0xf6, 0x23, 0x17, 0x4b, 0xd2, 0x2f, 0xe2, 0xd2, 0xab, 0xf7, 0x9b,
+	0x7e, 0x4d, 0x8f, 0x5c, 0x69, 0x16, 0x8e, 0x82, 0x0c, 0x4f, 0x66, 0xde, 0x67, 0x93, 0x92, 0xeb,
+	0x75, 0x23, 0x87, 0xb7, 0xe1, 0x60, 0xfe, 0x0f, 0xbc, 0xb3, 0xad, 0xf1, 0x37, 0xa8, 0xb9, 0xbb,
+	0x71, 0xa4, 0xd1, 0xe1, 0xf8, 0xac, 0xd1, 0xe5, 0x62, 0x6d, 0xd1, 0xe9, 0x18, 0x9b, 0x39, 0xd5,
+	0xed, 0x68, 0x2a, 0xe6, 0x33, 0x67, 0x05, 0x7d, 0xe6, 0x69, 0x74, 0xbd, 0xa9, 0x1f, 0x2a, 0x20,
+	0x53, 0xff, 0x08, 0x85, 0x17, 0x00, 0x5c, 0xbd, 0xa3, 0xad, 0x14, 0xf0, 0xe6, 0xbd, 0x72, 0x01,
+	0x6f, 0x15, 0xd7, 0x8a, 0xa5, 0x9d, 0xa2, 0xda, 0x06, 0xcf, 0x83, 0xc1, 0x14, 0xbe, 0x54, 0x5a,
+	0x5c, 0x2b, 0xe8, 0xaa, 0x02, 0xcf, 0x81, 0x81, 0x14, 0x7c, 0x77, 0xb1, 0xb4, 0xa3, 0xb6, 0xb7,
+	0x80, 0xb7, 0x0b, 0xeb, 0x77, 0xd4, 0x0e, 0x08, 0x41, 0x2e, 0x05, 0x96, 0xb6, 0x97, 0xd5, 0xce,
+	0x53, 0x98, 0xa6, 0x76, 0x4d, 0xfd, 0x48, 0x01, 0x83, 0xa7, 0x08, 0x0b, 0x37, 0x79, 0xb7, 0xb4,
+	0x81, 0x8b, 0x25, 0x5c, 0xd6, 0x57, 0x4b, 0xfa, 0xea, 0xe6, 0x3d, 0xb5, 0x2d, 0x01, 0xd7, 0x4b,
+	0x3b, 0x78, 0x5d, 0xdb, 0x2c, 0x14, 0x17, 0xef, 0xa9, 0x0a, 0x1c, 0x06, 0xe7, 0x39, 0xb8, 0x79,
+	0x5b, 0x2f, 0x6d, 0xad, 0xdc, 0x2e, 0x6f, 0x6d, 0xe2, 0xa5, 0xd2, 0x4e, 0x11, 0x6f, 0xa8, 0xed,
+	0x8f, 0x12, 0x71, 0xef, 0x1e, 0x21, 0x5a, 0x57, 0x3b, 0xa7, 0x7e, 0xa3, 0x80, 0xbe, 0x14, 0x77,
+	0xe3, 0x91, 0xd8, 0xbe, 0x83, 0xb5, 0x72, 0x19, 0x97, 0x36, 0x52, 0x01, 0x3a, 0x07, 0x06, 0x1a,
+	0xf0, 0xfa, 0x6a, 0x71, 0xeb, 0x0d, 0x55, 0x81, 0x08, 0x0c, 0x35, 0xc0, 0x9d, 0xd5, 0xe2, 0x52,
+	0x69, 0x67, 0x03, 0xdf, 0xbc, 0xa1, 0xb6, 0xc3, 0x11, 0x70, 0xe1, 0xb4, 0x64, 0xee, 0xc6, 0xcd,
+	0x39, 0xb5, 0xe3, 0x91, 0xb2, 0x5b, 0x6a, 0xe7, 0x23, 0x65, 0xaf, 0xaa, 0x5d, 0x53, 0x37, 0x01,
+	0x68, 0x7c, 0x51, 0xf2, 0xe0, 0x16, 0x4b, 0x58, 0xdb, 0xda, 0x2c, 0xe1, 0xa5, 0xc2, 0x7a, 0x61,
+	0xb3, 0xa0, 0xb6, 0xc1, 0x01, 0xd0, 0x97, 0x06, 0x94, 0xa9, 0x03, 0x00, 0x1a, 0x1f, 0x4f, 0xf0,
+	0x59, 0x90, 0xd7, 0x16, 0x17, 0x0b, 0x1b, 0x1b, 0xf1, 0x2d, 0x17, 0x96, 0xb5, 0xad, 0xf5, 0x4d,
+	0xbc, 0x5c, 0xd2, 0xf1, 0x52, 0xa1, 0xbc, 0x5e, 0xba, 0x77, 0xa7, 0x50, 0xdc, 0x54, 0xdb, 0x78,
+	0x92, 0x34, 0xe9, 0xad, 0xea, 0x85, 0xc5, 0x4d, 0x55, 0x81, 0x97, 0xc0, 0x70, 0x1a, 0x5f, 0x2f,
+	0x69, 0x4b, 0x78, 0x41, 0x5b, 0xd7, 0x8a, 0x8b, 0x05, 0x5d, 0x6d, 0x9f, 0xda, 0x00, 0x3d, 0xf1,
+	0xab, 0x01, 0x07, 0x41, 0x76, 0xa5, 0xbc, 0x25, 0xd5, 0x8a, 0xa5, 0x22, 0xf7, 0x4d, 0x05, 0xfd,
+	0x75, 0x48, 0x2b, 0xf2, 0xab, 0x4c, 0x2b, 0x6d, 0xaf, 0x94, 0xb7, 0xd4, 0xf6, 0x26, 0xa5, 0xf2,
+	0xe2, 0xaa, 0xda, 0x31, 0xf7, 0x27, 0x20, 0xfe, 0x4a, 0x69, 0xcc, 0x82, 0x3c, 0x93, 0x65, 0xb1,
+	0x69, 0x8c, 0xc1, 0x96, 0x52, 0x1f, 0x49, 0xf7, 0x48, 0x5d, 0xfc, 0x6f, 0xcb, 0x7f, 0xf3, 0xf0,
+	0x08, 0x4d, 0x25, 0xa4, 0x49, 0x63, 0x2c, 0x98, 0x96, 0xc4, 0xef, 0x0e, 0x71, 0x49, 0x85, 0x4e,
+	0xb7, 0xd6, 0xd2, 0xc7, 0xc7, 0x48, 0xf9, 0xeb, 0x31, 0x52, 0xb7, 0x5a, 0x78, 0xe2, 0x77, 0xff,
+	0xfc, 0xf9, 0x8f, 0xdb, 0xd5, 0x7c, 0xdf, 0xac, 0xfc, 0xba, 0x9a, 0x25, 0x8c, 0xcd, 0x2b, 0x53,
+	0xc2, 0x1d, 0x79, 0x1f, 0xff, 0x23, 0x77, 0xe4, 0x07, 0x6e, 0xe2, 0xce, 0xb7, 0x41, 0x46, 0x6a,
+	0xfe, 0x97, 0xde, 0xdc, 0x7e, 0x7c, 0x6f, 0xea, 0x3b, 0x4b, 0x26, 0x9d, 0xec, 0xfc, 0x3d, 0x05,
+	0xf4, 0x6c, 0xec, 0x7b, 0x0f, 0xce, 0xda, 0xb8, 0x65, 0x9e, 0x7f, 0xe3, 0xf0, 0x08, 0x4d, 0x9e,
+	0xb1, 0xeb, 0xb6, 0x45, 0x1f, 0x3c, 0x5e, 0x04, 0x72, 0xf9, 0xcc, 0x6c, 0xb0, 0xef, 0x3d, 0x88,
+	0xbd, 0xb8, 0xa1, 0xc0, 0x5f, 0x28, 0x60, 0x48, 0x33, 0xcd, 0xd3, 0x34, 0x63, 0xac, 0xd9, 0x89,
+	0x66, 0xe9, 0x59, 0xb1, 0xd9, 0x3e, 0x3c, 0x42, 0xd7, 0x1f, 0x1d, 0x9b, 0x33, 0x1e, 0xab, 0x87,
+	0x49, 0x78, 0x46, 0xf3, 0x17, 0x66, 0x89, 0x69, 0x72, 0xaf, 0x38, 0xeb, 0xe0, 0x04, 0x45, 0x3e,
+	0x88, 0x3c, 0x52, 0xbf, 0x56, 0xc0, 0x45, 0x9d, 0x3a, 0x5e, 0x95, 0x3e, 0x05, 0x27, 0xef, 0x3d,
+	0xb9, 0x93, 0xe3, 0xf9, 0xe1, 0x59, 0x5f, 0xf8, 0x71, 0xb6, 0x9f, 0x3f, 0x51, 0xc0, 0x60, 0x1c,
+	0xc9, 0x14, 0x2d, 0x19, 0x6e, 0xf1, 0xb0, 0x21, 0x3a, 0xcb, 0xbd, 0x8d, 0x27, 0x77, 0x0f, 0xe5,
+	0xcf, 0xd5, 0x63, 0xd8, 0x60, 0x14, 0xdc, 0xb1, 0x9f, 0x2b, 0x60, 0xa8, 0x11, 0xc0, 0x27, 0xf6,
+	0xed, 0x4b, 0xde, 0x6f, 0x2a, 0x74, 0xcd, 0xee, 0xfd, 0x4a, 0x01, 0xc3, 0xbc, 0x12, 0x38, 0x3f,
+	0x09, 0x96, 0x3d, 0x5f, 0x63, 0xac, 0x41, 0x5a, 0xe0, 0x44, 0xd3, 0xaf, 0xc1, 0x33, 0xb8, 0xcc,
+	0x48, 0x9a, 0x80, 0x73, 0x7c, 0x8d, 0xd6, 0xf2, 0xeb, 0x87, 0x47, 0x68, 0x38, 0xf1, 0x55, 0x18,
+	0x4e, 0x97, 0xcc, 0xfb, 0xc7, 0x48, 0xa9, 0x97, 0xe6, 0x95, 0xfc, 0x98, 0x28, 0x09, 0x87, 0x30,
+	0x66, 0xb9, 0x95, 0xd9, 0xc6, 0x2f, 0xce, 0xb7, 0xf8, 0x3a, 0x51, 0x25, 0x0b, 0x63, 0x0f, 0xff,
+	0x3e, 0xde, 0xf6, 0xf0, 0xd3, 0x71, 0xe5, 0xe3, 0x4f, 0xc7, 0x95, 0xbf, 0x7d, 0x3a, 0xae, 0xbc,
+	0xfd, 0xd9, 0x78, 0xdb, 0xc7, 0x9f, 0x8d, 0xb7, 0xfd, 0xe5, 0xb3, 0xf1, 0xb6, 0xdd, 0x6e, 0xb1,
+	0xf9, 0x0b, 0xff, 0x09, 0x00, 0x00, 0xff, 0xff, 0xe6, 0x26, 0xb5, 0x60, 0xe7, 0x18, 0x00, 0x00,
 }
 
 func (this *AppKey) GoString() string {
@@ -1456,6 +1467,43 @@ func (m *App) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.NodeResources != nil {
+		{
+			size, err := m.NodeResources.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApp(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3
+		i--
+		dAtA[i] = 0xa2
+	}
+	if m.KubernetesResources != nil {
+		{
+			size, err := m.KubernetesResources.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintApp(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3
+		i--
+		dAtA[i] = 0x9a
+	}
+	if len(m.ObjId) > 0 {
+		i -= len(m.ObjId)
+		copy(dAtA[i:], m.ObjId)
+		i = encodeVarintApp(dAtA, i, uint64(len(m.ObjId)))
+		i--
+		dAtA[i] = 0x3
+		i--
+		dAtA[i] = 0x92
+	}
 	if len(m.UpdateListAction) > 0 {
 		i -= len(m.UpdateListAction)
 		copy(dAtA[i:], m.UpdateListAction)
@@ -2551,6 +2599,25 @@ func (m *App) Matches(o *App, fopts ...MatchOpt) bool {
 			return false
 		}
 	}
+	if !opts.IgnoreBackend {
+		if !opts.Filter || o.ObjId != "" {
+			if o.ObjId != m.ObjId {
+				return false
+			}
+		}
+	}
+	if !opts.Filter || o.KubernetesResources != nil {
+		if m.KubernetesResources == nil && o.KubernetesResources != nil || m.KubernetesResources != nil && o.KubernetesResources == nil {
+			return false
+		} else if m.KubernetesResources != nil && o.KubernetesResources != nil {
+		}
+	}
+	if !opts.Filter || o.NodeResources != nil {
+		if m.NodeResources == nil && o.NodeResources != nil || m.NodeResources != nil && o.NodeResources == nil {
+			return false
+		} else if m.NodeResources != nil && o.NodeResources != nil {
+		}
+	}
 	return true
 }
 
@@ -2622,6 +2689,52 @@ const AppFieldSecretEnvVars = "48"
 const AppFieldSecretEnvVarsKey = "48.1"
 const AppFieldSecretEnvVarsValue = "48.2"
 const AppFieldUpdateListAction = "49"
+const AppFieldObjId = "50"
+const AppFieldKubernetesResources = "51"
+const AppFieldKubernetesResourcesCpuPool = "51.1"
+const AppFieldKubernetesResourcesCpuPoolTotalVcpus = "51.1.1"
+const AppFieldKubernetesResourcesCpuPoolTotalVcpusWhole = "51.1.1.1"
+const AppFieldKubernetesResourcesCpuPoolTotalVcpusNanos = "51.1.1.2"
+const AppFieldKubernetesResourcesCpuPoolTotalMemory = "51.1.2"
+const AppFieldKubernetesResourcesCpuPoolTotalDisk = "51.1.3"
+const AppFieldKubernetesResourcesCpuPoolTotalOptRes = "51.1.4"
+const AppFieldKubernetesResourcesCpuPoolTotalOptResKey = "51.1.4.1"
+const AppFieldKubernetesResourcesCpuPoolTotalOptResValue = "51.1.4.2"
+const AppFieldKubernetesResourcesCpuPoolTopology = "51.1.5"
+const AppFieldKubernetesResourcesCpuPoolTopologyMinNodeCpus = "51.1.5.1"
+const AppFieldKubernetesResourcesCpuPoolTopologyMinNodeMemory = "51.1.5.2"
+const AppFieldKubernetesResourcesCpuPoolTopologyMinNodeDisk = "51.1.5.3"
+const AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptRes = "51.1.5.4"
+const AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey = "51.1.5.4.1"
+const AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue = "51.1.5.4.2"
+const AppFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes = "51.1.5.5"
+const AppFieldKubernetesResourcesGpuPool = "51.2"
+const AppFieldKubernetesResourcesGpuPoolTotalVcpus = "51.2.1"
+const AppFieldKubernetesResourcesGpuPoolTotalVcpusWhole = "51.2.1.1"
+const AppFieldKubernetesResourcesGpuPoolTotalVcpusNanos = "51.2.1.2"
+const AppFieldKubernetesResourcesGpuPoolTotalMemory = "51.2.2"
+const AppFieldKubernetesResourcesGpuPoolTotalDisk = "51.2.3"
+const AppFieldKubernetesResourcesGpuPoolTotalOptRes = "51.2.4"
+const AppFieldKubernetesResourcesGpuPoolTotalOptResKey = "51.2.4.1"
+const AppFieldKubernetesResourcesGpuPoolTotalOptResValue = "51.2.4.2"
+const AppFieldKubernetesResourcesGpuPoolTopology = "51.2.5"
+const AppFieldKubernetesResourcesGpuPoolTopologyMinNodeCpus = "51.2.5.1"
+const AppFieldKubernetesResourcesGpuPoolTopologyMinNodeMemory = "51.2.5.2"
+const AppFieldKubernetesResourcesGpuPoolTopologyMinNodeDisk = "51.2.5.3"
+const AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptRes = "51.2.5.4"
+const AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey = "51.2.5.4.1"
+const AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue = "51.2.5.4.2"
+const AppFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes = "51.2.5.5"
+const AppFieldKubernetesResourcesMinK8SVersion = "51.4"
+const AppFieldNodeResources = "52"
+const AppFieldNodeResourcesVcpus = "52.1"
+const AppFieldNodeResourcesRam = "52.2"
+const AppFieldNodeResourcesDisk = "52.3"
+const AppFieldNodeResourcesOptResMap = "52.4"
+const AppFieldNodeResourcesOptResMapKey = "52.4.1"
+const AppFieldNodeResourcesOptResMapValue = "52.4.2"
+const AppFieldNodeResourcesInfraNodeFlavor = "52.5"
+const AppFieldNodeResourcesExternalVolumeSize = "52.6"
 
 var AppAllFields = []string{
 	AppFieldKeyOrganization,
@@ -2681,126 +2794,225 @@ var AppAllFields = []string{
 	AppFieldSecretEnvVarsKey,
 	AppFieldSecretEnvVarsValue,
 	AppFieldUpdateListAction,
+	AppFieldObjId,
+	AppFieldKubernetesResourcesCpuPoolTotalVcpusWhole,
+	AppFieldKubernetesResourcesCpuPoolTotalVcpusNanos,
+	AppFieldKubernetesResourcesCpuPoolTotalMemory,
+	AppFieldKubernetesResourcesCpuPoolTotalDisk,
+	AppFieldKubernetesResourcesCpuPoolTotalOptResKey,
+	AppFieldKubernetesResourcesCpuPoolTotalOptResValue,
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeCpus,
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeMemory,
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeDisk,
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey,
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue,
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes,
+	AppFieldKubernetesResourcesGpuPoolTotalVcpusWhole,
+	AppFieldKubernetesResourcesGpuPoolTotalVcpusNanos,
+	AppFieldKubernetesResourcesGpuPoolTotalMemory,
+	AppFieldKubernetesResourcesGpuPoolTotalDisk,
+	AppFieldKubernetesResourcesGpuPoolTotalOptResKey,
+	AppFieldKubernetesResourcesGpuPoolTotalOptResValue,
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeCpus,
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeMemory,
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeDisk,
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey,
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue,
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes,
+	AppFieldKubernetesResourcesMinK8SVersion,
+	AppFieldNodeResourcesVcpus,
+	AppFieldNodeResourcesRam,
+	AppFieldNodeResourcesDisk,
+	AppFieldNodeResourcesOptResMapKey,
+	AppFieldNodeResourcesOptResMapValue,
+	AppFieldNodeResourcesInfraNodeFlavor,
+	AppFieldNodeResourcesExternalVolumeSize,
 }
 
 var AppAllFieldsMap = NewFieldMap(map[string]struct{}{
-	AppFieldKeyOrganization:                         struct{}{},
-	AppFieldKeyName:                                 struct{}{},
-	AppFieldKeyVersion:                              struct{}{},
-	AppFieldImagePath:                               struct{}{},
-	AppFieldImageType:                               struct{}{},
-	AppFieldAccessPorts:                             struct{}{},
-	AppFieldDefaultFlavorName:                       struct{}{},
-	AppFieldAuthPublicKey:                           struct{}{},
-	AppFieldCommand:                                 struct{}{},
-	AppFieldAnnotations:                             struct{}{},
-	AppFieldDeployment:                              struct{}{},
-	AppFieldDeploymentManifest:                      struct{}{},
-	AppFieldDeploymentGenerator:                     struct{}{},
-	AppFieldAndroidPackageName:                      struct{}{},
-	AppFieldDelOpt:                                  struct{}{},
-	AppFieldConfigsKind:                             struct{}{},
-	AppFieldConfigsConfig:                           struct{}{},
-	AppFieldScaleWithCluster:                        struct{}{},
-	AppFieldInternalPorts:                           struct{}{},
-	AppFieldRevision:                                struct{}{},
-	AppFieldOfficialFqdn:                            struct{}{},
-	AppFieldMd5Sum:                                  struct{}{},
-	AppFieldAutoProvPolicy:                          struct{}{},
-	AppFieldAccessType:                              struct{}{},
-	AppFieldDeletePrepare:                           struct{}{},
-	AppFieldAutoProvPolicies:                        struct{}{},
-	AppFieldTemplateDelimiter:                       struct{}{},
-	AppFieldSkipHcPorts:                             struct{}{},
-	AppFieldCreatedAtSeconds:                        struct{}{},
-	AppFieldCreatedAtNanos:                          struct{}{},
-	AppFieldUpdatedAtSeconds:                        struct{}{},
-	AppFieldUpdatedAtNanos:                          struct{}{},
-	AppFieldTrusted:                                 struct{}{},
-	AppFieldRequiredOutboundConnectionsProtocol:     struct{}{},
-	AppFieldRequiredOutboundConnectionsPortRangeMin: struct{}{},
-	AppFieldRequiredOutboundConnectionsPortRangeMax: struct{}{},
-	AppFieldRequiredOutboundConnectionsRemoteCidr:   struct{}{},
-	AppFieldAllowServerless:                         struct{}{},
-	AppFieldServerlessConfigVcpusWhole:              struct{}{},
-	AppFieldServerlessConfigVcpusNanos:              struct{}{},
-	AppFieldServerlessConfigRam:                     struct{}{},
-	AppFieldServerlessConfigMinReplicas:             struct{}{},
-	AppFieldServerlessConfigGpuConfigType:           struct{}{},
-	AppFieldServerlessConfigGpuConfigModel:          struct{}{},
-	AppFieldServerlessConfigGpuConfigNumGpu:         struct{}{},
-	AppFieldServerlessConfigGpuConfigRam:            struct{}{},
-	AppFieldVmAppOsType:                             struct{}{},
-	AppFieldAlertPolicies:                           struct{}{},
-	AppFieldQosSessionProfile:                       struct{}{},
-	AppFieldQosSessionDuration:                      struct{}{},
-	AppFieldGlobalId:                                struct{}{},
-	AppFieldCommandArgs:                             struct{}{},
-	AppFieldEnvVarsKey:                              struct{}{},
-	AppFieldEnvVarsValue:                            struct{}{},
-	AppFieldSecretEnvVarsKey:                        struct{}{},
-	AppFieldSecretEnvVarsValue:                      struct{}{},
-	AppFieldUpdateListAction:                        struct{}{},
+	AppFieldKeyOrganization:                                      struct{}{},
+	AppFieldKeyName:                                              struct{}{},
+	AppFieldKeyVersion:                                           struct{}{},
+	AppFieldImagePath:                                            struct{}{},
+	AppFieldImageType:                                            struct{}{},
+	AppFieldAccessPorts:                                          struct{}{},
+	AppFieldDefaultFlavorName:                                    struct{}{},
+	AppFieldAuthPublicKey:                                        struct{}{},
+	AppFieldCommand:                                              struct{}{},
+	AppFieldAnnotations:                                          struct{}{},
+	AppFieldDeployment:                                           struct{}{},
+	AppFieldDeploymentManifest:                                   struct{}{},
+	AppFieldDeploymentGenerator:                                  struct{}{},
+	AppFieldAndroidPackageName:                                   struct{}{},
+	AppFieldDelOpt:                                               struct{}{},
+	AppFieldConfigsKind:                                          struct{}{},
+	AppFieldConfigsConfig:                                        struct{}{},
+	AppFieldScaleWithCluster:                                     struct{}{},
+	AppFieldInternalPorts:                                        struct{}{},
+	AppFieldRevision:                                             struct{}{},
+	AppFieldOfficialFqdn:                                         struct{}{},
+	AppFieldMd5Sum:                                               struct{}{},
+	AppFieldAutoProvPolicy:                                       struct{}{},
+	AppFieldAccessType:                                           struct{}{},
+	AppFieldDeletePrepare:                                        struct{}{},
+	AppFieldAutoProvPolicies:                                     struct{}{},
+	AppFieldTemplateDelimiter:                                    struct{}{},
+	AppFieldSkipHcPorts:                                          struct{}{},
+	AppFieldCreatedAtSeconds:                                     struct{}{},
+	AppFieldCreatedAtNanos:                                       struct{}{},
+	AppFieldUpdatedAtSeconds:                                     struct{}{},
+	AppFieldUpdatedAtNanos:                                       struct{}{},
+	AppFieldTrusted:                                              struct{}{},
+	AppFieldRequiredOutboundConnectionsProtocol:                  struct{}{},
+	AppFieldRequiredOutboundConnectionsPortRangeMin:              struct{}{},
+	AppFieldRequiredOutboundConnectionsPortRangeMax:              struct{}{},
+	AppFieldRequiredOutboundConnectionsRemoteCidr:                struct{}{},
+	AppFieldAllowServerless:                                      struct{}{},
+	AppFieldServerlessConfigVcpusWhole:                           struct{}{},
+	AppFieldServerlessConfigVcpusNanos:                           struct{}{},
+	AppFieldServerlessConfigRam:                                  struct{}{},
+	AppFieldServerlessConfigMinReplicas:                          struct{}{},
+	AppFieldServerlessConfigGpuConfigType:                        struct{}{},
+	AppFieldServerlessConfigGpuConfigModel:                       struct{}{},
+	AppFieldServerlessConfigGpuConfigNumGpu:                      struct{}{},
+	AppFieldServerlessConfigGpuConfigRam:                         struct{}{},
+	AppFieldVmAppOsType:                                          struct{}{},
+	AppFieldAlertPolicies:                                        struct{}{},
+	AppFieldQosSessionProfile:                                    struct{}{},
+	AppFieldQosSessionDuration:                                   struct{}{},
+	AppFieldGlobalId:                                             struct{}{},
+	AppFieldCommandArgs:                                          struct{}{},
+	AppFieldEnvVarsKey:                                           struct{}{},
+	AppFieldEnvVarsValue:                                         struct{}{},
+	AppFieldSecretEnvVarsKey:                                     struct{}{},
+	AppFieldSecretEnvVarsValue:                                   struct{}{},
+	AppFieldUpdateListAction:                                     struct{}{},
+	AppFieldObjId:                                                struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalVcpusWhole:            struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalVcpusNanos:            struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalMemory:                struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalDisk:                  struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalOptResKey:             struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalOptResValue:           struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeCpus:        struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeMemory:      struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeDisk:        struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey:   struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue: struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes:   struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalVcpusWhole:            struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalVcpusNanos:            struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalMemory:                struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalDisk:                  struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalOptResKey:             struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalOptResValue:           struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeCpus:        struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeMemory:      struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeDisk:        struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey:   struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue: struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes:   struct{}{},
+	AppFieldKubernetesResourcesMinK8SVersion:                     struct{}{},
+	AppFieldNodeResourcesVcpus:                                   struct{}{},
+	AppFieldNodeResourcesRam:                                     struct{}{},
+	AppFieldNodeResourcesDisk:                                    struct{}{},
+	AppFieldNodeResourcesOptResMapKey:                            struct{}{},
+	AppFieldNodeResourcesOptResMapValue:                          struct{}{},
+	AppFieldNodeResourcesInfraNodeFlavor:                         struct{}{},
+	AppFieldNodeResourcesExternalVolumeSize:                      struct{}{},
 })
 
 var AppAllFieldsStringMap = map[string]string{
-	AppFieldKeyOrganization:                         "Key Organization",
-	AppFieldKeyName:                                 "Key Name",
-	AppFieldKeyVersion:                              "Key Version",
-	AppFieldImagePath:                               "Image Path",
-	AppFieldImageType:                               "Image Type",
-	AppFieldAccessPorts:                             "Access Ports",
-	AppFieldDefaultFlavorName:                       "Default Flavor Name",
-	AppFieldAuthPublicKey:                           "Auth Public Key",
-	AppFieldCommand:                                 "Command",
-	AppFieldAnnotations:                             "Annotations",
-	AppFieldDeployment:                              "Deployment",
-	AppFieldDeploymentManifest:                      "Deployment Manifest",
-	AppFieldDeploymentGenerator:                     "Deployment Generator",
-	AppFieldAndroidPackageName:                      "Android Package Name",
-	AppFieldDelOpt:                                  "Del Opt",
-	AppFieldConfigsKind:                             "Configs Kind",
-	AppFieldConfigsConfig:                           "Configs Config",
-	AppFieldScaleWithCluster:                        "Scale With Cluster",
-	AppFieldInternalPorts:                           "Internal Ports",
-	AppFieldRevision:                                "Revision",
-	AppFieldOfficialFqdn:                            "Official Fqdn",
-	AppFieldMd5Sum:                                  "Md5 Sum",
-	AppFieldAutoProvPolicy:                          "Auto Prov Policy",
-	AppFieldAccessType:                              "Access Type",
-	AppFieldDeletePrepare:                           "Delete Prepare",
-	AppFieldAutoProvPolicies:                        "Auto Prov Policies",
-	AppFieldTemplateDelimiter:                       "Template Delimiter",
-	AppFieldSkipHcPorts:                             "Skip Hc Ports",
-	AppFieldCreatedAtSeconds:                        "Created At Seconds",
-	AppFieldCreatedAtNanos:                          "Created At Nanos",
-	AppFieldUpdatedAtSeconds:                        "Updated At Seconds",
-	AppFieldUpdatedAtNanos:                          "Updated At Nanos",
-	AppFieldTrusted:                                 "Trusted",
-	AppFieldRequiredOutboundConnectionsProtocol:     "Required Outbound Connections Protocol",
-	AppFieldRequiredOutboundConnectionsPortRangeMin: "Required Outbound Connections Port Range Min",
-	AppFieldRequiredOutboundConnectionsPortRangeMax: "Required Outbound Connections Port Range Max",
-	AppFieldRequiredOutboundConnectionsRemoteCidr:   "Required Outbound Connections Remote Cidr",
-	AppFieldAllowServerless:                         "Allow Serverless",
-	AppFieldServerlessConfigVcpusWhole:              "Serverless Config Vcpus Whole",
-	AppFieldServerlessConfigVcpusNanos:              "Serverless Config Vcpus Nanos",
-	AppFieldServerlessConfigRam:                     "Serverless Config Ram",
-	AppFieldServerlessConfigMinReplicas:             "Serverless Config Min Replicas",
-	AppFieldServerlessConfigGpuConfigType:           "Serverless Config Gpu Config Type",
-	AppFieldServerlessConfigGpuConfigModel:          "Serverless Config Gpu Config Model",
-	AppFieldServerlessConfigGpuConfigNumGpu:         "Serverless Config Gpu Config Num Gpu",
-	AppFieldServerlessConfigGpuConfigRam:            "Serverless Config Gpu Config Ram",
-	AppFieldVmAppOsType:                             "Vm App Os Type",
-	AppFieldAlertPolicies:                           "Alert Policies",
-	AppFieldQosSessionProfile:                       "Qos Session Profile",
-	AppFieldQosSessionDuration:                      "Qos Session Duration",
-	AppFieldGlobalId:                                "Global Id",
-	AppFieldCommandArgs:                             "Command Args",
-	AppFieldEnvVarsKey:                              "Env Vars Key",
-	AppFieldEnvVarsValue:                            "Env Vars Value",
-	AppFieldSecretEnvVarsKey:                        "Secret Env Vars Key",
-	AppFieldSecretEnvVarsValue:                      "Secret Env Vars Value",
-	AppFieldUpdateListAction:                        "Update List Action",
+	AppFieldKeyOrganization:                                      "Key Organization",
+	AppFieldKeyName:                                              "Key Name",
+	AppFieldKeyVersion:                                           "Key Version",
+	AppFieldImagePath:                                            "Image Path",
+	AppFieldImageType:                                            "Image Type",
+	AppFieldAccessPorts:                                          "Access Ports",
+	AppFieldDefaultFlavorName:                                    "Default Flavor Name",
+	AppFieldAuthPublicKey:                                        "Auth Public Key",
+	AppFieldCommand:                                              "Command",
+	AppFieldAnnotations:                                          "Annotations",
+	AppFieldDeployment:                                           "Deployment",
+	AppFieldDeploymentManifest:                                   "Deployment Manifest",
+	AppFieldDeploymentGenerator:                                  "Deployment Generator",
+	AppFieldAndroidPackageName:                                   "Android Package Name",
+	AppFieldDelOpt:                                               "Del Opt",
+	AppFieldConfigsKind:                                          "Configs Kind",
+	AppFieldConfigsConfig:                                        "Configs Config",
+	AppFieldScaleWithCluster:                                     "Scale With Cluster",
+	AppFieldInternalPorts:                                        "Internal Ports",
+	AppFieldRevision:                                             "Revision",
+	AppFieldOfficialFqdn:                                         "Official Fqdn",
+	AppFieldMd5Sum:                                               "Md5 Sum",
+	AppFieldAutoProvPolicy:                                       "Auto Prov Policy",
+	AppFieldAccessType:                                           "Access Type",
+	AppFieldDeletePrepare:                                        "Delete Prepare",
+	AppFieldAutoProvPolicies:                                     "Auto Prov Policies",
+	AppFieldTemplateDelimiter:                                    "Template Delimiter",
+	AppFieldSkipHcPorts:                                          "Skip Hc Ports",
+	AppFieldCreatedAtSeconds:                                     "Created At Seconds",
+	AppFieldCreatedAtNanos:                                       "Created At Nanos",
+	AppFieldUpdatedAtSeconds:                                     "Updated At Seconds",
+	AppFieldUpdatedAtNanos:                                       "Updated At Nanos",
+	AppFieldTrusted:                                              "Trusted",
+	AppFieldRequiredOutboundConnectionsProtocol:                  "Required Outbound Connections Protocol",
+	AppFieldRequiredOutboundConnectionsPortRangeMin:              "Required Outbound Connections Port Range Min",
+	AppFieldRequiredOutboundConnectionsPortRangeMax:              "Required Outbound Connections Port Range Max",
+	AppFieldRequiredOutboundConnectionsRemoteCidr:                "Required Outbound Connections Remote Cidr",
+	AppFieldAllowServerless:                                      "Allow Serverless",
+	AppFieldServerlessConfigVcpusWhole:                           "Serverless Config Vcpus Whole",
+	AppFieldServerlessConfigVcpusNanos:                           "Serverless Config Vcpus Nanos",
+	AppFieldServerlessConfigRam:                                  "Serverless Config Ram",
+	AppFieldServerlessConfigMinReplicas:                          "Serverless Config Min Replicas",
+	AppFieldServerlessConfigGpuConfigType:                        "Serverless Config Gpu Config Type",
+	AppFieldServerlessConfigGpuConfigModel:                       "Serverless Config Gpu Config Model",
+	AppFieldServerlessConfigGpuConfigNumGpu:                      "Serverless Config Gpu Config Num Gpu",
+	AppFieldServerlessConfigGpuConfigRam:                         "Serverless Config Gpu Config Ram",
+	AppFieldVmAppOsType:                                          "Vm App Os Type",
+	AppFieldAlertPolicies:                                        "Alert Policies",
+	AppFieldQosSessionProfile:                                    "Qos Session Profile",
+	AppFieldQosSessionDuration:                                   "Qos Session Duration",
+	AppFieldGlobalId:                                             "Global Id",
+	AppFieldCommandArgs:                                          "Command Args",
+	AppFieldEnvVarsKey:                                           "Env Vars Key",
+	AppFieldEnvVarsValue:                                         "Env Vars Value",
+	AppFieldSecretEnvVarsKey:                                     "Secret Env Vars Key",
+	AppFieldSecretEnvVarsValue:                                   "Secret Env Vars Value",
+	AppFieldUpdateListAction:                                     "Update List Action",
+	AppFieldObjId:                                                "Obj Id",
+	AppFieldKubernetesResourcesCpuPoolTotalVcpusWhole:            "Kubernetes Resources Cpu Pool Total Vcpus Whole",
+	AppFieldKubernetesResourcesCpuPoolTotalVcpusNanos:            "Kubernetes Resources Cpu Pool Total Vcpus Nanos",
+	AppFieldKubernetesResourcesCpuPoolTotalMemory:                "Kubernetes Resources Cpu Pool Total Memory",
+	AppFieldKubernetesResourcesCpuPoolTotalDisk:                  "Kubernetes Resources Cpu Pool Total Disk",
+	AppFieldKubernetesResourcesCpuPoolTotalOptResKey:             "Kubernetes Resources Cpu Pool Total Opt Res Key",
+	AppFieldKubernetesResourcesCpuPoolTotalOptResValue:           "Kubernetes Resources Cpu Pool Total Opt Res Value",
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeCpus:        "Kubernetes Resources Cpu Pool Topology Min Node Cpus",
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeMemory:      "Kubernetes Resources Cpu Pool Topology Min Node Memory",
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeDisk:        "Kubernetes Resources Cpu Pool Topology Min Node Disk",
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey:   "Kubernetes Resources Cpu Pool Topology Min Node Opt Res Key",
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue: "Kubernetes Resources Cpu Pool Topology Min Node Opt Res Value",
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes:   "Kubernetes Resources Cpu Pool Topology Min Number Of Nodes",
+	AppFieldKubernetesResourcesGpuPoolTotalVcpusWhole:            "Kubernetes Resources Gpu Pool Total Vcpus Whole",
+	AppFieldKubernetesResourcesGpuPoolTotalVcpusNanos:            "Kubernetes Resources Gpu Pool Total Vcpus Nanos",
+	AppFieldKubernetesResourcesGpuPoolTotalMemory:                "Kubernetes Resources Gpu Pool Total Memory",
+	AppFieldKubernetesResourcesGpuPoolTotalDisk:                  "Kubernetes Resources Gpu Pool Total Disk",
+	AppFieldKubernetesResourcesGpuPoolTotalOptResKey:             "Kubernetes Resources Gpu Pool Total Opt Res Key",
+	AppFieldKubernetesResourcesGpuPoolTotalOptResValue:           "Kubernetes Resources Gpu Pool Total Opt Res Value",
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeCpus:        "Kubernetes Resources Gpu Pool Topology Min Node Cpus",
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeMemory:      "Kubernetes Resources Gpu Pool Topology Min Node Memory",
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeDisk:        "Kubernetes Resources Gpu Pool Topology Min Node Disk",
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey:   "Kubernetes Resources Gpu Pool Topology Min Node Opt Res Key",
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue: "Kubernetes Resources Gpu Pool Topology Min Node Opt Res Value",
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes:   "Kubernetes Resources Gpu Pool Topology Min Number Of Nodes",
+	AppFieldKubernetesResourcesMinK8SVersion:                     "Kubernetes Resources Min K8 S Version",
+	AppFieldNodeResourcesVcpus:                                   "Node Resources Vcpus",
+	AppFieldNodeResourcesRam:                                     "Node Resources Ram",
+	AppFieldNodeResourcesDisk:                                    "Node Resources Disk",
+	AppFieldNodeResourcesOptResMapKey:                            "Node Resources Opt Res Map Key",
+	AppFieldNodeResourcesOptResMapValue:                          "Node Resources Opt Res Map Value",
+	AppFieldNodeResourcesInfraNodeFlavor:                         "Node Resources Infra Node Flavor",
+	AppFieldNodeResourcesExternalVolumeSize:                      "Node Resources External Volume Size",
 }
 
 func (m *App) IsKeyField(s string) bool {
@@ -3074,6 +3286,282 @@ func (m *App) DiffFields(o *App, fields *FieldMap) {
 	if m.UpdateListAction != o.UpdateListAction {
 		fields.Set(AppFieldUpdateListAction)
 	}
+	if m.ObjId != o.ObjId {
+		fields.Set(AppFieldObjId)
+	}
+	if m.KubernetesResources != nil && o.KubernetesResources != nil {
+		if m.KubernetesResources.CpuPool != nil && o.KubernetesResources.CpuPool != nil {
+			if m.KubernetesResources.CpuPool.TotalVcpus.Whole != o.KubernetesResources.CpuPool.TotalVcpus.Whole {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTotalVcpusWhole)
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTotalVcpus)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.TotalVcpus.Nanos != o.KubernetesResources.CpuPool.TotalVcpus.Nanos {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTotalVcpusNanos)
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTotalVcpus)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.TotalMemory != o.KubernetesResources.CpuPool.TotalMemory {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTotalMemory)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.TotalDisk != o.KubernetesResources.CpuPool.TotalDisk {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTotalDisk)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.TotalOptRes != nil && o.KubernetesResources.CpuPool.TotalOptRes != nil {
+				if len(m.KubernetesResources.CpuPool.TotalOptRes) != len(o.KubernetesResources.CpuPool.TotalOptRes) {
+					fields.Set(AppFieldKubernetesResourcesCpuPoolTotalOptRes)
+					fields.Set(AppFieldKubernetesResourcesCpuPool)
+					fields.Set(AppFieldKubernetesResources)
+				} else {
+					for k2, _ := range m.KubernetesResources.CpuPool.TotalOptRes {
+						_, vok2 := o.KubernetesResources.CpuPool.TotalOptRes[k2]
+						if !vok2 {
+							fields.Set(AppFieldKubernetesResourcesCpuPoolTotalOptRes)
+							fields.Set(AppFieldKubernetesResourcesCpuPool)
+							fields.Set(AppFieldKubernetesResources)
+						} else {
+							if m.KubernetesResources.CpuPool.TotalOptRes[k2] != o.KubernetesResources.CpuPool.TotalOptRes[k2] {
+								fields.Set(AppFieldKubernetesResourcesCpuPoolTotalOptRes)
+								fields.Set(AppFieldKubernetesResourcesCpuPool)
+								fields.Set(AppFieldKubernetesResources)
+								break
+							}
+						}
+					}
+				}
+			} else if (m.KubernetesResources.CpuPool.TotalOptRes != nil && o.KubernetesResources.CpuPool.TotalOptRes == nil) || (m.KubernetesResources.CpuPool.TotalOptRes == nil && o.KubernetesResources.CpuPool.TotalOptRes != nil) {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTotalOptRes)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.Topology.MinNodeCpus != o.KubernetesResources.CpuPool.Topology.MinNodeCpus {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopologyMinNodeCpus)
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.Topology.MinNodeMemory != o.KubernetesResources.CpuPool.Topology.MinNodeMemory {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopologyMinNodeMemory)
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.Topology.MinNodeDisk != o.KubernetesResources.CpuPool.Topology.MinNodeDisk {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopologyMinNodeDisk)
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.Topology.MinNodeOptRes != nil && o.KubernetesResources.CpuPool.Topology.MinNodeOptRes != nil {
+				if len(m.KubernetesResources.CpuPool.Topology.MinNodeOptRes) != len(o.KubernetesResources.CpuPool.Topology.MinNodeOptRes) {
+					fields.Set(AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptRes)
+					fields.Set(AppFieldKubernetesResourcesCpuPoolTopology)
+					fields.Set(AppFieldKubernetesResourcesCpuPool)
+					fields.Set(AppFieldKubernetesResources)
+				} else {
+					for k3, _ := range m.KubernetesResources.CpuPool.Topology.MinNodeOptRes {
+						_, vok3 := o.KubernetesResources.CpuPool.Topology.MinNodeOptRes[k3]
+						if !vok3 {
+							fields.Set(AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptRes)
+							fields.Set(AppFieldKubernetesResourcesCpuPoolTopology)
+							fields.Set(AppFieldKubernetesResourcesCpuPool)
+							fields.Set(AppFieldKubernetesResources)
+						} else {
+							if m.KubernetesResources.CpuPool.Topology.MinNodeOptRes[k3] != o.KubernetesResources.CpuPool.Topology.MinNodeOptRes[k3] {
+								fields.Set(AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptRes)
+								fields.Set(AppFieldKubernetesResourcesCpuPoolTopology)
+								fields.Set(AppFieldKubernetesResourcesCpuPool)
+								fields.Set(AppFieldKubernetesResources)
+								break
+							}
+						}
+					}
+				}
+			} else if (m.KubernetesResources.CpuPool.Topology.MinNodeOptRes != nil && o.KubernetesResources.CpuPool.Topology.MinNodeOptRes == nil) || (m.KubernetesResources.CpuPool.Topology.MinNodeOptRes == nil && o.KubernetesResources.CpuPool.Topology.MinNodeOptRes != nil) {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptRes)
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.Topology.MinNumberOfNodes != o.KubernetesResources.CpuPool.Topology.MinNumberOfNodes {
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes)
+				fields.Set(AppFieldKubernetesResourcesCpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesCpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+		} else if (m.KubernetesResources.CpuPool != nil && o.KubernetesResources.CpuPool == nil) || (m.KubernetesResources.CpuPool == nil && o.KubernetesResources.CpuPool != nil) {
+			fields.Set(AppFieldKubernetesResourcesCpuPool)
+			fields.Set(AppFieldKubernetesResources)
+		}
+		if m.KubernetesResources.GpuPool != nil && o.KubernetesResources.GpuPool != nil {
+			if m.KubernetesResources.GpuPool.TotalVcpus.Whole != o.KubernetesResources.GpuPool.TotalVcpus.Whole {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTotalVcpusWhole)
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTotalVcpus)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.TotalVcpus.Nanos != o.KubernetesResources.GpuPool.TotalVcpus.Nanos {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTotalVcpusNanos)
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTotalVcpus)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.TotalMemory != o.KubernetesResources.GpuPool.TotalMemory {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTotalMemory)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.TotalDisk != o.KubernetesResources.GpuPool.TotalDisk {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTotalDisk)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.TotalOptRes != nil && o.KubernetesResources.GpuPool.TotalOptRes != nil {
+				if len(m.KubernetesResources.GpuPool.TotalOptRes) != len(o.KubernetesResources.GpuPool.TotalOptRes) {
+					fields.Set(AppFieldKubernetesResourcesGpuPoolTotalOptRes)
+					fields.Set(AppFieldKubernetesResourcesGpuPool)
+					fields.Set(AppFieldKubernetesResources)
+				} else {
+					for k2, _ := range m.KubernetesResources.GpuPool.TotalOptRes {
+						_, vok2 := o.KubernetesResources.GpuPool.TotalOptRes[k2]
+						if !vok2 {
+							fields.Set(AppFieldKubernetesResourcesGpuPoolTotalOptRes)
+							fields.Set(AppFieldKubernetesResourcesGpuPool)
+							fields.Set(AppFieldKubernetesResources)
+						} else {
+							if m.KubernetesResources.GpuPool.TotalOptRes[k2] != o.KubernetesResources.GpuPool.TotalOptRes[k2] {
+								fields.Set(AppFieldKubernetesResourcesGpuPoolTotalOptRes)
+								fields.Set(AppFieldKubernetesResourcesGpuPool)
+								fields.Set(AppFieldKubernetesResources)
+								break
+							}
+						}
+					}
+				}
+			} else if (m.KubernetesResources.GpuPool.TotalOptRes != nil && o.KubernetesResources.GpuPool.TotalOptRes == nil) || (m.KubernetesResources.GpuPool.TotalOptRes == nil && o.KubernetesResources.GpuPool.TotalOptRes != nil) {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTotalOptRes)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.Topology.MinNodeCpus != o.KubernetesResources.GpuPool.Topology.MinNodeCpus {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopologyMinNodeCpus)
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.Topology.MinNodeMemory != o.KubernetesResources.GpuPool.Topology.MinNodeMemory {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopologyMinNodeMemory)
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.Topology.MinNodeDisk != o.KubernetesResources.GpuPool.Topology.MinNodeDisk {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopologyMinNodeDisk)
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.Topology.MinNodeOptRes != nil && o.KubernetesResources.GpuPool.Topology.MinNodeOptRes != nil {
+				if len(m.KubernetesResources.GpuPool.Topology.MinNodeOptRes) != len(o.KubernetesResources.GpuPool.Topology.MinNodeOptRes) {
+					fields.Set(AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptRes)
+					fields.Set(AppFieldKubernetesResourcesGpuPoolTopology)
+					fields.Set(AppFieldKubernetesResourcesGpuPool)
+					fields.Set(AppFieldKubernetesResources)
+				} else {
+					for k3, _ := range m.KubernetesResources.GpuPool.Topology.MinNodeOptRes {
+						_, vok3 := o.KubernetesResources.GpuPool.Topology.MinNodeOptRes[k3]
+						if !vok3 {
+							fields.Set(AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptRes)
+							fields.Set(AppFieldKubernetesResourcesGpuPoolTopology)
+							fields.Set(AppFieldKubernetesResourcesGpuPool)
+							fields.Set(AppFieldKubernetesResources)
+						} else {
+							if m.KubernetesResources.GpuPool.Topology.MinNodeOptRes[k3] != o.KubernetesResources.GpuPool.Topology.MinNodeOptRes[k3] {
+								fields.Set(AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptRes)
+								fields.Set(AppFieldKubernetesResourcesGpuPoolTopology)
+								fields.Set(AppFieldKubernetesResourcesGpuPool)
+								fields.Set(AppFieldKubernetesResources)
+								break
+							}
+						}
+					}
+				}
+			} else if (m.KubernetesResources.GpuPool.Topology.MinNodeOptRes != nil && o.KubernetesResources.GpuPool.Topology.MinNodeOptRes == nil) || (m.KubernetesResources.GpuPool.Topology.MinNodeOptRes == nil && o.KubernetesResources.GpuPool.Topology.MinNodeOptRes != nil) {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptRes)
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.Topology.MinNumberOfNodes != o.KubernetesResources.GpuPool.Topology.MinNumberOfNodes {
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes)
+				fields.Set(AppFieldKubernetesResourcesGpuPoolTopology)
+				fields.Set(AppFieldKubernetesResourcesGpuPool)
+				fields.Set(AppFieldKubernetesResources)
+			}
+		} else if (m.KubernetesResources.GpuPool != nil && o.KubernetesResources.GpuPool == nil) || (m.KubernetesResources.GpuPool == nil && o.KubernetesResources.GpuPool != nil) {
+			fields.Set(AppFieldKubernetesResourcesGpuPool)
+			fields.Set(AppFieldKubernetesResources)
+		}
+		if m.KubernetesResources.MinK8SVersion != o.KubernetesResources.MinK8SVersion {
+			fields.Set(AppFieldKubernetesResourcesMinK8SVersion)
+			fields.Set(AppFieldKubernetesResources)
+		}
+	} else if (m.KubernetesResources != nil && o.KubernetesResources == nil) || (m.KubernetesResources == nil && o.KubernetesResources != nil) {
+		fields.Set(AppFieldKubernetesResources)
+	}
+	if m.NodeResources != nil && o.NodeResources != nil {
+		if m.NodeResources.Vcpus != o.NodeResources.Vcpus {
+			fields.Set(AppFieldNodeResourcesVcpus)
+			fields.Set(AppFieldNodeResources)
+		}
+		if m.NodeResources.Ram != o.NodeResources.Ram {
+			fields.Set(AppFieldNodeResourcesRam)
+			fields.Set(AppFieldNodeResources)
+		}
+		if m.NodeResources.Disk != o.NodeResources.Disk {
+			fields.Set(AppFieldNodeResourcesDisk)
+			fields.Set(AppFieldNodeResources)
+		}
+		if m.NodeResources.OptResMap != nil && o.NodeResources.OptResMap != nil {
+			if len(m.NodeResources.OptResMap) != len(o.NodeResources.OptResMap) {
+				fields.Set(AppFieldNodeResourcesOptResMap)
+				fields.Set(AppFieldNodeResources)
+			} else {
+				for k1, _ := range m.NodeResources.OptResMap {
+					_, vok1 := o.NodeResources.OptResMap[k1]
+					if !vok1 {
+						fields.Set(AppFieldNodeResourcesOptResMap)
+						fields.Set(AppFieldNodeResources)
+					} else {
+						if m.NodeResources.OptResMap[k1] != o.NodeResources.OptResMap[k1] {
+							fields.Set(AppFieldNodeResourcesOptResMap)
+							fields.Set(AppFieldNodeResources)
+							break
+						}
+					}
+				}
+			}
+		} else if (m.NodeResources.OptResMap != nil && o.NodeResources.OptResMap == nil) || (m.NodeResources.OptResMap == nil && o.NodeResources.OptResMap != nil) {
+			fields.Set(AppFieldNodeResourcesOptResMap)
+			fields.Set(AppFieldNodeResources)
+		}
+		if m.NodeResources.InfraNodeFlavor != o.NodeResources.InfraNodeFlavor {
+			fields.Set(AppFieldNodeResourcesInfraNodeFlavor)
+			fields.Set(AppFieldNodeResources)
+		}
+		if m.NodeResources.ExternalVolumeSize != o.NodeResources.ExternalVolumeSize {
+			fields.Set(AppFieldNodeResourcesExternalVolumeSize)
+			fields.Set(AppFieldNodeResources)
+		}
+	} else if (m.NodeResources != nil && o.NodeResources == nil) || (m.NodeResources == nil && o.NodeResources != nil) {
+		fields.Set(AppFieldNodeResources)
+	}
 }
 
 func (m *App) GetDiffFields(o *App) *FieldMap {
@@ -3083,61 +3571,107 @@ func (m *App) GetDiffFields(o *App) *FieldMap {
 }
 
 var UpdateAppFieldsMap = NewFieldMap(map[string]struct{}{
-	AppFieldImagePath:                               struct{}{},
-	AppFieldImageType:                               struct{}{},
-	AppFieldAccessPorts:                             struct{}{},
-	AppFieldDefaultFlavor:                           struct{}{},
-	AppFieldDefaultFlavorName:                       struct{}{},
-	AppFieldAuthPublicKey:                           struct{}{},
-	AppFieldCommand:                                 struct{}{},
-	AppFieldAnnotations:                             struct{}{},
-	AppFieldDeployment:                              struct{}{},
-	AppFieldDeploymentManifest:                      struct{}{},
-	AppFieldDeploymentGenerator:                     struct{}{},
-	AppFieldAndroidPackageName:                      struct{}{},
-	AppFieldConfigs:                                 struct{}{},
-	AppFieldConfigsKind:                             struct{}{},
-	AppFieldConfigsConfig:                           struct{}{},
-	AppFieldScaleWithCluster:                        struct{}{},
-	AppFieldInternalPorts:                           struct{}{},
-	AppFieldRevision:                                struct{}{},
-	AppFieldOfficialFqdn:                            struct{}{},
-	AppFieldMd5Sum:                                  struct{}{},
-	AppFieldAccessType:                              struct{}{},
-	AppFieldAutoProvPolicies:                        struct{}{},
-	AppFieldTemplateDelimiter:                       struct{}{},
-	AppFieldSkipHcPorts:                             struct{}{},
-	AppFieldTrusted:                                 struct{}{},
-	AppFieldRequiredOutboundConnections:             struct{}{},
-	AppFieldRequiredOutboundConnectionsProtocol:     struct{}{},
-	AppFieldRequiredOutboundConnectionsPortRangeMin: struct{}{},
-	AppFieldRequiredOutboundConnectionsPortRangeMax: struct{}{},
-	AppFieldRequiredOutboundConnectionsRemoteCidr:   struct{}{},
-	AppFieldAllowServerless:                         struct{}{},
-	AppFieldServerlessConfig:                        struct{}{},
-	AppFieldServerlessConfigVcpus:                   struct{}{},
-	AppFieldServerlessConfigVcpusWhole:              struct{}{},
-	AppFieldServerlessConfigVcpusNanos:              struct{}{},
-	AppFieldServerlessConfigRam:                     struct{}{},
-	AppFieldServerlessConfigMinReplicas:             struct{}{},
-	AppFieldServerlessConfigGpuConfig:               struct{}{},
-	AppFieldServerlessConfigGpuConfigType:           struct{}{},
-	AppFieldServerlessConfigGpuConfigModel:          struct{}{},
-	AppFieldServerlessConfigGpuConfigNumGpu:         struct{}{},
-	AppFieldServerlessConfigGpuConfigRam:            struct{}{},
-	AppFieldVmAppOsType:                             struct{}{},
-	AppFieldAlertPolicies:                           struct{}{},
-	AppFieldQosSessionProfile:                       struct{}{},
-	AppFieldQosSessionDuration:                      struct{}{},
-	AppFieldGlobalId:                                struct{}{},
-	AppFieldCommandArgs:                             struct{}{},
-	AppFieldEnvVars:                                 struct{}{},
-	AppFieldEnvVarsKey:                              struct{}{},
-	AppFieldEnvVarsValue:                            struct{}{},
-	AppFieldSecretEnvVars:                           struct{}{},
-	AppFieldSecretEnvVarsKey:                        struct{}{},
-	AppFieldSecretEnvVarsValue:                      struct{}{},
-	AppFieldUpdateListAction:                        struct{}{},
+	AppFieldImagePath:                                            struct{}{},
+	AppFieldImageType:                                            struct{}{},
+	AppFieldAccessPorts:                                          struct{}{},
+	AppFieldDefaultFlavor:                                        struct{}{},
+	AppFieldDefaultFlavorName:                                    struct{}{},
+	AppFieldAuthPublicKey:                                        struct{}{},
+	AppFieldCommand:                                              struct{}{},
+	AppFieldAnnotations:                                          struct{}{},
+	AppFieldDeployment:                                           struct{}{},
+	AppFieldDeploymentManifest:                                   struct{}{},
+	AppFieldDeploymentGenerator:                                  struct{}{},
+	AppFieldAndroidPackageName:                                   struct{}{},
+	AppFieldConfigs:                                              struct{}{},
+	AppFieldConfigsKind:                                          struct{}{},
+	AppFieldConfigsConfig:                                        struct{}{},
+	AppFieldScaleWithCluster:                                     struct{}{},
+	AppFieldInternalPorts:                                        struct{}{},
+	AppFieldRevision:                                             struct{}{},
+	AppFieldOfficialFqdn:                                         struct{}{},
+	AppFieldMd5Sum:                                               struct{}{},
+	AppFieldAccessType:                                           struct{}{},
+	AppFieldAutoProvPolicies:                                     struct{}{},
+	AppFieldTemplateDelimiter:                                    struct{}{},
+	AppFieldSkipHcPorts:                                          struct{}{},
+	AppFieldTrusted:                                              struct{}{},
+	AppFieldRequiredOutboundConnections:                          struct{}{},
+	AppFieldRequiredOutboundConnectionsProtocol:                  struct{}{},
+	AppFieldRequiredOutboundConnectionsPortRangeMin:              struct{}{},
+	AppFieldRequiredOutboundConnectionsPortRangeMax:              struct{}{},
+	AppFieldRequiredOutboundConnectionsRemoteCidr:                struct{}{},
+	AppFieldAllowServerless:                                      struct{}{},
+	AppFieldServerlessConfig:                                     struct{}{},
+	AppFieldServerlessConfigVcpus:                                struct{}{},
+	AppFieldServerlessConfigVcpusWhole:                           struct{}{},
+	AppFieldServerlessConfigVcpusNanos:                           struct{}{},
+	AppFieldServerlessConfigRam:                                  struct{}{},
+	AppFieldServerlessConfigMinReplicas:                          struct{}{},
+	AppFieldServerlessConfigGpuConfig:                            struct{}{},
+	AppFieldServerlessConfigGpuConfigType:                        struct{}{},
+	AppFieldServerlessConfigGpuConfigModel:                       struct{}{},
+	AppFieldServerlessConfigGpuConfigNumGpu:                      struct{}{},
+	AppFieldServerlessConfigGpuConfigRam:                         struct{}{},
+	AppFieldVmAppOsType:                                          struct{}{},
+	AppFieldAlertPolicies:                                        struct{}{},
+	AppFieldQosSessionProfile:                                    struct{}{},
+	AppFieldQosSessionDuration:                                   struct{}{},
+	AppFieldGlobalId:                                             struct{}{},
+	AppFieldCommandArgs:                                          struct{}{},
+	AppFieldEnvVars:                                              struct{}{},
+	AppFieldEnvVarsKey:                                           struct{}{},
+	AppFieldEnvVarsValue:                                         struct{}{},
+	AppFieldSecretEnvVars:                                        struct{}{},
+	AppFieldSecretEnvVarsKey:                                     struct{}{},
+	AppFieldSecretEnvVarsValue:                                   struct{}{},
+	AppFieldUpdateListAction:                                     struct{}{},
+	AppFieldObjId:                                                struct{}{},
+	AppFieldKubernetesResources:                                  struct{}{},
+	AppFieldKubernetesResourcesCpuPool:                           struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalVcpus:                 struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalVcpusWhole:            struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalVcpusNanos:            struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalMemory:                struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalDisk:                  struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalOptRes:                struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalOptResKey:             struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTotalOptResValue:           struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopology:                   struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeCpus:        struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeMemory:      struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeDisk:        struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptRes:      struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey:   struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue: struct{}{},
+	AppFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes:   struct{}{},
+	AppFieldKubernetesResourcesGpuPool:                           struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalVcpus:                 struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalVcpusWhole:            struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalVcpusNanos:            struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalMemory:                struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalDisk:                  struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalOptRes:                struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalOptResKey:             struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTotalOptResValue:           struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopology:                   struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeCpus:        struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeMemory:      struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeDisk:        struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptRes:      struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey:   struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue: struct{}{},
+	AppFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes:   struct{}{},
+	AppFieldKubernetesResourcesMinK8SVersion:                     struct{}{},
+	AppFieldNodeResources:                                        struct{}{},
+	AppFieldNodeResourcesVcpus:                                   struct{}{},
+	AppFieldNodeResourcesRam:                                     struct{}{},
+	AppFieldNodeResourcesDisk:                                    struct{}{},
+	AppFieldNodeResourcesOptResMap:                               struct{}{},
+	AppFieldNodeResourcesOptResMapKey:                            struct{}{},
+	AppFieldNodeResourcesOptResMapValue:                          struct{}{},
+	AppFieldNodeResourcesInfraNodeFlavor:                         struct{}{},
+	AppFieldNodeResourcesExternalVolumeSize:                      struct{}{},
 })
 
 func (m *App) ValidateUpdateFields() error {
@@ -3746,6 +4280,314 @@ func (m *App) CopyInFields(src *App) int {
 			changed++
 		}
 	}
+	if fmap.Has("50") {
+		if m.ObjId != src.ObjId {
+			m.ObjId = src.ObjId
+			changed++
+		}
+	}
+	if fmap.HasOrHasChild("51") {
+		if src.KubernetesResources != nil {
+			if m.KubernetesResources == nil {
+				m.KubernetesResources = &KubernetesResources{}
+			}
+			if fmap.HasOrHasChild("51.1") {
+				if src.KubernetesResources.CpuPool != nil {
+					if m.KubernetesResources.CpuPool == nil {
+						m.KubernetesResources.CpuPool = &NodePoolResources{}
+					}
+					if fmap.HasOrHasChild("51.1.1") {
+						if m.KubernetesResources.CpuPool.TotalVcpus.Whole != src.KubernetesResources.CpuPool.TotalVcpus.Whole {
+							m.KubernetesResources.CpuPool.TotalVcpus.Whole = src.KubernetesResources.CpuPool.TotalVcpus.Whole
+							changed++
+						}
+						if m.KubernetesResources.CpuPool.TotalVcpus.Nanos != src.KubernetesResources.CpuPool.TotalVcpus.Nanos {
+							m.KubernetesResources.CpuPool.TotalVcpus.Nanos = src.KubernetesResources.CpuPool.TotalVcpus.Nanos
+							changed++
+						}
+					}
+					if fmap.Has("51.1.2") {
+						if m.KubernetesResources.CpuPool.TotalMemory != src.KubernetesResources.CpuPool.TotalMemory {
+							m.KubernetesResources.CpuPool.TotalMemory = src.KubernetesResources.CpuPool.TotalMemory
+							changed++
+						}
+					}
+					if fmap.Has("51.1.3") {
+						if m.KubernetesResources.CpuPool.TotalDisk != src.KubernetesResources.CpuPool.TotalDisk {
+							m.KubernetesResources.CpuPool.TotalDisk = src.KubernetesResources.CpuPool.TotalDisk
+							changed++
+						}
+					}
+					if fmap.HasOrHasChild("51.1.4") {
+						if src.KubernetesResources.CpuPool.TotalOptRes != nil {
+							if updateListAction == "add" {
+								for k2, v := range src.KubernetesResources.CpuPool.TotalOptRes {
+									m.KubernetesResources.CpuPool.TotalOptRes[k2] = v
+									changed++
+								}
+							} else if updateListAction == "remove" {
+								for k2, _ := range src.KubernetesResources.CpuPool.TotalOptRes {
+									if _, ok := m.KubernetesResources.CpuPool.TotalOptRes[k2]; ok {
+										delete(m.KubernetesResources.CpuPool.TotalOptRes, k2)
+										changed++
+									}
+								}
+							} else {
+								m.KubernetesResources.CpuPool.TotalOptRes = make(map[string]string)
+								for k2, v := range src.KubernetesResources.CpuPool.TotalOptRes {
+									m.KubernetesResources.CpuPool.TotalOptRes[k2] = v
+								}
+								changed++
+							}
+						} else if m.KubernetesResources.CpuPool.TotalOptRes != nil {
+							m.KubernetesResources.CpuPool.TotalOptRes = nil
+							changed++
+						}
+					}
+					if fmap.HasOrHasChild("51.1.5") {
+						if fmap.Has("51.1.5.1") {
+							if m.KubernetesResources.CpuPool.Topology.MinNodeCpus != src.KubernetesResources.CpuPool.Topology.MinNodeCpus {
+								m.KubernetesResources.CpuPool.Topology.MinNodeCpus = src.KubernetesResources.CpuPool.Topology.MinNodeCpus
+								changed++
+							}
+						}
+						if fmap.Has("51.1.5.2") {
+							if m.KubernetesResources.CpuPool.Topology.MinNodeMemory != src.KubernetesResources.CpuPool.Topology.MinNodeMemory {
+								m.KubernetesResources.CpuPool.Topology.MinNodeMemory = src.KubernetesResources.CpuPool.Topology.MinNodeMemory
+								changed++
+							}
+						}
+						if fmap.Has("51.1.5.3") {
+							if m.KubernetesResources.CpuPool.Topology.MinNodeDisk != src.KubernetesResources.CpuPool.Topology.MinNodeDisk {
+								m.KubernetesResources.CpuPool.Topology.MinNodeDisk = src.KubernetesResources.CpuPool.Topology.MinNodeDisk
+								changed++
+							}
+						}
+						if fmap.HasOrHasChild("51.1.5.4") {
+							if src.KubernetesResources.CpuPool.Topology.MinNodeOptRes != nil {
+								if updateListAction == "add" {
+									for k3, v := range src.KubernetesResources.CpuPool.Topology.MinNodeOptRes {
+										m.KubernetesResources.CpuPool.Topology.MinNodeOptRes[k3] = v
+										changed++
+									}
+								} else if updateListAction == "remove" {
+									for k3, _ := range src.KubernetesResources.CpuPool.Topology.MinNodeOptRes {
+										if _, ok := m.KubernetesResources.CpuPool.Topology.MinNodeOptRes[k3]; ok {
+											delete(m.KubernetesResources.CpuPool.Topology.MinNodeOptRes, k3)
+											changed++
+										}
+									}
+								} else {
+									m.KubernetesResources.CpuPool.Topology.MinNodeOptRes = make(map[string]string)
+									for k3, v := range src.KubernetesResources.CpuPool.Topology.MinNodeOptRes {
+										m.KubernetesResources.CpuPool.Topology.MinNodeOptRes[k3] = v
+									}
+									changed++
+								}
+							} else if m.KubernetesResources.CpuPool.Topology.MinNodeOptRes != nil {
+								m.KubernetesResources.CpuPool.Topology.MinNodeOptRes = nil
+								changed++
+							}
+						}
+						if fmap.Has("51.1.5.5") {
+							if m.KubernetesResources.CpuPool.Topology.MinNumberOfNodes != src.KubernetesResources.CpuPool.Topology.MinNumberOfNodes {
+								m.KubernetesResources.CpuPool.Topology.MinNumberOfNodes = src.KubernetesResources.CpuPool.Topology.MinNumberOfNodes
+								changed++
+							}
+						}
+					}
+				} else if m.KubernetesResources.CpuPool != nil {
+					m.KubernetesResources.CpuPool = nil
+					changed++
+				}
+			}
+			if fmap.HasOrHasChild("51.2") {
+				if src.KubernetesResources.GpuPool != nil {
+					if m.KubernetesResources.GpuPool == nil {
+						m.KubernetesResources.GpuPool = &NodePoolResources{}
+					}
+					if fmap.HasOrHasChild("51.2.1") {
+						if m.KubernetesResources.GpuPool.TotalVcpus.Whole != src.KubernetesResources.GpuPool.TotalVcpus.Whole {
+							m.KubernetesResources.GpuPool.TotalVcpus.Whole = src.KubernetesResources.GpuPool.TotalVcpus.Whole
+							changed++
+						}
+						if m.KubernetesResources.GpuPool.TotalVcpus.Nanos != src.KubernetesResources.GpuPool.TotalVcpus.Nanos {
+							m.KubernetesResources.GpuPool.TotalVcpus.Nanos = src.KubernetesResources.GpuPool.TotalVcpus.Nanos
+							changed++
+						}
+					}
+					if fmap.Has("51.2.2") {
+						if m.KubernetesResources.GpuPool.TotalMemory != src.KubernetesResources.GpuPool.TotalMemory {
+							m.KubernetesResources.GpuPool.TotalMemory = src.KubernetesResources.GpuPool.TotalMemory
+							changed++
+						}
+					}
+					if fmap.Has("51.2.3") {
+						if m.KubernetesResources.GpuPool.TotalDisk != src.KubernetesResources.GpuPool.TotalDisk {
+							m.KubernetesResources.GpuPool.TotalDisk = src.KubernetesResources.GpuPool.TotalDisk
+							changed++
+						}
+					}
+					if fmap.HasOrHasChild("51.2.4") {
+						if src.KubernetesResources.GpuPool.TotalOptRes != nil {
+							if updateListAction == "add" {
+								for k2, v := range src.KubernetesResources.GpuPool.TotalOptRes {
+									m.KubernetesResources.GpuPool.TotalOptRes[k2] = v
+									changed++
+								}
+							} else if updateListAction == "remove" {
+								for k2, _ := range src.KubernetesResources.GpuPool.TotalOptRes {
+									if _, ok := m.KubernetesResources.GpuPool.TotalOptRes[k2]; ok {
+										delete(m.KubernetesResources.GpuPool.TotalOptRes, k2)
+										changed++
+									}
+								}
+							} else {
+								m.KubernetesResources.GpuPool.TotalOptRes = make(map[string]string)
+								for k2, v := range src.KubernetesResources.GpuPool.TotalOptRes {
+									m.KubernetesResources.GpuPool.TotalOptRes[k2] = v
+								}
+								changed++
+							}
+						} else if m.KubernetesResources.GpuPool.TotalOptRes != nil {
+							m.KubernetesResources.GpuPool.TotalOptRes = nil
+							changed++
+						}
+					}
+					if fmap.HasOrHasChild("51.2.5") {
+						if fmap.Has("51.2.5.1") {
+							if m.KubernetesResources.GpuPool.Topology.MinNodeCpus != src.KubernetesResources.GpuPool.Topology.MinNodeCpus {
+								m.KubernetesResources.GpuPool.Topology.MinNodeCpus = src.KubernetesResources.GpuPool.Topology.MinNodeCpus
+								changed++
+							}
+						}
+						if fmap.Has("51.2.5.2") {
+							if m.KubernetesResources.GpuPool.Topology.MinNodeMemory != src.KubernetesResources.GpuPool.Topology.MinNodeMemory {
+								m.KubernetesResources.GpuPool.Topology.MinNodeMemory = src.KubernetesResources.GpuPool.Topology.MinNodeMemory
+								changed++
+							}
+						}
+						if fmap.Has("51.2.5.3") {
+							if m.KubernetesResources.GpuPool.Topology.MinNodeDisk != src.KubernetesResources.GpuPool.Topology.MinNodeDisk {
+								m.KubernetesResources.GpuPool.Topology.MinNodeDisk = src.KubernetesResources.GpuPool.Topology.MinNodeDisk
+								changed++
+							}
+						}
+						if fmap.HasOrHasChild("51.2.5.4") {
+							if src.KubernetesResources.GpuPool.Topology.MinNodeOptRes != nil {
+								if updateListAction == "add" {
+									for k3, v := range src.KubernetesResources.GpuPool.Topology.MinNodeOptRes {
+										m.KubernetesResources.GpuPool.Topology.MinNodeOptRes[k3] = v
+										changed++
+									}
+								} else if updateListAction == "remove" {
+									for k3, _ := range src.KubernetesResources.GpuPool.Topology.MinNodeOptRes {
+										if _, ok := m.KubernetesResources.GpuPool.Topology.MinNodeOptRes[k3]; ok {
+											delete(m.KubernetesResources.GpuPool.Topology.MinNodeOptRes, k3)
+											changed++
+										}
+									}
+								} else {
+									m.KubernetesResources.GpuPool.Topology.MinNodeOptRes = make(map[string]string)
+									for k3, v := range src.KubernetesResources.GpuPool.Topology.MinNodeOptRes {
+										m.KubernetesResources.GpuPool.Topology.MinNodeOptRes[k3] = v
+									}
+									changed++
+								}
+							} else if m.KubernetesResources.GpuPool.Topology.MinNodeOptRes != nil {
+								m.KubernetesResources.GpuPool.Topology.MinNodeOptRes = nil
+								changed++
+							}
+						}
+						if fmap.Has("51.2.5.5") {
+							if m.KubernetesResources.GpuPool.Topology.MinNumberOfNodes != src.KubernetesResources.GpuPool.Topology.MinNumberOfNodes {
+								m.KubernetesResources.GpuPool.Topology.MinNumberOfNodes = src.KubernetesResources.GpuPool.Topology.MinNumberOfNodes
+								changed++
+							}
+						}
+					}
+				} else if m.KubernetesResources.GpuPool != nil {
+					m.KubernetesResources.GpuPool = nil
+					changed++
+				}
+			}
+			if fmap.Has("51.4") {
+				if m.KubernetesResources.MinK8SVersion != src.KubernetesResources.MinK8SVersion {
+					m.KubernetesResources.MinK8SVersion = src.KubernetesResources.MinK8SVersion
+					changed++
+				}
+			}
+		} else if m.KubernetesResources != nil {
+			m.KubernetesResources = nil
+			changed++
+		}
+	}
+	if fmap.HasOrHasChild("52") {
+		if src.NodeResources != nil {
+			if m.NodeResources == nil {
+				m.NodeResources = &NodeResources{}
+			}
+			if fmap.Has("52.1") {
+				if m.NodeResources.Vcpus != src.NodeResources.Vcpus {
+					m.NodeResources.Vcpus = src.NodeResources.Vcpus
+					changed++
+				}
+			}
+			if fmap.Has("52.2") {
+				if m.NodeResources.Ram != src.NodeResources.Ram {
+					m.NodeResources.Ram = src.NodeResources.Ram
+					changed++
+				}
+			}
+			if fmap.Has("52.3") {
+				if m.NodeResources.Disk != src.NodeResources.Disk {
+					m.NodeResources.Disk = src.NodeResources.Disk
+					changed++
+				}
+			}
+			if fmap.HasOrHasChild("52.4") {
+				if src.NodeResources.OptResMap != nil {
+					if updateListAction == "add" {
+						for k1, v := range src.NodeResources.OptResMap {
+							m.NodeResources.OptResMap[k1] = v
+							changed++
+						}
+					} else if updateListAction == "remove" {
+						for k1, _ := range src.NodeResources.OptResMap {
+							if _, ok := m.NodeResources.OptResMap[k1]; ok {
+								delete(m.NodeResources.OptResMap, k1)
+								changed++
+							}
+						}
+					} else {
+						m.NodeResources.OptResMap = make(map[string]string)
+						for k1, v := range src.NodeResources.OptResMap {
+							m.NodeResources.OptResMap[k1] = v
+						}
+						changed++
+					}
+				} else if m.NodeResources.OptResMap != nil {
+					m.NodeResources.OptResMap = nil
+					changed++
+				}
+			}
+			if fmap.Has("52.5") {
+				if m.NodeResources.InfraNodeFlavor != src.NodeResources.InfraNodeFlavor {
+					m.NodeResources.InfraNodeFlavor = src.NodeResources.InfraNodeFlavor
+					changed++
+				}
+			}
+			if fmap.Has("52.6") {
+				if m.NodeResources.ExternalVolumeSize != src.NodeResources.ExternalVolumeSize {
+					m.NodeResources.ExternalVolumeSize = src.NodeResources.ExternalVolumeSize
+					changed++
+				}
+			}
+		} else if m.NodeResources != nil {
+			m.NodeResources = nil
+			changed++
+		}
+	}
 	return changed
 }
 
@@ -3847,6 +4689,21 @@ func (m *App) DeepCopyIn(src *App) {
 		m.SecretEnvVars = nil
 	}
 	m.UpdateListAction = src.UpdateListAction
+	m.ObjId = src.ObjId
+	if src.KubernetesResources != nil {
+		var tmp_KubernetesResources KubernetesResources
+		tmp_KubernetesResources.DeepCopyIn(src.KubernetesResources)
+		m.KubernetesResources = &tmp_KubernetesResources
+	} else {
+		m.KubernetesResources = nil
+	}
+	if src.NodeResources != nil {
+		var tmp_NodeResources NodeResources
+		tmp_NodeResources.DeepCopyIn(src.NodeResources)
+		m.NodeResources = &tmp_NodeResources
+	} else {
+		m.NodeResources = nil
+	}
 }
 
 func (s *App) HasFields() bool {
@@ -4634,6 +5491,16 @@ func (m *App) ValidateEnums() error {
 	if _, ok := QosSessionProfile_name[int32(m.QosSessionProfile)]; !ok {
 		return errors.New("invalid QosSessionProfile")
 	}
+	if m.KubernetesResources != nil {
+		if err := m.KubernetesResources.ValidateEnums(); err != nil {
+			return err
+		}
+	}
+	if m.NodeResources != nil {
+		if err := m.NodeResources.ValidateEnums(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -4665,6 +5532,15 @@ func (s *App) ClearTagged(tags map[string]struct{}) {
 	if s.ServerlessConfig != nil {
 		s.ServerlessConfig.ClearTagged(tags)
 	}
+	if _, found := tags["nocmp"]; found {
+		s.ObjId = ""
+	}
+	if s.KubernetesResources != nil {
+		s.KubernetesResources.ClearTagged(tags)
+	}
+	if s.NodeResources != nil {
+		s.NodeResources.ClearTagged(tags)
+	}
 }
 
 func IgnoreAppFields(taglist string) cmp.Option {
@@ -4684,6 +5560,9 @@ func IgnoreAppFields(taglist string) cmp.Option {
 	}
 	if _, found := tags["timestamp"]; found {
 		names = append(names, "UpdatedAt")
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "ObjId")
 	}
 	return cmpopts.IgnoreFields(App{}, names...)
 }
@@ -5361,6 +6240,250 @@ func (m *DeploymentZoneRequest) CopyInFields(src *DeploymentZoneRequest) int {
 			m.App.UpdateListAction = src.App.UpdateListAction
 			changed++
 		}
+		if m.App.ObjId != src.App.ObjId {
+			m.App.ObjId = src.App.ObjId
+			changed++
+		}
+		if src.App.KubernetesResources != nil {
+			if m.App.KubernetesResources == nil {
+				m.App.KubernetesResources = &KubernetesResources{}
+			}
+			if src.App.KubernetesResources.CpuPool != nil {
+				if m.App.KubernetesResources.CpuPool == nil {
+					m.App.KubernetesResources.CpuPool = &NodePoolResources{}
+				}
+				if m.App.KubernetesResources.CpuPool.TotalVcpus.Whole != src.App.KubernetesResources.CpuPool.TotalVcpus.Whole {
+					m.App.KubernetesResources.CpuPool.TotalVcpus.Whole = src.App.KubernetesResources.CpuPool.TotalVcpus.Whole
+					changed++
+				}
+				if m.App.KubernetesResources.CpuPool.TotalVcpus.Nanos != src.App.KubernetesResources.CpuPool.TotalVcpus.Nanos {
+					m.App.KubernetesResources.CpuPool.TotalVcpus.Nanos = src.App.KubernetesResources.CpuPool.TotalVcpus.Nanos
+					changed++
+				}
+				if m.App.KubernetesResources.CpuPool.TotalMemory != src.App.KubernetesResources.CpuPool.TotalMemory {
+					m.App.KubernetesResources.CpuPool.TotalMemory = src.App.KubernetesResources.CpuPool.TotalMemory
+					changed++
+				}
+				if m.App.KubernetesResources.CpuPool.TotalDisk != src.App.KubernetesResources.CpuPool.TotalDisk {
+					m.App.KubernetesResources.CpuPool.TotalDisk = src.App.KubernetesResources.CpuPool.TotalDisk
+					changed++
+				}
+				if src.App.KubernetesResources.CpuPool.TotalOptRes != nil {
+					if updateListAction == "add" {
+						for k3, v := range src.App.KubernetesResources.CpuPool.TotalOptRes {
+							m.App.KubernetesResources.CpuPool.TotalOptRes[k3] = v
+							changed++
+						}
+					} else if updateListAction == "remove" {
+						for k3, _ := range src.App.KubernetesResources.CpuPool.TotalOptRes {
+							if _, ok := m.App.KubernetesResources.CpuPool.TotalOptRes[k3]; ok {
+								delete(m.App.KubernetesResources.CpuPool.TotalOptRes, k3)
+								changed++
+							}
+						}
+					} else {
+						m.App.KubernetesResources.CpuPool.TotalOptRes = make(map[string]string)
+						for k3, v := range src.App.KubernetesResources.CpuPool.TotalOptRes {
+							m.App.KubernetesResources.CpuPool.TotalOptRes[k3] = v
+						}
+						changed++
+					}
+				} else if m.App.KubernetesResources.CpuPool.TotalOptRes != nil {
+					m.App.KubernetesResources.CpuPool.TotalOptRes = nil
+					changed++
+				}
+				if m.App.KubernetesResources.CpuPool.Topology.MinNodeCpus != src.App.KubernetesResources.CpuPool.Topology.MinNodeCpus {
+					m.App.KubernetesResources.CpuPool.Topology.MinNodeCpus = src.App.KubernetesResources.CpuPool.Topology.MinNodeCpus
+					changed++
+				}
+				if m.App.KubernetesResources.CpuPool.Topology.MinNodeMemory != src.App.KubernetesResources.CpuPool.Topology.MinNodeMemory {
+					m.App.KubernetesResources.CpuPool.Topology.MinNodeMemory = src.App.KubernetesResources.CpuPool.Topology.MinNodeMemory
+					changed++
+				}
+				if m.App.KubernetesResources.CpuPool.Topology.MinNodeDisk != src.App.KubernetesResources.CpuPool.Topology.MinNodeDisk {
+					m.App.KubernetesResources.CpuPool.Topology.MinNodeDisk = src.App.KubernetesResources.CpuPool.Topology.MinNodeDisk
+					changed++
+				}
+				if src.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes != nil {
+					if updateListAction == "add" {
+						for k4, v := range src.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes {
+							m.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes[k4] = v
+							changed++
+						}
+					} else if updateListAction == "remove" {
+						for k4, _ := range src.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes {
+							if _, ok := m.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes[k4]; ok {
+								delete(m.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes, k4)
+								changed++
+							}
+						}
+					} else {
+						m.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes = make(map[string]string)
+						for k4, v := range src.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes {
+							m.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes[k4] = v
+						}
+						changed++
+					}
+				} else if m.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes != nil {
+					m.App.KubernetesResources.CpuPool.Topology.MinNodeOptRes = nil
+					changed++
+				}
+				if m.App.KubernetesResources.CpuPool.Topology.MinNumberOfNodes != src.App.KubernetesResources.CpuPool.Topology.MinNumberOfNodes {
+					m.App.KubernetesResources.CpuPool.Topology.MinNumberOfNodes = src.App.KubernetesResources.CpuPool.Topology.MinNumberOfNodes
+					changed++
+				}
+			} else if m.App.KubernetesResources.CpuPool != nil {
+				m.App.KubernetesResources.CpuPool = nil
+				changed++
+			}
+			if src.App.KubernetesResources.GpuPool != nil {
+				if m.App.KubernetesResources.GpuPool == nil {
+					m.App.KubernetesResources.GpuPool = &NodePoolResources{}
+				}
+				if m.App.KubernetesResources.GpuPool.TotalVcpus.Whole != src.App.KubernetesResources.GpuPool.TotalVcpus.Whole {
+					m.App.KubernetesResources.GpuPool.TotalVcpus.Whole = src.App.KubernetesResources.GpuPool.TotalVcpus.Whole
+					changed++
+				}
+				if m.App.KubernetesResources.GpuPool.TotalVcpus.Nanos != src.App.KubernetesResources.GpuPool.TotalVcpus.Nanos {
+					m.App.KubernetesResources.GpuPool.TotalVcpus.Nanos = src.App.KubernetesResources.GpuPool.TotalVcpus.Nanos
+					changed++
+				}
+				if m.App.KubernetesResources.GpuPool.TotalMemory != src.App.KubernetesResources.GpuPool.TotalMemory {
+					m.App.KubernetesResources.GpuPool.TotalMemory = src.App.KubernetesResources.GpuPool.TotalMemory
+					changed++
+				}
+				if m.App.KubernetesResources.GpuPool.TotalDisk != src.App.KubernetesResources.GpuPool.TotalDisk {
+					m.App.KubernetesResources.GpuPool.TotalDisk = src.App.KubernetesResources.GpuPool.TotalDisk
+					changed++
+				}
+				if src.App.KubernetesResources.GpuPool.TotalOptRes != nil {
+					if updateListAction == "add" {
+						for k3, v := range src.App.KubernetesResources.GpuPool.TotalOptRes {
+							m.App.KubernetesResources.GpuPool.TotalOptRes[k3] = v
+							changed++
+						}
+					} else if updateListAction == "remove" {
+						for k3, _ := range src.App.KubernetesResources.GpuPool.TotalOptRes {
+							if _, ok := m.App.KubernetesResources.GpuPool.TotalOptRes[k3]; ok {
+								delete(m.App.KubernetesResources.GpuPool.TotalOptRes, k3)
+								changed++
+							}
+						}
+					} else {
+						m.App.KubernetesResources.GpuPool.TotalOptRes = make(map[string]string)
+						for k3, v := range src.App.KubernetesResources.GpuPool.TotalOptRes {
+							m.App.KubernetesResources.GpuPool.TotalOptRes[k3] = v
+						}
+						changed++
+					}
+				} else if m.App.KubernetesResources.GpuPool.TotalOptRes != nil {
+					m.App.KubernetesResources.GpuPool.TotalOptRes = nil
+					changed++
+				}
+				if m.App.KubernetesResources.GpuPool.Topology.MinNodeCpus != src.App.KubernetesResources.GpuPool.Topology.MinNodeCpus {
+					m.App.KubernetesResources.GpuPool.Topology.MinNodeCpus = src.App.KubernetesResources.GpuPool.Topology.MinNodeCpus
+					changed++
+				}
+				if m.App.KubernetesResources.GpuPool.Topology.MinNodeMemory != src.App.KubernetesResources.GpuPool.Topology.MinNodeMemory {
+					m.App.KubernetesResources.GpuPool.Topology.MinNodeMemory = src.App.KubernetesResources.GpuPool.Topology.MinNodeMemory
+					changed++
+				}
+				if m.App.KubernetesResources.GpuPool.Topology.MinNodeDisk != src.App.KubernetesResources.GpuPool.Topology.MinNodeDisk {
+					m.App.KubernetesResources.GpuPool.Topology.MinNodeDisk = src.App.KubernetesResources.GpuPool.Topology.MinNodeDisk
+					changed++
+				}
+				if src.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes != nil {
+					if updateListAction == "add" {
+						for k4, v := range src.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes {
+							m.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes[k4] = v
+							changed++
+						}
+					} else if updateListAction == "remove" {
+						for k4, _ := range src.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes {
+							if _, ok := m.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes[k4]; ok {
+								delete(m.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes, k4)
+								changed++
+							}
+						}
+					} else {
+						m.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes = make(map[string]string)
+						for k4, v := range src.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes {
+							m.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes[k4] = v
+						}
+						changed++
+					}
+				} else if m.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes != nil {
+					m.App.KubernetesResources.GpuPool.Topology.MinNodeOptRes = nil
+					changed++
+				}
+				if m.App.KubernetesResources.GpuPool.Topology.MinNumberOfNodes != src.App.KubernetesResources.GpuPool.Topology.MinNumberOfNodes {
+					m.App.KubernetesResources.GpuPool.Topology.MinNumberOfNodes = src.App.KubernetesResources.GpuPool.Topology.MinNumberOfNodes
+					changed++
+				}
+			} else if m.App.KubernetesResources.GpuPool != nil {
+				m.App.KubernetesResources.GpuPool = nil
+				changed++
+			}
+			if m.App.KubernetesResources.MinK8SVersion != src.App.KubernetesResources.MinK8SVersion {
+				m.App.KubernetesResources.MinK8SVersion = src.App.KubernetesResources.MinK8SVersion
+				changed++
+			}
+		} else if m.App.KubernetesResources != nil {
+			m.App.KubernetesResources = nil
+			changed++
+		}
+		if src.App.NodeResources != nil {
+			if m.App.NodeResources == nil {
+				m.App.NodeResources = &NodeResources{}
+			}
+			if m.App.NodeResources.Vcpus != src.App.NodeResources.Vcpus {
+				m.App.NodeResources.Vcpus = src.App.NodeResources.Vcpus
+				changed++
+			}
+			if m.App.NodeResources.Ram != src.App.NodeResources.Ram {
+				m.App.NodeResources.Ram = src.App.NodeResources.Ram
+				changed++
+			}
+			if m.App.NodeResources.Disk != src.App.NodeResources.Disk {
+				m.App.NodeResources.Disk = src.App.NodeResources.Disk
+				changed++
+			}
+			if src.App.NodeResources.OptResMap != nil {
+				if updateListAction == "add" {
+					for k2, v := range src.App.NodeResources.OptResMap {
+						m.App.NodeResources.OptResMap[k2] = v
+						changed++
+					}
+				} else if updateListAction == "remove" {
+					for k2, _ := range src.App.NodeResources.OptResMap {
+						if _, ok := m.App.NodeResources.OptResMap[k2]; ok {
+							delete(m.App.NodeResources.OptResMap, k2)
+							changed++
+						}
+					}
+				} else {
+					m.App.NodeResources.OptResMap = make(map[string]string)
+					for k2, v := range src.App.NodeResources.OptResMap {
+						m.App.NodeResources.OptResMap[k2] = v
+					}
+					changed++
+				}
+			} else if m.App.NodeResources.OptResMap != nil {
+				m.App.NodeResources.OptResMap = nil
+				changed++
+			}
+			if m.App.NodeResources.InfraNodeFlavor != src.App.NodeResources.InfraNodeFlavor {
+				m.App.NodeResources.InfraNodeFlavor = src.App.NodeResources.InfraNodeFlavor
+				changed++
+			}
+			if m.App.NodeResources.ExternalVolumeSize != src.App.NodeResources.ExternalVolumeSize {
+				m.App.NodeResources.ExternalVolumeSize = src.App.NodeResources.ExternalVolumeSize
+				changed++
+			}
+		} else if m.App.NodeResources != nil {
+			m.App.NodeResources = nil
+			changed++
+		}
 	} else if m.App != nil {
 		m.App = nil
 		changed++
@@ -5421,6 +6544,9 @@ func IgnoreDeploymentZoneRequestFields(taglist string) cmp.Option {
 	}
 	if _, found := tags["timestamp"]; found {
 		names = append(names, "App.UpdatedAt")
+	}
+	if _, found := tags["nocmp"]; found {
+		names = append(names, "App.ObjId")
 	}
 	return cmpopts.IgnoreFields(DeploymentZoneRequest{}, names...)
 }
@@ -6451,6 +7577,18 @@ func (m *App) Size() (n int) {
 	}
 	l = len(m.UpdateListAction)
 	if l > 0 {
+		n += 2 + l + sovApp(uint64(l))
+	}
+	l = len(m.ObjId)
+	if l > 0 {
+		n += 2 + l + sovApp(uint64(l))
+	}
+	if m.KubernetesResources != nil {
+		l = m.KubernetesResources.Size()
+		n += 2 + l + sovApp(uint64(l))
+	}
+	if m.NodeResources != nil {
+		l = m.NodeResources.Size()
 		n += 2 + l + sovApp(uint64(l))
 	}
 	return n
@@ -8216,6 +9354,110 @@ func (m *App) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.UpdateListAction = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 50:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ObjId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApp
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthApp
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthApp
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ObjId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 51:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KubernetesResources", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApp
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApp
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApp
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.KubernetesResources == nil {
+				m.KubernetesResources = &KubernetesResources{}
+			}
+			if err := m.KubernetesResources.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 52:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field NodeResources", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowApp
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthApp
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthApp
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.NodeResources == nil {
+				m.NodeResources = &NodeResources{}
+			}
+			if err := m.NodeResources.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

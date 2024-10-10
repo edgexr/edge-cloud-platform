@@ -81,16 +81,17 @@ type DmeAppInsts struct {
 
 type DmeApp struct {
 	sync.RWMutex
-	AppKey             edgeproto.AppKey
-	Carriers           map[string]*DmeAppInsts
-	AuthPublicKey      string
-	AndroidPackageName string
-	OfficialFqdn       string
-	AutoProvPolicies   map[string]*AutoProvPolicy
-	Deployment         string
-	DefaultFlavor      string
-	QosSessionProfile  string
-	QosSessionDuration time.Duration
+	AppKey              edgeproto.AppKey
+	Carriers            map[string]*DmeAppInsts
+	AuthPublicKey       string
+	AndroidPackageName  string
+	OfficialFqdn        string
+	AutoProvPolicies    map[string]*AutoProvPolicy
+	Deployment          string
+	KubernetesResources *edgeproto.KubernetesResources
+	NodeResources       *edgeproto.NodeResources
+	QosSessionProfile   string
+	QosSessionDuration  time.Duration
 	// Non mapped AppPorts from App definition (used for AppOfficialFqdnReply)
 	Ports []dme.AppPort
 }
@@ -226,7 +227,8 @@ func AddApp(ctx context.Context, in *edgeproto.App) {
 	app.AndroidPackageName = in.AndroidPackageName
 	app.OfficialFqdn = in.OfficialFqdn
 	app.Deployment = in.Deployment
-	app.DefaultFlavor = in.DefaultFlavor.Name
+	app.KubernetesResources = in.KubernetesResources
+	app.NodeResources = in.NodeResources
 	ports, _ := edgeproto.ParseAppPorts(in.AccessPorts)
 	app.Ports = ports
 	app.QosSessionProfile = in.QosSessionProfile.String()
@@ -866,13 +868,14 @@ func translateCarrierName(carrierName string) string {
 }
 
 type searchAppInst struct {
-	loc           *dme.Loc
-	reqCarrier    string
-	results       []*foundAppInst
-	appDeployment string
-	appFlavor     string
-	resultDist    float64
-	resultLimit   int
+	loc                    *dme.Loc
+	reqCarrier             string
+	results                []*foundAppInst
+	appDeployment          string
+	appKubernetesResources *edgeproto.KubernetesResources
+	appNodeResources       *edgeproto.NodeResources
+	resultDist             float64
+	resultLimit            int
 }
 
 type foundAppInst struct {
@@ -917,11 +920,12 @@ func SearchAppInsts(ctx context.Context, carrierName string, app *DmeApp, loc *d
 	// Eventually when we have FindCloudlet policies, we should look it
 	// up here and apply it to the search config.
 	search := searchAppInst{
-		loc:           loc,
-		reqCarrier:    carrierName,
-		appDeployment: app.Deployment,
-		appFlavor:     app.DefaultFlavor,
-		resultLimit:   resultLimit,
+		loc:                    loc,
+		reqCarrier:             carrierName,
+		appDeployment:          app.Deployment,
+		appKubernetesResources: app.KubernetesResources,
+		appNodeResources:       app.NodeResources,
+		resultLimit:            resultLimit,
 	}
 
 	for cname, carrierData := range app.Carriers {
@@ -1122,7 +1126,7 @@ func (s *searchAppInst) searchPolicyCloudlets(ctx context.Context, key *edgeprot
 		}
 		freeInst := false
 		// check for free reservable ClusterInst
-		if DmeAppTbl.FreeReservableClusterInsts.GetForCloudlet(&clkey, s.appDeployment, s.appFlavor, cloudcommon.AppInstToClusterDeployment) != nil {
+		if DmeAppTbl.FreeReservableClusterInsts.GetForCloudlet(ctx, &clkey, s.appDeployment, s.appKubernetesResources, s.appNodeResources, cloudcommon.AppInstToClusterDeployment) != nil {
 			freeInst = true
 		}
 		// controller will look for existing ClusterInst or create new one.

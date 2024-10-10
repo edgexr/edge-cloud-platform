@@ -28,6 +28,7 @@ type potentialInstCloudlet struct {
 	cloudlet     edgeproto.Cloudlet
 	cloudletInfo edgeproto.CloudletInfo
 	features     *edgeproto.PlatformFeatures
+	flavorLookup edgeproto.FlavorLookup
 }
 
 // SkipReason are reasons that a cloudlet was not considered
@@ -51,13 +52,14 @@ const (
 	UnsupportedImageType                   = "site does not support app image type"
 	NoSupportClusterInst                   = "site only supports AppInst creates"
 	NoSupportSharedVolumes                 = "site does not support shared volumes"
-	NoSupportNumNodes                      = "site does not support non-zero kubernetes nodes"
-	RequiresNumNodes                       = "site requires non-zero kubernetes nodes"
+	NoSupportNodePools                     = "site does not support clusters with node pools"
+	RequiresNodePools                      = "site requires at least one node pool"
 	NoSupportMultiTenantCluster            = "site does not support multi-tenant clusters"
 	NoSupportNetworks                      = "site does not support additional networks"
 	NoSupportSharedIPAccess                = "site does not support shared IP access"
 	NoSupportDedicatedIPAccess             = "site does not support dedicated IP access"
 	MTClusterOrgInvalid                    = "invalid organization for multi-tenant cluster"
+	NoSupportMultipleNodePools             = "site does not support multiple node pools"
 )
 
 type SkipReasons map[SkipReason]struct{}

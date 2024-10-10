@@ -141,6 +141,8 @@ func (s *AddRefsDataGen) GetCreateAppTestObj() (*edgeproto.App, *testSupportData
 	alertPolicy := testutil.AlertPolicyData()[0]
 
 	app := testutil.AppData()[0]
+	app.KubernetesResources = nil
+	app.NodeResources = nil
 	app.DefaultFlavor = flavor.Key
 	app.AutoProvPolicies = []string{autoProvPolicy.Key.Name}
 	app.AlertPolicies = []string{alertPolicy.Key.Name}
@@ -260,6 +262,7 @@ func (s *AddRefsDataGen) GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, 
 	clusterInst := testutil.ClusterInstData()[0]
 	clusterInst.CloudletKey = cloudlet.Key
 	clusterInst.Flavor = flavor.Key
+	clusterInst.NodePools = nil
 	clusterInst.AutoScalePolicy = autoScalePolicy.Key.Name
 	clusterInst.Networks = []string{network.Key.Name}
 	clusterInst.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM

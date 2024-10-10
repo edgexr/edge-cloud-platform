@@ -63,13 +63,9 @@ var ClusterResourcesReqOptionalArgs = []string{
 	"cloudletkey.federatedorganization",
 	"vmresources:#.key.name",
 	"vmresources:#.key.organization",
-	"vmresources:#.vmflavor.name",
-	"vmresources:#.vmflavor.vcpus",
-	"vmresources:#.vmflavor.ram",
-	"vmresources:#.vmflavor.disk",
-	"vmresources:#.vmflavor.propmap",
+	"vmresources:#.vmflavor",
 	"vmresources:#.type",
-	"vmresources:#.appaccesstype",
+	"vmresources:#.count",
 }
 var ClusterResourcesReqAliasArgs = []string{}
 var ClusterResourcesReqComments = map[string]string{
@@ -78,17 +74,11 @@ var ClusterResourcesReqComments = map[string]string{
 	"cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
 	"vmresources:#.key.name":            "Cluster name",
 	"vmresources:#.key.organization":    "Name of the organization that this cluster belongs to",
-	"vmresources:#.vmflavor.name":       "Name of the flavor on the Cloudlet",
-	"vmresources:#.vmflavor.vcpus":      "Number of VCPU cores on the Cloudlet",
-	"vmresources:#.vmflavor.ram":        "Ram in MB on the Cloudlet",
-	"vmresources:#.vmflavor.disk":       "Amount of disk in GB on the Cloudlet",
-	"vmresources:#.vmflavor.propmap":    "OS Flavor Properties, if any",
+	"vmresources:#.vmflavor":            "Infrastructure specific flavor of the VM",
 	"vmresources:#.type":                "Resource Type can be platform, rootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm, k8s-lb-svc",
-	"vmresources:#.appaccesstype":       "(deprecated) Access type for resource of type App VM, one of DefaultForDeployment, Direct, LoadBalancer",
+	"vmresources:#.count":               "Number of these VMs in cluster",
 }
-var ClusterResourcesReqSpecialArgs = map[string]string{
-	"vmresources:#.vmflavor.propmap": "StringToString",
-}
+var ClusterResourcesReqSpecialArgs = map[string]string{}
 var ClusterResourceMetricReqRequiredArgs = []string{}
 var ClusterResourceMetricReqOptionalArgs = []string{
 	"cloudletkey.organization",
@@ -102,13 +92,9 @@ var ClusterResourceMetricReqOptionalArgs = []string{
 	"resmetric.vals:#.name",
 	"vmresources:#.key.name",
 	"vmresources:#.key.organization",
-	"vmresources:#.vmflavor.name",
-	"vmresources:#.vmflavor.vcpus",
-	"vmresources:#.vmflavor.ram",
-	"vmresources:#.vmflavor.disk",
-	"vmresources:#.vmflavor.propmap",
+	"vmresources:#.vmflavor",
 	"vmresources:#.type",
-	"vmresources:#.appaccesstype",
+	"vmresources:#.count",
 }
 var ClusterResourceMetricReqAliasArgs = []string{}
 var ClusterResourceMetricReqComments = map[string]string{
@@ -123,17 +109,11 @@ var ClusterResourceMetricReqComments = map[string]string{
 	"resmetric.vals:#.name":             "Name of the value",
 	"vmresources:#.key.name":            "Cluster name",
 	"vmresources:#.key.organization":    "Name of the organization that this cluster belongs to",
-	"vmresources:#.vmflavor.name":       "Name of the flavor on the Cloudlet",
-	"vmresources:#.vmflavor.vcpus":      "Number of VCPU cores on the Cloudlet",
-	"vmresources:#.vmflavor.ram":        "Ram in MB on the Cloudlet",
-	"vmresources:#.vmflavor.disk":       "Amount of disk in GB on the Cloudlet",
-	"vmresources:#.vmflavor.propmap":    "OS Flavor Properties, if any",
+	"vmresources:#.vmflavor":            "Infrastructure specific flavor of the VM",
 	"vmresources:#.type":                "Resource Type can be platform, rootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm, k8s-lb-svc",
-	"vmresources:#.appaccesstype":       "(deprecated) Access type for resource of type App VM, one of DefaultForDeployment, Direct, LoadBalancer",
+	"vmresources:#.count":               "Number of these VMs in cluster",
 }
-var ClusterResourceMetricReqSpecialArgs = map[string]string{
-	"vmresources:#.vmflavor.propmap": "StringToString",
-}
+var ClusterResourceMetricReqSpecialArgs = map[string]string{}
 var NameSanitizeReqRequiredArgs = []string{}
 var NameSanitizeReqOptionalArgs = []string{
 	"cloudletkey.organization",

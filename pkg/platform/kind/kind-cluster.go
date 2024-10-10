@@ -110,7 +110,7 @@ func (s *Platform) CreateKINDCluster(ctx context.Context, clusterInst *edgeproto
 	params := &ConfigParams{
 		Image:      nodeImage,
 		NumMasters: make([]struct{}, clusterInst.NumMasters),
-		NumNodes:   make([]struct{}, clusterInst.NumNodes),
+		NumNodes:   make([]struct{}, clusterInst.GetNumNodes()),
 	}
 	buf := bytes.Buffer{}
 	err = tmpl.Execute(&buf, params)
