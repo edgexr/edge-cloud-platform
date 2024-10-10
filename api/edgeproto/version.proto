@@ -32,7 +32,8 @@ enum VersionHash {
   HASH_14ae4c721c1bace6e8379d0061a72a77 = 53 [(protogen.upgrade_func) = "UpgradeCrmOnEdge"];
   HASH_eff9d3a6c74fd02840efce05d1984e8d = 54 [(protogen.upgrade_func) = "AddStaticFqdn"];
   HASH_eac56710c013d954db31eeb306b514a4 = 55 [(protogen.upgrade_func) = "InstanceKeysRegionScopedName"];
-  HASH_75883d14000640b2ecf694fe8ef9192b = 56 [(protogen.upgrade_func) = "ZoneFeature"]; 
+  HASH_75883d14000640b2ecf694fe8ef9192b = 56 [(protogen.upgrade_func) = "ZoneFeature"];
+  HASH_e65c39ec2a489834dd06e87f7239f9a8 = 57 [(protogen.upgrade_func) = "NodePoolsFeature"];
   option (protogen.version_hash) = true;
-  option (protogen.version_hash_salt) = "0";
+  option (protogen.version_hash_salt) = "1";
 }

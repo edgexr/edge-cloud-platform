@@ -146,7 +146,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 		ctx,
 		cloudcommon.NodeTypeAppVM,
 		appVmName,
-		appInst.VmFlavor,
+		appInst.NodeResources.InfraNodeFlavor,
 		imageInfo.LocalImageName,
 		false,
 		WithComputeAvailabilityZone(appInst.AvailabilityZone),
@@ -427,7 +427,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			return err
 		}
 		setupStage := v.VMProvider.GetGPUSetupStage(ctx)
-		if appInst.OptRes == "gpu" && !cloudcommon.IsSideCarApp(app) && setupStage == AppInstStage {
+		if cloudcommon.AppInstGpuCount(appInst) > 0 && !cloudcommon.IsSideCarApp(app) && setupStage == AppInstStage {
 			// setup GPU drivers
 			err = v.setupGPUDrivers(ctx, client, clusterInst, updateCallback, ActionCreate)
 			if err != nil {

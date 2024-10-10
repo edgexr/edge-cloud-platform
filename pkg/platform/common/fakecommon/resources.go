@@ -179,14 +179,16 @@ func (s *Resources) AddClusterResources(clusterInst *edgeproto.ClusterInst) {
 		})
 		s.updateCommonResourcesUsedLocked(clusterInst.MasterNodeFlavor, ResourceAdd)
 	}
-	for ii := uint32(0); ii < clusterInst.NumNodes; ii++ {
-		s.clusterVMs[clusterInst.Key] = append(s.clusterVMs[clusterInst.Key], edgeproto.VmInfo{
-			Name:        fmt.Sprintf("fake-node-%d-%s", ii+1, vmNameSuffix),
-			Type:        cloudcommon.NodeTypeK8sClusterNode.String(),
-			InfraFlavor: clusterInst.NodeFlavor,
-			Status:      "ACTIVE",
-		})
-		s.updateCommonResourcesUsedLocked(clusterInst.NodeFlavor, ResourceAdd)
+	for _, pool := range clusterInst.NodePools {
+		for ii := uint32(0); ii < pool.NumNodes; ii++ {
+			s.clusterVMs[clusterInst.Key] = append(s.clusterVMs[clusterInst.Key], edgeproto.VmInfo{
+				Name:        fmt.Sprintf("fake-node-%s-%d-%s", pool.Name, ii+1, vmNameSuffix),
+				Type:        cloudcommon.NodeTypeK8sClusterNode.String(),
+				InfraFlavor: pool.NodeResources.InfraNodeFlavor,
+				Status:      "ACTIVE",
+			})
+			s.updateCommonResourcesUsedLocked(pool.NodeResources.InfraNodeFlavor, ResourceAdd)
+		}
 	}
 	if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		s.clusterVMs[clusterInst.Key] = append(s.clusterVMs[clusterInst.Key], edgeproto.VmInfo{
@@ -225,10 +227,10 @@ func (s *Resources) AddVmAppResCount(ctx context.Context, app *edgeproto.App, ap
 		s.clusterVMs[key] = append(s.clusterVMs[key], edgeproto.VmInfo{
 			Name:        appInst.DnsLabel,
 			Type:        cloudcommon.NodeTypeAppVM.String(),
-			InfraFlavor: appInst.VmFlavor,
+			InfraFlavor: appInst.NodeResources.InfraNodeFlavor,
 			Status:      "ACTIVE",
 		})
-		s.updateCommonResourcesUsedLocked(appInst.VmFlavor, ResourceAdd)
+		s.updateCommonResourcesUsedLocked(appInst.NodeResources.InfraNodeFlavor, ResourceAdd)
 		s.externalIpsUsed += 1 // VMApp create a dedicated LB that consumes one IP
 	}
 }
@@ -240,7 +242,7 @@ func (s *Resources) RemoveVmAppResCount(ctx context.Context, app *edgeproto.App,
 	if app.Deployment == cloudcommon.DeploymentTypeVM {
 		key := getVmAppKey(appInst)
 		delete(s.clusterVMs, key)
-		s.updateCommonResourcesUsedLocked(appInst.VmFlavor, ResourceRemove)
+		s.updateCommonResourcesUsedLocked(appInst.NodeResources.InfraNodeFlavor, ResourceRemove)
 		s.externalIpsUsed--
 	}
 }

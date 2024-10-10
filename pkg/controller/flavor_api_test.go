@@ -16,7 +16,6 @@ package controller
 
 import (
 	"context"
-	fmt "fmt"
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -46,7 +45,6 @@ func TestFlavorApi(t *testing.T) {
 
 	testutil.InternalFlavorTest(t, "cud", apis.flavorApi, testutil.FlavorData())
 	testMasterFlavor(t, ctx, apis)
-	testGetFlavorForServerlessConfig(t, ctx, apis)
 	dummy.Stop()
 }
 
@@ -83,69 +81,11 @@ func testMasterFlavor(t *testing.T, ctx context.Context, apis *AllApis) {
 			require.Nil(t, err, "Create Master Node Flavor")
 		}
 
-		vmspec, err := apis.resTagTableApi.GetVMSpec(ctx, stm, masterFlavor, "", cl, cli)
+		vmspec, err := apis.resTagTableApi.GetVMSpec(ctx, stm, masterFlavor.ToNodeResources(), "", cl, cli)
 		require.Nil(t, err, "GetVmSpec masterNodeFlavor")
 		require.Equal(t, "flavor.medium", vmspec.FlavorName)
 
 		return nil
 	})
-}
-
-type serverlessConfigFlavorMatch struct {
-	sconfig    edgeproto.ServerlessConfig
-	flavorName string
-}
-
-func testGetFlavorForServerlessConfig(t *testing.T, ctx context.Context, apis *AllApis) {
-	tests := []serverlessConfigFlavorMatch{{
-		sconfig: edgeproto.ServerlessConfig{
-			Vcpus: *edgeproto.NewUdec64(1, 0),
-			Ram:   256,
-		},
-		flavorName: "x1.tiny",
-	}, {
-		sconfig: edgeproto.ServerlessConfig{
-			Vcpus: *edgeproto.NewUdec64(2, 500*edgeproto.DecMillis),
-			Ram:   1024,
-		},
-		flavorName: "x1.medium",
-	}, {
-		sconfig: edgeproto.ServerlessConfig{
-			Vcpus: *edgeproto.NewUdec64(2, 0),
-			Ram:   16999,
-		},
-		flavorName: "",
-	}, {
-		sconfig: edgeproto.ServerlessConfig{
-			Vcpus: *edgeproto.NewUdec64(1, 0),
-			Ram:   1024,
-			GpuConfig: edgeproto.GpuConfig{
-				Type:   edgeproto.GpuType_GPU_TYPE_PCI,
-				NumGpu: 1,
-			},
-		},
-		flavorName: "x1.tiny.gpu",
-	}, {
-		sconfig: edgeproto.ServerlessConfig{
-			Vcpus: *edgeproto.NewUdec64(1, 0),
-			Ram:   1024,
-			GpuConfig: edgeproto.GpuConfig{
-				Type:   edgeproto.GpuType_GPU_TYPE_VGPU,
-				NumGpu: 1,
-			},
-		},
-		flavorName: "x1.small.vgpu",
-	}}
-	for ii, test := range tests {
-		flavor, err := apis.flavorApi.getFlavorForServerlessConfig(ctx, &test.sconfig)
-		desc := fmt.Sprintf("test[%d]", ii)
-		if test.flavorName == "" {
-			require.NotNil(t, err, desc)
-			require.Contains(t, err.Error(), "no matching flavor found", desc)
-		} else {
-			require.Nil(t, err, desc)
-			require.NotNil(t, flavor, desc)
-			require.Equal(t, test.flavorName, flavor.Key.Name, desc)
-		}
-	}
+	require.Nil(t, err)
 }

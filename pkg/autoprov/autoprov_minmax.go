@@ -490,7 +490,7 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 			}
 			for _, ckey := range s.caches.cloudletCache.CloudletsForZone(zkey) {
 				// see if free reservable ClusterInst exists
-				freeClustKey := s.caches.frClusterInsts.GetForCloudlet(&ckey, app.Deployment, app.DefaultFlavor.Name, cloudcommon.AppInstToClusterDeployment)
+				freeClustKey := s.caches.frClusterInsts.GetForCloudlet(ctx, &ckey, app.Deployment, app.KubernetesResources, app.NodeResources, cloudcommon.AppInstToClusterDeployment)
 				if freeClustKey != nil {
 					pt.hasFree = HasIt
 					break

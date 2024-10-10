@@ -124,16 +124,6 @@ func (s *CRMHandler) GatherInitialCloudletInfo(ctx context.Context, cloudlet *ed
 		return err
 	}
 	if resources != nil {
-		resMap := make(map[string]edgeproto.InfraResource)
-		for _, resInfo := range resources.Info {
-			resMap[resInfo.Name] = resInfo
-		}
-		quotaProps := pf.GetFeatures().ResourceQuotaProperties
-		err = cloudcommon.ValidateCloudletResourceQuotas(ctx, quotaProps, resMap, cloudlet.ResourceQuotas)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to validate cloudlet resource quota", "cloudlet", cloudlet.Key, "err", err)
-			return err
-		}
 		cloudletInfo.ResourcesSnapshot = *resources
 	}
 	return nil
@@ -450,11 +440,13 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 		}
 
 		flavor := edgeproto.Flavor{}
-		flavorFound := cd.FlavorCache.Get(&new.Flavor, &flavor)
-		if !flavorFound {
-			err = new.Flavor.NotFoundError()
-			sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
-			return nu, err
+		if new.Flavor.Name != "" {
+			flavorFound := cd.FlavorCache.Get(&new.Flavor, &flavor)
+			if !flavorFound {
+				err = new.Flavor.NotFoundError()
+				sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
+				return nu, err
+			}
 		}
 		clusterInst := edgeproto.ClusterInst{}
 		if cloudcommon.IsClusterInstReqd(&app) {
@@ -504,11 +496,13 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 			return nu, err
 		}
 		flavor := edgeproto.Flavor{}
-		flavorFound := cd.FlavorCache.Get(&new.Flavor, &flavor)
-		if !flavorFound {
-			err = new.Flavor.NotFoundError()
-			sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
-			return nu, err
+		if new.Flavor.Name != "" {
+			flavorFound := cd.FlavorCache.Get(&new.Flavor, &flavor)
+			if !flavorFound {
+				err = new.Flavor.NotFoundError()
+				sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
+				return nu, err
+			}
 		}
 		// Only proceed with power action if current state and it reflecting state is valid
 		nextPowerState := edgeproto.GetNextPowerState(new.PowerState, edgeproto.TransientState)

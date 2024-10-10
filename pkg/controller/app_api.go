@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"sort"
@@ -269,6 +270,89 @@ func validateSkipHcPorts(app *edgeproto.App) error {
 	return nil
 }
 
+type AppResourcesSpec struct {
+	FlavorKey           edgeproto.FlavorKey
+	KubernetesResources *edgeproto.KubernetesResources
+	NodeResources       *edgeproto.NodeResources
+}
+
+func (s *AppApi) resolveResourcesSpec(ctx context.Context, stm concurrency.STM, in *edgeproto.App) error {
+	appResources := AppResourcesSpec{
+		FlavorKey:           in.DefaultFlavor,
+		KubernetesResources: in.KubernetesResources,
+		NodeResources:       in.NodeResources,
+	}
+	err := s.resolveAppResourcesSpec(stm, in.Deployment, &appResources)
+	if err != nil {
+		return err
+	}
+	in.KubernetesResources = appResources.KubernetesResources
+	in.NodeResources = appResources.NodeResources
+	return nil
+}
+
+// common function for resolving App and AppInst resource specs.
+func (s *AppApi) resolveAppResourcesSpec(stm concurrency.STM, deployment string, res *AppResourcesSpec) error {
+	// We allow two ways to specify resources.
+	// 1. The old flavor-based way. This is maintained for backwards
+	// compatibility, and as a "shortcut" to avoid having to specify
+	// resources individually.
+	// 2. The new separate resources based way. This is a more accurate
+	// way for Kubernetes apps, and allows for specifying multiple
+	// node pool requirements.
+	//
+	// For backwards compatibility, if a user specifies the old
+	// flavor-based way, we retain the specified flavor.
+	// However, internally, the new resource-based structs are the
+	// source of truth.
+	// Additionally, if a flavor is specified, it always overrides
+	// the separate resources. To be able to specify resources
+	// individually, the flavor name must be cleared.
+	if res.FlavorKey.Name != "" {
+		flavor := &edgeproto.Flavor{}
+		if !s.all.flavorApi.store.STMGet(stm, &res.FlavorKey, flavor) {
+			return res.FlavorKey.NotFoundError()
+		}
+		if flavor.DeletePrepare {
+			return res.FlavorKey.BeingDeletedError()
+		}
+		if cloudcommon.AppDeploysToKubernetes(deployment) {
+			if res.KubernetesResources == nil {
+				res.KubernetesResources = &edgeproto.KubernetesResources{}
+			}
+			res.KubernetesResources.SetFromFlavor(flavor)
+		} else {
+			if res.NodeResources == nil {
+				res.NodeResources = &edgeproto.NodeResources{}
+			}
+			res.NodeResources.SetFromFlavor(flavor)
+		}
+	}
+	// validate may fill in default values
+	if cloudcommon.AppDeploysToKubernetes(deployment) {
+		if res.NodeResources != nil {
+			return errors.New("cannot specify node resources for Kubernetes deployment")
+		}
+		if res.FlavorKey.Name == "" && res.KubernetesResources == nil {
+			return errors.New("missing flavor or Kubernetes resources")
+		}
+		if err := res.KubernetesResources.Validate(); err != nil {
+			return fmt.Errorf("invalid KubernetesResources, %s", err)
+		}
+	} else {
+		if res.KubernetesResources != nil {
+			return errors.New("cannot specify Kubernetes resources for " + deployment + " deployment")
+		}
+		if res.FlavorKey.Name == "" && res.NodeResources == nil {
+			return errors.New("missing flavor or node resources")
+		}
+		if err := res.NodeResources.Validate(); err != nil {
+			return fmt.Errorf("invalid NodeResources, %s", err)
+		}
+	}
+	return nil
+}
+
 // Configure and validate App. Common code for Create and Update.
 func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edgeproto.App, revision string) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "configureApp", "app", in.Key.String())
@@ -435,26 +519,12 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		return fmt.Errorf("DaemonSet required in manifest when ScaleWithCluster set")
 	}
 
-	flavor := &edgeproto.Flavor{}
-	if in.DefaultFlavor.Name == "" && in.ServerlessConfig == nil {
-		return fmt.Errorf("Default flavor or ServerlessConfig must be specified")
+	if in.ServerlessConfig != nil {
+		return errors.New("serverless config is deprecated, please replace with KubernetesResources")
 	}
-	if in.DefaultFlavor.Name == "" {
-		// infer flavor from serverless config
-		flavor, err := s.all.flavorApi.getFlavorForServerlessConfig(ctx, in.ServerlessConfig)
-		if err != nil {
-			return fmt.Errorf("DefaultFlavor not specified, and unable to get flavor for serverless config, %s", err)
-		}
-		in.DefaultFlavor = flavor.Key
+	if err := s.resolveResourcesSpec(ctx, stm, in); err != nil {
+		return err
 	}
-
-	if !s.all.flavorApi.store.STMGet(stm, &in.DefaultFlavor, flavor) {
-		return in.DefaultFlavor.NotFoundError()
-	}
-	if flavor.DeletePrepare {
-		return flavor.Key.BeingDeletedError()
-	}
-
 	if in.AllowServerless {
 		if in.Deployment != cloudcommon.DeploymentTypeKubernetes {
 			return fmt.Errorf("Allow serverless only supported for deployment type Kubernetes")
@@ -468,21 +538,6 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 			// need to parse the manifest and look for any objects
 			// that cannot be segregated by namespace.
 			return fmt.Errorf("Allow serverless only allowed for system generated manifests")
-		}
-		if in.ServerlessConfig == nil {
-			in.ServerlessConfig = &edgeproto.ServerlessConfig{}
-		}
-		if in.ServerlessConfig.Vcpus.IsZero() {
-			in.ServerlessConfig.Vcpus.Set(flavor.Vcpus, 0)
-		}
-		if in.ServerlessConfig.Ram == 0 {
-			in.ServerlessConfig.Ram = flavor.Ram
-		}
-		if in.ServerlessConfig.Vcpus.Nanos%(edgeproto.DecMillis) != 0 {
-			return fmt.Errorf("Serverless config vcpus cannot have precision less than 0.001")
-		}
-		if in.ServerlessConfig.MinReplicas == 0 {
-			in.ServerlessConfig.MinReplicas = 1
 		}
 	}
 
@@ -508,7 +563,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	}
 
 	if in.DeploymentManifest != "" {
-		err = cloudcommon.IsValidDeploymentManifest(in.Deployment, in.Command, in.DeploymentManifest, ports, flavor)
+		err = cloudcommon.IsValidDeploymentManifest(in.Deployment, in.Command, in.DeploymentManifest, ports, in.KubernetesResources)
 		if err != nil {
 			return fmt.Errorf("Invalid deployment manifest, %s, %v", in.DeploymentManifest, err)
 		}
@@ -961,8 +1016,8 @@ func validateAutoDeployApp(stm concurrency.STM, app *edgeproto.App) error {
 	if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_DIRECT {
 		return fmt.Errorf("For auto-provisioning or auto-clusters (no cluster specified), App access type direct is not supported")
 	}
-	if app.DefaultFlavor.Name == "" {
-		return fmt.Errorf("For auto-provisioning or auto-clusters (no cluster specified), App must have default flavor defined")
+	if app.DefaultFlavor.Name == "" && app.NodeResources == nil && app.KubernetesResources == nil {
+		return fmt.Errorf("For auto-provisioning or auto-clusters (no cluster specified), App must have desired resources specified")
 	}
 	return nil
 }
@@ -1081,7 +1136,7 @@ func (s *AppApi) tryDeployApp(ctx context.Context, stm concurrency.STM, app *edg
 			if !cloudlet.Key.Matches(&data.Obj.CloudletKey) {
 				continue
 			}
-			if data.Obj.Reservable && data.Obj.ReservedBy == "" && data.Obj.Deployment == deployment && data.Obj.Flavor.Name == app.DefaultFlavor.Name {
+			if data.Obj.Reservable && data.Obj.ReservedBy == "" && data.Obj.Deployment == deployment {
 				// can deploy to existing reservable ClusterInst
 				canDeploy = true
 				break
@@ -1103,15 +1158,24 @@ func (s *AppApi) tryDeployApp(ctx context.Context, stm concurrency.STM, app *edg
 			targetCluster.NumMasters = 1
 			targetCluster.NumNodes = numNodes
 		}
-		return s.all.clusterInstApi.validateResources(ctx, stm, &targetCluster, nil, nil, cloudlet, cloudletInfo, cloudletRefs, NoGenResourceAlerts)
+		return s.all.clusterInstApi.validateResources(ctx, stm, &targetCluster, nil, nil, nil, cloudlet, cloudletInfo, cloudletRefs, NoGenResourceAlerts)
 	}
 	if deployment == cloudcommon.DeploymentTypeVM {
-		return s.all.clusterInstApi.validateResources(ctx, stm, nil, app, appInst, cloudlet, cloudletInfo, cloudletRefs, NoGenResourceAlerts)
+		return s.all.clusterInstApi.validateResources(ctx, stm, nil, nil, app, appInst, cloudlet, cloudletInfo, cloudletRefs, NoGenResourceAlerts)
 	}
 	return fmt.Errorf("Unsupported deployment type %s\n", app.Deployment)
 }
 
 func (s *AppApi) ShowZonesForAppDeployment(in *edgeproto.DeploymentZoneRequest, cb edgeproto.AppApi_ShowZonesForAppDeploymentServer) error {
+	// TODO: This function needs a major overhaul. It uses too much
+	// code that is not common with the actual AppInst deploy path.
+	// What it should probably do is take a reference to an existing
+	// App definition, rather than require the user to specify a full
+	// App. That will ensure the App definition is well formed and has
+	// already been validated via App create, and default values filled
+	// in. We should then consider running the actual AppInst create
+	// command with an option to exit before writing any etcd state.
+	// Otherwise this code will just be too hard to maintain.
 	ctx := cb.Context()
 	var allclds = make(map[edgeproto.CloudletKey]string)
 	app := in.App
@@ -1163,7 +1227,8 @@ func (s *AppApi) ShowZonesForAppDeployment(in *edgeproto.DeploymentZoneRequest, 
 			keyOk := false
 			err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 				keyOk = false
-				appInst.VmFlavor = allclds[key]
+				// TODO: fixme
+				//appInst.VmFlavor = allclds[key]
 				cloudlet := edgeproto.Cloudlet{}
 				if !s.all.cloudletApi.store.STMGet(stm, &key, &cloudlet) {
 					log.SpanLog(ctx, log.DebugLevelApi, "ShowZonesForAppDeployment cloudlet not found", "cloudlet", key)

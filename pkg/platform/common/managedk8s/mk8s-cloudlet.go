@@ -16,6 +16,7 @@ package managedk8s
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
@@ -24,8 +25,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 )
 
 func (m *ManagedK8sPlatform) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
@@ -68,7 +67,6 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
-	cloudletClusterName := m.getCloudletClusterName(cloudlet)
 
 	// find available flavors
 	var info edgeproto.CloudletInfo
@@ -77,26 +75,7 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		return cloudletResourcesCreated, err
 	}
 	if cloudlet.CrmOnEdge {
-		// at this point we can communicate to the cloudlet so ensure full delete happens on error
-		cloudletResourcesCreated = true
-
-		// Find the closest matching vmspec
-		cli := edgeproto.CloudletInfo{}
-		cli.Key = cloudlet.Key
-		cli.Flavors = info.Flavors
-		vmsp, err := vmspec.GetVMSpec(ctx, *flavor, cli, nil)
-		if err != nil {
-			return cloudletResourcesCreated, err
-		}
-		// create the cluster to run the platform
-		kconf := fmt.Sprintf("%s.%s.kubeconfig", cloudlet.Key.Name, "platform")
-		client := &pc.LocalClient{}
-		err = m.createClusterInstInternal(ctx, client, cloudletClusterName, kconf, 1, vmsp.FlavorName, updateCallback)
-		if err != nil {
-			return cloudletResourcesCreated, err
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet success")
-		return cloudletResourcesCreated, m.CreatePlatformApp(ctx, "crm-"+cloudletClusterName, kconf, platCfg.AccessApi, pfConfig)
+		return false, errors.New("managed Kubernetes platforms do not support CRM on edge")
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet success")
 	return cloudletResourcesCreated, nil

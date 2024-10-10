@@ -25,7 +25,6 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	v1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -65,7 +64,7 @@ var (
 	CommonCloudletResources = map[string]string{
 		ResourceRamMb:       ResourceRamUnits,
 		ResourceVcpus:       "",
-		ResourceDiskGb:      "",
+		ResourceDiskGb:      ResourceDiskUnits,
 		ResourceGpus:        "",
 		ResourceExternalIPs: "",
 	}
@@ -100,118 +99,6 @@ var (
 
 	CommonResourceQuotaProps = GetCommonResourceQuotaProps()
 )
-
-// GetClusterInstVMRequirements uses the nodeFlavor and masterNodeFlavor if it cannot find a platform flavor
-func GetClusterInstVMRequirements(ctx context.Context, clusterInst *edgeproto.ClusterInst, nodeFlavor, masterNodeFlavor, rootLBFlavor *edgeproto.FlavorInfo, isManagedK8s bool) ([]edgeproto.VMResource, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "GetClusterInstVMResources", "clusterinst key", clusterInst.Key, "nodeFlavor", nodeFlavor.Name, "masterNodeFlavor", masterNodeFlavor.Name, "root lb flavor", rootLBFlavor, "managed k8s", isManagedK8s)
-	vmResources := []edgeproto.VMResource{}
-
-	if clusterInst.Deployment == DeploymentTypeDocker {
-		vmResources = append(vmResources, edgeproto.VMResource{
-			Key:      clusterInst.Key,
-			VmFlavor: nodeFlavor,
-			Type:     NodeTypeDockerClusterNode.String(),
-		})
-	} else {
-		// For managed-k8s platforms, ignore master node for resource calculation
-		if !isManagedK8s {
-			for ii := uint32(0); ii < clusterInst.NumMasters; ii++ {
-				if clusterInst.MasterNodeFlavor == "" {
-					vmResources = append(vmResources, edgeproto.VMResource{
-						Key:      clusterInst.Key,
-						VmFlavor: nodeFlavor,
-						Type:     NodeTypeK8sClusterMaster.String(),
-					})
-				} else {
-					vmResources = append(vmResources, edgeproto.VMResource{
-						Key:      clusterInst.Key,
-						VmFlavor: masterNodeFlavor,
-						Type:     NodeTypeK8sClusterMaster.String(),
-					})
-				}
-			}
-		}
-		for ii := uint32(0); ii < clusterInst.NumNodes; ii++ {
-			vmResources = append(vmResources, edgeproto.VMResource{
-				Key:      clusterInst.Key,
-				VmFlavor: nodeFlavor,
-				Type:     NodeTypeK8sClusterNode.String(),
-			})
-		}
-	}
-
-	// For managed-k8s platforms, ignore rootLB for resource calculation
-	if !isManagedK8s {
-		if clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
-			if rootLBFlavor == nil {
-				return nil, fmt.Errorf("missing rootlb flavor")
-			}
-			vmResources = append(vmResources, edgeproto.VMResource{
-				Key:      clusterInst.Key,
-				VmFlavor: rootLBFlavor,
-				Type:     NodeTypeDedicatedRootLB.String(),
-			})
-		}
-	}
-	return vmResources, nil
-}
-
-func GetVMAppRequirements(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, pfFlavorList []*edgeproto.FlavorInfo, rootLBFlavor *edgeproto.FlavorInfo) ([]edgeproto.VMResource, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "GetVMAppRequirements", "appinst key", appInst.Key, "platform flavors", pfFlavorList)
-	vmResources := []edgeproto.VMResource{}
-	vmFlavor := &edgeproto.FlavorInfo{}
-	vmFlavorFound := false
-	for _, flavor := range pfFlavorList {
-		if flavor.Name == appInst.VmFlavor {
-			vmFlavor = flavor
-			vmFlavorFound = true
-			break
-		}
-	}
-	if !vmFlavorFound && len(pfFlavorList) > 0 {
-		return nil, fmt.Errorf("VM flavor %s does not exist", appInst.VmFlavor)
-	}
-	if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
-		vmResources = append(vmResources, edgeproto.VMResource{
-			Key:      *appInst.GetClusterKey(),
-			VmFlavor: rootLBFlavor,
-			Type:     NodeTypeDedicatedRootLB.String(),
-		})
-	}
-	vmResources = append(vmResources, edgeproto.VMResource{
-		Key:           *appInst.GetClusterKey(),
-		VmFlavor:      vmFlavor,
-		Type:          NodeTypeAppVM.String(),
-		AppAccessType: app.AccessType,
-	})
-	return vmResources, nil
-}
-
-func GetK8sAppRequirements(ctx context.Context, app *edgeproto.App) ([]edgeproto.VMResource, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "GetK8sAppRequirements", "app", app)
-	resources := []edgeproto.VMResource{}
-	if app.Deployment != DeploymentTypeKubernetes && app.Deployment != DeploymentTypeHelm {
-		return resources, nil
-	}
-	objs, _, err := DecodeK8SYaml(app.DeploymentManifest)
-	if err != nil {
-		return nil, fmt.Errorf("parse kubernetes deployment yaml failed for app %v, %v", app.Key, err)
-	}
-	for _, obj := range objs {
-		ksvc, ok := obj.(*v1.Service)
-		if !ok {
-			continue
-		}
-		if ksvc.Spec.Type != v1.ServiceTypeLoadBalancer {
-			continue
-		}
-		// add LB svc as a resource for public-cloud based platform validations
-		resources = append(resources, edgeproto.VMResource{
-			Type: ResourceTypeK8sLBSvc,
-		})
-	}
-	return resources, nil
-}
 
 func usageAlertWarningLabels(ctx context.Context, key *edgeproto.CloudletKey, alertname, warning string) map[string]string {
 	labels := make(map[string]string)
@@ -262,7 +149,7 @@ func GetCommonResourceQuotaProps(additionalResources ...string) []edgeproto.Infr
 	return props
 }
 
-func ValidateCloudletResourceQuotas(ctx context.Context, quotaProps []edgeproto.InfraResource, curRes map[string]edgeproto.InfraResource, resourceQuotas []edgeproto.ResourceQuota) error {
+func ValidateCloudletResourceQuotas(ctx context.Context, quotaProps []edgeproto.InfraResource, curRes map[string]*edgeproto.InfraResource, resourceQuotas []edgeproto.ResourceQuota) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validate cloudlet resource quotas", "curResources", curRes, "quotas", resourceQuotas)
 	resPropsMap := make(map[string]struct{})
 	resPropsNames := []string{}
@@ -289,37 +176,75 @@ func ValidateCloudletResourceQuotas(ctx context.Context, quotaProps []edgeproto.
 		if infraRes.InfraMaxValue > 0 && resQuota.Value > infraRes.InfraMaxValue {
 			return fmt.Errorf("Resource quota %s exceeded max supported value: %d", resQuota.Name, infraRes.InfraMaxValue)
 		}
-		if resQuota.Value > 0 && resQuota.Value < infraRes.Value {
-			return fmt.Errorf("Resource quota value for %s is less than currently used value. Should be at least %d", resQuota.Name, infraRes.Value)
-		}
+		// Note: not a failure if currently used value exceeds quota.
+		// It just means no more resources can be consumed until
+		// current value drops below quota.
+		// Also, curRes has the current value as reported by the
+		// infrastructure. But not all infras may report the current
+		// usage.
 	}
 	return nil
 }
 
 var GPUResourceLimitName = "nvidia.com/gpu"
 
-func IsGPUFlavor(flavor *edgeproto.Flavor) (bool, int) {
-	if flavor == nil {
-		return false, 0
+func GetGPUCount(optResMap map[string]string) uint64 {
+	if optResMap == nil {
+		return 0
 	}
-	resStr, ok := flavor.OptResMap["gpu"]
+	val, ok := optResMap["gpu"]
 	if !ok {
-		return ok, 0
+		return 0
 	}
-	_, _, count, err := ParseGPUResource(resStr)
+	_, _, count, err := ParseOptResVal(val)
 	if err != nil {
-		return false, 0
+		// invalid spec
+		return 0
 	}
-	return true, count
+	return uint64(count)
 }
 
-func ParseGPUResource(resStr string) (string, string, int, error) {
+func KuberentesResourcesGPUCount(kr *edgeproto.KubernetesResources) uint64 {
+	if kr == nil || kr.GpuPool == nil {
+		return 0
+	}
+	return GetGPUCount(kr.GpuPool.TotalOptRes)
+}
+
+func NodeResourcesGPUCount(nr *edgeproto.NodeResources) uint64 {
+	if nr == nil {
+		return 0
+	}
+	return GetGPUCount(nr.OptResMap)
+}
+
+func NodePoolResourcesGPUCount(npr *edgeproto.NodePoolResources) uint64 {
+	if npr == nil {
+		return 0
+	}
+	return GetGPUCount(npr.TotalOptRes)
+}
+
+func AppInstGpuCount(appInst *edgeproto.AppInst) uint64 {
+	if appInst.KubernetesResources != nil {
+		return KuberentesResourcesGPUCount(appInst.KubernetesResources)
+	}
+	if appInst.NodeResources != nil {
+		return NodeResourcesGPUCount(appInst.NodeResources)
+	}
+	return 0
+}
+
+// ParseOptResVal decodes an optional resource spec string of
+// format "pci:1" or "vgpu:A100:2" into its respective parts
+// of type, spec(alias), and count.
+func ParseOptResVal(resStr string) (string, string, int, error) {
 	typ := ""
 	spec := ""
 	count := 0
 	values := strings.Split(resStr, ":")
 	if len(values) == 1 {
-		return typ, spec, count, fmt.Errorf("Missing manditory resource count, ex: optresmap=gpu=gpu:1")
+		return typ, spec, count, fmt.Errorf("missing mandatory resource count for %s, ex: optresmap=gpu=gpu:1", resStr)
 	}
 	var countStr string
 	var err error
@@ -331,10 +256,10 @@ func ParseGPUResource(resStr string) (string, string, int, error) {
 		spec = values[1]
 		countStr = values[2]
 	} else {
-		return typ, spec, count, fmt.Errorf("Invalid optresmap syntax encountered: ex: optresmap=gpu=gpu:1")
+		return typ, spec, count, fmt.Errorf("invalid optresmap value %s, should be of form gpu:1 or pci:T4:2", resStr)
 	}
 	if count, err = strconv.Atoi(countStr); err != nil {
-		return typ, spec, count, fmt.Errorf("Non-numeric resource count encountered, found %s", values[1])
+		return typ, spec, count, fmt.Errorf("non-numeric resource count %s in optres value %s", values[1], resStr)
 	}
 	return typ, spec, count, nil
 }

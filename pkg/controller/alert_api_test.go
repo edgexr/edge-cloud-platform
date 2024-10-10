@@ -89,7 +89,7 @@ func TestAlertApi(t *testing.T) {
 			val := data.Obj
 			totalCount++
 			if cloudletName, found := val.Labels[edgeproto.CloudletKeyTagName]; !found ||
-				cloudletName != testCloudlet.Key.Name {
+				cloudletName != testCloudletName {
 				continue
 			}
 			if cloudletOrg, found := val.Labels[edgeproto.CloudletKeyTagOrganization]; !found ||

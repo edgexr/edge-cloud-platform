@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -41,6 +42,7 @@ import (
 var upgradeTestFileLocation = "./upgrade_testfiles"
 var upgradeTestFilePreSuffix = "_pre.etcd"
 var upgradeTestFilePostSuffix = "_post.etcd"
+var upgradeTestFileExpectedSuffix = "_expected.etcd"
 var upgradeVaultTestFilePreSuffix = "_pre.vault"
 var upgradeVaultTestFilePostSuffix = "_post.vault"
 var upgradeVaultTestFileExpectedSuffix = "_expected.vault"
@@ -216,6 +218,59 @@ func normalizeRandomFields(m map[string]interface{}, keys ...string) {
 			}
 		}
 	}
+}
+
+// make it easier for a human to do a diff between files
+func exportEtcdAsYaml(ctx context.Context, etcdFileName string) error {
+	outFileName := strings.TrimSuffix(etcdFileName, ".etcd") + ".yaml"
+
+	infile, err := os.Open(etcdFileName)
+	if err != nil {
+		return fmt.Errorf("failed to open %s, %s", etcdFileName, err)
+	}
+	defer infile.Close()
+	outfile, err := os.Create(outFileName)
+	if err != nil {
+		return fmt.Errorf("failed to create %s, %s", outFileName, err)
+	}
+	defer outfile.Close()
+
+	err = scanEtcdFile(ctx, infile, func(ctx context.Context, key, val string) error {
+		_, err := outfile.WriteString(key + "\n")
+		if err != nil {
+			return err
+		}
+		valNotJson := false
+		for _, prefix := range []string{
+			"1/AppGlobalId/",
+			"1/AppInstId/",
+			"1/CloudletDnsLabel/",
+			"1/CloudletObjectDnsLabel/",
+			"1/Version",
+		} {
+			if strings.HasPrefix(key, prefix) {
+				valNotJson = true
+				break
+			}
+		}
+		if valNotJson {
+			_, err := outfile.WriteString(val + "\n")
+			return err
+		}
+		data := map[string]interface{}{}
+		err = json.Unmarshal([]byte(val+"\n"), &data)
+		if err != nil {
+			fmt.Printf("unmarshal error %s\n", err)
+			return err
+		}
+		out, err := yaml.Marshal(data)
+		if err != nil {
+			return err
+		}
+		_, err = outfile.Write(out)
+		return err
+	})
+	return err
 }
 
 type VaultUpgradeData struct {
@@ -400,6 +455,13 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		sync.Start()
 		defer sync.Done()
 		deleteAllObjects(t, ctx, &objStore, apis)
+		// hard to diff json, convert files to yaml
+		preFile := upgradeTestFileLocation + "/" + funcName + upgradeTestFilePreSuffix
+		err = exportEtcdAsYaml(ctx, preFile)
+		require.Nil(t, err)
+		expFile := upgradeTestFileLocation + "/" + funcName + upgradeTestFileExpectedSuffix
+		err = exportEtcdAsYaml(ctx, expFile)
+		require.Nil(t, err)
 	})
 
 	for _, upgrade := range VersionHash_UpgradeFuncs {
@@ -420,6 +482,13 @@ func TestAllUpgradeFuncs(t *testing.T) {
 		err = RunSingleUpgrade(ctx, &objStore, apis, sup, fn, id)
 		require.Nil(t, err, "Upgrade failed")
 		err = compareDbToExpected(&objStore, funcName)
+		if err != nil {
+			// write out yaml versions to make it easy to compare
+			preFile := upgradeTestFileLocation + "/" + funcName + upgradeTestFilePreSuffix
+			exportEtcdAsYaml(ctx, preFile)
+			expFile := upgradeTestFileLocation + "/" + funcName + upgradeTestFileExpectedSuffix
+			exportEtcdAsYaml(ctx, expFile)
+		}
 		require.Nil(t, err, "Unexpected result from upgrade function(%s)", funcName)
 		if vaultDataLoaded {
 			cleanupVault := false

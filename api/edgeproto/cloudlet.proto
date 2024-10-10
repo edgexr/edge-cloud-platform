@@ -29,6 +29,7 @@ import "org.proto";
 import "dme/loc.proto";
 import "gogoproto/gogo.proto";
 import "dme/appcommon.proto";
+import "resources.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -193,6 +194,8 @@ message PlatformFeatures {
   bool requires_crm_off_edge = 29;
   // Requires certificate refresh
   bool requires_cert_refresh = 30;
+  // Kubernetes clusters support more than one node pool
+  bool supports_multiple_node_pools = 31;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties
@@ -976,6 +979,8 @@ message CloudletInfo {
   bool standby_crm = 23;
   // Cloudlet release version
   string release_version = 24;
+  // Node pool resources for Cloudlets that are a single Kubernetes cluster
+  repeated NodePool node_pools = 46;
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cache) = true;

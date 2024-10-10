@@ -31,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/gogo/protobuf/types"
 	"github.com/oklog/ulid/v2"
@@ -436,6 +437,21 @@ func getAppInstURI(ctx context.Context, appInst *edgeproto.AppInst, app *edgepro
 	return getAppInstFQDN(appInst, cloudlet)
 }
 
+func (s *AppInstApi) resolveResourcesSpec(ctx context.Context, stm concurrency.STM, app *edgeproto.App, in *edgeproto.AppInst) error {
+	appResources := AppResourcesSpec{
+		FlavorKey:           in.Flavor,
+		KubernetesResources: in.KubernetesResources,
+		NodeResources:       in.NodeResources,
+	}
+	err := s.all.appApi.resolveAppResourcesSpec(stm, app.Deployment, &appResources)
+	if err != nil {
+		return err
+	}
+	in.KubernetesResources = appResources.KubernetesResources
+	in.NodeResources = appResources.NodeResources
+	return nil
+}
+
 // createAppInstInternal is used to create dynamic app insts internally,
 // bypassing static assignment.
 func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppInst, inCb edgeproto.AppInstApi_CreateAppInstServer) (reterr error) {
@@ -503,6 +519,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	// cloudlet.
 	inCopy := edgeproto.AppInst{}
 	inCopy.DeepCopyIn(in)
+	var app edgeproto.App
 
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		// reset modified state in case STM hits conflict and runs again
@@ -513,9 +530,9 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		reservedCluster = nil
 		platformSupportsIPV6 = false
 		in.DeepCopyIn(&inCopy)
+		app = edgeproto.App{}
 
 		// lookup App so we can get flavor for reservable ClusterInst
-		var app edgeproto.App
 		if !s.all.appApi.store.STMGet(stm, &in.AppKey, &app) {
 			return in.AppKey.NotFoundError()
 		}
@@ -544,7 +561,14 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			}
 		}
 
-		if in.Flavor.Name == "" {
+		// if no resources specified, inherit from app
+		if in.Flavor.Name == "" && in.KubernetesResources == nil && in.NodeResources == nil {
+			if app.KubernetesResources != nil {
+				in.KubernetesResources = app.KubernetesResources.Clone()
+			}
+			if app.NodeResources != nil {
+				in.NodeResources = app.NodeResources.Clone()
+			}
 			in.Flavor = app.DefaultFlavor
 		}
 		sidecarApp = cloudcommon.IsSideCarApp(&app)
@@ -572,17 +596,14 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			}
 		}
 
+		err := s.resolveResourcesSpec(ctx, stm, &app, in)
+		if err != nil {
+			return err
+		}
 		// Since autoclusteripaccess is deprecated, set it to unknown
 		in.AutoClusterIpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
-		vmFlavor := edgeproto.Flavor{}
-		if !s.all.flavorApi.store.STMGet(stm, &in.Flavor, &vmFlavor) {
-			return in.Flavor.NotFoundError()
-		}
-		if vmFlavor.DeletePrepare {
-			return in.Flavor.BeingDeletedError()
-		}
 		if app.DeploymentManifest != "" {
-			err = cloudcommon.IsValidDeploymentManifestForFlavor(app.Deployment, app.DeploymentManifest, &vmFlavor)
+			err = cloudcommon.IsValidDeploymentManifestForResources(app.Deployment, app.DeploymentManifest, in.KubernetesResources)
 			if err != nil {
 				return fmt.Errorf("Invalid deployment manifest, %v", err)
 			}
@@ -696,17 +717,16 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			log.SpanLog(ctx, log.DebugLevelApi, "Creating new auto-cluster", "key", in.GetClusterKey())
 		}
 
-		vmspec, verr := s.all.resTagTableApi.GetVMSpec(ctx, stm, vmFlavor, in.CloudletFlavor, cloudlet, info)
-		if verr != nil {
-			return verr
+		if !cloudcommon.IsClusterInstReqd(&app) {
+			// select infra flavor for VM AppInst
+			az, _, err := s.all.clusterInstApi.setInfraFlavor(ctx, stm, &cloudlet, &info, in.NodeResources)
+			if err != nil {
+				return err
+			}
+			log.SpanLog(ctx, log.DebugLevelApi, "selected VM AppInst infra node flavor", "flavor", in.NodeResources.InfraNodeFlavor, "availabilityzone", az)
+			in.AvailabilityZone = az
 		}
-		// if needed, master node flavor will be looked up from createClusterInst
-		// save original in.Flavor.Name in that case
-		in.VmFlavor = vmspec.FlavorName
-		in.AvailabilityZone = vmspec.AvailabilityZone
-		in.ExternalVolumeSize = vmspec.ExternalVolumeSize
-		log.SpanLog(ctx, log.DebugLevelApi, "Selected AppInst Node Flavor", "vmspec", vmspec.FlavorName)
-		in.OptRes = s.all.resTagTableApi.AddGpuResourceHintIfNeeded(ctx, stm, vmspec, cloudlet)
+
 		in.Revision = app.Revision
 		appDeploymentType = app.Deployment
 		// there may be direct access apps still defined, disallow them from being instantiated.
@@ -723,20 +743,11 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// no cluster for vms
 			in.ClusterKey = edgeproto.ClusterKey{}
 			// check resources
-			err = s.all.clusterInstApi.validateResources(ctx, stm, nil, &app, in, &cloudlet, &info, &refs, GenResourceAlerts)
+			err = s.all.clusterInstApi.validateResources(ctx, stm, nil, nil, &app, in, &cloudlet, &info, &refs, GenResourceAlerts)
 			if err != nil {
 				return err
 			}
 			refs.VmAppInsts = append(refs.VmAppInsts, in.Key)
-			refsChanged = true
-		}
-		// Track K8s AppInstances for resource management only if platform supports K8s deployments only
-		if platform.TrackK8sAppInst(ctx, &app, cloudletFeatures) {
-			err = s.all.clusterInstApi.validateResources(ctx, stm, nil, &app, nil, &cloudlet, &info, &refs, GenResourceAlerts)
-			if err != nil {
-				return err
-			}
-			refs.K8SAppInsts = append(refs.K8SAppInsts, in.Key)
 			refsChanged = true
 		}
 		if refsChanged {
@@ -839,9 +850,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 						if app.Deployment == cloudcommon.DeploymentTypeVM {
 							refsChanged = removeAppInstFromRefs(&in.Key, &refs.VmAppInsts)
 						}
-						if platform.TrackK8sAppInst(ctx, &app, cloudletFeatures) {
-							refsChanged = removeAppInstFromRefs(&in.Key, &refs.K8SAppInsts)
-						}
 					}
 				}
 			}
@@ -904,23 +912,21 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 		// To reduce the proliferation of different reservable ClusterInst
 		// configurations, we restrict reservable ClusterInst configs.
-		clusterInst.Flavor.Name = in.Flavor.Name
-		clusterInst.NodeFlavor = in.CloudletFlavor
-		clusterInst.MasterNodeFlavor = in.CloudletFlavor
+		if err := setClusterResourcesForReqs(ctx, &clusterInst, &app, in); err != nil {
+			return err
+		}
 		// Prefer IP access shared, but some platforms (gcp, etc) only
 		// support dedicated.
 		clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
 		clusterInst.Deployment = appDeploymentType
 		clusterInst.EnableIpv6 = platformSupportsIPV6
-		if appDeploymentType == cloudcommon.DeploymentTypeKubernetes ||
-			appDeploymentType == cloudcommon.DeploymentTypeHelm {
+		if cloudcommon.AppDeploysToKubernetes(appDeploymentType) {
 			clusterInst.Deployment = cloudcommon.DeploymentTypeKubernetes
 			clusterInst.NumMasters = 1
-			clusterInst.NumNodes = 1 // TODO support 1 master, zero nodes
 			clusterInst.EnableIpv6 = false
 			if cloudletFeatures.NoClusterSupport {
-				log.SpanLog(ctx, log.DebugLevelApi, "Setting num nodes to 0 as platform does not support clusters", "platform", cloudletFeatures.PlatformType)
-				clusterInst.NumNodes = 0
+				log.SpanLog(ctx, log.DebugLevelApi, "removing node pools as platform does not support clusters", "platform", cloudletFeatures.PlatformType)
+				clusterInst.NodePools = nil
 			}
 		}
 		clusterInst.Liveness = edgeproto.Liveness_LIVENESS_DYNAMIC
@@ -969,9 +975,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			return in.AppKey.NotFoundError()
 		}
 
-		if in.Flavor.Name == "" {
-			in.Flavor = app.DefaultFlavor
-		}
 		cloudlet := edgeproto.Cloudlet{}
 		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
 			return in.CloudletKey.NotFoundError()
@@ -1176,9 +1179,6 @@ func (s *AppInstApi) useReservableClusterInst(stm concurrency.STM, ctx context.C
 		// no restrictions, no reservation
 		return nil
 	}
-	if in.Flavor.Name != cibuf.Flavor.Name {
-		return fmt.Errorf("flavor mismatch between AppInst and reservable ClusterInst")
-	}
 	if cibuf.ReservedBy != "" {
 		return fmt.Errorf("ClusterInst already reserved")
 	}
@@ -1210,6 +1210,7 @@ func useMultiTenantClusterInst(stm concurrency.STM, ctx context.Context, in *edg
 		return fmt.Errorf("App must allow serverless deployment to deploy to multi-tenant cluster %s", cibuf.Key.Name)
 	}
 	if app.Deployment != cloudcommon.DeploymentTypeKubernetes {
+		// helm not supported
 		return fmt.Errorf("Deployment type must be kubernetes for multi-tenant ClusterInst")
 	}
 	if in.EnableIpv6 && !cibuf.EnableIpv6 {
@@ -1525,6 +1526,11 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 		}
 	}
 
+	resChange := false
+	if fmap.HasOrHasChild(edgeproto.AppInstFieldFlavor) || fmap.HasOrHasChild(edgeproto.AppInstFieldKubernetesResources) || fmap.HasOrHasChild(edgeproto.AppFieldKubernetesResources) {
+		resChange = true
+	}
+
 	cctx := DefCallContext()
 	cctx.SetOverride(&in.CrmOverride)
 
@@ -1574,6 +1580,33 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 		if changeCount == 0 {
 			// nothing changed
 			return nil
+		}
+		if resChange {
+			if !cloudcommon.IsClusterInstReqd(&app) {
+				return errors.New("cannot modify resources allocated to VM deployments")
+			}
+			// In clusters, resource specs can be changed because
+			// they specify the resources to be reserved, and do not
+			// correspond to any change in the deployment.
+			err := s.resolveResourcesSpec(ctx, stm, &app, &cur)
+			if err != nil {
+				return err
+			}
+			clusterInst := edgeproto.ClusterInst{}
+			if !s.all.clusterInstApi.store.STMGet(stm, &cur.ClusterKey, &clusterInst) {
+				return cur.ClusterKey.NotFoundError()
+			}
+			cloudletInfo := edgeproto.CloudletInfo{}
+			s.all.cloudletInfoApi.store.STMGet(stm, &cur.CloudletKey, &cloudletInfo)
+			refs := edgeproto.ClusterRefs{}
+			if !s.all.clusterRefsApi.store.STMGet(stm, &cur.ClusterKey, &refs) {
+				refs.Key = cur.ClusterKey
+			}
+			// ensure that cluster can fit new specified resources
+			err = s.all.clusterInstApi.fitsAppResources(ctx, &clusterInst, &refs, &app, &cur, cloudletInfo.GetFlavorLookup())
+			if err != nil {
+				return err
+			}
 		}
 		diffFields = old.GetDiffFields(&cur)
 		if !ignoreCRM(cctx) && powerState != edgeproto.PowerState_POWER_STATE_UNKNOWN {
@@ -1729,24 +1762,6 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
 		nodeType = cloudletFeatures.NodeType
-		if platform.TrackK8sAppInst(ctx, &app, cloudletFeatures) {
-			ii := 0
-			for ; ii < len(cloudletRefs.K8SAppInsts); ii++ {
-				aiKey := cloudletRefs.K8SAppInsts[ii]
-				if aiKey.Matches(&in.Key) {
-					break
-				}
-			}
-			if ii < len(cloudletRefs.K8SAppInsts) {
-				// explicity zero out deleted item to
-				// prevent memory leak
-				a := cloudletRefs.K8SAppInsts
-				copy(a[ii:], a[ii+1:])
-				a[len(a)-1] = edgeproto.AppInstKey{}
-				cloudletRefs.K8SAppInsts = a[:len(a)-1]
-				cloudletRefsChanged = true
-			}
-		}
 		if cloudletRefsChanged {
 			s.all.cloudletRefsApi.store.STMPut(stm, &cloudletRefs)
 		}
@@ -2238,6 +2253,26 @@ func setPortFQDNPrefix(port *dme.AppPort, objs []runtime.Object) {
 	}
 }
 
+func (s *AppInstApi) sumRequestedAppInstResources(appInst *edgeproto.AppInst) resspec.ResValMap {
+	// Note this calculates the resource values as requested
+	// by the user, not the actual resources deployed in the
+	// infrastructure due to flavor quantization or additional
+	// platform specific requirements like load balancers.
+	resVals := resspec.ResValMap{}
+	if appInst.KubernetesResources != nil {
+		for _, pool := range []*edgeproto.NodePoolResources{
+			appInst.KubernetesResources.CpuPool,
+			appInst.KubernetesResources.GpuPool,
+		} {
+			resVals.AddNodePoolResources(pool)
+		}
+	}
+	if appInst.NodeResources != nil {
+		resVals.AddNodeResources(appInst.NodeResources, 1)
+	}
+	return resVals
+}
+
 func (s *AppInstApi) RecordAppInstEvent(ctx context.Context, appInst *edgeproto.AppInst, event cloudcommon.InstanceEvent, serverStatus string) {
 	metric := edgeproto.Metric{}
 	metric.Name = cloudcommon.AppInstEvent
@@ -2266,9 +2301,9 @@ func (s *AppInstApi) RecordAppInstEvent(ctx context.Context, appInst *edgeproto.
 	}
 	metric.AddStringVal(cloudcommon.MetricTagDeployment, app.Deployment)
 
-	if app.Deployment == cloudcommon.DeploymentTypeVM {
-		metric.AddStringVal(cloudcommon.MetricTagFlavor, appInst.Flavor.Name)
-	}
+	resVals := s.sumRequestedAppInstResources(appInst)
+	metric.AddIntVal(cloudcommon.MetricTagRAM, resVals.GetInt(cloudcommon.ResourceRamMb))
+	metric.AddIntVal(cloudcommon.MetricTagVCPU, resVals.GetInt(cloudcommon.ResourceVcpus))
 	services.events.AddMetric(&metric)
 }
 

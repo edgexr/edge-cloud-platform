@@ -328,6 +328,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 		_, err := apis.appApi.CreateApp(ctx, &app)
 		require.Nil(t, err, "create App")
 	}
+	flavor := testutil.FlavorData()[0]
 
 	// Should be able to create a developer AppInst on the ClusterInst
 	streamOut := testutil.NewCudStreamoutAppInst(ctx)
@@ -338,6 +339,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	appinst.CloudletKey = cinst.CloudletKey
 	appinst.AppKey = appKey
 	appinst.ClusterKey = cinst.Key
+	appinst.Flavor = flavor.Key
 	err := apis.appInstApi.CreateAppInst(&appinst, streamOut)
 	require.Nil(t, err, "create AppInst")
 	checkReservedBy(t, ctx, api, &cinst.Key, appinst.Key.Organization)
@@ -350,7 +352,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	appinst2.CloudletKey = cinst.CloudletKey
 	appinst2.AppKey = appKey2
 	appinst2.ClusterKey = cinst.Key
-	appinst2.Flavor = appinst.Flavor
+	appinst2.Flavor = flavor.Key
 	require.NotEqual(t, appinst.Key.Organization, appinst2.Key.Organization)
 	err = apis.appInstApi.CreateAppInst(&appinst2, streamOut)
 	require.NotNil(t, err, "create AppInst on already reserved ClusterInst")
@@ -362,6 +364,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	appinst3.CloudletKey = cinst.CloudletKey
 	appinst3.AppKey = appKey3
 	appinst3.ClusterKey = cinst.Key
+	appinst3.Flavor = flavor.Key
 	require.Equal(t, appinst.Key.Organization, appinst3.Key.Organization)
 	err = apis.appInstApi.CreateAppInst(&appinst3, streamOut)
 	require.NotNil(t, err, "create AppInst on already reserved ClusterInst")
@@ -582,6 +585,7 @@ func getClusterInstMetricCounts(t *testing.T, ctx context.Context, clusterInst *
 	var nodeFlavor *edgeproto.FlavorInfo
 	var masterNodeFlavor *edgeproto.FlavorInfo
 	var lbFlavor *edgeproto.FlavorInfo
+	gpusUsed := uint64(0)
 	err = apis.clusterInstApi.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		existingCl := edgeproto.ClusterInst{}
 		found := apis.clusterInstApi.store.STMGet(stm, &clusterInst.Key, &existingCl)
@@ -597,8 +601,23 @@ func getClusterInstMetricCounts(t *testing.T, ctx context.Context, clusterInst *
 		require.True(t, found, "cloudlet info exists")
 
 		for _, flavor := range cloudletInfo.Flavors {
-			if flavor.Name == existingCl.NodeFlavor {
-				nodeFlavor = flavor
+			for _, pool := range existingCl.NodePools {
+				if pool.NodeResources == nil {
+					continue
+				}
+				if flavor.Name == pool.NodeResources.InfraNodeFlavor {
+					nodeFlavor = flavor
+					gpuCount := cloudcommon.NodeResourcesGPUCount(pool.NodeResources)
+					gpusUsed += uint64(pool.NumNodes) * gpuCount
+					break
+				}
+			}
+			if existingCl.NodeResources != nil {
+				if flavor.Name == existingCl.NodeResources.InfraNodeFlavor {
+					nodeFlavor = flavor
+					gpuCount := cloudcommon.NodeResourcesGPUCount(existingCl.NodeResources)
+					gpusUsed += gpuCount
+				}
 			}
 			if flavor.Name == existingCl.MasterNodeFlavor {
 				masterNodeFlavor = flavor
@@ -619,12 +638,9 @@ func getClusterInstMetricCounts(t *testing.T, ctx context.Context, clusterInst *
 		uint64(clusterInst.NumMasters)*masterNodeFlavor.Vcpus +
 		lbFlavor.Vcpus
 	externalIPsUsed := uint64(1) // 1 dedicated Flavor
-	gpusUsed := uint64(0)
-	if clusterInst.OptRes == "gpu" {
-		gpusUsed = uint64(clusterInst.NumNodes)
-		if clusterInst.NodeFlavor == clusterInst.MasterNodeFlavor {
-			gpusUsed += uint64(clusterInst.NumMasters)
-		}
+	if nodeFlavor == masterNodeFlavor && gpusUsed > 0 {
+		// master node also using gpus
+		gpusUsed += uint64(clusterInst.NumMasters)
 	}
 	flavorCnt := make(map[string]uint64)
 	if _, ok := flavorCnt[nodeFlavor.Name]; !ok {
@@ -696,7 +712,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 	obj.Flavor = testutil.FlavorData()[3].Key
 	err := apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err, "not enough resources available")
-	require.Contains(t, err.Error(), "Not enough")
+	require.Contains(t, err.Error(), "not enough resources available")
 
 	// create appinst
 	testutil.InternalAppCreate(t, apis.appApi, []edgeproto.App{
@@ -763,6 +779,16 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 	appInstObj := testutil.AppInstData()[0]
 	appInstObj.CloudletKey = clusterInstObj.CloudletKey
 	appInstObj.ClusterKey = clusterInstObj.Key
+	// must specify gpu in resource request to access gpu pool
+	appInstObj.KubernetesResources = &edgeproto.KubernetesResources{
+		GpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
+			TotalMemory: 20,
+			TotalOptRes: map[string]string{
+				"gpu": "pci:1", // matches cluster flavorData[4]
+			},
+		},
+	}
 	testutil.InternalAppInstCreate(t, apis.appInstApi, []edgeproto.AppInst{
 		appInstObj, testutil.AppInstData()[11],
 	})
@@ -781,13 +807,15 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		found = apis.cloudletRefsApi.store.STMGet(stm, &cloudletKey, &cloudletRefs)
 		require.True(t, found, "cloudlet refs exists")
 
-		allRes, err := apis.clusterInstApi.getAllCloudletResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletRefs)
+		usedRes, err := apis.clusterInstApi.getCloudletUsedResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletRefs)
 		require.Nil(t, err, "get all cloudlet resources")
 		clusters := make(map[edgeproto.ClusterKey]struct{})
 		resTypeVMAppCount := 0
-		for ii, res := range allRes {
+		for ii, res := range usedRes.vms {
 			if res.Key.Name == "" {
-				resTypeVMAppCount++
+				if res.Type == cloudcommon.NodeTypeAppVM.String() {
+					resTypeVMAppCount++
+				}
 				continue
 			}
 			existingCl := edgeproto.ClusterInst{}
@@ -795,7 +823,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 			require.True(t, found, "cluster inst %s from resources[%d] must exist", res.Key.GetKeyString(), ii)
 			clusters[res.Key] = struct{}{}
 		}
-		require.Equal(t, resTypeVMAppCount, 2, "two vm appinst resource exists")
+		require.Equal(t, 1, resTypeVMAppCount, "one vm appinst resource exists")
 		for _, ciRefKey := range cloudletRefs.ClusterInsts {
 			ciKey := ciRefKey
 			existingCl := edgeproto.ClusterInst{}
@@ -811,7 +839,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		for _, resInfo := range cloudletInfo.ResourcesSnapshot.Info {
 			infraResInfo[resInfo.Name] = resInfo
 		}
-		allResInfo, err := apis.cloudletApi.GetCloudletResourceInfo(ctx, stm, &cloudlet, allRes, infraResInfo)
+		allResInfo, err := apis.cloudletApi.totalCloudletResources(ctx, stm, &cloudlet, &cloudletInfo, usedRes, infraResInfo)
 		require.Nil(t, err)
 		// set quotas to what is currently being used
 		// so creating anything should trigger both quota warnings and
@@ -820,7 +848,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		for _, infraRes := range allResInfo {
 			quotas = append(quotas, edgeproto.ResourceQuota{
 				Name:           infraRes.Name,
-				Value:          infraRes.Value,
+				Value:          infraRes.Value.Whole,
 				AlertThreshold: 30,
 			})
 		}
@@ -835,43 +863,45 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		require.Nil(t, err, "found rootlb flavor")
 		clusterInst := testutil.ClusterInstData()[0]
 		clusterInst.NumMasters = 2
-		clusterInst.NumNodes = 2
+		clusterInst.MasterNodeFlavor = "flavor.large"
+		clusterInstFlavor := testutil.FlavorData()[4]
+		clusterInst.EnsureDefaultNodePool()
+		clusterInst.NodePools[0].SetFromFlavor(&clusterInstFlavor)
+		clusterInst.NodePools[0].NumNodes = 2
+		clusterInst.NodePools[0].NodeResources.InfraNodeFlavor = "flavor.large"
 		clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_DEDICATED
-		clusterInst.Flavor = testutil.FlavorData()[4].Key
-		clusterInst.NodeFlavor = "flavor.large"
-		nodeFlavorInfo, masterFlavorInfo, err := apis.clusterInstApi.getClusterFlavorInfo(ctx, stm, cloudletInfo.Flavors, &clusterInst)
-		require.Nil(t, err, "get cluster flavor info")
 		isManagedK8s := false // Master nodes & RootLB should be counted
-		ciResources, err := cloudcommon.GetClusterInstVMRequirements(ctx, &clusterInst, nodeFlavorInfo, masterFlavorInfo, lbFlavor, isManagedK8s)
-		require.Nil(t, err, "get cluster inst vm requirements")
+		ciResources := NewCloudletResources()
+		ciResources.AddClusterInstResources(ctx, &clusterInst, lbFlavor, isManagedK8s)
 		// number of vm resources = num_nodes + num_masters + num_of_rootLBs
-		require.Equal(t, 5, len(ciResources), "matches number of vm resources")
+		require.Equal(t, 5, ciResources.numVms, "matches number of vm resources")
 		numNodes := 0
 		numMasters := 0
 		numRootLB := 0
-		for _, res := range ciResources {
+		for _, res := range ciResources.vms {
 			if res.Type == cloudcommon.NodeTypeK8sClusterMaster.String() {
-				numMasters++
+				numMasters += int(res.Count)
 			} else if res.Type == cloudcommon.NodeTypeK8sClusterNode.String() {
-				numNodes++
+				numNodes += int(res.Count)
 			} else if res.Type == cloudcommon.NodeTypeDedicatedRootLB.String() {
-				numRootLB++
+				numRootLB += int(res.Count)
 			} else {
 				require.Fail(t, "invalid resource type", "type", res.Type)
 			}
 			require.Equal(t, res.Key, clusterInst.Key, "resource key matches cluster inst key")
 		}
 		require.Equal(t, numMasters, int(clusterInst.NumMasters), "resource type count matches")
-		require.Equal(t, numNodes, int(clusterInst.NumNodes), "resource type count matches")
+		require.Equal(t, numNodes, int(clusterInst.GetNumNodes()), "resource type count matches")
 		require.Equal(t, numRootLB, 1, "resource type count matches")
 
-		isManagedK8s = true // Master nodes & RootLB should not be counted
-		ciResources, err = cloudcommon.GetClusterInstVMRequirements(ctx, &clusterInst, nodeFlavorInfo, masterFlavorInfo, lbFlavor, isManagedK8s)
-		require.Nil(t, err, "get cluster inst vm requirements")
+		isManagedK8s = true // Master nodes not allowed & RootLB should not be counted
+		clusterInst.NumMasters = 0
+		ciResources = NewCloudletResources()
+		ciResources.AddClusterInstResources(ctx, &clusterInst, lbFlavor, isManagedK8s)
 		// number of vm resources = num_nodes
-		require.Equal(t, numNodes, len(ciResources), "matches number of vm resources")
+		require.Equal(t, 2, ciResources.numVms, "matches number of vm resources")
 
-		warnings, err := apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo.ResourcesSnapshot, allRes, ciResources)
+		warnings, err := apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletInfo.ResourcesSnapshot, usedRes, ciResources, nil)
 		require.NotNil(t, err, "not enough resource available error")
 		for _, resName := range []string{
 			cloudcommon.ResourceRamMb,
@@ -893,32 +923,33 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 			cloudcommon.ResourceDiskGb,
 			cloudcommon.ResourceGpus,
 			cloudcommon.ResourceInstances,
-			cloudcommon.ResourceExternalIPs,
 		} {
-			require.Contains(t, allWarnings, "More than 30% of "+resName+" is used by the cloudlet")
+			require.Contains(t, allWarnings, "more than 30% of "+resName+" is used by the cloudlet")
 		}
 
 		// test vm app inst resource requirements
 		appInst := testutil.AppInstData()[11]
-		appInst.Flavor = testutil.FlavorData()[4].Key
-		appInst.VmFlavor = "flavor.large"
-		vmAppResources, err := cloudcommon.GetVMAppRequirements(ctx, &testutil.AppData()[12], &appInst, cloudletInfo.Flavors, lbFlavor)
-		require.Nil(t, err, "get app inst vm requirements")
-		require.Equal(t, 2, len(vmAppResources), "matches number of vm resources")
+		//appInstFlavor := testutil.FlavorData()[4]
+		appInst.NodeResources = &edgeproto.NodeResources{}
+		//appInst.NodeResources.SetFromFlavor(&appInstFlavor)
+		appInst.NodeResources.InfraNodeFlavor = "flavor.large"
+		vmAppResources := NewCloudletResources()
+		vmAppResources.AddVMAppInstResources(ctx, &testutil.AppData()[12], &appInst, lbFlavor)
+		require.Equal(t, 2, len(vmAppResources.vms), "matches number of vm resources")
 		foundVMRes := false
 		foundVMRootLBRes := false
-		for _, vmRes := range vmAppResources {
+		for _, vmRes := range vmAppResources.vms {
 			if vmRes.Type == cloudcommon.NodeTypeAppVM.String() {
 				foundVMRes = true
 			} else if vmRes.Type == cloudcommon.NodeTypeDedicatedRootLB.String() {
 				foundVMRootLBRes = true
 			}
-			require.Equal(t, vmAppResources[0].Key, *appInst.GetClusterKey(), "resource key matches appinst's clusterinst key")
+			require.Equal(t, vmAppResources.vms[0].Key, *appInst.GetClusterKey(), "resource key matches appinst's clusterinst key")
 		}
 		require.True(t, foundVMRes, "resource type app vm found")
 		require.True(t, foundVMRootLBRes, "resource type vm rootlb found")
 
-		warnings, err = apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo.ResourcesSnapshot, allRes, vmAppResources)
+		warnings, err = apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletInfo.ResourcesSnapshot, usedRes, vmAppResources, nil)
 		require.NotNil(t, err, "not enough resource available")
 		for _, resName := range []string{
 			cloudcommon.ResourceRamMb,
@@ -939,7 +970,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 			cloudcommon.ResourceInstances,
 			cloudcommon.ResourceExternalIPs,
 		} {
-			require.Contains(t, allWarnings, "More than 30% of "+resName+" is used by the cloudlet")
+			require.Contains(t, allWarnings, "more than 30% of "+resName+" is used by the cloudlet")
 		}
 		return nil
 	})

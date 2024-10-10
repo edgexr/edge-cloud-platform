@@ -108,17 +108,20 @@ func (s *ClusterInstApi) validatePotentialCloudlet(ctx context.Context, cctx *Ca
 		return nil, NoSupportIPV6, errors.New(NoSupportIPV6)
 	}
 	if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
-		if features.NoClusterSupport && in.NumNodes != 0 {
+		if features.NoClusterSupport && len(in.NodePools) > 0 {
 			// Special case for k8s baremetal because multi-tenanancy is
 			// managed by the platform, not the Controller. There is no
 			// real cluster, just pods, so numnodes is not used. Once we
 			// consolidate the code so that the Controller manages it,
 			// then there will no longer be any ClusterInst object created
 			// (it will be AppInst only), so this check can be removed.
-			return nil, NoSupportNumNodes, errors.New(NoSupportNumNodes)
+			return nil, NoSupportNodePools, errors.New(NoSupportNodePools)
 		}
-		if features.KubernetesRequiresWorkerNodes && in.NumNodes == 0 {
-			return nil, RequiresNumNodes, errors.New(RequiresNumNodes)
+		if features.KubernetesRequiresWorkerNodes && len(in.NodePools) == 0 {
+			return nil, RequiresNodePools, errors.New(RequiresNodePools)
+		}
+		if !features.SupportsMultipleNodePools && len(in.NodePools) > 1 {
+			return nil, NoSupportMultipleNodePools, errors.New(NoSupportMultipleNodePools)
 		}
 	}
 	if in.MultiTenant && !features.SupportsMultiTenantCluster {
@@ -139,5 +142,6 @@ func (s *ClusterInstApi) validatePotentialCloudlet(ctx context.Context, cctx *Ca
 	}
 
 	pc.features = features
+	pc.flavorLookup = pc.cloudletInfo.GetFlavorLookup()
 	return pc, NoSkipReason, nil
 }

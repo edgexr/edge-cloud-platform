@@ -34,7 +34,7 @@ type ClusterCheckpoint struct {
 
 var ClusterUsageInfluxQueryTemplate = `SELECT %s from "%s" WHERE ` + getInfluxQueryWhere(cloudcommon.ClusterInstEventSelectors) + ` %sAND time >= '%s' AND time < '%s' order by time desc`
 
-func CreateClusterUsageRecord(ctx context.Context, cluster *edgeproto.ClusterInst, endTime time.Time) error {
+func (s *ClusterInstApi) CreateClusterUsageRecord(ctx context.Context, cluster *edgeproto.ClusterInst, endTime time.Time) error {
 	var metric *edgeproto.Metric
 	// query from the checkpoint up to the event
 	selectors := []string{"event", "status"}
@@ -48,7 +48,6 @@ func CreateClusterUsageRecord(ctx context.Context, cluster *edgeproto.ClusterIns
 	if err != nil {
 		return fmt.Errorf("unable to retrieve Checkpoint: %v", err)
 	}
-	fmt.Printf("got checkpoint: %+v\n", checkpoint)
 	influxLogQuery := fmt.Sprintf(ClusterUsageInfluxQueryTemplate,
 		cloudcommon.GetInfluxSelectFields(selectors),
 		cloudcommon.ClusterInstEvent,
@@ -74,13 +73,13 @@ func CreateClusterUsageRecord(ctx context.Context, cluster *edgeproto.ClusterIns
 	}
 
 	// write the usage record to influx
-	metric = createClusterUsageMetric(cluster, stats.start, stats.end, stats.upTime, stats.status)
+	metric = s.createClusterUsageMetric(cluster, stats.start, stats.end, stats.upTime, stats.status)
 
 	services.events.AddMetric(metric)
 	return nil
 }
 
-func createClusterUsageMetric(cluster *edgeproto.ClusterInst, startTime, endTime time.Time, runTime time.Duration, status string) *edgeproto.Metric {
+func (s *ClusterInstApi) createClusterUsageMetric(cluster *edgeproto.ClusterInst, startTime, endTime time.Time, runTime time.Duration, status string) *edgeproto.Metric {
 	metric := edgeproto.Metric{}
 	metric.Name = cloudcommon.ClusterInstCheckpoints
 	ts, _ := types.TimestampProto(endTime)
@@ -90,10 +89,15 @@ func createClusterUsageMetric(cluster *edgeproto.ClusterInst, startTime, endTime
 	startUTC := startTime.In(utc)
 	endUTC := endTime.In(utc)
 
+	resInfo := s.sumRequestedClusterResources(cluster)
+
 	metric.AddKeyTags(&cluster.Key)
-	metric.AddStringVal("flavor", cluster.Flavor.Name)
-	metric.AddIntVal("nodecount", uint64(cluster.NumMasters+cluster.NumNodes))
-	metric.AddStringVal("ipaccess", cluster.IpAccess.String())
+	metric.AddIntVal(cloudcommon.MetricTagRAM, resInfo.GetInt(cloudcommon.ResourceRamMb))
+	metric.AddIntVal(cloudcommon.MetricTagVCPU, resInfo.GetInt(cloudcommon.ResourceVcpus))
+	metric.AddIntVal(cloudcommon.MetricTagDisk, resInfo.GetInt(cloudcommon.ResourceDiskGb))
+	metric.AddIntVal(cloudcommon.MetricTagGPUs, resInfo.GetInt(cloudcommon.ResourceGpus))
+	metric.AddIntVal(cloudcommon.MetricTagNodeCount, resInfo.GetInt(cloudcommon.ResourceInstances))
+	metric.AddStringVal(cloudcommon.MetricTagIpAccess, cluster.IpAccess.String())
 	metric.AddStringVal("start", startUTC.Format(time.RFC3339))
 	metric.AddStringVal("end", endUTC.Format(time.RFC3339))
 	metric.AddDoubleVal("uptime", runTime.Seconds())
@@ -165,7 +169,7 @@ func (s *ClusterInstApi) CreateClusterCheckpoint(ctx context.Context, timestamp 
 					continue
 				}
 				//record the usage up to this point
-				err = CreateClusterUsageRecord(ctx, &info, timestamp)
+				err = s.CreateClusterUsageRecord(ctx, &info, timestamp)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to create cluster usage record of checkpointed cluster", "cluster", key, "err", err)
 				}
@@ -210,7 +214,7 @@ func (s *ClusterInstApi) CreateClusterCheckpoint(ctx context.Context, timestamp 
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Could not find clusterinst even though event log indicates it is up", "cluster", key)
 			continue
 		}
-		err = CreateClusterUsageRecord(ctx, &info, timestamp)
+		err = s.CreateClusterUsageRecord(ctx, &info, timestamp)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Unable to create cluster usage record of checkpointed cluster", "cluster", key, "err", err)
 		}
