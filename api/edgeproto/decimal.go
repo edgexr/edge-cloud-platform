@@ -135,6 +135,7 @@ func (a *Udec64) SubFloor(b *Udec64, underflow *bool) {
 		a.Whole = 0
 		a.Nanos = 0
 		*underflow = true
+		return
 	}
 	a.Sub(b)
 }
@@ -152,7 +153,7 @@ func (a *Udec64) Uint64() uint64 {
 	return a.Whole
 }
 
-// Ceil returns the least integer value greater than or equal
+// Ceil returns the least integer value greater than or equal to
 // the current value.
 func (a *Udec64) Ceil() uint64 {
 	if a.Nanos == 0 {
@@ -161,7 +162,7 @@ func (a *Udec64) Ceil() uint64 {
 	return a.Whole + 1
 }
 
-// Float returns the value as a float for floating point math
+// Float returns the value as a float64.
 func (a *Udec64) Float() float64 {
 	return float64(a.Whole) + float64(a.Nanos)/float64(DecWhole)
 }

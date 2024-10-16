@@ -1234,6 +1234,10 @@ func NodePoolsFeature(ctx context.Context, objStore objstore.KVStore, allApis *A
 		if err != nil {
 			return err
 		}
+		if appInst.NodeResources != nil {
+			appInst.NodeResources.InfraNodeFlavor = appInst.VmFlavor
+			appInst.NodeResources.ExternalVolumeSize = appInst.ExternalVolumeSize
+		}
 		allApis.appInstApi.store.STMPut(stm, appInst)
 		return nil
 	})

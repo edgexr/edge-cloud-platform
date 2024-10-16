@@ -663,6 +663,7 @@ func ClusterInstData() []edgeproto.ClusterInst {
 	devData := DevData()
 	flavorData := FlavorData()
 	cloudletData := CloudletData()
+	cloudletInfoData := CloudletInfoData()
 	zoneData := ZoneData()
 	autoScalePolicyData := AutoScalePolicyData()
 	return []edgeproto.ClusterInst{{ // 0
@@ -777,7 +778,7 @@ func ClusterInstData() []edgeproto.ClusterInst {
 		Flavor:           flavorData[0].Key,
 		IpAccess:         edgeproto.IpAccess_IP_ACCESS_SHARED,
 		NumMasters:       1,
-		MasterNodeFlavor: flavorData[2].Key.Name, // medium
+		MasterNodeFlavor: cloudletInfoData[0].Flavors[3].Name, // flavor.medium
 		MultiTenant:      true,
 		NodePools: []*edgeproto.NodePool{{
 			Name:     "cpupool",

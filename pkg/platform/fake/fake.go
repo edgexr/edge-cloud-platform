@@ -379,7 +379,11 @@ func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto
 		rt := &edgeproto.AppInstRuntime{}
 		for _, pool := range clusterInst.NodePools {
 			for ii := uint32(0); ii < pool.NumNodes; ii++ {
-				rt.ContainerIds = append(rt.ContainerIds, fmt.Sprintf("appOnClusterNode-%s-%d", pool.Name, ii))
+				poolTag := "-" + pool.Name
+				if pool.Name == edgeproto.DefaultNodePoolName {
+					poolTag = ""
+				}
+				rt.ContainerIds = append(rt.ContainerIds, fmt.Sprintf("appOnClusterNode%s%d", poolTag, ii))
 			}
 		}
 		return rt, nil

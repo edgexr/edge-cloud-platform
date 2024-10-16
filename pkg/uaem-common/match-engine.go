@@ -1126,7 +1126,8 @@ func (s *searchAppInst) searchPolicyCloudlets(ctx context.Context, key *edgeprot
 		}
 		freeInst := false
 		// check for free reservable ClusterInst
-		if DmeAppTbl.FreeReservableClusterInsts.GetForCloudlet(ctx, &clkey, s.appDeployment, s.appKubernetesResources, s.appNodeResources, cloudcommon.AppInstToClusterDeployment) != nil {
+		freeClusts := DmeAppTbl.FreeReservableClusterInsts.GetForCloudlet(ctx, &clkey, s.appDeployment, s.appKubernetesResources, s.appNodeResources, cloudcommon.AppInstToClusterDeployment)
+		if len(freeClusts) > 0 {
 			freeInst = true
 		}
 		// controller will look for existing ClusterInst or create new one.

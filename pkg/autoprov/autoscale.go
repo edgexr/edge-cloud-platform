@@ -78,8 +78,9 @@ func getClusterInstToScale(ctx context.Context, name string, alert *edgeproto.Al
 	inst.CloudletKey.Organization = alert.Labels[edgeproto.CloudletKeyTagOrganization]
 	if name == cloudcommon.AlertClusterAutoScale {
 		// new v1 scaling alert
-		inst.EnsureDefaultNodePool()
-		inst.NodePools[0].NumNodes = uint32(alert.Value)
+		// Use ClusterInst.NumNodes so we don't have to figure
+		// out the pool name
+		inst.NumNodes = uint32(alert.Value)
 	}
 	inst.Fields = []string{edgeproto.ClusterInstFieldNumNodes}
 	return &inst, nil

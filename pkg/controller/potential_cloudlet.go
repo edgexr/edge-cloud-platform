@@ -52,7 +52,6 @@ const (
 	UnsupportedImageType                   = "site does not support app image type"
 	NoSupportClusterInst                   = "site only supports AppInst creates"
 	NoSupportSharedVolumes                 = "site does not support shared volumes"
-	NoSupportNodePools                     = "site does not support clusters with node pools"
 	RequiresNodePools                      = "site requires at least one node pool"
 	NoSupportMultiTenantCluster            = "site does not support multi-tenant clusters"
 	NoSupportNetworks                      = "site does not support additional networks"

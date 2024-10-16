@@ -170,7 +170,8 @@ func (s *ServerlessConfig) ToKubernetesResources() *KubernetesResources {
 func (s *ClusterInst) EnsureDefaultNodePool() {
 	if len(s.NodePools) == 0 {
 		s.NodePools = []*NodePool{{
-			Name: DefaultNodePoolName,
+			Name:          DefaultNodePoolName,
+			NodeResources: &NodeResources{},
 		}}
 	}
 }

@@ -100,7 +100,7 @@ message ClusterInst {
   // (_deprecated_) Replaced by NodePools.NumNodes. Number of k8s nodes (In case of docker deployment, this field is not required)
   uint32 num_nodes = 14;
   // StatusInfo (16) (Deprecated) status is used to reflect progress of creation or other events
-
+  reserved 16;
   // (_deprecated_) Replaced by NodePools.ExternalVolumeSize. Size of external volume to be attached to nodes. This is for the root partition
   uint64 external_volume_size = 17 [(protogen.backend) = true];
   // Auto scale policy name

@@ -255,17 +255,6 @@ func (s *ClusterInstApi) validateCloudletInfraResources(ctx context.Context, stm
 		return nil, err
 	}
 
-	/*
-		reqdResInfo, err := s.all.cloudletApi.convertResourceInfo(ctx, stm, cloudlet, cloudletInfo, reqdResources, infraResInfo)
-		if err != nil {
-			return nil, err
-		}
-
-		usedResInfo, err := s.all.cloudletApi.convertResourceInfo(ctx, stm, cloudlet, cloudletInfo, usedResources, infraResInfo)
-		if err != nil {
-			return nil, err
-		}
-	*/
 	if subtractReqdResources != nil {
 		// this will be set when updating a cluster inst, and
 		// will be the old state of the cluster resources.
@@ -300,11 +289,6 @@ func (s *ClusterInstApi) validateCloudletInfraResources(ctx context.Context, stm
 			// no validation can be done
 			continue
 		}
-		resReqd, ok := reqdVals[resName]
-		if !ok {
-			// this resource is not tracked by controller, skip it
-			continue
-		}
 		if resInfo.QuotaMaxValue > 0 && resInfo.InfraMaxValue > 0 {
 			if resInfo.QuotaMaxValue > resInfo.InfraMaxValue {
 				warnings = append(warnings, fmt.Sprintf("[quota] invalid quota set for %s, quota max value %d is more than infra max value %d", resName, resInfo.QuotaMaxValue, resInfo.InfraMaxValue))
@@ -316,8 +300,12 @@ func (s *ClusterInstApi) validateCloudletInfraResources(ctx context.Context, stm
 		} else {
 			thAvailableResVal = max - resInfo.Value
 		}
-		if float64(resInfo.Value*100)/float64(max) > float64(resInfo.AlertThreshold) {
-			warnings = append(warnings, fmt.Sprintf("more than %d%% of %s is used by the cloudlet", resInfo.AlertThreshold, resName))
+		if resInfo.AlertThreshold > 0 && float64(resInfo.Value*100)/float64(max) > float64(resInfo.AlertThreshold) {
+			warnings = append(warnings, fmt.Sprintf("more than %d%% of %s (%d%s of %d%s) is used by the cloudlet", resInfo.AlertThreshold, resName, resInfo.Value, resInfo.Units, max, resInfo.Units))
+		}
+		resReqd, ok := reqdVals[resName]
+		if !ok {
+			continue
 		}
 		if resReqd.Value.GreaterThanUint64(thAvailableResVal) {
 			errsStr = append(errsStr, fmt.Sprintf("required %s is %s%s but only %d%s out of %d%s is available", resName, resReqd.Value.String(), resInfo.Units, thAvailableResVal, resInfo.Units, max, resInfo.Units))
@@ -355,14 +343,14 @@ func (s *ClusterInstApi) validateCloudletInfraResources(ctx context.Context, stm
 				resInfo.AlertThreshold = quota.AlertThreshold
 			}
 		}
+		infraAvailableResVal := resInfo.InfraMaxValue - resInfo.Value
+		if resInfo.AlertThreshold > 0 && float64(resInfo.Value*100)/float64(resInfo.InfraMaxValue) > float64(resInfo.AlertThreshold) {
+			warnings = append(warnings, fmt.Sprintf("more than %d%% of %s (%d%s of %d%s) is used on the infra managed by the cloudlet", resInfo.AlertThreshold, resName, resInfo.Value, resInfo.Units, resInfo.InfraMaxValue, resInfo.Units))
+		}
 		resReqd, ok := reqdVals[resName]
 		if !ok {
 			// this resource is not tracked by controller, skip it
 			continue
-		}
-		infraAvailableResVal := resInfo.InfraMaxValue - resInfo.Value
-		if float64(resInfo.Value*100)/float64(resInfo.InfraMaxValue) > float64(resInfo.AlertThreshold) {
-			warnings = append(warnings, fmt.Sprintf("more than %d%% of %s is used on the infra managed by the cloudlet", resInfo.AlertThreshold, resName))
 		}
 		if resReqd.Value.GreaterThanUint64(infraAvailableResVal) {
 			errsStr = append(errsStr, fmt.Sprintf("required %s is %s%s but only %d%s out of %d%s is available", resName, resReqd.Value.String(), resInfo.Units, infraAvailableResVal, resInfo.Units, resInfo.InfraMaxValue, resInfo.Units))
@@ -563,6 +551,7 @@ func (s *ClusterInstApi) getCloudletUsedResources(ctx context.Context, stm concu
 }
 
 func (s *ClusterInstApi) handleResourceUsageAlerts(ctx context.Context, stm concurrency.STM, key *edgeproto.CloudletKey, warnings []string) {
+	log.SpanLog(ctx, log.DebugLevelApi, "handle resource usage alerts", "cloudlet", key, "warnings", warnings)
 	alerts := cloudcommon.CloudletResourceUsageAlerts(ctx, key, warnings)
 	staleAlerts := make(map[edgeproto.AlertKey]struct{})
 	s.all.alertApi.cache.GetAllKeys(ctx, func(k *edgeproto.AlertKey, modRev int64) {
@@ -592,6 +581,12 @@ func (s *ClusterInstApi) handleResourceUsageAlerts(ctx context.Context, stm conc
 	}
 }
 
+// validateResources checks that adding either the specified clusterInst
+// or the specified VM AppInst to the cloudlet is allowed given the
+// available resources in the cloudlet. This function is also used
+// for clusterInst update, in which case the oldClusterInst will also
+// be specified, so we can diff the resources between the desired and
+// the old clusterInst resources.
 func (s *ClusterInstApi) validateResources(ctx context.Context, stm concurrency.STM, clusterInst, oldClusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletRefs *edgeproto.CloudletRefs, genAlerts GenerateResourceAlerts) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validate resources", "cloudlet", cloudlet.Key, "clusterinst", clusterInst, "appinst", appInst, "app", app)
 	lbFlavor, err := s.GetRootLBFlavorInfo(ctx, stm, cloudlet, cloudletInfo)
@@ -986,7 +981,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 				// to support multiple optional resources from
 				// multiple node pools.
 				if in.OptRes != "" && optRes != in.OptRes {
-					return fmt.Errorf("cluster currently only supports a single cluster-wide optional resource")
+					return fmt.Errorf("cluster currently only supports a single cluster-wide optional resource, but have both %q and %q", in.OptRes, optRes)
 				}
 				if in.AvailabilityZone != "" && az != in.AvailabilityZone {
 					return fmt.Errorf("availability zone mismatch, flavors selected from both %s and %s zones", in.AvailabilityZone, az)
@@ -1004,36 +999,47 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 			in.AvailabilityZone = az
 			log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Node Flavor", "res", in.NodeResources)
 		}
-		// check if MasterNodeFlavor required
-		if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
-			if len(in.NodePools) == 0 {
-				// if numnodes is 0, then developer will run its application on master node.
-				// Hence master node flavor should match user given flavor i.e. node flavor
-				in.MasterNodeFlavor = in.NodePools[0].NodeResources.InfraNodeFlavor
-			} else {
+		// Handle control (master) node specification
+		// Note for platforms that manage the control nodes themselves
+		// like Azure AKS, etc, we don't need to configure any master
+		// node resources.
+		if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.ManagesK8SControlNodes && !features.NoClusterSupport {
+			// For platforms that do not manage the master nodes,
+			// we need to set the master node flavor so we can create
+			// the master nodes.
+			// Note: temporarily drop support for running workloads on
+			// master nodes. To do so we should allow one of the user
+			// specified node pools to become the master pool.
+			// That requires more work in the platform code to support
+			// such a change and allow for more than 1 master node.
+			var masterNodeResources *edgeproto.NodeResources
+			settings := s.all.settingsApi.Get()
+			if settings.MasterNodeFlavor != "" {
 				masterFlavor := edgeproto.Flavor{}
 				masterFlavorKey := edgeproto.FlavorKey{}
-				settings := s.all.settingsApi.Get()
 				masterFlavorKey.Name = settings.MasterNodeFlavor
-
 				if s.all.flavorApi.store.STMGet(stm, &masterFlavorKey, &masterFlavor) {
-					log.SpanLog(ctx, log.DebugLevelApi, "MasterNodeFlavor found ", "MasterNodeFlavor", settings.MasterNodeFlavor)
-					nodeResources := masterFlavor.ToNodeResources()
-					vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, nodeResources, in.MasterNodeFlavor, cloudlet, info)
-					if err != nil {
-						// Unlikely with reasonably modest settings.MasterNodeFlavor sized flavor
-						log.SpanLog(ctx, log.DebugLevelApi, "Error K8s Master Node Flavor matches no eixsting OS flavor", "nodeFlavor", in.NodeFlavor)
-						return err
-					} else {
-						in.MasterNodeFlavor = vmspec.FlavorName
-						log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Master Node Flavor", "vmspec", vmspec, "master flavor", in.MasterNodeFlavor)
-					}
+					masterNodeResources = masterFlavor.ToNodeResources()
 				} else {
-					// should never be non empty and not found due to validation in update
-					// revert to using NodeFlavor (pre EC-1767) and log warning
-					in.MasterNodeFlavor = in.NodePools[0].NodeResources.InfraNodeFlavor
-					log.SpanLog(ctx, log.DebugLevelApi, "Warning : Master Node Flavor does not exist using", "master flavor", in.MasterNodeFlavor)
+					return fmt.Errorf("default master node flavor %q in settings is not found, please contact your administrator", settings.MasterNodeFlavor)
 				}
+			} else {
+				log.SpanLog(ctx, log.DebugLevelApi, "using default master node resources")
+				// no master node flavor specified by admin, just
+				// use minimum resources.
+				masterNodeResources = &edgeproto.NodeResources{
+					Vcpus: 1,
+					Ram:   2048,
+					Disk:  10,
+				}
+			}
+			log.SpanLog(ctx, log.DebugLevelApi, "lookup infra flavor for master nodes", "in.MasterNodeFlavor", in.MasterNodeFlavor, "settings.MasterNodeFlavor", settings.MasterNodeFlavor, "nodeResources", masterNodeResources)
+			vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, masterNodeResources, in.MasterNodeFlavor, cloudlet, info)
+			if err != nil {
+				return fmt.Errorf("failed to get infra flavor for default master node resources %v, %s, please contact your administrator", masterNodeResources, err)
+			} else {
+				in.MasterNodeFlavor = vmspec.FlavorName
+				log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Master Node Flavor", "vmspec", vmspec, "master flavor", in.MasterNodeFlavor)
 			}
 		}
 
@@ -2289,7 +2295,7 @@ func (s *ClusterInstApi) setInfraFlavor(ctx context.Context, stm concurrency.STM
 func setClusterResourcesForReqs(ctx context.Context, ci *edgeproto.ClusterInst, app *edgeproto.App, ai *edgeproto.AppInst) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "set cluster resources", "ci", ci.Key, "app", app.Key, "ai", ai.Key)
 	if cloudcommon.AppDeploysToKubernetes(app.Deployment) {
-		nodePools, err := GetKubernetesResourcesFromReqs(ctx, ai.KubernetesResources)
+		nodePools, err := GetNodePoolsFromReqs(ctx, ai.KubernetesResources)
 		if err != nil {
 			return err
 		}
@@ -2307,6 +2313,10 @@ func setClusterResourcesForReqs(ctx context.Context, ci *edgeproto.ClusterInst, 
 // FitsAppResources check if the clusterInst's configuration
 // satisfies the App's resource requirements.
 func (s *ClusterInstApi) fitsAppResources(ctx context.Context, ci *edgeproto.ClusterInst, refs *edgeproto.ClusterRefs, app *edgeproto.App, appInst *edgeproto.AppInst, flavorLookup edgeproto.FlavorLookup) error {
+	if cloudcommon.IsSideCarApp(app) {
+		// we don't count sidecar apps for resource calculations.
+		return nil
+	}
 	if cloudcommon.AppDeploysToKubernetes(app.Deployment) {
 		cpuUsed, gpuUsed, err := s.calcKubernetesClusterUsedResources(refs, appInst)
 		if err != nil {

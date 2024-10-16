@@ -1150,6 +1150,8 @@ func (s *AppApi) tryDeployApp(ctx context.Context, stm concurrency.STM, app *edg
 		// see if we can create a new ClusterInst
 		targetCluster := edgeproto.ClusterInst{}
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
+			// TODO: this is wrong, MasterNodeFlavor is the infra
+			// specific flavor.
 			targetCluster.MasterNodeFlavor = s.all.settingsApi.Get().MasterNodeFlavor
 		}
 		targetCluster.NodeFlavor = app.DefaultFlavor.Name

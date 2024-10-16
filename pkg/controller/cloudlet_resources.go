@@ -50,11 +50,10 @@ func (s *CloudletResources) AddRes(clusterKey *edgeproto.ClusterKey, nr *edgepro
 		// quantized to platform flavor
 		s.AddFlavor(clusterKey, nr.InfraNodeFlavor, nodeType, count)
 	} else {
-		resVals, err := resspec.NodeResourcesToResValMap(nr)
+		err := s.nonFlavorVals.AddNodeResources(nr, count)
 		if err != nil {
 			return err
 		}
-		s.nonFlavorVals.AddAllMult(resVals, count)
 	}
 	return nil
 }

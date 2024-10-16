@@ -77,6 +77,7 @@ func TestClusterInstApi(t *testing.T) {
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
 	testutil.InternalAutoScalePolicyCreate(t, apis.autoScalePolicyApi, testutil.AutoScalePolicyData())
+	setTestMasterNodeFlavorSetting(t, ctx, apis)
 
 	// Set responder to fail. This should clean up the object after
 	// the fake crm returns a failure. If it doesn't, the next test to
@@ -719,15 +720,6 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		testutil.AppData()[0], testutil.AppData()[12],
 	})
 
-	// Update settings to empty master node flavor, so that we can use GPU flavor for master node
-	apis.settingsApi.initDefaults(ctx)
-	settings, err := apis.settingsApi.ShowSettings(ctx, &edgeproto.Settings{})
-	require.Nil(t, err)
-	settings.MasterNodeFlavor = ""
-	settings.Fields = []string{edgeproto.SettingsFieldMasterNodeFlavor}
-	_, err = apis.settingsApi.UpdateSettings(ctx, settings)
-	require.Nil(t, err)
-
 	// get resource usage before clusterInst creation
 	cloudletData := testutil.CloudletData()
 	oldResUsage := getMetricCounts(t, ctx, &cloudletData[0], apis)
@@ -924,7 +916,8 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 			cloudcommon.ResourceGpus,
 			cloudcommon.ResourceInstances,
 		} {
-			require.Contains(t, allWarnings, "more than 30% of "+resName+" is used by the cloudlet")
+			rx := "more than 30% of " + resName + " (.*?) is used by the cloudlet"
+			require.Regexp(t, regexp.MustCompile(rx), allWarnings)
 		}
 
 		// test vm app inst resource requirements
@@ -970,7 +963,8 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 			cloudcommon.ResourceInstances,
 			cloudcommon.ResourceExternalIPs,
 		} {
-			require.Contains(t, allWarnings, "more than 30% of "+resName+" is used by the cloudlet")
+			rx := "more than 30% of " + resName + " (.*?) is used by the cloudlet"
+			require.Regexp(t, regexp.MustCompile(rx), allWarnings)
 		}
 		return nil
 	})
@@ -1030,6 +1024,7 @@ func TestDefaultMTCluster(t *testing.T) {
 
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
 	testutil.InternalFlavorTest(t, "cud", apis.flavorApi, testutil.FlavorData())
+	setTestMasterNodeFlavorSetting(t, ctx, apis)
 
 	cloudlet := testutil.CloudletData()[0]
 	cloudlet.EnableDefaultServerlessCluster = true
@@ -1120,4 +1115,16 @@ func testClusterInstGPUFlavor(t *testing.T, ctx context.Context, apis *AllApis) 
 	verbose = true
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err, "create cluster inst with vgpu flavor on vgpu cloudlet")
+}
+
+func setTestMasterNodeFlavorSetting(t *testing.T, ctx context.Context, apis *AllApis) {
+	// set default master node flavor
+	// this is not required, but having at least one test do this
+	// exercises that code path.
+	flavors := testutil.FlavorData()
+	settings := apis.settingsApi.Get()
+	settings.MasterNodeFlavor = flavors[0].Key.Name
+	settings.Fields = []string{edgeproto.SettingsFieldMasterNodeFlavor}
+	_, err := apis.settingsApi.UpdateSettings(ctx, settings)
+	require.Nil(t, err)
 }

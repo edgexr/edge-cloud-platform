@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
@@ -46,10 +47,16 @@ func TestCalcKubernetesClusterUsedResources(t *testing.T) {
 	sync := regiondata.InitSync(&dummy)
 	apis := NewAllApis(sync)
 
+	app := edgeproto.App{}
+	app.Key.Name = "testApp"
+	app.Deployment = cloudcommon.DeploymentTypeKubernetes
+	apis.appApi.cache.Update(ctx, &app, 0)
+
 	// create some app insts
 	for ii := 1; ii <= 5; ii++ {
 		ai := edgeproto.AppInst{}
 		ai.Key.Name = fmt.Sprintf("c%d", ii)
+		ai.AppKey = app.Key
 		ai.KubernetesResources = &edgeproto.KubernetesResources{
 			CpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(uint64(ii), 0),
@@ -61,6 +68,7 @@ func TestCalcKubernetesClusterUsedResources(t *testing.T) {
 
 		ai2 := edgeproto.AppInst{}
 		ai2.Key.Name = fmt.Sprintf("g%d", ii)
+		ai2.AppKey = app.Key
 		ai2.KubernetesResources = &edgeproto.KubernetesResources{
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(uint64(ii), 0),

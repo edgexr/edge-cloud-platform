@@ -719,12 +719,13 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 		if !cloudcommon.IsClusterInstReqd(&app) {
 			// select infra flavor for VM AppInst
-			az, _, err := s.all.clusterInstApi.setInfraFlavor(ctx, stm, &cloudlet, &info, in.NodeResources)
+			az, optRes, err := s.all.clusterInstApi.setInfraFlavor(ctx, stm, &cloudlet, &info, in.NodeResources)
 			if err != nil {
 				return err
 			}
 			log.SpanLog(ctx, log.DebugLevelApi, "selected VM AppInst infra node flavor", "flavor", in.NodeResources.InfraNodeFlavor, "availabilityzone", az)
 			in.AvailabilityZone = az
+			in.OptRes = optRes
 		}
 
 		in.Revision = app.Revision
@@ -924,10 +925,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			clusterInst.Deployment = cloudcommon.DeploymentTypeKubernetes
 			clusterInst.NumMasters = 1
 			clusterInst.EnableIpv6 = false
-			if cloudletFeatures.NoClusterSupport {
-				log.SpanLog(ctx, log.DebugLevelApi, "removing node pools as platform does not support clusters", "platform", cloudletFeatures.PlatformType)
-				clusterInst.NodePools = nil
-			}
 		}
 		clusterInst.Liveness = edgeproto.Liveness_LIVENESS_DYNAMIC
 		createStart := time.Now()

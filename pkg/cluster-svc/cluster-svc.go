@@ -121,7 +121,7 @@ var MEXPrometheusApp = edgeproto.App{
 	Annotations:   "version=47.5.0",
 	KubernetesResources: &edgeproto.KubernetesResources{
 		CpuPool: &edgeproto.NodePoolResources{
-			TotalVcpus:  *edgeproto.NewUdec64(0, 300),
+			TotalVcpus:  *edgeproto.NewUdec64(0, 300*edgeproto.DecMillis),
 			TotalMemory: 400,
 		},
 	},

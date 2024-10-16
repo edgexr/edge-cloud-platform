@@ -21,6 +21,7 @@ import (
 	math "math"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 )
 
@@ -28,35 +29,54 @@ import (
 // Resources may be set by node resources for docker clusters,
 // or cpu/gpu pools for Kubernetes clusters.
 
+// Calculate used resources within a kubernetes cluster.
+// If a newAppInst is being created, we will ignore it if it's
+// already in the refs due to an earlier failed create.
 func (s *ClusterInstApi) calcKubernetesClusterUsedResources(refs *edgeproto.ClusterRefs, newAppInst *edgeproto.AppInst) (resspec.ResValMap, resspec.ResValMap, error) {
 	// calculate resources already allocated in a cluster
 	cpuPoolVals := resspec.ResValMap{}
 	gpuPoolVals := resspec.ResValMap{}
-	err := s.walkClusterAppInsts(refs, newAppInst, func(appInst *edgeproto.AppInst) error {
+	err := s.walkClusterAppInsts(refs, newAppInst, func(app *edgeproto.App, appInst *edgeproto.AppInst) error {
 		if appInst.KubernetesResources == nil {
 			return nil
 		}
+		if cloudcommon.IsSideCarApp(app) {
+			// ignore sidecar apps for resource calculation, as
+			// reservable clusterinsts don't take them into account
+			// when being sized for an App.
+			return nil
+		}
 		kr := appInst.KubernetesResources
-		cpuPoolVals.AddNodePoolResources(kr.CpuPool)
-		gpuPoolVals.AddNodePoolResources(kr.GpuPool)
+		if err := cpuPoolVals.AddNodePoolResources(kr.CpuPool); err != nil {
+			return err
+		}
+		if err := gpuPoolVals.AddNodePoolResources(kr.GpuPool); err != nil {
+			return err
+		}
 		return nil
 	})
 	return cpuPoolVals, gpuPoolVals, err
 }
 
+// Calculate used resources within a VM-based cluster.
+// If a newAppInst is being created, we will ignore it if it's
+// already in the refs due to an earlier failed create.
 func (s *ClusterInstApi) calcVMClusterUsedResources(refs *edgeproto.ClusterRefs, newAppInst *edgeproto.AppInst) (resspec.ResValMap, error) {
 	resVals := resspec.ResValMap{}
-	err := s.walkClusterAppInsts(refs, newAppInst, func(appInst *edgeproto.AppInst) error {
+	err := s.walkClusterAppInsts(refs, newAppInst, func(app *edgeproto.App, appInst *edgeproto.AppInst) error {
 		if appInst.NodeResources == nil {
 			return nil
 		}
-		resVals.AddNodeResources(appInst.NodeResources, 1)
+		if err := resVals.AddNodeResources(appInst.NodeResources, 1); err != nil {
+			return err
+		}
 		return nil
 	})
 	return resVals, err
 }
 
-func (s *ClusterInstApi) walkClusterAppInsts(refs *edgeproto.ClusterRefs, newAppInst *edgeproto.AppInst, cb func(appInst *edgeproto.AppInst) error) error {
+// helper function to walk the appInsts referenced by clusterRefs.
+func (s *ClusterInstApi) walkClusterAppInsts(refs *edgeproto.ClusterRefs, newAppInst *edgeproto.AppInst, cb func(app *edgeproto.App, appInst *edgeproto.AppInst) error) error {
 	for _, aikey := range refs.Apps {
 		if newAppInst != nil && newAppInst.Key.Matches(&aikey) {
 			// when running create again to clear a create error,
@@ -68,16 +88,20 @@ func (s *ClusterInstApi) walkClusterAppInsts(refs *edgeproto.ClusterRefs, newApp
 		if !s.all.appInstApi.cache.Get(&aikey, &appInst) {
 			return aikey.NotFoundError()
 		}
-		if err := cb(&appInst); err != nil {
+		app := edgeproto.App{}
+		if !s.all.appApi.cache.Get(&appInst.AppKey, &app) {
+			return appInst.AppKey.NotFoundError()
+		}
+		if err := cb(&app, &appInst); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// GetKubernetesResourcesFromReqs derives an autocluster cluster size
-// from the AppInst resource requirements.
-func GetKubernetesResourcesFromReqs(ctx context.Context, kr *edgeproto.KubernetesResources) ([]*edgeproto.NodePool, error) {
+// GetNodePoolsFromReqs derives a Kuberentes autocluster
+// cluster size from the AppInst resource requirements.
+func GetNodePoolsFromReqs(ctx context.Context, kr *edgeproto.KubernetesResources) ([]*edgeproto.NodePool, error) {
 	if kr == nil {
 		return nil, errors.New("missing kubernetes resource definition")
 	}
@@ -93,6 +117,8 @@ func GetKubernetesResourcesFromReqs(ctx context.Context, kr *edgeproto.Kubernete
 	return nodePools, nil
 }
 
+// GetNodeResourcesFromReqs derives a VM autocluster size from
+// the AppInst resource requirements.
 func GetNodeResourcesFromReqs(ctx context.Context, nr *edgeproto.NodeResources) (*edgeproto.NodeResources, error) {
 	if nr == nil {
 		return nil, errors.New("missing node resources definition")

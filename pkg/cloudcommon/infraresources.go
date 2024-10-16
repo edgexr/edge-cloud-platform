@@ -176,9 +176,9 @@ func ValidateCloudletResourceQuotas(ctx context.Context, quotaProps []edgeproto.
 		if infraRes.InfraMaxValue > 0 && resQuota.Value > infraRes.InfraMaxValue {
 			return fmt.Errorf("Resource quota %s exceeded max supported value: %d", resQuota.Name, infraRes.InfraMaxValue)
 		}
-		// Note: not a failure if currently used value exceeds quota.
-		// It just means no more resources can be consumed until
-		// current value drops below quota.
+		// Note: not a failure if the currently used value exceeds the quota.
+		// It just means no more resources can be consumed until the
+		// current value drops below the quota.
 		// Also, curRes has the current value as reported by the
 		// infrastructure. But not all infras may report the current
 		// usage.

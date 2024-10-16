@@ -181,8 +181,12 @@ func (s *Resources) AddClusterResources(clusterInst *edgeproto.ClusterInst) {
 	}
 	for _, pool := range clusterInst.NodePools {
 		for ii := uint32(0); ii < pool.NumNodes; ii++ {
+			poolTag := "-" + pool.Name
+			if pool.Name == edgeproto.DefaultNodePoolName {
+				poolTag = ""
+			}
 			s.clusterVMs[clusterInst.Key] = append(s.clusterVMs[clusterInst.Key], edgeproto.VmInfo{
-				Name:        fmt.Sprintf("fake-node-%s-%d-%s", pool.Name, ii+1, vmNameSuffix),
+				Name:        fmt.Sprintf("fake-node%s-%d-%s", poolTag, ii+1, vmNameSuffix),
 				Type:        cloudcommon.NodeTypeK8sClusterNode.String(),
 				InfraFlavor: pool.NodeResources.InfraNodeFlavor,
 				Status:      "ACTIVE",
