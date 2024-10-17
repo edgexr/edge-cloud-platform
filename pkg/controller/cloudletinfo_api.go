@@ -140,17 +140,22 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 	if !s.all.cloudletApi.cache.Get(&in.Key, &cloudlet) {
 		return
 	}
+	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "unable to get features for cloudlet", "cloudlet", in.Key, "err", err)
+	}
 	if changedToOnline {
 		log.SpanLog(ctx, log.DebugLevelApi, "cloudlet online", "cloudlet", in.Key)
 		nodeMgr.Event(ctx, "Cloudlet online", in.Key.Organization, in.Key.GetTags(), nil, "state", in.State.String(), "version", in.ContainerVersion)
-		features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
-		if err == nil {
+		if features != nil {
 			if features.SupportsMultiTenantCluster && cloudlet.EnableDefaultServerlessCluster {
 				s.all.cloudletApi.defaultMTClustWorkers.NeedsWork(ctx, in.Key)
 			}
-		} else {
-			log.SpanLog(ctx, log.DebugLevelApi, "unable to get features for cloudlet", "cloudlet", in.Key, "err", err)
 		}
+	}
+	if fmap.HasOrHasChild(edgeproto.CloudletInfoFieldNodePools) && features != nil && features.IsSingleKubernetesCluster {
+		// copy node pool resource info to single cluster
+		s.all.clusterInstApi.updateCloudletSingleClusterResources(ctx, &cloudlet.Key, cloudlet.SingleKubernetesClusterOwner, in.NodePools)
 	}
 
 	newState := edgeproto.TrackedState_TRACKED_STATE_UNKNOWN
@@ -233,7 +238,7 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 			}
 			cloudletRefs := edgeproto.CloudletRefs{}
 			s.all.cloudletRefsApi.store.STMGet(stm, key, &cloudletRefs)
-			return s.all.clusterInstApi.validateResources(ctx, stm, nil, nil, nil, &cloudlet, in, &cloudletRefs, GenResourceAlerts)
+			return s.all.clusterInstApi.validateResources(ctx, stm, nil, nil, nil, nil, &cloudlet, in, &cloudletRefs, GenResourceAlerts)
 		})
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelNotify, "Failed to validate cloudlet resources",

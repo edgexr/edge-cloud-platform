@@ -78,34 +78,9 @@ func getClusterInstToScale(ctx context.Context, name string, alert *edgeproto.Al
 	inst.CloudletKey.Organization = alert.Labels[edgeproto.CloudletKeyTagOrganization]
 	if name == cloudcommon.AlertClusterAutoScale {
 		// new v1 scaling alert
+		// Use ClusterInst.NumNodes so we don't have to figure
+		// out the pool name
 		inst.NumNodes = uint32(alert.Value)
-	} else {
-		// old v0 alerts
-		nodecountStr := alert.Annotations[cloudcommon.AlertKeyNodeCount]
-		nodecount, err := strconv.Atoi(nodecountStr)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse nodecount %s, %v", nodecountStr, err)
-		}
-
-		if name == cloudcommon.AlertAutoScaleUp {
-			inst.NumNodes = uint32(nodecount + 1)
-		} else {
-			lowStr := alert.Annotations[cloudcommon.AlertKeyLowCpuNodeCount]
-			lowcount, err := strconv.Atoi(lowStr)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse lowcpu count %s, %v", lowStr, err)
-			}
-			minNodesStr := alert.Annotations[cloudcommon.AlertKeyMinNodes]
-			minNodes, err := strconv.Atoi(minNodesStr)
-			if err != nil {
-				return nil, fmt.Errorf("failed to parse min nodes %s, %v", minNodesStr, err)
-			}
-			newCount := nodecount - lowcount
-			if newCount < minNodes {
-				newCount = minNodes
-			}
-			inst.NumNodes = uint32(newCount)
-		}
 	}
 	inst.Fields = []string{edgeproto.ClusterInstFieldNumNodes}
 	return &inst, nil
@@ -140,7 +115,7 @@ func scaleClusterInst(ctx context.Context, name string, alert *edgeproto.Alert, 
 	}
 	if err == nil {
 		// only log event if scaling succeeded
-		nodeMgr.TimedEvent(ctx, name+" ClusterInst", inst.Key.Organization, node.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "new nodecount", strconv.Itoa(int(inst.NumNodes)), "reason", alert.Annotations["reason"])
+		nodeMgr.TimedEvent(ctx, name+" ClusterInst", inst.Key.Organization, node.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "new nodecount", strconv.Itoa(int(inst.GetNumNodes())), "reason", alert.Annotations["reason"])
 	}
 	return err
 }

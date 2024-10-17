@@ -45,8 +45,8 @@ func NewUdec64(whole uint64, nanos uint32) *Udec64 {
 
 // Cmp compares a and b and returns:
 // -1 if a < b
-//  0 if a == b
-//  1 if a > b
+// 0 if a == b
+// 1 if a > b
 func (a *Udec64) Cmp(b *Udec64) int {
 	if a.Whole > b.Whole {
 		return 1
@@ -127,6 +127,18 @@ func (a *Udec64) Sub(b *Udec64) {
 	}
 }
 
+// SubFloor subtracts b from a. If b > a, a is set to 0
+// and underflow is set true
+func (a *Udec64) SubFloor(b *Udec64, underflow *bool) {
+	if a.LessThan(b) {
+		a.Whole = 0
+		a.Nanos = 0
+		*underflow = true
+		return
+	}
+	a.Sub(b)
+}
+
 func (a *Udec64) AddUint64(val uint64) {
 	a.Whole += val
 }
@@ -135,9 +147,40 @@ func (a *Udec64) SubUint64(val uint64) {
 	a.Whole -= val
 }
 
-// Whole returns only the whole number portion of the decimal
+// Uint64 returns only the whole number portion of the decimal
 func (a *Udec64) Uint64() uint64 {
 	return a.Whole
+}
+
+// Ceil returns the least integer value greater than or equal to
+// the current value.
+func (a *Udec64) Ceil() uint64 {
+	if a.Nanos == 0 {
+		return a.Whole
+	}
+	return a.Whole + 1
+}
+
+// Float returns the value as a float64.
+func (a *Udec64) Float() float64 {
+	return float64(a.Whole) + float64(a.Nanos)/float64(DecWhole)
+}
+
+// Mult multiples the value by the factor.
+func (a *Udec64) Mult(factor uint32) {
+	if factor == 1 {
+		return
+	}
+	if factor == 0 {
+		a.Whole = 0
+		a.Nanos = 0
+		return
+	}
+	a.Whole *= uint64(factor)
+	a.Nanos *= factor
+	wholeExtra := uint64(a.Nanos / DecWhole)
+	a.Nanos = a.Nanos % DecWhole
+	a.Whole += wholeExtra
 }
 
 func ParseUdec64(str string) (*Udec64, error) {

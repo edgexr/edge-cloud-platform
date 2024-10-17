@@ -108,6 +108,11 @@ func checkClusterAutoScale(ctx context.Context, k interface{}) {
 		log.SpanLog(ctx, log.DebugLevelApi, "checkClusterAutoScale cluster not found", "key", key)
 		return
 	}
+	if len(cinst.NodePools) == 0 {
+		log.SpanLog(ctx, log.DebugLevelApi, "checkClusterAutoScale cluster has no node pools", "key", key)
+		return
+	}
+	pool := cinst.NodePools[0]
 
 	// Get the max desired nodes.
 	// We calculate desiredNodes = ceil(total-load/target-per-node-load)
@@ -137,7 +142,7 @@ func checkClusterAutoScale(ctx context.Context, k interface{}) {
 			reason = fmt.Sprintf("stabilized total active connections %f, target %d per node", autoScaler.lastStabilizedActiveConns, policy.TargetActiveConnections)
 		}
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "checkClusterAutoScale calculations", "key", key, "autoScaler", fmt.Sprintf("%+v", autoScaler), "policy", policy, "desiredNodesRaw", desiredNodesRaw, "curNumNodes", cinst.NumNodes, "reason", reason)
+	log.SpanLog(ctx, log.DebugLevelApi, "checkClusterAutoScale calculations", "key", key, "autoScaler", fmt.Sprintf("%+v", autoScaler), "policy", policy, "desiredNodesRaw", desiredNodesRaw, "curNumNodes", pool.NumNodes, "reason", reason)
 	autoScaler.mux.Unlock()
 	if desiredNodesRaw == 0 {
 		log.SpanLog(ctx, log.DebugLevelApi, "checkClusterAutoScale no metrics to scale on")
@@ -157,8 +162,8 @@ func checkClusterAutoScale(ctx context.Context, k interface{}) {
 	// is between 2.0 and 2.2 for example, if the current num nodes is 2,
 	// no change will happen (because of 10% check), or, if the current num
 	// nodes is 3, also no change will happen (because of the ceil check).
-	if (desiredNodesRaw < float64(cinst.NumNodes)*1.1 && desiredNodesRaw >= float64(cinst.NumNodes)) || uint32(desiredCeil) == cinst.NumNodes {
-		log.SpanLog(ctx, log.DebugLevelApi, "checkClusterAutoScale no scaling needed", "desiredRaw", desiredNodesRaw, "desiredCeil", uint32(desiredCeil), "actual", cinst.NumNodes)
+	if (desiredNodesRaw < float64(pool.NumNodes)*1.1 && desiredNodesRaw >= float64(pool.NumNodes)) || uint32(desiredCeil) == pool.NumNodes {
+		log.SpanLog(ctx, log.DebugLevelApi, "checkClusterAutoScale no scaling needed", "desiredRaw", desiredNodesRaw, "desiredCeil", uint32(desiredCeil), "actual", pool.NumNodes)
 		AlertCache.Delete(ctx, alert, 0)
 		autoScaler.scaleInProgress = false
 		return

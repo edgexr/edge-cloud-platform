@@ -275,29 +275,19 @@ var VMResourceRequiredArgs = []string{
 	"key.organization",
 }
 var VMResourceOptionalArgs = []string{
-	"vmflavor.name",
-	"vmflavor.vcpus",
-	"vmflavor.ram",
-	"vmflavor.disk",
-	"vmflavor.propmap",
+	"vmflavor",
 	"type",
-	"appaccesstype",
+	"count",
 }
 var VMResourceAliasArgs = []string{}
 var VMResourceComments = map[string]string{
 	"key.name":         "Cluster name",
 	"key.organization": "Name of the organization that this cluster belongs to",
-	"vmflavor.name":    "Name of the flavor on the Cloudlet",
-	"vmflavor.vcpus":   "Number of VCPU cores on the Cloudlet",
-	"vmflavor.ram":     "Ram in MB on the Cloudlet",
-	"vmflavor.disk":    "Amount of disk in GB on the Cloudlet",
-	"vmflavor.propmap": "OS Flavor Properties, if any",
+	"vmflavor":         "Infrastructure specific flavor of the VM",
 	"type":             "Resource Type can be platform, rootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm, k8s-lb-svc",
-	"appaccesstype":    "(deprecated) Access type for resource of type App VM, one of DefaultForDeployment, Direct, LoadBalancer",
+	"count":            "Number of these VMs in cluster",
 }
-var VMResourceSpecialArgs = map[string]string{
-	"vmflavor.propmap": "StringToString",
-}
+var VMResourceSpecialArgs = map[string]string{}
 var CloudletRefsRequiredArgs = []string{
 	"key.organization",
 	"key.name",

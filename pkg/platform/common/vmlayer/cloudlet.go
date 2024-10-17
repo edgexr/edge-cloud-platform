@@ -27,8 +27,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 )
 
 // VMDomain is to differentiate platform vs computing VMs and associated resources
@@ -582,7 +582,7 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 			return nil, err
 		}
 		if cloudlet.InfraConfig.FlavorName == "" {
-			var spec *vmspec.VMCreationSpec = &vmspec.VMCreationSpec{}
+			var spec *resspec.VMCreationSpec = &resspec.VMCreationSpec{}
 			cli := edgeproto.CloudletInfo{}
 			cli.Flavors = flavorList
 			cli.Key = cloudlet.Key
@@ -593,8 +593,9 @@ func (v *VMPlatform) getCloudletVMsSpec(ctx context.Context, accessApi platform.
 				}
 				spec.FlavorName = flavInfo.Name
 			} else {
+				nr := pfFlavor.ToNodeResources()
 				restbls := v.GetResTablesForCloudlet(ctx, &cli.Key)
-				spec, err = vmspec.GetVMSpec(ctx, *pfFlavor, cli, restbls)
+				spec, err = resspec.GetVMSpec(ctx, nr, cli, restbls)
 				if err != nil {
 					return nil, fmt.Errorf("unable to find VM spec for Shared RootLB: %v", err)
 				}

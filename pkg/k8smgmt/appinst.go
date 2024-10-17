@@ -355,7 +355,7 @@ func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeName
 	return nil
 }
 
-func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
+func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, app.DeploymentManifest)
 	if err != nil {
 		return err
@@ -368,7 +368,7 @@ func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.Acces
 		}
 		mf = AddManifest(mf, np)
 	}
-	mf, err = MergeEnvVars(ctx, accessApi, app, appInst, mf, names.ImagePullSecrets, names, appInstFlavor)
+	mf, err = MergeEnvVars(ctx, accessApi, app, appInst, mf, names.ImagePullSecrets, names, appInst.KubernetesResources)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to merge env vars", "error", err)
 		return fmt.Errorf("error merging environment variables config file: %s", err)
@@ -389,7 +389,7 @@ func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.Acces
 	return nil
 }
 
-func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor, action string) error {
+func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, _ *edgeproto.Flavor, action string) error {
 	if action == createManifest && names.MultitenantNamespace != "" {
 		err := CreateMultitenantNamespace(ctx, client, names)
 		if err != nil {
@@ -397,7 +397,7 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 		}
 	}
 
-	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst, appInstFlavor); err != nil {
+	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst); err != nil {
 		return err
 	}
 	configDir := getConfigDirName(names)

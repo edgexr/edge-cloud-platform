@@ -172,7 +172,7 @@ func TestHeatNodePrefix(t *testing.T) {
 		require.True(t, ok, "matched %s", d.name)
 		require.Equal(t, d.num, num, "matched num for %s", d.name)
 		// make sure prefix gen function works
-		prefix := vmlayer.ClusterNodePrefix(d.num)
+		prefix := vmlayer.ClusterNodePrefix("defaultpool", d.num)
 		ok = strings.HasPrefix(d.name, prefix)
 		require.True(t, ok, "%s has prefix %s", d.name, prefix)
 	}

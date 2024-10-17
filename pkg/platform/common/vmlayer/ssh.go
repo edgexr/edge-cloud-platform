@@ -123,25 +123,26 @@ func (v *VMPlatform) GetAllCloudletVMs(ctx context.Context, caches *platform.Cac
 				Client: masterClient,
 				Role:   RoleMaster,
 			})
-			for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
-				var nodeClient ssh.Client
-				clusterNode := GetClusterNodeName(ctx, clusterInst, nn)
-				nodeIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), clusterNode)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelInfra, "error getting node IP", "vm", clusterNode, "err", err)
-				} else {
-					nodeClient, err = lbClient.AddHop(nodeIP.IPV4ExternalAddr(), 22)
+			for _, pool := range clusterInst.NodePools {
+				for nn := uint32(1); nn <= pool.NumNodes; nn++ {
+					var nodeClient ssh.Client
+					clusterNode := GetClusterNodeName(ctx, clusterInst, pool.Name, nn)
+					nodeIP, err := v.GetIPFromServerName(ctx, v.VMProperties.GetCloudletMexNetwork(), v.GetClusterSubnetName(ctx, clusterInst), clusterNode)
 					if err != nil {
-						log.SpanLog(ctx, log.DebugLevelInfra, "Fail to addhop to node", "nodeIP", nodeIP, "err", err)
+						log.SpanLog(ctx, log.DebugLevelInfra, "error getting node IP", "vm", clusterNode, "err", err)
+					} else {
+						nodeClient, err = lbClient.AddHop(nodeIP.IPV4ExternalAddr(), 22)
+						if err != nil {
+							log.SpanLog(ctx, log.DebugLevelInfra, "Fail to addhop to node", "nodeIP", nodeIP, "err", err)
+						}
 					}
+					cloudletVMs = append(cloudletVMs, VMAccess{
+						Name:   clusterNode,
+						Client: nodeClient,
+						Role:   RoleK8sNode,
+					})
 				}
-				cloudletVMs = append(cloudletVMs, VMAccess{
-					Name:   clusterNode,
-					Client: nodeClient,
-					Role:   RoleK8sNode,
-				})
 			}
-
 		case cloudcommon.DeploymentTypeDocker:
 			var dockerNodeClient ssh.Client
 			dockerNode := v.GetDockerNodeName(ctx, clusterInst)

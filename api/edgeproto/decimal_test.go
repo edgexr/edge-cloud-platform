@@ -122,6 +122,31 @@ func TestMathUdec64(t *testing.T) {
 	}
 }
 
+func TestSubFloorUdec64(t *testing.T) {
+	tests := []struct {
+		aWhole   uint64
+		aNanos   uint32
+		bWhole   uint64
+		bNanos   uint32
+		resWhole uint64
+		resNanos uint32
+	}{
+		{0, 0, 0, 0, 0, 0},
+		{2, 4, 1, 3, 1, 1},
+		{2, 100 * DecMillis, 1, 200 * DecMillis, 0, 900 * DecMillis},
+		{2, 100 * DecMillis, 2, 200 * DecMillis, 0, 0}, // underflow
+	}
+	for _, test := range tests {
+		a := NewUdec64(test.aWhole, test.aNanos)
+		b := NewUdec64(test.bWhole, test.bNanos)
+		r := NewUdec64(test.resWhole, test.resNanos)
+		aVal := a.DecString()
+		underflow := false
+		a.SubFloor(b, &underflow)
+		require.Equal(t, r, a, "%s subfloor %s", aVal, b.DecString())
+	}
+}
+
 func TestParseUdec64(t *testing.T) {
 	tests := []struct {
 		str      string

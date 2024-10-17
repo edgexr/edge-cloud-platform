@@ -173,3 +173,46 @@ func CreateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis,
 	require.Nil(t, err)
 	supportData.delete(t, ctx, all)
 }
+
+func UpdateAppInstAddRefsChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen AllAddRefsDataGen) {
+	var err error
+
+	testObj, supportData := dataGen.GetUpdateAppInstTestObj()
+	supportData.put(t, ctx, all)
+	{
+		// set delete_prepare on referenced Flavor
+		ref := supportData.getOneFlavor()
+		require.NotNil(t, ref, "support data must include one referenced Flavor")
+		ref.DeletePrepare = true
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
+		require.Nil(t, err)
+		// api call must fail with object being deleted
+		testObj, _ = dataGen.GetUpdateAppInstTestObj()
+		err = all.appInstApi.UpdateAppInst(testObj, testutil.NewCudStreamoutAppInst(ctx))
+		require.NotNil(t, err, "UpdateAppInst must fail with Flavor.DeletePrepare set")
+		require.Equal(t, ref.GetKey().BeingDeletedError().Error(), err.Error())
+		// reset delete_prepare on referenced Flavor
+		ref.DeletePrepare = false
+		_, err = all.flavorApi.store.Put(ctx, ref, all.flavorApi.sync.SyncWait)
+		require.Nil(t, err)
+	}
+
+	// wrap the stores so we can make sure all checks and changes
+	// happen in the same STM.
+	appInstApiStore, appInstApiUnwrap := wrapAppInstTrackerStore(all.appInstApi)
+	defer appInstApiUnwrap()
+	flavorApiStore, flavorApiUnwrap := wrapFlavorTrackerStore(all.flavorApi)
+	defer flavorApiUnwrap()
+
+	// UpdateAppInst should succeed if no references are in delete_prepare
+	testObj, _ = dataGen.GetUpdateAppInstTestObj()
+	err = all.appInstApi.UpdateAppInst(testObj, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err, "UpdateAppInst should succeed if no references are in delete prepare")
+	// make sure everything ran in the same STM
+	require.NotNil(t, appInstApiStore.putSTM, "UpdateAppInst put AppInst must be done in STM")
+	require.NotNil(t, flavorApiStore.getSTM, "UpdateAppInst check Flavor ref must be done in STM")
+	require.Equal(t, appInstApiStore.putSTM, flavorApiStore.getSTM, "UpdateAppInst check Flavor ref must be done in same STM as AppInst put")
+
+	// clean up
+	supportData.delete(t, ctx, all)
+}

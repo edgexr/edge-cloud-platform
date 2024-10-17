@@ -43,7 +43,9 @@ func TestClusterAutoScaler(t *testing.T) {
 
 	cluster.AutoScalePolicy = policy.Key.Name
 	cluster.Deployment = cloudcommon.DeploymentTypeKubernetes
-	cluster.NumNodes = 2
+	cluster.NodePools = []*edgeproto.NodePool{{
+		NumNodes: 2,
+	}}
 
 	// inject data into caches
 	edgeproto.InitAutoScalePolicyCache(&AutoScalePoliciesCache)

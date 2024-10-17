@@ -1,0 +1,93 @@
+// Copyright 2024 EdgeXR, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Resources define resource requirements for applications
+// and instances.
+
+syntax = "proto3";
+package edgeproto;
+
+import "gogoproto/gogo.proto";
+import "decimal.proto";
+import "tools/protogen/protogen.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// NodeResources defines the node resources for machines or VMs
+message NodeResources {
+  // Vcpus to be allocated to the VM, must be either 1 or an even number
+  uint64 vcpus = 1;
+  // Total RAM in megabytes to be allocated to the VM
+  uint64 ram = 2;
+  // Total disk space in gigabytes to be allocated to the VM's root partition
+  uint64 disk = 3;
+  // Optional resources request, key = gpu
+  // form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1
+  map<string, string> opt_res_map = 4;
+  // Infrastructure specific node flavor
+  string infra_node_flavor = 5 [(protogen.backend) = true];
+  // Size of external volume to be attached to nodes. This is for the root partition
+  uint64 external_volume_size = 6 [(protogen.backend) = true];
+}
+
+// KubernetesResources defines resource requirements for Kubernetes Applications
+message KubernetesResources {
+  // CPU Node Pool resources
+  NodePoolResources cpu_pool = 1;
+  // GPU Node Pool resources
+  NodePoolResources gpu_pool = 2;
+  // Minimum Kubernetes version
+  string min_k8s_version = 4;
+}
+
+// NodePoolResources defines the total resource and topology requirements for a Kubernetes node pool.
+message NodePoolResources {
+  // Total Vcpus to be allocated in the pool, in increments of 0.001
+  Udec64 total_vcpus = 1 [(gogoproto.nullable) = false];
+  // Total RAM in megabytes to be allocated in the pool
+  uint64 total_memory = 2;
+  // Total Disk in gigabytes to be allocated in the pool
+  uint64 total_disk = 3;
+  // Total optional resources to be allocated in the pool,
+  // follows the NodeResources.OptResMap format.
+  map<string, string> total_opt_res = 4;
+  // Minimum viable topology
+  NodePoolTopology topology = 5 [(gogoproto.nullable) = false];
+}
+
+// NodePoolTopology defines the minimum resource requirements for a Kubernetes node pool.
+message NodePoolTopology {
+  // Minimum number of vcpus per node
+  uint64 min_node_vcpus = 1;
+  // Minimum amount of RAM in megabytes per node
+  uint64 min_node_memory = 2;
+  // Minimum amount of root partition disk space in gigabytes per node
+  uint64 min_node_disk = 3;
+  // Minimum number of optional resources per node
+  map<string, string> min_node_opt_res = 4;
+  // Minimum number of nodes in pool, to satisfy HA/replication requirements
+  int32 min_number_of_nodes = 5;
+}
+
+// NodePool defines the resources in a Kubernetes node pool.
+message NodePool {
+  // Node pool name
+  string Name = 1;
+  // Number of nodes in the pool
+  uint32 num_nodes = 2;
+  // Specification of per node resources
+  NodeResources node_resources = 3;
+}

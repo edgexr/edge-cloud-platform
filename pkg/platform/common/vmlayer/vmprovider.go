@@ -546,11 +546,6 @@ func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platf
 		return
 	}
 
-	appInstFlavor := edgeproto.Flavor{}
-	if !caches.FlavorCache.Get(&appInst.Flavor, &appInstFlavor) {
-		log.SpanLog(ctx, log.DebugLevelInfra, "flavor not found", "AppInst", appInst.Key)
-		return
-	}
 	names, err := k8smgmt.GetKubeNames(&cinst, &app, appInst)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "update appinst data for lb, names failed", "AppInst", appInst.Key, "err", err)
@@ -564,7 +559,7 @@ func (v *VMPlatform) updateAppInstConfigForLb(ctx context.Context, caches *platf
 	if app.Deployment == cloudcommon.DeploymentTypeKubernetes ||
 		app.Deployment == cloudcommon.DeploymentTypeHelm {
 		// Update appinst manifests on the rootLb
-		err = k8smgmt.WriteDeploymentManifestToFile(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, &app, appInst, &appInstFlavor)
+		err = k8smgmt.WriteDeploymentManifestToFile(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, &app, appInst)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to write deployment manifest to rootLb", "AppInst", appInst.Key, "err", err)
 		}

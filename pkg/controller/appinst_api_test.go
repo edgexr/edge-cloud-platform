@@ -170,9 +170,9 @@ func TestAppInstApi(t *testing.T) {
 		// make sure error matches responder
 		// if app-inst triggers auto-cluster, the error will be for a cluster
 		if strings.Contains(err.Error(), "cluster inst") {
-			require.Contains(t, err.Error(), "create cluster inst failed", err.Error(), "AppInst[%d]: %v", ii, obj.Key)
+			require.Contains(t, err.Error(), "create cluster inst failed", "AppInst[%d]: %v, err :%s", ii, obj.Key, err)
 		} else {
-			require.Contains(t, err.Error(), "create app inst failed", err.Error(), "AppInst[%d]: %v", ii, obj.Key)
+			require.Contains(t, err.Error(), "create app inst failed", "AppInst[%d]: %v, err: %s", ii, obj.Key, err)
 		}
 		// Verify that on error, undo deleted the appInst object from etcd
 		show := testutil.ShowAppInst{}
@@ -380,11 +380,16 @@ func TestAppInstApi(t *testing.T) {
 			// skip AppInst[0], it was deleted earlier in the test
 			continue
 		}
-		if testutil.IsAutoClusterAutoDeleteApp(&obj) {
-			continue
-		}
 		err := apis.appInstApi.DeleteAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
 		require.Nil(t, err, "Delete app inst %d failed", ii)
+	}
+	createdClusterInsts := testutil.CreatedClusterInstData()
+	for _, clusterInst := range createdClusterInsts {
+		refs := edgeproto.ClusterRefs{}
+		ok := apis.clusterRefsApi.cache.Get(&clusterInst.Key, &refs)
+		// when all appInsts are deleted, refs object gets cleaned
+		// up as well, so it should not exist.
+		require.False(t, ok, clusterInst.Key, refs)
 	}
 
 	testAppInstId(t, ctx, apis)
@@ -665,9 +670,9 @@ func testAppFlavorRequest(t *testing.T, ctx context.Context, api *testutil.AppIn
 		Key: edgeproto.FlavorKey{
 			Name: "x1.large-mex",
 		},
-		Ram:       8192,
-		Vcpus:     8,
-		Disk:      40,
+		Ram:       1024,
+		Vcpus:     1,
+		Disk:      1,
 		OptResMap: map[string]string{"gpu": "gpu:1"},
 	}
 	_, err := apis.flavorApi.CreateFlavor(ctx, &testflavor)
@@ -676,7 +681,7 @@ func testAppFlavorRequest(t *testing.T, ctx context.Context, api *testutil.AppIn
 	nonNomApp.Flavor = testflavor.Key
 	err = apis.appInstApi.CreateAppInst(&nonNomApp, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err, "non-nom-app-create")
-	require.Equal(t, "Cloudlet New York Site doesn't support GPU", err.Error())
+	require.Contains(t, err.Error(), "want 1 gpu:gpu but only 0 free")
 }
 
 // Test that Crm Override for Delete App overrides any failures
@@ -804,6 +809,15 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 		Key:                  cloudletMT.Key,
 		State:                dme.CloudletState_CLOUDLET_STATE_READY,
 		CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 5,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 8,
+				Ram:   16384,
+				Disk:  500,
+			},
+		}},
 	}
 	mtOrg := edgeproto.OrganizationEdgeCloud
 	stOrg := testutil.AppInstData()[0].Key.Organization
@@ -1032,6 +1046,12 @@ func testAppInstId(t *testing.T, ctx context.Context, apis *AllApis) {
 	appInst0 := testutil.AppInstData()[0]
 	appInst0.Key.Name = "ai1"
 	appInst0.AppKey = app0.Key
+	appInst0.KubernetesResources = &edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(0, 100*edgeproto.DecMillis),
+			TotalMemory: 10,
+		},
+	}
 
 	appInst1 := appInst0
 	appInst0.Key.Name = "ai.1"
@@ -1234,17 +1254,21 @@ func TestAppInstIdDelimiter(t *testing.T) {
 
 func waitForAppInstState(t *testing.T, ctx context.Context, apis *AllApis, key *edgeproto.AppInstKey, ii int, state edgeproto.TrackedState) {
 	var ok bool
+	curState := edgeproto.TrackedState_TRACKED_STATE_UNKNOWN
 	for ii := 0; ii < 50; ii++ {
 		apis.appInstApi.cache.Mux.Lock()
 		inst, found := apis.appInstApi.cache.Objs[*key]
-		ok = found && inst.Obj.State == state
+		if found {
+			ok = inst.Obj.State == state
+			curState = inst.Obj.State
+		}
 		apis.appInstApi.cache.Mux.Unlock()
 		if ok {
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	require.True(t, ok, "Wait for state %s for AppInstData[%d]", state.String(), ii)
+	require.True(t, ok, "Wait for state %s for AppInstData[%d], cur state is %s", state.String(), ii, curState.String())
 }
 
 // Autoprov relies on being able to detect AppInst being created

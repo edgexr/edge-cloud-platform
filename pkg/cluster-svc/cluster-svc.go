@@ -119,6 +119,12 @@ var MEXPrometheusApp = edgeproto.App{
 	InternalPorts: true,
 	Trusted:       true,
 	Annotations:   "version=47.5.0",
+	KubernetesResources: &edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(0, 300*edgeproto.DecMillis),
+			TotalMemory: 400,
+		},
+	},
 }
 
 var dialOpts grpc.DialOption
@@ -514,7 +520,6 @@ func getSidecarAppInstKey(platformApp *edgeproto.App, cikey *edgeproto.ClusterKe
 // create an appInst as a cluster-svc
 func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterInst *edgeproto.ClusterInst, userApp *edgeproto.App, userAppInst *edgeproto.AppInst, platformApp *edgeproto.App) error {
 	//update flavor
-	platformApp.DefaultFlavor = edgeproto.FlavorKey{Name: clusterInst.Flavor.Name}
 	conn, err := grpc.Dial(*ctrlAddr, dialOpts, grpc.WithBlock(), grpc.WithUnaryInterceptor(log.UnaryClientTraceGrpc), grpc.WithStreamInterceptor(log.StreamClientTraceGrpc), grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})))
 	if err != nil {
 		return fmt.Errorf("Connect to server %s failed: %s", *ctrlAddr, err.Error())
@@ -528,7 +533,6 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 		ClusterKey:  clusterInst.Key,
 		CloudletKey: clusterInst.CloudletKey,
 		ZoneKey:     clusterInst.ZoneKey,
-		Flavor:      clusterInst.Flavor,
 	}
 	if clusterSvcPlugin != nil {
 		var policy *edgeproto.AutoScalePolicy

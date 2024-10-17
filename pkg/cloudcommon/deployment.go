@@ -116,7 +116,7 @@ func GetMappedAccessType(accessType edgeproto.AccessType, deployment, deployment
 
 }
 
-func IsValidDeploymentManifestForFlavor(deploymentType, manifest string, flavor *edgeproto.Flavor) error {
+func IsValidDeploymentManifestForResources(deploymentType, manifest string, kr *edgeproto.KubernetesResources) error {
 	if deploymentType != DeploymentTypeKubernetes {
 		return nil
 	}
@@ -124,12 +124,12 @@ func IsValidDeploymentManifestForFlavor(deploymentType, manifest string, flavor 
 	if err != nil {
 		return fmt.Errorf("parse kubernetes deployment yaml failed, %v", err)
 	}
-	return isValidKubernetesManifestForFlavor(objs, flavor)
+	return isValidKubernetesManifestForResources(objs, kr)
 }
 
-func isValidKubernetesManifestForFlavor(objs []runtime.Object, flavor *edgeproto.Flavor) error {
-	ok, count := IsGPUFlavor(flavor)
-	if !ok {
+func isValidKubernetesManifestForResources(objs []runtime.Object, kr *edgeproto.KubernetesResources) error {
+	count := KuberentesResourcesGPUCount(kr)
+	if count == 0 {
 		// currently we are only validating GPU resources
 		return nil
 	}
@@ -165,7 +165,7 @@ func isValidKubernetesManifestForFlavor(objs []runtime.Object, flavor *edgeproto
 	return nil
 }
 
-func IsValidDeploymentManifest(deploymentType, command, manifest string, ports []dme.AppPort, appFlavor *edgeproto.Flavor) error {
+func IsValidDeploymentManifest(deploymentType, command, manifest string, ports []dme.AppPort, kr *edgeproto.KubernetesResources) error {
 	if deploymentType == DeploymentTypeVM {
 		if command != "" {
 			return fmt.Errorf("both deploymentmanifest and command cannot be used together for VM based deployment")
@@ -252,7 +252,7 @@ func IsValidDeploymentManifest(deploymentType, command, manifest string, ports [
 		if len(missingPorts) > 0 {
 			return fmt.Errorf("port %s defined in AccessPorts but missing from kubernetes manifest in a LoadBalancer service", strings.Join(missingPorts, ","))
 		}
-		err = isValidKubernetesManifestForFlavor(objs, appFlavor)
+		err = isValidKubernetesManifestForResources(objs, kr)
 		if err != nil {
 			return err
 		}
@@ -507,4 +507,8 @@ func AppInstToClusterDeployment(deployment string) string {
 		deployment = DeploymentTypeKubernetes
 	}
 	return deployment
+}
+
+func AppDeploysToKubernetes(deployment string) bool {
+	return deployment == DeploymentTypeKubernetes || deployment == DeploymentTypeHelm
 }

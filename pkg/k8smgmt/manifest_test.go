@@ -63,7 +63,12 @@ func TestEnvVars(t *testing.T) {
 
 	names := &KubeNames{}
 
-	defaultFlavor := testutil.FlavorData()[0]
+	defaultFlavor := edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+			TotalMemory: 1024,
+		},
+	}
 
 	accessApi := &accessapi.TestHandler{}
 	// Test Deployment manifest with inline EnvVars
@@ -85,7 +90,15 @@ func TestEnvVars(t *testing.T) {
 		Ram:         20,
 		MinReplicas: 2,
 	}
-	gpuFlavor := testutil.FlavorData()[4]
+	gpuFlavor := edgeproto.KubernetesResources{
+		GpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+			TotalMemory: 1024,
+			TotalOptRes: map[string]string{
+				"gpu": "pci:1",
+			},
+		},
+	}
 	merged, err := MergeEnvVars(ctx, accessApi, app, appInst, baseMf, nil, names, &gpuFlavor)
 	require.Nil(t, err)
 	require.Equal(t, expectedFullManifest, merged)
@@ -477,7 +490,12 @@ func TestImagePullSecrets(t *testing.T) {
 		names.ImagePullSecrets = append(names.ImagePullSecrets, secret)
 	}
 
-	defaultFlavor := testutil.FlavorData()[0]
+	defaultFlavor := edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+			TotalMemory: 1024,
+		},
+	}
 	newMf, err := MergeEnvVars(ctx, nil, app, appInst, baseMf, names.ImagePullSecrets, &KubeNames{}, &defaultFlavor)
 	require.Nil(t, err)
 	fmt.Println(newMf)

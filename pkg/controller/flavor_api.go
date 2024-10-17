@@ -23,7 +23,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
-	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
@@ -191,16 +190,4 @@ func (s *FlavorApi) RemoveFlavorRes(ctx context.Context, in *edgeproto.Flavor) (
 	})
 
 	return &edgeproto.Result{}, err
-}
-
-func (s *FlavorApi) getFlavorForServerlessConfig(ctx context.Context, sconfig *edgeproto.ServerlessConfig) (*edgeproto.Flavor, error) {
-	flavors := []edgeproto.Flavor{}
-	err := s.cache.Show(&edgeproto.Flavor{}, func(obj *edgeproto.Flavor) error {
-		flavors = append(flavors, *obj)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return vmspec.GetFlavorForServerlessConfig(ctx, flavors, sconfig)
 }

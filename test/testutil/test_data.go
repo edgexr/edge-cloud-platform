@@ -98,11 +98,12 @@ func AppData() []edgeproto.App {
 		ImageType:       edgeproto.ImageType_IMAGE_TYPE_DOCKER,
 		AccessPorts:     "tcp:443,tcp:10002,udp:10002",
 		AccessType:      edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor:   flavorData[0].Key,
 		AllowServerless: true,
-		ServerlessConfig: &edgeproto.ServerlessConfig{
-			Vcpus: *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
-			Ram:   20,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
+				TotalMemory: 20,
+			},
 		},
 		Trusted: true, // This is a Trusted App.
 	}, { // edgeproto.App // 1
@@ -125,6 +126,17 @@ func AppData() []edgeproto.App {
 		AccessPorts:   "tcp:443,udp:11111",
 		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		DefaultFlavor: flavorData[1].Key,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeVcpus:  1,
+					MinNodeMemory: 1024,
+					MinNodeDisk:   1,
+				},
+			},
+		},
 	}, { // edgeproto.App // 3
 		Key: edgeproto.AppKey{
 			Organization: devData[1],
@@ -147,47 +159,78 @@ func AppData() []edgeproto.App {
 		AccessPorts:   "udp:1024",
 		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		DefaultFlavor: flavorData[2].Key,
+		NodeResources: &edgeproto.NodeResources{
+			Vcpus: 1,
+			Ram:   1024,
+			Disk:  1,
+		},
 	}, { // edgeproto.App // 5
 		Key: edgeproto.AppKey{
 			Organization: devData[0],
 			Name:         "helmApp",
 			Version:      "0.0.1",
 		},
-		Deployment:    "helm",
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_HELM,
-		AccessPorts:   "udp:2024",
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[2].Key,
+		Deployment:  "helm",
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_HELM,
+		AccessPorts: "udp:2024",
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+			},
+		},
 	}, { // edgeproto.App // 6
 		Key: edgeproto.AppKey{
 			Organization: devData[0],
 			Name:         "Nelon",
 			Version:      "0.0.2",
 		},
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		AccessPorts:   "tcp:80,udp:8001,tcp:065535",
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[1].Key,
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		AccessPorts: "tcp:80,udp:8001,tcp:065535",
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeVcpus:  1,
+					MinNodeMemory: 1024,
+				},
+			},
+		},
 	}, { // edgeproto.App // 7
 		Key: edgeproto.AppKey{
 			Organization: devData[0],
 			Name:         "NoPorts",
 			Version:      "1.0.0",
 		},
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[0].Key,
+		ImageType:  edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		AccessType: edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 100*edgeproto.DecMillis),
+				TotalMemory: 100,
+			},
+		},
 	}, { // edgeproto.App // 8
 		Key: edgeproto.AppKey{
 			Organization: devData[0],
 			Name:         "PortRangeApp",
 			Version:      "1.0.0",
 		},
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		AccessPorts:   "tcp:80,tcp:443,udp:10002,tcp:5000-5002", // new port range notation
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[0].Key,
-	}, { // edgeproto.App // 9
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		AccessPorts: "tcp:80,tcp:443,udp:10002,tcp:5000-5002", // new port range notation
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeDisk: 1,
+				},
+			},
+		}}, { // edgeproto.App // 9
 		Key: edgeproto.AppKey{
 			Organization: edgeproto.OrganizationEdgeCloud,
 			Name:         "AutoDeleteApp",
@@ -195,12 +238,13 @@ func AppData() []edgeproto.App {
 		},
 		ImageType:       edgeproto.ImageType_IMAGE_TYPE_DOCKER,
 		AccessType:      edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor:   flavorData[0].Key,
 		DelOpt:          edgeproto.DeleteType_AUTO_DELETE,
 		AllowServerless: true,
-		ServerlessConfig: &edgeproto.ServerlessConfig{
-			Vcpus: *edgeproto.NewUdec64(0, 200*edgeproto.DecMillis),
-			Ram:   10,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 200*edgeproto.DecMillis),
+				TotalMemory: 10,
+			},
 		},
 		InternalPorts: true,
 	}, { // edgeproto.App // 10
@@ -209,20 +253,36 @@ func AppData() []edgeproto.App {
 			Name:         "Dev1App",
 			Version:      "0.0.1",
 		},
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		AccessPorts:   "tcp:443,udp:11111",
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[1].Key,
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		AccessPorts: "tcp:443,udp:11111",
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(2, 0),
+				TotalMemory: 2048,
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeDisk: 2,
+				},
+			},
+		},
 	}, { // edgeproto.App // 11
 		Key: edgeproto.AppKey{
 			Organization: devData[0],
 			Name:         "Pillimo Go!",
 			Version:      "1.0.2",
 		},
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		AccessPorts:   "tcp:10003",
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[0].Key,
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		AccessPorts: "tcp:10003",
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeDisk: 1,
+				},
+			},
+		},
 		AutoProvPolicies: []string{
 			autoProvPolicyData[0].Key.Name,
 			autoProvPolicyData[3].Key.Name,
@@ -233,12 +293,16 @@ func AppData() []edgeproto.App {
 			Name:         "vm lb",
 			Version:      "1.0.2",
 		},
-		Deployment:    "vm",
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_QCOW,
-		ImagePath:     "http://somerepo/image/path/myreality/0.0.1#md5:7e9cfcb763e83573a4b9d9315f56cc5f",
-		AccessPorts:   "tcp:10003",
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[0].Key,
+		Deployment:  "vm",
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_QCOW,
+		ImagePath:   "http://somerepo/image/path/myreality/0.0.1#md5:7e9cfcb763e83573a4b9d9315f56cc5f",
+		AccessPorts: "tcp:10003",
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		NodeResources: &edgeproto.NodeResources{
+			Vcpus: 1,
+			Ram:   1024,
+			Disk:  1,
+		},
 	}, { // edgeproto.App // 13 - EdgeCloud app
 		Key: edgeproto.AppKey{
 			Organization: edgeproto.OrganizationEdgeCloud,
@@ -248,11 +312,12 @@ func AppData() []edgeproto.App {
 		ImageType:       edgeproto.ImageType_IMAGE_TYPE_DOCKER,
 		AccessType:      edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		AccessPorts:     "tcp:889",
-		DefaultFlavor:   flavorData[0].Key,
 		AllowServerless: true,
-		ServerlessConfig: &edgeproto.ServerlessConfig{
-			Vcpus: *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
-			Ram:   20,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
+				TotalMemory: 20,
+			},
 		},
 	}, { // edgeproto.App // 14
 		Key: edgeproto.AppKey{
@@ -263,11 +328,12 @@ func AppData() []edgeproto.App {
 		ImageType:       edgeproto.ImageType_IMAGE_TYPE_DOCKER,
 		AccessPorts:     "tcp:444",
 		AccessType:      edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor:   flavorData[0].Key,
 		AllowServerless: true,
-		ServerlessConfig: &edgeproto.ServerlessConfig{
-			Vcpus: *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
-			Ram:   20,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
+				TotalMemory: 20,
+			},
 		},
 	}, { // edgeproto.App // 15
 		Key: edgeproto.AppKey{
@@ -280,17 +346,30 @@ func AppData() []edgeproto.App {
 		AccessPorts:   "tcp:80,tcp:443,tcp:81:tls",
 		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		DefaultFlavor: flavorData[0].Key,
+		NodeResources: &edgeproto.NodeResources{
+			Vcpus: 1,
+			Ram:   1024,
+			Disk:  1,
+		},
 	}, { // edgeproto.App // 16
 		Key: edgeproto.AppKey{
 			Organization: devData[0],
 			Name:         "Custom-k8s",
 			Version:      "1.0",
 		},
-		Deployment:    cloudcommon.DeploymentTypeKubernetes,
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		AccessPorts:   "tcp:80,tcp:443,tcp:81:tls",
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[0].Key,
+		Deployment:  cloudcommon.DeploymentTypeKubernetes,
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		AccessPorts: "tcp:80,tcp:443,tcp:81:tls",
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeDisk: 1,
+				},
+			},
+		},
 	}}
 }
 
@@ -345,6 +424,7 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 		features[ii].SupportsAdditionalNetworks = true
 		features[ii].SupportsPlatformHighAvailabilityOnDocker = true
 		features[ii].SupportsPlatformHighAvailabilityOnK8S = true
+		features[ii].SupportsMultipleNodePools = true
 		features[ii].AccessVars = map[string]*edgeproto.PropertyInfo{
 			"APIKey": &edgeproto.PropertyInfo{
 				Name:        "API Key",
@@ -583,6 +663,7 @@ func ClusterInstData() []edgeproto.ClusterInst {
 	devData := DevData()
 	flavorData := FlavorData()
 	cloudletData := CloudletData()
+	cloudletInfoData := CloudletInfoData()
 	zoneData := ZoneData()
 	autoScalePolicyData := AutoScalePolicyData()
 	return []edgeproto.ClusterInst{{ // 0
@@ -595,6 +676,15 @@ func ClusterInstData() []edgeproto.ClusterInst {
 		IpAccess:   edgeproto.IpAccess_IP_ACCESS_DEDICATED,
 		NumMasters: 1,
 		NumNodes:   2,
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 2,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 1,
+				Ram:   1024,
+				Disk:  1,
+			},
+		}},
 	}, { // edgeproto.ClusterInst // 1
 		Key: edgeproto.ClusterKey{
 			Name:         "Pillimos2",
@@ -611,10 +701,17 @@ func ClusterInstData() []edgeproto.ClusterInst {
 			Organization: devData[0],
 		},
 		ZoneKey:         zoneData[2].Key,
-		Flavor:          flavorData[0].Key,
 		NumMasters:      1,
-		NumNodes:        2,
 		AutoScalePolicy: autoScalePolicyData[2].Key.Name,
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 2,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 1,
+				Ram:   1024,
+				Disk:  1,
+			},
+		}},
 	}, { // edgeproto.ClusterInst // 3
 		Key: edgeproto.ClusterKey{
 			Name:         "Ever.Ai",
@@ -654,7 +751,15 @@ func ClusterInstData() []edgeproto.ClusterInst {
 		ZoneKey:    zoneData[3].Key,
 		Flavor:     flavorData[2].Key,
 		NumMasters: 1,
-		NumNodes:   3,
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "default",
+			NumNodes: 3,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 4,
+				Ram:   4096,
+				Disk:  4,
+			},
+		}},
 	}, { // edgeproto.ClusterInst // 7
 		Key: edgeproto.ClusterKey{
 			Name:         "Reservable",
@@ -673,9 +778,25 @@ func ClusterInstData() []edgeproto.ClusterInst {
 		Flavor:           flavorData[0].Key,
 		IpAccess:         edgeproto.IpAccess_IP_ACCESS_SHARED,
 		NumMasters:       1,
-		NumNodes:         5,
-		MasterNodeFlavor: flavorData[2].Key.Name, // medium
+		MasterNodeFlavor: cloudletInfoData[0].Flavors[3].Name, // flavor.medium
 		MultiTenant:      true,
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 2,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 1,
+				Ram:   1024,
+				Disk:  1,
+			},
+		}, {
+			Name:     "bigcpupool",
+			NumNodes: 3,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 4,
+				Ram:   4096,
+				Disk:  4,
+			},
+		}},
 	}, { // edgeproto.ClusterInst // 9
 		Key: edgeproto.ClusterKey{
 			Name:         "dockerCluster",
@@ -683,8 +804,12 @@ func ClusterInstData() []edgeproto.ClusterInst {
 		},
 		ZoneKey:    zoneData[1].Key,
 		Deployment: cloudcommon.DeploymentTypeDocker,
-		Flavor:     flavorData[0].Key,
 		IpAccess:   edgeproto.IpAccess_IP_ACCESS_DEDICATED,
+		NodeResources: &edgeproto.NodeResources{
+			Vcpus: 1,
+			Ram:   1024,
+			Disk:  1,
+		},
 	}}
 }
 
@@ -692,7 +817,6 @@ func ClusterInstData() []edgeproto.ClusterInst {
 // from appinsts that have not specified a cluster.
 func ClusterInstAutoData() []edgeproto.ClusterInst {
 	devData := DevData()
-	flavorData := FlavorData()
 	cloudletData := CloudletData()
 	zoneData := ZoneData()
 	return []edgeproto.ClusterInst{{
@@ -703,13 +827,21 @@ func ClusterInstAutoData() []edgeproto.ClusterInst {
 		},
 		CloudletKey: cloudletData[1].Key,
 		ZoneKey:     zoneData[1].Key,
-		Flavor:      flavorData[0].Key,
 		NumMasters:  1,
 		NumNodes:    1,
 		State:       edgeproto.TrackedState_READY,
 		Auto:        true,
 		Reservable:  true,
 		ReservedBy:  devData[0],
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 1,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 1,
+				Ram:   1024,
+				Disk:  1,
+			},
+		}},
 	}, { // edgeproto.ClusterInst
 		// from AppInstData[4] -> AppData[2]
 		Key: edgeproto.ClusterKey{
@@ -718,13 +850,21 @@ func ClusterInstAutoData() []edgeproto.ClusterInst {
 		},
 		CloudletKey: cloudletData[2].Key,
 		ZoneKey:     zoneData[2].Key,
-		Flavor:      flavorData[1].Key,
 		NumMasters:  1,
 		NumNodes:    1,
 		State:       edgeproto.TrackedState_READY,
 		Auto:        true,
 		Reservable:  true,
 		ReservedBy:  devData[0],
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 1,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 2,
+				Ram:   2048,
+				Disk:  2,
+			},
+		}},
 	}, { // edgeproto.ClusterInst
 		// from AppInstData[6] -> AppData[6]
 		Key: edgeproto.ClusterKey{
@@ -733,13 +873,21 @@ func ClusterInstAutoData() []edgeproto.ClusterInst {
 		},
 		CloudletKey: cloudletData[2].Key,
 		ZoneKey:     zoneData[2].Key,
-		Flavor:      flavorData[1].Key,
 		NumMasters:  1,
 		NumNodes:    1,
 		State:       edgeproto.TrackedState_READY,
 		Auto:        true,
 		Reservable:  true,
 		ReservedBy:  devData[0],
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 1,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 2,
+				Ram:   2048,
+				Disk:  2,
+			},
+		}},
 	}, { // edgeproto.ClusterInst
 		// from AppInstData[12] -> AppData[13]
 		Key: edgeproto.ClusterKey{
@@ -748,13 +896,21 @@ func ClusterInstAutoData() []edgeproto.ClusterInst {
 		},
 		CloudletKey: cloudletData[3].Key,
 		ZoneKey:     zoneData[3].Key,
-		Flavor:      flavorData[0].Key,
 		NumMasters:  1,
 		NumNodes:    1,
 		State:       edgeproto.TrackedState_READY,
 		Auto:        true,
 		Reservable:  true,
 		ReservedBy:  edgeproto.OrganizationEdgeCloud,
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 1,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 1,
+				Ram:   1024,
+				Disk:  1,
+			},
+		}},
 	}}
 }
 
@@ -795,6 +951,17 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:     appData[1].Key,
 		ZoneKey:    zoneData[1].Key, // expect to create clusterInstAutoData[0]
 		PowerState: edgeproto.PowerState_POWER_ON,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 300*edgeproto.DecMillis),
+				TotalMemory: 300,
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeVcpus:  1,
+					MinNodeMemory: 1024,
+					MinNodeDisk:   1,
+				},
+			},
+		},
 	}, { // edgeproto.AppInst // 4
 		Key: edgeproto.AppInstKey{
 			Name:         appData[2].Key.Name + "1",
@@ -819,6 +986,17 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:     appData[6].Key,
 		ZoneKey:    zoneData[2].Key, // expect to create clusterInstAutoData[2]
 		PowerState: edgeproto.PowerState_POWER_ON,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeVcpus:  2,
+					MinNodeMemory: 2048,
+					MinNodeDisk:   2,
+				},
+			},
+		},
 	}, { // edgeproto.AppInst // 7
 		Key: edgeproto.AppInstKey{
 			Name:         appData[6].Key.Name + "2",
@@ -827,6 +1005,12 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:     appData[6].Key,
 		ClusterKey: clusterInstData[0].Key,
 		PowerState: edgeproto.PowerState_POWER_ON,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 100*edgeproto.DecMillis),
+				TotalMemory: 128,
+			},
+		},
 	}, { // edgeproto.AppInst // 8
 		Key: edgeproto.AppInstKey{
 			Name:         appData[7].Key.Name + "1",
@@ -1283,6 +1467,15 @@ func CloudletInfoData() []edgeproto.CloudletInfo {
 			}},
 		},
 		CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 10,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 5,
+				Ram:   4096,
+				Disk:  500,
+			},
+		}},
 	}}
 }
 
@@ -1455,8 +1648,8 @@ func ResTagTableData() []edgeproto.ResTagTable {
 }
 
 func AlertData() []edgeproto.Alert {
-	clusterInstData := ClusterInstData()
-	appInstData := AppInstData()
+	clusterInstData := CreatedClusterInstData()
+	appInstData := CreatedAppInstData()
 	return []edgeproto.Alert{{
 		Labels: map[string]string{
 			"alertname":   "AutoScaleUp",
@@ -2285,6 +2478,30 @@ func IsAutoClusterAutoDeleteApp(inst *edgeproto.AppInst) bool {
 	panic(fmt.Sprintf("App definition not found for %v", inst.Key))
 }
 
+func CreatedAppData() []edgeproto.App {
+	appData := AppData()
+	flavorData := FlavorData()
+	created := []edgeproto.App{}
+	for ii, app := range appData {
+		// cloudlet key is set by the controller algorithm
+		// which chooses a cloudlet from the specified zone.
+		switch ii {
+		case 1:
+			app.KubernetesResources = &edgeproto.KubernetesResources{}
+			app.KubernetesResources.SetFromFlavor(&flavorData[0])
+		case 3:
+			app.NodeResources = &edgeproto.NodeResources{}
+			app.NodeResources.SetFromFlavor(&flavorData[1])
+		case 4:
+			// flavor overrides KubernetesResources spec
+			app.NodeResources = &edgeproto.NodeResources{}
+			app.NodeResources.SetFromFlavor(&flavorData[2])
+		}
+		created = append(created, app)
+	}
+	return created
+}
+
 // Get the AppInst data after it has been created by the Controller.
 // This is for tests that are using data as if it has already been
 // created and processed by the Controller, given that the controller
@@ -2293,6 +2510,7 @@ func CreatedAppInstData() []edgeproto.AppInst {
 	clusterInstData := ClusterInstData()
 	clusterInstAutoData := ClusterInstAutoData()
 	cloudletData := CloudletData()
+	appData := AppData()
 	cloudletFromCluster := map[edgeproto.ClusterKey]edgeproto.CloudletKey{}
 	for _, cluster := range append(CreatedClusterInstData(), ClusterInstAutoData()...) {
 		cloudletFromCluster[cluster.Key] = cluster.CloudletKey
@@ -2304,24 +2522,50 @@ func CreatedAppInstData() []edgeproto.AppInst {
 	insts := []edgeproto.AppInst{}
 	for ii, appInst := range AppInstData() {
 		switch ii {
+		case 0:
+			// fill in resource data inherited from App.
+			appInst.KubernetesResources = appData[0].KubernetesResources
+		case 1:
+			appInst.KubernetesResources = appData[0].KubernetesResources
+		case 2:
+			appInst.KubernetesResources = appData[0].KubernetesResources
 		case 3:
 			// grab expected autocluster real name
 			appInst.ClusterKey = clusterInstAutoData[0].Key
 		case 4:
+			appInst.KubernetesResources = appData[2].KubernetesResources
 			appInst.ClusterKey = clusterInstAutoData[1].Key
+		case 5:
+			appInst.KubernetesResources = appData[5].KubernetesResources
+			appInst.KubernetesResources.Validate()
 		case 6:
 			appInst.ClusterKey = clusterInstAutoData[2].Key
+		case 8:
+			appInst.KubernetesResources = appData[7].KubernetesResources
+		case 9:
+			appInst.KubernetesResources = appData[9].KubernetesResources
+		case 10:
+			appInst.KubernetesResources = appData[9].KubernetesResources
 		case 11:
+			appInst.NodeResources = appData[12].NodeResources
 			appInst.CloudletKey = cloudletData[0].Key // VM App
 		case 12:
+			appInst.KubernetesResources = appData[13].KubernetesResources
 			appInst.ClusterKey = clusterInstAutoData[3].Key
 		case 13:
-			fallthrough
+			appInst.KubernetesResources = appData[0].KubernetesResources
+			appInst.ClusterKey = clusterInstData[8].Key
+		case 14:
+			appInst.KubernetesResources = appData[9].KubernetesResources
 		case 15:
-			fallthrough
+			appInst.KubernetesResources = appData[13].KubernetesResources
+			appInst.ClusterKey = clusterInstData[8].Key
 		case 16:
+			appInst.KubernetesResources = appData[14].KubernetesResources
 			// auto cluster chooses MT cluster
 			appInst.ClusterKey = clusterInstData[8].Key
+		case 17:
+			appInst.NodeResources = appData[15].NodeResources
 		}
 		// fill in cloudlet from cluster if non-VM app
 		if appInst.ClusterKey.Name != "" {
@@ -2343,7 +2587,9 @@ func CreatedAppInstData() []edgeproto.AppInst {
 
 func CreatedClusterInstData() []edgeproto.ClusterInst {
 	cloudletData := CloudletData()
+	cloudletInfoData := CloudletInfoData()
 	clusterInstData := ClusterInstData()
+	flavorData := FlavorData()
 	insts := []edgeproto.ClusterInst{}
 	for ii, ci := range clusterInstData {
 		// cloudlet key is set by the controller algorithm
@@ -2352,36 +2598,56 @@ func CreatedClusterInstData() []edgeproto.ClusterInst {
 		case 0:
 			ci.CloudletKey = cloudletData[0].Key
 		case 1:
+			ci.EnsureDefaultNodePool()
+			ci.NodePools[0].SetFromFlavor(&flavorData[0])
 			ci.CloudletKey = cloudletData[1].Key
 		case 2:
 			ci.CloudletKey = cloudletData[2].Key
+			ci.NumNodes = ci.NodePools[0].NumNodes
 		case 3:
+			ci.EnsureDefaultNodePool()
+			ci.NodePools[0].SetFromFlavor(&flavorData[1])
 			ci.CloudletKey = cloudletData[0].Key
 		case 4:
+			ci.EnsureDefaultNodePool()
+			ci.NodePools[0].SetFromFlavor(&flavorData[1])
 			ci.CloudletKey = cloudletData[1].Key
 		case 5:
+			ci.EnsureDefaultNodePool()
+			ci.NodePools[0].SetFromFlavor(&flavorData[2])
 			ci.CloudletKey = cloudletData[2].Key
 		case 6:
 			ci.CloudletKey = cloudletData[3].Key
+			ci.NumNodes = ci.NodePools[0].NumNodes
 		case 7:
+			ci.EnsureDefaultNodePool()
+			ci.NodePools[0].SetFromFlavor(&flavorData[0])
 			ci.CloudletKey = cloudletData[0].Key
 		case 8:
 			ci.CloudletKey = cloudletData[0].Key
+			ci.NumNodes = ci.NodePools[0].NumNodes
 		case 9:
 			ci.CloudletKey = cloudletData[1].Key
 		}
+		for _, pool := range ci.NodePools {
+			_ = pool.Validate()
+		}
+		if ci.NodeResources != nil {
+			_ = ci.NodeResources.Validate()
+		}
 		insts = append(insts, ci)
 	}
-	for _, cloudlet := range cloudletData {
-		if cloudlet.PlatformType == "fakesinglecluster" {
-			ci := edgeproto.ClusterInst{}
-			ci.Key = *cloudcommon.GetDefaultClustKey(cloudlet.Key, cloudlet.SingleKubernetesClusterOwner)
-			ci.Deployment = cloudcommon.DeploymentTypeKubernetes
-			ci.MultiTenant = true
-			ci.CloudletKey = cloudlet.Key
-			insts = append(insts, ci)
-		}
+	// add clusters for fakesinglecluster cloudlets
+	addSingleKubernetesCluster := func(cloudlet *edgeproto.Cloudlet, info *edgeproto.CloudletInfo) {
+		ci := edgeproto.ClusterInst{}
+		ci.Key = *cloudcommon.GetDefaultClustKey(cloudlet.Key, cloudlet.SingleKubernetesClusterOwner)
+		ci.Deployment = cloudcommon.DeploymentTypeKubernetes
+		ci.MultiTenant = true
+		ci.CloudletKey = cloudlet.Key
+		ci.NodePools = info.NodePools
+		insts = append(insts, ci)
 	}
+	addSingleKubernetesCluster(&cloudletData[4], &cloudletInfoData[4])
 	return insts
 }
 

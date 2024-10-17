@@ -55,6 +55,13 @@ func (s *ClusterRefsApi) addRef(stm concurrency.STM, appInst *edgeproto.AppInst)
 	if !s.store.STMGet(stm, key, &refs) {
 		refs.Key = *key
 	}
+	// if creating again to override create error, may already
+	// exist
+	for _, aikey := range refs.Apps {
+		if aikey.Matches(&appInst.Key) {
+			return
+		}
+	}
 	refs.Apps = append(refs.Apps, appInst.Key)
 	s.store.STMPut(stm, &refs)
 }

@@ -32,7 +32,7 @@ import (
 // the best cluster from pre-existing clusters when the AppInst
 // does not specify a specific one.
 func TestAppInstGetPotentialClusters(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
+	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
@@ -92,6 +92,11 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 		IpAccess:    edgeproto.IpAccess_IP_ACCESS_SHARED,
 		Deployment:  cloudcommon.DeploymentTypeDocker,
 		Reservable:  true,
+		NodeResources: &edgeproto.NodeResources{
+			Vcpus: 2,
+			Ram:   4096,
+			Disk:  100,
+		},
 	}
 	reservK := edgeproto.ClusterInst{
 		Key: edgeproto.ClusterKey{
@@ -104,6 +109,15 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 		IpAccess:    edgeproto.IpAccess_IP_ACCESS_SHARED,
 		Deployment:  cloudcommon.DeploymentTypeKubernetes,
 		Reservable:  true,
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 2,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 2,
+				Ram:   4096,
+				Disk:  100,
+			},
+		}},
 	}
 	_, err = apis.clusterInstApi.store.Put(ctx, &reservD, sync.SyncWait)
 	require.Nil(t, err)
@@ -133,10 +147,6 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 			AccessType:      edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 			DefaultFlavor:   flavorData[0].Key,
 			AllowServerless: false,
-			ServerlessConfig: &edgeproto.ServerlessConfig{
-				Vcpus: *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
-				Ram:   20,
-			},
 		}
 	}
 	getAppInst := func() *edgeproto.AppInst {
@@ -148,6 +158,17 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 			AppKey:  appKey,
 			ZoneKey: zone.Key,
 			Flavor:  flavorData[0].Key,
+			KubernetesResources: &edgeproto.KubernetesResources{
+				CpuPool: &edgeproto.NodePoolResources{
+					TotalVcpus:  *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
+					TotalMemory: 20,
+				},
+			},
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 1,
+				Ram:   1024,
+				Disk:  20,
+			},
 		}
 	}
 	cctx := DefCallContext()
