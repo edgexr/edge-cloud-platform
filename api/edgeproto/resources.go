@@ -146,27 +146,6 @@ func (s *KubernetesResources) SetFromFlavor(flavor *Flavor) {
 	s.CpuPool.Topology.MinNodeOptRes = flavor.OptResMap
 }
 
-func (s *ServerlessConfig) ToKubernetesResources() *KubernetesResources {
-	// for backwards compatibility, convert serverless config
-	// to kubernetes resources.
-	reps := uint64(s.MinReplicas)
-	totalVcpuWhole := reps * s.Vcpus.Whole
-	totalVcpuNano := uint32(reps) * s.Vcpus.Nanos
-	totalVcpus := NewUdec64(totalVcpuWhole, totalVcpuNano)
-
-	return &KubernetesResources{
-		CpuPool: &NodePoolResources{
-			TotalVcpus:  *totalVcpus,
-			TotalMemory: reps * s.Ram,
-			Topology: NodePoolTopology{
-				MinNodeVcpus:     uint64(s.Vcpus.Whole),
-				MinNodeMemory:    s.Ram,
-				MinNumberOfNodes: int32(reps),
-			},
-		},
-	}
-}
-
 func (s *ClusterInst) EnsureDefaultNodePool() {
 	if len(s.NodePools) == 0 {
 		s.NodePools = []*NodePool{{

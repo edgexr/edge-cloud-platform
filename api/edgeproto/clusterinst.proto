@@ -91,17 +91,17 @@ message ClusterInst {
   IpAccess ip_access = 7 [(protogen.backend) = true];
   // Allocated IP for dedicated access
   string allocated_ip = 8 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
-  // (_deprecated_) Replaced by NodePools.CloudletNodeFlavor. Cloudlet specific node flavor.
+  // (_deprecated_) Replaced by NodePools.NodeResources.InfraNodeFlavor. Cloudlet specific node flavor.
   string node_flavor = 11 [(protogen.backend) = true];
   // Deployment type (kubernetes or docker)
   string deployment = 15 [(protogen.backend) = true];
   // Number of k8s masters (In case of docker deployment, this field is not required)
   uint32 num_masters = 13;
-  // (_deprecated_) Replaced by NodePools.NumNodes. Number of k8s nodes (In case of docker deployment, this field is not required)
+  // (_deprecated_) Replaced by NodePools.NumNodes. Number of k8s nodes.
   uint32 num_nodes = 14;
   // StatusInfo (16) (Deprecated) status is used to reflect progress of creation or other events
   reserved 16;
-  // (_deprecated_) Replaced by NodePools.ExternalVolumeSize. Size of external volume to be attached to nodes. This is for the root partition
+  // (_deprecated_) Replaced by NodePools.NodeResources.ExternalVolumeSize. Size of external volume to be attached to nodes. This is for the root partition
   uint64 external_volume_size = 17 [(protogen.backend) = true];
   // Auto scale policy name
   string auto_scale_policy = 18 [(protogen.refers_to) = "AutoScalePolicy"];

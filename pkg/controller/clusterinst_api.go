@@ -1585,13 +1585,6 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 		if !in.DeletePrepare {
 			return errors.New("ClusterInst expected delete prepare")
 		}
-		/*
-			nodeFlavor := edgeproto.Flavor{}
-			if !s.all.flavorApi.store.STMGet(stm, &in.Flavor, &nodeFlavor) {
-				log.WarnLog("Delete ClusterInst: flavor not found",
-					"flavor", in.Flavor.Name)
-			}
-		*/
 		cloudlet := edgeproto.Cloudlet{}
 		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
 			log.WarnLog("Delete ClusterInst: cloudlet not found",
@@ -2171,7 +2164,9 @@ func (s *ClusterInstApi) updateCloudletSingleClusterResources(ctx context.Contex
 		s.store.STMPut(stm, &clusterInst)
 		return nil
 	})
-	log.SpanLog(ctx, log.DebugLevelApi, "updated cloudlet single cluster resources", "err", err)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "update cloudlet single cluster resources failed", "err", err)
+	}
 }
 
 func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *edgeproto.Cloudlet, inCb edgeproto.ClusterInstApi_UpdateClusterInstServer) (reterr error) {

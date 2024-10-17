@@ -55,10 +55,9 @@ func KubernetesResourcesFits(ctx context.Context, clusterInst *edgeproto.Cluster
 // pools. We also assume that CPU pools and GPU pools are separate sets
 // of pools, and non-GPU workloads will not be deployed to pools with
 // GPU resources (we may need to use affinities to enforce this).
-// Note this does not consider any instances already deployed,
-// OS resource overhead, or sidecar apps that will be deployed later.
 // This returns the calculated total resources available in the
 // valid pools.
+// TODO: consider taking into account OS overhead.
 func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used ResValMap, nodePools []*edgeproto.NodePool, flavorLookup edgeproto.FlavorLookup) error {
 	// convert topology to generic set of numeric resources
 	reqMins, err := TopologyToResValMap(&reqs.Topology)
@@ -125,7 +124,6 @@ func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used R
 	}
 	free := total.Clone()
 	underflow := false
-	//NodePoolResourcesSubFloor(free, used, &underflow)
 	free.SubFloorAll(used, &underflow)
 
 	log.SpanLog(ctx, log.DebugLevelApi, "node pool fits", "reqs", reqTotals.String(), "total", total.String(), "used", used.String(), "free", free.String(), "skippools", reasons, "underflow", underflow)
@@ -209,9 +207,9 @@ func TopologyToResValMap(top *edgeproto.NodePoolTopology) (ResValMap, error) {
 	if top == nil {
 		return resVals, nil
 	}
-	resVals.Add(NewWholeResVal(cloudcommon.ResourceVcpus, "", top.MinNodeVcpus))
-	resVals.Add(NewWholeResVal(cloudcommon.ResourceRamMb, cloudcommon.ResourceRamUnits, top.MinNodeMemory))
-	resVals.Add(NewWholeResVal(cloudcommon.ResourceDiskGb, cloudcommon.ResourceDiskUnits, top.MinNodeDisk))
+	resVals.AddVcpus(top.MinNodeVcpus, 0)
+	resVals.AddRam(top.MinNodeMemory)
+	resVals.AddDisk(top.MinNodeDisk)
 	// optional resources
 	err := resVals.AddOptResMap(top.MinNodeOptRes, 1)
 	if err != nil {

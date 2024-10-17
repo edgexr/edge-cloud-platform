@@ -45,9 +45,8 @@ func NewUdec64(whole uint64, nanos uint32) *Udec64 {
 
 // Cmp compares a and b and returns:
 // -1 if a < b
-//
-//	0 if a == b
-//	1 if a > b
+// 0 if a == b
+// 1 if a > b
 func (a *Udec64) Cmp(b *Udec64) int {
 	if a.Whole > b.Whole {
 		return 1

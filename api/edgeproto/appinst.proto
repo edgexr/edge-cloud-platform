@@ -162,7 +162,7 @@ message AppInst {
   repeated distributed_match_engine.AppPort mapped_ports = 9 [(gogoproto.nullable) = false, (protogen.backend) = true];
   // Flavor defining resource requirements
   FlavorKey flavor = 12 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.refers_to) = "Flavor"];
-  // (_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources/KubernetesResources CloudletNodeFlavor.
+  // (_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources.InfraNodeFlavor.
   string cloudlet_flavor = 42;
   // Current state of the AppInst on the Cloudlet
   TrackedState state = 14 [(protogen.backend) = true];
@@ -199,7 +199,7 @@ message AppInst {
   uint64 external_volume_size = 32 [(protogen.backend) = true];
   // Optional Availability Zone if any
   string availability_zone = 33 [(protogen.backend) = true];
-  // (_deprecated_) Replaced by NodeResources.CloudletNodeFlavor; OS node flavor to use
+  // (_deprecated_) Replaced by NodeResources.InfraNodeFlavor; OS node flavor to use
   string vm_flavor = 34 [(protogen.backend) = true];
   // (_deprecated_) Optional Resources required by OS flavor if any
   string opt_res = 35 [(protogen.backend) = true];

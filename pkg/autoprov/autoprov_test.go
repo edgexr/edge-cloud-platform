@@ -80,8 +80,8 @@ func TestAutoProv(t *testing.T) {
 
 func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, dn *notify.DummyHandler) {
 	// initial state of ClusterInst
-	cinst := testutil.ClusterInstData()[2]
-	numnodes := int(testutil.ClusterInstData()[2].NodePools[0].NumNodes)
+	cinst := testutil.CreatedClusterInstData()[2]
+	numnodes := int(cinst.NodePools[0].NumNodes)
 	ds.ClusterInstCache.Update(ctx, &cinst, 0)
 
 	// alert labels for ClusterInst
@@ -129,9 +129,7 @@ func requireClusterInstNumNodes(t *testing.T, cache *edgeproto.ClusterInstCache,
 		if !cache.Get(key, &cinst) {
 			require.True(t, false, "cluster inst should have been found, %v", key)
 		}
-		if len(cinst.NodePools) > 0 {
-			checkCount = int(cinst.NodePools[0].NumNodes)
-		}
+		checkCount = int(cinst.NumNodes)
 		if checkCount != numnodes {
 			time.Sleep(10 * time.Millisecond)
 			continue

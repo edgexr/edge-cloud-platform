@@ -104,6 +104,13 @@ func (s *FreeReservableClusterInstCache) GetForCloudlet(ctx context.Context, key
 			if deployment != clust.Deployment {
 				continue
 			}
+			// TODO: call resspec.KubernetesResourcesFits or
+			// resspec.NodeResourcesFits to determine if resources
+			// can fit in the cluster. Unfortunately due to
+			// FreeReservableClusterInstCache being in edgeproto,
+			// this results in an import cycle. For now the
+			// resource check is skipped, as it anyway will
+			// be done under STM by the controller.
 			matched = append(matched, clust.Clone())
 		}
 	}

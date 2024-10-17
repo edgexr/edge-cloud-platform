@@ -326,7 +326,7 @@ type AppInst struct {
 	MappedPorts []distributed_match_engine.AppPort `protobuf:"bytes,9,rep,name=mapped_ports,json=mappedPorts,proto3" json:"mapped_ports"`
 	// Flavor defining resource requirements
 	Flavor FlavorKey `protobuf:"bytes,12,opt,name=flavor,proto3" json:"flavor"`
-	// (_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources/KubernetesResources CloudletNodeFlavor.
+	// (_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources.InfraNodeFlavor.
 	CloudletFlavor string `protobuf:"bytes,42,opt,name=cloudlet_flavor,json=cloudletFlavor,proto3" json:"cloudlet_flavor,omitempty"`
 	// Current state of the AppInst on the Cloudlet
 	State TrackedState `protobuf:"varint,14,opt,name=state,proto3,enum=edgeproto.TrackedState" json:"state,omitempty"`
@@ -356,7 +356,7 @@ type AppInst struct {
 	ExternalVolumeSize uint64 `protobuf:"varint,32,opt,name=external_volume_size,json=externalVolumeSize,proto3" json:"external_volume_size,omitempty"`
 	// Optional Availability Zone if any
 	AvailabilityZone string `protobuf:"bytes,33,opt,name=availability_zone,json=availabilityZone,proto3" json:"availability_zone,omitempty"`
-	// (_deprecated_) Replaced by NodeResources.CloudletNodeFlavor; OS node flavor to use
+	// (_deprecated_) Replaced by NodeResources.InfraNodeFlavor; OS node flavor to use
 	VmFlavor string `protobuf:"bytes,34,opt,name=vm_flavor,json=vmFlavor,proto3" json:"vm_flavor,omitempty"`
 	// (_deprecated_) Optional Resources required by OS flavor if any
 	OptRes string `protobuf:"bytes,35,opt,name=opt_res,json=optRes,proto3" json:"opt_res,omitempty"`

@@ -159,15 +159,15 @@ type ClusterInst struct {
 	IpAccess IpAccess `protobuf:"varint,7,opt,name=ip_access,json=ipAccess,proto3,enum=edgeproto.IpAccess" json:"ip_access,omitempty"`
 	// Allocated IP for dedicated access
 	AllocatedIp string `protobuf:"bytes,8,opt,name=allocated_ip,json=allocatedIp,proto3" json:"allocated_ip,omitempty"`
-	// (_deprecated_) Replaced by NodePools.CloudletNodeFlavor. Cloudlet specific node flavor.
+	// (_deprecated_) Replaced by NodePools.NodeResources.InfraNodeFlavor. Cloudlet specific node flavor.
 	NodeFlavor string `protobuf:"bytes,11,opt,name=node_flavor,json=nodeFlavor,proto3" json:"node_flavor,omitempty"`
 	// Deployment type (kubernetes or docker)
 	Deployment string `protobuf:"bytes,15,opt,name=deployment,proto3" json:"deployment,omitempty"`
 	// Number of k8s masters (In case of docker deployment, this field is not required)
 	NumMasters uint32 `protobuf:"varint,13,opt,name=num_masters,json=numMasters,proto3" json:"num_masters,omitempty"`
-	// (_deprecated_) Replaced by NodePools.NumNodes. Number of k8s nodes (In case of docker deployment, this field is not required)
+	// (_deprecated_) Replaced by NodePools.NumNodes. Number of k8s nodes.
 	NumNodes uint32 `protobuf:"varint,14,opt,name=num_nodes,json=numNodes,proto3" json:"num_nodes,omitempty"`
-	// (_deprecated_) Replaced by NodePools.ExternalVolumeSize. Size of external volume to be attached to nodes. This is for the root partition
+	// (_deprecated_) Replaced by NodePools.NodeResources.ExternalVolumeSize. Size of external volume to be attached to nodes. This is for the root partition
 	ExternalVolumeSize uint64 `protobuf:"varint,17,opt,name=external_volume_size,json=externalVolumeSize,proto3" json:"external_volume_size,omitempty"`
 	// Auto scale policy name
 	AutoScalePolicy string `protobuf:"bytes,18,opt,name=auto_scale_policy,json=autoScalePolicy,proto3" json:"auto_scale_policy,omitempty"`

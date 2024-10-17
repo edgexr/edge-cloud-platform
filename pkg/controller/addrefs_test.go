@@ -258,8 +258,6 @@ func (s *AddRefsDataGen) GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, 
 	autoScalePolicy := testutil.AutoScalePolicyData()[0]
 	network := testutil.NetworkData()[0]
 	network.Key.CloudletKey = cloudlet.Key
-	settings := edgeproto.GetDefaultSettings()
-	settings.MasterNodeFlavor = testutil.FlavorData()[0].Key.Name
 
 	clusterInst := testutil.ClusterInstData()[0]
 	clusterInst.CloudletKey = cloudlet.Key
@@ -278,7 +276,6 @@ func (s *AddRefsDataGen) GetCreateClusterInstTestObj() (*edgeproto.ClusterInst, 
 	supportData.AutoScalePolicies = []edgeproto.AutoScalePolicy{autoScalePolicy}
 	supportData.Networks = []edgeproto.Network{network}
 	supportData.PlatformFeatures = []edgeproto.PlatformFeatures{features}
-	supportData.Settings = settings
 	return &clusterInst, supportData
 }
 
