@@ -33,11 +33,13 @@ type ManagedK8sProvider interface {
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
 	SetProperties(props *infracommon.InfraProperties) error
 	Login(ctx context.Context) error
-	GetCredentials(ctx context.Context, clusterName string) ([]byte, error)
+	// GetCredentials retrieves kubeconfig credentials from the cluster
+	GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error)
 	NameSanitize(name string) string
 	CreateClusterPrerequisites(ctx context.Context, clusterName string) error
-	RunClusterCreateCommand(ctx context.Context, clusterName string, numNodes uint32, flavor string) error
-	RunClusterDeleteCommand(ctx context.Context, clusterName string) error
+	// RunClusterCreateCommand creates the specified cluster, returning any infra annotations to add to the cluster.
+	RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
+	RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error
 	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource
