@@ -1229,7 +1229,13 @@ func (s *AppApi) ShowZonesForAppDeployment(in *edgeproto.DeploymentZoneRequest, 
 			keyOk := false
 			err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 				keyOk = false
-				// TODO: fixme
+				// TODO: Many problems here.
+				// This needs to be based on Zones, not Cloudlets.
+				// This needs to use the potentialCloudlets/potentialClusters
+				// search algorithms.
+				// VmFlavor is deprecated, this should be based on
+				// Kubernetes/NodeResources, not flavors.
+				// This should require the caller to specify app resources.
 				//appInst.VmFlavor = allclds[key]
 				cloudlet := edgeproto.Cloudlet{}
 				if !s.all.cloudletApi.store.STMGet(stm, &key, &cloudlet) {
