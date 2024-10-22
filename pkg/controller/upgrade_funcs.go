@@ -81,6 +81,31 @@ func unmarshalUpgradeObj(ctx context.Context, str string, obj interface{}) error
 	return nil
 }
 
+func walkUpgradeObjs[Obj any](ctx context.Context, objStore objstore.KVStore, dbKey string, workFunc func(ctx context.Context, stm concurrency.STM, buf *Obj) error) error {
+	keyStrs, err := getDbObjectKeys(objStore, dbKey)
+	if err != nil {
+		return err
+	}
+	for keyStr := range keyStrs {
+		_, err := objStore.ApplySTM(ctx, func(stm concurrency.STM) error {
+			valStr := stm.Get(keyStr)
+			if valStr == "" {
+				// deleted in the meantime
+				return nil
+			}
+			buf := new(Obj)
+			if err := unmarshalUpgradeObj(ctx, valStr, buf); err != nil {
+				return err
+			}
+			return workFunc(ctx, stm, buf)
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // New ClusterInstRefKey is just the ClusterKey
 type ClusterInstRefKeyV1 struct {
 	ClusterKey   edgeproto.ClusterKeyV1 `json:"cluster_key"`
@@ -1157,4 +1182,68 @@ func cloudletKeyToZoneKey(key *edgeproto.CloudletKey) *edgeproto.ZoneKey {
 		Organization:          key.Organization,
 		FederatedOrganization: key.FederatedOrganization,
 	}
+}
+
+// NodePoolsFeature updates App, AppInst, and ClusterInst definitions
+// by converting flavors to the new resource specs.
+func NodePoolsFeature(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport, dbModelID int32) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "Node Pools Feature")
+
+	err := walkUpgradeObjs(ctx, objStore, "App", func(ctx context.Context, stm concurrency.STM, app *edgeproto.App) error {
+		if app.KubernetesResources != nil || app.NodeResources != nil {
+			// already upgraded
+			return nil
+		}
+		err := allApis.appApi.resolveResourcesSpec(ctx, stm, app)
+		if err != nil {
+			return err
+		}
+		allApis.appApi.store.STMPut(stm, app)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	err = walkUpgradeObjs(ctx, objStore, "ClusterInst", func(ctx context.Context, stm concurrency.STM, ci *edgeproto.ClusterInst) error {
+		if len(ci.NodePools) > 0 || ci.NodeResources != nil {
+			// already upgraded
+			return nil
+		}
+		err := allApis.clusterInstApi.resolveResourcesSpec(ctx, stm, ci, nil)
+		if err != nil {
+			return err
+		}
+		allApis.clusterInstApi.store.STMPut(stm, ci)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	err = walkUpgradeObjs(ctx, objStore, "AppInst", func(ctx context.Context, stm concurrency.STM, appInst *edgeproto.AppInst) error {
+		if appInst.KubernetesResources != nil || appInst.NodeResources != nil {
+			// already upgraded
+			return nil
+		}
+		app := edgeproto.App{}
+		if !allApis.appApi.store.STMGet(stm, &appInst.AppKey, &app) {
+			return appInst.AppKey.NotFoundError()
+		}
+		err := allApis.appInstApi.resolveResourcesSpec(ctx, stm, &app, appInst)
+		if err != nil {
+			return err
+		}
+		if appInst.NodeResources != nil {
+			appInst.NodeResources.InfraNodeFlavor = appInst.VmFlavor
+			appInst.NodeResources.ExternalVolumeSize = appInst.ExternalVolumeSize
+		}
+		allApis.appInstApi.store.STMPut(stm, appInst)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

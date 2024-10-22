@@ -683,10 +683,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 
 	// specify a pci pass_throuh, don't care what kind
 	// should match flavor.large-pci
-	var flavorPciMatch = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "x1.large-pci-mex",
-		},
+	var flavorPciMatch = &edgeproto.NodeResources{
 		Ram:   8192,
 		Vcpus: 10,
 		Disk:  40,
@@ -695,10 +692,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 	}
 
 	// map to a generic nvidia vgpu type, should match flavor.large-nvidia
-	var flavorVgpuMatch = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "x1.large-vgpu-mex",
-		},
+	var flavorVgpuMatch = &edgeproto.NodeResources{
 		Ram:   8192,
 		Vcpus: 10,
 		Disk:  40,
@@ -708,10 +702,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 	// don't care what kind of gpu resource
 
 	// don't care what kind of gpu resource
-	var testflavor = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "x1.large-mex",
-		},
+	var testflavor = &edgeproto.NodeResources{
 		Ram:   8192,
 		Vcpus: 8,
 		Disk:  40,
@@ -719,10 +710,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 		OptResMap: map[string]string{"gpu": "gpu:1"},
 	}
 	// request two optional resources
-	var testflavor2 = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "x1.large-2-Resources",
-		},
+	var testflavor2 = &edgeproto.NodeResources{
 		Ram:   8192,
 		Vcpus: 8,
 		Disk:  40,
@@ -730,10 +718,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 		OptResMap: map[string]string{"gpu": "gpu:1", "nas": "nas:ceph-20:1"},
 	}
 	// request nas optional resource only
-	var testflavorNas = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "x1.large-2-Resources",
-		},
+	var testflavorNas = &edgeproto.NodeResources{
 		Ram:       8192,
 		Vcpus:     8,
 		Disk:      40,
@@ -742,10 +727,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 
 	// test request for a specific type of pci  ( one T4 )
 	// should match flavor.large from testutils.
-	var testPciT4flavor = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "mex.large-pci-T4",
-		},
+	var testPciT4flavor = &edgeproto.NodeResources{
 		Ram:   8192,
 		Vcpus: 8,
 		Disk:  40,
@@ -753,10 +735,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 		OptResMap: map[string]string{"gpu": "pci:t4:1"},
 	}
 
-	var flavorVgpuNvidiaMatch = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "mex.large-vgpu-nvidia-63",
-		},
+	var flavorVgpuNvidiaMatch = &edgeproto.NodeResources{
 		Ram:   8192,
 		Vcpus: 10,
 		Disk:  40,
@@ -765,10 +744,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 	}
 
 	// should match flavor.large-generic-gpu
-	var flavorVIOMatch = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "x1.large-vmware-vgpu",
-		},
+	var flavorVIOMatch = &edgeproto.NodeResources{
 		Ram:   8192,
 		Vcpus: 10,
 		Disk:  80,
@@ -777,10 +753,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 	}
 
 	// Two mex flavors differing only in GPU vs VGPU
-	var flavorT4VGPUMatch = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "mex.large-vgpuT48Q",
-		},
+	var flavorT4VGPUMatch = &edgeproto.NodeResources{
 		Ram:   4096,
 		Vcpus: 12,
 		Disk:  20,
@@ -788,10 +761,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 		OptResMap: map[string]string{"gpu": "resources:VGPU:1"},
 	}
 
-	var flavorT4GPUMatch = edgeproto.Flavor{
-		Key: edgeproto.FlavorKey{
-			Name: "mex.large-gpuT48Q",
-		},
+	var flavorT4GPUMatch = &edgeproto.NodeResources{
 		Ram:   4096,
 		Vcpus: 12,
 		Disk:  20,
@@ -829,7 +799,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 		// change testflavor to request 10 gpus of any kind.
 		testflavor.OptResMap["gpu"] = "gpu:10"
 		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", *cl, cli)
-		require.Equal(t, "no suitable platform flavor found for x1.large-mex, please try a smaller flavor", vmerr.Error(), "nil table")
+		require.Equal(t, "no suitable infra flavor found for requested node resources, 2 with not enough RAM, 5 with not enough gpu, 5 with not enough vCPUs", vmerr.Error(), "not enough resources")
 
 		// specific pci passthrough
 		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testPciT4flavor, "", *cl, cli)
@@ -875,7 +845,7 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 		// Non-nominal: ask for nas only, should reject testflavor2 as there are no
 		// os flavors with only a nas resource
 		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavorNas, "", *cl, cli)
-		require.Equal(t, "no suitable platform flavor found for x1.large-2-Resources, please try a smaller flavor", vmerr.Error())
+		require.Equal(t, "no suitable infra flavor found for requested node resources, 2 with not enough RAM, 4 with not enough nas, 5 with not enough vCPUs, 1 with optional resources not requested", vmerr.Error())
 		// Non-nominal: flavor requests optional resource, while cloudlet's OptResMap is nil (cloudlet supports none)
 		cl.ResTagMap = nil
 		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", *cl, cli)

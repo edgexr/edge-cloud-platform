@@ -18,10 +18,10 @@ import (
 	fmt "fmt"
 	"time"
 
-	"github.com/gogo/protobuf/types"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
+	"github.com/gogo/protobuf/types"
 	context "golang.org/x/net/context"
 )
 
@@ -35,7 +35,7 @@ func getFlavorBasedVM(ctx context.Context, vmList []edgeproto.VM, vmSpec *edgepr
 		}
 		cli.Flavors = append(cli.Flavors, newVM.Flavor)
 	}
-	vmFlavorSpec, err := vmspec.GetVMSpec(ctx, vmSpec.Flavor, cli, nil)
+	vmFlavorSpec, err := resspec.GetVMSpec(ctx, vmSpec.Flavor.ToNodeResources(), cli, nil)
 	if err != nil {
 		return vmList, "", err
 	}

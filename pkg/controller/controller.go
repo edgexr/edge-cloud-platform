@@ -43,11 +43,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
-	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
 	"github.com/go-redis/redis/v8"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	gwruntime "github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -883,7 +883,7 @@ const (
 func initDebug(ctx context.Context, nodeMgr *node.NodeMgr, allApis *AllApis) {
 	nodeMgr.Debug.AddDebugFunc(ToggleFlavorMatchVerbose,
 		func(ctx context.Context, req *edgeproto.DebugRequest) string {
-			return vmspec.ToggleFlavorMatchVerbose()
+			return resspec.ToggleFlavorMatchVerbose()
 		})
 	nodeMgr.Debug.AddDebugFunc(ShowControllers, allApis.controllerApi.showControllers)
 }

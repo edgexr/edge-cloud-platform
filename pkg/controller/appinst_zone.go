@@ -149,7 +149,7 @@ func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallCo
 		}
 	}
 	if features.IsSingleKubernetesCluster {
-		if app.Deployment != cloudcommon.DeploymentTypeKubernetes && app.Deployment != cloudcommon.DeploymentTypeHelm {
+		if !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
 			return nil, KubernetesOnly, fmt.Errorf("app deployment %s, but cloudlet only supports kubernetes", app.Deployment)
 		}
 		if !app.AllowServerless {
@@ -176,6 +176,7 @@ func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallCo
 		return nil, UnsupportedImageType, err
 	}
 	pc.features = features
+	pc.flavorLookup = pc.cloudletInfo.GetFlavorLookup()
 	return pc, NoSkipReason, nil
 }
 
@@ -188,6 +189,7 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 		clust.existingCluster = in.ClusterKey
 		clust.cloudletKey = in.CloudletKey
 		clust.userSpecified = true
+		clust.parentPC = potentialCloudlets[0]
 		potentialClusters = append(potentialClusters, &clust)
 		return potentialClusters, nil
 	}
@@ -200,7 +202,7 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip single k8s cloudlet, not single kubernetes cluster", "cloudlet", pc.cloudlet.Key)
 			continue
 		}
-		if app.Deployment != cloudcommon.DeploymentTypeKubernetes && app.Deployment != cloudcommon.DeploymentTypeHelm {
+		if !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip single k8s cloudlet, app deployment is not kubernetes", "cloudlet", pc.cloudlet.Key)
 			continue
 		}
@@ -212,6 +214,15 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 		}
 		if cluster.MultiTenant && !app.AllowServerless {
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip single k8s cloudlet, cluster is multi-tenant and app is not serverless", "cloudlet", pc.cloudlet.Key)
+			continue
+		}
+		refs := edgeproto.ClusterRefs{}
+		if !s.all.clusterRefsApi.cache.Get(defaultClusterKey, &refs) {
+			// no error if refs not found
+			refs.Key = *defaultClusterKey
+		}
+		if err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup); err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip single k8s cloudlet, not enough resources", "cloudlet", pc.cloudlet.Key, "err", err)
 			continue
 		}
 		clust := potentialAppInstCluster{}
@@ -231,12 +242,22 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 	} else {
 		for _, pc := range potentialCloudlets {
 			clusterKey := cloudcommon.GetDefaultMTClustKey(pc.cloudlet.Key)
-			if !s.all.clusterInstApi.cache.HasKey(clusterKey) {
+			cluster := edgeproto.ClusterInst{}
+			if !s.all.clusterInstApi.cache.Get(clusterKey, &cluster) {
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT cluster, cluster not found", "cloudlet", pc.cloudlet.Key, "cluster", clusterKey)
 				continue
 			}
-			if app.Deployment != cloudcommon.DeploymentTypeKubernetes && app.Deployment != cloudcommon.DeploymentTypeHelm {
+			if !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT cluster, app deployment is not kubernetes", "cloudlet", pc.cloudlet.Key, "cluster", clusterKey)
+				continue
+			}
+			refs := edgeproto.ClusterRefs{}
+			if !s.all.clusterRefsApi.cache.Get(clusterKey, &refs) {
+				// no error if refs not found
+				refs.Key = *clusterKey
+			}
+			if err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup); err != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT cluster, not enough resources", "cloudlet", pc.cloudlet.Key, "err", err)
 				continue
 			}
 			clust := potentialAppInstCluster{}
@@ -277,21 +298,22 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential free reservable cluster, cluster not found", "cloudlet", pc.cloudlet.Key, "cluster", cluster.Key)
 				continue
 			}
-			if cluster.Flavor.Name != in.Flavor.Name {
-				// flavor mismatch
-				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, flavor mismatch", "cloudlet", pc.cloudlet.Key, "clusterFlavor", cluster.Flavor.Name, "appInstFlavor", in.Flavor.Name)
-				continue
-			}
-			targetDeployment := app.Deployment
-			if app.Deployment == cloudcommon.DeploymentTypeHelm {
-				targetDeployment = cloudcommon.DeploymentTypeKubernetes
-			}
+			targetDeployment := cloudcommon.AppInstToClusterDeployment(app.Deployment)
 			if targetDeployment != cluster.Deployment {
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, deployment mismatch", "cloudlet", pc.cloudlet.Key, "clusterDep", cluster.Deployment, "appInstDep", targetDeployment)
 				continue
 			}
 			if in.EnableIpv6 && !cluster.EnableIpv6 {
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, IPV6 mismatch", "cloudlet", pc.cloudlet.Key, "clusterIPV6", cluster.EnableIpv6, "appInstIPV6", in.EnableIpv6)
+				continue
+			}
+			refs := edgeproto.ClusterRefs{}
+			if !s.all.clusterRefsApi.cache.Get(&key, &refs) {
+				// no error if refs not found
+				refs.Key = key
+			}
+			if err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup); err != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, not enough resources", "cloudlet", pc.cloudlet.Key, "err", err)
 				continue
 			}
 			clust := potentialAppInstCluster{}
@@ -332,6 +354,15 @@ func (s *AppInstApi) usePotentialCluster(ctx context.Context, stm concurrency.ST
 		if !sidecarApp && in.Key.Organization != clusterInst.Key.Organization {
 			return nil, fmt.Errorf("developer organization mismatch between AppInst: %s and ClusterInst: %s", in.Key.Organization, clusterInst.Key.Organization)
 		}
+	}
+	// check resources again under STM to ensure no race conditions.
+	refs := edgeproto.ClusterRefs{}
+	if !s.all.clusterRefsApi.store.STMGet(stm, &pc.existingCluster, &refs) {
+		// no error if refs not found
+		refs.Key = pc.existingCluster
+	}
+	if err := s.all.clusterInstApi.fitsAppResources(ctx, &clusterInst, &refs, app, in, pc.parentPC.flavorLookup); err != nil {
+		return nil, fmt.Errorf("not enough resources in cluster %s, %s", pc.existingCluster.GetKeyString(), err)
 	}
 	return &clusterInst, nil
 }

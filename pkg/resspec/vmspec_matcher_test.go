@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package vmspec
+package resspec
 
 import (
 	"context"
@@ -106,10 +106,9 @@ var (
 )
 
 func testResMatch(t *testing.T, ctx context.Context, resname, request string, flavorInfo edgeproto.FlavorInfo, resTagTbl *edgeproto.ResTagTable, check bool) {
-	matched, err := match(ctx, resname, request, flavorInfo, resTagTbl)
+	err := match(ctx, resname, request, flavorInfo, resTagTbl)
 	if check == MATCH {
 		require.Nil(t, err)
-		require.True(t, matched)
 	} else {
 		require.NotNil(t, err, "resource not matched")
 		require.Contains(t, err.Error(), "No match found")

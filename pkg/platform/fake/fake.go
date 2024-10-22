@@ -221,6 +221,7 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsAdditionalNetworks:               true,
 		SupportsPlatformHighAvailabilityOnDocker: true,
 		SupportsPlatformHighAvailabilityOnK8S:    true,
+		SupportsMultipleNodePools:                true,
 		Properties:                               fakeProps,
 		ResourceQuotaProperties:                  quotaProps,
 		AccessVars:                               AccessVarProps,
@@ -311,14 +312,22 @@ func (s *Platform) GetClusterAdditionalResources(ctx context.Context, cloudlet *
 
 	out, ok := resInfo[cloudcommon.ResourceInstances]
 	if ok {
-		out.Value += uint64(len(vmResources))
+		instCount := 0
+		for _, vmRes := range vmResources {
+			instCount += int(vmRes.Count)
+		}
+		out.Value += uint64(instCount)
 		resInfo[cloudcommon.ResourceInstances] = out
 	}
 	return resInfo
 }
 
 func (s *Platform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
-	instancesUsed := uint64(len(resources))
+	instCount := 0
+	for _, vmRes := range resources {
+		instCount += int(vmRes.Count)
+	}
+	instancesUsed := uint64(instCount)
 	resMetric.AddIntVal(cloudcommon.ResourceMetricInstances, instancesUsed)
 	return nil
 }
@@ -368,8 +377,14 @@ func (v *Platform) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, app
 func (s *Platform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 	if app.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		rt := &edgeproto.AppInstRuntime{}
-		for ii := uint32(0); ii < clusterInst.NumNodes; ii++ {
-			rt.ContainerIds = append(rt.ContainerIds, fmt.Sprintf("appOnClusterNode%d", ii))
+		for _, pool := range clusterInst.NodePools {
+			for ii := uint32(0); ii < pool.NumNodes; ii++ {
+				poolTag := "-" + pool.Name
+				if pool.Name == edgeproto.DefaultNodePoolName {
+					poolTag = ""
+				}
+				rt.ContainerIds = append(rt.ContainerIds, fmt.Sprintf("appOnClusterNode%s%d", poolTag, ii))
+			}
 		}
 		return rt, nil
 	}

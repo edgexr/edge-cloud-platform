@@ -159,6 +159,8 @@ func CloudletInfoHideTags(in *edgeproto.CloudletInfo) {
 	}
 	for i0 := 0; i0 < len(in.NodeInfos); i0++ {
 	}
+	for i0 := 0; i0 < len(in.NodePools); i0++ {
+	}
 }
 
 var PlatformFeaturesApiCmd edgeproto.PlatformFeaturesApiClient
@@ -2689,6 +2691,8 @@ var PlatformFeaturesOptionalArgs = []string{
 	"requirescrmonedge",
 	"requirescrmoffedge",
 	"requirescertrefresh",
+	"supportsmultiplenodepools",
+	"managesk8scontrolnodes",
 	"resourcequotaproperties:#.name",
 	"resourcequotaproperties:#.value",
 	"resourcequotaproperties:#.inframaxvalue",
@@ -2727,6 +2731,8 @@ var PlatformFeaturesComments = map[string]string{
 	"requirescrmonedge":                        "Requires on-edge-site CRM",
 	"requirescrmoffedge":                       "Requires off-edge-site CRM, i.e. CCRM",
 	"requirescertrefresh":                      "Requires certificate refresh",
+	"supportsmultiplenodepools":                "Kubernetes clusters support more than one node pool",
+	"managesk8scontrolnodes":                   "Platform manages Kubernetes control nodes",
 	"resourcequotaproperties:#.name":           "Resource name",
 	"resourcequotaproperties:#.value":          "Resource value",
 	"resourcequotaproperties:#.inframaxvalue":  "Resource infra max value",
@@ -3372,6 +3378,14 @@ var CloudletInfoOptionalArgs = []string{
 	"activecrminstance",
 	"standbycrm",
 	"releaseversion",
+	"nodepools:#.name",
+	"nodepools:#.numnodes",
+	"nodepools:#.noderesources.vcpus",
+	"nodepools:#.noderesources.ram",
+	"nodepools:#.noderesources.disk",
+	"nodepools:#.noderesources.optresmap",
+	"nodepools:#.noderesources.infranodeflavor",
+	"nodepools:#.noderesources.externalvolumesize",
 }
 var CloudletInfoAliasArgs = []string{
 	"cloudletorg=key.organization",
@@ -3441,13 +3455,22 @@ var CloudletInfoComments = map[string]string{
 	"activecrminstance":                                        "Active HA instance",
 	"standbycrm":                                               "Denotes if info was reported by inactive",
 	"releaseversion":                                           "Cloudlet release version",
+	"nodepools:#.name":                                         "Node pool name",
+	"nodepools:#.numnodes":                                     "Number of nodes in the pool",
+	"nodepools:#.noderesources.vcpus":                          "Vcpus to be allocated to the VM, must be either 1 or an even number",
+	"nodepools:#.noderesources.ram":                            "Total RAM in megabytes to be allocated to the VM",
+	"nodepools:#.noderesources.disk":                           "Total disk space in gigabytes to be allocated to the VMs root partition",
+	"nodepools:#.noderesources.optresmap":                      "Optional resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1",
+	"nodepools:#.noderesources.infranodeflavor":                "Infrastructure specific node flavor",
+	"nodepools:#.noderesources.externalvolumesize":             "Size of external volume to be attached to nodes. This is for the root partition",
 }
 var CloudletInfoSpecialArgs = map[string]string{
-	"errors":            "StringArray",
-	"fields":            "StringArray",
-	"flavors:#.propmap": "StringToString",
-	"properties":        "StringToString",
-	"status.msgs":       "StringArray",
+	"errors":                              "StringArray",
+	"fields":                              "StringArray",
+	"flavors:#.propmap":                   "StringToString",
+	"nodepools:#.noderesources.optresmap": "StringToString",
+	"properties":                          "StringToString",
+	"status.msgs":                         "StringArray",
 }
 var CloudletMetricsRequiredArgs = []string{}
 var CloudletMetricsOptionalArgs = []string{

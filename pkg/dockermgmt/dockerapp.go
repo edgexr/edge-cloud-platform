@@ -327,7 +327,7 @@ func CreateAppInstLocal(ctx context.Context, client ssh.Client, app *edgeproto.A
 	name := GetContainerName(appInst)
 	cluster := util.DockerSanitize(appInst.ClusterKey.Organization + "-" + appInst.ClusterKey.Name)
 	baseCmd := "docker run "
-	if appInst.OptRes == "gpu" {
+	if cloudcommon.AppInstGpuCount(appInst) > 0 {
 		baseCmd += "--gpus all"
 	}
 	labelsStr := getLabelsStr(appInst)
@@ -390,7 +390,7 @@ func CreateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 	image := app.ImagePath
 	labelsStr := getLabelsStr(appInst)
 	baseCmd := "docker run "
-	if appInst.OptRes == "gpu" {
+	if cloudcommon.AppInstGpuCount(appInst) > 0 {
 		baseCmd += "--gpus all"
 	}
 	if dockerOpt.ExposePorts {

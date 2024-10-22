@@ -129,7 +129,7 @@ func TestVMSpec(t *testing.T) {
 	}
 	_, err = markVMsForAllocation(ctx, group1, &vmPool, vmSpecs)
 	require.NotNil(t, err, "mark vms for allocation should fail as no vm with same flavor exists")
-	require.Contains(t, err.Error(), "no suitable platform flavor found", "error message should match")
+	require.Contains(t, err.Error(), "no suitable infra flavor found for requested node resources, 1 with not enough vCPUs")
 
 	// Release 1 VM from group1, should fail as it is IN_PROGRESS
 	vmSpecs = []edgeproto.VMSpec{

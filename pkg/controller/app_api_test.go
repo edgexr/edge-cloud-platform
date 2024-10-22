@@ -48,17 +48,13 @@ func TestAppApi(t *testing.T) {
 	sync.Start()
 	defer sync.Done()
 
-	// cannot create apps without developer
-	for _, obj := range testutil.AppData() {
-		_, err := apis.appApi.CreateApp(ctx, &obj)
-		require.NotNil(t, err, "Create app without developer")
-	}
-
 	// create support data
 	testutil.InternalAutoProvPolicyCreate(t, apis.autoProvPolicyApi, testutil.AutoProvPolicyData())
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 
-	testutil.InternalAppTest(t, "cud", apis.appApi, testutil.AppData())
+	testutil.InternalAppTest(t, "cud", apis.appApi, testutil.CreatedAppData())
+
+	testAppResourceConsistency(t, ctx, apis)
 
 	// update should validate ports
 	upapp := testutil.AppData()[3]
@@ -133,6 +129,7 @@ func TestAppApi(t *testing.T) {
 	// manifest must be empty if deployment is helm
 	app.Deployment = cloudcommon.DeploymentTypeHelm
 	app.DeploymentManifest = testK8SManifest1
+	app.NodeResources = nil
 	app.ImageType = edgeproto.ImageType_IMAGE_TYPE_HELM
 	_, err = apis.appApi.CreateApp(ctx, &app)
 	require.NotNil(t, err)
@@ -220,6 +217,7 @@ func TestAppApi(t *testing.T) {
 	app.Deployment = "docker"
 	app.AccessPorts = "tcp:888,udp:1999:maxpktsize=1500"
 	app.ImageType = edgeproto.ImageType_IMAGE_TYPE_DOCKER
+	app.KubernetesResources = nil
 	_, err = apis.appApi.CreateApp(ctx, &app)
 	require.Nil(t, err, "Create app with maxpktsize")
 	_, err = apis.appApi.DeleteApp(ctx, &app)
@@ -229,73 +227,88 @@ func TestAppApi(t *testing.T) {
 	_, err = apis.appApi.CreateApp(ctx, &app)
 	require.NotNil(t, err, "Create app with maxpktsize fails")
 
-	// update app with serverless config
+	// test updating kubernetes resources
 	app.Deployment = "kubernetes"
 	app.AccessPorts = "tcp:888"
+	app.DefaultFlavor.Name = ""
+	app.KubernetesResources = &edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+			TotalMemory: 1024,
+		},
+		GpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(2, 0),
+			TotalMemory: 2048,
+			TotalOptRes: map[string]string{
+				"gpu": "pci:1",
+			},
+		},
+	}
+	app.NodeResources = nil
 	_, err = apis.appApi.CreateApp(ctx, &app)
 	require.Nil(t, err)
-	app.AllowServerless = true
-	app.ServerlessConfig = &edgeproto.ServerlessConfig{}
-	app.ServerlessConfig.Vcpus = *edgeproto.NewUdec64(5, 0)
-	app.ServerlessConfig.Ram = 24
-	app.ServerlessConfig.MinReplicas = 1
-	app.Fields = []string{
-		edgeproto.AppFieldAllowServerless,
-		edgeproto.AppFieldServerlessConfig,
-	}
-	_, err = apis.appApi.UpdateApp(ctx, &app)
-	require.Nil(t, err)
-	// update vcpus, only specifying vcpus field, and not subfields
-	app.ServerlessConfig.Vcpus = *edgeproto.NewUdec64(6, 0)
-	app.ServerlessConfig.Ram = 0
-	app.ServerlessConfig.MinReplicas = 0
-	app.Fields = []string{
-		edgeproto.AppFieldAllowServerless,
-		edgeproto.AppFieldServerlessConfigVcpus,
-	}
-	_, err = apis.appApi.UpdateApp(ctx, &app)
-	require.Nil(t, err)
-	storedApp = edgeproto.App{}
+	// check created
+	err = app.KubernetesResources.Validate()
 	found = apis.appApi.Get(app.GetKey(), &storedApp)
 	require.True(t, found)
-	require.Equal(t, app.ServerlessConfig.Vcpus, storedApp.ServerlessConfig.Vcpus)
-	// check that other fields were not changed
-	require.Equal(t, uint64(24), storedApp.ServerlessConfig.Ram)
-	require.Equal(t, uint32(1), storedApp.ServerlessConfig.MinReplicas)
-	// disable serverless config
-	app.AllowServerless = false
+	require.Nil(t, err)
+	require.Equal(t, app.KubernetesResources, storedApp.KubernetesResources)
+	// update resources
+	app.KubernetesResources = &edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(1, 500*edgeproto.DecMillis),
+			TotalMemory: 1234,
+		},
+		GpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(2, 500*edgeproto.DecMillis),
+			TotalMemory: 2456,
+			TotalOptRes: map[string]string{
+				"gpu": "pci:1",
+			},
+		},
+	}
 	app.Fields = []string{
-		edgeproto.AppFieldAllowServerless,
+		edgeproto.AppFieldKubernetesResources,
 	}
 	_, err = apis.appApi.UpdateApp(ctx, &app)
 	require.Nil(t, err)
+	// check updated
+	err = app.KubernetesResources.Validate()
+	require.Nil(t, err)
+	found = apis.appApi.Get(app.GetKey(), &storedApp)
+	require.True(t, found)
+	require.Equal(t, app.KubernetesResources, storedApp.KubernetesResources)
+	// update single value
+	app.KubernetesResources.CpuPool.TotalMemory = 4096
+	app.Fields = []string{
+		edgeproto.AppFieldKubernetesResourcesCpuPoolTotalMemory,
+	}
+	_, err = apis.appApi.UpdateApp(ctx, &app)
+	require.Nil(t, err)
+	// check updated
+	found = apis.appApi.Get(app.GetKey(), &storedApp)
+	require.True(t, found)
+	require.Equal(t, app.KubernetesResources, storedApp.KubernetesResources)
+
 	// clean up app
 	_, err = apis.appApi.DeleteApp(ctx, &app)
 	require.Nil(t, err)
 
 	app = testutil.AppData()[12]
 	require.Equal(t, app.Deployment, cloudcommon.DeploymentTypeVM)
-	app.Key.Name = "vm serverless"
-	app.AllowServerless = true
-	app.ServerlessConfig = &edgeproto.ServerlessConfig{}
-	app.ServerlessConfig.Vcpus = *edgeproto.NewUdec64(5, 0)
-	app.ServerlessConfig.Ram = 24
-	app.ServerlessConfig.MinReplicas = 1
+	app.Key.Name = "vm k8s"
+	app.KubernetesResources = &edgeproto.KubernetesResources{}
 	_, err = apis.appApi.CreateApp(ctx, &app)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Allow serverless only supported for deployment type Kubernetes")
+	require.Contains(t, err.Error(), "cannot specify Kubernetes resources for vm deployment")
 
 	app = testutil.AppData()[15]
 	require.Equal(t, app.Deployment, cloudcommon.DeploymentTypeDocker)
-	app.Key.Name = "docker serverless"
-	app.AllowServerless = true
-	app.ServerlessConfig = &edgeproto.ServerlessConfig{}
-	app.ServerlessConfig.Vcpus = *edgeproto.NewUdec64(5, 0)
-	app.ServerlessConfig.Ram = 24
-	app.ServerlessConfig.MinReplicas = 1
+	app.Key.Name = "docker k8s"
+	app.KubernetesResources = &edgeproto.KubernetesResources{}
 	_, err = apis.appApi.CreateApp(ctx, &app)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "Allow serverless only supported for deployment type Kubernetes")
+	require.Contains(t, err.Error(), "cannot specify Kubernetes resources for docker deployment")
 
 	// Verify that qossessionduration cannot be specified without also specifying a qossessionprofile
 	qosApp := testutil.AppData()[15]
@@ -647,3 +660,227 @@ spec:
             name: cornav-graphhopper-init-cm
             defaultMode: 0777
 `
+
+func testAppResourceConsistency(t *testing.T, ctx context.Context, apis *AllApis) {
+	app := testutil.AppData()[0]
+	app.Key.Name = "testAppRes"
+	app.DefaultFlavor.Name = ""
+	app.NodeResources = nil
+	app.KubernetesResources = nil
+	app.AllowServerless = false
+
+	getKR := func(size string) *edgeproto.KubernetesResources {
+		if size == "small" {
+			return &edgeproto.KubernetesResources{
+				CpuPool: &edgeproto.NodePoolResources{
+					TotalVcpus:  *edgeproto.NewUdec64(2, 0),
+					TotalMemory: 2048,
+					TotalDisk:   2,
+					Topology: edgeproto.NodePoolTopology{
+						MinNodeVcpus:     2,
+						MinNodeMemory:    2048,
+						MinNodeDisk:      2,
+						MinNumberOfNodes: 1,
+					},
+				},
+			}
+		} else if size == "medium" {
+			return &edgeproto.KubernetesResources{
+				CpuPool: &edgeproto.NodePoolResources{
+					TotalVcpus:  *edgeproto.NewUdec64(4, 0),
+					TotalMemory: 4096,
+					TotalDisk:   4,
+					Topology: edgeproto.NodePoolTopology{
+						MinNodeVcpus:     4,
+						MinNodeMemory:    4096,
+						MinNodeDisk:      4,
+						MinNumberOfNodes: 1,
+					},
+				},
+			}
+		}
+		return nil
+	}
+	getNR := func(size string) *edgeproto.NodeResources {
+		if size == "small" {
+			return &edgeproto.NodeResources{
+				Vcpus: 2,
+				Ram:   2048,
+				Disk:  2,
+			}
+		} else if size == "medium" {
+			return &edgeproto.NodeResources{
+				Vcpus: 4,
+				Ram:   4096,
+				Disk:  4,
+			}
+		}
+		return nil
+	}
+
+	var tests = []struct {
+		desc          string
+		modApp        func(*edgeproto.App)
+		expectCreated func(*edgeproto.App)
+		createErr     string
+		modUpdate     func(*edgeproto.App)
+		updateErr     string
+		expectUpdated func(*edgeproto.App)
+	}{{
+		desc:      "k8s app without resources fails",
+		modApp:    func(app *edgeproto.App) {},
+		createErr: "missing flavor or Kubernetes resources",
+	}, {
+		desc: "docker app without resources fails",
+		modApp: func(app *edgeproto.App) {
+			app.Deployment = cloudcommon.DeploymentTypeDocker
+		},
+		createErr: "missing flavor or node resources",
+	}, {
+		desc: "flavor specified converts to KubernetesResources",
+		modApp: func(app *edgeproto.App) {
+			app.DefaultFlavor.Name = "x1.medium"
+		},
+		expectCreated: func(app *edgeproto.App) {
+			require.Equal(t, "x1.medium", app.DefaultFlavor.Name)
+			require.Empty(t, app.NodeResources)
+			require.Equal(t, getKR("medium"), app.KubernetesResources)
+		},
+	}, {
+		desc: "flavor specified converts to NodeResources",
+		modApp: func(app *edgeproto.App) {
+			app.DefaultFlavor.Name = "x1.medium"
+			app.Deployment = cloudcommon.DeploymentTypeDocker
+		},
+		expectCreated: func(app *edgeproto.App) {
+			require.Equal(t, "x1.medium", app.DefaultFlavor.Name)
+			require.Equal(t, getNR("medium"), app.NodeResources)
+			require.Empty(t, app.KubernetesResources)
+		},
+	}, {
+		desc: "flavor overrides KubernetesResources",
+		modApp: func(app *edgeproto.App) {
+			app.DefaultFlavor.Name = "x1.medium"
+			app.KubernetesResources = getKR("small")
+		},
+		expectCreated: func(app *edgeproto.App) {
+			require.Equal(t, "x1.medium", app.DefaultFlavor.Name)
+			require.Empty(t, app.NodeResources)
+			require.Equal(t, getKR("medium"), app.KubernetesResources)
+		},
+	}, {
+		desc: "flavor overrides NodeResources",
+		modApp: func(app *edgeproto.App) {
+			app.DefaultFlavor.Name = "x1.medium"
+			app.Deployment = cloudcommon.DeploymentTypeDocker
+			app.NodeResources = getNR("small")
+		},
+		expectCreated: func(app *edgeproto.App) {
+			require.Equal(t, "x1.medium", app.DefaultFlavor.Name)
+			require.Equal(t, getNR("medium"), app.NodeResources)
+			require.Empty(t, app.KubernetesResources)
+		},
+	}, {
+		desc: "update Kubernetes Resources ok if no flavor set",
+		modApp: func(app *edgeproto.App) {
+			app.KubernetesResources = getKR("small")
+		},
+		expectCreated: func(app *edgeproto.App) {
+			require.Equal(t, getKR("small"), app.KubernetesResources)
+		},
+		modUpdate: func(app *edgeproto.App) {
+			app.KubernetesResources = getKR("medium")
+			app.Fields = append(app.Fields, edgeproto.AppFieldKubernetesResources)
+		},
+		expectUpdated: func(app *edgeproto.App) {
+			require.Equal(t, getKR("medium"), app.KubernetesResources)
+		},
+	}, {
+		desc: "update Node Resources ok if no flavor set",
+		modApp: func(app *edgeproto.App) {
+			app.NodeResources = getNR("small")
+			app.Deployment = cloudcommon.DeploymentTypeDocker
+		},
+		expectCreated: func(app *edgeproto.App) {
+			require.Equal(t, getNR("small"), app.NodeResources)
+		},
+		modUpdate: func(app *edgeproto.App) {
+			app.NodeResources = getNR("medium")
+			app.Fields = append(app.Fields, edgeproto.AppFieldNodeResources)
+		},
+		expectUpdated: func(app *edgeproto.App) {
+			require.Equal(t, getNR("medium"), app.NodeResources)
+		},
+	}, {
+		desc: "update flavor updates Kubernetes Resources, overrides specified individual resources",
+		modApp: func(app *edgeproto.App) {
+			app.DefaultFlavor.Name = "x1.medium"
+		},
+		modUpdate: func(app *edgeproto.App) {
+			app.DefaultFlavor.Name = "x1.small"
+			app.KubernetesResources = getKR("medium")
+			app.Fields = append(app.Fields, edgeproto.AppFieldDefaultFlavor, edgeproto.AppFieldKubernetesResources)
+		},
+		expectUpdated: func(app *edgeproto.App) {
+			require.Equal(t, "x1.small", app.DefaultFlavor.Name)
+			require.Empty(t, app.NodeResources)
+			require.Equal(t, getKR("small"), app.KubernetesResources)
+		},
+	}, {
+		desc: "update flavor updates Node Resources, overrides specified individual resources",
+		modApp: func(app *edgeproto.App) {
+			app.DefaultFlavor.Name = "x1.medium"
+			app.Deployment = cloudcommon.DeploymentTypeDocker
+		},
+		modUpdate: func(app *edgeproto.App) {
+			app.DefaultFlavor.Name = "x1.small"
+			app.NodeResources = getNR("medium")
+			app.Fields = append(app.Fields, edgeproto.AppFieldDefaultFlavor, edgeproto.AppFieldNodeResources)
+		},
+		expectUpdated: func(app *edgeproto.App) {
+			require.Equal(t, "x1.small", app.DefaultFlavor.Name)
+			require.Equal(t, getNR("small"), app.NodeResources)
+			require.Empty(t, app.KubernetesResources)
+		},
+	}}
+
+	for _, test := range tests {
+		testApp := app
+		// modify app for test
+		test.modApp(&testApp)
+		// create test app
+		_, err := apis.appApi.CreateApp(ctx, &testApp)
+		if test.createErr != "" {
+			require.NotNil(t, err, test.desc)
+			require.Contains(t, err.Error(), test.createErr, test.desc)
+			continue
+		}
+		require.Nil(t, err, test.desc)
+		if test.expectCreated != nil {
+			// show created test app
+			createdApp := edgeproto.App{}
+			found := apis.appApi.cache.Get(&testApp.Key, &createdApp)
+			require.True(t, found, test.desc)
+			// check created app
+			test.expectCreated(&createdApp)
+		}
+		if test.modUpdate != nil {
+			// apply update
+			test.modUpdate(&testApp)
+			_, err := apis.appApi.UpdateApp(ctx, &testApp)
+			if test.updateErr != "" {
+				require.NotNil(t, err, test.desc)
+				require.Contains(t, err.Error(), test.updateErr, test.desc)
+			}
+			// show updated test app
+			updatedApp := edgeproto.App{}
+			found := apis.appApi.cache.Get(&testApp.Key, &updatedApp)
+			require.True(t, found, test.desc)
+			// check created app
+			test.expectUpdated(&updatedApp)
+		}
+		// cleanup
+		_, err = apis.appApi.DeleteApp(ctx, &testApp)
+		require.Nil(t, err, test.desc)
+	}
+}

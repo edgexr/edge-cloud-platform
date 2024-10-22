@@ -257,17 +257,17 @@ func getAwsEksResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, resou
 	k8sNodeCount := 0
 	for _, vmRes := range resources {
 		if vmRes.Type == cloudcommon.ResourceTypeK8sLBSvc {
-			networkLBs++
+			networkLBs += int(vmRes.Count)
 			continue
 		}
 		if vmRes.Type != cloudcommon.NodeTypeK8sClusterNode.String() {
 			continue
 		}
-		k8sNodeCount++
+		k8sNodeCount += int(vmRes.Count)
 		if _, ok := uniqueClusters[vmRes.Key]; !ok {
-			uniqueClusters[vmRes.Key] = 1
+			uniqueClusters[vmRes.Key] = int(vmRes.Count)
 		} else {
-			uniqueClusters[vmRes.Key] += 1
+			uniqueClusters[vmRes.Key] += int(vmRes.Count)
 		}
 	}
 	maxK8sNodesPerCluster := 0

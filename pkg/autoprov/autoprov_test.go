@@ -21,7 +21,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 	"time"
 
@@ -81,8 +80,8 @@ func TestAutoProv(t *testing.T) {
 
 func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, dn *notify.DummyHandler) {
 	// initial state of ClusterInst
-	cinst := testutil.ClusterInstData()[2]
-	numnodes := int(testutil.ClusterInstData()[2].NumNodes)
+	cinst := testutil.CreatedClusterInstData()[2]
+	numnodes := int(cinst.NodePools[0].NumNodes)
 	ds.ClusterInstCache.Update(ctx, &cinst, 0)
 
 	// alert labels for ClusterInst
@@ -96,12 +95,12 @@ func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, 
 	scaleup := edgeproto.Alert{}
 	scaleup.Labels = make(map[string]string)
 	scaleup.Annotations = make(map[string]string)
-	scaleup.Labels["alertname"] = cloudcommon.AlertAutoScaleUp
+	scaleup.Labels["alertname"] = cloudcommon.AlertClusterAutoScale
 	scaleup.State = "firing"
+	scaleup.Value = float64(numnodes + 1)
 	for k, v := range keys {
 		scaleup.Labels[k] = v
 	}
-	scaleup.Annotations[cloudcommon.AlertKeyNodeCount] = strconv.Itoa(numnodes)
 	dn.AlertCache.Update(ctx, &scaleup, 0)
 	requireClusterInstNumNodes(t, &ds.ClusterInstCache, &cinst.Key, numnodes+1)
 	dn.AlertCache.Delete(ctx, &scaleup, 0)
@@ -110,15 +109,12 @@ func testAutoScale(t *testing.T, ctx context.Context, ds *testutil.DummyServer, 
 	scaledown := edgeproto.Alert{}
 	scaledown.Labels = make(map[string]string)
 	scaledown.Annotations = make(map[string]string)
-	scaledown.Labels["alertname"] = cloudcommon.AlertAutoScaleDown
-	scaledown.Annotations[cloudcommon.AlertKeyLowCpuNodeCount] = "1"
-	scaledown.Annotations[cloudcommon.AlertKeyMinNodes] = "1"
+	scaledown.Labels["alertname"] = cloudcommon.AlertClusterAutoScale
+	scaledown.Value = float64(numnodes - 1)
 	scaledown.State = "firing"
 	for k, v := range keys {
 		scaledown.Labels[k] = v
 	}
-	scaledown.Annotations[cloudcommon.AlertKeyNodeCount] = strconv.Itoa(numnodes + 1)
-	scaledown.Annotations[cloudcommon.AlertKeyLowCpuNodeCount] = "2"
 	dn.AlertCache.Update(ctx, &scaledown, 0)
 	requireClusterInstNumNodes(t, &ds.ClusterInstCache, &cinst.Key, numnodes-1)
 	dn.AlertCache.Delete(ctx, &scaledown, 0)

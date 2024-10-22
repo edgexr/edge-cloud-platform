@@ -22,6 +22,7 @@ import "result.proto";
 import "tools/protogen/protogen.proto";
 import "app.proto";
 import "flavor.proto";
+import "resources.proto";
 import "common.proto";
 import "cloudletkey.proto";
 import "autoscalepolicy.proto";
@@ -161,7 +162,7 @@ message AppInst {
   repeated distributed_match_engine.AppPort mapped_ports = 9 [(gogoproto.nullable) = false, (protogen.backend) = true];
   // Flavor defining resource requirements
   FlavorKey flavor = 12 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.refers_to) = "Flavor"];
-  // Cloudlet-specific flavor instead of regional flavor
+  // (_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources.InfraNodeFlavor.
   string cloudlet_flavor = 42;
   // Current state of the AppInst on the Cloudlet
   TrackedState state = 14 [(protogen.backend) = true];
@@ -198,9 +199,9 @@ message AppInst {
   uint64 external_volume_size = 32 [(protogen.backend) = true];
   // Optional Availability Zone if any
   string availability_zone = 33 [(protogen.backend) = true];
-  // OS node flavor to use
+  // (_deprecated_) Replaced by NodeResources.InfraNodeFlavor; OS node flavor to use
   string vm_flavor = 34 [(protogen.backend) = true];
-  // Optional Resources required by OS flavor if any
+  // (_deprecated_) Optional Resources required by OS flavor if any
   string opt_res = 35 [(protogen.backend) = true];
   // Updated at time
   distributed_match_engine.Timestamp updated_at = 36 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.hidetag) = "timestamp"];
@@ -228,6 +229,11 @@ message AppInst {
   map<string, string> annotations = 52;
   // database version model ID
   int32 db_model_id = 54 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Required resources for kubernetes deployments
+  KubernetesResources kubernetes_resources = 55;
+  // Required node resources for VM/Docker deployments
+  NodeResources node_resources = 56;
+
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;
@@ -296,7 +302,7 @@ service AppInstApi {
     };
     option (protogen.stream_out_incremental) = true;
     option (protogen.mc2_api) = "ResourceAppInsts,ActionManage,Key.Organization";
-    option (protogen.method_noconfig) = "Flavor,AutoClusterIpAccess,UpdateMultiple,ForceUpdate,HealthCheck,SharedVolumeSize,VmFlavor,AppKey,ClusterKey,CloudletKey";
+    option (protogen.method_noconfig) = "AutoClusterIpAccess,UpdateMultiple,ForceUpdate,HealthCheck,SharedVolumeSize,VmFlavor,AppKey,ClusterKey,CloudletKey";
   }
   // Show Application Instances. Lists all the Application instances managed by the Edge Controller.
   // Any fields specified will be used to filter results.

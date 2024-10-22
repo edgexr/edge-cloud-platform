@@ -177,7 +177,7 @@ func testC(t *testing.T) {
 	testutil.ClientFlavorTest(t, "cud", flavorClient, testutil.FlavorData())
 	testutil.ClientAutoProvPolicyTest(t, "cud", autoProvPolicyClient, testutil.AutoProvPolicyData())
 	testutil.ClientAutoScalePolicyTest(t, "cud", autoScalePolicyClient, testutil.AutoScalePolicyData())
-	testutil.ClientAppTest(t, "cud", appClient, testutil.AppData())
+	testutil.ClientAppTest(t, "cud", appClient, testutil.CreatedAppData())
 	testutil.ClientGPUDriverTest(t, "cud", gpuDriverClient, testutil.GPUDriverData())
 	testutil.ClientResTagTableTest(t, "cud", resTagTableClient, testutil.ResTagTableData())
 	testutil.ClientZoneTest(t, "cud", zoneClient, testutil.ZoneData())

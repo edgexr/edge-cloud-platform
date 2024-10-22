@@ -23,6 +23,7 @@ import "cloudletkey.proto";
 import "trustpolicy.proto";
 import "tools/protogen/protogen.proto";
 import "flavor.proto";
+import "resources.proto";
 import "decimal.proto";
 import "gogoproto/gogo.proto";
 import "dme/loc.proto";
@@ -237,7 +238,7 @@ message App {
   repeated SecurityRule required_outbound_connections = 38 [(gogoproto.nullable) = false];
   // App is allowed to deploy as serverless containers
   bool allow_serverless = 39;
-  // Configuration when deployed as serverless containers
+  // (_deprecated_) Replaced by KubernetesResources
   ServerlessConfig serverless_config = 40;
   // OS Type for VM Apps
   VmAppOsType vm_app_os_type = 41;
@@ -256,6 +257,10 @@ message App {
   map<string, string> secret_env_vars = 48;
   // For updating list and map fields, set to 'add', 'remove', or 'replace' to define how to resolve specified entries against existing entries
   string update_list_action = 49;
+  // Required resources for kubernetes deployments
+  KubernetesResources kubernetes_resources = 50;
+  // Required resources for VM/Docker deployments
+  NodeResources node_resources = 51;
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

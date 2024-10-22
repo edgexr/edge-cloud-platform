@@ -37,12 +37,14 @@ option (gogoproto.goproto_sizecache_all) = false;
 message VMResource {
   // ClusterInstKey to track which cluster this VM resource belongs to
   ClusterKey key = 1 [(gogoproto.nullable) = false];
-  // Flavor requirement of the VM required by the cluster
-  FlavorInfo vm_flavor = 2;
+  // Infrastructure specific flavor of the VM
+  string vm_flavor = 2;
   // Resource Type can be platform, rootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm, k8s-lb-svc
   string type = 3;
   // (deprecated) Access type for resource of type App VM
-  AccessType app_access_type = 4;
+  reserved 4;
+  // Number of these VMs in cluster
+  uint32 count = 5;
 }
 
 // Refs track ref counts of used resources, ports, etc.
@@ -72,7 +74,7 @@ message CloudletRefs {
   repeated ClusterKey cluster_insts = 13 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "ClusterInst"];
   // VM apps instantiated on the Cloudlet
   repeated AppInstKey vm_app_insts = 14 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "AppInst"];
-  // K8s apps instantiated on the Cloudlet
+  // (_deprecated_) Track k8s appinsts on clusterRefs instead. Previously K8s apps instantiated on the Cloudlet
   repeated AppInstKey k8s_app_insts = 15 [(gogoproto.nullable) = false]; // no tracks_refs_by as it is handled by ClusterInst refs
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

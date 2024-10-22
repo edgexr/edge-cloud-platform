@@ -152,8 +152,10 @@ func (v *VMPlatform) setupGPUDrivers(ctx context.Context, rootLBClient ssh.Clien
 		if clusterInst.MasterNodeFlavor == clusterInst.NodeFlavor {
 			targetNodes = append(targetNodes, GetClusterMasterName(ctx, clusterInst))
 		}
-		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
-			targetNodes = append(targetNodes, GetClusterNodeName(ctx, clusterInst, nn))
+		for _, pool := range clusterInst.NodePools {
+			for nn := uint32(1); nn <= pool.NumNodes; nn++ {
+				targetNodes = append(targetNodes, GetClusterNodeName(ctx, clusterInst, pool.Name, nn))
+			}
 		}
 	default:
 		return fmt.Errorf("GPU driver installation not supported for deployment type %s", clusterInst.Deployment)
@@ -330,13 +332,21 @@ var NvidiaGPUOperatorApp = edgeproto.App{
 `,
 		},
 	},
+	// TODO: what resources does the NVidia operator need?
+	// should those resources be tracked by the controller?
+	KubernetesResources: &edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(0, 200*edgeproto.DecMillis),
+			TotalMemory: 200,
+		},
+	},
 }
 
 func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Client, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, action ActionType) error {
 	appInst := edgeproto.AppInst{}
 	appInst.AppKey = NvidiaGPUOperatorApp.Key
 	appInst.ClusterKey = clusterInst.Key
-	appInst.Flavor = clusterInst.Flavor
+	appInst.KubernetesResources = NvidiaGPUOperatorApp.KubernetesResources
 
 	kubeNames, err := k8smgmt.GetKubeNames(clusterInst, &NvidiaGPUOperatorApp, &appInst)
 	if err != nil {

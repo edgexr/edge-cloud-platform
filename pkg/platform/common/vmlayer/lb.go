@@ -31,7 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -350,7 +350,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 	}
 	cli.Flavors = flavors
 
-	spec := &vmspec.VMCreationSpec{}
+	spec := &resspec.VMCreationSpec{}
 	if len(cli.Flavors) == 0 {
 		log.SpanLog(ctx, log.DebugLevelInfra, "GetVMSpecForRootLB clouldlet flavor list emtpy use default", "rootLbName", rootLbName)
 		// must be a platform with no native flavor support, just use the default
@@ -358,7 +358,7 @@ func (v *VMPlatform) GetVMSpecForRootLB(ctx context.Context, rootLbName string, 
 		// The platform has the definition of the name in its internal flavors list for the actual create
 	} else {
 		restbls := v.GetResTablesForCloudlet(ctx, &cli.Key)
-		spec, err = vmspec.GetVMSpec(ctx, rootlbFlavor, cli, restbls)
+		spec, err = resspec.GetVMSpec(ctx, rootlbFlavor.ToNodeResources(), cli, restbls)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "RootLB GetVMSpec error", "v.FlavorList", flavors, "rootlbFlavor", rootlbFlavor, "err", err)
 			return nil, fmt.Errorf("unable to find VM spec for RootLB: %v", err)

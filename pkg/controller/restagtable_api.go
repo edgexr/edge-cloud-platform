@@ -23,7 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
-	"github.com/edgexr/edge-cloud-platform/pkg/vmspec"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
@@ -278,28 +278,28 @@ func (s *ResTagTableApi) UsesGpu(ctx context.Context, stm concurrency.STM, flavo
 }
 
 // GetVMSpec returns the VMCreationAttributes including flavor name and the size of the external volume which is required, if any
-func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm concurrency.STM, nodeflavor edgeproto.Flavor, cloudletFlavorName string, cl edgeproto.Cloudlet, cli edgeproto.CloudletInfo) (*vmspec.VMCreationSpec, error) {
+func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm concurrency.STM, nodeResources *edgeproto.NodeResources, cloudletFlavorName string, cl edgeproto.Cloudlet, cli edgeproto.CloudletInfo) (*resspec.VMCreationSpec, error) {
 	// for those platforms with no concept of a quantized set of resources (flavors)
 	// return a VMCreationSpec  based on the our meta-flavor resource request.
 	if len(cli.Flavors) == 0 {
-		spec := vmspec.VMCreationSpec{
-			FlavorName: nodeflavor.Key.Name,
+		spec := resspec.VMCreationSpec{
+			FlavorName: "noderesources",
 			FlavorInfo: &edgeproto.FlavorInfo{
-				Ram:   nodeflavor.Ram,
-				Name:  nodeflavor.Key.Name,
-				Disk:  nodeflavor.Disk,
-				Vcpus: nodeflavor.Vcpus,
+				Ram:   nodeResources.Ram,
+				Name:  "noderesources",
+				Disk:  nodeResources.Disk,
+				Vcpus: nodeResources.Vcpus,
 			},
 		}
-		log.SpanLog(ctx, log.DebugLevelApi, "GetVMSpec platform has no native flavors returning mex flavor for", "platform", cl.PlatformType, "as", spec)
+		log.SpanLog(ctx, log.DebugLevelApi, "GetVMSpec platform has no native flavors returning spec for", "platform", cl.PlatformType, "as", spec)
 		return &spec, nil
 	} else if cloudletFlavorName != "" {
 		// look up cloudlet-specific flavor from list on CloudletInfo
-		return vmspec.GetVMSpecCloudletFlavor(ctx, cloudletFlavorName, cli)
+		return resspec.GetVMSpecCloudletFlavor(ctx, cloudletFlavorName, cli)
 	}
 
 	tbls, _ := s.GetResTablesForCloudlet(ctx, stm, &cl)
-	return vmspec.GetVMSpec(ctx, nodeflavor, cli, tbls)
+	return resspec.GetVMSpec(ctx, nodeResources, cli, tbls)
 }
 
 func (s *ResTagTableApi) GetResTablesForCloudlet(ctx context.Context, stm concurrency.STM, cl *edgeproto.Cloudlet) (tables map[string]*edgeproto.ResTagTable, err error) {
@@ -347,7 +347,7 @@ func (s *ResTagTableApi) ValidateOptResMapValues(resmap map[string]string) (bool
 	var err error
 	for k, v := range resmap {
 		if k == "gpu" {
-			_, _, _, err = cloudcommon.ParseGPUResource(v)
+			_, _, _, err = cloudcommon.ParseOptResVal(v)
 			if err != nil {
 				return false, err
 			}
@@ -359,7 +359,7 @@ func (s *ResTagTableApi) ValidateOptResMapValues(resmap map[string]string) (bool
 	return true, nil
 }
 
-func (s *ResTagTableApi) AddGpuResourceHintIfNeeded(ctx context.Context, stm concurrency.STM, spec *vmspec.VMCreationSpec, cloudlet edgeproto.Cloudlet) string {
+func (s *ResTagTableApi) AddGpuResourceHintIfNeeded(ctx context.Context, stm concurrency.STM, spec *resspec.VMCreationSpec, cloudlet edgeproto.Cloudlet) string {
 
 	if s.UsesGpu(ctx, stm, *spec.FlavorInfo, cloudlet) {
 		log.SpanLog(ctx, log.DebugLevelApi, "add hint using gpu on", "platform", cloudlet.PlatformType, "flavor", spec.FlavorName)

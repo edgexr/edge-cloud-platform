@@ -185,6 +185,7 @@ const (
 	MetricTagDeployment       = "deployment"
 	MetricTagRAM              = "ram"
 	MetricTagVCPU             = "vcpu"
+	MetricTagGPUs             = "gpus"
 	MetricTagDisk             = "disk"
 	MetricTagNodeCount        = "nodecount"
 	MetricTagNumNodes         = "numnodes"

@@ -16,6 +16,7 @@ package vmlayer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -97,16 +98,21 @@ func GetClusterMasterNameFromNodeList(ctx context.Context, client ssh.Client, cl
 	return "", fmt.Errorf("unable to find cluster master")
 }
 
-func GetClusterNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst, nodeNum uint32) string {
-	return ClusterNodePrefix(nodeNum) + "-" + k8smgmt.GetCloudletClusterName(clusterInst)
+func GetClusterNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst, poolName string, nodeNum uint32) string {
+	return ClusterNodePrefix(poolName, nodeNum) + "-" + k8smgmt.GetCloudletClusterName(clusterInst)
 }
 
 func (v *VMPlatform) GetDockerNodeName(ctx context.Context, clusterInst *edgeproto.ClusterInst) string {
 	return ClusterTypeDockerVMLabel + "-" + k8smgmt.GetCloudletClusterName(clusterInst)
 }
 
-func ClusterNodePrefix(num uint32) string {
-	return fmt.Sprintf("%s%d", cloudcommon.MexNodePrefix, num)
+func ClusterNodePrefix(poolName string, num uint32) string {
+	if poolName == edgeproto.DefaultNodePoolName {
+		// for backwards compatibility, return the old
+		// pool naming style
+		return fmt.Sprintf("%s%d", cloudcommon.MexNodePrefix, num)
+	}
+	return fmt.Sprintf("%s%s%d", cloudcommon.MexNodePrefix, poolName, num)
 }
 
 func ParseClusterNodePrefix(name string) (bool, uint32) {
@@ -185,6 +191,11 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 		if err != nil {
 			return err
 		}
+		if len(clusterInst.NodePools) == 0 {
+			return errors.New("no node pools specified")
+		}
+		pool := clusterInst.NodePools[0]
+
 		// if removing nodes, need to tell kubernetes that nodes are
 		// going away forever so that tolerating pods can be migrated
 		// off immediately.
@@ -210,9 +221,9 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 				continue
 			}
 			numExistingNodes++
-			nodeName := GetClusterNodeName(ctx, clusterInst, num)
+			nodeName := GetClusterNodeName(ctx, clusterInst, pool.Name, num)
 			// heat will remove the higher-numbered nodes
-			if num > clusterInst.NumNodes {
+			if num > pool.NumNodes {
 				toRemove = append(toRemove, n)
 				nodeUpdateAction[nodeName] = ActionRemove
 			} else {
@@ -220,7 +231,7 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 			}
 		}
 		if len(toRemove) > 0 {
-			if clusterInst.NumNodes == 0 {
+			if pool.NumNodes == 0 {
 				// We are removing all the nodes. Remove the master taint before deleting the node so the pods can migrate immediately
 				err = k8smgmt.SetMasterNoscheduleTaint(ctx, client, masterNodeName, k8smgmt.GetKconfName(clusterInst), k8smgmt.NoScheduleMasterTaintRemove)
 				if err != nil {
@@ -233,18 +244,18 @@ func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Clien
 				return err
 			}
 		}
-		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
-			nodeName := GetClusterNodeName(ctx, clusterInst, nn)
+		for nn := uint32(1); nn <= pool.NumNodes; nn++ {
+			nodeName := GetClusterNodeName(ctx, clusterInst, pool.Name, nn)
 			if _, ok := nodeUpdateAction[nodeName]; !ok {
 				nodeUpdateAction[nodeName] = ActionAdd
 			}
 		}
-		if numExistingMaster == clusterInst.NumMasters && numExistingNodes == clusterInst.NumNodes {
+		if numExistingMaster == clusterInst.NumMasters && numExistingNodes == pool.NumNodes {
 			// nothing changing
 			log.SpanLog(ctx, log.DebugLevelInfra, "no change in nodes", "ClusterInst", clusterInst.Key, "numExistingMaster", numExistingMaster, "numExistingNodes", numExistingNodes)
 			return nil
 		}
-		if clusterInst.NumNodes > 0 && numExistingNodes == 0 {
+		if pool.NumNodes > 0 && numExistingNodes == 0 {
 			// we are adding one or more nodes and there was previously none.  Add the taint to master after we do orchestration.
 			// Note the case of removing the master taint is done earlier
 			masterTaintAction = k8smgmt.NoScheduleMasterTaintAdd
@@ -363,16 +374,18 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete cloudlet node registration", "name", nodeName, "err", err)
 		}
-		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
-			// Worker node
-			nodeName := GetClusterNodeName(ctx, clusterInst, nn)
-			nodeKey := &edgeproto.CloudletNodeKey{
-				Name:        nodeName,
-				CloudletKey: clusterInst.CloudletKey,
-			}
-			err = accessApi.DeleteCloudletNode(ctx, nodeKey)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete cloudlet node registration", "name", nodeName, "err", err)
+		for _, pool := range clusterInst.NodePools {
+			for nn := uint32(1); nn <= pool.NumNodes; nn++ {
+				// Worker node
+				nodeName := GetClusterNodeName(ctx, clusterInst, pool.Name, nn)
+				nodeKey := &edgeproto.CloudletNodeKey{
+					Name:        nodeName,
+					CloudletKey: clusterInst.CloudletKey,
+				}
+				err = accessApi.DeleteCloudletNode(ctx, nodeKey)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete cloudlet node registration", "name", nodeName, "err", err)
+				}
 			}
 		}
 	}
@@ -401,10 +414,22 @@ func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgepro
 		return err
 	}
 
+	var nodeResources *edgeproto.NodeResources
+	// only one of these should be set
+	if clusterInst.NodeResources != nil {
+		nodeResources = clusterInst.NodeResources
+	} else if len(clusterInst.NodePools) > 0 {
+		nodeResources = clusterInst.NodePools[0].NodeResources
+	} else {
+		return errors.New("no resources specified")
+	}
+	flavorName := nodeResources.InfraNodeFlavor
+	externalVolumeSize := nodeResources.ExternalVolumeSize
+
 	//find the flavor and check the disk size
 	for _, flavor := range flavors {
-		if flavor.Name == clusterInst.NodeFlavor && flavor.Disk < MINIMUM_DISK_SIZE && clusterInst.ExternalVolumeSize < MINIMUM_DISK_SIZE {
-			log.SpanLog(ctx, log.DebugLevelInfra, "flavor disk size too small", "flavor", flavor, "ExternalVolumeSize", clusterInst.ExternalVolumeSize)
+		if flavor.Name == flavorName && flavor.Disk < MINIMUM_DISK_SIZE && externalVolumeSize < MINIMUM_DISK_SIZE {
+			log.SpanLog(ctx, log.DebugLevelInfra, "flavor disk size too small", "flavor", flavor, "ExternalVolumeSize", externalVolumeSize)
 			return fmt.Errorf("Insufficient disk size, please specify a flavor with at least %dgb", MINIMUM_DISK_SIZE)
 		}
 	}
@@ -670,6 +695,8 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 	var err error
 	log.SpanLog(ctx, log.DebugLevelInfra, "waitClusterReady", "cluster", clusterInst.Key, "timeout", timeout)
 
+	numClusterNodes := clusterInst.GetNumNodes()
+
 	for {
 		if !masterIPs.IsSet() {
 			masterIPs, err = v.GetClusterAccessIP(ctx, clusterInst)
@@ -683,7 +710,7 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 			ready, readyCount, err := v.isClusterReady(ctx, clusterInst, masterName, masterIPs, rootLBName, updateCallback)
 			if readyCount != currReadyCount {
 				numNodes := readyCount - 1
-				updateCallback(edgeproto.UpdateStep, fmt.Sprintf("%d of %d nodes active", numNodes, clusterInst.NumNodes))
+				updateCallback(edgeproto.UpdateStep, fmt.Sprintf("%d of %d nodes active", numNodes, numClusterNodes))
 			}
 			currReadyCount = readyCount
 			if err != nil {
@@ -756,16 +783,17 @@ func (v *VMPlatform) isClusterReady(ctx context.Context, clusterInst *edgeproto.
 			}
 		}
 	}
-	if readyCount < (clusterInst.NumNodes + clusterInst.NumMasters) {
+	numNodes := clusterInst.GetNumNodes()
+	if readyCount < (numNodes + clusterInst.NumMasters) {
 		log.SpanLog(ctx, log.DebugLevelInfra, "kubernetes cluster not ready", "readyCount", readyCount, "notReadyCount", notReadyCount)
 		return false, readyCount, nil
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "cluster nodes ready", "numnodes", clusterInst.NumNodes, "nummasters", clusterInst.NumMasters, "readyCount", readyCount, "notReadyCount", notReadyCount)
+	log.SpanLog(ctx, log.DebugLevelInfra, "cluster nodes ready", "numnodes", numNodes, "nummasters", clusterInst.NumMasters, "readyCount", readyCount, "notReadyCount", notReadyCount)
 
 	if err := infracommon.CopyKubeConfig(ctx, rootLBClient, clusterInst, rootLBName, connectMasterIP); err != nil {
 		return false, 0, fmt.Errorf("kubeconfig copy failed, %v", err)
 	}
-	if clusterInst.NumNodes == 0 {
+	if numNodes == 0 {
 		// Untaint the master.  Note in the update case this has already been done when going from >0 nodes to 0 prior to node deletion but
 		// for the create case this is the earliest it can be done
 		err = k8smgmt.SetMasterNoscheduleTaint(ctx, rootLBClient, masterString, k8smgmt.GetKconfName(clusterInst), k8smgmt.NoScheduleMasterTaintRemove)
@@ -807,14 +835,18 @@ func (v *VMPlatform) getVMRequestSpecForDockerCluster(ctx context.Context, imgNa
 			vms = append(vms, rootlb)
 		}
 	}
+	if clusterInst.NodeResources == nil {
+		return vms, newSubnetName, newSecgrpName, errors.New("node resources not specified")
+	}
+
 	dockervm, err := v.GetVMRequestSpec(
 		ctx,
 		cloudcommon.NodeTypeDockerClusterNode,
 		dockerVmName,
-		clusterInst.NodeFlavor,
+		clusterInst.NodeResources.InfraNodeFlavor,
 		imgName,
 		false,
-		WithExternalVolume(clusterInst.ExternalVolumeSize),
+		WithExternalVolume(clusterInst.NodeResources.ExternalVolumeSize),
 		WithSubnetConnection(newSubnetName),
 		WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.CloudletKey, &clusterInst.Key),
 		WithOptionalResource(clusterInst.OptRes),
@@ -896,7 +928,7 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 			masterFlavor = clusterInst.NodeFlavor
 		}
 		masterAZ := ""
-		if clusterInst.NumNodes == 0 {
+		if len(clusterInst.NodePools) == 0 {
 			// master is used for workloads
 			masterAZ = clusterInst.AvailabilityZone
 		}
@@ -917,24 +949,30 @@ func (v *VMPlatform) PerformOrchestrationForCluster(ctx context.Context, imgName
 		}
 		vms = append(vms, master)
 
-		for nn := uint32(1); nn <= clusterInst.NumNodes; nn++ {
-			node, err := v.GetVMRequestSpec(ctx,
-				cloudcommon.NodeTypeK8sClusterNode,
-				GetClusterNodeName(ctx, clusterInst, nn),
-				clusterInst.NodeFlavor,
-				pfImage,
-				false, //connect external
-				WithExternalVolume(clusterInst.ExternalVolumeSize),
-				WithSubnetConnection(newSubnetName),
-				WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.CloudletKey, &clusterInst.Key),
-				WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
-				WithAdditionalNetworks(nodeNets),
-				WithRoutes(nodeRoutes),
-			)
-			if err != nil {
-				return nil, err
+		for _, pool := range clusterInst.NodePools {
+			for nn := uint32(1); nn <= pool.NumNodes; nn++ {
+				if pool.NodeResources == nil {
+					return nil, fmt.Errorf("cluster pool %s missing node resources", pool.Name)
+				}
+				nr := pool.NodeResources
+				node, err := v.GetVMRequestSpec(ctx,
+					cloudcommon.NodeTypeK8sClusterNode,
+					GetClusterNodeName(ctx, clusterInst, pool.Name, nn),
+					nr.InfraNodeFlavor,
+					pfImage,
+					false, //connect external
+					WithExternalVolume(nr.ExternalVolumeSize),
+					WithSubnetConnection(newSubnetName),
+					WithConfigureNodeVars(v, cloudcommon.NodeRoleBase, &clusterInst.CloudletKey, &clusterInst.Key),
+					WithComputeAvailabilityZone(clusterInst.AvailabilityZone),
+					WithAdditionalNetworks(nodeNets),
+					WithRoutes(nodeRoutes),
+				)
+				if err != nil {
+					return nil, err
+				}
+				vms = append(vms, node)
 			}
-			vms = append(vms, node)
 		}
 	}
 	return v.OrchestrateVMsFromVMSpec(ctx,

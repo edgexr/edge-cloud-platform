@@ -16,6 +16,7 @@ package managedk8s
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -36,8 +37,17 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 	if err != nil {
 		return err
 	}
+	if len(clusterInst.NodePools) == 0 {
+		return errors.New("no node pools specified for cluster")
+	}
+	// for now, only support a single node pool
+	if len(clusterInst.NodePools) > 1 {
+		return errors.New("currently only one node pool is supported")
+	}
+	pool := clusterInst.NodePools[0]
+
 	kconf := k8smgmt.GetKconfName(clusterInst)
-	err = m.createClusterInstInternal(ctx, client, clusterName, kconf, clusterInst.NumNodes, clusterInst.NodeFlavor, updateCallback)
+	err = m.createClusterInstInternal(ctx, client, clusterName, kconf, pool.NumNodes, pool.NodeResources.InfraNodeFlavor, updateCallback)
 	if err != nil {
 		if !clusterInst.SkipCrmCleanupOnFailure {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst)
