@@ -241,9 +241,9 @@ func TestOpenstackLive(t *testing.T) {
 			StaticFqdn:  "dockerclustDLB", // becomes rootLB name
 			EnableIpv6:  false,
 		}
-		err = plat.CreateClusterInst(ctx, dockerClusterInstD, cb, 6*time.Minute)
-		//err = plat.DeleteClusterInst(ctx, dockerClusterInstD, cb)
-		//err = plat.UpdateClusterInst(ctx, dockerClusterInstD, cb)
+		_, err = plat.CreateClusterInst(ctx, dockerClusterInstD, cb, 6*time.Minute)
+		//_, err = plat.DeleteClusterInst(ctx, dockerClusterInstD, cb)
+		//_, err = plat.UpdateClusterInst(ctx, dockerClusterInstD, cb)
 		if err != nil {
 			fmt.Println(err.Error())
 		}

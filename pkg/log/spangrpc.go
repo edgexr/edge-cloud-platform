@@ -149,3 +149,31 @@ func EchoAuditLogger(next echo.HandlerFunc) echo.HandlerFunc {
 		return err
 	}
 }
+
+// HTTPRequestDoer performs HTTP requests.
+type HTTPRequestDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// HTTPRequestDoerAuditor is a wrapper around HTTPRequestDoer
+// for auto-generated clients from OpenAPI specs to audit requests.
+type HTTPRequestDoerAuditor struct {
+	Doer HTTPRequestDoer
+}
+
+func (s *HTTPRequestDoerAuditor) Do(req *http.Request) (*http.Response, error) {
+	ctx := req.Context()
+	start := time.Now()
+	reqURL := ""
+	if req.URL != nil {
+		reqURL = req.URL.String()
+	}
+	SpanLog(ctx, DebugLevelApi, "http request start", "method", req.Method, "url", reqURL)
+	resp, err := s.Doer.Do(req)
+	if err == nil {
+		SpanLog(ctx, DebugLevelApi, "http request done", "method", req.Method, "url", reqURL, "status", resp.StatusCode, "dur", time.Since(start))
+	} else {
+		SpanLog(ctx, DebugLevelApi, "http request failed", "method", req.Method, "url", reqURL, "dur", time.Since(start), "err", err)
+	}
+	return resp, err
+}

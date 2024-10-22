@@ -329,7 +329,7 @@ type CreateClusterInfo struct {
 	K8sVersion              *string   `json:"k8s_version,omitempty"`
 	Location                *string   `json:"location,omitempty"`
 	Name                    *string   `json:"name,omitempty"`
-	NodeCount               *string   `json:"node_count,omitempty"`
+	NodeCount               *int      `json:"node_count,omitempty"`
 	NodeSize                *string   `json:"node_size,omitempty"`
 	RegionName              *string   `json:"region_name,omitempty"`
 	ResourceGroup           *string   `json:"resource_group,omitempty"`

@@ -1942,6 +1942,9 @@ func IgnoreAllDataFields(taglist string) cmp.Option {
 		names = append(names, "ClusterInsts.DbModelId")
 	}
 	if _, found := tags["nocmp"]; found {
+		names = append(names, "ClusterInsts.InfraAnnotations")
+	}
+	if _, found := tags["nocmp"]; found {
 		names = append(names, "Apps.AuthPublicKey")
 	}
 	if _, found := tags["nocmp"]; found {

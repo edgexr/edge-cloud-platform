@@ -40,10 +40,18 @@ func TestClusterCreate(t *testing.T) {
 	require.Nil(t, err)
 
 	clusterName := "unit-test-cluster"
-	err = a.RunClusterCreateCommand(ctx, clusterName, 1, "Standard_D2s_v3")
+	ci := edgeproto.ClusterInst{
+		NodePools: []*edgeproto.NodePool{{
+			NumNodes: 1,
+			NodeResources: &edgeproto.NodeResources{
+				InfraNodeFlavor: "Standard_D2s_v3",
+			},
+		}},
+	}
+	_, err = a.RunClusterCreateCommand(ctx, clusterName, &ci)
 	require.Nil(t, err)
 
-	creds, err := a.GetCredentials(ctx, clusterName)
+	creds, err := a.GetCredentials(ctx, clusterName, &ci)
 	require.Nil(t, err)
 	kubeconfig := "/tmp/" + clusterName + ".kubeconfig"
 	err = os.WriteFile(kubeconfig, creds, 0644)
@@ -54,7 +62,7 @@ func TestClusterCreate(t *testing.T) {
 	require.Nil(t, err)
 	fmt.Println(string(out))
 
-	err = a.RunClusterDeleteCommand(ctx, clusterName)
+	err = a.RunClusterDeleteCommand(ctx, clusterName, &ci)
 	require.Nil(t, err)
 	os.Remove(kubeconfig)
 }

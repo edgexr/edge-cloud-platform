@@ -1788,6 +1788,14 @@ func (s *ClusterInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.Clust
 				saveInst = true
 			}
 		}
+		if fmap.HasOrHasChild(edgeproto.ClusterInstInfoFieldInfraAnnotations) && in.InfraAnnotations != nil {
+			if inst.InfraAnnotations == nil {
+				inst.InfraAnnotations = make(map[string]string)
+			}
+			for k, v := range in.InfraAnnotations {
+				inst.InfraAnnotations[k] = v
+			}
+		}
 		if fmap.HasOrHasChild(edgeproto.ClusterInstInfoFieldState) {
 			if inst.State != in.State {
 				saveInst = true

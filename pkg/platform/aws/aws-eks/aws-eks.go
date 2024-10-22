@@ -75,20 +75,23 @@ func (a *AwsEksPlatform) CreateClusterPrerequisites(ctx context.Context, cluster
 }
 
 // RunClusterCreateCommand creates a kubernetes cluster on AWS
-func (a *AwsEksPlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, numNodes uint32, flavor string) error {
+func (a *AwsEksPlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+	pool := clusterInst.NodePools[0]
+	numNodes := pool.NumNodes
+	flavor := pool.NodeResources.InfraNodeFlavor
 	log.DebugLog(log.DebugLevelInfra, "RunClusterCreateCommand", "clusterName", clusterName, "numNodes:", numNodes, "NodeFlavor", flavor)
 	// Can not create a managed cluster if numNodes is 0
 	region := a.awsGenPf.GetAwsRegion()
 	out, err := infracommon.Sh(a.awsGenPf.AccountAccessVars).Command("eksctl", "create", "--region", region, "cluster", "--name", clusterName, "--node-type", flavor, "--nodes", fmt.Sprintf("%d", numNodes), "--managed").CombinedOutput()
 	if err != nil {
 		log.DebugLog(log.DebugLevelInfra, "Create eks cluster failed", "clusterName", clusterName, "out", string(out), "err", err)
-		return fmt.Errorf("Create eks cluster failed: %s - %v", string(out), err)
+		return nil, fmt.Errorf("Create eks cluster failed: %s - %v", string(out), err)
 	}
-	return nil
+	return nil, nil
 }
 
 // RunClusterDeleteCommand removes the kubernetes cluster on AWS
-func (a *AwsEksPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string) error {
+func (a *AwsEksPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error {
 	log.DebugLog(log.DebugLevelInfra, "RunClusterDeleteCommand", "clusterName:", clusterName)
 	out, err := infracommon.Sh(a.awsGenPf.AccountAccessVars).Command("eksctl", "delete", "cluster", "--name", clusterName).CombinedOutput()
 	if err != nil {
@@ -99,7 +102,7 @@ func (a *AwsEksPlatform) RunClusterDeleteCommand(ctx context.Context, clusterNam
 }
 
 // GetCredentials retrieves kubeconfig credentials from AWS
-func (a *AwsEksPlatform) GetCredentials(ctx context.Context, clusterName string) ([]byte, error) {
+func (a *AwsEksPlatform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
 	// TODO: this needs to return the kubeconfig contents
 	return nil, fmt.Errorf("AWS EKS get credentials needs update")
 	/*

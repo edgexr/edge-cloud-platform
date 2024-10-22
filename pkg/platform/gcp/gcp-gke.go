@@ -52,19 +52,21 @@ func (a *GCPPlatform) CreateClusterPrerequisites(ctx context.Context, clusterNam
 }
 
 // RunClusterCreateCommand creates a kubernetes cluster on gcloud
-func (g *GCPPlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, numNodes uint32, flavor string) error {
+func (g *GCPPlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RunClusterCreateCommand", "clusterName", clusterName)
-	numNodesStr := fmt.Sprintf("%d", numNodes)
+	pool := clusterInst.NodePools[0]
+	flavor := pool.NodeResources.InfraNodeFlavor
+	numNodesStr := fmt.Sprintf("%d", pool.NumNodes)
 	out, err := infracommon.Sh(g.accessVars).Command("gcloud", "container", "clusters", "create", "--num-nodes="+numNodesStr, "--machine-type="+flavor, clusterName).CombinedOutput()
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in cluster create", "out", string(out), "err", err)
-		return fmt.Errorf("Error in cluster create: %s - %v", string(out), err)
+		return nil, fmt.Errorf("Error in cluster create: %s - %v", string(out), err)
 	}
-	return nil
+	return nil, nil
 }
 
 // RunClusterDeleteCommand removes kubernetes cluster on gcloud
-func (g *GCPPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string) error {
+func (g *GCPPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RunClusterDeleteCommand", "clusterName", clusterName)
 	out, err := infracommon.Sh(g.accessVars).Command("gcloud", "container", "clusters", "delete", "--quiet", clusterName).CombinedOutput()
 	if err != nil {
@@ -75,7 +77,7 @@ func (g *GCPPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName s
 }
 
 // GetCredentials retrieves kubeconfig credentials from gcloud.
-func (g *GCPPlatform) GetCredentials(ctx context.Context, clusterName string) ([]byte, error) {
+func (g *GCPPlatform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
 	kconf := "/tmp/" + clusterName + ".kubeconfig"
 	envVars := make(map[string]string)
 	for k, v := range g.accessVars {

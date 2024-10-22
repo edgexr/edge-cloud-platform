@@ -240,25 +240,26 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	return nil
 }
 
-func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake UpdateClusterInst", "clusterInst", clusterInst)
 	updateCallback(edgeproto.UpdateTask, "Updating Cluster Inst")
 	s.resources.RemoveClusterResources(&clusterInst.Key)
 	s.resources.AddClusterResources(clusterInst)
-	return nil
+	return nil, nil
 }
 
 func (s *Platform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
-	return s.UpdateClusterInst(ctx, clusterInst, updateCallback)
+	_, err := s.UpdateClusterInst(ctx, clusterInst, updateCallback)
+	return err
 }
 
-func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake CreateClusterInst", "clusterInst", clusterInst)
 	updateCallback(edgeproto.UpdateTask, "First Create Task")
 	updateCallback(edgeproto.UpdateTask, "Second Create Task")
 	s.pause.Wait()
 	if s.simulateClusterCreateFailure {
-		return errors.New("fake platform create ClusterInst failed")
+		return nil, errors.New("fake platform create ClusterInst failed")
 	}
 	s.resources.AddClusterResources(clusterInst)
 
@@ -266,12 +267,12 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 	if len(clusterInst.Networks) > 0 {
 		networks, err := edgeproto.GetNetworksForClusterInst(ctx, clusterInst, s.caches.NetworkCache)
 		if err != nil {
-			return fmt.Errorf("Error getting cluster networks - %v", err)
+			return nil, fmt.Errorf("Error getting cluster networks - %v", err)
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "found networks from cache", "networks", networks)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake ClusterInst ready")
-	return nil
+	return nil, nil
 }
 
 func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {

@@ -630,6 +630,7 @@ var ClusterInstOptionalArgs = []string{
 	"nodepools:#.noderesources.optresmap",
 	"nodepools:#.noderesources.infranodeflavor",
 	"nodepools:#.noderesources.externalvolumesize",
+	"infraannotations",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=key.name",
@@ -714,11 +715,13 @@ var ClusterInstComments = map[string]string{
 	"nodepools:#.noderesources.optresmap":          "Optional resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1, specify nodepools:#.noderesources.optresmap:empty=true to clear",
 	"nodepools:#.noderesources.infranodeflavor":    "Infrastructure specific node flavor",
 	"nodepools:#.noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
+	"infraannotations":                             "Annotations added by the implementing infrastructure, specify infraannotations:empty=true to clear",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"annotations":                         "StringToString",
 	"errors":                              "StringArray",
 	"fields":                              "StringArray",
+	"infraannotations":                    "StringToString",
 	"networks":                            "StringArray",
 	"nodepools:#.noderesources.optresmap": "StringToString",
 	"noderesources.optresmap":             "StringToString",
@@ -757,6 +760,7 @@ var ClusterInstInfoOptionalArgs = []string{
 	"resources.vms:#.containers:#.status",
 	"resources.vms:#.containers:#.clusterip",
 	"resources.vms:#.containers:#.restarts",
+	"infraannotations",
 }
 var ClusterInstInfoAliasArgs = []string{}
 var ClusterInstInfoComments = map[string]string{
@@ -783,11 +787,13 @@ var ClusterInstInfoComments = map[string]string{
 	"resources.vms:#.containers:#.status":      "Runtime status of the container",
 	"resources.vms:#.containers:#.clusterip":   "IP within the CNI and is applicable to kubernetes only",
 	"resources.vms:#.containers:#.restarts":    "Restart count, applicable to kubernetes only",
+	"infraannotations":                         "Annotations added by the implementing infrastructure",
 }
 var ClusterInstInfoSpecialArgs = map[string]string{
-	"errors":      "StringArray",
-	"fields":      "StringArray",
-	"status.msgs": "StringArray",
+	"errors":           "StringArray",
+	"fields":           "StringArray",
+	"infraannotations": "StringToString",
+	"status.msgs":      "StringArray",
 }
 var UpdateClusterInstRequiredArgs = []string{
 	"cluster",
@@ -807,4 +813,5 @@ var UpdateClusterInstOptionalArgs = []string{
 	"dbmodelid",
 	"nodepools:empty",
 	"nodepools:#.numnodes",
+	"infraannotations",
 }

@@ -38,27 +38,27 @@ import (
 // Below is for KIND v0.20.0
 var DefaultNodeImage = "kindest/node:v1.26.6@sha256:6e2d8b28a5b601defe327b98bd1c2d1930b49e5d8c512e1895099e4504007adb"
 
-func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
 	var err error
 
 	switch clusterInst.Deployment {
 	case cloudcommon.DeploymentTypeDocker:
 		updateCallback(edgeproto.UpdateTask, "Create done for Docker Cluster on KIND")
-		return nil
+		return nil, nil
 	case cloudcommon.DeploymentTypeKubernetes:
 		updateCallback(edgeproto.UpdateTask, "Create KIND Cluster")
 	default:
-		return fmt.Errorf("Only K8s and Docker clusters are supported on KIND")
+		return nil, fmt.Errorf("Only K8s and Docker clusters are supported on KIND")
 	}
 	// Create K8s cluster
 	if err = s.CreateKINDCluster(ctx, clusterInst); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return nil, nil
 }
 
-func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("update cluster not supported for KIND")
+func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+	return nil, fmt.Errorf("update cluster not supported for KIND")
 }
 
 func (s *Platform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {

@@ -129,12 +129,12 @@ type Platform interface {
 	// This includes available resources, flavors, etc.
 	// Returns true if sync with controller is required
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
-	// Create a Kubernetes Cluster on the cloudlet.
-	CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error
+	// Create a Kubernetes Cluster on the cloudlet, returns infra-specific annotations (may be nil)
+	CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error)
 	// Delete a Kuberentes Cluster on the cloudlet.
 	DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error
-	// Update the cluster
-	UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error
+	// Update the cluster, returns any updated or additional infra-specific annotations (may be nil)
+	UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error)
 	// Update the cluster dns names
 	ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error
 	// Get resources used by the cloudlet

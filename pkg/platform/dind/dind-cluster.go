@@ -37,17 +37,17 @@ type DindCluster struct {
 	KContext    string
 }
 
-func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
 	var err error
 
 	switch clusterInst.Deployment {
 	case cloudcommon.DeploymentTypeDocker:
 		updateCallback(edgeproto.UpdateTask, "Create done for Docker Cluster on DIND")
-		return nil
+		return nil, nil
 	case cloudcommon.DeploymentTypeKubernetes:
 		updateCallback(edgeproto.UpdateTask, "Create DIND Cluster")
 	default:
-		return fmt.Errorf("Only K8s and Docker clusters are supported on DIND")
+		return nil, fmt.Errorf("Only K8s and Docker clusters are supported on DIND")
 	}
 	// Create K8s cluster
 	clusterName := k8smgmt.NormalizeName(clusterInst.Key.Name + clusterInst.Key.Organization)
@@ -55,14 +55,14 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 
 	kconfName := k8smgmt.GetKconfName(clusterInst)
 	if err = s.CreateDINDCluster(ctx, clusterName, kconfName); err != nil {
-		return err
+		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "created dind", "name", clusterName)
-	return nil
+	return nil, nil
 }
 
-func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("update cluster not supported for DIND")
+func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+	return nil, fmt.Errorf("update cluster not supported for DIND")
 }
 
 func (s *Platform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {

@@ -77,40 +77,40 @@ func (s *Platform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Cloud
 	return process.StopCRMService(ctx, cloudlet, process.HARoleAll)
 }
 
-func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
 	client, err := s.getClient()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	switch clusterInst.Deployment {
 	case cloudcommon.DeploymentTypeDocker:
 		// just going to use localhost
-		return nil
+		return nil, nil
 	case cloudcommon.DeploymentTypeKubernetes:
 		// create local k3d cluster
 		name := clusterInst.Key.Name
 		cmd := "k3d cluster create " + name + " --kubeconfig-switch-context=false --kubeconfig-update-default=false"
 		out, err := client.Output(cmd)
 		if err != nil {
-			return fmt.Errorf("%s failed: %s, %s", cmd, out, err)
+			return nil, fmt.Errorf("%s failed: %s, %s", cmd, out, err)
 		}
 		kconf := k8smgmt.GetKconfName(clusterInst)
 		cmd = "k3d kubeconfig get " + name + " > " + kconf
 		out, err = client.Output(cmd)
 		if err != nil {
-			return fmt.Errorf("%s failed: %s, %s", cmd, out, err)
+			return nil, fmt.Errorf("%s failed: %s, %s", cmd, out, err)
 		}
 		err = k8smgmt.WaitNodesReady(ctx, client, clusterInst, 1, time.Second, 30)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		return nil
+		return nil, nil
 	}
-	return fmt.Errorf("unsupported deployment")
+	return nil, fmt.Errorf("unsupported deployment")
 }
 
-func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return nil
+func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+	return nil, nil
 }
 
 func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {

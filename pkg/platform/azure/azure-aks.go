@@ -60,14 +60,15 @@ func (a *AzurePlatform) CreateClusterPrerequisites(ctx context.Context, clusterN
 }
 
 // RunClusterCreateCommand creates a kubernetes cluster on azure
-func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, numNodes uint32, flavor string) error {
+func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
 	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
 	log.SpanLog(ctx, log.DebugLevelInfra, "Create Cluster", "clusterName", clusterName, "resourcegroup", resourceGroup)
 	managedClustersClient, err := a.getManagedClusterClient(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	start := time.Now()
+	pool := clusterInst.NodePools[0]
 
 	managedCluster := armcontainerservice.ManagedCluster{
 		Location: to.Ptr(a.GetAzureLocation()),
@@ -75,8 +76,8 @@ func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName
 			KubernetesVersion: nil,
 			AgentPoolProfiles: []*armcontainerservice.ManagedClusterAgentPoolProfile{{
 				Name:   to.Ptr("agentpool"),
-				Count:  to.Ptr[int32](int32(numNodes)),
-				VMSize: to.Ptr(flavor),
+				Count:  to.Ptr[int32](int32(pool.NumNodes)),
+				VMSize: to.Ptr(pool.NodeResources.InfraNodeFlavor),
 				OSType: to.Ptr(armcontainerservice.OSTypeLinux),
 				Type:   to.Ptr(armcontainerservice.AgentPoolTypeVirtualMachineScaleSets),
 				Mode:   to.Ptr(armcontainerservice.AgentPoolModeSystem),
@@ -92,23 +93,23 @@ func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName
 	pollerResp, err := managedClustersClient.BeginCreateOrUpdate(ctx, resourceGroup, clusterName, managedCluster, nil)
 	if err != nil {
 		if azerr, ok := err.(*azcore.ResponseError); ok {
-			return fmt.Errorf("failed to create cluster (%s), %s", azerr.ErrorCode, azerr.Error())
+			return nil, fmt.Errorf("failed to create cluster (%s), %s", azerr.ErrorCode, azerr.Error())
 		}
-		return err
+		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create in progress", "cluster", clusterName)
 	_, err = pollerResp.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
 		Frequency: 15 * time.Second,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create finished", "cluster", clusterName, "took", time.Since(start).String())
-	return nil
+	return nil, nil
 }
 
 // RunClusterDeleteCommand removes the kubernetes cluster on azure
-func (a *AzurePlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string) error {
+func (a *AzurePlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error {
 	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
 	log.SpanLog(ctx, log.DebugLevelInfra, "Delete Cluster", "clusterName", clusterName, "resourceGroup", resourceGroup)
 	managedClustersClient, err := a.getManagedClusterClient(ctx)
@@ -133,7 +134,7 @@ func (a *AzurePlatform) RunClusterDeleteCommand(ctx context.Context, clusterName
 }
 
 // GetCredentials retrieves kubeconfig credentials from azure for the cluster just created
-func (a *AzurePlatform) GetCredentials(ctx context.Context, clusterName string) ([]byte, error) {
+func (a *AzurePlatform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCredentials", "clusterName", clusterName)
 	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
 	managedClustersClient, err := a.getManagedClusterClient(ctx)

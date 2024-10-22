@@ -29,65 +29,65 @@ import (
 
 const MaxKubeCredentialsWait = 10 * time.Second
 
-func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst", "clusterInst", clusterInst)
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
 	updateCallback(edgeproto.UpdateTask, "Creating Kubernetes Cluster: "+clusterName)
 	client, err := m.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if len(clusterInst.NodePools) == 0 {
-		return errors.New("no node pools specified for cluster")
+		return nil, errors.New("no node pools specified for cluster")
 	}
 	// for now, only support a single node pool
 	if len(clusterInst.NodePools) > 1 {
-		return errors.New("currently only one node pool is supported")
+		return nil, errors.New("currently only one node pool is supported")
 	}
-	pool := clusterInst.NodePools[0]
 
 	kconf := k8smgmt.GetKconfName(clusterInst)
-	err = m.createClusterInstInternal(ctx, client, clusterName, kconf, pool.NumNodes, pool.NodeResources.InfraNodeFlavor, updateCallback)
+	infraAnnotations, err := m.createClusterInstInternal(ctx, client, clusterName, kconf, clusterInst, updateCallback)
 	if err != nil {
 		if !clusterInst.SkipCrmCleanupOnFailure {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst)
-			delerr := m.deleteClusterInstInternal(ctx, clusterName, updateCallback)
+			delerr := m.deleteClusterInstInternal(ctx, clusterName, clusterInst, updateCallback)
 			if delerr != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "fail to cleanup cluster")
 			}
 		}
 	}
-	return err
+	return infraAnnotations, err
 }
 
-func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, client ssh.Client, clusterName string, kconf string, numNodes uint32, flavor string, updateCallback edgeproto.CacheUpdateCallback) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "createClusterInstInternal", "clusterName", clusterName, "numNodes", numNodes, "flavor", flavor)
+func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, client ssh.Client, clusterName string, kconf string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "createClusterInstInternal", "clusterName", clusterName, "nodePools", clusterInst.NodePools)
 	var err error
 	if err = m.Provider.Login(ctx); err != nil {
-		return err
+		return nil, err
 	}
 	// perform any actions to create prereq resource before the cluster
 	if err = m.Provider.CreateClusterPrerequisites(ctx, clusterName); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in creating cluster prereqs", "err", err)
-		return err
+		return nil, err
 	}
-	if err = m.Provider.RunClusterCreateCommand(ctx, clusterName, numNodes, flavor); err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "Error in creating cluster", "err", err)
-		return err
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create done")
-
-	err = m.SetupClusterKconf(ctx, clusterName, kconf)
+	infraAnnotations, err := m.Provider.RunClusterCreateCommand(ctx, clusterName, clusterInst)
 	if err != nil {
-		return err
+		log.SpanLog(ctx, log.DebugLevelInfra, "Error in creating cluster", "err", err)
+		return nil, err
 	}
-	return nil
+	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create done", "annotations", infraAnnotations)
+
+	err = m.SetupClusterKconf(ctx, clusterName, clusterInst, kconf)
+	if err != nil {
+		return nil, err
+	}
+	return infraAnnotations, nil
 }
 
 func (m *ManagedK8sPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteClusterInst", "clusterInst", clusterInst)
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
-	err := m.deleteClusterInstInternal(ctx, clusterName, updateCallback)
+	err := m.deleteClusterInstInternal(ctx, clusterName, clusterInst, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -98,16 +98,16 @@ func (m *ManagedK8sPlatform) DeleteClusterInst(ctx context.Context, clusterInst 
 	return k8smgmt.CleanupClusterConfig(ctx, client, clusterInst)
 }
 
-func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clusterName string, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleteClusterInstInternal", "clusterName", clusterName)
 	if err := m.Provider.Login(ctx); err != nil {
 		return err
 	}
-	return m.Provider.RunClusterDeleteCommand(ctx, clusterName)
+	return m.Provider.RunClusterDeleteCommand(ctx, clusterName, clusterInst)
 }
 
-func (m *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("Update cluster inst not implemented")
+func (m *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+	return nil, fmt.Errorf("Update cluster inst not implemented")
 }
 
 func (s *ManagedK8sPlatform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {

@@ -11472,7 +11472,7 @@ components:
         node_size:
           type: string
         node_count:
-          type: string
+          type: integer
         description:
           type: string
         region_name:

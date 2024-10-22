@@ -168,12 +168,12 @@ func (m *ManagedK8sPlatform) SetupKconf(ctx context.Context, clusterInst *edgepr
 		return nil
 	}
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
-	return m.SetupClusterKconf(ctx, clusterName, targetFile)
+	return m.SetupClusterKconf(ctx, clusterName, clusterInst, targetFile)
 }
 
-func (m *ManagedK8sPlatform) SetupClusterKconf(ctx context.Context, clusterName, targetFile string) error {
+func (m *ManagedK8sPlatform) SetupClusterKconf(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, targetFile string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetupKconf", "cluster", clusterName, "targetFile", targetFile)
-	kconfData, err := m.Provider.GetCredentials(ctx, clusterName)
+	kconfData, err := m.Provider.GetCredentials(ctx, clusterName, clusterInst)
 	if err != nil {
 		return fmt.Errorf("unable to get cluster %s credentials %v", clusterName, err)
 	}
