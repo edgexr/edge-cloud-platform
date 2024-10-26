@@ -117,10 +117,6 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 	if err != nil {
 		return err
 	}
-	if cloudlet.CrmOnEdge {
-		cloudletClusterName := m.getCloudletClusterName(cloudlet)
-		return m.deleteClusterInstInternal(ctx, cloudletClusterName, updateCallback)
-	}
 	return nil
 }
 

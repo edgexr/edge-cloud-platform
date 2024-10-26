@@ -274,10 +274,13 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "create cluster inst", "ClusterInst", *new, "timeout", timeout)
 
-		err = pf.CreateClusterInst(ctx, new, updateClusterCacheCallback, timeout)
+		infraAnnotations, err := pf.CreateClusterInst(ctx, new, updateClusterCacheCallback, timeout)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "error cluster create fail", "error", err)
 			sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
+			return nu, err
+		}
+		if err := cd.clusterInstInfoAnnotations(ctx, sender, infraAnnotations); err != nil {
 			return nu, err
 		}
 		// Get cluster resources and report to controller.
@@ -303,10 +306,13 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 		}
 
 		log.SpanLog(ctx, log.DebugLevelInfra, "update cluster inst", "ClusterInst", *new)
-		err = pf.UpdateClusterInst(ctx, new, updateClusterCacheCallback)
+		infraAnnotations, err := pf.UpdateClusterInst(ctx, new, updateClusterCacheCallback)
 		if err != nil {
 			err := fmt.Errorf("update failed: %s", err)
 			sender.SendState(edgeproto.TrackedState_UPDATE_ERROR, edgeproto.WithStateError(err))
+			return nu, err
+		}
+		if err := cd.clusterInstInfoAnnotations(ctx, sender, infraAnnotations); err != nil {
 			return nu, err
 		}
 		// Get cluster resources and report to controller.
@@ -583,6 +589,22 @@ func (cd *CRMHandler) clusterInstInfoResources(ctx context.Context, sender edgep
 		info.Resources = *resources
 		return nil
 	})
+}
+
+func (cd *CRMHandler) clusterInstInfoAnnotations(ctx context.Context, sender edgeproto.ClusterInstInfoSender, annotations map[string]string) error {
+	if annotations == nil {
+		return nil
+	}
+	err := sender.SendUpdate(func(info *edgeproto.ClusterInstInfo) error {
+		info.Fields = []string{edgeproto.ClusterInstInfoFieldInfraAnnotations}
+		info.InfraAnnotations = annotations
+		return nil
+	})
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to send annotations", "annotations", annotations, "err", err)
+		return err
+	}
+	return nil
 }
 
 func (cd *CRMHandler) appInstInfoPowerState(ctx context.Context, sender edgeproto.AppInstInfoSender, state edgeproto.PowerState) error {

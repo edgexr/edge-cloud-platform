@@ -25,18 +25,18 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
-func (k *K8sBareMetalPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (k *K8sBareMetalPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst")
 	if strings.HasPrefix(clusterInst.Key.Name, cloudcommon.DefaultMultiTenantCluster) && edgeproto.IsEdgeCloudOrg(clusterInst.Key.Organization) {
 		// The cluster that represents this Cloudlet's cluster.
 		// This is a no-op as the cluster already exists.
-		return nil
+		return nil, nil
 	}
-	return fmt.Errorf("CreateClusterInst not supported on " + platformName())
+	return nil, fmt.Errorf("CreateClusterInst not supported on " + platformName())
 }
 
-func (k *K8sBareMetalPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("UpdateClusterInst not supported on " + platformName())
+func (k *K8sBareMetalPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+	return nil, fmt.Errorf("UpdateClusterInst not supported on " + platformName())
 }
 
 func (k *K8sBareMetalPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {

@@ -135,12 +135,12 @@ func (v *VMPlatform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edge
 	return nil
 }
 
-func (v *VMPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *VMPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	var err error
 	var result OperationInitResult
 	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
@@ -149,16 +149,16 @@ func (v *VMPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgepro
 	lbName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "get cloudlet base image")
 	imgName, err := v.GetCloudletImageToUse(ctx, updateCallback)
 	if err != nil {
 		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
-		return err
+		return nil, err
 	}
-	return v.updateClusterInternal(ctx, client, lbName, imgName, clusterInst, updateCallback)
+	return nil, v.updateClusterInternal(ctx, client, lbName, imgName, clusterInst, updateCallback)
 }
 
 func (v *VMPlatform) updateClusterInternal(ctx context.Context, client ssh.Client, rootLBName, imgName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (reterr error) {
@@ -396,7 +396,7 @@ func (v *VMPlatform) deleteCluster(ctx context.Context, rootLBName string, clust
 	return nil
 }
 
-func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
+func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
 	lbName := v.VMProperties.GetRootLBNameForCluster(ctx, clusterInst)
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst", "clusterInst", clusterInst, "lbName", lbName)
 
@@ -404,14 +404,14 @@ func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgepro
 	var result OperationInitResult
 	ctx, result, err = v.VMProvider.InitOperationContext(ctx, OperationInitStart)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if result == OperationNewlyInitialized {
 		defer v.VMProvider.InitOperationContext(ctx, OperationInitComplete)
 	}
 	flavors, err := v.GetCachedFlavorList(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var nodeResources *edgeproto.NodeResources
@@ -421,7 +421,7 @@ func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgepro
 	} else if len(clusterInst.NodePools) > 0 {
 		nodeResources = clusterInst.NodePools[0].NodeResources
 	} else {
-		return errors.New("no resources specified")
+		return nil, errors.New("no resources specified")
 	}
 	flavorName := nodeResources.InfraNodeFlavor
 	externalVolumeSize := nodeResources.ExternalVolumeSize
@@ -430,7 +430,7 @@ func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgepro
 	for _, flavor := range flavors {
 		if flavor.Name == flavorName && flavor.Disk < MINIMUM_DISK_SIZE && externalVolumeSize < MINIMUM_DISK_SIZE {
 			log.SpanLog(ctx, log.DebugLevelInfra, "flavor disk size too small", "flavor", flavor, "ExternalVolumeSize", externalVolumeSize)
-			return fmt.Errorf("Insufficient disk size, please specify a flavor with at least %dgb", MINIMUM_DISK_SIZE)
+			return nil, fmt.Errorf("Insufficient disk size, please specify a flavor with at least %dgb", MINIMUM_DISK_SIZE)
 		}
 	}
 
@@ -441,9 +441,9 @@ func (v *VMPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgepro
 	imgName, err := v.GetCloudletImageToUse(ctx, updateCallback)
 	if err != nil {
 		log.InfoLog("error with cloudlet base image", "imgName", imgName, "error", err)
-		return err
+		return nil, err
 	}
-	return v.createClusterInternal(ctx, lbName, imgName, clusterInst, updateCallback, timeout)
+	return nil, v.createClusterInternal(ctx, lbName, imgName, clusterInst, updateCallback, timeout)
 }
 
 func (v *VMPlatform) cleanupClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {

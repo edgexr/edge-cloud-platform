@@ -23,16 +23,16 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
-func (s *K8sOperator) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) error {
-	return errors.New("create cluster should not be called for k8s operator")
+func (s *K8sOperator) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
+	return nil, errors.New("create cluster should not be called for k8s operator")
 }
 
 func (s *K8sOperator) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return errors.New("delete cluster should not be called for k8s operator")
 }
 
-func (s *K8sOperator) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return errors.New("update cluster should not be called for k8s operator")
+func (s *K8sOperator) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+	return nil, errors.New("update cluster should not be called for k8s operator")
 }
 
 func (s *K8sOperator) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {

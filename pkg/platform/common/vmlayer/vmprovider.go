@@ -598,7 +598,7 @@ func (v *VMPlatform) checkRebuildRootLb(ctx context.Context, caches *platform.Ca
 	for _, cluster := range clusters {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Update rootLb for cluster", "cluster", cluster)
 		// Add cluster config to the rootLb as well as patch rootLB VM with k8s network for this cluster
-		if err := v.UpdateClusterInst(ctx, cluster, updateCallback); err != nil {
+		if _, err := v.UpdateClusterInst(ctx, cluster, updateCallback); err != nil {
 			// The whole process is best effort, so try to update config for every cluster that we can
 			log.SpanLog(ctx, log.DebugLevelInfra, "Failed to update cluster", "cluster", cluster, "err", err)
 		}

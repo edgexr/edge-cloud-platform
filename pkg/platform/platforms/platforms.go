@@ -31,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/localhost"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/mock"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmk8s"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vcd"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vmpool"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vsphere"
@@ -59,6 +60,7 @@ var builders = []platform.PlatformBuilder{
 	kindinfra.NewPlatform,
 	mock.NewPlatform,
 	localhost.NewPlatform,
+	osmk8s.NewPlatform,
 }
 
 type PlatformsData struct {

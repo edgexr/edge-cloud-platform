@@ -44,4 +44,5 @@ const (
 	PlatformTypeVCD               = "vcd"
 	PlatformTypeVMPool            = "vmpool"
 	PlatformTypeVSphere           = "vsphere"
+	PlatformTypeOSMK8S            = "osmk8s"
 )
