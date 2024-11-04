@@ -177,9 +177,11 @@ func (a *Udec64) Mult(factor uint32) {
 		return
 	}
 	a.Whole *= uint64(factor)
-	a.Nanos *= factor
-	wholeExtra := uint64(a.Nanos / DecWhole)
-	a.Nanos = a.Nanos % DecWhole
+	// use uint64 for nanos calculations to avoid overflow
+	nanos := uint64(a.Nanos)
+	nanos *= uint64(factor)
+	wholeExtra := nanos / uint64(DecWhole)
+	a.Nanos = uint32(nanos % uint64(DecWhole))
 	a.Whole += wholeExtra
 }
 

@@ -179,7 +179,7 @@ func getOpenstackResources(cloudlet *edgeproto.Cloudlet, resources []edgeproto.V
 }
 
 // called by controller, make sure it doesn't make any calls to infra API
-func (o *OpenstackPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+func (o *OpenstackPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, _ map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
 	// resource name -> resource units
 	cloudletRes := map[string]string{
 		cloudcommon.ResourceInstances:   "",
@@ -187,14 +187,9 @@ func (o *OpenstackPlatform) GetClusterAdditionalResources(ctx context.Context, c
 	}
 	resInfo := make(map[string]edgeproto.InfraResource)
 	for resName, resUnits := range cloudletRes {
-		resMax := uint64(0)
-		if infraRes, ok := infraResMap[resName]; ok {
-			resMax = infraRes.InfraMaxValue
-		}
 		resInfo[resName] = edgeproto.InfraResource{
-			Name:          resName,
-			InfraMaxValue: resMax,
-			Units:         resUnits,
+			Name:  resName,
+			Units: resUnits,
 		}
 	}
 

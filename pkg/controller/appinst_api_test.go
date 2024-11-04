@@ -395,6 +395,7 @@ func TestAppInstApi(t *testing.T) {
 	testAppInstId(t, ctx, apis)
 	testAppFlavorRequest(t, ctx, commonApi, responder, apis)
 	testSingleKubernetesCloudlet(t, ctx, apis, appDnsRoot)
+	testAppInstPotentialCloudlets(t, ctx, apis)
 
 	// cleanup unused reservable auto clusters
 	apis.clusterInstApi.cleanupIdleReservableAutoClusters(ctx, time.Duration(0))
@@ -1324,4 +1325,106 @@ func testBeingErrors(t *testing.T, ctx context.Context, responder *DummyInfoResp
 		wg.Wait()
 	}
 	require.True(t, testedAutoCluster, "tested autocluster")
+}
+
+func testAppInstPotentialCloudlets(t *testing.T, ctx context.Context, apis *AllApis) {
+	// Test that AppInst with autocluster chooses the correct cloudlet.
+	// Currently the algorithm selects the cloudlet with the most free
+	// resources.
+
+	// create zones and cloudlets
+	zone, cloudlets, _, cleanup := testPotentialCloudletsCreateDeps(t, ctx, apis)
+	defer cleanup()
+
+	app := edgeproto.App{
+		Key: edgeproto.AppKey{
+			Organization: "pcdev",
+			Name:         "pcapp",
+			Version:      "1.0",
+		},
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		AccessPorts: "tcp:443",
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+			},
+		},
+	}
+	_, err := apis.appApi.CreateApp(ctx, &app)
+	require.Nil(t, err)
+	defer func() {
+		apis.appApi.DeleteApp(ctx, &app)
+	}()
+
+	// Create six auto-cluster instances.  Resource usage in num nodes will be
+	// 6, 5, 4, 3, 2, 1. For the first three clusters, it will
+	// go in order based on name since all three cloudlets have
+	// no resource usage. The second three clusters will start
+	// from the last cloudlet because it has the most free resources,
+	// and end on the first cloudlet. In the end, we should have:
+	// cloudlet0: cluster0 (6 vcpus) + cluster5 (1 vcpus)
+	// cloudlet1: cluster1 (5 vcpus) + cluster4 (2 vcpus)
+	// cloudlet2: cluster2 (4 vcpus) + cluster3 (3 vcpus)
+	insts := []*edgeproto.AppInst{}
+	for ii := 0; ii < 6; ii++ {
+		desc := fmt.Sprintf("create appInst%d", ii)
+		ai := &edgeproto.AppInst{}
+		ai.Key.Name = fmt.Sprintf("pcappinst%d", ii)
+		ai.Key.Organization = app.Key.Organization
+		ai.AppKey = app.Key
+		ai.ZoneKey = zone.Key
+		ai.KubernetesResources = &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(uint64(6-ii), 0),
+				TotalMemory: uint64(1024 * (6 - ii)),
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeVcpus:     1,
+					MinNodeMemory:    1024,
+					MinNodeDisk:      10,
+					MinNumberOfNodes: int32(6 - ii),
+				},
+			},
+		}
+		err := apis.appInstApi.CreateAppInst(ai, testutil.NewCudStreamoutAppInst(ctx))
+		require.Nil(t, err, desc)
+		outAi := &edgeproto.AppInst{}
+		found := apis.appInstApi.cache.Get(&ai.Key, outAi)
+		require.True(t, found, desc)
+		cloudletName := ""
+		if ii < 3 {
+			cloudletName = cloudlets[ii].Key.Name
+		} else {
+			cloudletName = cloudlets[5-ii].Key.Name
+		}
+		require.Equal(t, cloudletName, outAi.CloudletKey.Name, desc)
+		insts = append(insts, ai)
+	}
+	// cleanup
+	for _, ai := range insts {
+		err := apis.appInstApi.DeleteAppInst(ai, testutil.NewCudStreamoutAppInst(ctx))
+		require.Nil(t, err)
+	}
+
+	// test corner case, no cloudlets with enough resources
+	ai := &edgeproto.AppInst{}
+	ai.Key.Name = "pcappinsttoobig"
+	ai.Key.Organization = app.Key.Organization
+	ai.AppKey = app.Key
+	ai.ZoneKey = zone.Key
+	ai.KubernetesResources = &edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(4*20, 0),
+			TotalMemory: 4096 * 20,
+			Topology: edgeproto.NodePoolTopology{
+				MinNodeVcpus:     4,
+				MinNodeMemory:    4096,
+				MinNodeDisk:      40,
+				MinNumberOfNodes: 20,
+			},
+		},
+	}
+	err = apis.appInstApi.CreateAppInst(ai, testutil.NewCudStreamoutAppInst(ctx))
+	require.NotNil(t, err)
+	require.Equal(t, "not enough resources available: required RAM is 86016MB but only 66560MB out of 81920MB is available, required vCPUs is 84 but only 5 out of 20 is available", err.Error())
 }

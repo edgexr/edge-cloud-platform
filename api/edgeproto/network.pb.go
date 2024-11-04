@@ -1434,6 +1434,21 @@ func (c *NetworkCache) Get(key *NetworkKey, valbuf *Network) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *NetworkCache) STMGet(ostm *OptionalSTM, key *NetworkKey, valbuf *Network) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("NetworkCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *NetworkCache) GetWithRev(key *NetworkKey, valbuf *Network, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1782,6 +1797,11 @@ func (s *NetworkCache) InitSync(sync DataSync) {
 		s.Store = NewNetworkStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitNetworkCacheWithStore(cache *NetworkCache, store NetworkStore) {
+	InitNetworkCache(cache)
+	cache.Store = store
 }
 
 func (c *NetworkCache) UsesOrg(org string) bool {

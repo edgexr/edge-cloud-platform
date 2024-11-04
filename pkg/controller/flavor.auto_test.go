@@ -41,8 +41,14 @@ func wrapFlavorTrackerStore(api *FlavorApi) (*FlavorStoreTracker, func()) {
 		FlavorStore: api.store,
 	}
 	api.store = tracker
+	if api.cache.Store != nil {
+		api.cache.Store = tracker
+	}
 	unwrap := func() {
 		api.store = orig
+		if api.cache.Store != nil {
+			api.cache.Store = orig
+		}
 	}
 	return tracker, unwrap
 }
@@ -71,7 +77,6 @@ type FlavorDeleteDataGen interface {
 	GetAppDefaultFlavorRef(key *edgeproto.FlavorKey) (*edgeproto.App, *testSupportData)
 	GetAppInstFlavorRef(key *edgeproto.FlavorKey) (*edgeproto.AppInst, *testSupportData)
 	GetCloudletFlavorRef(key *edgeproto.FlavorKey) (*edgeproto.Cloudlet, *testSupportData)
-	GetClusterInstFlavorRef(key *edgeproto.FlavorKey) (*edgeproto.ClusterInst, *testSupportData)
 }
 
 // FlavorDeleteStore wraps around the usual
@@ -236,26 +241,6 @@ func deleteFlavorChecks(t *testing.T, ctx context.Context, all *AllApis, dataGen
 		// remove Cloudlet obj
 		_, err = all.cloudletApi.store.Delete(ctx, refBy, all.cloudletApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from Cloudlet must succeed")
-		deleteStore.putDeletePrepareCb = nil
-		supportData.delete(t, ctx, all)
-	}
-	{
-		// Negative test, ClusterInst refers to Flavor.
-		// The cb will inject refBy obj after delete prepare has been set.
-		refBy, supportData := dataGen.GetClusterInstFlavorRef(testObj.GetKey())
-		supportData.put(t, ctx, all)
-		deleteStore.putDeletePrepareCb = func() {
-			all.clusterInstApi.store.Put(ctx, refBy, all.clusterInstApi.sync.SyncWait)
-		}
-		testObj, _ = dataGen.GetFlavorTestObj()
-		_, err = api.DeleteFlavor(ctx, testObj)
-		require.NotNil(t, err, "must fail delete with ref from ClusterInst")
-		require.Contains(t, err.Error(), "in use")
-		// check that delete prepare was reset
-		deleteStore.requireUndoDeletePrepare(ctx, testObj)
-		// remove ClusterInst obj
-		_, err = all.clusterInstApi.store.Delete(ctx, refBy, all.clusterInstApi.sync.SyncWait)
-		require.Nil(t, err, "cleanup ref from ClusterInst must succeed")
 		deleteStore.putDeletePrepareCb = nil
 		supportData.delete(t, ctx, all)
 	}

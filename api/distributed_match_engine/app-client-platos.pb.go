@@ -11,6 +11,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	_ "github.com/gogo/googleapis/google/api"
 	proto "github.com/gogo/protobuf/proto"
+	"go.etcd.io/etcd/client/v3/concurrency"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -1345,6 +1346,21 @@ func (s *FieldMap) Fields() []string {
 
 func (s *FieldMap) Count() int {
 	return len(s.fields)
+}
+
+// OptionalSTM is for operations that use either the cache or the store.
+type OptionalSTM struct {
+	// STM may be nil to force using the cache instead of the store
+	stm concurrency.STM
+}
+
+// NewOptionalSTM creates a new optional STM for operations that
+// use either the cache or the store. Set the stm to force using
+// the store, or leave nil to force using the cache.
+func NewOptionalSTM(stm concurrency.STM) *OptionalSTM {
+	return &OptionalSTM{
+		stm: stm,
+	}
 }
 
 // DecodeHook for use with the mapstructure package.

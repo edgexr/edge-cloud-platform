@@ -76,7 +76,7 @@ message ClusterInst {
   // Zone on which the instance is deployed
   ZoneKey zone_key = 43 [(gogoproto.nullable) = false];
   // Flavor for the VM or the primary Kubernetes node pool
-  FlavorKey flavor = 3 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.refers_to) = "Flavor"];
+  FlavorKey flavor = 3 [(gogoproto.nullable) = false, (protogen.backend) = true];
   // Liveness of instance (see Liveness)
   Liveness liveness = 9 [(protogen.backend) = true];
   // Auto is set to true when automatically created by back-end (internal use only)

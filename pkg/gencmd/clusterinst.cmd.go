@@ -630,6 +630,7 @@ var ClusterInstOptionalArgs = []string{
 	"nodepools:#.noderesources.optresmap",
 	"nodepools:#.noderesources.infranodeflavor",
 	"nodepools:#.noderesources.externalvolumesize",
+	"nodepools:#.scalable",
 	"infraannotations",
 }
 var ClusterInstAliasArgs = []string{
@@ -715,6 +716,7 @@ var ClusterInstComments = map[string]string{
 	"nodepools:#.noderesources.optresmap":          "Optional resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1, specify nodepools:#.noderesources.optresmap:empty=true to clear",
 	"nodepools:#.noderesources.infranodeflavor":    "Infrastructure specific node flavor",
 	"nodepools:#.noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
+	"nodepools:#.scalable":                         "Scalable indicates the system may scale the number of nodes",
 	"infraannotations":                             "Annotations added by the implementing infrastructure, specify infraannotations:empty=true to clear",
 }
 var ClusterInstSpecialArgs = map[string]string{
@@ -813,5 +815,6 @@ var UpdateClusterInstOptionalArgs = []string{
 	"dbmodelid",
 	"nodepools:empty",
 	"nodepools:#.numnodes",
+	"nodepools:#.scalable",
 	"infraannotations",
 }

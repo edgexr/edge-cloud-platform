@@ -1147,6 +1147,21 @@ func (c *TrustPolicyCache) Get(key *PolicyKey, valbuf *TrustPolicy) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *TrustPolicyCache) STMGet(ostm *OptionalSTM, key *PolicyKey, valbuf *TrustPolicy) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("TrustPolicyCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *TrustPolicyCache) GetWithRev(key *PolicyKey, valbuf *TrustPolicy, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1495,6 +1510,11 @@ func (s *TrustPolicyCache) InitSync(sync DataSync) {
 		s.Store = NewTrustPolicyStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitTrustPolicyCacheWithStore(cache *TrustPolicyCache, store TrustPolicyStore) {
+	InitTrustPolicyCache(cache)
+	cache.Store = store
 }
 
 func (c *TrustPolicyCache) UsesOrg(org string) bool {

@@ -1392,6 +1392,21 @@ func (c *NodeCache) Get(key *NodeKey, valbuf *Node) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *NodeCache) STMGet(ostm *OptionalSTM, key *NodeKey, valbuf *Node) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("NodeCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *NodeCache) GetWithRev(key *NodeKey, valbuf *Node, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1775,6 +1790,11 @@ func (s *NodeCache) InitSync(sync DataSync) {
 		s.Store = NewNodeStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitNodeCacheWithStore(cache *NodeCache, store NodeStore) {
+	InitNodeCache(cache)
+	cache.Store = store
 }
 
 func (c *NodeCache) UsesOrg(org string) bool {

@@ -75,7 +75,7 @@ func NewAppInstApi(sync *regiondata.Sync, all *AllApis) *AppInstApi {
 	appInstApi.fedStore = edgeproto.NewFedAppInstStore(sync.GetKVStore())
 	appInstApi.dnsLabelStore = &all.cloudletApi.objectDnsLabelStore
 	appInstApi.fedAppInstEventSendMany = notify.NewFedAppInstEventSendMany()
-	edgeproto.InitAppInstCache(&appInstApi.cache)
+	edgeproto.InitAppInstCacheWithStore(&appInstApi.cache, appInstApi.store)
 	sync.RegisterCache(&appInstApi.cache)
 	return &appInstApi
 }
@@ -625,6 +625,11 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				return err
 			}
 			for _, pc := range potentialClusters {
+				if pc.scaleSpec != nil {
+					// no support for scaling up clusters yet
+					log.SpanLog(ctx, log.DebugLevelApi, "skipping cluster that requires scaling", "pc-cluster", pc.existingCluster)
+					continue
+				}
 				clusterInst, err := s.usePotentialCluster(ctx, stm, in, &app, sidecarApp, pc)
 				if err != nil && pc.userSpecified {
 					// user specified this cluster, so this is a hard failure
@@ -656,6 +661,17 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// Sort potential cloudlets by available resources.
 			// TODO: filter this list based on the actual resource requirements
 			// for the instance.
+			// TODO: Currently we choose the cloudlet with the best free
+			// resource score. However that score is calculated on cached
+			// data, not part of a transaction. So, we could still fail with
+			// out of resources if another thread happens to use that cloudlet
+			// before us. Instead, we need to loop over all cloudlets in the
+			// list and attempt to use it in a transaction. This is what the
+			// createClusterInst code already does. Probably the best solution
+			// is to leverage the code in createCluster to figure out which
+			// cloudlet to use, but that requires refactoring a bunch of the
+			// logic in the this STM which depends on the target cloudlet,
+			// and moving it into the createClusterInst code.
 			sort.Sort(PotentialInstCloudletsByResource(potentialCloudlets))
 			in.CloudletKey = potentialCloudlets[0].cloudlet.Key
 		}
@@ -719,7 +735,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 		if !cloudcommon.IsClusterInstReqd(&app) {
 			// select infra flavor for VM AppInst
-			az, optRes, err := s.all.clusterInstApi.setInfraFlavor(ctx, stm, &cloudlet, &info, in.NodeResources)
+			ostm := edgeproto.NewOptionalSTM(stm)
+			az, optRes, err := s.all.clusterInstApi.setInfraFlavor(ctx, ostm, &cloudlet, &info, in.NodeResources)
 			if err != nil {
 				return err
 			}
@@ -744,10 +761,13 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// no cluster for vms
 			in.ClusterKey = edgeproto.ClusterKey{}
 			// check resources
-			err = s.all.clusterInstApi.validateResources(ctx, stm, nil, nil, &app, in, &cloudlet, &info, &refs, GenResourceAlerts)
+			ostm := edgeproto.NewOptionalSTM(stm)
+			resCalc := NewCloudletResCalc(s.all, ostm, &in.CloudletKey)
+			warnings, err := resCalc.CloudletFitsVMApp(ctx, &app, in)
 			if err != nil {
 				return err
 			}
+			s.all.clusterInstApi.handleResourceUsageAlerts(ctx, stm, &cloudlet.Key, warnings)
 			refs.VmAppInsts = append(refs.VmAppInsts, in.Key)
 			refsChanged = true
 		}
@@ -1600,7 +1620,7 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 				refs.Key = cur.ClusterKey
 			}
 			// ensure that cluster can fit new specified resources
-			err = s.all.clusterInstApi.fitsAppResources(ctx, &clusterInst, &refs, &app, &cur, cloudletInfo.GetFlavorLookup())
+			_, _, err = s.all.clusterInstApi.fitsAppResources(ctx, &clusterInst, &refs, &app, &cur, cloudletInfo.GetFlavorLookup())
 			if err != nil {
 				return err
 			}

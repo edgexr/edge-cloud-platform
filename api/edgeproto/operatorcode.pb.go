@@ -635,6 +635,21 @@ func (c *OperatorCodeCache) Get(key *OperatorCodeKey, valbuf *OperatorCode) bool
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *OperatorCodeCache) STMGet(ostm *OptionalSTM, key *OperatorCodeKey, valbuf *OperatorCode) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("OperatorCodeCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *OperatorCodeCache) GetWithRev(key *OperatorCodeKey, valbuf *OperatorCode, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -983,6 +998,11 @@ func (s *OperatorCodeCache) InitSync(sync DataSync) {
 		s.Store = NewOperatorCodeStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitOperatorCodeCacheWithStore(cache *OperatorCodeCache, store OperatorCodeStore) {
+	InitOperatorCodeCache(cache)
+	cache.Store = store
 }
 
 func (c *OperatorCodeCache) UsesOrg(org string) bool {

@@ -43,8 +43,14 @@ func wrapPlatformFeaturesTrackerStore(api *PlatformFeaturesApi) (*PlatformFeatur
 		PlatformFeaturesStore: api.store,
 	}
 	api.store = tracker
+	if api.cache.Store != nil {
+		api.cache.Store = tracker
+	}
 	unwrap := func() {
 		api.store = orig
+		if api.cache.Store != nil {
+			api.cache.Store = orig
+		}
 	}
 	return tracker, unwrap
 }
@@ -221,8 +227,14 @@ func wrapGPUDriverTrackerStore(api *GPUDriverApi) (*GPUDriverStoreTracker, func(
 		GPUDriverStore: api.store,
 	}
 	api.store = tracker
+	if api.cache.Store != nil {
+		api.cache.Store = tracker
+	}
 	unwrap := func() {
 		api.store = orig
+		if api.cache.Store != nil {
+			api.cache.Store = orig
+		}
 	}
 	return tracker, unwrap
 }
@@ -399,8 +411,14 @@ func wrapCloudletTrackerStore(api *CloudletApi) (*CloudletStoreTracker, func()) 
 		CloudletStore: api.store,
 	}
 	api.store = tracker
+	if api.cache.Store != nil {
+		api.cache.Store = tracker
+	}
 	unwrap := func() {
 		api.store = orig
+		if api.cache.Store != nil {
+			api.cache.Store = orig
+		}
 	}
 	return tracker, unwrap
 }

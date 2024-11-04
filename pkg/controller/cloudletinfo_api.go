@@ -26,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
@@ -43,7 +44,7 @@ func NewCloudletInfoApi(sync *regiondata.Sync, all *AllApis) *CloudletInfoApi {
 	cloudletInfoApi.all = all
 	cloudletInfoApi.sync = sync
 	cloudletInfoApi.store = edgeproto.NewCloudletInfoStore(sync.GetKVStore())
-	edgeproto.InitCloudletInfoCache(&cloudletInfoApi.cache)
+	edgeproto.InitCloudletInfoCacheWithStore(&cloudletInfoApi.cache, cloudletInfoApi.store)
 	sync.RegisterCache(&cloudletInfoApi.cache)
 	return &cloudletInfoApi
 }
@@ -231,18 +232,20 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 		s.ClearCloudletAndAppInstDownAlerts(ctx, in)
 	}
 	if in.State == dme.CloudletState_CLOUDLET_STATE_READY {
-		// Validate cloudlet resources and generate appropriate warnings
-		err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-			if !s.all.cloudletApi.store.STMGet(stm, key, &cloudlet) {
-				return key.NotFoundError()
-			}
-			cloudletRefs := edgeproto.CloudletRefs{}
-			s.all.cloudletRefsApi.store.STMGet(stm, key, &cloudletRefs)
-			return s.all.clusterInstApi.validateResources(ctx, stm, nil, nil, nil, nil, &cloudlet, in, &cloudletRefs, GenResourceAlerts)
-		})
+		// Validate cloudlet resources and generate appropriate warnings,
+		// use cache instead of store.
+		cacheSTM := edgeproto.NewOptionalSTM(nil)
+		resCalc := NewCloudletResCalc(s.all, cacheSTM, key)
+		resCalc.deps.cloudletInfo = in
+		warnings, err := resCalc.cloudletFitsReqdVals(ctx, resspec.ResValMap{})
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelNotify, "Failed to validate cloudlet resources",
 				"key", in.Key, "err", err)
+		} else {
+			_ = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+				s.all.clusterInstApi.handleResourceUsageAlerts(ctx, stm, &cloudlet.Key, warnings)
+				return nil
+			})
 		}
 	}
 }

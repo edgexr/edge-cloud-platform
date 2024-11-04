@@ -1384,6 +1384,21 @@ func (c *CloudletNodeCache) Get(key *CloudletNodeKey, valbuf *CloudletNode) bool
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *CloudletNodeCache) STMGet(ostm *OptionalSTM, key *CloudletNodeKey, valbuf *CloudletNode) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("CloudletNodeCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *CloudletNodeCache) GetWithRev(key *CloudletNodeKey, valbuf *CloudletNode, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1732,6 +1747,11 @@ func (s *CloudletNodeCache) InitSync(sync DataSync) {
 		s.Store = NewCloudletNodeStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitCloudletNodeCacheWithStore(cache *CloudletNodeCache, store CloudletNodeStore) {
+	InitCloudletNodeCache(cache)
+	cache.Store = store
 }
 
 func (c *CloudletNodeCache) UsesOrg(org string) bool {

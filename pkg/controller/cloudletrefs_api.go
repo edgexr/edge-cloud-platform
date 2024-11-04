@@ -33,7 +33,7 @@ func NewCloudletRefsApi(sync *regiondata.Sync, all *AllApis) *CloudletRefsApi {
 	cloudletRefsApi.all = all
 	cloudletRefsApi.sync = sync
 	cloudletRefsApi.store = edgeproto.NewCloudletRefsStore(sync.GetKVStore())
-	edgeproto.InitCloudletRefsCache(&cloudletRefsApi.cache)
+	edgeproto.InitCloudletRefsCacheWithStore(&cloudletRefsApi.cache, cloudletRefsApi.store)
 	sync.RegisterCache(&cloudletRefsApi.cache)
 	return &cloudletRefsApi
 }

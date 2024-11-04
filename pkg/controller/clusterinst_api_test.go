@@ -16,6 +16,7 @@ package controller
 
 import (
 	"context"
+	fmt "fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -244,6 +245,7 @@ func TestClusterInstApi(t *testing.T) {
 
 	testClusterInstResourceUsage(t, ctx, apis, ccrm)
 	testClusterInstGPUFlavor(t, ctx, apis)
+	testClusterPotentialCloudlets(t, ctx, apis)
 
 	dummy.Stop()
 }
@@ -624,7 +626,7 @@ func getClusterInstMetricCounts(t *testing.T, ctx context.Context, clusterInst *
 				masterNodeFlavor = flavor
 			}
 		}
-		lbFlavor, err = apis.clusterInstApi.GetRootLBFlavorInfo(ctx, stm, &cloudlet, &cloudletInfo)
+		lbFlavor, err = apis.clusterInstApi.GetRootLBFlavorInfo(ctx, edgeproto.NewOptionalSTM(stm), &cloudlet, &cloudletInfo)
 		require.Nil(t, err, "found rootlb flavor")
 		return nil
 	})
@@ -786,20 +788,15 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 	})
 
 	err = apis.clusterInstApi.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
+		var found bool
 		cloudletKey := obj.CloudletKey
-		cloudlet := edgeproto.Cloudlet{}
-		found := apis.cloudletApi.store.STMGet(stm, &cloudletKey, &cloudlet)
-		require.True(t, found, "cloudlet exists")
+		resCalc := NewCloudletResCalc(apis, edgeproto.NewOptionalSTM(stm), &cloudletKey)
+		resCalc.InitDeps(ctx)
+		cloudlet := resCalc.deps.cloudlet
+		cloudletInfo := resCalc.deps.cloudletInfo
+		cloudletRefs := resCalc.deps.cloudletRefs
 
-		cloudletInfo := edgeproto.CloudletInfo{}
-		found = apis.cloudletInfoApi.store.STMGet(stm, &cloudletKey, &cloudletInfo)
-		require.True(t, found, "cloudlet info exists")
-
-		cloudletRefs := edgeproto.CloudletRefs{}
-		found = apis.cloudletRefsApi.store.STMGet(stm, &cloudletKey, &cloudletRefs)
-		require.True(t, found, "cloudlet refs exists")
-
-		usedRes, err := apis.clusterInstApi.getCloudletUsedResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletRefs)
+		usedRes, err := resCalc.getCloudletUsedResources(ctx)
 		require.Nil(t, err, "get all cloudlet resources")
 		clusters := make(map[edgeproto.ClusterKey]struct{})
 		resTypeVMAppCount := 0
@@ -831,7 +828,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		for _, resInfo := range cloudletInfo.ResourcesSnapshot.Info {
 			infraResInfo[resInfo.Name] = resInfo
 		}
-		allResInfo, err := apis.cloudletApi.totalCloudletResources(ctx, stm, &cloudlet, &cloudletInfo, usedRes, infraResInfo)
+		allResInfo, err := apis.cloudletApi.totalCloudletResources(ctx, resCalc.stm, cloudlet, cloudletInfo, usedRes)
 		require.Nil(t, err)
 		// set quotas to what is currently being used
 		// so creating anything should trigger both quota warnings and
@@ -851,8 +848,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		for _, quota := range cloudlet.ResourceQuotas {
 			quotaMap[quota.Name] = quota
 		}
-		lbFlavor, err := apis.clusterInstApi.GetRootLBFlavorInfo(ctx, stm, &cloudlet, &cloudletInfo)
-		require.Nil(t, err, "found rootlb flavor")
+		lbFlavor := resCalc.deps.lbFlavor
 		clusterInst := testutil.ClusterInstData()[0]
 		clusterInst.NumMasters = 2
 		clusterInst.MasterNodeFlavor = "flavor.large"
@@ -893,7 +889,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		// number of vm resources = num_nodes
 		require.Equal(t, 2, ciResources.numVms, "matches number of vm resources")
 
-		warnings, err := apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletInfo.ResourcesSnapshot, usedRes, ciResources, nil)
+		warnings, err := resCalc.CloudletFitsCluster(ctx, &clusterInst, nil)
 		require.NotNil(t, err, "not enough resource available error")
 		for _, resName := range []string{
 			cloudcommon.ResourceRamMb,
@@ -926,8 +922,9 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		appInst.NodeResources = &edgeproto.NodeResources{}
 		//appInst.NodeResources.SetFromFlavor(&appInstFlavor)
 		appInst.NodeResources.InfraNodeFlavor = "flavor.large"
+		app := &testutil.AppData()[12]
 		vmAppResources := NewCloudletResources()
-		vmAppResources.AddVMAppInstResources(ctx, &testutil.AppData()[12], &appInst, lbFlavor)
+		vmAppResources.AddVMAppInstResources(ctx, app, &appInst, lbFlavor)
 		require.Equal(t, 2, len(vmAppResources.vms), "matches number of vm resources")
 		foundVMRes := false
 		foundVMRootLBRes := false
@@ -942,7 +939,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		require.True(t, foundVMRes, "resource type app vm found")
 		require.True(t, foundVMRootLBRes, "resource type vm rootlb found")
 
-		warnings, err = apis.clusterInstApi.validateCloudletInfraResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletInfo.ResourcesSnapshot, usedRes, vmAppResources, nil)
+		warnings, err = resCalc.CloudletFitsVMApp(ctx, app, &appInst)
 		require.NotNil(t, err, "not enough resource available")
 		for _, resName := range []string{
 			cloudcommon.ResourceRamMb,
@@ -1127,4 +1124,124 @@ func setTestMasterNodeFlavorSetting(t *testing.T, ctx context.Context, apis *All
 	settings.Fields = []string{edgeproto.SettingsFieldMasterNodeFlavor}
 	_, err := apis.settingsApi.UpdateSettings(ctx, settings)
 	require.Nil(t, err)
+}
+
+func testClusterPotentialCloudlets(t *testing.T, ctx context.Context, apis *AllApis) {
+	// Test potential cloudlet algorithm based on available resources
+
+	// Set up a test zone with 3 cloudlets. Expect ClusterCreate to
+	// choose cloudlets based on available resources.
+	zone, cloudlets, _, cleanup := testPotentialCloudletsCreateDeps(t, ctx, apis)
+	defer cleanup()
+
+	// Create six clusters. Resource usage in num nodes will be
+	// 6, 5, 4, 3, 2, 1. For the first three clusters, it will
+	// go in order based on name since all three cloudlets have
+	// no resource usage. The second three clusters will start
+	// from the last cloudlet because it has the most free resources,
+	// and end on the first cloudlet. In the end, we should have:
+	// cloudlet0: cluster0 (6 nodes) + cluster5 (1 node)
+	// cloudlet1: cluster1 (5 nodes) + cluster4 (2 nodes)
+	// cloudlet2: cluster2 (4 nodes) + cluster3 (3 nodes)
+	clusters := []*edgeproto.ClusterInst{}
+	for ii := 0; ii < 6; ii++ {
+		ci := &edgeproto.ClusterInst{}
+		ci.Key.Name = fmt.Sprintf("pcclust%d", ii)
+		ci.Key.Organization = "pcdev"
+		ci.ZoneKey = zone.Key
+		ci.NodePools = []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: uint32(6 - ii),
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 1,
+				Ram:   1024,
+				Disk:  10,
+			},
+		}}
+		err := apis.clusterInstApi.CreateClusterInst(ci, testutil.NewCudStreamoutClusterInst(ctx))
+		require.Nil(t, err)
+		outCi := &edgeproto.ClusterInst{}
+		found := apis.clusterInstApi.cache.Get(&ci.Key, outCi)
+		require.True(t, found)
+		cloudletName := ""
+		if ii < 3 {
+			cloudletName = cloudlets[ii].Key.Name
+		} else {
+			cloudletName = cloudlets[5-ii].Key.Name
+		}
+		require.Equal(t, cloudletName, outCi.CloudletKey.Name)
+		clusters = append(clusters, ci)
+	}
+	// cleanup
+	for _, ci := range clusters {
+		err := apis.clusterInstApi.DeleteClusterInst(ci, testutil.NewCudStreamoutClusterInst(ctx))
+		require.Nil(t, err)
+	}
+
+	// test corner case, no cloudlets with enough resources
+	ci := &edgeproto.ClusterInst{}
+	ci.Key.Name = "toobig"
+	ci.Key.Organization = "pcdev"
+	ci.ZoneKey = zone.Key
+	ci.NodePools = []*edgeproto.NodePool{{
+		Name:     "cpupool",
+		NumNodes: 20,
+		NodeResources: &edgeproto.NodeResources{
+			Vcpus: 4,
+			Ram:   4096,
+			Disk:  40,
+		},
+	}}
+	err := apis.clusterInstApi.CreateClusterInst(ci, testutil.NewCudStreamoutClusterInst(ctx))
+	require.NotNil(t, err)
+	require.Equal(t, "not enough resources available: required RAM is 82944MB but only 81920MB out of 81920MB is available, required vCPUs is 81 but only 20 out of 20 is available", err.Error())
+}
+
+func testPotentialCloudletsCreateDeps(t *testing.T, ctx context.Context, apis *AllApis) (*edgeproto.Zone, []*edgeproto.Cloudlet, []*edgeproto.CloudletInfo, func()) {
+	syncWait := apis.zoneApi.sync.SyncWait
+	// create zone
+	zone := &edgeproto.Zone{}
+	zone.Key.Name = "pczone"
+	zone.Key.Organization = "pcorg"
+	_, err := apis.zoneApi.store.Put(ctx, zone, syncWait)
+	require.Nil(t, err)
+
+	// create cloudlets
+	cloudletData := testutil.CloudletData()
+	cloudletInfoData := testutil.CloudletInfoData()
+	cloudlets := []*edgeproto.Cloudlet{}
+	cloudletInfos := []*edgeproto.CloudletInfo{}
+	for ii := 0; ii < 3; ii++ {
+		cloudlet := cloudletData[0].Clone()
+		cloudlet.Key.Name = fmt.Sprintf("c%d", ii)
+		cloudlet.Key.Organization = zone.Key.Organization
+		cloudlet.Zone = zone.Key.Name
+		cloudlet.ResourceQuotas = []edgeproto.ResourceQuota{{
+			Name:  cloudcommon.ResourceVcpus,
+			Value: 20,
+		}, {
+			Name:  cloudcommon.ResourceRamMb,
+			Value: 81920,
+		}}
+		_, err := apis.cloudletApi.store.Put(ctx, cloudlet, syncWait)
+		require.Nil(t, err)
+		info := cloudletInfoData[0].Clone()
+		info.Key = cloudlet.Key
+		info.ResourcesSnapshot.Info = nil
+		_, err = apis.cloudletInfoApi.store.Put(ctx, info, syncWait)
+		require.Nil(t, err)
+		cloudlets = append(cloudlets, cloudlet)
+		cloudletInfos = append(cloudletInfos, info)
+	}
+
+	cleanup := func() {
+		for _, c := range cloudlets {
+			apis.cloudletApi.store.Delete(ctx, c, syncWait)
+		}
+		for _, i := range cloudletInfos {
+			apis.cloudletInfoApi.store.Delete(ctx, i, syncWait)
+		}
+		apis.zoneApi.store.Delete(ctx, zone, syncWait)
+	}
+	return zone, cloudlets, cloudletInfos, cleanup
 }

@@ -903,6 +903,21 @@ func (c *ControllerCache) Get(key *ControllerKey, valbuf *Controller) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *ControllerCache) STMGet(ostm *OptionalSTM, key *ControllerKey, valbuf *Controller) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("ControllerCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *ControllerCache) GetWithRev(key *ControllerKey, valbuf *Controller, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1251,6 +1266,11 @@ func (s *ControllerCache) InitSync(sync DataSync) {
 		s.Store = NewControllerStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitControllerCacheWithStore(cache *ControllerCache, store ControllerStore) {
+	InitControllerCache(cache)
+	cache.Store = store
 }
 
 func (c *ControllerCache) UsesOrg(org string) bool {

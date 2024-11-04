@@ -37,8 +37,14 @@ func wrapCloudletRefsTrackerStore(api *CloudletRefsApi) (*CloudletRefsStoreTrack
 		CloudletRefsStore: api.store,
 	}
 	api.store = tracker
+	if api.cache.Store != nil {
+		api.cache.Store = tracker
+	}
 	unwrap := func() {
 		api.store = orig
+		if api.cache.Store != nil {
+			api.cache.Store = orig
+		}
 	}
 	return tracker, unwrap
 }
@@ -74,8 +80,14 @@ func wrapClusterRefsTrackerStore(api *ClusterRefsApi) (*ClusterRefsStoreTracker,
 		ClusterRefsStore: api.store,
 	}
 	api.store = tracker
+	if api.cache.Store != nil {
+		api.cache.Store = tracker
+	}
 	unwrap := func() {
 		api.store = orig
+		if api.cache.Store != nil {
+			api.cache.Store = orig
+		}
 	}
 	return tracker, unwrap
 }
@@ -111,8 +123,14 @@ func wrapAppInstRefsTrackerStore(api *AppInstRefsApi) (*AppInstRefsStoreTracker,
 		AppInstRefsStore: api.store,
 	}
 	api.store = tracker
+	if api.cache.Store != nil {
+		api.cache.Store = tracker
+	}
 	unwrap := func() {
 		api.store = orig
+		if api.cache.Store != nil {
+			api.cache.Store = orig
+		}
 	}
 	return tracker, unwrap
 }

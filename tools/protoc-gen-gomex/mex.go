@@ -166,8 +166,10 @@ func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 	}
 	if hasGenerateCud {
 		m.gen.PrintImport("", "encoding/json")
-		m.gen.PrintImport("", "go.etcd.io/etcd/client/v3/concurrency")
 		m.importObjstore = true
+	}
+	if hasGenerateCud || m.firstFile == *file.FileDescriptorProto.Name {
+		m.gen.PrintImport("", "go.etcd.io/etcd/client/v3/concurrency")
 	}
 	if m.importObjstore {
 		m.gen.PrintImport("", "github.com/edgexr/edge-cloud-platform/pkg/objstore")
@@ -502,6 +504,21 @@ func (s *FieldMap) Fields() []string {
 
 func (s *FieldMap) Count() int {
 	return len(s.fields)
+}
+
+// OptionalSTM is for operations that use either the cache or the store.
+type OptionalSTM struct {
+	// STM may be nil to force using the cache instead of the store
+	stm concurrency.STM
+}
+
+// NewOptionalSTM creates a new optional STM for operations that
+// use either the cache or the store. Set the stm to force using
+// the store, or leave nil to force using the cache.
+func NewOptionalSTM(stm concurrency.STM) *OptionalSTM {
+	return &OptionalSTM{
+		stm: stm,
+	}
 }
 
 `
@@ -1664,6 +1681,23 @@ func (c *{{.Name}}Cache) Get(key *{{.KeyType}}, valbuf *{{.Name}}) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+{{- if .CudCache}}
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *{{.Name}}Cache) STMGet(ostm *OptionalSTM, key *{{.KeyType}}, valbuf *{{.Name}}) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("{{.Name}}Cache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+{{- end}}
+
 func (c *{{.Name}}Cache) GetWithRev(key *{{.KeyType}}, valbuf *{{.Name}}, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -2059,6 +2093,12 @@ func (s *{{.Name}}Cache) InitSync(sync DataSync) {
 		sync.RegisterCache(s)
 	}
 }
+
+func Init{{.Name}}CacheWithStore(cache *{{.Name}}Cache, store {{.Name}}Store) {
+	Init{{.Name}}Cache(cache)
+	cache.Store = store
+}
+
 {{- end}}
 
 {{- if .ParentObjName}}

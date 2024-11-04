@@ -70,6 +70,17 @@ func TestKubernetesResourcesFits(t *testing.T) {
 		"gpu": "gpu:2",
 	}
 
+	makeScalable := func(np *edgeproto.NodePool) *edgeproto.NodePool {
+		cp := np.Clone()
+		cp.Name = np.Name + "-scalable"
+		cp.Scalable = true
+		return cp
+	}
+	// scalable versions
+	cpuPoolSmallScalable := makeScalable(cpuPoolSmall)
+	cpuPoolMediumScalable := makeScalable(cpuPoolMedium)
+	gpuPoolSmallScalable := makeScalable(gpuPoolSmall)
+
 	// infra flavors
 	flavorLookup := edgeproto.FlavorLookup{
 		"infra.medium": &edgeproto.FlavorInfo{
@@ -80,12 +91,16 @@ func TestKubernetesResourcesFits(t *testing.T) {
 	}
 
 	var tests = []struct {
-		desc      string
-		nodePools []*edgeproto.NodePool
-		reqs      *edgeproto.KubernetesResources
-		cpuUsed   func() ResValMap
-		gpuUsed   func() ResValMap
-		expErr    string
+		desc         string
+		nodePools    []*edgeproto.NodePool
+		reqs         *edgeproto.KubernetesResources
+		cpuUsed      func() ResValMap
+		gpuUsed      func() ResValMap
+		expErr       string
+		expErrIgnore bool // expect error, but don't check contents
+		expCpuScale  *PoolScaleSpec
+		expGpuScale  *PoolScaleSpec
+		expFree      func() ResValMap
 	}{{
 		desc:      "cpu fit 1 pool small",
 		nodePools: []*edgeproto.NodePool{cpuPoolSmall},
@@ -94,6 +109,13 @@ func TestKubernetesResourcesFits(t *testing.T) {
 				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
 				TotalMemory: 1024,
 			},
+		},
+		expFree: func() ResValMap {
+			free := ResValMap{}
+			free.AddVcpus(2, 0)
+			free.AddRam(2048)
+			free.AddDisk(10)
+			return free
 		},
 	}, {
 		desc:      "gpu fit 1 pool small",
@@ -106,6 +128,14 @@ func TestKubernetesResourcesFits(t *testing.T) {
 					"gpu": "gpu:1",
 				},
 			},
+		},
+		expFree: func() ResValMap {
+			free := ResValMap{}
+			free.AddVcpus(2, 0)
+			free.AddRam(2048)
+			free.AddDisk(10)
+			free.AddOptRes("gpu", "gpu:1", 1)
+			return free
 		},
 	}, {
 		desc:      "cpu/gpu fit 1 small pools",
@@ -122,6 +152,14 @@ func TestKubernetesResourcesFits(t *testing.T) {
 					"gpu": "gpu:1",
 				},
 			},
+		},
+		expFree: func() ResValMap {
+			free := ResValMap{}
+			free.AddVcpus(4, 0)
+			free.AddRam(4096)
+			free.AddDisk(20)
+			free.AddOptRes("gpu", "gpu:1", 1)
+			return free
 		},
 	}, {
 		desc:      "cpu fit 1 with used 1 small pool",
@@ -225,6 +263,83 @@ func TestKubernetesResourcesFits(t *testing.T) {
 				},
 			},
 		},
+		expFree: func() ResValMap {
+			free := ResValMap{}
+			free.AddVcpus(14, 0)
+			free.AddRam(14336)
+			free.AddDisk(130)
+			free.AddOptRes("gpu", "gpu:2", 3)
+			return free
+		},
+	}, {
+		desc:      "cpu/gpu fit small/medium pools used check free",
+		nodePools: []*edgeproto.NodePool{cpuPoolSmall, gpuPoolMedium},
+		reqs: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 100*edgeproto.DecMillis),
+				TotalMemory: 1024,
+			},
+			GpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(4, 0),
+				TotalMemory: 1024 * 4,
+				TotalOptRes: map[string]string{
+					"gpu": "gpu:2",
+				},
+			},
+		},
+		cpuUsed: func() ResValMap {
+			resMap := ResValMap{}
+			resMap.AddVcpus(1, 500*edgeproto.DecMillis)
+			resMap.AddRam(200)
+			return resMap
+		},
+		gpuUsed: func() ResValMap {
+			resMap := ResValMap{}
+			resMap.AddVcpus(5, 600*edgeproto.DecMillis)
+			resMap.AddRam(5500)
+			resMap.AddOptRes("gpu", "gpu:2", 1)
+			return resMap
+		},
+		// free is sum of cpu and gpu pools free space
+		expFree: func() ResValMap {
+			free := ResValMap{}
+			free.AddVcpus(6, 900*edgeproto.DecMillis)
+			free.AddRam(8636)
+			free.AddDisk(130)
+			free.AddOptRes("gpu", "gpu:2", 2)
+			return free
+		},
+	}, {
+		desc:      "cpu/gpu fit small/medium pools used check free gpu pool ignored",
+		nodePools: []*edgeproto.NodePool{cpuPoolMedium, gpuPoolMedium},
+		reqs: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 100*edgeproto.DecMillis),
+				TotalMemory: 1024,
+			},
+		},
+		cpuUsed: func() ResValMap {
+			resMap := ResValMap{}
+			resMap.AddVcpus(1, 400*edgeproto.DecMillis)
+			resMap.AddRam(200)
+			return resMap
+		},
+		gpuUsed: func() ResValMap {
+			resMap := ResValMap{}
+			resMap.AddVcpus(5, 600*edgeproto.DecMillis)
+			resMap.AddRam(5500)
+			resMap.AddOptRes("gpu", "gpu:2", 1)
+			return resMap
+		},
+		// note, no GPU Pool requirements, so "free" resources
+		// only takes into account cpu pools
+		expFree: func() ResValMap {
+			free := ResValMap{}
+			free.AddVcpus(10, 600*edgeproto.DecMillis)
+			free.AddRam(12088)
+			free.AddDisk(120)
+			return free
+		},
 	}, {
 		desc:      "cpu/gpu fit max small/medium pools with used, fail cpu pool",
 		nodePools: []*edgeproto.NodePool{cpuPoolSmall, gpuPoolMedium},
@@ -279,6 +394,133 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			return resMap
 		},
 		expErr: "gpu pool requirements not met, want 6 gpu:gpu but only 5 free",
+	}, {
+		desc:      "cpu pool scale exact 1",
+		nodePools: []*edgeproto.NodePool{cpuPoolSmallScalable, gpuPoolSmallScalable},
+		reqs: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(4, 0),
+				TotalMemory: 4096,
+			},
+		},
+		expErrIgnore: true,
+		expCpuScale: &PoolScaleSpec{
+			PoolName:       cpuPoolSmallScalable.Name,
+			NumNodesChange: 1,
+		},
+	}, {
+		desc:      "cpu pool scale exact 3",
+		nodePools: []*edgeproto.NodePool{cpuPoolSmallScalable, gpuPoolSmallScalable},
+		reqs: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(8, 0),
+				TotalMemory: 8192,
+			},
+		},
+		expErrIgnore: true,
+		expCpuScale: &PoolScaleSpec{
+			PoolName:       cpuPoolSmallScalable.Name,
+			NumNodesChange: 3,
+		},
+	}, {
+		desc:      "cpu pool scale exact 3 used",
+		nodePools: []*edgeproto.NodePool{cpuPoolSmallScalable, gpuPoolSmallScalable},
+		reqs: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(4, 0),
+				TotalMemory: 4096,
+			},
+		},
+		cpuUsed: func() ResValMap {
+			resMap := ResValMap{}
+			resMap.AddVcpus(4, 0)
+			resMap.AddRam(4096)
+			return resMap
+		},
+		expErrIgnore: true,
+		expCpuScale: &PoolScaleSpec{
+			PoolName:       cpuPoolSmallScalable.Name,
+			NumNodesChange: 3,
+		},
+	}, {
+		desc:      "cpu pool scale non-exact 3",
+		nodePools: []*edgeproto.NodePool{cpuPoolSmallScalable, gpuPoolSmallScalable},
+		reqs: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(7, 0),
+				TotalMemory: 8000,
+			},
+		},
+		expErrIgnore: true,
+		expCpuScale: &PoolScaleSpec{
+			PoolName:       cpuPoolSmallScalable.Name,
+			NumNodesChange: 3,
+		},
+	}, {
+		desc:      "gpu pool scale non-exact 3",
+		nodePools: []*edgeproto.NodePool{cpuPoolSmallScalable, gpuPoolSmallScalable},
+		reqs: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+			},
+			GpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(6, 0),
+				TotalMemory: 1024 * 6,
+				TotalOptRes: map[string]string{
+					"gpu": "gpu:6",
+				},
+			},
+		},
+		expErrIgnore: true,
+		expGpuScale: &PoolScaleSpec{
+			PoolName:       gpuPoolSmallScalable.Name,
+			NumNodesChange: 5,
+		},
+	}, {
+		desc:      "cpu and gpu pool scale mixed pools",
+		nodePools: []*edgeproto.NodePool{cpuPoolSmall, cpuPoolSmallScalable, gpuPoolSmall, gpuPoolSmallScalable},
+		reqs: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(8, 0),
+				TotalMemory: 8096,
+			},
+			GpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(6, 0),
+				TotalMemory: 1024 * 6,
+				TotalOptRes: map[string]string{
+					"gpu": "gpu:6",
+				},
+			},
+		},
+		expErrIgnore: true,
+		expCpuScale: &PoolScaleSpec{
+			PoolName:       cpuPoolSmallScalable.Name,
+			NumNodesChange: 2,
+		},
+		expGpuScale: &PoolScaleSpec{
+			PoolName:       gpuPoolSmallScalable.Name,
+			NumNodesChange: 4,
+		},
+	}, {
+		desc:      "cpu pool scale mixed pools topology reqs",
+		nodePools: []*edgeproto.NodePool{cpuPoolSmall, cpuPoolSmallScalable, cpuPoolMediumScalable},
+		reqs: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(22, 0),
+				TotalMemory: 8096,
+				Topology: edgeproto.NodePoolTopology{
+					MinNodeVcpus: 4,
+				},
+			},
+		},
+		expErrIgnore: true,
+		// small pools are ignored due to topology requirements.
+		// want 22 vcpus, medium pool has 12, need 10 more
+		expCpuScale: &PoolScaleSpec{
+			PoolName:       cpuPoolMediumScalable.Name,
+			NumNodesChange: 3,
+		},
 	}}
 
 	for _, test := range tests {
@@ -291,12 +533,32 @@ func TestKubernetesResourcesFits(t *testing.T) {
 		if test.gpuUsed != nil {
 			gpuUsed = test.gpuUsed()
 		}
-		err := KubernetesResourcesFits(ctx, &cluster, test.reqs, cpuUsed, gpuUsed, flavorLookup)
-		if test.expErr == "" {
-			require.Nil(t, err, test.desc)
-		} else {
+		ss, free, err := KubernetesResourcesFits(ctx, &cluster, test.reqs, cpuUsed, gpuUsed, flavorLookup)
+		if test.expErr != "" {
 			require.NotNil(t, err, test.desc)
 			require.Contains(t, err.Error(), test.expErr, test.desc)
+		} else if test.expErrIgnore {
+			require.NotNil(t, err, test.desc)
+		} else {
+			require.Nil(t, err, test.desc)
+		}
+		if test.expFree != nil {
+			require.Equal(t, test.expFree(), free, test.desc)
+		}
+		if test.expCpuScale != nil {
+			require.NotNil(t, ss, test.desc)
+			// we're not checking the per node resources
+			if ss.CPUPoolScale != nil {
+				ss.CPUPoolScale.PerNodeResources = nil
+			}
+			require.Equal(t, test.expCpuScale, ss.CPUPoolScale, test.desc)
+		}
+		if test.expGpuScale != nil {
+			require.NotNil(t, ss, test.desc)
+			if ss.GPUPoolScale != nil {
+				ss.GPUPoolScale.PerNodeResources = nil
+			}
+			require.Equal(t, test.expGpuScale, ss.GPUPoolScale, test.desc)
 		}
 	}
 }

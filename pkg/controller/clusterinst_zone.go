@@ -79,7 +79,6 @@ func (s *ClusterInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallCo
 	return potentialCloudlets, nil
 }
 
-// TODO: check that cloudlet has enough available resources for new ClusterInst
 func (s *ClusterInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallContext, in *edgeproto.ClusterInst, ckey *edgeproto.CloudletKey) (*potentialInstCloudlet, SkipReason, error) {
 	pc := &potentialInstCloudlet{}
 	if !s.all.cloudletApi.cache.Get(ckey, &pc.cloudlet) {
@@ -134,5 +133,8 @@ func (s *ClusterInstApi) validatePotentialCloudlet(ctx context.Context, cctx *Ca
 
 	pc.features = features
 	pc.flavorLookup = pc.cloudletInfo.GetFlavorLookup()
+	if err := pc.initResCalc(ctx, s.all, nil); err != nil {
+		return nil, SiteUnavailable, err
+	}
 	return pc, NoSkipReason, nil
 }
