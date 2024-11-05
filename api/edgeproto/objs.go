@@ -40,19 +40,21 @@ var minPort uint32 = 1
 var maxPort uint32 = 65535
 
 const (
-	AppConfigHelmYaml      = "helmCustomizationYaml"
-	AppAccessCustomization = "appAccessCustomization"
-	AppConfigEnvYaml       = "envVarsYaml"
-	AppConfigPodArgs       = "podArgs"
+	AppConfigHelmYaml       = "helmCustomizationYaml"
+	AppAccessCustomization  = "appAccessCustomization"
+	AppConfigEnvYaml        = "envVarsYaml"
+	AppConfigPodArgs        = "podArgs"
+	AppInstServicePrinciple = "servicePrinciple"
 
 	GPUDriverLicenseConfig = "license.conf"
 	ForceImport            = "force-import"
 )
 
 var ValidConfigKinds = map[string]struct{}{
-	AppConfigHelmYaml:      {},
-	AppAccessCustomization: {},
-	AppConfigEnvYaml:       {},
+	AppConfigHelmYaml:       {},
+	AppAccessCustomization:  {},
+	AppConfigEnvYaml:        {},
+	AppInstServicePrinciple: {},
 }
 
 var ReservedPlatformPorts = map[string]string{

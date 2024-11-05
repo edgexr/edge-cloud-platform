@@ -679,6 +679,10 @@ func scrapeIntervalInSeconds(scrapeInterval time.Duration) string {
 
 func fillAppConfigs(app *edgeproto.App, interval time.Duration) error {
 	var scrapeStr = scrapeIntervalInSeconds(interval)
+	// Nothing to do for inference apps
+	if _, ok := app.Tags[cloudcommon.TagsInferenceService]; ok {
+		return nil
+	}
 	switch app.Key.Name {
 	case MEXPrometheusAppName:
 		ex := promCustomizations{
@@ -1048,6 +1052,7 @@ func Run() {
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvAlertPolicyCache(&AlertPolicyCache)
 	notifyClient.RegisterRecv(notify.GlobalSettingsRecv(settings, nil))
+	notifyClient.RegisterSendAllRecv(&sendAllRecv{})
 	edgeproto.InitAlertCache(&alertCache)
 	notifyClient.RegisterSendAlertCache(&alertCache)
 	notifyClient.RegisterRecvCloudletCache(&CloudletCache)

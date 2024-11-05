@@ -29,7 +29,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var envVars = `- name: SOME_ENV1
+var envVars = `- name: MINIO_USER
+  value: minio
+- name: MINIO_HASH
+  value: minio- name: SOME_ENV1
   value: value1
 - name: SOME_ENV2
   valueFrom:

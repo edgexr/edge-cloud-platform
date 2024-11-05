@@ -29,6 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
+	yaml "github.com/mobiledgex/yaml/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 )
@@ -37,6 +38,14 @@ const WaitDeleted string = "WaitDeleted"
 const WaitRunning string = "WaitRunning"
 
 const DefaultNamespace string = "default"
+
+const (
+	GcsServiceAcctSectretName = "gcs-service-account"
+	GcsBucketConfigName       = "gcs-bucket"
+	GcsBucketVarName          = "BUCKET_NAME"
+	GcsSubscriberId           = "SUBSCRIBER_ID"
+	GcsTopic                  = "TOPIC"
+)
 
 // This is half of the default controller AppInst timeout
 var maxWait = 15 * time.Minute
@@ -355,6 +364,101 @@ func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeName
 	return nil
 }
 
+var GcsBucketConfigMapFmt = `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: %s
+  namespace: default
+data:
+  %s: %s
+  %s: %s
+  %s: %s
+`
+
+func CreateAppInstServiceAccountSecret(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "CreateAppInstServiceAccountSecret kubenames", "names", names)
+	if app.Tags == nil {
+		return nil
+	}
+	if _, ok := app.Tags[cloudcommon.TagsInferenceService]; !ok {
+		log.SpanLog(ctx, log.DebugLevelApi, "not an inference Service")
+		return nil
+	}
+	for _, v := range appInst.Configs {
+		configDir := getConfigDirName(names)
+		err := pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
+		if err != nil {
+			return err
+		}
+		if v.Kind == edgeproto.AppInstServicePrinciple {
+			log.SpanLog(ctx, log.DebugLevelApi, "found service principle", "app", appInst.Key.Name)
+			// write secret to file
+			configName := "gcs_service_acct.json"
+			file := configDir + "/" + configName
+			log.SpanLog(ctx, log.DebugLevelInfra, "writing config file", "file", file)
+			err = pc.WriteFile(client, file, v.Config, "Service Principle", pc.NoSudo)
+			if err != nil {
+				return err
+			}
+
+			// write secret with the principle
+			secretName := GcsServiceAcctSectretName
+			cmd := fmt.Sprintf("kubectl %s create secret generic %s --from-file=%s", names.KconfArg, secretName, file)
+			out, err := client.Output(cmd)
+			if err != nil {
+				return fmt.Errorf("error running kubectl command %s: %s, %v", cmd, out, err)
+			}
+			if err = pc.DeleteFile(client, file, pc.NoSudo); err != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "Unable to delete file", "file", file)
+			}
+		} else if v.Kind == edgeproto.AppConfigEnvYaml {
+			log.SpanLog(ctx, log.DebugLevelApi, "found s3 bucket config", "app", appInst.Key.Name, "cfg", v.Config)
+			// write config with storage details
+			var curVars []v1.EnvVar
+			cfg, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, v.Config)
+			if err != nil {
+				return err
+			}
+			err = yaml.Unmarshal([]byte(cfg), &curVars)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "cannot unmarshal env vars", "kind", v.Kind,
+					"config", cfg, "error", err)
+				return fmt.Errorf("cannot unmarshal env vars: %s - %v", cfg, err)
+			}
+			bucketName := ""
+			subscriber := ""
+			topic := ""
+			for _, v := range curVars {
+				if v.Name == GcsBucketVarName {
+					bucketName = v.Value
+				} else if v.Name == GcsSubscriberId {
+					subscriber = v.Value
+				} else if v.Name == GcsTopic {
+					topic = v.Value
+				}
+			}
+			if bucketName == "" || subscriber == "" || topic == "" {
+				// not gcp creds - done here
+				return nil
+			}
+			mf := fmt.Sprintf(GcsBucketConfigMapFmt, GcsBucketConfigName, bucketName, GcsSubscriberId, subscriber, GcsTopic, topic)
+			file := configDir + "/" + GcsBucketConfigName
+			log.SpanLog(ctx, log.DebugLevelInfra, "writing config file", "file", file)
+			err = pc.WriteFile(client, file, mf, "GCP Bucket config", pc.NoSudo)
+			if err != nil {
+				return err
+			}
+
+			cmd := fmt.Sprintf("kubectl %s apply -f %s", names.KconfArg, file)
+			out, err := client.Output(cmd)
+			if err != nil {
+				return fmt.Errorf("error running kubectl command %s: %s, %v", cmd, out, err)
+			}
+		}
+	}
+	return nil
+}
+
 func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
 	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, app.DeploymentManifest)
 	if err != nil {
@@ -424,6 +528,13 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst, appInstFlavor); err != nil {
 		return err
 	}
+
+	// Write service principle into a k8s secret, if one exists
+	if err := CreateAppInstServiceAccountSecret(ctx, accessApi, client, names, app, appInst, appInstFlavor); err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to create service account", "err", err)
+		return err
+	}
+
 	configDir := getConfigDirName(names)
 
 	// Kubernetes provides 3 styles of object management.

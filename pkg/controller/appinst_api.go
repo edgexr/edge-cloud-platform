@@ -530,6 +530,9 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				return fmt.Errorf("Cluster organization must be blank for App deployment type %s", app.Deployment)
 			}
 		}
+		if _, ok := app.Tags[cloudcommon.TagsInferenceService]; ok && clusterSpecified {
+			return fmt.Errorf("Cannot specify cluster for inference services")
+		}
 		if clusterSpecified {
 			autoClusterType = NoAutoCluster
 			if in.ClusterKey.Organization == "" {
@@ -594,7 +597,15 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if err != nil {
 			return err
 		}
-		if cloudcommon.IsClusterInstReqd(&app) {
+
+		// AI Inference apps get deployed with a new cluster
+		if _, ok := app.Tags[cloudcommon.TagsInferenceService]; ok {
+			if in.Tags == nil {
+				in.Tags = map[string]string{}
+			}
+			in.Tags[cloudcommon.TagsInferenceService] = "True"
+			autoClusterType = ChooseAutoCluster
+		} else if cloudcommon.IsClusterInstReqd(&app) {
 			// Check if we will use a pre-existing cluster.
 			// This may be a cluster specified by the caller, or it may
 			// be a system-provided reservable/multi-tenant cluster.
@@ -921,6 +932,12 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			if cloudletFeatures.NoClusterSupport {
 				log.SpanLog(ctx, log.DebugLevelApi, "Setting num nodes to 0 as platform does not support clusters", "platform", cloudletFeatures.PlatformType)
 				clusterInst.NumNodes = 0
+			}
+		}
+		if in.Tags != nil {
+			if _, ok := in.Tags[cloudcommon.TagsInferenceService]; ok {
+				clusterInst.Tags = map[string]string{}
+				clusterInst.Tags[cloudcommon.TagsInferenceService] = "True"
 			}
 		}
 		clusterInst.Liveness = edgeproto.Liveness_LIVENESS_DYNAMIC
