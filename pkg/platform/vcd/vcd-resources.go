@@ -217,7 +217,7 @@ func getVcdResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, resource
 }
 
 // called by controller, make sure it doesn't make any calls to infra API
-func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {
 	// resource name -> resource units
 	cloudletRes := map[string]string{
 		cloudcommon.ResourceInstances: "",
@@ -225,9 +225,6 @@ func (v *VcdPlatform) GetClusterAdditionalResources(ctx context.Context, cloudle
 	resInfo := make(map[string]edgeproto.InfraResource)
 	for resName, resUnits := range cloudletRes {
 		resMax := uint64(0)
-		if infraRes, ok := infraResMap[resName]; ok {
-			resMax = infraRes.InfraMaxValue
-		}
 		resInfo[resName] = edgeproto.InfraResource{
 			Name:          resName,
 			InfraMaxValue: resMax,

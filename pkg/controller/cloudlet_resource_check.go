@@ -18,10 +18,12 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 )
 
@@ -172,6 +174,115 @@ func (s *CloudletResCalc) getUsedResVals(ctx context.Context) (resspec.ResValMap
 	}
 	s.usedVals = usedVals
 	return usedVals, nil
+}
+
+func (s *CloudletResCalc) cloudletFitsReqdVals(ctx context.Context, reqdVals resspec.ResValMap) ([]string, error) {
+	if err := s.InitDeps(ctx); err != nil {
+		return nil, err
+	}
+	usedVals, err := s.getUsedResVals(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resLimits := s.getResourceLimits()
+
+	log.SpanLog(ctx, log.DebugLevelApi, "cloudletFitsReqdVals", "cloudlet", s.cloudletKey.GetKeyString(), "reqdVals", reqdVals.String(), "usedVals", usedVals.String(), "resLimits", resLimits.String())
+
+	warnings := []string{}
+
+	// sort for deterministic error messages
+	resNames := []string{}
+	for resName := range resLimits {
+		resNames = append(resNames, resName)
+	}
+	sort.Strings(resNames)
+
+	// Theoretical Validation
+	errsStr := []string{}
+	for _, resName := range resNames {
+		resInfo := resLimits[resName]
+		max := resInfo.QuotaMaxValue
+		if max == 0 {
+			max = resInfo.InfraMaxValue
+		}
+		if max == 0 {
+			// no limits on resource
+			continue
+		}
+		if resInfo.QuotaMaxValue > 0 && resInfo.InfraMaxValue > 0 {
+			if resInfo.QuotaMaxValue > resInfo.InfraMaxValue {
+				warnings = append(warnings, fmt.Sprintf("[quota] invalid quota set for %s, quota max value %d is more than infra max value %d", resName, resInfo.QuotaMaxValue, resInfo.InfraMaxValue))
+			}
+		}
+		thAvailableResVal := edgeproto.NewUdec64(max, 0)
+		usedVal := edgeproto.NewUdec64(0, 0)
+		if usedRes, ok := usedVals[resName]; ok {
+			usedVal = usedRes.Value.Clone()
+		}
+		underflow := false
+		thAvailableResVal.SubFloor(usedVal, &underflow)
+		if usedVal.GreaterThanUint64(max) {
+			warnings = append(warnings, fmt.Sprintf("[quota] invalid quota set for %s, quota max value %d is less than used resource value %s", resName, max, usedVal.DecString()))
+		}
+		if resInfo.AlertThreshold > 0 && usedVal.Float()*100/float64(max) > float64(resInfo.AlertThreshold) {
+			warnings = append(warnings, fmt.Sprintf("more than %d%% of %s (%s%s of %d%s) is used by the cloudlet", resInfo.AlertThreshold, resName, usedVal.DecString(), resInfo.Units, max, resInfo.Units))
+		}
+		resReqd, ok := reqdVals[resName]
+		if !ok {
+			continue
+		}
+		if resReqd.Value.GreaterThan(thAvailableResVal) {
+			errsStr = append(errsStr, fmt.Sprintf("required %s is %s%s but only %s%s out of %d%s is available", resName, resReqd.Value.DecString(), resInfo.Units, thAvailableResVal.DecString(), resInfo.Units, max, resInfo.Units))
+		}
+	}
+
+	err = nil
+	if len(errsStr) > 0 {
+		errsOut := strings.Join(errsStr, ", ")
+		err = fmt.Errorf("not enough resources available: %s", errsOut)
+	}
+	if err != nil {
+		return warnings, err
+	}
+
+	infraUsedVals := map[string]*edgeproto.InfraResource{}
+	for _, infraRes := range s.deps.cloudletInfo.ResourcesSnapshot.Info {
+		res := infraRes
+		infraUsedVals[infraRes.Name] = &res
+	}
+
+	// Infra based validation
+	errsStr = []string{}
+	for _, resName := range resNames {
+		resInfo := resLimits[resName]
+		if resInfo.InfraMaxValue == 0 {
+			// no limits on resource
+			continue
+		}
+		infraUsed := uint64(0)
+		if infraRes, ok := infraUsedVals[resName]; ok {
+			infraUsed = infraRes.Value
+		}
+		infraAvailableResVal := resInfo.InfraMaxValue - infraUsed
+		if resInfo.AlertThreshold > 0 && float64(infraUsed*100)/float64(resInfo.InfraMaxValue) > float64(resInfo.AlertThreshold) {
+			warnings = append(warnings, fmt.Sprintf("more than %d%% of %s (%d%s of %d%s) is used on the infra managed by the cloudlet", resInfo.AlertThreshold, resName, infraUsed, resInfo.Units, resInfo.InfraMaxValue, resInfo.Units))
+		}
+		resReqd, ok := reqdVals[resName]
+		if !ok {
+			// this resource is not tracked by controller, skip it
+			continue
+		}
+		if resReqd.Value.GreaterThanUint64(infraAvailableResVal) {
+			errsStr = append(errsStr, fmt.Sprintf("required %s is %s%s but only %d%s out of %d%s is available", resName, resReqd.Value.DecString(), resInfo.Units, infraAvailableResVal, resInfo.Units, resInfo.InfraMaxValue, resInfo.Units))
+		}
+	}
+	err = nil
+	if len(errsStr) > 0 {
+		errsOut := strings.Join(errsStr, ", ")
+		err = fmt.Errorf("[infra] not enough resources available: %s", errsOut)
+	}
+
+	return warnings, err
 }
 
 // getMaxResourceVals gets a map of each resource and either max value

@@ -94,7 +94,7 @@ func (s *Xind) GetRestrictedCloudletStatus(ctx context.Context, cloudlet *edgepr
 	return nil
 }
 
-func (s *Xind) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, _ map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+func (s *Xind) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {
 	return nil
 }
 

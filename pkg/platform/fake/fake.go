@@ -293,7 +293,7 @@ func (s *Platform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.In
 }
 
 // called by controller, make sure it doesn't make any calls to infra API
-func (s *Platform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, _ map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+func (s *Platform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {
 	// resource name -> resource units
 	cloudletRes := map[string]string{
 		cloudcommon.ResourceInstances: "",

@@ -119,7 +119,7 @@ func (s *Platform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.In
 	return s.resources.GetSnapshot(), nil
 }
 
-func (s *Platform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, _ map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+func (s *Platform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {
 	return map[string]edgeproto.InfraResource{}
 }
 

@@ -179,7 +179,7 @@ func getOpenstackResources(cloudlet *edgeproto.Cloudlet, resources []edgeproto.V
 }
 
 // called by controller, make sure it doesn't make any calls to infra API
-func (o *OpenstackPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, _ map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+func (o *OpenstackPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {
 	// resource name -> resource units
 	cloudletRes := map[string]string{
 		cloudcommon.ResourceInstances:   "",

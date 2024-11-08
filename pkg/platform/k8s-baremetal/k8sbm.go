@@ -158,7 +158,7 @@ func (k *K8sBareMetalPlatform) GetCloudletInfraResources(ctx context.Context) (*
 }
 
 // TODO
-func (k *K8sBareMetalPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, _ map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+func (k *K8sBareMetalPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {
 	resInfo := make(map[string]edgeproto.InfraResource)
 	return resInfo
 }
