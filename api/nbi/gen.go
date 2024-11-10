@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// We use a custom version of oapi-codegen.
+// The custom generator avoids anonymous inner structs.
+// Install using:
 // git clone https://github.com/edgexr/oapi-codegen
 // (cd oapi-codegen/cmd/oapi-codegen && go install .)
 

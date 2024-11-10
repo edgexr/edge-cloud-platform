@@ -1248,3 +1248,21 @@ func NodePoolsFeature(ctx context.Context, objStore objstore.KVStore, allApis *A
 
 	return nil
 }
+
+func AppObjID(ctx context.Context, objStore objstore.KVStore, allApis *AllApis, sup *UpgradeSupport, dbModelID int32) error {
+	log.SpanLog(ctx, log.DebugLevelUpgrade, "App Obj ID")
+
+	err := walkUpgradeObjs(ctx, objStore, "App", func(ctx context.Context, stm concurrency.STM, app *edgeproto.App) error {
+		if app.ObjId != "" {
+			// already upgraded
+			return nil
+		}
+		app.ObjId = ulid.Make().String()
+		allApis.appApi.store.STMPut(stm, app)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}

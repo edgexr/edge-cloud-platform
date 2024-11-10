@@ -66,7 +66,7 @@ func ProtoApp(in *nbi.AppManifest) (*edgeproto.App, error) {
 		// or tell the user to do so.
 		// For now assume it's our registry, and when we go to create the
 		// app, it will fail to validate the image if it's not in our
-		// registry and it's not publicly reachable.
+		// registry or it's not publicly reachable.
 		app.AppAnnotations[NBIAppAnnotationRepoType] = NBIAppRepoTypePrivate
 	} else if in.AppRepo.Type == nbi.PUBLICREPO {
 		app.AppAnnotations[NBIAppAnnotationRepoType] = NBIAppRepoTypePublic
@@ -213,7 +213,11 @@ func NBIApp(in *edgeproto.App) (*nbi.AppManifest, error) {
 			return nil, fmt.Errorf("unsupported image type %s for NBI App", in.ImageType.String())
 		}
 	}
-	if repoType, ok := in.AppAnnotations[NBIAppAnnotationRepoType]; ok {
+	appAnnotations := in.AppAnnotations
+	if appAnnotations == nil {
+		appAnnotations = make(map[string]string)
+	}
+	if repoType, ok := appAnnotations[NBIAppAnnotationRepoType]; ok {
 		switch repoType {
 		case NBIAppRepoTypePrivate:
 			am.AppRepo.Type = nbi.PRIVATEREPO
@@ -223,7 +227,7 @@ func NBIApp(in *edgeproto.App) (*nbi.AppManifest, error) {
 	}
 	am.AppRepo.ImagePath = in.ImagePath
 	cspec := nbi.AppManifest_ComponentSpec{}
-	cname := in.AppAnnotations[NBIAppAnnotationComponentName]
+	cname := appAnnotations[NBIAppAnnotationComponentName]
 	if cname == "" {
 		cname = in.Key.Name
 	}
@@ -256,12 +260,12 @@ func NBIApp(in *edgeproto.App) (*nbi.AppManifest, error) {
 	am.ComponentSpec = append(am.ComponentSpec, cspec)
 
 	// convert operating system
-	if arch, ok := in.AppAnnotations[NBIAppAnnotationOSArch]; ok {
+	if arch, ok := appAnnotations[NBIAppAnnotationOSArch]; ok {
 		os := &nbi.OperatingSystem{}
 		os.Architecture = nbi.OperatingSystemArchitecture(arch)
-		os.Family = nbi.OperatingSystemFamily(in.AppAnnotations[NBIAppAnnotationOSFamily])
-		os.License = nbi.OperatingSystemLicense(in.AppAnnotations[NBIAppAnnotationOSLicense])
-		os.Version = nbi.OperatingSystemVersion(in.AppAnnotations[NBIAppAnnotationOSVersion])
+		os.Family = nbi.OperatingSystemFamily(appAnnotations[NBIAppAnnotationOSFamily])
+		os.License = nbi.OperatingSystemLicense(appAnnotations[NBIAppAnnotationOSLicense])
+		os.Version = nbi.OperatingSystemVersion(appAnnotations[NBIAppAnnotationOSVersion])
 		am.OperatingSystem = os
 	}
 	if in.KubernetesResources != nil {
