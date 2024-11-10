@@ -70,7 +70,7 @@ func (s *CCRMHandler) GetClusterAdditionalResources(ctx context.Context, in *edg
 	if err != nil {
 		return nil, err
 	}
-	resMap := cloudletPlatform.GetClusterAdditionalResources(ctx, cloudlet, in.VmResources, in.InfraResources)
+	resMap := cloudletPlatform.GetClusterAdditionalResources(ctx, cloudlet, in.VmResources)
 	res := edgeproto.InfraResourceMap{
 		InfraResources: resMap,
 	}

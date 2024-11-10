@@ -24,6 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -235,4 +236,51 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 	require.Equal(t, *singleMT4Key, pclus[0].existingCluster)
 	require.Equal(t, *defaultMT0Key, pclus[1].existingCluster)
 	require.Equal(t, reservK.Key, pclus[2].existingCluster)
+}
+
+func TestPotentialAppInstClusterCalcResourceScore(t *testing.T) {
+	var tests = []struct {
+		desc     string
+		free     func() resspec.ResValMap
+		expScore uint64
+	}{{
+		desc:     "free nil",
+		expScore: 0,
+	}, {
+		desc: "free res 1",
+		free: func() resspec.ResValMap {
+			res := resspec.ResValMap{}
+			res.AddVcpus(4, 500*edgeproto.DecMillis)
+			return res
+		},
+		expScore: 4500, // (4.5*1000)/1
+	}, {
+		desc: "free res 2",
+		free: func() resspec.ResValMap {
+			res := resspec.ResValMap{}
+			res.AddVcpus(4, 500*edgeproto.DecMillis)
+			res.AddRam(10000)
+			return res
+		},
+		expScore: 7250, // (4.5*1000 + 10000*1)/2
+	}, {
+		desc: "free res 3 ignore 1",
+		free: func() resspec.ResValMap {
+			res := resspec.ResValMap{}
+			res.AddVcpus(4, 500*edgeproto.DecMillis)
+			res.AddRam(10000)
+			res.AddRes("foo", "", 20, 0)
+			return res
+		},
+		expScore: 7250, // (4.5*1000 + 10000*1)/2
+	}}
+	for _, test := range tests {
+		pc := potentialAppInstCluster{}
+		var free resspec.ResValMap
+		if test.free != nil {
+			free = test.free()
+		}
+		pc.calcResourceScore(free)
+		require.Equal(t, test.expScore, pc.resourceScore, fmt.Sprintf("%s: expected %d but was %d", test.desc, test.expScore, pc.resourceScore))
+	}
 }

@@ -16,6 +16,7 @@ package resspec
 
 import (
 	"fmt"
+	"math"
 	"slices"
 	"strings"
 
@@ -207,4 +208,36 @@ func (s ResValMap) AddNodePoolResources(npr *edgeproto.NodePoolResources) error 
 	s.AddDisk(npr.TotalDisk)
 	// optional resources
 	return s.AddOptResMap(npr.TotalOptRes, 1)
+}
+
+// DivFactor returns the result found by dividing this
+// resource by the other resource, rounded up to the nearest
+// whole number. Returns false if no values to compare.
+func (s ResValMap) DivFactor(nres *ResVal) (uint32, bool) {
+	existing, ok := s[nres.Name]
+	if ok {
+		nrVal := nres.Value.Float()
+		if nrVal == 0 {
+			return 0, false
+		}
+		res := existing.Value.Float() / nrVal
+		return uint32(math.Ceil(res)), true
+	}
+	return 0, false
+}
+
+// DivFactorLargest calculcates the DivFactor for all resources and
+// returns the largest factor
+func (s ResValMap) DivFactorLargest(other ResValMap) uint32 {
+	largest := uint32(0)
+	for _, oval := range other {
+		factor, ok := s.DivFactor(oval)
+		if !ok {
+			continue
+		}
+		if factor > largest {
+			largest = factor
+		}
+	}
+	return largest
 }

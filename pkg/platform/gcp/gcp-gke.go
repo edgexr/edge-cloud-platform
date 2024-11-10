@@ -104,7 +104,7 @@ func (g *GCPPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edge
 }
 
 // called by controller, make sure it doesn't make any calls to infra API
-func (g *GCPPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource, infraResMap map[string]edgeproto.InfraResource) map[string]edgeproto.InfraResource {
+func (g *GCPPlatform) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {
 	return nil
 }
 

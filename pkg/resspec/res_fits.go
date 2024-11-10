@@ -31,22 +31,48 @@ func (s *SkipReasons) add(reason string) {
 	*s = append(*s, reason)
 }
 
-func KubernetesResourcesFits(ctx context.Context, clusterInst *edgeproto.ClusterInst, reqs *edgeproto.KubernetesResources, cpuUsed, gpuUsed ResValMap, flavorLookup edgeproto.FlavorLookup) error {
+type PoolScaleSpec struct {
+	PoolName         string
+	NumNodesChange   uint32
+	PerNodeResources ResValMap
+}
+
+type KubeResScaleSpec struct {
+	CPUPoolScale *PoolScaleSpec
+	GPUPoolScale *PoolScaleSpec
+}
+
+// KubernetesResourcesFits checks if the resource requirements fits
+// in the Kubernetes cluster. It returns a scaleSpec if the resources
+// don't fit, but the cluster could be scaled to fit them.
+// It also returns the amount of free resources in the cluster, for
+// sorting purposes.
+func KubernetesResourcesFits(ctx context.Context, clusterInst *edgeproto.ClusterInst, reqs *edgeproto.KubernetesResources, cpuUsed, gpuUsed ResValMap, flavorLookup edgeproto.FlavorLookup) (*KubeResScaleSpec, ResValMap, error) {
+	var fitsErr error
+	kubeSS := KubeResScaleSpec{}
+	free := ResValMap{}
 	if reqs.CpuPool != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "check kubernetes cpupool fits", "requests", reqs.CpuPool, "used", cpuUsed, "total", clusterInst.NodePools)
-		err := NodePoolFits(ctx, reqs.CpuPool, cpuUsed, clusterInst.NodePools, flavorLookup)
+		ss, cpufree, err := NodePoolFits(ctx, reqs.CpuPool, cpuUsed, clusterInst.NodePools, flavorLookup)
 		if err != nil {
-			return fmt.Errorf("cpu pool requirements not met, %s", err)
+			fitsErr = fmt.Errorf("cpu pool requirements not met, %s", err)
 		}
+		kubeSS.CPUPoolScale = ss
+		free.AddAllMult(cpufree, 1)
 	}
 	if reqs.GpuPool != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "check kubernetes gpupool fits", "requests", reqs.GpuPool, "used", gpuUsed, "total", clusterInst.NodePools)
-		err := NodePoolFits(ctx, reqs.GpuPool, gpuUsed, clusterInst.NodePools, flavorLookup)
-		if err != nil {
-			return fmt.Errorf("gpu pool requirements not met, %s", err)
+		ss, gpufree, err := NodePoolFits(ctx, reqs.GpuPool, gpuUsed, clusterInst.NodePools, flavorLookup)
+		if err != nil && fitsErr == nil {
+			fitsErr = fmt.Errorf("gpu pool requirements not met, %s", err)
 		}
+		kubeSS.GPUPoolScale = ss
+		free.AddAllMult(gpufree, 1)
 	}
-	return nil
+	if fitsErr == nil {
+		return nil, free, nil
+	}
+	return &kubeSS, free, fitsErr
 }
 
 // NodePoolFits checks if the specified resources can fit into the Node Pools.
@@ -58,20 +84,25 @@ func KubernetesResourcesFits(ctx context.Context, clusterInst *edgeproto.Cluster
 // This returns the calculated total resources available in the
 // valid pools.
 // TODO: consider taking into account OS overhead.
-func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used ResValMap, nodePools []*edgeproto.NodePool, flavorLookup edgeproto.FlavorLookup) error {
+// Returns a pool that can be scaled to accomodate the resource
+// requirements if it doesn't fit.
+// Returns calculated free space.
+func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used ResValMap, nodePools []*edgeproto.NodePool, flavorLookup edgeproto.FlavorLookup) (*PoolScaleSpec, ResValMap, error) {
 	// convert topology to generic set of numeric resources
 	reqMins, err := TopologyToResValMap(&reqs.Topology)
 	if err != nil {
-		return fmt.Errorf("requested topology %s", err)
+		return nil, nil, fmt.Errorf("requested topology %s", err)
 	}
 	reqMinKeys := reqMins.SortedKeys()
 	reqsGpuCount := cloudcommon.NodePoolResourcesGPUCount(reqs)
 
 	total := ResValMap{}
 	reasons := SkipReasons{}
+	var scalablePool *edgeproto.NodePool
+	var scalablePoolNodeRes ResValMap
 	for _, pool := range nodePools {
 		if pool.NodeResources == nil {
-			return fmt.Errorf("pool %s node resources not defined", pool.Name)
+			return nil, nil, fmt.Errorf("pool %s node resources not defined", pool.Name)
 		}
 
 		// TODO: we may want to generalize this check to all optional
@@ -83,15 +114,20 @@ func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used R
 			reasons.add("skipped gpu pool " + pool.Name + " because no request for gpu")
 			continue
 		}
+		if reqsGpuCount > 0 && poolGpuCount == 0 {
+			// don't use a cpu pool if we need gpus
+			reasons.add("skipped cpu pool " + pool.Name + " because requesting for gpu")
+			continue
+		}
 
 		infraRes, err := GetInfraNodeResources(pool.NodeResources, flavorLookup)
 		if err != nil {
-			return fmt.Errorf("pool %s %s", pool.Name, err)
+			return nil, nil, fmt.Errorf("pool %s %s", pool.Name, err)
 		}
 		// convert pool to generic set of numeric resources
 		infraResCounts, err := NodeResourcesToResValMap(infraRes)
 		if err != nil {
-			return fmt.Errorf("pool %s resources %s", pool.Name, err)
+			return nil, nil, fmt.Errorf("pool %s resources %s", pool.Name, err)
 		}
 		// Skip the pool if it does not meet the minimum requirements,
 		// as we assume that the workloads cannot be deployed to it.
@@ -115,12 +151,17 @@ func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used R
 		if skip {
 			continue
 		}
+		if pool.Scalable && scalablePool == nil {
+			// we only pick one pool to potentially scale
+			scalablePool = pool
+			scalablePoolNodeRes = infraResCounts
+		}
 		total.AddAllMult(infraResCounts, pool.NumNodes)
 	}
 
 	reqTotals, err := NodePoolResourcesToResValMap(reqs)
 	if err != nil {
-		return fmt.Errorf("requested total resources %s", err)
+		return nil, nil, fmt.Errorf("requested total resources %s", err)
 	}
 	free := total.Clone()
 	underflow := false
@@ -128,7 +169,27 @@ func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used R
 
 	log.SpanLog(ctx, log.DebugLevelApi, "node pool fits", "reqs", reqTotals.String(), "total", total.String(), "used", used.String(), "free", free.String(), "skippools", reasons, "underflow", underflow)
 
-	return ResValsFits(reqTotals, free, reasons)
+	fitsErr := ResValsFits(reqTotals, free, reasons)
+	if fitsErr == nil {
+		return nil, free, nil
+	}
+	if scalablePool == nil {
+		return nil, free, fitsErr
+	}
+	// doesn't fit, calculate how much pool would need to scale to fit
+	// needed = req + used - total
+	// numNodes = needed / nodeRes
+	req := reqTotals.Clone()
+	req.AddAllMult(used, 1)
+	req.SubFloorAll(total, &underflow)
+	numNodes := req.DivFactorLargest(scalablePoolNodeRes)
+	scaleSpec := PoolScaleSpec{
+		PoolName:         scalablePool.Name,
+		NumNodesChange:   numNodes,
+		PerNodeResources: scalablePoolNodeRes,
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "node pool scale", "needs", req.String(), "pool", scalablePool.Name, "poolNodeRes", scalablePoolNodeRes.String(), "numNodes", numNodes)
+	return &scaleSpec, free, fitsErr
 }
 
 // NodeResourceFits checks if the requested resources will fit into

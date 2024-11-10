@@ -145,6 +145,7 @@ var NodePoolOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"scalable",
 }
 var NodePoolAliasArgs = []string{}
 var NodePoolComments = map[string]string{
@@ -156,6 +157,7 @@ var NodePoolComments = map[string]string{
 	"noderesources.optresmap":          "Optional resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1",
 	"noderesources.infranodeflavor":    "Infrastructure specific node flavor",
 	"noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
+	"scalable":                         "Scalable indicates the system may scale the number of nodes",
 }
 var NodePoolSpecialArgs = map[string]string{
 	"noderesources.optresmap": "StringToString",

@@ -2185,6 +2185,21 @@ func (c *FlowRateLimitSettingsCache) Get(key *FlowRateLimitSettingsKey, valbuf *
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *FlowRateLimitSettingsCache) STMGet(ostm *OptionalSTM, key *FlowRateLimitSettingsKey, valbuf *FlowRateLimitSettings) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("FlowRateLimitSettingsCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *FlowRateLimitSettingsCache) GetWithRev(key *FlowRateLimitSettingsKey, valbuf *FlowRateLimitSettings, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -2533,6 +2548,11 @@ func (s *FlowRateLimitSettingsCache) InitSync(sync DataSync) {
 		s.Store = NewFlowRateLimitSettingsStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitFlowRateLimitSettingsCacheWithStore(cache *FlowRateLimitSettingsCache, store FlowRateLimitSettingsStore) {
+	InitFlowRateLimitSettingsCache(cache)
+	cache.Store = store
 }
 
 func (c *FlowRateLimitSettingsCache) UsesOrg(org string) bool {
@@ -3180,6 +3200,21 @@ func (c *MaxReqsRateLimitSettingsCache) Get(key *MaxReqsRateLimitSettingsKey, va
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *MaxReqsRateLimitSettingsCache) STMGet(ostm *OptionalSTM, key *MaxReqsRateLimitSettingsKey, valbuf *MaxReqsRateLimitSettings) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("MaxReqsRateLimitSettingsCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *MaxReqsRateLimitSettingsCache) GetWithRev(key *MaxReqsRateLimitSettingsKey, valbuf *MaxReqsRateLimitSettings, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -3528,6 +3563,11 @@ func (s *MaxReqsRateLimitSettingsCache) InitSync(sync DataSync) {
 		s.Store = NewMaxReqsRateLimitSettingsStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitMaxReqsRateLimitSettingsCacheWithStore(cache *MaxReqsRateLimitSettingsCache, store MaxReqsRateLimitSettingsStore) {
+	InitMaxReqsRateLimitSettingsCache(cache)
+	cache.Store = store
 }
 
 func (c *MaxReqsRateLimitSettingsCache) UsesOrg(org string) bool {

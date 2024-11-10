@@ -38,7 +38,7 @@ func NewFlavorApi(sync *regiondata.Sync, all *AllApis) *FlavorApi {
 	flavorApi.all = all
 	flavorApi.sync = sync
 	flavorApi.store = edgeproto.NewFlavorStore(sync.GetKVStore())
-	edgeproto.InitFlavorCache(&flavorApi.cache)
+	edgeproto.InitFlavorCacheWithStore(&flavorApi.cache, flavorApi.store)
 	sync.RegisterCache(&flavorApi.cache)
 	return &flavorApi
 }

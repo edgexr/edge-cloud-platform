@@ -6087,6 +6087,21 @@ func (c *AppInstCache) Get(key *AppInstKey, valbuf *AppInst) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *AppInstCache) STMGet(ostm *OptionalSTM, key *AppInstKey, valbuf *AppInst) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("AppInstCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *AppInstCache) GetWithRev(key *AppInstKey, valbuf *AppInst, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -6435,6 +6450,11 @@ func (s *AppInstCache) InitSync(sync DataSync) {
 		s.Store = NewAppInstStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitAppInstCacheWithStore(cache *AppInstCache, store AppInstStore) {
+	InitAppInstCache(cache)
+	cache.Store = store
 }
 
 func (c *AppInstCache) UsesOrg(org string) bool {
@@ -7593,6 +7613,21 @@ func (c *AppInstInfoCache) Get(key *AppInstKey, valbuf *AppInstInfo) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *AppInstInfoCache) STMGet(ostm *OptionalSTM, key *AppInstKey, valbuf *AppInstInfo) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("AppInstInfoCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *AppInstInfoCache) GetWithRev(key *AppInstKey, valbuf *AppInstInfo, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -7976,6 +8011,11 @@ func (s *AppInstInfoCache) InitSync(sync DataSync) {
 		s.Store = NewAppInstInfoStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitAppInstInfoCacheWithStore(cache *AppInstInfoCache, store AppInstInfoStore) {
+	InitAppInstInfoCache(cache)
+	cache.Store = store
 }
 
 // AppInstInfoObjectUpdater defines a way of updating a specific AppInstInfo
@@ -9046,6 +9086,21 @@ func (c *FedAppInstCache) Get(key *FedAppInstKey, valbuf *FedAppInst) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *FedAppInstCache) STMGet(ostm *OptionalSTM, key *FedAppInstKey, valbuf *FedAppInst) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("FedAppInstCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *FedAppInstCache) GetWithRev(key *FedAppInstKey, valbuf *FedAppInst, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -9394,6 +9449,11 @@ func (s *FedAppInstCache) InitSync(sync DataSync) {
 		s.Store = NewFedAppInstStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitFedAppInstCacheWithStore(cache *FedAppInstCache, store FedAppInstStore) {
+	InitFedAppInstCache(cache)
+	cache.Store = store
 }
 
 func (c *FedAppInstCache) UsesOrg(org string) bool {

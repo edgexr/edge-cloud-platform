@@ -1210,7 +1210,8 @@ func NodePoolsFeature(ctx context.Context, objStore objstore.KVStore, allApis *A
 			// already upgraded
 			return nil
 		}
-		err := allApis.clusterInstApi.resolveResourcesSpec(ctx, stm, ci, nil)
+		ostm := edgeproto.NewOptionalSTM(stm)
+		err := allApis.clusterInstApi.resolveResourcesSpec(ctx, ostm, ci, nil)
 		if err != nil {
 			return err
 		}

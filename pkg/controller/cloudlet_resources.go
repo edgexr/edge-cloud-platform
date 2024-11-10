@@ -34,6 +34,7 @@ type CloudletResources struct {
 	platformNodeCount int
 	vms               []edgeproto.VMResource // list of VMs to pass to platform GetClusterAdditionalResources()
 	numVms            int
+	debug             bool // print debug messages during calculations
 }
 
 func NewCloudletResources() *CloudletResources {
@@ -95,7 +96,9 @@ func (s *CloudletResources) AddPlatformVMs(ctx context.Context, cloudletInfo *ed
 // Optionally the oldClusterInst can be specified if we are
 // calculating resources for an update.
 func (s *CloudletResources) AddClusterInstResources(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBFlavor *edgeproto.FlavorInfo, isManagedK8s bool) error {
-	log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources", "clusterinst key", clusterInst.Key, "root lb flavor", rootLBFlavor.Name, "managed k8s", isManagedK8s, "nodeRes", clusterInst.NodeResources, "nodepools", clusterInst.NodePools)
+	if s.debug {
+		log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources", "clusterinst key", clusterInst.Key, "root lb flavor", rootLBFlavor.Name, "managed k8s", isManagedK8s, "nodeRes", clusterInst.NodeResources, "nodepools", clusterInst.NodePools)
+	}
 
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		s.AddRes(&clusterInst.Key, clusterInst.NodeResources, cloudcommon.NodeTypeDockerClusterNode.String(), 1)
@@ -118,7 +121,9 @@ func (s *CloudletResources) AddClusterInstResources(ctx context.Context, cluster
 
 // AddVMAppInstResources adds in resources in use by the VM AppInst.
 func (s *CloudletResources) AddVMAppInstResources(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, rootLBFlavor *edgeproto.FlavorInfo) error {
-	log.SpanLog(ctx, log.DebugLevelApi, "AddVMAppInstsResources", "appinst key", appInst.Key)
+	if s.debug {
+		log.SpanLog(ctx, log.DebugLevelApi, "AddVMAppInstsResources", "appinst key", appInst.Key)
+	}
 
 	s.AddRes(appInst.GetClusterKey(), appInst.NodeResources, cloudcommon.NodeTypeAppVM.String(), 1)
 

@@ -32,7 +32,7 @@ func NewClusterRefsApi(sync *regiondata.Sync, all *AllApis) *ClusterRefsApi {
 	clusterRefsApi.all = all
 	clusterRefsApi.sync = sync
 	clusterRefsApi.store = edgeproto.NewClusterRefsStore(sync.GetKVStore())
-	edgeproto.InitClusterRefsCache(&clusterRefsApi.cache)
+	edgeproto.InitClusterRefsCacheWithStore(&clusterRefsApi.cache, clusterRefsApi.store)
 	sync.RegisterCache(&clusterRefsApi.cache)
 	return &clusterRefsApi
 }

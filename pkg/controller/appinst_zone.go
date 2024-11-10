@@ -23,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
@@ -30,7 +31,9 @@ type potentialAppInstCluster struct {
 	existingCluster edgeproto.ClusterKey
 	cloudletKey     edgeproto.CloudletKey
 	parentPC        *potentialInstCloudlet
+	scaleSpec       *resspec.KubeResScaleSpec
 	userSpecified   bool
+	resourceScore   uint64
 }
 
 const MaxPotentialClusters = 5
@@ -177,6 +180,9 @@ func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallCo
 	}
 	pc.features = features
 	pc.flavorLookup = pc.cloudletInfo.GetFlavorLookup()
+	if err := pc.initResCalc(ctx, s.all, nil); err != nil {
+		return nil, SiteUnavailable, err
+	}
 	return pc, NoSkipReason, nil
 }
 
@@ -221,7 +227,10 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			// no error if refs not found
 			refs.Key = *defaultClusterKey
 		}
-		if err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup); err != nil {
+		// note: assume single kubernetes clusters are not scalable,
+		// so ignore any returned scale spec
+		_, free, err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup)
+		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip single k8s cloudlet, not enough resources", "cloudlet", pc.cloudlet.Key, "err", err)
 			continue
 		}
@@ -229,11 +238,9 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 		clust.existingCluster = *defaultClusterKey
 		clust.cloudletKey = pc.cloudlet.Key
 		clust.parentPC = pc
+		clust.calcResourceScore(free)
 		potentialClusters = append(potentialClusters, &clust)
-		log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential single kubernetes cloudlet", "cloudlet", pc.cloudlet.Key)
-		if len(potentialClusters) > MaxPotentialClusters {
-			return potentialClusters, nil
-		}
+		log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential single kubernetes cloudlet", "cloudlet", pc.cloudlet.Key, "free", free.String(), "resourceScore", clust.resourceScore)
 	}
 
 	// check for default multi-tenant clusters
@@ -256,7 +263,17 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 				// no error if refs not found
 				refs.Key = *clusterKey
 			}
-			if err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup); err != nil {
+			ss, free, err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup)
+			if err != nil && ss != nil {
+				// cluster does not have enough resources, but can potentially
+				// scale up to provide enough. check if the cloudlet can
+				// support the scaled up cluster.
+				_, scaleErr := pc.resCalc.CloudletFitsScaledSpec(ctx, ss)
+				if scaleErr != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT cluster, not enough resources for scaling", "cloudlet", pc.cloudlet.Key, "err", err, "scaleErr", scaleErr)
+					continue
+				}
+			} else if ss == nil && err != nil {
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT cluster, not enough resources", "cloudlet", pc.cloudlet.Key, "err", err)
 				continue
 			}
@@ -264,8 +281,10 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			clust.existingCluster = *clusterKey
 			clust.cloudletKey = pc.cloudlet.Key
 			clust.parentPC = pc
+			clust.scaleSpec = ss
+			clust.calcResourceScore(free)
 			potentialClusters = append(potentialClusters, &clust)
-			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential default MT kubernetes cluster", "cloudlet", pc.cloudlet.Key)
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential default MT kubernetes cluster", "cloudlet", pc.cloudlet.Key, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
 			if len(potentialClusters) > MaxPotentialClusters {
 				return potentialClusters, nil
 			}
@@ -312,7 +331,14 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 				// no error if refs not found
 				refs.Key = key
 			}
-			if err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup); err != nil {
+			ss, free, err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup)
+			if err != nil && ss != nil {
+				_, scaleErr := pc.resCalc.CloudletFitsScaledSpec(ctx, ss)
+				if scaleErr != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, not enough resources for scaling", "cloudlet", pc.cloudlet.Key, "err", err, "scaleErr", scaleErr)
+					continue
+				}
+			} else if ss == nil && err != nil {
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, not enough resources", "cloudlet", pc.cloudlet.Key, "err", err)
 				continue
 			}
@@ -320,12 +346,18 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			clust.existingCluster = key
 			clust.cloudletKey = pc.cloudlet.Key
 			clust.parentPC = pc
+			clust.scaleSpec = ss
+			clust.calcResourceScore(free)
 			potentialClusters = append(potentialClusters, &clust)
-			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add free reservable cluster", "cloudlet", pc.cloudlet.Key)
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add free reservable cluster", "cloudlet", pc.cloudlet.Key, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
 			if len(potentialClusters) > MaxPotentialClusters {
 				return potentialClusters, nil
 			}
 		}
+	}
+	sort.Sort(PotentialAppInstClusterByResource(potentialClusters))
+	if len(potentialClusters) > MaxPotentialClusters {
+		return potentialClusters[:MaxPotentialClusters], nil
 	}
 	return potentialClusters, nil
 }
@@ -361,8 +393,75 @@ func (s *AppInstApi) usePotentialCluster(ctx context.Context, stm concurrency.ST
 		// no error if refs not found
 		refs.Key = pc.existingCluster
 	}
-	if err := s.all.clusterInstApi.fitsAppResources(ctx, &clusterInst, &refs, app, in, pc.parentPC.flavorLookup); err != nil {
+	_, _, err := s.all.clusterInstApi.fitsAppResources(ctx, &clusterInst, &refs, app, in, pc.parentPC.flavorLookup)
+	if err != nil {
 		return nil, fmt.Errorf("not enough resources in cluster %s, %s", pc.existingCluster.GetKeyString(), err)
 	}
 	return &clusterInst, nil
+}
+
+// calcResourceScore gets a score which represents the available resources
+// in a cluster. A higher score means more available resources.
+func (s *potentialAppInstCluster) calcResourceScore(free resspec.ResValMap) {
+	if free == nil {
+		s.resourceScore = 0
+		return
+	}
+	// Calculate score based on weights and free values
+	// Because some resources may have no limit, track the number
+	// of resources we've scored. We'll divide by this number to
+	// get an average per-resource score for comparisons.
+	var score, numScored uint64
+	for res, weight := range resourceWeights {
+		if resVal, ok := free[res]; ok {
+			// make a copy
+			freeDecVal := edgeproto.NewUdec64(resVal.Value.Whole, resVal.Value.Nanos)
+			// multiply by weight to try to promote and remove decimal values
+			freeDecVal.Mult(uint32(weight))
+
+			score += freeDecVal.Whole
+			numScored++
+		}
+	}
+	if numScored == 0 {
+		score = 0
+	} else {
+		score /= numScored
+	}
+	s.resourceScore = score
+}
+
+// PotentialAppInstClusterByResource sorts potential clusters based
+// on available resources
+type PotentialAppInstClusterByResource []*potentialAppInstCluster
+
+func (a PotentialAppInstClusterByResource) Len() int {
+	return len(a)
+}
+
+func (a PotentialAppInstClusterByResource) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a PotentialAppInstClusterByResource) Less(i, j int) bool {
+	// prefer clusters that don't need scaling
+	if a[i].scaleSpec == nil && a[j].scaleSpec != nil {
+		return true
+	}
+	if a[i].scaleSpec == nil && a[j].scaleSpec == nil {
+		// sort by amount of free space in cluster
+		iscore := a[i].resourceScore
+		jscore := a[j].resourceScore
+		if iscore == jscore {
+			return a[i].existingCluster.GetKeyString() < a[j].existingCluster.GetKeyString()
+		}
+		return iscore > jscore
+	}
+	if a[i].scaleSpec != nil && a[j].scaleSpec != nil {
+		// sort by amount of free space in cloudlet
+		parents := PotentialInstCloudletsByResource{}
+		parents = append(parents, a[i].parentPC, a[j].parentPC)
+		return parents.Less(0, 1)
+	}
+	return false
 }

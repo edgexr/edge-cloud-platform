@@ -1238,6 +1238,21 @@ func (c *FlavorCache) Get(key *FlavorKey, valbuf *Flavor) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *FlavorCache) STMGet(ostm *OptionalSTM, key *FlavorKey, valbuf *Flavor) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("FlavorCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *FlavorCache) GetWithRev(key *FlavorKey, valbuf *Flavor, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1586,6 +1601,11 @@ func (s *FlavorCache) InitSync(sync DataSync) {
 		s.Store = NewFlavorStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitFlavorCacheWithStore(cache *FlavorCache, store FlavorStore) {
+	InitFlavorCache(cache)
+	cache.Store = store
 }
 
 func (c *FlavorCache) UsesOrg(org string) bool {

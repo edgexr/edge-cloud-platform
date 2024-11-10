@@ -1636,6 +1636,21 @@ func (c *AutoProvPolicyCache) Get(key *PolicyKey, valbuf *AutoProvPolicy) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *AutoProvPolicyCache) STMGet(ostm *OptionalSTM, key *PolicyKey, valbuf *AutoProvPolicy) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("AutoProvPolicyCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *AutoProvPolicyCache) GetWithRev(key *PolicyKey, valbuf *AutoProvPolicy, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1984,6 +1999,11 @@ func (s *AutoProvPolicyCache) InitSync(sync DataSync) {
 		s.Store = NewAutoProvPolicyStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitAutoProvPolicyCacheWithStore(cache *AutoProvPolicyCache, store AutoProvPolicyStore) {
+	InitAutoProvPolicyCache(cache)
+	cache.Store = store
 }
 
 func (c *AutoProvPolicyCache) UsesOrg(org string) bool {
@@ -2969,6 +2989,21 @@ func (c *AutoProvInfoCache) Get(key *CloudletKey, valbuf *AutoProvInfo) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *AutoProvInfoCache) STMGet(ostm *OptionalSTM, key *CloudletKey, valbuf *AutoProvInfo) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("AutoProvInfoCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *AutoProvInfoCache) GetWithRev(key *CloudletKey, valbuf *AutoProvInfo, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -3352,6 +3387,11 @@ func (s *AutoProvInfoCache) InitSync(sync DataSync) {
 		s.Store = NewAutoProvInfoStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitAutoProvInfoCacheWithStore(cache *AutoProvInfoCache, store AutoProvInfoStore) {
+	InitAutoProvInfoCache(cache)
+	cache.Store = store
 }
 
 func (c *AutoProvInfoCache) UsesOrg(org string) bool {

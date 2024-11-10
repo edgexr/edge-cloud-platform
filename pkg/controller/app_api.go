@@ -51,7 +51,7 @@ func NewAppApi(sync *regiondata.Sync, all *AllApis) *AppApi {
 	appApi.all = all
 	appApi.sync = sync
 	appApi.store = edgeproto.NewAppStore(sync.GetKVStore())
-	edgeproto.InitAppCache(&appApi.cache)
+	edgeproto.InitAppCacheWithStore(&appApi.cache, appApi.store)
 	sync.RegisterCache(&appApi.cache)
 	return &appApi
 }
@@ -1128,6 +1128,10 @@ func (s *AppApi) tryDeployApp(ctx context.Context, stm concurrency.STM, app *edg
 		// note: helm not allowed
 		// TODO: check if multi-tenant cluster exists on cloudlet, and check if resources are available
 	}
+	resCalc := NewCloudletResCalc(s.all, edgeproto.NewOptionalSTM(stm), &cloudlet.Key)
+	resCalc.deps.cloudlet = cloudlet
+	resCalc.deps.cloudletInfo = cloudletInfo
+	resCalc.deps.cloudletRefs = cloudletRefs
 	if deployment == cloudcommon.DeploymentTypeKubernetes || deployment == cloudcommon.DeploymentTypeDocker {
 		// look for reservable ClusterInst. This emulates behavior in createAppInstInternal().
 		s.all.clusterInstApi.cache.Mux.Lock()
@@ -1160,10 +1164,12 @@ func (s *AppApi) tryDeployApp(ctx context.Context, stm concurrency.STM, app *edg
 			targetCluster.NumMasters = 1
 			targetCluster.NumNodes = numNodes
 		}
-		return s.all.clusterInstApi.validateResources(ctx, stm, &targetCluster, nil, nil, nil, cloudlet, cloudletInfo, cloudletRefs, NoGenResourceAlerts)
+		_, err := resCalc.CloudletFitsCluster(ctx, &targetCluster, nil)
+		return err
 	}
 	if deployment == cloudcommon.DeploymentTypeVM {
-		return s.all.clusterInstApi.validateResources(ctx, stm, nil, nil, app, appInst, cloudlet, cloudletInfo, cloudletRefs, NoGenResourceAlerts)
+		_, err := resCalc.CloudletFitsVMApp(ctx, app, appInst)
+		return err
 	}
 	return fmt.Errorf("Unsupported deployment type %s\n", app.Deployment)
 }

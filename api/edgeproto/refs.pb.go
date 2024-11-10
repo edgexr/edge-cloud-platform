@@ -1647,6 +1647,21 @@ func (c *CloudletRefsCache) Get(key *CloudletKey, valbuf *CloudletRefs) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *CloudletRefsCache) STMGet(ostm *OptionalSTM, key *CloudletKey, valbuf *CloudletRefs) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("CloudletRefsCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *CloudletRefsCache) GetWithRev(key *CloudletKey, valbuf *CloudletRefs, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1995,6 +2010,11 @@ func (s *CloudletRefsCache) InitSync(sync DataSync) {
 		s.Store = NewCloudletRefsStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitCloudletRefsCacheWithStore(cache *CloudletRefsCache, store CloudletRefsStore) {
+	InitCloudletRefsCache(cache)
+	cache.Store = store
 }
 
 func (c *CloudletRefsCache) UsesOrg(org string) bool {
@@ -2430,6 +2450,21 @@ func (c *ClusterRefsCache) Get(key *ClusterKey, valbuf *ClusterRefs) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *ClusterRefsCache) STMGet(ostm *OptionalSTM, key *ClusterKey, valbuf *ClusterRefs) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("ClusterRefsCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *ClusterRefsCache) GetWithRev(key *ClusterKey, valbuf *ClusterRefs, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -2778,6 +2813,11 @@ func (s *ClusterRefsCache) InitSync(sync DataSync) {
 		s.Store = NewClusterRefsStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitClusterRefsCacheWithStore(cache *ClusterRefsCache, store ClusterRefsStore) {
+	InitClusterRefsCache(cache)
+	cache.Store = store
 }
 
 func (c *ClusterRefsCache) UsesOrg(org string) bool {
@@ -3213,6 +3253,21 @@ func (c *AppInstRefsCache) Get(key *AppKey, valbuf *AppInstRefs) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *AppInstRefsCache) STMGet(ostm *OptionalSTM, key *AppKey, valbuf *AppInstRefs) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("AppInstRefsCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *AppInstRefsCache) GetWithRev(key *AppKey, valbuf *AppInstRefs, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -3561,6 +3616,11 @@ func (s *AppInstRefsCache) InitSync(sync DataSync) {
 		s.Store = NewAppInstRefsStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitAppInstRefsCacheWithStore(cache *AppInstRefsCache, store AppInstRefsStore) {
+	InitAppInstRefsCache(cache)
+	cache.Store = store
 }
 
 func (c *AppInstRefsCache) UsesOrg(org string) bool {

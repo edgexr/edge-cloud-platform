@@ -1616,6 +1616,21 @@ func (c *DeviceCache) Get(key *DeviceKey, valbuf *Device) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *DeviceCache) STMGet(ostm *OptionalSTM, key *DeviceKey, valbuf *Device) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("DeviceCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *DeviceCache) GetWithRev(key *DeviceKey, valbuf *Device, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1999,6 +2014,11 @@ func (s *DeviceCache) InitSync(sync DataSync) {
 		s.Store = NewDeviceStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitDeviceCacheWithStore(cache *DeviceCache, store DeviceStore) {
+	InitDeviceCache(cache)
+	cache.Store = store
 }
 
 func (c *DeviceCache) UsesOrg(org string) bool {

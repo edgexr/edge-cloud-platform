@@ -7369,6 +7369,21 @@ func (c *CloudletInternalCache) Get(key *CloudletKey, valbuf *CloudletInternal) 
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *CloudletInternalCache) STMGet(ostm *OptionalSTM, key *CloudletKey, valbuf *CloudletInternal) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("CloudletInternalCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *CloudletInternalCache) GetWithRev(key *CloudletKey, valbuf *CloudletInternal, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -7717,6 +7732,11 @@ func (s *CloudletInternalCache) InitSync(sync DataSync) {
 		s.Store = NewCloudletInternalStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitCloudletInternalCacheWithStore(cache *CloudletInternalCache, store CloudletInternalStore) {
+	InitCloudletInternalCache(cache)
+	cache.Store = store
 }
 
 func (c *CloudletInternalCache) UsesOrg(org string) bool {
@@ -8757,6 +8777,21 @@ func (c *PlatformFeaturesCache) Get(key *PlatformFeaturesKey, valbuf *PlatformFe
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *PlatformFeaturesCache) STMGet(ostm *OptionalSTM, key *PlatformFeaturesKey, valbuf *PlatformFeatures) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("PlatformFeaturesCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *PlatformFeaturesCache) GetWithRev(key *PlatformFeaturesKey, valbuf *PlatformFeatures, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -9105,6 +9140,11 @@ func (s *PlatformFeaturesCache) InitSync(sync DataSync) {
 		s.Store = NewPlatformFeaturesStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitPlatformFeaturesCacheWithStore(cache *PlatformFeaturesCache, store PlatformFeaturesStore) {
+	InitPlatformFeaturesCache(cache)
+	cache.Store = store
 }
 
 func (c *PlatformFeaturesCache) UsesOrg(org string) bool {
@@ -10372,6 +10412,21 @@ func (c *GPUDriverCache) Get(key *GPUDriverKey, valbuf *GPUDriver) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *GPUDriverCache) STMGet(ostm *OptionalSTM, key *GPUDriverKey, valbuf *GPUDriver) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("GPUDriverCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *GPUDriverCache) GetWithRev(key *GPUDriverKey, valbuf *GPUDriver, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -10720,6 +10775,11 @@ func (s *GPUDriverCache) InitSync(sync DataSync) {
 		s.Store = NewGPUDriverStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitGPUDriverCacheWithStore(cache *GPUDriverCache, store GPUDriverStore) {
+	InitGPUDriverCache(cache)
+	cache.Store = store
 }
 
 func (c *GPUDriverCache) UsesOrg(org string) bool {
@@ -13811,6 +13871,21 @@ func (c *CloudletCache) Get(key *CloudletKey, valbuf *Cloudlet) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *CloudletCache) STMGet(ostm *OptionalSTM, key *CloudletKey, valbuf *Cloudlet) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("CloudletCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *CloudletCache) GetWithRev(key *CloudletKey, valbuf *Cloudlet, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -14159,6 +14234,11 @@ func (s *CloudletCache) InitSync(sync DataSync) {
 		s.Store = NewCloudletStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitCloudletCacheWithStore(cache *CloudletCache, store CloudletStore) {
+	InitCloudletCache(cache)
+	cache.Store = store
 }
 
 func (c *CloudletCache) UsesOrg(org string) bool {
@@ -15297,6 +15377,7 @@ const CloudletInfoFieldNodePoolsNodeResourcesOptResMapKey = "46.3.4.1"
 const CloudletInfoFieldNodePoolsNodeResourcesOptResMapValue = "46.3.4.2"
 const CloudletInfoFieldNodePoolsNodeResourcesInfraNodeFlavor = "46.3.5"
 const CloudletInfoFieldNodePoolsNodeResourcesExternalVolumeSize = "46.3.6"
+const CloudletInfoFieldNodePoolsScalable = "46.4"
 
 var CloudletInfoAllFields = []string{
 	CloudletInfoFieldKeyOrganization,
@@ -15377,6 +15458,7 @@ var CloudletInfoAllFields = []string{
 	CloudletInfoFieldNodePoolsNodeResourcesOptResMapValue,
 	CloudletInfoFieldNodePoolsNodeResourcesInfraNodeFlavor,
 	CloudletInfoFieldNodePoolsNodeResourcesExternalVolumeSize,
+	CloudletInfoFieldNodePoolsScalable,
 }
 
 var CloudletInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
@@ -15458,6 +15540,7 @@ var CloudletInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
 	CloudletInfoFieldNodePoolsNodeResourcesOptResMapValue:              struct{}{},
 	CloudletInfoFieldNodePoolsNodeResourcesInfraNodeFlavor:             struct{}{},
 	CloudletInfoFieldNodePoolsNodeResourcesExternalVolumeSize:          struct{}{},
+	CloudletInfoFieldNodePoolsScalable:                                 struct{}{},
 })
 
 var CloudletInfoAllFieldsStringMap = map[string]string{
@@ -15539,6 +15622,7 @@ var CloudletInfoAllFieldsStringMap = map[string]string{
 	CloudletInfoFieldNodePoolsNodeResourcesOptResMapValue:              "Node Pools Node Resources Opt Res Map Value",
 	CloudletInfoFieldNodePoolsNodeResourcesInfraNodeFlavor:             "Node Pools Node Resources Infra Node Flavor",
 	CloudletInfoFieldNodePoolsNodeResourcesExternalVolumeSize:          "Node Pools Node Resources External Volume Size",
+	CloudletInfoFieldNodePoolsScalable:                                 "Node Pools Scalable",
 }
 
 func (m *CloudletInfo) IsKeyField(s string) bool {
@@ -16080,6 +16164,10 @@ func (m *CloudletInfo) DiffFields(o *CloudletInfo, fields *FieldMap) {
 					}
 				} else if (m.NodePools[i0].NodeResources != nil && o.NodePools[i0].NodeResources == nil) || (m.NodePools[i0].NodeResources == nil && o.NodePools[i0].NodeResources != nil) {
 					fields.Set(CloudletInfoFieldNodePoolsNodeResources)
+					fields.Set(CloudletInfoFieldNodePools)
+				}
+				if m.NodePools[i0].Scalable != o.NodePools[i0].Scalable {
+					fields.Set(CloudletInfoFieldNodePoolsScalable)
 					fields.Set(CloudletInfoFieldNodePools)
 				}
 			}
@@ -17200,6 +17288,21 @@ func (c *CloudletInfoCache) Get(key *CloudletKey, valbuf *CloudletInfo) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *CloudletInfoCache) STMGet(ostm *OptionalSTM, key *CloudletKey, valbuf *CloudletInfo) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("CloudletInfoCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *CloudletInfoCache) GetWithRev(key *CloudletKey, valbuf *CloudletInfo, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -17583,6 +17686,11 @@ func (s *CloudletInfoCache) InitSync(sync DataSync) {
 		s.Store = NewCloudletInfoStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitCloudletInfoCacheWithStore(cache *CloudletInfoCache, store CloudletInfoStore) {
+	InitCloudletInfoCache(cache)
+	cache.Store = store
 }
 
 // CloudletInfoObjectUpdater defines a way of updating a specific CloudletInfo

@@ -2378,6 +2378,21 @@ func (c *VMPoolCache) Get(key *VMPoolKey, valbuf *VMPool) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *VMPoolCache) STMGet(ostm *OptionalSTM, key *VMPoolKey, valbuf *VMPool) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("VMPoolCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *VMPoolCache) GetWithRev(key *VMPoolKey, valbuf *VMPool, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -2726,6 +2741,11 @@ func (s *VMPoolCache) InitSync(sync DataSync) {
 		s.Store = NewVMPoolStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitVMPoolCacheWithStore(cache *VMPoolCache, store VMPoolStore) {
+	InitVMPoolCache(cache)
+	cache.Store = store
 }
 
 func (c *VMPoolCache) UsesOrg(org string) bool {
@@ -3893,6 +3913,21 @@ func (c *VMPoolInfoCache) Get(key *VMPoolKey, valbuf *VMPoolInfo) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *VMPoolInfoCache) STMGet(ostm *OptionalSTM, key *VMPoolKey, valbuf *VMPoolInfo) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("VMPoolInfoCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *VMPoolInfoCache) GetWithRev(key *VMPoolKey, valbuf *VMPoolInfo, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -4276,6 +4311,11 @@ func (s *VMPoolInfoCache) InitSync(sync DataSync) {
 		s.Store = NewVMPoolInfoStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitVMPoolInfoCacheWithStore(cache *VMPoolInfoCache, store VMPoolInfoStore) {
+	InitVMPoolInfoCache(cache)
+	cache.Store = store
 }
 
 // VMPoolInfoObjectUpdater defines a way of updating a specific VMPoolInfo

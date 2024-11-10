@@ -776,6 +776,21 @@ func (c *AlertCache) Get(key *AlertKey, valbuf *Alert) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *AlertCache) STMGet(ostm *OptionalSTM, key *AlertKey, valbuf *Alert) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("AlertCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *AlertCache) GetWithRev(key *AlertKey, valbuf *Alert, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1161,6 +1176,11 @@ func (s *AlertCache) InitSync(sync DataSync) {
 	}
 }
 
+func InitAlertCacheWithStore(cache *AlertCache, store AlertStore) {
+	InitAlertCache(cache)
+	cache.Store = store
+}
+
 func (c *AlertCache) UsesOrg(org string) bool {
 	return false
 }
@@ -1313,6 +1333,21 @@ func (s *FieldMap) Fields() []string {
 
 func (s *FieldMap) Count() int {
 	return len(s.fields)
+}
+
+// OptionalSTM is for operations that use either the cache or the store.
+type OptionalSTM struct {
+	// STM may be nil to force using the cache instead of the store
+	stm concurrency.STM
+}
+
+// NewOptionalSTM creates a new optional STM for operations that
+// use either the cache or the store. Set the stm to force using
+// the store, or leave nil to force using the cache.
+func NewOptionalSTM(stm concurrency.STM) *OptionalSTM {
+	return &OptionalSTM{
+		stm: stm,
+	}
 }
 
 // DecodeHook for use with the mapstructure package.
@@ -1597,7 +1632,7 @@ func GetReferencesMap() map[string][]string {
 	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
 	refs["CloudletRefs"] = []string{"AppInst", "ClusterInst"}
 	refs["CloudletResMap"] = []string{"Cloudlet", "ResTagTable"}
-	refs["ClusterInst"] = []string{"AutoScalePolicy", "Cloudlet", "Flavor", "Network"}
+	refs["ClusterInst"] = []string{"AutoScalePolicy", "Cloudlet", "Network"}
 	refs["ClusterInstKeyV1"] = []string{"Cloudlet"}
 	refs["ClusterInstKeyV2"] = []string{"Cloudlet"}
 	refs["ClusterRefs"] = []string{"AppInst"}

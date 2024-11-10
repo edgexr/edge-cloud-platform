@@ -1565,6 +1565,21 @@ func (c *TrustPolicyExceptionCache) Get(key *TrustPolicyExceptionKey, valbuf *Tr
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *TrustPolicyExceptionCache) STMGet(ostm *OptionalSTM, key *TrustPolicyExceptionKey, valbuf *TrustPolicyException) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("TrustPolicyExceptionCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *TrustPolicyExceptionCache) GetWithRev(key *TrustPolicyExceptionKey, valbuf *TrustPolicyException, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1913,6 +1928,11 @@ func (s *TrustPolicyExceptionCache) InitSync(sync DataSync) {
 		s.Store = NewTrustPolicyExceptionStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitTrustPolicyExceptionCacheWithStore(cache *TrustPolicyExceptionCache, store TrustPolicyExceptionStore) {
+	InitTrustPolicyExceptionCache(cache)
+	cache.Store = store
 }
 
 func (c *TrustPolicyExceptionCache) UsesOrg(org string) bool {
@@ -2551,6 +2571,21 @@ func (c *TPEInstanceStateCache) Get(key *TPEInstanceKey, valbuf *TPEInstanceStat
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *TPEInstanceStateCache) STMGet(ostm *OptionalSTM, key *TPEInstanceKey, valbuf *TPEInstanceState) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("TPEInstanceStateCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *TPEInstanceStateCache) GetWithRev(key *TPEInstanceKey, valbuf *TPEInstanceState, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -2899,6 +2934,11 @@ func (s *TPEInstanceStateCache) InitSync(sync DataSync) {
 		s.Store = NewTPEInstanceStateStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitTPEInstanceStateCacheWithStore(cache *TPEInstanceStateCache, store TPEInstanceStateStore) {
+	InitTPEInstanceStateCache(cache)
+	cache.Store = store
 }
 
 func (c *TPEInstanceStateCache) UsesOrg(org string) bool {

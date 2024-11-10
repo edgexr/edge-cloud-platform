@@ -41,7 +41,7 @@ func NewResTagTableApi(sync *regiondata.Sync, all *AllApis) *ResTagTableApi {
 	resTagTableApi.all = all
 	resTagTableApi.sync = sync
 	resTagTableApi.store = edgeproto.NewResTagTableStore(sync.GetKVStore())
-	edgeproto.InitResTagTableCache(&resTagTableApi.cache)
+	edgeproto.InitResTagTableCacheWithStore(&resTagTableApi.cache, resTagTableApi.store)
 	sync.RegisterCache(&resTagTableApi.cache)
 	return &resTagTableApi
 }
@@ -198,10 +198,10 @@ func (s *ResTagTableApi) RemoveResTag(ctx context.Context, in *edgeproto.ResTagT
 }
 
 // Routines supporting the mapping used in GetVMSpec
-func (s *ResTagTableApi) GetCloudletResourceMap(ctx context.Context, stm concurrency.STM, key *edgeproto.ResTagTableKey) (*edgeproto.ResTagTable, error) {
+func (s *ResTagTableApi) GetCloudletResourceMap(ctx context.Context, stm *edgeproto.OptionalSTM, key *edgeproto.ResTagTableKey) (*edgeproto.ResTagTable, error) {
 
 	tbl := edgeproto.ResTagTable{}
-	if !s.store.STMGet(stm, key, &tbl) {
+	if !s.cache.STMGet(stm, key, &tbl) {
 		return nil, key.NotFoundError()
 	}
 	return &tbl, nil
@@ -229,7 +229,7 @@ func (s *ResTagTableApi) findAZmatch(res string, cli edgeproto.CloudletInfo) (st
 
 // Irrespective of any requesting mex flavor, do we think this OS flavor offers any optional resources, given the current cloudlet's mappings?
 // Return count and resource type values discovered in flavor.
-func (s *ResTagTableApi) osFlavorResources(ctx context.Context, stm concurrency.STM, flavor edgeproto.FlavorInfo, cl edgeproto.Cloudlet) (offered map[string]struct{}, count int) {
+func (s *ResTagTableApi) osFlavorResources(ctx context.Context, stm *edgeproto.OptionalSTM, flavor edgeproto.FlavorInfo, cl edgeproto.Cloudlet) (offered map[string]struct{}, count int) {
 	var rescnt int
 	resources := make(map[string]struct{})
 
@@ -267,7 +267,7 @@ func (s *ResTagTableApi) osFlavorResources(ctx context.Context, stm concurrency.
 	return resources, rescnt
 }
 
-func (s *ResTagTableApi) UsesGpu(ctx context.Context, stm concurrency.STM, flavor edgeproto.FlavorInfo, cl edgeproto.Cloudlet) bool {
+func (s *ResTagTableApi) UsesGpu(ctx context.Context, stm *edgeproto.OptionalSTM, flavor edgeproto.FlavorInfo, cl edgeproto.Cloudlet) bool {
 	resources, rescnt := s.osFlavorResources(ctx, stm, flavor, cl)
 	if rescnt > 0 {
 		if _, ok := resources["gpu"]; ok {
@@ -278,7 +278,7 @@ func (s *ResTagTableApi) UsesGpu(ctx context.Context, stm concurrency.STM, flavo
 }
 
 // GetVMSpec returns the VMCreationAttributes including flavor name and the size of the external volume which is required, if any
-func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm concurrency.STM, nodeResources *edgeproto.NodeResources, cloudletFlavorName string, cl edgeproto.Cloudlet, cli edgeproto.CloudletInfo) (*resspec.VMCreationSpec, error) {
+func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm *edgeproto.OptionalSTM, nodeResources *edgeproto.NodeResources, cloudletFlavorName string, cl edgeproto.Cloudlet, cli edgeproto.CloudletInfo) (*resspec.VMCreationSpec, error) {
 	// for those platforms with no concept of a quantized set of resources (flavors)
 	// return a VMCreationSpec  based on the our meta-flavor resource request.
 	if len(cli.Flavors) == 0 {
@@ -302,7 +302,7 @@ func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm concurrency.STM, nod
 	return resspec.GetVMSpec(ctx, nodeResources, cli, tbls)
 }
 
-func (s *ResTagTableApi) GetResTablesForCloudlet(ctx context.Context, stm concurrency.STM, cl *edgeproto.Cloudlet) (tables map[string]*edgeproto.ResTagTable, err error) {
+func (s *ResTagTableApi) GetResTablesForCloudlet(ctx context.Context, stm *edgeproto.OptionalSTM, cl *edgeproto.Cloudlet) (tables map[string]*edgeproto.ResTagTable, err error) {
 	if cl.ResTagMap == nil {
 		return nil, fmt.Errorf("Cloudlet %s requests no optional resources", cl.Key.Name)
 	}
@@ -310,7 +310,7 @@ func (s *ResTagTableApi) GetResTablesForCloudlet(ctx context.Context, stm concur
 	tabs := make(map[string]*edgeproto.ResTagTable)
 	for k, v := range cl.ResTagMap {
 		t := edgeproto.ResTagTable{}
-		if s.store.STMGet(stm, v, &t) {
+		if s.cache.STMGet(stm, v, &t) {
 			tabs[k] = &t
 		}
 	}
@@ -359,7 +359,7 @@ func (s *ResTagTableApi) ValidateOptResMapValues(resmap map[string]string) (bool
 	return true, nil
 }
 
-func (s *ResTagTableApi) AddGpuResourceHintIfNeeded(ctx context.Context, stm concurrency.STM, spec *resspec.VMCreationSpec, cloudlet edgeproto.Cloudlet) string {
+func (s *ResTagTableApi) AddGpuResourceHintIfNeeded(ctx context.Context, stm *edgeproto.OptionalSTM, spec *resspec.VMCreationSpec, cloudlet edgeproto.Cloudlet) string {
 
 	if s.UsesGpu(ctx, stm, *spec.FlavorInfo, cloudlet) {
 		log.SpanLog(ctx, log.DebugLevelApi, "add hint using gpu on", "platform", cloudlet.PlatformType, "flavor", spec.FlavorName)

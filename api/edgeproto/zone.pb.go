@@ -1320,6 +1320,21 @@ func (c *ZoneCache) Get(key *ZoneKey, valbuf *Zone) bool {
 	return c.GetWithRev(key, valbuf, &modRev)
 }
 
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *ZoneCache) STMGet(ostm *OptionalSTM, key *ZoneKey, valbuf *Zone) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("ZoneCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
 func (c *ZoneCache) GetWithRev(key *ZoneKey, valbuf *Zone, modRev *int64) bool {
 	c.Mux.Lock()
 	defer c.Mux.Unlock()
@@ -1668,6 +1683,11 @@ func (s *ZoneCache) InitSync(sync DataSync) {
 		s.Store = NewZoneStore(sync.GetKVStore())
 		sync.RegisterCache(s)
 	}
+}
+
+func InitZoneCacheWithStore(cache *ZoneCache, store ZoneStore) {
+	InitZoneCache(cache)
+	cache.Store = store
 }
 
 func (c *ZoneCache) UsesOrg(org string) bool {

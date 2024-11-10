@@ -15,20 +15,27 @@
 package controller
 
 import (
+	"context"
+	math "math"
 	"sort"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
+	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
 // potentialInstCloudlet is a potential cloudlet to consider when
 // determining where to deploy an instance in a zone.
 type potentialInstCloudlet struct {
-	cloudlet     edgeproto.Cloudlet
-	cloudletInfo edgeproto.CloudletInfo
-	features     *edgeproto.PlatformFeatures
-	flavorLookup edgeproto.FlavorLookup
+	cloudlet        edgeproto.Cloudlet
+	cloudletInfo    edgeproto.CloudletInfo
+	features        *edgeproto.PlatformFeatures
+	flavorLookup    edgeproto.FlavorLookup
+	resCalc         *CloudletResCalc
+	cloudletUsedRes *CloudletResources
+	resourceScore   uint64
 }
 
 // SkipReason are reasons that a cloudlet was not considered
@@ -81,37 +88,67 @@ func (s SkipReasons) String() string {
 	return strings.Join(reasons, ", ")
 }
 
-const (
-	ResourceWeightVCPU uint64 = 1000
-	ResourceWeightRAM  uint64 = 1
-)
+var resourceWeights = map[string]uint64{
+	cloudcommon.ResourceVcpus: 1000,
+	cloudcommon.ResourceRamMb: 1,
+}
 
-// resourceScore gets a score which represents the available resources
-// on a cloudlet. A higher score means more available resources.
-func (s *potentialInstCloudlet) resourceScore() uint64 {
-	var score uint64
-	for _, res := range s.cloudletInfo.ResourcesSnapshot.Info {
-		var weight uint64
-		if res.Name == cloudcommon.ResourceVcpus {
-			// weight is 1000 per vcpu
-			weight = ResourceWeightVCPU
-		} else if res.Name == cloudcommon.ResourceRamMb {
-			// weight is 1 per MB
-			weight = ResourceWeightRAM
-		} else {
-			// skip
-			continue
-		}
-		max := res.InfraMaxValue
-		if res.QuotaMaxValue != 0 {
-			max = res.QuotaMaxValue
-		}
-		if res.Value >= max {
-			continue
-		}
-		score += weight * (max - res.Value)
+func (s *potentialInstCloudlet) initResCalc(ctx context.Context, all *AllApis, stm concurrency.STM) error {
+	resCalc := NewCloudletResCalc(all, edgeproto.NewOptionalSTM(stm), &s.cloudlet.Key)
+	resCalc.deps.cloudlet = &s.cloudlet
+	resCalc.deps.cloudletInfo = &s.cloudletInfo
+	resCalc.deps.features = s.features
+	if err := resCalc.InitDeps(ctx); err != nil {
+		return err
 	}
-	return score
+	// cache used values for sorting
+	usedVals, err := resCalc.getUsedResVals(ctx)
+	if err != nil {
+		return err
+	}
+	s.resCalc = resCalc
+	s.calcResourceScore(usedVals)
+	return nil
+}
+
+// calcResourceScore gets a score which represents the available resources
+// on a cloudlet. A higher score means more available resources.
+func (s *potentialInstCloudlet) calcResourceScore(usedVals resspec.ResValMap) {
+	// get max value for each resource on cloudlet
+	maxVals := getMaxResourceVals(s.cloudletInfo.ResourcesSnapshot.Info, s.cloudlet.ResourceQuotas)
+	// Calculate score based on weights and free values
+	// Because some resources may have no limit, track the number
+	// of resources we've scored. We'll divide by this number to
+	// get an average per-resource score for comparisons.
+	var score, numScored uint64
+	for res, weight := range resourceWeights {
+		max, ok := maxVals[res]
+		if !ok {
+			continue // no limit
+		}
+		free := max * weight
+		if usedVal, ok := usedVals[res]; ok {
+			// make a copy
+			usedDecVal := edgeproto.NewUdec64(usedVal.Value.Whole, usedVal.Value.Nanos)
+			// multiply by weight to try to promote and remove decimal values
+			usedDecVal.Mult(uint32(weight))
+			// subtract from free, dropping decimal value
+			if usedDecVal.Whole > free {
+				// avoid underflow
+				free = 0
+			} else {
+				free -= usedDecVal.Whole
+			}
+		}
+		score += free
+		numScored++
+	}
+	if numScored == 0 {
+		score = math.MaxUint64
+	} else {
+		score /= numScored
+	}
+	s.resourceScore = score
 }
 
 // PotentialInstCloudletsByResource sorts potential cloudlets
@@ -135,8 +172,8 @@ func (a PotentialInstCloudletsByResource) Swap(i, j int) {
 
 func (a PotentialInstCloudletsByResource) Less(i, j int) bool {
 	// for now just take into account RAM and VCPU.
-	iscore := a[i].resourceScore()
-	jscore := a[j].resourceScore()
+	iscore := a[i].resourceScore
+	jscore := a[j].resourceScore
 	if iscore == jscore {
 		return a[i].cloudlet.Key.GetKeyString() < a[j].cloudlet.Key.GetKeyString()
 	}

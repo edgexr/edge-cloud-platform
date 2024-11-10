@@ -90,4 +90,6 @@ message NodePool {
   uint32 num_nodes = 2;
   // Specification of per node resources
   NodeResources node_resources = 3;
+  // Scalable indicates the system may scale the number of nodes
+  bool scalable = 4;
 }

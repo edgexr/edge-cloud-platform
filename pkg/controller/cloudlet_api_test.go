@@ -779,8 +779,8 @@ func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Clo
 	// We can direct a generic request to a given flavor though,
 	// which is the case here.
 
-	err = apis.cloudletApi.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-
+	err = apis.cloudletApi.sync.ApplySTMWait(ctx, func(istm concurrency.STM) error {
+		stm := edgeproto.NewOptionalSTM(istm)
 		spec, vmerr := apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", *cl, cli)
 		require.Nil(t, vmerr, "GetVmSpec")
 		require.Equal(t, "flavor.large", spec.FlavorName)

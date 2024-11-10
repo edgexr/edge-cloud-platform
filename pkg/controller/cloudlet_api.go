@@ -107,6 +107,7 @@ func NewCloudletApi(sync *regiondata.Sync, all *AllApis) *CloudletApi {
 	cloudletApi.sync = sync
 	cloudletApi.store = edgeproto.NewCloudletStore(sync.GetKVStore())
 	cloudletApi.cache = nodeMgr.CloudletLookup.GetCloudletCache(node.NoRegion)
+	cloudletApi.cache.Store = cloudletApi.store
 	sync.RegisterCache(cloudletApi.cache)
 	cloudletApi.accessKeyServer = node.NewAccessKeyServer(cloudletApi.cache, nodeMgr.VaultAddr)
 	cloudletApi.defaultMTClustWorkers.Init("UpdateMultiTenantCluster", cloudletApi.updateDefaultMultiTenantClusterWorker)
@@ -1952,31 +1953,25 @@ func (s *CloudletApi) FindFlavorMatch(ctx context.Context, in *edgeproto.FlavorM
 
 	cl := edgeproto.Cloudlet{}
 	var spec *resspec.VMCreationSpec
-	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-
-		if !s.all.cloudletApi.store.STMGet(stm, &in.Key, &cl) {
-			return in.Key.NotFoundError()
-		}
-		cli := edgeproto.CloudletInfo{}
-		if !s.all.cloudletInfoApi.store.STMGet(stm, &in.Key, &cli) {
-			return in.Key.NotFoundError()
-		}
-		mexFlavor := edgeproto.Flavor{}
-		mexFlavor.Key.Name = in.FlavorName
-		if !s.all.flavorApi.store.STMGet(stm, &mexFlavor.Key, &mexFlavor) {
-			return in.Key.NotFoundError()
-		}
-		// convert flavor to node resources requirement
-		nr := mexFlavor.ToNodeResources()
-		var verr error
-		spec, verr = s.all.resTagTableApi.GetVMSpec(ctx, stm, nr, "", cl, cli)
-		if verr != nil {
-			return verr
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	if !s.all.cloudletApi.cache.Get(&in.Key, &cl) {
+		return nil, in.Key.NotFoundError()
+	}
+	cli := edgeproto.CloudletInfo{}
+	if !s.all.cloudletInfoApi.cache.Get(&in.Key, &cli) {
+		return nil, in.Key.NotFoundError()
+	}
+	mexFlavor := edgeproto.Flavor{}
+	mexFlavor.Key.Name = in.FlavorName
+	if !s.all.flavorApi.cache.Get(&mexFlavor.Key, &mexFlavor) {
+		return nil, in.Key.NotFoundError()
+	}
+	// convert flavor to node resources requirement
+	nr := mexFlavor.ToNodeResources()
+	var verr error
+	stm := edgeproto.NewOptionalSTM(nil)
+	spec, verr = s.all.resTagTableApi.GetVMSpec(ctx, stm, nr, "", cl, cli)
+	if verr != nil {
+		return nil, verr
 	}
 	in.FlavorName = spec.FlavorName
 	in.AvailabilityZone = spec.AvailabilityZone
@@ -2301,7 +2296,7 @@ func (s *CloudletApi) WaitForTrustPolicyState(ctx context.Context, key *edgeprot
 }
 
 // sumCloudletResources adds up resources from CloudletResources
-func (s *CloudletApi) sumCloudletResources(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletResources *CloudletResources) resspec.ResValMap {
+func (s *CloudletApi) sumCloudletResources(ctx context.Context, stm *edgeproto.OptionalSTM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletResources *CloudletResources) resspec.ResValMap {
 	resVals := resspec.ResValMap{}
 	// add in non-flavor resource values
 	resVals.AddAllMult(cloudletResources.nonFlavorVals, 1)
@@ -2336,7 +2331,7 @@ func (s *CloudletApi) sumCloudletResources(ctx context.Context, stm concurrency.
 
 // totalCloudletResources sums up the resources and adds in any
 // additional cluster resources. This requires a network call.
-func (s *CloudletApi) totalCloudletResources(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletResources *CloudletResources, infraResMap map[string]edgeproto.InfraResource) (resspec.ResValMap, error) {
+func (s *CloudletApi) totalCloudletResources(ctx context.Context, stm *edgeproto.OptionalSTM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletResources *CloudletResources) (resspec.ResValMap, error) {
 	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 	if err != nil {
 		return nil, err
@@ -2354,9 +2349,8 @@ func (s *CloudletApi) totalCloudletResources(ctx context.Context, stm concurrenc
 	}
 	api := edgeproto.NewCloudletPlatformAPIClient(conn)
 	req := &edgeproto.ClusterResourcesReq{
-		CloudletKey:    &cloudlet.Key,
-		VmResources:    cloudletResources.vms,
-		InfraResources: infraResMap,
+		CloudletKey: &cloudlet.Key,
+		VmResources: cloudletResources.vms,
 	}
 	res, err := api.GetClusterAdditionalResources(reqCtx, req)
 	if err != nil {
@@ -2406,7 +2400,12 @@ func convertToInfraRes(ctx context.Context, cloudlet *edgeproto.Cloudlet, resVal
 }
 
 // Get actual resource info used by the cloudlet
-func (s *CloudletApi) GetResourceUsage(ctx context.Context, stm concurrency.STM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, infraResInfo []edgeproto.InfraResource, usedResources *CloudletResources, infraUsage bool) ([]edgeproto.InfraResource, error) {
+func (s *CloudletResCalc) convertResourceUsage(ctx context.Context, usedResources *CloudletResources, infraUsage bool) ([]edgeproto.InfraResource, error) {
+	stm := s.stm
+	cloudlet := s.deps.cloudlet
+	cloudletInfo := s.deps.cloudletInfo
+
+	infraResInfo := cloudletInfo.ResourcesSnapshot.Info
 	resQuotasInfo := make(map[string]edgeproto.InfraResource)
 	for _, resQuota := range cloudlet.ResourceQuotas {
 		resQuotasInfo[resQuota.Name] = edgeproto.InfraResource{
@@ -2437,7 +2436,7 @@ func (s *CloudletApi) GetResourceUsage(ctx context.Context, stm concurrency.STM,
 		infraResInfoMap[resInfo.Name] = resInfo
 	}
 	if !infraUsage {
-		usedVals, err := s.totalCloudletResources(ctx, stm, cloudlet, cloudletInfo, usedResources, infraResInfoMap)
+		usedVals, err := s.all.cloudletApi.totalCloudletResources(ctx, stm, cloudlet, cloudletInfo, usedResources)
 		if err != nil {
 			return nil, err
 		}
@@ -2467,32 +2466,24 @@ func (s *CloudletApi) GetResourceUsage(ctx context.Context, stm concurrency.STM,
 func (s *CloudletApi) GetCloudletResourceUsage(ctx context.Context, usage *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "GetCloudletResourceUsage", "key", usage.Key)
 	cloudletResUsage := edgeproto.CloudletResourceUsage{}
-	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
-		cloudlet := edgeproto.Cloudlet{}
-		if !s.store.STMGet(stm, &usage.Key, &cloudlet) {
-			return usage.Key.NotFoundError()
-		}
-		cloudletInfo := edgeproto.CloudletInfo{}
-		if !s.all.cloudletInfoApi.store.STMGet(stm, &usage.Key, &cloudletInfo) {
-			return fmt.Errorf("No resource information found for Cloudlet %s", usage.Key)
-		}
-		cloudletRefs := edgeproto.CloudletRefs{}
-		s.all.cloudletRefsApi.store.STMGet(stm, &usage.Key, &cloudletRefs)
-		usedResources, err := s.all.clusterInstApi.getCloudletUsedResources(ctx, stm, &cloudlet, &cloudletInfo, &cloudletRefs)
-		if err != nil {
-			return err
-		}
-		cloudletResUsage.Key = usage.Key
-		cloudletResUsage.InfraUsage = usage.InfraUsage
-		cloudletResUsage.Info = cloudletInfo.ResourcesSnapshot.Info
-		resInfo := []edgeproto.InfraResource{}
-		resInfo, err = s.GetResourceUsage(ctx, stm, &cloudlet, &cloudletInfo, cloudletInfo.ResourcesSnapshot.Info, usedResources, usage.InfraUsage)
-		if err != nil {
-			return err
-		}
-		cloudletResUsage.Info = resInfo
-		return nil
-	})
+	stm := edgeproto.NewOptionalSTM(nil)
+	resCalc := NewCloudletResCalc(s.all, stm, &usage.Key)
+	if err := resCalc.InitDeps(ctx); err != nil {
+		return &cloudletResUsage, err
+	}
+	usedResources, err := resCalc.getCloudletUsedResources(ctx)
+	if err != nil {
+		return &cloudletResUsage, err
+	}
+	cloudletResUsage.Key = usage.Key
+	cloudletResUsage.InfraUsage = usage.InfraUsage
+	cloudletResUsage.Info = resCalc.deps.cloudletInfo.ResourcesSnapshot.Info
+	resInfo := []edgeproto.InfraResource{}
+	resInfo, err = resCalc.convertResourceUsage(ctx, usedResources, usage.InfraUsage)
+	if err != nil {
+		return &cloudletResUsage, err
+	}
+	cloudletResUsage.Info = resInfo
 	return &cloudletResUsage, err
 }
 

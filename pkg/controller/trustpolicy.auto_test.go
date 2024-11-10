@@ -42,8 +42,14 @@ func wrapTrustPolicyTrackerStore(api *TrustPolicyApi) (*TrustPolicyStoreTracker,
 		TrustPolicyStore: api.store,
 	}
 	api.store = tracker
+	if api.cache.Store != nil {
+		api.cache.Store = tracker
+	}
 	unwrap := func() {
 		api.store = orig
+		if api.cache.Store != nil {
+			api.cache.Store = orig
+		}
 	}
 	return tracker, unwrap
 }
