@@ -98,7 +98,7 @@ func GetContainerName(appInst *edgeproto.AppInst) string {
 
 // Helper function that generates the ports string for docker command
 // Example : "-p 80:80/http -p 7777:7777/tcp"
-func GetDockerPortString(ports []dme.AppPort, containerPortType string, proxyMatch, listenIP, listenIPV6 string) []string {
+func GetDockerPortString(ports []edgeproto.InstPort, containerPortType string, proxyMatch, listenIP, listenIPV6 string) []string {
 	var cmdArgs []string
 	// ensure envoy and nginx docker commands are only opening the udp ports they are managing, not all of the apps udp ports
 	for _, p := range ports {

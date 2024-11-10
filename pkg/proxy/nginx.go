@@ -78,7 +78,7 @@ func init() {
 	nginxConfT = template.Must(template.New("conf").Parse(nginxConf))
 }
 
-func CheckProtocols(name string, ports []dme.AppPort) (bool, bool) {
+func CheckProtocols(name string, ports []edgeproto.InstPort) (bool, bool) {
 	needEnvoy := false
 	needNginx := false
 	for _, p := range ports {

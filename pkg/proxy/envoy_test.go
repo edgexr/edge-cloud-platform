@@ -84,7 +84,7 @@ func TestGenerateEnvoyYaml(t *testing.T) {
 		DestIPV6:   "fc00:101:ecec:1::65",
 	}
 	appInst := &edgeproto.AppInst{
-		MappedPorts: []dme.AppPort{{
+		MappedPorts: []edgeproto.InstPort{{
 			Proto:        dme.LProto_L_PROTO_TCP,
 			InternalPort: 5677,
 			PublicPort:   5677,

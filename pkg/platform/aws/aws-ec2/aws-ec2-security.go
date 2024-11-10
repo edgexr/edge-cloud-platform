@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strings"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -78,7 +77,7 @@ func (a *AwsEc2Platform) RevokeSecurityGroupRule(ctx context.Context, groupId, p
 }
 
 // addOrDeleteSecurityRule is a utility function to share code within adding and removing a rule
-func (a *AwsEc2Platform) addOrDeleteSecurityRule(ctx context.Context, grpName, allowedCidr string, ports []dme.AppPort, action SecurityGroupAction) error {
+func (a *AwsEc2Platform) addOrDeleteSecurityRule(ctx context.Context, grpName, allowedCidr string, ports []edgeproto.InstPort, action SecurityGroupAction) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "addOrDeleteSecurityRule", "grpName", grpName, "allowedCidr", allowedCidr, "ports", ports, "action", action)
 	vpc, err := a.GetVPC(ctx, a.GetVpcName())
 	if err != nil {

@@ -28,12 +28,14 @@ var minUDPPktSize int64 = 1500
 var maxUDPPktSize int64 = 50000
 
 type PortSpec struct {
-	Proto      string
-	Port       string
-	EndPort    string // mfw XXX ? why two type and parse rtns for AppPort? (3 actually kube.go is another)
-	Tls        bool
-	Nginx      bool
-	MaxPktSize int64
+	Proto           string
+	Port            string
+	EndPort         string // mfw XXX ? why two type and parse rtns for AppPort? (3 actually kube.go is another)
+	Tls             bool
+	Nginx           bool
+	MaxPktSize      int64
+	InternalVisOnly bool
+	ID              string
 }
 
 func ParsePorts(accessPorts string) ([]PortSpec, error) {
@@ -57,7 +59,7 @@ func ParsePorts(accessPorts string) ([]PortSpec, error) {
 			if kv == "" {
 				return nil, fmt.Errorf("invalid AccessPorts annotation %s for port %s, expected format is either key or key=val", kv, pp[1])
 			}
-			keyval := strings.Split(kv, "=")
+			keyval := strings.SplitN(kv, "=", 2)
 			if len(keyval) == 1 {
 				// boolean annotation
 				annotations[kv] = "true"
@@ -142,6 +144,10 @@ func ParsePorts(accessPorts string) ([]PortSpec, error) {
 					return nil, fmt.Errorf("Invalid maxpktsize, should be between range %v to %v (exclusive)", minUDPPktSize, maxUDPPktSize)
 				}
 				portSpec.MaxPktSize = maxPktSize
+			case "intvis":
+				portSpec.InternalVisOnly = true
+			case "id":
+				portSpec.ID = val
 			default:
 				return nil, fmt.Errorf("unrecognized annotation %s for port %s", key+"="+val, pp[1])
 			}

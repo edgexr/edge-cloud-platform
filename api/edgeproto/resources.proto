@@ -50,7 +50,7 @@ message KubernetesResources {
   // GPU Node Pool resources
   NodePoolResources gpu_pool = 2;
   // Minimum Kubernetes version
-  string min_k8s_version = 4;
+  string min_kubernetes_version = 4;
 }
 
 // NodePoolResources defines the total resource and topology requirements for a Kubernetes node pool.

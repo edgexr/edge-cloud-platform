@@ -199,7 +199,7 @@ func buildPortsMapFromString(portsString string) (map[string]struct{}, error) {
 	return portMap, nil
 }
 
-func getBackendIpToUse(ctx context.Context, appInst *edgeproto.AppInst, port *dme.AppPort, defaultBackendIP string) (string, error) {
+func getBackendIpToUse(ctx context.Context, appInst *edgeproto.AppInst, port *edgeproto.InstPort, defaultBackendIP string) (string, error) {
 	serviceBackendIP := defaultBackendIP
 	if appInst.InternalPortToLbIp != nil {
 		pstring, err := edgeproto.AppInternalPortToString(port)

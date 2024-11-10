@@ -16,6 +16,7 @@ package deploygen
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"strings"
 	"text/template"
@@ -41,6 +42,7 @@ type kubeBasicGen struct {
 }
 
 type kubePort struct {
+	Name      string
 	Proto     string
 	KubeProto string
 	Port      string
@@ -77,6 +79,13 @@ func setKubePorts(ports []util.PortSpec) []kubePort {
 	kports := []kubePort{}
 	var kp kubePort
 	for _, port := range ports {
+		var tls, nginx string
+		if port.Tls {
+			tls = "tls"
+		}
+		if port.Nginx {
+			nginx = "nginx"
+		}
 		endPort, _ := strconv.ParseInt(port.EndPort, 10, 32)
 		if endPort != 0 { // PortSpec port-range short hand notation,
 			// exhaustively enumerate each as a kp
@@ -88,6 +97,7 @@ func setKubePorts(ports []util.PortSpec) []kubePort {
 					Proto: strings.ToLower(port.Proto),
 					Port:  p,
 				}
+				kp.Name = fmt.Sprintf("%s%s%s%s", kp.Proto, kp.Port, tls, nginx)
 				switch port.Proto {
 				case "tcp":
 					kp.KubeProto = "TCP"
@@ -103,6 +113,11 @@ func setKubePorts(ports []util.PortSpec) []kubePort {
 			kp = kubePort{
 				Proto: strings.ToLower(port.Proto),
 				Port:  port.Port,
+			}
+			if port.ID != "" {
+				kp.Name = port.ID
+			} else {
+				kp.Name = fmt.Sprintf("%s%s%s%s", kp.Proto, kp.Port, tls, nginx)
 			}
 			switch port.Proto {
 			case "tcp":
@@ -165,7 +180,7 @@ spec:
   type: LoadBalancer
   ports:
 {{- range .Ports}}
-  - name: {{.Proto}}{{.Port}}{{if .Tls}}tls{{end}}{{if .Nginx}}nginx{{end}}
+  - name: {{.Name}}
     protocol: {{.KubeProto}}
     port: {{.Port}}
     targetPort: {{.Port}}

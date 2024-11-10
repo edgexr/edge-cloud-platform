@@ -12,12 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// git clone https://github.com/edgexr/oapi-codegen
-// (cd oapi-codegen/cmd/oapi-codegen && go install .)
+package controller
 
-//go:generate oapi-codegen --config=config.yaml openapi/Edge-Application-Management.yaml
+import (
+	"fmt"
+	"testing"
 
-// For reference, if using official oapi-codegen:
-//**go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml openapi/Edge-Application-Management.yaml
+	"github.com/edgexr/edge-cloud-platform/test/nbitest"
+	"github.com/test-go/testify/require"
+)
 
-package nbi
+func TestConvertApp(t *testing.T) {
+	pairs := nbitest.AppData()
+
+	for idx, pair := range pairs {
+		desc := fmt.Sprintf("pair[%d]", idx)
+		// convert NBI to App
+		outProto, err := ProtoApp(pair.NBI)
+		require.Nil(t, err, desc)
+		require.Equal(t, pair.Edgeproto, outProto, desc)
+
+		outNBI, err := NBIApp(pair.Edgeproto)
+		require.Nil(t, err, desc)
+		require.Equal(t, pair.NBI, outNBI, desc)
+	}
+}

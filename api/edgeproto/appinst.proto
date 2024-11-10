@@ -159,7 +159,7 @@ message AppInst {
   // For instances accessible via a shared load balancer, defines the external
   // ports on the shared load balancer that map to the internal ports
   // External ports should be appended to the Uri for L4 access.
-  repeated distributed_match_engine.AppPort mapped_ports = 9 [(gogoproto.nullable) = false, (protogen.backend) = true];
+  repeated InstPort mapped_ports = 9 [(gogoproto.nullable) = false, (protogen.backend) = true];
   // Flavor defining resource requirements
   FlavorKey flavor = 12 [(gogoproto.nullable) = false, (protogen.backend) = true, (protogen.refers_to) = "Flavor"];
   // (_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources.InfraNodeFlavor.
@@ -257,6 +257,34 @@ message AppInstRuntime {
   repeated string container_ids = 1 [(protogen.backend) = true];
 }
 
+// InstPort port information
+//
+// InstPort is a superset of dme.AppPort
+message InstPort {
+  // TCP (L4) or UDP (L4) protocol
+  distributed_match_engine.LProto proto = 1;
+  // Container port
+  int32 internal_port = 2;
+  // Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)
+  int32 public_port = 3;
+  // path_prefix was removed since we dont need it after removed http
+  reserved 4;
+  // FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.
+  string fqdn_prefix = 5;
+  // A non-zero end port indicates a port range from internal port to end port, inclusive.
+  int32 end_port = 6;
+  // TLS termination for this port
+  bool tls = 7;
+  // Use nginx proxy for this port if you really need a transparent proxy (udp only)
+  bool nginx = 8;
+  // Maximum datagram size (udp only)
+  int64 max_pkt_size = 9;
+  // Internal visibility only
+  bool internal_vis_only = 10;
+  // Port ID for NBI compatibility
+  string id = 11;
+}
+
 service AppInstApi {
   // Create Application Instance. Creates an instance of an App on a Cloudlet where it is
   // defined by an App plus a ClusterInst key. Many of the fields here are inherited from
@@ -345,7 +373,7 @@ message AppInstInfo {
   // Federation AppInst Key, if any
   FedAppInstKey fed_key = 10 [(protogen.backend) = true, (gogoproto.nullable) = false];
   // Federation Port info if any
-  repeated distributed_match_engine.AppPort fed_ports = 11 [(gogoproto.nullable) = false];
+  repeated InstPort fed_ports = 11 [(gogoproto.nullable) = false];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cache) = true;
@@ -455,7 +483,7 @@ message FedAppInstEvent {
   // Event message or error message
   string message = 3;
   // Port info if any
-  repeated distributed_match_engine.AppPort ports = 4 [(gogoproto.nullable) = false];
+  repeated InstPort ports = 4 [(gogoproto.nullable) = false];
   // Unique Id, matches AppInst.UniqueId
   string unique_id = 5;
   option (protogen.notify_message) = true;

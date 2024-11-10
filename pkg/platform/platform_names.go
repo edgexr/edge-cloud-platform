@@ -32,6 +32,7 @@ const (
 	PlatformTypeFakeInfra         = "fakeinfra"
 	PlatformTypeFakeEdgebox       = "fakeedgebox"
 	PlatformTypeFakeSingleCluster = "fakesinglecluster"
+	PlatformTypeFakePublicCloud   = "fakepubliccloud"
 	PlatformTypeFakeVMPool        = "fakevmpool"
 	PlatformTypeFederation        = "federation"
 	PlatformTypeGCP               = "gcp"

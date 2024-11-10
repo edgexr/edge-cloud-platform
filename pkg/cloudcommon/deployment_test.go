@@ -261,7 +261,7 @@ func TestDeploymentManifest(t *testing.T) {
 	var err error
 
 	// ensure that empty protocol in svc manifest defaults to TCP
-	ports := []dme.AppPort{
+	ports := []edgeproto.InstPort{
 		{
 			Proto:        dme.LProto_L_PROTO_TCP,
 			InternalPort: int32(2222),
@@ -275,7 +275,7 @@ func TestDeploymentManifest(t *testing.T) {
 	require.Nil(t, err, "valid k8s svc manifest")
 
 	// clusterIP should not be considered while validating access ports
-	ports = append(ports, dme.AppPort{
+	ports = append(ports, edgeproto.InstPort{
 		Proto:        dme.LProto_L_PROTO_TCP,
 		InternalPort: int32(1111),
 	})

@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package nbiconvert provides conversion functions between
-// NBI structs and edgeproto structs
-package nbiconvert
+package controller
 
 import (
 	"strings"
@@ -32,7 +30,7 @@ func NBIZone(in *edgeproto.Zone, region string) *nbi.EdgeCloudZone {
 	return &zone
 }
 
-func ZoneSort(a, b nbi.EdgeCloudZone) int {
+func NBIZoneSort(a, b nbi.EdgeCloudZone) int {
 	akey := a.EdgeCloudProvider + a.EdgeCloudZoneName
 	bkey := b.EdgeCloudProvider + b.EdgeCloudZoneName
 	return strings.Compare(akey, bkey)

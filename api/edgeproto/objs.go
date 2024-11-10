@@ -1016,7 +1016,7 @@ func L4ProtoStr(proto dme.LProto) (string, error) {
 	return "", fmt.Errorf("Invalid proto %d", proto)
 }
 
-func AppPortLookupKey(ap *dme.AppPort) string {
+func AppPortLookupKey(ap *InstPort) string {
 	protoStr, _ := LProtoStr(ap.Proto)
 	return fmt.Sprintf("%s%d", protoStr, ap.InternalPort)
 }
@@ -1026,7 +1026,7 @@ func ProtoPortToString(proto string, port int32) string {
 	return fmt.Sprintf("%s:%d", strings.ToLower(proto), port)
 }
 
-func AppInternalPortToString(port *dme.AppPort) (string, error) {
+func AppInternalPortToString(port *InstPort) (string, error) {
 	lproto, err := LProtoStr(port.Proto)
 	if err != nil {
 		return "", err
@@ -1034,8 +1034,8 @@ func AppInternalPortToString(port *dme.AppPort) (string, error) {
 	return ProtoPortToString(lproto, port.InternalPort), nil
 }
 
-func ParseAppPorts(ports string) ([]dme.AppPort, error) {
-	appports := make([]dme.AppPort, 0)
+func ParseAppPorts(ports string) ([]InstPort, error) {
+	appports := make([]InstPort, 0)
 	if ports == "" {
 		return appports, nil
 	}
@@ -1076,13 +1076,15 @@ func ParseAppPorts(ports string) ([]dme.AppPort, error) {
 			}
 		}
 
-		p := dme.AppPort{
-			Proto:        proto,
-			InternalPort: int32(baseport),
-			EndPort:      int32(endport),
-			Tls:          portSpec.Tls,
-			Nginx:        portSpec.Nginx,
-			MaxPktSize:   portSpec.MaxPktSize,
+		p := InstPort{
+			Proto:           proto,
+			InternalPort:    int32(baseport),
+			EndPort:         int32(endport),
+			Tls:             portSpec.Tls,
+			Nginx:           portSpec.Nginx,
+			MaxPktSize:      portSpec.MaxPktSize,
+			InternalVisOnly: portSpec.InternalVisOnly,
+			Id:              portSpec.ID,
 		}
 
 		appports = append(appports, p)
@@ -1090,7 +1092,7 @@ func ParseAppPorts(ports string) ([]dme.AppPort, error) {
 	return appports, nil
 }
 
-func DoPortsOverlap(a dme.AppPort, b dme.AppPort) bool {
+func DoPortsOverlap(a, b InstPort) bool {
 	lastPortA := a.EndPort
 	if lastPortA == 0 {
 		lastPortA = a.InternalPort

@@ -82,8 +82,8 @@ var (
 		State:       edgeproto.TrackedState_READY,
 		HealthCheck: dme.HealthCheck_HEALTH_CHECK_OK,
 		Liveness:    edgeproto.Liveness_LIVENESS_AUTOPROV,
-		MappedPorts: []dme.AppPort{
-			dme.AppPort{
+		MappedPorts: []edgeproto.InstPort{
+			{
 				Proto:      dme.LProto_L_PROTO_TCP,
 				PublicPort: 1234,
 			},

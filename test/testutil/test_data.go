@@ -179,6 +179,7 @@ func AppData() []edgeproto.App {
 				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
 				TotalMemory: 1024,
 			},
+			MinKubernetesVersion: "1.28.999",
 		},
 	}, { // edgeproto.App // 6
 		Key: edgeproto.AppKey{
@@ -712,6 +713,7 @@ func ClusterInstData() []edgeproto.ClusterInst {
 				Disk:  1,
 			},
 		}},
+		KubernetesVersion: "1.29",
 	}, { // edgeproto.ClusterInst // 3
 		Key: edgeproto.ClusterKey{
 			Name:         "Ever.Ai",
@@ -842,6 +844,7 @@ func ClusterInstAutoData() []edgeproto.ClusterInst {
 				Disk:  1,
 			},
 		}},
+		KubernetesVersion: "1.30",
 	}, { // edgeproto.ClusterInst
 		// from AppInstData[4] -> AppData[2]
 		Key: edgeproto.ClusterKey{
@@ -961,6 +964,7 @@ func AppInstData() []edgeproto.AppInst {
 					MinNodeDisk:   1,
 				},
 			},
+			MinKubernetesVersion: "1.30",
 		},
 	}, { // edgeproto.AppInst // 4
 		Key: edgeproto.AppInstKey{
@@ -2538,6 +2542,7 @@ func CreatedAppInstData() []edgeproto.AppInst {
 		case 5:
 			appInst.KubernetesResources = appData[5].KubernetesResources
 			appInst.KubernetesResources.Validate()
+			appInst.KubernetesResources.MinKubernetesVersion = "1.28.999"
 		case 6:
 			appInst.ClusterKey = clusterInstAutoData[2].Key
 		case 8:

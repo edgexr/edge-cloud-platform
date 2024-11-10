@@ -161,3 +161,20 @@ func (s *ZoneApi) ShowZone(in *edgeproto.Zone, cb edgeproto.ZoneApi_ShowZoneServ
 	})
 	return err
 }
+
+// getZoneByID finds the Zone by ID. If not found returns nil Zone instead
+// of an error.
+func (s *ZoneApi) getZoneByID(ctx context.Context, id string) (*edgeproto.Zone, error) {
+	filter := &edgeproto.Zone{
+		ObjId: id,
+	}
+	var zone *edgeproto.Zone
+	err := s.cache.Show(filter, func(obj *edgeproto.Zone) error {
+		zone = obj
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return zone, nil
+}

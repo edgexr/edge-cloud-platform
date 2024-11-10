@@ -632,6 +632,7 @@ var ClusterInstOptionalArgs = []string{
 	"nodepools:#.noderesources.externalvolumesize",
 	"nodepools:#.scalable",
 	"infraannotations",
+	"kubernetesversion",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=key.name",
@@ -718,6 +719,7 @@ var ClusterInstComments = map[string]string{
 	"nodepools:#.noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
 	"nodepools:#.scalable":                         "Scalable indicates the system may scale the number of nodes",
 	"infraannotations":                             "Annotations added by the implementing infrastructure, specify infraannotations:empty=true to clear",
+	"kubernetesversion":                            "Kubernetes version of cluster if applicable",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"annotations":                         "StringToString",

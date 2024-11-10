@@ -18,4 +18,6 @@ generate:
   models: true
   strict-server: true
   client: true
+output-options:
+  gen-anonymous-objs: true
 output: nbi-generated.go

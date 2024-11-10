@@ -51,6 +51,9 @@ func AppHideTags(in *edgeproto.App) {
 	}
 	for i0 := 0; i0 < len(in.RequiredOutboundConnections); i0++ {
 	}
+	if _, found := tags["nocmp"]; found {
+		in.ObjId = ""
+	}
 }
 
 func DeploymentZoneRequestHideTags(in *edgeproto.DeploymentZoneRequest) {
@@ -76,6 +79,9 @@ func DeploymentZoneRequestHideTags(in *edgeproto.DeploymentZoneRequest) {
 		in.App.UpdatedAt = distributed_match_engine.Timestamp{}
 	}
 	for i1 := 0; i1 < len(in.App.RequiredOutboundConnections); i1++ {
+	}
+	if _, found := tags["nocmp"]; found {
+		in.App.ObjId = ""
 	}
 }
 
@@ -744,13 +750,15 @@ var AppOptionalArgs = []string{
 	"kubernetesresources.gpupool.topology.minnodedisk",
 	"kubernetesresources.gpupool.topology.minnodeoptres",
 	"kubernetesresources.gpupool.topology.minnumberofnodes",
-	"kubernetesresources.mink8sversion",
+	"kubernetesresources.minkubernetesversion",
 	"noderesources.vcpus",
 	"noderesources.ram",
 	"noderesources.disk",
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"objid",
+	"appannotations",
 }
 var AppAliasArgs = []string{
 	"apporg=key.organization",
@@ -765,7 +773,7 @@ var AppComments = map[string]string{
 	"appvers":                                "App version",
 	"imagepath":                              "URI of where image resides",
 	"imagetype":                              "Image type, one of Unknown, Docker, Qcow, Helm, Ovf, Ova",
-	"accessports":                            "Comma separated list of protocol:port pairs that the App listens on. Ex: tcp:80,udp:10002. Also supports additional configurations per port: (1) tls (tcp-only) - Enables TLS on specified port. Ex: tcp:443:tls. (2) nginx (udp-only) - Use NGINX LB instead of envoy for specified port. Ex: udp:10001:nginx. (3) maxpktsize (udp-only) - Configures maximum UDP datagram size allowed on port for both upstream/downstream traffic. Ex: udp:10001:maxpktsize=8000.",
+	"accessports":                            "Comma separated list of protocol:port pairs that the App listens on. Ex: tcp:80,udp:10002. Also supports additional configurations per port: (1) tls (tcp-only) - Enables TLS on specified port. Ex: tcp:443:tls. (2) nginx (udp-only) - Use NGINX LB instead of envoy for specified port. Ex: udp:10001:nginx. (3) maxpktsize (udp-only) - Configures maximum UDP datagram size allowed on port for both upstream/downstream traffic. Ex: udp:10001:maxpktsize=8000. (4) intvis (internal-visibility)- Port is not externally accessible. Ex: tcp:9000:intvis (5) id - Port ID. Ex: tcp:9000:id=p9000",
 	"defaultflavor":                          "Flavor name",
 	"authpublickey":                          "Public key used for authentication",
 	"command":                                "Command that the container runs to start service, separate multiple commands by a space",
@@ -832,16 +840,19 @@ var AppComments = map[string]string{
 	"kubernetesresources.gpupool.topology.minnodedisk":      "Minimum amount of root partition disk space in gigabytes per node",
 	"kubernetesresources.gpupool.topology.minnodeoptres":    "Minimum number of optional resources per node, specify kubernetesresources.gpupool.topology.minnodeoptres:empty=true to clear",
 	"kubernetesresources.gpupool.topology.minnumberofnodes": "Minimum number of nodes in pool, to satisfy HA/replication requirements",
-	"kubernetesresources.mink8sversion":                     "Minimum Kubernetes version",
+	"kubernetesresources.minkubernetesversion":              "Minimum Kubernetes version",
 	"noderesources.vcpus":                                   "Vcpus to be allocated to the VM, must be either 1 or an even number",
 	"noderesources.ram":                                     "Total RAM in megabytes to be allocated to the VM",
 	"noderesources.disk":                                    "Total disk space in gigabytes to be allocated to the VMs root partition",
 	"noderesources.optresmap":                               "Optional resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1, specify noderesources.optresmap:empty=true to clear",
 	"noderesources.infranodeflavor":                         "Infrastructure specific node flavor",
 	"noderesources.externalvolumesize":                      "Size of external volume to be attached to nodes. This is for the root partition",
+	"objid":                                                 "Universally unique object ID",
+	"appannotations":                                        "Internal Annotations, specify appannotations:empty=true to clear",
 }
 var AppSpecialArgs = map[string]string{
 	"alertpolicies":    "StringArray",
+	"appannotations":   "StringToString",
 	"autoprovpolicies": "StringArray",
 	"commandargs":      "StringArray",
 	"envvars":          "StringToString",
@@ -996,13 +1007,15 @@ var DeploymentZoneRequestOptionalArgs = []string{
 	"app.kubernetesresources.gpupool.topology.minnodedisk",
 	"app.kubernetesresources.gpupool.topology.minnodeoptres",
 	"app.kubernetesresources.gpupool.topology.minnumberofnodes",
-	"app.kubernetesresources.mink8sversion",
+	"app.kubernetesresources.minkubernetesversion",
 	"app.noderesources.vcpus",
 	"app.noderesources.ram",
 	"app.noderesources.disk",
 	"app.noderesources.optresmap",
 	"app.noderesources.infranodeflavor",
 	"app.noderesources.externalvolumesize",
+	"app.objid",
+	"app.appannotations",
 	"dryrundeploy",
 	"numnodes",
 }
@@ -1017,7 +1030,7 @@ var DeploymentZoneRequestComments = map[string]string{
 	"appvers":                 "App version",
 	"app.imagepath":           "URI of where image resides",
 	"app.imagetype":           "Image type, one of Unknown, Docker, Qcow, Helm, Ovf, Ova",
-	"app.accessports":         "Comma separated list of protocol:port pairs that the App listens on. Ex: tcp:80,udp:10002. Also supports additional configurations per port: (1) tls (tcp-only) - Enables TLS on specified port. Ex: tcp:443:tls. (2) nginx (udp-only) - Use NGINX LB instead of envoy for specified port. Ex: udp:10001:nginx. (3) maxpktsize (udp-only) - Configures maximum UDP datagram size allowed on port for both upstream/downstream traffic. Ex: udp:10001:maxpktsize=8000.",
+	"app.accessports":         "Comma separated list of protocol:port pairs that the App listens on. Ex: tcp:80,udp:10002. Also supports additional configurations per port: (1) tls (tcp-only) - Enables TLS on specified port. Ex: tcp:443:tls. (2) nginx (udp-only) - Use NGINX LB instead of envoy for specified port. Ex: udp:10001:nginx. (3) maxpktsize (udp-only) - Configures maximum UDP datagram size allowed on port for both upstream/downstream traffic. Ex: udp:10001:maxpktsize=8000. (4) intvis (internal-visibility)- Port is not externally accessible. Ex: tcp:9000:intvis (5) id - Port ID. Ex: tcp:9000:id=p9000",
 	"app.defaultflavor.name":  "Flavor name",
 	"app.authpublickey":       "Public key used for authentication",
 	"app.command":             "Command that the container runs to start service, separate multiple commands by a space",
@@ -1082,18 +1095,21 @@ var DeploymentZoneRequestComments = map[string]string{
 	"app.kubernetesresources.gpupool.topology.minnodedisk":      "Minimum amount of root partition disk space in gigabytes per node",
 	"app.kubernetesresources.gpupool.topology.minnodeoptres":    "Minimum number of optional resources per node",
 	"app.kubernetesresources.gpupool.topology.minnumberofnodes": "Minimum number of nodes in pool, to satisfy HA/replication requirements",
-	"app.kubernetesresources.mink8sversion":                     "Minimum Kubernetes version",
+	"app.kubernetesresources.minkubernetesversion":              "Minimum Kubernetes version",
 	"app.noderesources.vcpus":                                   "Vcpus to be allocated to the VM, must be either 1 or an even number",
 	"app.noderesources.ram":                                     "Total RAM in megabytes to be allocated to the VM",
 	"app.noderesources.disk":                                    "Total disk space in gigabytes to be allocated to the VMs root partition",
 	"app.noderesources.optresmap":                               "Optional resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1",
 	"app.noderesources.infranodeflavor":                         "Infrastructure specific node flavor",
 	"app.noderesources.externalvolumesize":                      "Size of external volume to be attached to nodes. This is for the root partition",
+	"app.objid":                                                 "Universally unique object ID",
+	"app.appannotations":                                        "Internal Annotations",
 	"dryrundeploy":                                              "Attempt to qualify zones resources for deployment",
 	"numnodes":                                                  "Optional number of worker VMs in dry run K8s Cluster, default = 2",
 }
 var DeploymentZoneRequestSpecialArgs = map[string]string{
 	"app.alertpolicies":    "StringArray",
+	"app.appannotations":   "StringToString",
 	"app.autoprovpolicies": "StringArray",
 	"app.commandargs":      "StringArray",
 	"app.envvars":          "StringToString",
@@ -1172,13 +1188,15 @@ var CreateAppOptionalArgs = []string{
 	"kubernetesresources.gpupool.topology.minnodedisk",
 	"kubernetesresources.gpupool.topology.minnodeoptres",
 	"kubernetesresources.gpupool.topology.minnumberofnodes",
-	"kubernetesresources.mink8sversion",
+	"kubernetesresources.minkubernetesversion",
 	"noderesources.vcpus",
 	"noderesources.ram",
 	"noderesources.disk",
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"objid",
+	"appannotations",
 }
 var DeleteAppRequiredArgs = []string{
 	"apporg",
@@ -1247,13 +1265,15 @@ var DeleteAppOptionalArgs = []string{
 	"kubernetesresources.gpupool.topology.minnodedisk",
 	"kubernetesresources.gpupool.topology.minnodeoptres",
 	"kubernetesresources.gpupool.topology.minnumberofnodes",
-	"kubernetesresources.mink8sversion",
+	"kubernetesresources.minkubernetesversion",
 	"noderesources.vcpus",
 	"noderesources.ram",
 	"noderesources.disk",
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"objid",
+	"appannotations",
 }
 var ShowAppRequiredArgs = []string{
 	"apporg",
@@ -1322,11 +1342,13 @@ var ShowAppOptionalArgs = []string{
 	"kubernetesresources.gpupool.topology.minnodedisk",
 	"kubernetesresources.gpupool.topology.minnodeoptres",
 	"kubernetesresources.gpupool.topology.minnumberofnodes",
-	"kubernetesresources.mink8sversion",
+	"kubernetesresources.minkubernetesversion",
 	"noderesources.vcpus",
 	"noderesources.ram",
 	"noderesources.disk",
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"objid",
+	"appannotations",
 }

@@ -69,7 +69,7 @@ spec:
 `)
 
 	// Network policy, with ports
-	appInst.MappedPorts = []dme.AppPort{
+	appInst.MappedPorts = []edgeproto.InstPort{
 		{
 			// tcp
 			Proto:        dme.LProto_L_PROTO_TCP,

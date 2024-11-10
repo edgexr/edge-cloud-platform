@@ -16,7 +16,6 @@ package nbictl
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/edgexr/edge-cloud-platform/api/nbi"
 )
@@ -33,14 +32,6 @@ func GetAll(ctx context.Context, client *nbi.ClientWithResponses) (*GetData, []A
 		data.Apps = apps
 	}
 
-	// get app instances
-	appinsts, apierr := GetAppInsts(ctx, client)
-	if apierr != nil {
-		apiErrors = append(apiErrors, *apierr)
-	} else {
-		data.AppInsts = appinsts
-	}
-
 	// get zones
 	zones, apierr := GetZones(ctx, client)
 	if apierr != nil {
@@ -49,47 +40,103 @@ func GetAll(ctx context.Context, client *nbi.ClientWithResponses) (*GetData, []A
 		data.Zones = zones
 	}
 
+	zonesByID := toZonesByID(zones)
+
+	// get clusters
+	clusters, nbiClusters, apierr := GetClusters(ctx, client, zonesByID)
+	if apierr != nil {
+		apiErrors = append(apiErrors, *apierr)
+	} else {
+		data.Clusters = clusters
+	}
+
+	appsByID := toAppsByID(apps)
+	clustersByID := toClustersByID(nbiClusters)
+
+	// get app instances
+	appinsts, apierr := GetAppInsts(ctx, client, appsByID, zonesByID, clustersByID)
+	if apierr != nil {
+		apiErrors = append(apiErrors, *apierr)
+	} else {
+		data.AppInsts = appinsts
+	}
+
 	return data, apiErrors
 }
 
 func GetApps(ctx context.Context, client *nbi.ClientWithResponses) ([]nbi.AppManifest, *APIErr) {
+	desc := "getapps"
 	resp, err := client.GetAppsWithResponse(ctx, &nbi.GetAppsParams{})
-	status := resp.StatusCode()
-	if err != nil || status != http.StatusOK {
-		return nil, &APIErr{
-			Desc:   "getapps",
-			Status: status,
-			Err:    err,
-		}
+	if err != nil {
+		return nil, wrapAPIErr(desc, 0, err)
 	}
-	return *resp.JSON200, nil
-}
-
-func GetAppInsts(ctx context.Context, client *nbi.ClientWithResponses) ([]nbi.AppInstanceInfo, *APIErr) {
-	resp, err := client.GetAppInstanceWithResponse(ctx, &nbi.GetAppInstanceParams{})
-	status := resp.StatusCode()
-	if err != nil || status != http.StatusOK {
-		return nil, &APIErr{
-			Desc:   "getappinstances",
-			Status: status,
-			Err:    err,
-		}
+	if resp.JSON200 != nil {
+		return *resp.JSON200, nil
 	}
-	return *resp.JSON200.AppInstaceInfo, nil
+	return nil, readAPIErr(desc, resp.StatusCode(), resp.Body)
 }
 
 func GetZones(ctx context.Context, client *nbi.ClientWithResponses) ([]nbi.EdgeCloudZone, *APIErr) {
+	desc := "getzones"
 	resp, err := client.GetEdgeCloudZonesWithResponse(ctx, &nbi.GetEdgeCloudZonesParams{})
-	status := 0
-	if resp != nil {
-		status = resp.StatusCode()
+	if err != nil {
+		return nil, wrapAPIErr(desc, 0, err)
 	}
-	if err != nil || status != http.StatusOK {
-		return nil, &APIErr{
-			Desc:   "getzones",
-			Status: status,
-			Err:    err,
+	if resp.JSON200 != nil {
+		return *resp.JSON200, nil
+	}
+	return nil, readAPIErr(desc, resp.StatusCode(), resp.Body)
+}
+
+func GetClusters(ctx context.Context, client *nbi.ClientWithResponses, zonesByID ZonesByID) ([]GetClusterInfo, []nbi.ClusterInfo, *APIErr) {
+	desc := "getclusters"
+	resp, err := client.GetClustersWithResponse(ctx, &nbi.GetClustersParams{})
+	if err != nil {
+		return nil, nil, wrapAPIErr(desc, 0, err)
+	}
+	clusters := []GetClusterInfo{}
+	if resp.JSON200 != nil {
+		for _, clust := range *resp.JSON200 {
+			ci := GetClusterInfo{}
+			ci.ClusterInfo = clust
+			if zone, ok := zonesByID[clust.EdgeCloudZoneId]; ok {
+				ci.EdgeCloudProvider = zone.EdgeCloudProvider
+				ci.EdgeCloudZoneName = zone.EdgeCloudZoneName
+			}
+			clusters = append(clusters, ci)
 		}
+		return clusters, *resp.JSON200, nil
 	}
-	return *resp.JSON200, nil
+	return nil, nil, readAPIErr(desc, resp.StatusCode(), resp.Body)
+}
+
+func GetAppInsts(ctx context.Context, client *nbi.ClientWithResponses, appsByID AppsByID, zonesByID ZonesByID, clustersByID ClustersByID) ([]GetAppInstanceInfo, *APIErr) {
+	desc := "getappinstances"
+	resp, err := client.GetAppInstanceWithResponse(ctx, &nbi.GetAppInstanceParams{})
+	if err != nil {
+		return nil, wrapAPIErr(desc, 0, err)
+	}
+	appInsts := []GetAppInstanceInfo{}
+	if resp.JSON200 != nil && resp.JSON200.AppInstanceInfo != nil {
+		for _, inst := range *resp.JSON200.AppInstanceInfo {
+			ai := GetAppInstanceInfo{}
+			ai.AppInstanceInfo = inst
+			if zone, ok := zonesByID[inst.EdgeCloudZoneId]; ok {
+				ai.EdgeCloudProvider = zone.EdgeCloudProvider
+				ai.EdgeCloudZoneName = zone.EdgeCloudZoneName
+			}
+			if app, ok := appsByID[inst.AppId]; ok {
+				ai.AppName = app.Name
+			}
+			if inst.KubernetesClusterRef != nil {
+				if cluster, ok := clustersByID[*inst.KubernetesClusterRef]; ok {
+					ai.ClusterName = cluster.Name
+					ai.ClusterProvider = cluster.Provider
+				}
+			}
+			appInsts = append(appInsts, ai)
+		}
+		return appInsts, nil
+	}
+	return nil, readAPIErr(desc, resp.StatusCode(), resp.Body)
 }

@@ -151,7 +151,7 @@ func TestOpenstackLive(t *testing.T) {
 		},
 		AppKey:      dockerApp.Key,
 		CloudletKey: cloudlet.Key,
-		MappedPorts: []distributed_match_engine.AppPort{{
+		MappedPorts: []edgeproto.InstPort{{
 			Proto:        distributed_match_engine.LProto_L_PROTO_TCP,
 			InternalPort: 5678,
 			PublicPort:   5678,
@@ -299,7 +299,7 @@ runcmd:
 			NodeResources: &edgeproto.NodeResources{
 				InfraNodeFlavor: flavor,
 			},
-			MappedPorts: []distributed_match_engine.AppPort{{
+			MappedPorts: []edgeproto.InstPort{{
 				Proto:        distributed_match_engine.LProto_L_PROTO_TCP,
 				InternalPort: 5677,
 				PublicPort:   5677,

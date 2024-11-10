@@ -939,19 +939,19 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	}, {
 		"VM App",
 		11, &zoneST, "", "", notDedicatedIp, "",
-		"no available edge sites in zone, some sites were skipped because platform only supports kubernetes",
+		"no available edge sites in zone singlek8sST, some sites were skipped because platform only supports kubernetes",
 	}, {
 		"VM App",
 		11, &zoneMT, "", "", notDedicatedIp, "",
-		"no available edge sites in zone, some sites were skipped because platform only supports kubernetes",
+		"no available edge sites in zone singlek8sMT, some sites were skipped because platform only supports kubernetes",
 	}, {
 		"Docker App",
 		17, &zoneST, "", "", notDedicatedIp, "",
-		"no available edge sites in zone, some sites were skipped because platform only supports kubernetes",
+		"no available edge sites in zone singlek8sST, some sites were skipped because platform only supports kubernetes",
 	}, {
 		"Docker App",
 		17, &zoneMT, "", "", notDedicatedIp, "",
-		"no available edge sites in zone, some sites were skipped because platform only supports kubernetes",
+		"no available edge sites in zone singlek8sMT, some sites were skipped because platform only supports kubernetes",
 	}}
 	for _, test := range appInstCreateTests {
 		ai := testutil.AppInstData()[test.aiIdx]

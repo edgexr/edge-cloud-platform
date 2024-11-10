@@ -12,12 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// git clone https://github.com/edgexr/oapi-codegen
-// (cd oapi-codegen/cmd/oapi-codegen && go install .)
-
-//go:generate oapi-codegen --config=config.yaml openapi/Edge-Application-Management.yaml
-
-// For reference, if using official oapi-codegen:
-//**go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml openapi/Edge-Application-Management.yaml
-
 package nbi
+
+import (
+	"fmt"
+	"net/http"
+)
+
+// Error allows the common ErrorInfo object to be treated as a
+// golang error.
+func (s *ErrorInfo) Error() string {
+	return fmt.Sprintf("status=%d, %s", s.Status, s.Message)
+}
+
+func NewErrorInfo(code int, message string) error {
+	return &ErrorInfo{
+		Status:  code,
+		Code:    http.StatusText(code),
+		Message: message,
+	}
+}

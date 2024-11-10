@@ -66,8 +66,10 @@ func (s *Platform) RunClusterCreateCommand(ctx context.Context, clusterName stri
 	regionName := s.getRegion()
 	vimAccount := s.getVIMAccount()
 	resourceGroup := s.getResourceGroup()
-	// TODO: make cluster version configurable
-	kubeVersion := "1.29"
+	kubeVersion := clusterInst.KubernetesVersion
+	if kubeVersion == "" {
+		kubeVersion = "1.29"
+	}
 
 	createCluster := osmapi.CreateClusterInfo{
 		Name:          &clusterName,
