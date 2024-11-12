@@ -1316,6 +1316,9 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 		}
 		api := edgeproto.NewCloudletPlatformAPIClient(conn)
 		cur.Fields = diffFields.Fields()
+		if crmUpdateReqd {
+			cur.Fields = append(cur.Fields, edgeproto.CloudletFieldState)
+		}
 		outStream, err := api.ApplyCloudlet(reqCtx, cur)
 		if err != nil {
 			return cloudcommon.GRPCErrorUnwrap(err)

@@ -114,3 +114,28 @@ func TestDeleteCluster(t *testing.T) {
 	err = s.RunClusterDeleteCommand(ctx, testClusterName, ci)
 	require.Nil(t, err)
 }
+
+func TestGatherCloudletInfo(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	s := Platform{}
+	s.properties = &infracommon.InfraProperties{
+		Properties: make(map[string]*edgeproto.PropertyInfo),
+	}
+	s.properties.SetProperties(Props)
+	s.properties.SetValue(OSM_FLAVORS, `[{"name":"Standard_D2s_v3","vcpus":2,"ram":8192,"disk":16}]`)
+
+	flavors := []*edgeproto.FlavorInfo{{
+		Name:  "Standard_D2s_v3",
+		Vcpus: 2,
+		Ram:   8192,
+		Disk:  16,
+	}}
+	info := &edgeproto.CloudletInfo{}
+	err := s.GatherCloudletInfo(ctx, info)
+	require.Nil(t, err)
+	require.Equal(t, flavors, info.Flavors)
+}

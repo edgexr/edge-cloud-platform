@@ -16,6 +16,7 @@ package fake
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -30,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/fakecommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
@@ -46,13 +48,14 @@ type Platform struct {
 	crmServiceOps  []process.CrmServiceOp
 	resources      fakecommon.Resources
 	platformConfig *platform.PlatformConfig
+	commonPf       infracommon.CommonPlatform
 	// settings used for unit testing
 	simulateAppCreateFailure     bool
 	simulateAppDeleteFailure     bool
 	simulateClusterCreateFailure bool
 	simulateClusterDeleteFailure bool
 	pause                        sync.WaitGroup
-	FlavorList                   []*edgeproto.FlavorInfo
+	CustomFlavorList             []*edgeproto.FlavorInfo
 }
 
 const (
@@ -85,12 +88,17 @@ var fakeProps = map[string]*edgeproto.PropertyInfo{
 		Name:        "Property 1",
 		Description: "First Property",
 		Secret:      true,
-		Mandatory:   true,
+		Mandatory:   false,
 	},
 	"PROP_2": &edgeproto.PropertyInfo{
 		Name:        "Property 2",
 		Description: "Second Property",
-		Mandatory:   true,
+		Mandatory:   false,
+	},
+	"FLAVORS": &edgeproto.PropertyInfo{
+		Name:        "Flavors JSON",
+		Description: "[]edgeproto.FlavorInfo as JSON string",
+		Mandatory:   false,
 	},
 }
 
@@ -173,6 +181,7 @@ func GetPlatformVMs() []edgeproto.VmInfo {
 func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "running in fake cloudlet mode", "envVars", platformConfig.EnvVars)
 	platformConfig.NodeMgr.Debug.AddDebugFunc("fakecmd", s.runDebug)
+	platformConfig.DeploymentTag = "test"
 
 	s.caches = caches
 	s.cloudletKey = platformConfig.CloudletKey
@@ -181,19 +190,23 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 	s.consoleServer = httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Console Content")
 	}))
-	if len(s.FlavorList) == 0 {
-		s.FlavorList = DefaultFlavorList
+	if err := s.commonPf.InitInfraCommon(ctx, platformConfig, fakeProps); err != nil {
+		return err
 	}
-	rootLbFlavor := s.FlavorList[1]
+	flavors, err := s.getInfraFlavors()
+	if err != nil {
+		return err
+	}
+	rootLbFlavor := flavors[1]
 	s.resources.Init()
-	s.resources.SetCloudletFlavors(s.FlavorList, rootLbFlavor.Name)
+	s.resources.SetCloudletFlavors(flavors, rootLbFlavor.Name)
 	// Update resource info for platformVM and RootLBVM
 	for _, vm := range GetPlatformVMs() {
 		s.resources.AddPlatformVM(vm)
 	}
 	s.resources.UpdateExternalIP(fakecommon.ResourceAdd)
 
-	err := s.UpdateResourcesMax(platformConfig.EnvVars)
+	err = s.UpdateResourcesMax(platformConfig.EnvVars)
 	if err != nil {
 		return err
 	}
@@ -233,11 +246,33 @@ func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloud
 	info.OsMaxRam = ramMax
 	info.OsMaxVcores = vcpusMax
 	info.OsMaxVolGb = diskMax
-	if len(s.FlavorList) == 0 {
-		s.FlavorList = DefaultFlavorList
+	log.SpanLog(ctx, log.DebugLevelApi, "fake gather cloudlet info")
+	flavors, err := s.getInfraFlavors()
+	if err != nil {
+		return err
 	}
-	info.Flavors = s.FlavorList
+	info.Flavors = flavors
+	// in case flavors changed, update resources
+	rootLbFlavor := flavors[1]
+	s.resources.SetCloudletFlavors(flavors, rootLbFlavor.Name)
 	return nil
+}
+
+// getInfraFlavors emulates querying underlying infrastructure API for flavors
+func (s *Platform) getInfraFlavors() ([]*edgeproto.FlavorInfo, error) {
+	flavorsJSON, ok := s.commonPf.Properties.GetValue("FLAVORS")
+	if ok && flavorsJSON != "" {
+		flavors := []*edgeproto.FlavorInfo{}
+		err := json.Unmarshal([]byte(flavorsJSON), &flavors)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal FLAVORS env var: %s, %s", flavorsJSON, err)
+		}
+		return flavors, nil
+	}
+	if s.CustomFlavorList != nil {
+		return s.CustomFlavorList, nil
+	}
+	return DefaultFlavorList, nil
 }
 
 func (s *Platform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
@@ -585,10 +620,11 @@ func (s *Platform) GetVersionProperties(ctx context.Context) map[string]string {
 }
 
 func (s *Platform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error) {
-	if len(s.FlavorList) == 0 {
-		s.FlavorList = DefaultFlavorList
+	flavors, err := s.getInfraFlavors()
+	if err != nil {
+		return nil, err
 	}
-	rootLbFlavor := s.FlavorList[1]
+	rootLbFlavor := flavors[1]
 	return &edgeproto.Flavor{
 		Key: edgeproto.FlavorKey{
 			Name: rootLbFlavor.Name,
