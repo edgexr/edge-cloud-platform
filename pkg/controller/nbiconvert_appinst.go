@@ -39,8 +39,7 @@ func (s *NBIAPI) NBIAppInst(in *edgeproto.AppInst) (*nbi.AppInstanceInfo, error)
 	}
 	endpoints := []nbi.AppInstanceInfo_ComponentEndpointInfo{}
 	for _, port := range in.MappedPorts {
-		// XXX: does FqdnPrefix append or prepend?
-		fqdn := in.Uri + port.FqdnPrefix
+		fqdn := port.FqdnPrefix + in.Uri
 		endpoint := nbi.AppInstanceInfo_ComponentEndpointInfo{
 			InterfaceId: port.Id,
 			AccessPoints: nbi.AccessEndpoint{

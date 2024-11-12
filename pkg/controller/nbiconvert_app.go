@@ -146,7 +146,6 @@ func ProtoApp(in *nbi.AppManifest) (*edgeproto.App, error) {
 	default:
 		return nil, fmt.Errorf("unhandled NBI App required resources type %T", rr)
 	}
-
 	return &app, nil
 }
 

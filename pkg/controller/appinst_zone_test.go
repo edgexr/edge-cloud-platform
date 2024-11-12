@@ -230,9 +230,6 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 	verifyCloudlets(pclos, 3, 1, 4, 2, 0)
 	pclus, err = apis.appInstApi.getPotentialClusters(ctx, cctx, ai, app, pclos)
 	require.Nil(t, err)
-	for _, pc := range pclus {
-		fmt.Println(*pc)
-	}
 	require.Equal(t, 3, len(pclus))
 	require.Equal(t, *singleMT4Key, pclus[0].existingCluster)
 	require.Equal(t, *defaultMT0Key, pclus[1].existingCluster)
@@ -248,9 +245,6 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 	verifyCloudlets(pclos, 3, 1, 4, 2, 0)
 	pclus, err = apis.appInstApi.getPotentialClusters(ctx, cctx, ai, app, pclos)
 	require.Nil(t, err)
-	for _, pc := range pclus {
-		fmt.Println(*pc)
-	}
 	require.Equal(t, 2, len(pclus))
 	require.Equal(t, *singleMT4Key, pclus[0].existingCluster)
 	require.Equal(t, *defaultMT0Key, pclus[1].existingCluster)
