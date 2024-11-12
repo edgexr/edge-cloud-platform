@@ -39,7 +39,8 @@ type CloudletResources struct {
 
 func NewCloudletResources() *CloudletResources {
 	return &CloudletResources{
-		flavors: make(map[string]int),
+		nonFlavorVals: resspec.ResValMap{},
+		flavors:       make(map[string]int),
 	}
 }
 
