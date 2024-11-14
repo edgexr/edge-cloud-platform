@@ -41,11 +41,16 @@ import (
 
 type CCRMDummy struct {
 	ccrm.CCRMHandler
-	listener              *bufconn.Listener
-	flags                 ccrm.Flags
-	caches                ccrm.CCRMCaches
-	sync                  *regiondata.Sync
-	testutilCloudletInfos map[edgeproto.CloudletKey]*edgeproto.CloudletInfo
+	listener                     *bufconn.Listener
+	flags                        ccrm.Flags
+	caches                       ccrm.CCRMCaches
+	sync                         *regiondata.Sync
+	testutilCloudletInfos        map[edgeproto.CloudletKey]*edgeproto.CloudletInfo
+	pause                        bool
+	simulateAppCreateFailure     bool
+	simulateAppDeleteFailure     bool
+	simulateClusterCreateFailure bool
+	simulateClusterDeleteFailure bool
 }
 
 // StartDummyCCRM starts an in-memory CCRM using grpc.bufconn.
@@ -121,7 +126,15 @@ func (d *CCRMDummy) NewPlatform() platform.Platform {
 	f := fake.NewPlatform().(*fake.Platform)
 	// For the controller's unit tests we also override the default
 	// set of flavors.
-	f.FlavorList = UnitTestFlavors
+	f.CustomFlavorList = UnitTestFlavors
+	// Set debug states for new platforms
+	if d.pause {
+		f.SetPause(true)
+	}
+	f.SetSimulateAppCreateFailure(d.simulateAppCreateFailure)
+	f.SetSimulateAppDeleteFailure(d.simulateAppDeleteFailure)
+	f.SetSimulateClusterCreateFailure(d.simulateClusterCreateFailure)
+	f.SetSimulateClusterDeleteFailure(d.simulateClusterDeleteFailure)
 	return f
 }
 
@@ -133,6 +146,7 @@ type fakeSetFailure interface {
 }
 
 func (d *CCRMDummy) SetSimulateAppCreateFailure(state bool) {
+	d.simulateAppCreateFailure = state
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
 		if f, ok := fp.(fakeSetFailure); ok {
 			f.SetSimulateAppCreateFailure(state)
@@ -141,6 +155,7 @@ func (d *CCRMDummy) SetSimulateAppCreateFailure(state bool) {
 }
 
 func (d *CCRMDummy) SetSimulateAppDeleteFailure(state bool) {
+	d.simulateAppDeleteFailure = state
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
 		if f, ok := fp.(fakeSetFailure); ok {
 			f.SetSimulateAppDeleteFailure(state)
@@ -149,6 +164,7 @@ func (d *CCRMDummy) SetSimulateAppDeleteFailure(state bool) {
 }
 
 func (d *CCRMDummy) SetSimulateClusterCreateFailure(state bool) {
+	d.simulateClusterCreateFailure = state
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
 		if f, ok := fp.(fakeSetFailure); ok {
 			f.SetSimulateClusterCreateFailure(state)
@@ -157,6 +173,7 @@ func (d *CCRMDummy) SetSimulateClusterCreateFailure(state bool) {
 }
 
 func (d *CCRMDummy) SetSimulateClusterDeleteFailure(state bool) {
+	d.simulateClusterDeleteFailure = state
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
 		if f, ok := fp.(fakeSetFailure); ok {
 			f.SetSimulateClusterDeleteFailure(state)
@@ -167,6 +184,7 @@ func (d *CCRMDummy) SetSimulateClusterDeleteFailure(state bool) {
 // SetPause blocks responder until unpaused.
 // Warning: don't double-pause or double-unpause.
 func (d *CCRMDummy) SetPause(enable bool) {
+	d.pause = enable
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
 		if f, ok := fp.(*fake.Platform); ok {
 			f.SetPause(enable)
@@ -195,7 +213,7 @@ func (d *CCRMDummy) GetFakePlatformResources(key *edgeproto.CloudletKey) (*fakec
 
 func (d *CCRMDummy) SetFakePlatformFlavors(key *edgeproto.CloudletKey, flavors []*edgeproto.FlavorInfo) error {
 	if f, ok := d.GetFakePlatform(key); ok {
-		f.FlavorList = flavors
+		f.CustomFlavorList = flavors
 		return nil
 	}
 	return fmt.Errorf("fake platform not found for %s", key.GetKeyString())

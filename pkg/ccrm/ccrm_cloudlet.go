@@ -63,6 +63,13 @@ func (s *CCRMHandler) ApplyCloudlet(in *edgeproto.Cloudlet, stream edgeproto.Clo
 			// CRM will handle it
 			return nil
 		}
+		// Delete platform from cache. This will force re-init of the platform
+		// using the new state of cloudlet (env vars, etc) pulled from etcd.
+		// Note that this also happens via Cloudlet cache update to flush
+		// from all CCRM instances, but we need to (potentially redundantly)
+		// do it here to guarantee it is flushed before CloudletChanged()
+		// function requests for it.
+		s.crmPlatforms.Delete(&in.Key)
 		return s.crmHandler.CloudletChanged(ctx, &in.Key, in, responseSender)
 	}
 

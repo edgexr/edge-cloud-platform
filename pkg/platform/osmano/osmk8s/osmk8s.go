@@ -68,6 +68,14 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 func (s *Platform) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	// OSM has no way to list resource limits
 	// OSM has no way to list flavors
+	flavorsJSON, ok := s.properties.GetValue(OSM_FLAVORS)
+	if ok && flavorsJSON != "" {
+		flavors := []*edgeproto.FlavorInfo{}
+		if err := json.Unmarshal([]byte(flavorsJSON), &flavors); err != nil {
+			return fmt.Errorf("failed to unmarshal %s: %s, %s", OSM_FLAVORS, flavorsJSON, err)
+		}
+		info.Flavors = flavors
+	}
 	return nil
 }
 

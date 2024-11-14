@@ -143,6 +143,11 @@ func (s *CCRMHandler) InitConnectivity(client *notify.Client, kvstore objstore.K
 		edgeproto.RegisterClusterPlatformAPIServer(grpcServer, s)
 		edgeproto.RegisterAppInstPlatformAPIServer(grpcServer, s)
 	}
+
+	s.crmHandler.CloudletCache.AddUpdatedCb(func(ctx context.Context, old, new *edgeproto.Cloudlet) {
+		// force re-init of platform in case env vars, etc, changed
+		s.crmPlatforms.Delete(&new.Key)
+	})
 }
 
 func (s *CCRMHandler) Start(ctx context.Context, ctrlConn *grpc.ClientConn) {
