@@ -232,6 +232,7 @@ func TestCloudletApi(t *testing.T) {
 	testShowPlatformFeaturesForZone(t, ctx, apis)
 	testAllianceOrgs(t, ctx, apis)
 	testCloudletEdgeboxOnly(t, ctx, cloudletData[2], apis)
+	testCloudletUpdateInfo(t, ctx, apis)
 }
 
 func testBadLat(t *testing.T, ctx context.Context, clbad *edgeproto.Cloudlet, lats []float64, action string, apis *AllApis) {
@@ -1354,4 +1355,81 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	err = apis.cloudletApi.ChangeCloudletDNS(&cloudlet.Key, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
 	checkDNS()
+}
+
+func testCloudletUpdateInfo(t *testing.T, ctx context.Context, apis *AllApis) {
+	// Test for triggering updated CloudletInfo.
+	// Currently for CCRM-based cloudlets, GatherCloudletInfo, which
+	// grabs the Flavors from the cloudlet-specific infra, is only
+	// run at create time. If for some reason flavors change, we need a
+	// mechanism to be able to update those flavors.
+	// That mechanism is currently hidden inside UpdateCloudlet.
+	// Any update to the cloudlet will trigger updating the flavors.
+	// For CRM-based cloudlets, GatherCloudletInfo is called every
+	// time the CRM restarts (this is sub-optimal, as CRM restart
+	// causes a control-plane outage).
+	// In the future we may want to consider a combination of a periodic
+	// thread that checks for flavor changes in addition to an API that
+	// can trigger an immediate check.
+	// This test uses a CCRM-based cloudlet because:
+	// 1) the CCRM dummy uses a real CCRMHandler, so we test the actual
+	// code that sends back CloudletInfos
+	// 2) the CCRM needs to be tested to make sure it re-inits the platform
+	// instance held in cache to update the env vars.
+	cloudlet := &testutil.CloudletData()[0]
+	cloudlet.Key.Name = "update-envvars-test"
+	cloudlet.CrmOnEdge = false // test that CCRM re-inits platform in cache
+	if cloudlet.EnvVar == nil {
+		cloudlet.EnvVar = map[string]string{}
+	}
+	cloudlet.Zone = ""
+	flavors := []*edgeproto.FlavorInfo{{
+		Name:  "s1-2",
+		Vcpus: 2,
+		Ram:   8192,
+		Disk:  16,
+	}, {
+		Name:  "s1-4",
+		Vcpus: 4,
+		Ram:   16384,
+		Disk:  32,
+	}}
+	flavorsJSON, err := json.Marshal(flavors)
+	require.Nil(t, err)
+	cloudlet.EnvVar["FLAVORS"] = string(flavorsJSON)
+
+	// create cloudlet
+	err = apis.cloudletApi.CreateCloudlet(cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	defer func() {
+		err = apis.cloudletApi.DeleteCloudlet(cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+		require.Nil(t, err)
+	}()
+
+	// check cloudletInfo
+	cloudletInfo := &edgeproto.CloudletInfo{}
+	found := apis.cloudletInfoApi.cache.Get(&cloudlet.Key, cloudletInfo)
+	require.True(t, found)
+	require.Equal(t, flavors, cloudletInfo.Flavors)
+
+	// update flavors env var
+	updatedFlavors := append(flavors, &edgeproto.FlavorInfo{
+		Name:  "s1-8",
+		Vcpus: 8,
+		Ram:   32768,
+		Disk:  64,
+	})
+	flavorsJSON, err = json.Marshal(updatedFlavors)
+	require.Nil(t, err)
+	cloudlet.EnvVar["FLAVORS"] = string(flavorsJSON)
+	cloudlet.Fields = []string{
+		edgeproto.CloudletFieldEnvVar,
+	}
+	err = apis.cloudletApi.UpdateCloudlet(cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	// check cloudletInfo
+	cloudletInfo = &edgeproto.CloudletInfo{}
+	found = apis.cloudletInfoApi.cache.Get(&cloudlet.Key, cloudletInfo)
+	require.True(t, found)
+	require.Equal(t, updatedFlavors, cloudletInfo.Flavors)
 }

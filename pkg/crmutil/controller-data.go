@@ -765,6 +765,15 @@ func (cd *CRMHandler) CloudletChanged(ctx context.Context, target *edgeproto.Clo
 		resources, err := pf.GetCloudletInfraResources(ctx)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Cloudlet resources not found for cloudlet", "key", new.Key, "err", err)
+			resources = &edgeproto.InfraResourcesSnapshot{}
+		}
+		var updatedFlavors []*edgeproto.FlavorInfo
+		updatedInfo := &edgeproto.CloudletInfo{}
+		err = pf.GatherCloudletInfo(ctx, updatedInfo)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "gather info for cloudlet failed", "key", new.Key, "err", err)
+		} else {
+			updatedFlavors = updatedInfo.Flavors
 		}
 		sender.SendUpdate(func(info *edgeproto.CloudletInfo) error {
 			info.Fields = []string{
@@ -775,6 +784,10 @@ func (cd *CRMHandler) CloudletChanged(ctx context.Context, target *edgeproto.Clo
 			info.ResourcesSnapshot.PlatformVms = resources.PlatformVms
 			info.State = dme.CloudletState_CLOUDLET_STATE_READY
 			info.Status.StatusReset()
+			if updatedFlavors != nil {
+				info.Flavors = updatedFlavors
+				info.Fields = append(info.Fields, edgeproto.CloudletInfoFieldFlavors)
+			}
 			return nil
 		})
 	}

@@ -40,6 +40,8 @@ import (
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
+const RedactedAccessVarValue = "***"
+
 type CloudletApi struct {
 	all                   *AllApis
 	sync                  *regiondata.Sync
@@ -462,7 +464,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	accessVars := make(map[string]string)
 	if in.AccessVars != nil {
 		accessVars = in.AccessVars
-		in.AccessVars = nil
+		in.AccessVars = redactAccessVars(accessVars)
 	}
 
 	kafkaDetails := node.KafkaCreds{}
@@ -1001,7 +1003,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 	accessVars := make(map[string]string)
 	if fmap.HasOrHasChild(edgeproto.CloudletFieldAccessVars) {
 		accessVars = in.AccessVars
-		in.AccessVars = nil
+		in.AccessVars = redactAccessVars(accessVars)
 	}
 
 	singleKubernetesClusterOwnerSet := fmap.Has(edgeproto.CloudletFieldSingleKubernetesClusterOwner)
@@ -1316,6 +1318,9 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 		}
 		api := edgeproto.NewCloudletPlatformAPIClient(conn)
 		cur.Fields = diffFields.Fields()
+		if crmUpdateReqd {
+			cur.Fields = append(cur.Fields, edgeproto.CloudletFieldState)
+		}
 		outStream, err := api.ApplyCloudlet(reqCtx, cur)
 		if err != nil {
 			return cloudcommon.GRPCErrorUnwrap(err)
@@ -2874,4 +2879,12 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 	}
 	cb.Send(&edgeproto.Result{Message: "DNS Migration complete"})
 	return nil
+}
+
+func redactAccessVars(accessVars map[string]string) map[string]string {
+	vars := map[string]string{}
+	for k := range accessVars {
+		vars[k] = RedactedAccessVarValue
+	}
+	return vars
 }
