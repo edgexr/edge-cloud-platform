@@ -96,7 +96,7 @@ func AppData() []*AppDataSet {
 			AllowServerless: true,
 			AppAnnotations: map[string]string{
 				"NBIAppComponentName": "comp0",
-				"NBIAppRepoType":      "NBIAppRepoTypePublic",
+				"NBIAppRepoType":      string(nbi.PUBLICREPO),
 			},
 		},
 		InstTemplate: &nbi.AppInstanceInfo{
@@ -179,7 +179,7 @@ func AppData() []*AppDataSet {
 			AllowServerless: false,
 			AppAnnotations: map[string]string{
 				"NBIAppComponentName": "comp0",
-				"NBIAppRepoType":      "NBIAppRepoTypePublic",
+				"NBIAppRepoType":      string(nbi.PUBLICREPO),
 			},
 		},
 		InstTemplate: &nbi.AppInstanceInfo{

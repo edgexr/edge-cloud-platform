@@ -2126,14 +2126,12 @@ type ClientWithResponsesInterface interface {
 type GetAppInstanceResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *struct {
-		AppInstanceInfo *[]AppInstanceInfo `json:"appInstanceInfo,omitempty"`
-	}
-	JSON401 *N401
-	JSON403 *N403
-	JSON404 *N404
-	JSON500 *N500
-	JSON503 *N503
+	JSON200      *[]AppInstanceInfo
+	JSON401      *N401
+	JSON403      *N403
+	JSON404      *N404
+	JSON500      *N500
+	JSON503      *N503
 }
 
 // Status returns HTTPResponse.Status
@@ -2534,9 +2532,7 @@ func ParseGetAppInstanceResponse(rsp *http.Response) (*GetAppInstanceResponse, e
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest struct {
-			AppInstanceInfo *[]AppInstanceInfo `json:"appInstanceInfo,omitempty"`
-		}
+		var dest []AppInstanceInfo
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -3607,9 +3603,7 @@ type GetAppInstance200ResponseHeaders struct {
 }
 
 type GetAppInstance200JSONResponse struct {
-	Body struct {
-		AppInstanceInfo *[]AppInstanceInfo `json:"appInstanceInfo,omitempty"`
-	}
+	Body    []AppInstanceInfo
 	Headers GetAppInstance200ResponseHeaders
 }
 

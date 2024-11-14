@@ -128,7 +128,7 @@ func (s *NBIAPI) GetAppInstance(ctx context.Context, request nbi.GetAppInstanceR
 	}
 	slices.SortStableFunc(insts, NBIAppInstSort)
 	resp := nbi.GetAppInstance200JSONResponse{}
-	resp.Body.AppInstanceInfo = &insts
+	resp.Body = insts
 	return resp, nil
 }
 

@@ -81,7 +81,7 @@ func getAppInstsByKey(ctx context.Context, client *nbi.ClientWithResponses) (App
 	if apiErr != nil {
 		return nil, apiErr
 	}
-	insts := *resp.JSON200.AppInstanceInfo
+	insts := *resp.JSON200
 	for ii, inst := range insts {
 		key := edgeproto.AppInstKey{
 			Name:         inst.Name,

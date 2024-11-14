@@ -130,9 +130,9 @@ func TestNBIAPI(t *testing.T) {
 			require.Nil(t, err)
 			getResp200, ok := getResp.(nbi.GetAppInstance200JSONResponse)
 			require.True(t, ok, "expect 200 but got %T", getResp)
-			require.NotNil(t, getResp200.Body.AppInstanceInfo)
-			require.Equal(t, 1, len(*getResp200.Body.AppInstanceInfo))
-			appInstOut := (*getResp200.Body.AppInstanceInfo)[0]
+			require.NotNil(t, getResp200.Body)
+			require.Equal(t, 1, len(getResp200.Body))
+			appInstOut := (getResp200.Body)[0]
 
 			// craft the expected value
 			expInst := appData.InstTemplate
@@ -172,10 +172,10 @@ func TestNBIAPI(t *testing.T) {
 			require.Nil(t, err)
 			getResp200, ok = getResp.(nbi.GetAppInstance200JSONResponse)
 			require.True(t, ok, "expect 200 but got %T", getResp)
-			if getResp200.Body.AppInstanceInfo != nil {
-				require.Equal(t, 0, len(*getResp200.Body.AppInstanceInfo))
+			if getResp200.Body != nil {
+				require.Equal(t, 0, len(getResp200.Body))
 			} else {
-				require.Nil(t, 0, getResp200.Body.AppInstanceInfo)
+				require.Nil(t, 0, getResp200.Body)
 			}
 		}
 

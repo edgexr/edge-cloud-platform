@@ -117,8 +117,8 @@ func GetAppInsts(ctx context.Context, client *nbi.ClientWithResponses, appsByID 
 		return nil, wrapAPIErr(desc, 0, err)
 	}
 	appInsts := []GetAppInstanceInfo{}
-	if resp.JSON200 != nil && resp.JSON200.AppInstanceInfo != nil {
-		for _, inst := range *resp.JSON200.AppInstanceInfo {
+	if resp.JSON200 != nil {
+		for _, inst := range *resp.JSON200 {
 			ai := GetAppInstanceInfo{}
 			ai.AppInstanceInfo = inst
 			if zone, ok := zonesByID[inst.EdgeCloudZoneId]; ok {

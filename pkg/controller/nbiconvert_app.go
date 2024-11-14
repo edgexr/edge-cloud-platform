@@ -67,9 +67,11 @@ func ProtoApp(in *nbi.AppManifest) (*edgeproto.App, error) {
 		// For now assume it's our registry, and when we go to create the
 		// app, it will fail to validate the image if it's not in our
 		// registry or it's not publicly reachable.
-		app.AppAnnotations[NBIAppAnnotationRepoType] = NBIAppRepoTypePrivate
+		app.AppAnnotations[NBIAppAnnotationRepoType] = string(nbi.PRIVATEREPO)
 	} else if in.AppRepo.Type == nbi.PUBLICREPO {
-		app.AppAnnotations[NBIAppAnnotationRepoType] = NBIAppRepoTypePublic
+		app.AppAnnotations[NBIAppAnnotationRepoType] = string(nbi.PUBLICREPO)
+	} else {
+		return nil, fmt.Errorf("invalid AppRepo type %s", in.AppRepo.Type)
 	}
 	if in.AppRepo.Checksum != nil {
 		// TODO: verify in.AppRepo.Checksum
@@ -79,6 +81,9 @@ func ProtoApp(in *nbi.AppManifest) (*edgeproto.App, error) {
 	}
 	if len(in.ComponentSpec) != 1 {
 		return nil, fmt.Errorf("one and only one component spec must be specified")
+	}
+	if len(in.ComponentSpec[0].ComponentName) == 0 {
+		return nil, fmt.Errorf("empty component spec name")
 	}
 	ports := []string{}
 	for _, intf := range in.ComponentSpec[0].NetworkInterfaces {
@@ -217,12 +222,7 @@ func NBIApp(in *edgeproto.App) (*nbi.AppManifest, error) {
 		appAnnotations = make(map[string]string)
 	}
 	if repoType, ok := appAnnotations[NBIAppAnnotationRepoType]; ok {
-		switch repoType {
-		case NBIAppRepoTypePrivate:
-			am.AppRepo.Type = nbi.PRIVATEREPO
-		case NBIAppRepoTypePublic:
-			am.AppRepo.Type = nbi.PUBLICREPO
-		}
+		am.AppRepo.Type = nbi.AppManifestAppRepoType(repoType)
 	}
 	am.AppRepo.ImagePath = in.ImagePath
 	cspec := nbi.AppManifest_ComponentSpec{}
