@@ -173,6 +173,8 @@ message App {
   // (1) tls (tcp-only) - Enables TLS on specified port. Ex: "tcp:443:tls".
   // (2) nginx (udp-only) - Use NGINX LB instead of envoy for specified port. Ex: "udp:10001:nginx".
   // (3) maxpktsize (udp-only) - Configures maximum UDP datagram size allowed on port for both upstream/downstream traffic. Ex: "udp:10001:maxpktsize=8000".
+  // (4) intvis (internal-visibility)- Port is not externally accessible. Ex: "tcp:9000:intvis"
+  // (5) id - Port ID. Ex: "tcp:9000:id=p9000"
   string access_ports = 7;
   // Default flavor for the App, which may be overridden by the AppInst
   FlavorKey default_flavor = 9 [(gogoproto.nullable) = false, (protogen.refers_to) = "Flavor"];
@@ -261,6 +263,10 @@ message App {
   KubernetesResources kubernetes_resources = 50;
   // Required resources for VM/Docker deployments
   NodeResources node_resources = 51;
+  // Universally unique object ID
+  string obj_id = 52 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Internal Annotations
+  map<string, string> app_annotations = 53;
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

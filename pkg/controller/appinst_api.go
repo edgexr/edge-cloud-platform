@@ -351,7 +351,7 @@ const (
 	MultiTenantAutoCluster
 )
 
-func (s *AppInstApi) checkPortOverlapDedicatedLB(stm concurrency.STM, appPorts []dme.AppPort, appInstKey *edgeproto.AppInstKey, clusterKey *edgeproto.ClusterKey) error {
+func (s *AppInstApi) checkPortOverlapDedicatedLB(stm concurrency.STM, appPorts []edgeproto.InstPort, appInstKey *edgeproto.AppInstKey, clusterKey *edgeproto.ClusterKey) error {
 	clustRefs := edgeproto.ClusterRefs{}
 	if !s.all.clusterRefsApi.store.STMGet(stm, clusterKey, &clustRefs) {
 		return nil
@@ -571,6 +571,12 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			}
 			in.Flavor = app.DefaultFlavor
 		}
+		// if no kubernetes version specified, inherit from app
+		if in.KubernetesResources != nil && app.KubernetesResources != nil {
+			if in.KubernetesResources.MinKubernetesVersion == "" {
+				in.KubernetesResources.MinKubernetesVersion = app.KubernetesResources.MinKubernetesVersion
+			}
+		}
 		sidecarApp = cloudcommon.IsSideCarApp(&app)
 		if sidecarApp && (in.ClusterKey.Name == "" || in.ClusterKey.Organization == "") {
 			return fmt.Errorf("Sidecar AppInst (AutoDelete App) must specify the Cluster name and organization to deploy to")
@@ -674,6 +680,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// and moving it into the createClusterInst code.
 			sort.Sort(PotentialInstCloudletsByResource(potentialCloudlets))
 			in.CloudletKey = potentialCloudlets[0].cloudlet.Key
+			log.SpanLog(ctx, log.DebugLevelApi, "chose cloudlet for autocluster", "cloudlet", in.CloudletKey)
 		}
 
 		// validate chosen cloudlet
@@ -1988,7 +1995,7 @@ func (s *AppInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.AppInstIn
 		if fmap.HasOrHasChild(edgeproto.AppInstInfoFieldFedPorts) {
 			if len(in.FedPorts) > 0 {
 				log.SpanLog(ctx, log.DebugLevelApi, "Updating ports on federated appinst", "key", in.Key, "ports", in.FedPorts)
-				fedPortLookup := map[string]*dme.AppPort{}
+				fedPortLookup := map[string]*edgeproto.InstPort{}
 				for ii := range in.FedPorts {
 					key := edgeproto.AppPortLookupKey(&in.FedPorts[ii])
 					fedPortLookup[key] = &in.FedPorts[ii]
@@ -2248,7 +2255,7 @@ func setPortFQDNPrefixes(in *edgeproto.AppInst, app *edgeproto.App) error {
 	return nil
 }
 
-func setPortFQDNPrefix(port *dme.AppPort, objs []runtime.Object) {
+func setPortFQDNPrefix(port *edgeproto.InstPort, objs []runtime.Object) {
 	for _, obj := range objs {
 		ksvc, ok := obj.(*v1.Service)
 		if !ok {
@@ -2510,4 +2517,21 @@ func (s *AppInstIDSanitizer) NameSanitize(name string) (string, error) {
 		return "", cloudcommon.GRPCErrorUnwrap(err)
 	}
 	return res.Message, nil
+}
+
+// getAppInstByID finds AppInst by ID. If appInst not found returns nil AppInst
+// instead of an error.
+func (s *AppInstApi) getAppInstByID(ctx context.Context, id string) (*edgeproto.AppInst, error) {
+	filter := &edgeproto.AppInst{
+		ObjId: id,
+	}
+	var appInst *edgeproto.AppInst
+	err := s.cache.Show(filter, func(obj *edgeproto.AppInst) error {
+		appInst = obj
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return appInst, nil
 }

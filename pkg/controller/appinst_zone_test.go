@@ -119,6 +119,7 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 				Disk:  100,
 			},
 		}},
+		KubernetesVersion: "1.29",
 	}
 	_, err = apis.clusterInstApi.store.Put(ctx, &reservD, sync.SyncWait)
 	require.Nil(t, err)
@@ -229,13 +230,24 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 	verifyCloudlets(pclos, 3, 1, 4, 2, 0)
 	pclus, err = apis.appInstApi.getPotentialClusters(ctx, cctx, ai, app, pclos)
 	require.Nil(t, err)
-	for _, pc := range pclus {
-		fmt.Println(*pc)
-	}
 	require.Equal(t, 3, len(pclus))
 	require.Equal(t, *singleMT4Key, pclus[0].existingCluster)
 	require.Equal(t, *defaultMT0Key, pclus[1].existingCluster)
 	require.Equal(t, reservK.Key, pclus[2].existingCluster)
+
+	// Kubernetes app with serverless but minK8s version
+	// should find singleMT, defaultMT
+	app.Deployment = cloudcommon.DeploymentTypeKubernetes
+	app.AllowServerless = true
+	ai.KubernetesResources.MinKubernetesVersion = "1.30"
+	pclos, err = apis.appInstApi.getPotentialCloudlets(ctx, cctx, ai, app)
+	require.Nil(t, err)
+	verifyCloudlets(pclos, 3, 1, 4, 2, 0)
+	pclus, err = apis.appInstApi.getPotentialClusters(ctx, cctx, ai, app, pclos)
+	require.Nil(t, err)
+	require.Equal(t, 2, len(pclus))
+	require.Equal(t, *singleMT4Key, pclus[0].existingCluster)
+	require.Equal(t, *defaultMT0Key, pclus[1].existingCluster)
 }
 
 func TestPotentialAppInstClusterCalcResourceScore(t *testing.T) {

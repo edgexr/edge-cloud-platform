@@ -22,7 +22,6 @@ import (
 	"regexp"
 	"strings"
 
-	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	ssh "github.com/edgexr/golang-ssh"
@@ -135,6 +134,7 @@ func DoIptablesCommand(ctx context.Context, client ssh.Client, rule string, rule
 }
 
 //	parseFirewallRules parses rules in the format:
+//
 // Value: "protocol=tcp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=udp,portrange=1:65535,remotecidr=0.0.0.0/0;protocol=icmp,remotecidr=0.0.0.0/0",
 func parseFirewallRules(ctx context.Context, ruleString string) ([]FirewallRule, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "parseFirewallRules", "ruleString", ruleString)
@@ -496,7 +496,7 @@ func AddDefaultIptablesRules(ctx context.Context, client ssh.Client, ipversion I
 }
 
 // GetFirewallRulesFromAppPorts accepts a CIDR and a set of AppPorts and converts to a set of rules
-func GetFirewallRulesFromAppPorts(ctx context.Context, cidr string, destIp string, ports []dme.AppPort, ipversion IPVersion) (*FirewallRules, error) {
+func GetFirewallRulesFromAppPorts(ctx context.Context, cidr string, destIp string, ports []edgeproto.InstPort, ipversion IPVersion) (*FirewallRules, error) {
 	var fwRules FirewallRules
 	for _, p := range ports {
 		portStr := fmt.Sprintf("%d", p.PublicPort)
@@ -561,7 +561,7 @@ func PersistIptablesRules(ctx context.Context, client ssh.Client, ipversion IPVe
 }
 
 // AddIngressIptablesRules adds rules using a CIDR and AppPorts as input
-func AddIngressIptablesRules(ctx context.Context, client ssh.Client, label string, cidrs, destIp IPs, ports []dme.AppPort) error {
+func AddIngressIptablesRules(ctx context.Context, client ssh.Client, label string, cidrs, destIp IPs, ports []edgeproto.InstPort) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "AddIngressIptablesRules", "label", label, "cidrs", cidrs, "ports", ports)
 
 	for ii, cidr := range cidrs {
@@ -582,7 +582,7 @@ func AddIngressIptablesRules(ctx context.Context, client ssh.Client, label strin
 }
 
 // RemoveIngressIptablesRules removes rules using a CIDR and AppPorts as input
-func RemoveIngressIptablesRules(ctx context.Context, client ssh.Client, label string, cidrs, destIP IPs, ports []dme.AppPort) error {
+func RemoveIngressIptablesRules(ctx context.Context, client ssh.Client, label string, cidrs, destIP IPs, ports []edgeproto.InstPort) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RemoveIngressIptablesRules", "secGrp", label)
 
 	for ii, cidr := range cidrs {

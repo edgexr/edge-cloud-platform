@@ -59,7 +59,7 @@ type DmeAppInst struct {
 	Location dme.Loc
 	id       uint64
 	// Ports and L7 Paths
-	ports []dme.AppPort
+	ports []edgeproto.InstPort
 	// State of the cloudlet - copy of the DmeCloudlet
 	CloudletState    dme.CloudletState
 	MaintenanceState dme.MaintenanceState
@@ -93,7 +93,7 @@ type DmeApp struct {
 	QosSessionProfile   string
 	QosSessionDuration  time.Duration
 	// Non mapped AppPorts from App definition (used for AppOfficialFqdnReply)
-	Ports []dme.AppPort
+	Ports []edgeproto.InstPort
 }
 
 type DmeCloudlet struct {
@@ -1685,15 +1685,25 @@ func ListAppinstTbl(ctx context.Context) {
 	}
 }
 
-func copyPorts(cports []dme.AppPort) []*dme.AppPort {
+func copyPorts(cports []edgeproto.InstPort) []*dme.AppPort {
 	if cports == nil || len(cports) == 0 {
 		return nil
 	}
-	ports := make([]*dme.AppPort, len(cports))
-	for ii, _ := range cports {
+	ports := []*dme.AppPort{}
+	for _, cp := range cports {
+		if cp.InternalVisOnly {
+			continue
+		}
 		p := dme.AppPort{}
-		p = cports[ii]
-		ports[ii] = &p
+		p.Proto = cp.Proto
+		p.InternalPort = cp.InternalPort
+		p.PublicPort = cp.PublicPort
+		p.FqdnPrefix = cp.FqdnPrefix
+		p.EndPort = cp.EndPort
+		p.Tls = cp.Tls
+		p.Nginx = cp.Nginx
+		p.MaxPktSize = cp.MaxPktSize
+		ports = append(ports, &p)
 	}
 	return ports
 }

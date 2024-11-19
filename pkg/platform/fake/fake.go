@@ -56,6 +56,7 @@ type Platform struct {
 	simulateClusterDeleteFailure bool
 	pause                        sync.WaitGroup
 	CustomFlavorList             []*edgeproto.FlavorInfo
+	simPublicCloud               bool
 }
 
 const (
@@ -201,10 +202,12 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 	s.resources.Init()
 	s.resources.SetCloudletFlavors(flavors, rootLbFlavor.Name)
 	// Update resource info for platformVM and RootLBVM
-	for _, vm := range GetPlatformVMs() {
-		s.resources.AddPlatformVM(vm)
+	if !s.simPublicCloud {
+		for _, vm := range GetPlatformVMs() {
+			s.resources.AddPlatformVM(vm)
+		}
+		s.resources.UpdateExternalIP(fakecommon.ResourceAdd)
 	}
-	s.resources.UpdateExternalIP(fakecommon.ResourceAdd)
 
 	err = s.UpdateResourcesMax(platformConfig.EnvVars)
 	if err != nil {
@@ -235,6 +238,7 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsPlatformHighAvailabilityOnDocker: true,
 		SupportsPlatformHighAvailabilityOnK8S:    true,
 		SupportsMultipleNodePools:                true,
+		ManagesK8SControlNodes:                   s.simPublicCloud,
 		Properties:                               fakeProps,
 		ResourceQuotaProperties:                  quotaProps,
 		AccessVars:                               AccessVarProps,

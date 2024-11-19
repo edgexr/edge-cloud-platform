@@ -1,0 +1,86 @@
+--- Edge-Application-Management.yaml.last	2024-10-26 10:28:08.414921536 -0700
++++ Edge-Application-Management.yaml	2024-11-05 15:57:33.814156188 -0800
+@@ -547,6 +547,57 @@
+           $ref: '#/components/responses/500'
+         '503':
+           $ref: '#/components/responses/503'
++  /clusters:
++    get:
++      security:
++        - openId:
++            - edge-application-management:clusters:read
++      tags:
++        - Cluster
++      summary: Retrieve a list of the available clusters
++      description: |
++        List available cluster information
++      operationId: getClusters
++      parameters:
++        - $ref: '#/components/parameters/x-correlator'
++        - name: region
++          description: |
++            Human readable name of the geographical Edge Cloud Region of
++            the Cluster. Defined by the Edge Cloud Provider.
++          in: query
++          required: false
++          schema:
++            $ref: '#/components/schemas/EdgeCloudRegion'
++        - name: clusterRef
++          description: |
++            A globally unique identifier for the Cluster.
++          in: query
++          required: false
++          schema:
++            $ref: '#/components/schemas/KubernetesClusterRef'
++      responses:
++        '200':
++          description: |
++            Successful response, returning the clusters.
++          headers:
++            x-correlator:
++              $ref: "#/components/headers/x-correlator"
++          content:
++            application/json:
++              schema:
++                type: array
++                items:
++                  $ref: '#/components/schemas/ClusterInfo'
++        '401':
++          $ref: '#/components/responses/401'
++        '403':
++          $ref: '#/components/responses/403'
++        '404':
++          $ref: '#/components/responses/404'
++        '500':
++          $ref: '#/components/responses/500'
++        '503':
++          $ref: '#/components/responses/503'
+   /edge-cloud-zones:
+     get:
+       security:
+@@ -922,6 +973,25 @@
+       pattern: ^[A-Za-z][A-Za-z0-9_]{7,63}$
+       description: Human readable name of the Application Provider.
+ 
++    ClusterInfo:
++      description: Kubernetes cluster information
++      required:
++        - name
++        - provider
++        - clusterRef
++        - edgeCloudZoneId
++      properties:
++        name:
++          type: string
++          description: |
++            Name of the Cluster, scoped to the Provider
++        provider:
++          $ref: '#/components/schemas/AppProvider'
++        clusterRef:
++          $ref: '#/components/schemas/KubernetesClusterRef'
++        edgeCloudZoneId:
++          $ref: '#/components/schemas/EdgeCloudZoneId'
++
+     EdgeCloudProvider:
+       type: string
+       description: Human readable name of the Edge Cloud Provider.

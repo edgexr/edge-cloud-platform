@@ -22,6 +22,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
@@ -108,6 +109,7 @@ func (s *potentialInstCloudlet) initResCalc(ctx context.Context, all *AllApis, s
 	}
 	s.resCalc = resCalc
 	s.calcResourceScore(usedVals)
+	log.SpanLog(ctx, log.DebugLevelApi, "potentialInstCloudlet calcResourceScore", "cloudlet", resCalc.cloudletKey, "score", s.resourceScore, "used", usedVals.String())
 	return nil
 }
 

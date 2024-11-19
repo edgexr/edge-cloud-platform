@@ -165,7 +165,7 @@ func isValidKubernetesManifestForResources(objs []runtime.Object, kr *edgeproto.
 	return nil
 }
 
-func IsValidDeploymentManifest(deploymentType, command, manifest string, ports []dme.AppPort, kr *edgeproto.KubernetesResources) error {
+func IsValidDeploymentManifest(deploymentType, command, manifest string, ports []edgeproto.InstPort, kr *edgeproto.KubernetesResources) error {
 	if deploymentType == DeploymentTypeVM {
 		if command != "" {
 			return fmt.Errorf("both deploymentmanifest and command cannot be used together for VM based deployment")
@@ -241,6 +241,8 @@ func IsValidDeploymentManifest(deploymentType, command, manifest string, ports [
 			// No need to test TLS or nginx as part of manifest
 			tp.Tls = false
 			tp.Nginx = false
+			tp.InternalVisOnly = false
+			tp.Id = ""
 			// This config is specifically for envoy and hence not required for k8s validation
 			tp.MaxPktSize = 0
 			if _, found := objPorts[tp.String()]; found {

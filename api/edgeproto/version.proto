@@ -34,6 +34,7 @@ enum VersionHash {
   HASH_eac56710c013d954db31eeb306b514a4 = 55 [(protogen.upgrade_func) = "InstanceKeysRegionScopedName"];
   HASH_75883d14000640b2ecf694fe8ef9192b = 56 [(protogen.upgrade_func) = "ZoneFeature"];
   HASH_e65c39ec2a489834dd06e87f7239f9a8 = 57 [(protogen.upgrade_func) = "NodePoolsFeature"];
+  HASH_b25b4e18e9a1dadfd3006e23fabfbf95 = 58 [(protogen.upgrade_func) = "AppObjID"];
   option (protogen.version_hash) = true;
-  option (protogen.version_hash_salt) = "1";
+  option (protogen.version_hash_salt) = "2";
 }

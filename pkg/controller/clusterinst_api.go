@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -355,9 +356,11 @@ func (s *CloudletResCalc) getCloudletUsedResources(ctx context.Context) (*Cloudl
 			return nil, err
 		}
 		cpuRes.AddAllMult(gpuRes, 1)
-		return &CloudletResources{
+		cloudletRes := &CloudletResources{
 			nonFlavorVals: cpuRes,
-		}, nil
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "GetAllCloudletResources single k8s cluster", "key", cloudlet.Key, "cloudletResources", cloudletRes)
+		return cloudletRes, nil
 	}
 
 	// get all cloudlet resources (platformVM, sharedRootLB, etc)
@@ -653,6 +656,16 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 	} else {
 		return fmt.Errorf("Invalid deployment type %s for ClusterInst", in.Deployment)
+	}
+
+	if in.KubernetesVersion != "" {
+		if in.Deployment != cloudcommon.DeploymentTypeKubernetes {
+			return fmt.Errorf("cannot specify kubernetes version %q for non-kubernetes cluster", in.KubernetesVersion)
+		}
+		_, err := semver.NewVersion(in.KubernetesVersion)
+		if err != nil {
+			return fmt.Errorf("failed to parse Kubernetes version %q, %s", in.KubernetesVersion, err)
+		}
 	}
 
 	// dedicatedOrShared(2) is removed
@@ -1951,6 +1964,7 @@ func (s *ClusterInstApi) createCloudletSingularCluster(stm concurrency.STM, clou
 	clusterInst.State = edgeproto.TrackedState_READY
 	clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_SHARED
 	clusterInst.CloudletKey = cloudlet.Key
+	clusterInst.ObjId = ulid.Make().String()
 	if err := s.setDnsLabel(stm, &clusterInst); err != nil {
 		return err
 	}
@@ -2122,12 +2136,36 @@ func setClusterResourcesForReqs(ctx context.Context, ci *edgeproto.ClusterInst, 
 			return err
 		}
 		ci.NodePools = nodePools
+		ci.KubernetesVersion = ai.KubernetesResources.MinKubernetesVersion
 	} else {
 		nr, err := GetNodeResourcesFromReqs(ctx, ai.NodeResources)
 		if err != nil {
 			return err
 		}
 		ci.NodeResources = nr
+	}
+	return nil
+}
+
+// check for any kubernetes version constraint from application on cluster.
+func (s *ClusterInstApi) checkMinKubernetesVersion(ci *edgeproto.ClusterInst, appInst *edgeproto.AppInst) error {
+	if appInst.KubernetesResources == nil {
+		return nil
+	}
+	if appInst.KubernetesResources.MinKubernetesVersion == "" || ci.KubernetesVersion == "" {
+		return nil
+	}
+	minVer := appInst.KubernetesResources.MinKubernetesVersion
+	minSemver, err := semver.NewVersion(minVer)
+	if err != nil {
+		return fmt.Errorf("failed to parse AppInst Kubernetes version %q, %s", minVer, err)
+	}
+	ciSemver, err := semver.NewVersion(ci.KubernetesVersion)
+	if err != nil {
+		return fmt.Errorf("failed to parse cluster Kubernetes version %q, %s", ci.KubernetesVersion, err)
+	}
+	if ciSemver.Compare(minSemver) < 0 {
+		return fmt.Errorf("appInst requires a minimum Kubernetes version of %q but cluster has version %q", minVer, ci.KubernetesVersion)
 	}
 	return nil
 }
@@ -2153,4 +2191,52 @@ func (s *ClusterInstApi) fitsAppResources(ctx context.Context, ci *edgeproto.Clu
 		}
 		return nil, noFreeRes, resspec.NodeResourcesFits(ctx, ci, appInst.NodeResources, used, flavorLookup)
 	}
+}
+
+// getClusterInstByID finds the ClusterInst by ID. If not found returns a
+// nil ClusterInst instead of an error.
+func (s *ClusterInstApi) getClusterInstByID(ctx context.Context, id string) (*edgeproto.ClusterInst, error) {
+	filter := &edgeproto.ClusterInst{
+		ObjId: id,
+	}
+	var ci *edgeproto.ClusterInst
+	err := s.cache.Show(filter, func(obj *edgeproto.ClusterInst) error {
+		ci = obj
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return ci, nil
+}
+
+func (s *ClusterInstApi) getMTClusters(ctx context.Context, cloudletKey *edgeproto.CloudletKey) ([]*edgeproto.ClusterInst, error) {
+	filter := &edgeproto.ClusterInst{
+		MultiTenant: true,
+	}
+	if cloudletKey != nil {
+		filter.CloudletKey = *cloudletKey
+	}
+	insts := []*edgeproto.ClusterInst{}
+	err := s.cache.Show(filter, func(obj *edgeproto.ClusterInst) error {
+		insts = append(insts, obj.Clone())
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return insts, nil
+}
+
+func (s *ClusterInstApi) hasInstanceOfApp(refs *edgeproto.ClusterRefs, app *edgeproto.App) bool {
+	for _, aiKey := range refs.Apps {
+		ai := &edgeproto.AppInst{}
+		if !s.all.appInstApi.cache.Get(&aiKey, ai) {
+			continue
+		}
+		if ai.AppKey.Matches(&app.Key) {
+			return true
+		}
+	}
+	return false
 }

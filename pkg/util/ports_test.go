@@ -15,8 +15,9 @@
 package util
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 var accessPorts = []string{
@@ -44,6 +45,7 @@ var accessPorts = []string{
 	"udp:23-25:maxpktsize=1",                    // 21
 	"udp:26:maxpktsize=50000",                   // 22
 	"tcp:20:maxpktsize=50000",                   // 23
+	"tcp:800:intvis",                            // 24
 }
 
 func TestParsePorts(t *testing.T) {
@@ -114,7 +116,8 @@ func TestParsePorts(t *testing.T) {
 			require.Equal(t, int64(50000), ports[0].MaxPktSize, "valid pkt size can be set for UDP")
 		case 23:
 			require.NotNil(t, err, "maxpktsize not valid for tcp")
-
+		case 24:
+			require.True(t, ports[0].InternalVisOnly, "internal visibility only")
 		}
 
 	}

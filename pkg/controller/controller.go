@@ -146,6 +146,7 @@ type Services struct {
 	stopInitCC                  chan bool
 	waitGroup                   sync.WaitGroup
 	allApis                     *AllApis
+	nbiApis                     *NBIAPI
 	periodicClusterInstCleanup  *tasks.PeriodicTask
 	periodicCloudletCertRefresh *tasks.PeriodicTask
 	checkpointer                *Checkpointer
@@ -557,12 +558,13 @@ func startServices() error {
 
 	nbiApis := NewNBIAPI(allApis)
 	e := echo.New()
-	e.Use(log.EchoTraceHandler, log.EchoAuditLogger)
+	e.Use(log.EchoTraceHandler, NBIErrorHandler, log.EchoAuditLogger)
 	e.HideBanner = true
 	nbiHandler := nbi.NewStrictHandler(nbiApis, []nbi.StrictMiddlewareFunc{})
 	nbi.RegisterHandlersWithBaseURL(e, nbiHandler, cloudcommon.NBIRootPath)
 	// note that the trailing / is needed to do sub-path matching
 	mux.Handle(cloudcommon.NBIRootPath+"/", e)
+	services.nbiApis = nbiApis
 
 	httpServer := &http.Server{
 		Addr:      *httpAddr,

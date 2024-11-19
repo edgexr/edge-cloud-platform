@@ -36,7 +36,7 @@ type WhiteListParams struct {
 	Label       string
 	AllowedCIDR IPs
 	DestIP      IPs
-	Ports       []dme.AppPort
+	Ports       []edgeproto.InstPort
 }
 
 type WhiteListFunc func(ctx context.Context, client ssh.Client, wlParams *WhiteListParams) error
@@ -155,7 +155,7 @@ func (c *CommonPlatform) DeleteProxySecurityGroupRules(ctx context.Context, clie
 // First octet: 127
 // Second octet:  1 if highest port is TCP, 2 if highest port is UDP
 // Third and fourth octets: highest port number
-func GetUniqueLoopbackIp(ctx context.Context, ports []dme.AppPort) string {
+func GetUniqueLoopbackIp(ctx context.Context, ports []edgeproto.InstPort) string {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetUniqueLoopbackIp", "ports", ports)
 
 	var maxUdp int32 = 0

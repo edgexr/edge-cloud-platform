@@ -1,0 +1,19 @@
+--- Edge-Application-Management.yaml.last	2024-11-13 16:54:40.951746340 -0800
++++ Edge-Application-Management.yaml	2024-11-13 16:54:55.902081113 -0800
+@@ -483,13 +483,9 @@
+           content:
+             application/json:
+               schema:
+-                type: object
+-                properties:
+-                  appInstanceInfo:
+-                    type: array
+-                    items:
+-                      $ref: '#/components/schemas/AppInstanceInfo'
+-                minItems: 1
++                type: array
++                items:
++                  $ref: '#/components/schemas/AppInstanceInfo'
+         '401':
+           $ref: '#/components/responses/401'
+         '403':

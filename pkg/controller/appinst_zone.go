@@ -41,6 +41,7 @@ const MaxPotentialClusters = 5
 func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App) ([]*potentialInstCloudlet, error) {
 	// determine the potential cloudlets to deploy the instance to
 	var potentialCloudletKeys []edgeproto.CloudletKey
+	clusterSpecified := false
 	cloudletSpecified := false
 	if in.ClusterKey.Name != "" {
 		// if cluster was specified, then cloudlet and zone are derived
@@ -50,6 +51,7 @@ func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContex
 			return nil, in.ClusterKey.NotFoundError()
 		}
 		potentialCloudletKeys = []edgeproto.CloudletKey{inCluster.CloudletKey}
+		clusterSpecified = true
 		cloudletSpecified = true
 
 	} else if in.CloudletKey.Name != "" {
@@ -93,21 +95,20 @@ func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContex
 	}
 	if len(potentialCloudlets) == 0 {
 		reasonsStr := skipReasons.String()
-		if in.ClusterKey.Name != "" {
-			if reasonsStr == "" {
-				// if this happens, there's a problem with the validatePotentialCloudlet
-				// function
-				log.SpanLog(ctx, log.DebugLevelApi, "unexpected empty reason for no potential cloudlets")
-				return nil, fmt.Errorf("cannot deploy to cluster %s", in.ClusterKey.Name)
+		if reasonsStr != "" {
+			if !cloudletSpecified {
+				// zone was specified
+				reasonsStr = ", some sites were skipped because " + reasonsStr
 			} else {
-				return nil, fmt.Errorf("cannot deploy to cluster %s, %s", in.ClusterKey.Name, reasonsStr)
+				reasonsStr = ", " + reasonsStr
 			}
+		}
+		if clusterSpecified {
+			return nil, fmt.Errorf("cannot deploy to cluster %s%s", in.ClusterKey.Name, reasonsStr)
+		} else if cloudletSpecified {
+			return nil, fmt.Errorf("cannot deploy to cloudlet %s%s", in.CloudletKey.Name, reasonsStr)
 		} else {
-			if reasonsStr == "" {
-				return nil, fmt.Errorf("no available edge sites in zone")
-			} else {
-				return nil, fmt.Errorf("no available edge sites in zone, some sites were skipped because %s", reasonsStr)
-			}
+			return nil, fmt.Errorf("no available edge sites in zone %s%s", in.ZoneKey.Name, reasonsStr)
 		}
 	}
 	return potentialCloudlets, nil
@@ -222,10 +223,20 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip single k8s cloudlet, cluster is multi-tenant and app is not serverless", "cloudlet", pc.cloudlet.Key)
 			continue
 		}
+		if err := s.all.clusterInstApi.checkMinKubernetesVersion(&cluster, in); err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip single k8s cloudlet, k8s version check failed", "cloudlet", pc.cloudlet.Key, "err", err)
+			continue
+		}
 		refs := edgeproto.ClusterRefs{}
 		if !s.all.clusterRefsApi.cache.Get(defaultClusterKey, &refs) {
 			// no error if refs not found
 			refs.Key = *defaultClusterKey
+		}
+		if s.all.clusterInstApi.hasInstanceOfApp(&refs, app) {
+			// we don't support multiple instances of the same app in the
+			// same cluster
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip single k8s cloudlet, already instance of app in cluster", "cloudlet", pc.cloudlet.Key)
+			continue
 		}
 		// note: assume single kubernetes clusters are not scalable,
 		// so ignore any returned scale spec
@@ -240,53 +251,70 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 		clust.parentPC = pc
 		clust.calcResourceScore(free)
 		potentialClusters = append(potentialClusters, &clust)
-		log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential single kubernetes cloudlet", "cloudlet", pc.cloudlet.Key, "free", free.String(), "resourceScore", clust.resourceScore)
+		log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential single kubernetes cloudlet", "cloudlet", pc.cloudlet.Key, "free", free.String(), "cluster", *defaultClusterKey, "resourceScore", clust.resourceScore)
 	}
 
-	// check for default multi-tenant clusters
+	// check for multi-tenant clusters
 	if !app.AllowServerless {
-		log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT kubernetes clusters, app is not serverless")
+		log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential MT kubernetes clusters, app is not serverless")
 	} else {
 		for _, pc := range potentialCloudlets {
-			clusterKey := cloudcommon.GetDefaultMTClustKey(pc.cloudlet.Key)
-			cluster := edgeproto.ClusterInst{}
-			if !s.all.clusterInstApi.cache.Get(clusterKey, &cluster) {
-				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT cluster, cluster not found", "cloudlet", pc.cloudlet.Key, "cluster", clusterKey)
+			if pc.features.IsSingleKubernetesCluster {
+				// single kubernetes clusters are also multi-teant,
+				// so already checked earlier
 				continue
 			}
-			if !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
-				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT cluster, app deployment is not kubernetes", "cloudlet", pc.cloudlet.Key, "cluster", clusterKey)
+			clusters, err := s.all.clusterInstApi.getMTClusters(ctx, &pc.cloudlet.Key)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential MT clusters, cluster lookup failed", "cloudlet", pc.cloudlet.Key, "err", err)
 				continue
 			}
-			refs := edgeproto.ClusterRefs{}
-			if !s.all.clusterRefsApi.cache.Get(clusterKey, &refs) {
-				// no error if refs not found
-				refs.Key = *clusterKey
-			}
-			ss, free, err := s.all.clusterInstApi.fitsAppResources(ctx, &cluster, &refs, app, in, pc.flavorLookup)
-			if err != nil && ss != nil {
-				// cluster does not have enough resources, but can potentially
-				// scale up to provide enough. check if the cloudlet can
-				// support the scaled up cluster.
-				_, scaleErr := pc.resCalc.CloudletFitsScaledSpec(ctx, ss)
-				if scaleErr != nil {
-					log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT cluster, not enough resources for scaling", "cloudlet", pc.cloudlet.Key, "err", err, "scaleErr", scaleErr)
+			for _, cluster := range clusters {
+				clusterKey := &cluster.Key
+				if !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
+					log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential MT cluster, app deployment is not kubernetes", "cloudlet", pc.cloudlet.Key, "cluster", clusterKey)
 					continue
 				}
-			} else if ss == nil && err != nil {
-				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential default MT cluster, not enough resources", "cloudlet", pc.cloudlet.Key, "err", err)
-				continue
-			}
-			clust := potentialAppInstCluster{}
-			clust.existingCluster = *clusterKey
-			clust.cloudletKey = pc.cloudlet.Key
-			clust.parentPC = pc
-			clust.scaleSpec = ss
-			clust.calcResourceScore(free)
-			potentialClusters = append(potentialClusters, &clust)
-			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential default MT kubernetes cluster", "cloudlet", pc.cloudlet.Key, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
-			if len(potentialClusters) > MaxPotentialClusters {
-				return potentialClusters, nil
+				if err := s.all.clusterInstApi.checkMinKubernetesVersion(cluster, in); err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential MT cluster, k8s version check failed", "cloudlet", pc.cloudlet.Key, "cluster", clusterKey, "err", err)
+					continue
+				}
+				refs := edgeproto.ClusterRefs{}
+				if !s.all.clusterRefsApi.cache.Get(clusterKey, &refs) {
+					// no error if refs not found
+					refs.Key = *clusterKey
+				}
+				if s.all.clusterInstApi.hasInstanceOfApp(&refs, app) {
+					// we don't support multiple instances of the same app in the
+					// same cluster
+					log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential MT cluster, already instance of app in cluster", "cloudlet", pc.cloudlet.Key, "cluster", clusterKey)
+					continue
+				}
+				ss, free, err := s.all.clusterInstApi.fitsAppResources(ctx, cluster, &refs, app, in, pc.flavorLookup)
+				if err != nil && ss != nil {
+					// cluster does not have enough resources, but can potentially
+					// scale up to provide enough. check if the cloudlet can
+					// support the scaled up cluster.
+					_, scaleErr := pc.resCalc.CloudletFitsScaledSpec(ctx, ss)
+					if scaleErr != nil {
+						log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential MT cluster, not enough resources for scaling", "cloudlet", pc.cloudlet.Key, "err", err, "scaleErr", scaleErr)
+						continue
+					}
+				} else if ss == nil && err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential MT cluster, not enough resources", "cloudlet", pc.cloudlet.Key, "err", err)
+					continue
+				}
+				clust := potentialAppInstCluster{}
+				clust.existingCluster = *clusterKey
+				clust.cloudletKey = pc.cloudlet.Key
+				clust.parentPC = pc
+				clust.scaleSpec = ss
+				clust.calcResourceScore(free)
+				potentialClusters = append(potentialClusters, &clust)
+				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential MT kubernetes cluster", "cloudlet", pc.cloudlet.Key, "cluster", clusterKey, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
+				if len(potentialClusters) > MaxPotentialClusters {
+					return potentialClusters, nil
+				}
 			}
 		}
 	}
@@ -319,11 +347,15 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			}
 			targetDeployment := cloudcommon.AppInstToClusterDeployment(app.Deployment)
 			if targetDeployment != cluster.Deployment {
-				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, deployment mismatch", "cloudlet", pc.cloudlet.Key, "clusterDep", cluster.Deployment, "appInstDep", targetDeployment)
+				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, deployment mismatch", "cloudlet", pc.cloudlet.Key, "cluster", cluster.Key, "clusterDep", cluster.Deployment, "appInstDep", targetDeployment)
 				continue
 			}
 			if in.EnableIpv6 && !cluster.EnableIpv6 {
-				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, IPV6 mismatch", "cloudlet", pc.cloudlet.Key, "clusterIPV6", cluster.EnableIpv6, "appInstIPV6", in.EnableIpv6)
+				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, IPV6 mismatch", "cloudlet", pc.cloudlet.Key, "cluster", cluster.Key, "clusterIPV6", cluster.EnableIpv6, "appInstIPV6", in.EnableIpv6)
+				continue
+			}
+			if err := s.all.clusterInstApi.checkMinKubernetesVersion(&cluster, in); err != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, k8s version check failed", "cloudlet", pc.cloudlet.Key, "cluster", cluster.Key, "err", err)
 				continue
 			}
 			refs := edgeproto.ClusterRefs{}
@@ -335,11 +367,11 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			if err != nil && ss != nil {
 				_, scaleErr := pc.resCalc.CloudletFitsScaledSpec(ctx, ss)
 				if scaleErr != nil {
-					log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, not enough resources for scaling", "cloudlet", pc.cloudlet.Key, "err", err, "scaleErr", scaleErr)
+					log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, not enough resources for scaling", "cloudlet", pc.cloudlet.Key, "cluster", cluster.Key, "err", err, "scaleErr", scaleErr)
 					continue
 				}
 			} else if ss == nil && err != nil {
-				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, not enough resources", "cloudlet", pc.cloudlet.Key, "err", err)
+				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable cluster, not enough resources", "cloudlet", pc.cloudlet.Key, "cluster", cluster.Key, "err", err)
 				continue
 			}
 			clust := potentialAppInstCluster{}
@@ -349,7 +381,7 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			clust.scaleSpec = ss
 			clust.calcResourceScore(free)
 			potentialClusters = append(potentialClusters, &clust)
-			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add free reservable cluster", "cloudlet", pc.cloudlet.Key, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add free reservable cluster", "cloudlet", pc.cloudlet.Key, "cluster", cluster.Key, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
 			if len(potentialClusters) > MaxPotentialClusters {
 				return potentialClusters, nil
 			}

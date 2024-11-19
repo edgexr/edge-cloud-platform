@@ -33,6 +33,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	"github.com/oklog/ulid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	appsv1 "k8s.io/api/apps/v1"
 )
@@ -628,6 +629,7 @@ func (s *AppApi) CreateApp(ctx context.Context, in *edgeproto.App) (res *edgepro
 		if err != nil {
 			return err
 		}
+		in.ObjId = ulid.Make().String()
 		s.all.appInstRefsApi.createRef(stm, &in.Key)
 
 		in.CreatedAt = dme.TimeToTimestamp(time.Now())
@@ -1285,4 +1287,21 @@ func (s *AppApi) ShowZonesForAppDeployment(in *edgeproto.DeploymentZoneRequest, 
 		cb.Send(zkey)
 	}
 	return nil
+}
+
+// getAppByID finds App by ID. If app not found returns nil App instead
+// of an error.
+func (s *AppApi) getAppByID(ctx context.Context, id string) (*edgeproto.App, error) {
+	filter := &edgeproto.App{
+		ObjId: id,
+	}
+	var app *edgeproto.App
+	err := s.cache.Show(filter, func(obj *edgeproto.App) error {
+		app = obj
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return app, nil
 }

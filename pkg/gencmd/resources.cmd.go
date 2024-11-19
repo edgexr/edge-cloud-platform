@@ -58,7 +58,7 @@ var KubernetesResourcesOptionalArgs = []string{
 	"gpupool.topology.minnodedisk",
 	"gpupool.topology.minnodeoptres",
 	"gpupool.topology.minnumberofnodes",
-	"mink8sversion",
+	"minkubernetesversion",
 }
 var KubernetesResourcesAliasArgs = []string{}
 var KubernetesResourcesComments = map[string]string{
@@ -80,7 +80,7 @@ var KubernetesResourcesComments = map[string]string{
 	"gpupool.topology.minnodedisk":      "Minimum amount of root partition disk space in gigabytes per node",
 	"gpupool.topology.minnodeoptres":    "Minimum number of optional resources per node",
 	"gpupool.topology.minnumberofnodes": "Minimum number of nodes in pool, to satisfy HA/replication requirements",
-	"mink8sversion":                     "Minimum Kubernetes version",
+	"minkubernetesversion":              "Minimum Kubernetes version",
 }
 var KubernetesResourcesSpecialArgs = map[string]string{
 	"cpupool.topology.minnodeoptres": "StringToString",

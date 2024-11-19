@@ -12,6 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml openapi/Edge-Application-Management.yaml
+// We use a custom version of oapi-codegen.
+// The custom generator avoids anonymous inner structs.
+// Install using:
+// git clone https://github.com/edgexr/oapi-codegen
+// (cd oapi-codegen/cmd/oapi-codegen && go install .)
+
+//go:generate oapi-codegen --config=config.yaml openapi/Edge-Application-Management.yaml
+
+// For reference, if using official oapi-codegen:
+//**go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml openapi/Edge-Application-Management.yaml
 
 package nbi

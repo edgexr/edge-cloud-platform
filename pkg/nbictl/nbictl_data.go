@@ -17,60 +17,70 @@
 package nbictl
 
 import (
-	"context"
-	"crypto/tls"
-	"net/http"
-
 	"github.com/edgexr/edge-cloud-platform/api/nbi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 )
 
-type AppInst struct {
-	AppID    nbi.AppId    `json:"appid"`
-	AppZones nbi.AppZones `json:"appzones"`
+// CreateAppInst adds additional fields to the NBI data to allow for
+// declarative and infrastructure-as-code input.
+type CreateAppInst struct {
+	nbi.CreateAppInstanceJSONBody
+	AppName           string `json:"appname,omitempty"`
+	AppProvider       string `json:"appprovider,omitempty"`
+	AppVersion        string `json:"appversion,omitempty"`
+	EdgeCloudZoneName string `json:"zonename,omitempty"`
+	EdgeCloudProvider string `json:"edgecloudprovider,omitempty"`
+	ClusterName       string `json:"clustername,omitempty"`
+	ClusterProvider   string `json:"clusterprovider,omitempty"`
+}
+
+// DeleteAppInst adds additional fields to the NBI data to allow for
+// declarative and infrastructure-as-code input.
+type DeleteAppInst struct {
+	ID          string `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	AppProvider string `json:"appprovider,omitempty"`
 }
 
 type ApplyData struct {
 	Apps     []nbi.AppManifest `json:"apps,omitempty"`
-	AppInsts []AppInst         `json:"appinsts,omitempty"`
+	AppInsts []CreateAppInst   `json:"appinsts,omitempty"`
 }
 
 type GetData struct {
-	Apps     []nbi.AppManifest     `json:"apps,omitempty"`
-	AppInsts []nbi.AppInstanceInfo `json:"appinsts,omitempty"`
-	Zones    []nbi.EdgeCloudZone   `json:"zones,omitempty"`
+	Apps     []nbi.AppManifest    `json:"apps,omitempty"`
+	AppInsts []GetAppInstanceInfo `json:"appinsts,omitempty"`
+	Zones    []nbi.EdgeCloudZone  `json:"zones,omitempty"`
+	Clusters []GetClusterInfo     `json:"clusters,omitempty"`
+}
+
+// GetAppInstanceInfo adds additional fields to the NBI data to allow
+// for declarative and infrastructure-as-code output.
+type GetAppInstanceInfo struct {
+	nbi.AppInstanceInfo
+	AppName           string `json:"appname,omitempty"`
+	EdgeCloudZoneName string `json:"zonename,omitempty"`
+	EdgeCloudProvider string `json:"edgecloudprovider,omitempty"`
+	ClusterName       string `json:"clustername,omitempty"`
+	ClusterProvider   string `json:"clusterprovider,omitempty"`
+}
+
+// GetClusterInfo adds additional fields to the NBI data to allow
+// for declarative and infrastructure-as-code output.
+type GetClusterInfo struct {
+	nbi.ClusterInfo
+	EdgeCloudZoneName string `json:"zonename,omitempty"`
+	EdgeCloudProvider string `json:"edgecloudprovider,omitempty"`
+	ClusterName       string `json:"clustername,omitempty"`
+	ClusterProvider   string `json:"clusterprovider,omitempty"`
+}
+
+type DeleteData struct {
+	Apps     []nbi.AppManifest `json:"apps,omitempty"`
+	AppInsts []DeleteAppInst   `json:"appinsts,omitempty"`
 }
 
 type APIErr struct {
 	Desc   string
 	Status int
-	Err    error
-}
-
-func getURL(addr string) string {
-	return addr + cloudcommon.NBIRootPath
-}
-
-func BasicClient(addr, bearerToken string, skipVerify bool) (*nbi.ClientWithResponses, error) {
-	url := getURL(addr)
-	customize := func(client *nbi.Client) error {
-		if skipVerify {
-			client.Client = &http.Client{
-				Transport: &http.Transport{
-					TLSClientConfig: &tls.Config{
-						InsecureSkipVerify: true,
-					},
-				},
-			}
-		}
-		if bearerToken != "" {
-			addToken := func(ctx context.Context, req *http.Request) error {
-				req.Header.Add("Authorization", "Bearer "+bearerToken)
-				return nil
-			}
-			client.RequestEditors = append(client.RequestEditors, addToken)
-		}
-		return nil
-	}
-	return nbi.NewClientWithResponses(url, customize)
+	Err    string
 }

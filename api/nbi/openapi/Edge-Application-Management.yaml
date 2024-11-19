@@ -233,8 +233,8 @@ paths:
         - Application
       summary: Retrieve a list of existing Applications
       description: |
-        Get the list of existing Application definitions from the Edge Cloud
-        Provider.
+        Get the list of all existing Application definitions from the
+        Edge Cloud Provider that the user has permission to view.
       operationId: getApps
       parameters:
         - $ref: '#/components/parameters/x-correlator'
@@ -370,25 +370,31 @@ paths:
         - Application
       summary: Instantiation of an Application
       description: |
-        Ask the Edge Cloud Platform to instantiate an application to one
-        or several Edge Cloud Zones with an Application as an input and an
-        Application Instance as the output.
+        Ask the Edge Cloud Platform to instantiate an application to an
+        Edge Cloud Zone.
       operationId: createAppInstance
       parameters:
         - $ref: '#/components/parameters/x-correlator'
       requestBody:
         description: |
-          The Application ID and the array of Edge Cloud Zones to deploy
-          it to.
+          Information about the application and where to deploy it.
         content:
           application/json:
             schema:
               type: object
+              required:
+                - name
+                - appId
+                - edgeCloudZoneId
               properties:
+                name:
+                  $ref: '#/components/schemas/AppInstanceName'
                 appId:
                   $ref: '#/components/schemas/AppId'
-                appZones:
-                  $ref: '#/components/schemas/AppZones'
+                edgeCloudZoneId:
+                  $ref: '#/components/schemas/EdgeCloudZoneId'
+                kubernetesClusterRef:
+                  $ref: '#/components/schemas/KubernetesClusterRef'
         required: true
       responses:
         '202':
@@ -404,13 +410,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  appInstaces:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/AppInstanceInfo'
-                minItems: 1
+                $ref: '#/components/schemas/AppInstanceInfo'
         '400':
           $ref: '#/components/responses/400'
         '401':
@@ -427,7 +427,7 @@ paths:
                 status: 409
                 code: CONFLICT
                 message: "Application already instantiated in the given
-                  Edge Cloud Zone or Edge Cloud Region"
+                  Edge Cloud Zone"
         '500':
           $ref: '#/components/responses/500'
         '501':
@@ -483,13 +483,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  appInstaceInfo:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/AppInstanceInfo'
-                minItems: 1
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppInstanceInfo'
         '401':
           $ref: '#/components/responses/401'
         '403':
@@ -534,6 +530,57 @@ paths:
           description: Application Instance Deleted
         '400':
           $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '403':
+          $ref: '#/components/responses/403'
+        '404':
+          $ref: '#/components/responses/404'
+        '500':
+          $ref: '#/components/responses/500'
+        '503':
+          $ref: '#/components/responses/503'
+  /clusters:
+    get:
+      security:
+        - openId:
+            - edge-application-management:clusters:read
+      tags:
+        - Cluster
+      summary: Retrieve a list of the available clusters
+      description: |
+        List available cluster information
+      operationId: getClusters
+      parameters:
+        - $ref: '#/components/parameters/x-correlator'
+        - name: region
+          description: |
+            Human readable name of the geographical Edge Cloud Region of
+            the Cluster. Defined by the Edge Cloud Provider.
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/EdgeCloudRegion'
+        - name: clusterRef
+          description: |
+            A globally unique identifier for the Cluster.
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/KubernetesClusterRef'
+      responses:
+        '200':
+          description: |
+            Successful response, returning the clusters.
+          headers:
+            x-correlator:
+              $ref: "#/components/headers/x-correlator"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClusterInfo'
         '401':
           $ref: '#/components/responses/401'
         '403':
@@ -670,9 +717,21 @@ components:
     AppInstanceInfo:
       description: Information about the application instance.
       type: object
+      required:
+        - name
+        - appId
+        - appInstanceId
+        - appProvider
+        - edgeCloudZoneId
       properties:
+        name:
+          $ref: '#/components/schemas/AppInstanceName'
+        appId:
+          $ref: '#/components/schemas/AppId'
         appInstanceId:
           $ref: '#/components/schemas/AppInstanceId'
+        appProvider:
+          $ref: '#/components/schemas/AppProvider'
         status:
           description: Status of the application instance (default is 'unknown')
           type: string
@@ -705,16 +764,30 @@ components:
               accessPoints:
                 $ref: '#/components/schemas/AccessEndpoint'
           minItems: 1
-        edgeCloudZone:
-          $ref: '#/components/schemas/EdgeCloudZone'
+        kubernetesClusterRef:
+          $ref: '#/components/schemas/KubernetesClusterRef'
+        edgeCloudZoneId:
+          $ref: '#/components/schemas/EdgeCloudZoneId'
+
+    AppInstanceName:
+      type: string
+      pattern: ^[A-Za-z][A-Za-z0-9_]{1,63}$
+      description: Name of the App instance, scoped to the AppProvider
 
     AppZones:
       description: |
-        Collection of Edge Cloud Zones where the Application Provider wants to
-        instantiate the application.
+        Collection of Edge Cloud Zones and/or Kubernetes cluster reference
+        where the Application Provider wants to instantiate the application.
       type: array
       items:
-        $ref: '#/components/schemas/EdgeCloudZone'
+        type: object
+        properties:
+          kubernetesClusterRef:
+            $ref: '#/components/schemas/KubernetesClusterRef'
+          EdgeCloudZone:
+            $ref: '#/components/schemas/EdgeCloudZone'
+      required:
+        - EdgeCloudZone
       minItems: 1
       additionalProperties: false
 
@@ -729,6 +802,8 @@ components:
           type: string
           pattern: ^[A-Za-z][A-Za-z0-9_]{1,63}$
           description: Name of the application.
+        appProvider:
+          $ref: '#/components/schemas/AppProvider'
         version:
           type: string
           description: Application version information
@@ -795,7 +870,6 @@ components:
                 digest for containers
         requiredResources:
           $ref: '#/components/schemas/RequiredResources'
-
         componentSpec:
           description: |
             Information defined in "appRepo" point to the application
@@ -881,10 +955,35 @@ components:
       required:
         - name
         - version
+        - appProvider
         - packageType
         - appRepo
         - requiredResources
         - componentSpec
+
+    AppProvider:
+      type: string
+      pattern: ^[A-Za-z][A-Za-z0-9_]{7,63}$
+      description: Human readable name of the Application Provider.
+
+    ClusterInfo:
+      description: Kubernetes cluster information
+      required:
+        - name
+        - provider
+        - clusterRef
+        - edgeCloudZoneId
+      properties:
+        name:
+          type: string
+          description: |
+            Name of the Cluster, scoped to the Provider
+        provider:
+          $ref: '#/components/schemas/AppProvider'
+        clusterRef:
+          $ref: '#/components/schemas/KubernetesClusterRef'
+        edgeCloudZoneId:
+          $ref: '#/components/schemas/EdgeCloudZoneId'
 
     EdgeCloudProvider:
       type: string
@@ -935,8 +1034,6 @@ components:
           $ref: '#/components/schemas/EdgeCloudProvider'
         edgeCloudRegion:
           $ref: '#/components/schemas/EdgeCloudRegion'
-        edgeCloudKubernetesClusterRef:
-          $ref: '#/components/schemas/KubernetesClusterRef'
       minItems: 1
 
     EdgeCloudZoneName:
@@ -1106,140 +1203,138 @@ components:
           enum:
             - kubernetes
         applicationResources:
-            description: |
-              Application resources define the resources pool required
-              by the application to be executed in a Kubernetes clusters.
-            type: object
-            properties:
-              cpuPool:
-                required:
-                  - numCPU
-                  - memory
-                  - topology
-                type: object
-                description: |
-                  CPU Pool refers to the amount of application' resources
-                  that is executed in nodes with CPU only. That means the part
-                  of application that doesn't require GPU or other kind of
-                  acceleration.
-                  CPU pool is not mandatory when the application is executed
-                  exclusively in a GPU pool.
-                  A CPU pool is composed by CPU and memory.
-                properties:
-                  numCPU:
-                    description: |
-                      Total number of vcpus in whole (i.e 1) of CPU pool.
-                    type: integer
-                    example: 1
-                  memory:
-                    description: Total memory in mega bytes of CPU pool.
-                    type: integer
-                    example: 1024
-                  topology:
-                    type: object
-                    description: |
-                      CPU pool topology defines an application's CPU-based
-                      architecture.
-                      When deploying for high availability or redundancy, it
-                      allows for clustering with a configurable number of nodes
-                      and minimum CPU/memory resource per Kubernetes node
-                      requirements.
-                    required:
-                      - minNumberOfNodes
-                      - minNodeCpu
-                      - minNodeMemory
-                    properties:
-                      minNumberOfNodes:
-                        description: |
-                          Minimum number of worker nodes required by the
-                          application.
-                        type: integer
-                        example: 5
-                      minNodeCpu:
-                        description: |
-                          Minimum number of vcpus in whole (i.e 1) per cluster
-                          node in CPU pool.
-                        type: integer
-                        example: 2
-                      minNodeMemory:
-                        description: |
-                          Minimum memory in mega bytes per cluster node in
-                          CPU pool.
-                        type: integer
-                        example: 1024
-              gpuPool:
-                required:
-                  - numCPU
-                  - memory
-                  - gpuMemory
-                  - topology
-                type: object
-                description: |
-                  GPU Pool refers to the amount of resources of the application
-                  that is executed in nodes with GPU.
-                  GPU Pool is not mandatory when the application is executed
-                  exclusively in a CPU pool.
-                  A GPU pool is composed by memory, CPU and GPU memory
-                properties:
-                  numCPU:
-                    description: |
-                      Total Number of vcpus in whole (i.e 1) of GPU pool.
-                    type: integer
-                    example: 1
-                  memory:
-                    description: Total memory in mega bytes of GPU pool.
-                    type: integer
-                    example: 1024
-                  gpuMemory:
-                    description: Total GPU memory in giga bytes of GPU pool.
-                    type: integer
-                    example: 16
-                  topology:
-                    type: object
-                    description: |
-                      GPU pool topology defines an application's GPU-based
-                      architecture.
-                      When deploying for high availability or redundancy, it
-                      allows for clustering with a configurable number of nodes
-                      and minimum CPU/memory/GPU memory resource per Kubernetes
-                      node requirements.
-                    required:
-                      - minNumberOfNodes
-                      - minNodeCpu
-                      - minNodeMemory
-                      - minNodeGpuMemory
-                    properties:
-                      minNumberOfNodes:
-                        description: |
-                          Minimum number of worker nodes with GPU required by
-                          the application.
-                        type: integer
-                        example: 2
-                      minNodeCpu:
-                        description: |
-                          Minimum number of vcpus in whole (i.e 1) per cluster
-                          node in GPU pool.
-                        type: integer
-                        example: 2
-                      minNodeMemory:
-                        description: |
-                          Minimum memory in mega bytes per cluster node in
-                          GPU pool.
-                        type: integer
-                        example: 1024
-                      minNodeGpuMemory:
-                        description: Minimum memory in giga bytes per cluster
-                         node in GPU pool.
-                        type: integer
-                        example: 8
+          description: |
+            Application resources define the resources pool required
+            by the application to be executed in a Kubernetes clusters.
+          type: object
+          properties:
+            cpuPool:
+              required:
+                - numCPU
+                - memory
+                - topology
+              type: object
+              description: |
+                CPU Pool refers to the amount of application' resources
+                that is executed in nodes with CPU only. That means the part
+                of application that doesn't require GPU or other kind of
+                acceleration.
+                CPU pool is not mandatory when the application is executed
+                exclusively in a GPU pool.
+                A CPU pool is composed by CPU and memory.
+              properties:
+                numCPU:
+                  description: |
+                    Total number of vcpus in whole (i.e 1) of CPU pool.
+                  type: integer
+                  example: 1
+                memory:
+                  description: Total memory in mega bytes of CPU pool.
+                  type: integer
+                  example: 1024
+                topology:
+                  type: object
+                  description: |
+                    CPU pool topology defines an application's CPU-based
+                    architecture.
+                    When deploying for high availability or redundancy, it
+                    allows for clustering with a configurable number of nodes
+                    and minimum CPU/memory resource per Kubernetes node
+                    requirements.
+                  required:
+                    - minNumberOfNodes
+                    - minNodeCpu
+                    - minNodeMemory
+                  properties:
+                    minNumberOfNodes:
+                      description: |
+                        Minimum number of worker nodes required by the
+                        application.
+                      type: integer
+                      example: 5
+                    minNodeCpu:
+                      description: |
+                        Minimum number of vcpus in whole (i.e 1) per cluster
+                        node in CPU pool.
+                      type: integer
+                      example: 2
+                    minNodeMemory:
+                      description: |
+                        Minimum memory in mega bytes per cluster node in
+                        CPU pool.
+                      type: integer
+                      example: 1024
+            gpuPool:
+              required:
+                - numCPU
+                - memory
+                - gpuMemory
+                - topology
+              type: object
+              description: |
+                GPU Pool refers to the amount of resources of the application
+                that is executed in nodes with GPU.
+                GPU Pool is not mandatory when the application is executed
+                exclusively in a CPU pool.
+                A GPU pool is composed by memory, CPU and GPU memory
+              properties:
+                numCPU:
+                  description: |
+                    Total Number of vcpus in whole (i.e 1) of GPU pool.
+                  type: integer
+                  example: 1
+                memory:
+                  description: Total memory in mega bytes of GPU pool.
+                  type: integer
+                  example: 1024
+                gpuMemory:
+                  description: Total GPU memory in giga bytes of GPU pool.
+                  type: integer
+                  example: 16
+                topology:
+                  type: object
+                  description: |
+                    GPU pool topology defines an application's GPU-based
+                    architecture.
+                    When deploying for high availability or redundancy, it
+                    allows for clustering with a configurable number of nodes
+                    and minimum CPU/memory/GPU memory resource per Kubernetes
+                    node requirements.
+                  required:
+                    - minNumberOfNodes
+                    - minNodeCpu
+                    - minNodeMemory
+                    - minNodeGpuMemory
+                  properties:
+                    minNumberOfNodes:
+                      description: |
+                        Minimum number of worker nodes with GPU required by
+                        the application.
+                      type: integer
+                      example: 2
+                    minNodeCpu:
+                      description: |
+                        Minimum number of vcpus in whole (i.e 1) per cluster
+                        node in GPU pool.
+                      type: integer
+                      example: 2
+                    minNodeMemory:
+                      description: |
+                        Minimum memory in mega bytes per cluster node in
+                        GPU pool.
+                      type: integer
+                      example: 1024
+                    minNodeGpuMemory:
+                      description: Minimum memory in giga bytes per cluster
+                        node in GPU pool.
+                      type: integer
+                      example: 8
         isStandalone:
           description: |
             Define if the Kubernetes clusters can be reused by other
             applications.
           type: boolean
           example: false
-        kubernetesClusterRef:
-          $ref: '#/components/schemas/KubernetesClusterRef'
         version:
           type: string
           description: Minimum Kubernetes Version.

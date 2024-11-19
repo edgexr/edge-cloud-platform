@@ -48,7 +48,7 @@ var udevRulesFile = "/etc/udev/rules.d/70-persistent-net.rules"
 
 var sharedRootLBPortLock sync.Mutex
 
-var RootLBPorts = []dme.AppPort{}
+var RootLBPorts = []edgeproto.InstPort{}
 var NoAccessKey string
 
 // creates entries in the 70-persistent-net.rules files to ensure the interface names are consistent after reboot
@@ -554,7 +554,7 @@ func (v *VMPlatform) SetupRootLB(
 		// this is not necessarily fatal
 		log.SpanLog(ctx, log.DebugLevelInfra, "cannot fetch public ip", "err", err)
 	} else {
-		var sshPort = []dme.AppPort{{
+		var sshPort = []edgeproto.InstPort{{
 			PublicPort: 22,
 			Proto:      dme.LProto_L_PROTO_TCP,
 		}}

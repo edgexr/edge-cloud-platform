@@ -125,6 +125,14 @@ func StartSpanHTTP(r *http.Request) *http.Request {
 	return r.WithContext(ContextWithSpan(r.Context(), span))
 }
 
+// InjectSpanHTTP injects the span from context into the request.
+// Used to forward spans across HTTP requests.
+func InjectSpanHTTP(ctx context.Context, r *http.Request) error {
+	carrier := opentracing.HTTPHeadersCarrier(r.Header)
+	span := SpanFromContext(ctx)
+	return tracer.Inject(span.Context(), opentracing.HTTPHeaders, carrier)
+}
+
 // EchoTraceHandler is an echo server middleware to ensure a span trace is present.
 func EchoTraceHandler(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {

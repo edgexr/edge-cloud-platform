@@ -157,6 +157,8 @@ message ClusterInst {
   repeated NodePool node_pools = 46;
   // Annotations added by the implementing infrastructure
   map<string, string> infra_annotations = 47 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Kubernetes version of cluster if applicable
+  string kubernetes_version = 48;
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;
@@ -210,7 +212,7 @@ service ClusterInstApi {
     };
     option (protogen.stream_out_incremental) = true;
     option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
-    option (protogen.method_noconfig) = "Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName,Networks,MultiTenant,CloudletKey,NodeResources,NodePools:#.Name,NodePools:#.NodeResources";
+    option (protogen.method_noconfig) = "Flavor,NumMasters,AvailabilityZone,Reservable,SharedVolumeSize,IpAccess,Deployment,ImageName,Networks,MultiTenant,CloudletKey,NodeResources,NodePools:#.Name,NodePools:#.NodeResources,KubernetesVersion";
   }
   // Show Cluster Instances. Lists all the cluster instances managed by Edge Controller.
   rpc ShowClusterInst(ClusterInst) returns (stream ClusterInst) {
