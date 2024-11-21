@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	math "math"
+	"sort"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -168,4 +169,161 @@ func NodePoolFromResources(name string, pr *edgeproto.NodePoolResources) *edgepr
 		NumNodes:      uint32(numNodes),
 		NodeResources: &nr,
 	}
+}
+
+// calcResourceScore gets a score which represents the available resources
+// in a cluster. A higher score means more available resources.
+func (s *ClusterInstApi) calcResourceScore(free resspec.ResValMap) uint64 {
+	if free == nil {
+		return 0
+	}
+	// Calculate score based on weights and free values
+	// Because some resources may have no limit, track the number
+	// of resources we've scored. We'll divide by this number to
+	// get an average per-resource score for comparisons.
+	var score, numScored uint64
+	for res, weight := range resourceWeights {
+		if resVal, ok := free[res]; ok {
+			// make a copy
+			freeDecVal := edgeproto.NewUdec64(resVal.Value.Whole, resVal.Value.Nanos)
+			// multiply by weight to try to promote and remove decimal values
+			freeDecVal.Mult(uint32(weight))
+
+			score += freeDecVal.Whole
+			numScored++
+		}
+	}
+	if numScored == 0 {
+		score = 0
+	} else {
+		score /= numScored
+	}
+	return score
+}
+
+// calcKubernetesClusterTotalResources calculates the total amount of
+// resources in the cluster.
+func calcKubernetesClusterTotalResources(ci *edgeproto.ClusterInst, flavorLookup edgeproto.FlavorLookup) (resspec.ResValMap, resspec.ResValMap, error) {
+	cpuRes := resspec.ResValMap{}
+	gpuRes := resspec.ResValMap{}
+
+	for _, pool := range ci.NodePools {
+		var res *resspec.ResValMap
+		if cloudcommon.NodeResourcesGPUCount(pool.NodeResources) > 0 {
+			res = &gpuRes
+		} else {
+			res = &cpuRes
+		}
+		infraRes, err := resspec.GetInfraNodeResources(pool.NodeResources, flavorLookup)
+		if err != nil {
+			return nil, nil, fmt.Errorf("pool %s %s", pool.Name, err)
+		}
+		// convert pool to generic set of numeric resources
+		infraResCounts, err := resspec.NodeResourcesToResValMap(infraRes)
+		if err != nil {
+			return nil, nil, fmt.Errorf("pool %s resources %s", pool.Name, err)
+		}
+		res.AddAllMult(infraResCounts, pool.NumNodes)
+	}
+	return cpuRes, gpuRes, nil
+}
+
+func calcVMClusterTotalResources(ci *edgeproto.ClusterInst, flavorLookup edgeproto.FlavorLookup) (resspec.ResValMap, error) {
+	if ci.NodeResources == nil {
+		return resspec.ResValMap{}, nil
+	}
+	nodeRes, err := resspec.GetInfraNodeResources(ci.NodeResources, flavorLookup)
+	if err != nil {
+		return nil, err
+	}
+	resVals, err := resspec.NodeResourcesToResValMap(nodeRes)
+	if err != nil {
+		return nil, err
+	}
+	return resVals, nil
+}
+
+func clusterResValToInfra(usedVals, totalVals resspec.ResValMap) []*edgeproto.InfraResource {
+	out := []*edgeproto.InfraResource{}
+	// add in used values with total
+	for resName, resVal := range usedVals {
+		infraRes := edgeproto.InfraResource{}
+		infraRes.Name = resName
+		infraRes.Value = resVal.Value.Whole
+		infraRes.Units = resVal.Units
+		if total, ok := totalVals[resName]; ok {
+			infraRes.InfraMaxValue = total.Value.Whole
+		}
+		out = append(out, &infraRes)
+	}
+	// add in total values if not found in used.
+	for resName, resVal := range totalVals {
+		if _, found := usedVals[resName]; found {
+			continue
+		}
+		infraRes := edgeproto.InfraResource{}
+		infraRes.Name = resName
+		infraRes.Units = resVal.Units
+		infraRes.InfraMaxValue = resVal.Value.Whole
+		out = append(out, &infraRes)
+	}
+	sort.Slice(out[:], func(i, j int) bool {
+		return out[i].Name < out[j].Name
+	})
+	return out
+}
+
+func (s *ClusterInstApi) getClusterResourceUsage(ctx context.Context, ci *edgeproto.ClusterInst, flavorLookup edgeproto.FlavorLookup) (*edgeproto.ClusterResourceUsage, error) {
+	var underflow bool
+	refs := &edgeproto.ClusterRefs{}
+	if !s.all.clusterRefsApi.cache.Get(&ci.Key, refs) {
+		refs.Key = ci.Key
+	}
+	usage := edgeproto.ClusterResourceUsage{}
+	usage.Key = ci.Key
+	usage.ZoneKey = ci.ZoneKey
+	usage.CloudletKey = ci.CloudletKey
+	if ci.Deployment == cloudcommon.DeploymentTypeKubernetes {
+		// For Kubernetes, resource decisions are made independently
+		// based on whether nodes have GPU resources or not.
+		// So we separate into cpu/gpu/total. Total is just for
+		// user reference and not actually used for decisions.
+		cpuUsed, gpuUsed, err := s.calcKubernetesClusterUsedResources(refs, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get used resources for cluster %s, %s", ci.Key.GetKeyString(), err)
+		}
+		cpuTotal, gpuTotal, err := calcKubernetesClusterTotalResources(ci, flavorLookup)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get total resources for cluster %s, %s", ci.Key.GetKeyString(), err)
+		}
+		cpuFree := cpuTotal.Clone()
+		cpuFree.SubFloorAll(cpuUsed, &underflow)
+		gpuFree := gpuTotal.Clone()
+		gpuFree.SubFloorAll(gpuUsed, &underflow)
+		usage.CpuPoolsResources = clusterResValToInfra(cpuUsed, cpuTotal)
+		usage.GpuPoolsResources = clusterResValToInfra(gpuUsed, gpuTotal)
+		usage.CpuPoolsResourceScore = s.calcResourceScore(cpuFree)
+		usage.GpuPoolsResourceScore = s.calcResourceScore(gpuFree)
+		// calculate overall values
+		cpuUsed.AddAllMult(gpuUsed, 1)
+		cpuTotal.AddAllMult(gpuTotal, 1)
+		free := cpuTotal.Clone()
+		free.SubFloorAll(cpuUsed, &underflow)
+		usage.TotalResources = clusterResValToInfra(cpuUsed, cpuTotal)
+		usage.ResourceScore = s.calcResourceScore(free)
+	} else {
+		used, err := s.calcVMClusterUsedResources(refs, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get used resources for cluster %s, %s", ci.Key.GetKeyString(), err)
+		}
+		total, err := calcVMClusterTotalResources(ci, flavorLookup)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get total resources for cluster %s, %s", ci.Key.GetKeyString(), err)
+		}
+		free := total.Clone()
+		free.SubFloorAll(used, &underflow)
+		usage.TotalResources = clusterResValToInfra(used, total)
+		usage.ResourceScore = s.calcResourceScore(free)
+	}
+	return &usage, nil
 }

@@ -1549,6 +1549,83 @@ func GetCloudletResourceUsages(c *cli.Command, data []edgeproto.CloudletResource
 	}
 }
 
+var ShowCloudletResourceUsageCmd = &cli.Command{
+	Use:          "ShowCloudletResourceUsage",
+	RequiredArgs: strings.Join(ShowCloudletResourceUsageRequiredArgs, " "),
+	OptionalArgs: strings.Join(ShowCloudletResourceUsageOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:  &CloudletSpecialArgs,
+	Comments:     CloudletComments,
+	ReqData:      &edgeproto.Cloudlet{},
+	ReplyData:    &edgeproto.CloudletResourceUsage{},
+	Run:          runShowCloudletResourceUsage,
+}
+
+func runShowCloudletResourceUsage(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.Cloudlet)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowCloudletResourceUsage(c, obj)
+}
+
+func ShowCloudletResourceUsage(c *cli.Command, in *edgeproto.Cloudlet) error {
+	if CloudletApiCmd == nil {
+		return fmt.Errorf("CloudletApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := CloudletApiCmd.ShowCloudletResourceUsage(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowCloudletResourceUsage failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.CloudletResourceUsage, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowCloudletResourceUsage recv failed: %s", errstr)
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowCloudletResourceUsages(c *cli.Command, data []edgeproto.Cloudlet, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowCloudletResourceUsage %v\n", data[ii])
+		myerr := ShowCloudletResourceUsage(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var AddCloudletResMappingCmd = &cli.Command{
 	Use:          "AddCloudletResMapping",
 	RequiredArgs: strings.Join(CloudletResMapRequiredArgs, " "),
@@ -2257,6 +2334,7 @@ var CloudletApiCmds = []*cobra.Command{
 	GetCloudletPropsCmd.GenCmd(),
 	GetCloudletResourceQuotaPropsCmd.GenCmd(),
 	GetCloudletResourceUsageCmd.GenCmd(),
+	ShowCloudletResourceUsageCmd.GenCmd(),
 	AddCloudletResMappingCmd.GenCmd(),
 	RemoveCloudletResMappingCmd.GenCmd(),
 	AddCloudletAllianceOrgCmd.GenCmd(),
@@ -3235,6 +3313,7 @@ var CloudletResourceUsageOptionalArgs = []string{
 	"info:#.description",
 	"info:#.units",
 	"info:#.alertthreshold",
+	"resourcescore",
 }
 var CloudletResourceUsageAliasArgs = []string{
 	"cloudletorg=key.organization",
@@ -3253,6 +3332,7 @@ var CloudletResourceUsageComments = map[string]string{
 	"info:#.description":    "Resource description",
 	"info:#.units":          "Resource units",
 	"info:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
+	"resourcescore":         "Resouce score, higher score means more available resources",
 }
 var CloudletResourceUsageSpecialArgs = map[string]string{}
 var CloudletAllianceOrgRequiredArgs = []string{
@@ -3812,6 +3892,73 @@ var GetCloudletResourceUsageRequiredArgs = []string{
 var GetCloudletResourceUsageOptionalArgs = []string{
 	"federatedorg",
 	"infrausage",
+}
+var ShowCloudletResourceUsageRequiredArgs = []string{}
+var ShowCloudletResourceUsageOptionalArgs = []string{
+	"cloudletorg",
+	"cloudlet",
+	"federatedorg",
+	"location.latitude",
+	"location.longitude",
+	"location.altitude",
+	"zone",
+	"ipsupport",
+	"staticips",
+	"numdynamicips",
+	"timelimits.createclusterinsttimeout",
+	"timelimits.updateclusterinsttimeout",
+	"timelimits.deleteclusterinsttimeout",
+	"timelimits.createappinsttimeout",
+	"timelimits.updateappinsttimeout",
+	"timelimits.deleteappinsttimeout",
+	"crmoverride",
+	"deploymentlocal",
+	"platformtype",
+	"notifysrvaddr",
+	"flavor.name",
+	"physicalname",
+	"envvar",
+	"containerversion",
+	"accessvars",
+	"vmimageversion",
+	"deployment",
+	"infraapiaccess",
+	"infraconfig.externalnetworkname",
+	"infraconfig.flavorname",
+	"maintenancestate",
+	"overridepolicycontainerversion",
+	"vmpool",
+	"trustpolicy",
+	"resourcequotas:#.name",
+	"resourcequotas:#.value",
+	"resourcequotas:#.alertthreshold",
+	"defaultresourcealertthreshold",
+	"kafkacluster",
+	"kafkauser",
+	"kafkapassword",
+	"gpuconfig.driver.name",
+	"gpuconfig.driver.organization",
+	"gpuconfig.properties",
+	"gpuconfig.licenseconfig",
+	"enabledefaultserverlesscluster",
+	"allianceorgs",
+	"singlekubernetesclusterowner",
+	"platformhighavailability",
+	"secondarynotifysrvaddr",
+	"federationconfig.federationcontextid",
+	"federationconfig.partnerfederationaddr",
+	"federationconfig.federationdbid",
+	"federationconfig.federationname",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.propmap",
+	"edgeboxonly",
+	"crmonedge",
+	"objid",
+	"annotations",
+	"dbmodelid",
 }
 var ShowFlavorsForZoneRequiredArgs = []string{}
 var ShowFlavorsForZoneOptionalArgs = []string{

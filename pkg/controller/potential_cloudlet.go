@@ -16,14 +16,12 @@ package controller
 
 import (
 	"context"
-	math "math"
 	"sort"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
@@ -108,49 +106,9 @@ func (s *potentialInstCloudlet) initResCalc(ctx context.Context, all *AllApis, s
 		return err
 	}
 	s.resCalc = resCalc
-	s.calcResourceScore(usedVals)
+	s.resourceScore = resCalc.calcResourceScore(usedVals)
 	log.SpanLog(ctx, log.DebugLevelApi, "potentialInstCloudlet calcResourceScore", "cloudlet", resCalc.cloudletKey, "score", s.resourceScore, "used", usedVals.String())
 	return nil
-}
-
-// calcResourceScore gets a score which represents the available resources
-// on a cloudlet. A higher score means more available resources.
-func (s *potentialInstCloudlet) calcResourceScore(usedVals resspec.ResValMap) {
-	// get max value for each resource on cloudlet
-	maxVals := getMaxResourceVals(s.cloudletInfo.ResourcesSnapshot.Info, s.cloudlet.ResourceQuotas)
-	// Calculate score based on weights and free values
-	// Because some resources may have no limit, track the number
-	// of resources we've scored. We'll divide by this number to
-	// get an average per-resource score for comparisons.
-	var score, numScored uint64
-	for res, weight := range resourceWeights {
-		max, ok := maxVals[res]
-		if !ok {
-			continue // no limit
-		}
-		free := max * weight
-		if usedVal, ok := usedVals[res]; ok {
-			// make a copy
-			usedDecVal := edgeproto.NewUdec64(usedVal.Value.Whole, usedVal.Value.Nanos)
-			// multiply by weight to try to promote and remove decimal values
-			usedDecVal.Mult(uint32(weight))
-			// subtract from free, dropping decimal value
-			if usedDecVal.Whole > free {
-				// avoid underflow
-				free = 0
-			} else {
-				free -= usedDecVal.Whole
-			}
-		}
-		score += free
-		numScored++
-	}
-	if numScored == 0 {
-		score = math.MaxUint64
-	} else {
-		score /= numScored
-	}
-	s.resourceScore = score
 }
 
 // PotentialInstCloudletsByResource sorts potential cloudlets

@@ -2405,7 +2405,7 @@ func convertToInfraRes(ctx context.Context, cloudlet *edgeproto.Cloudlet, resVal
 }
 
 // Get actual resource info used by the cloudlet
-func (s *CloudletResCalc) convertResourceUsage(ctx context.Context, usedResources *CloudletResources, infraUsage bool) ([]edgeproto.InfraResource, error) {
+func (s *CloudletResCalc) convertResourceUsage(ctx context.Context, usedResources *CloudletResources, infraUsage bool) ([]edgeproto.InfraResource, uint64, error) {
 	stm := s.stm
 	cloudlet := s.deps.cloudlet
 	cloudletInfo := s.deps.cloudletInfo
@@ -2440,21 +2440,18 @@ func (s *CloudletResCalc) convertResourceUsage(ctx context.Context, usedResource
 		resInfo.AlertThreshold = thresh
 		infraResInfoMap[resInfo.Name] = resInfo
 	}
+	resourceScore := uint64(0)
 	if !infraUsage {
 		usedVals, err := s.all.cloudletApi.totalCloudletResources(ctx, stm, cloudlet, cloudletInfo, usedResources)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		ctrlResInfo := convertToInfraRes(ctx, cloudlet, usedVals, infraResInfoMap)
 
 		for resName, resInfo := range ctrlResInfo {
-			if infraResInfo, ok := infraResInfoMap[resName]; ok {
-				infraResInfo.Value += resInfo.Value
-				infraResInfoMap[resName] = infraResInfo
-			} else {
-				infraResInfoMap[resName] = *resInfo
-			}
+			infraResInfoMap[resName] = *resInfo
 		}
+		resourceScore = s.calcResourceScore(usedVals)
 	}
 	out := []edgeproto.InfraResource{}
 	for _, val := range infraResInfoMap {
@@ -2465,7 +2462,7 @@ func (s *CloudletResCalc) convertResourceUsage(ctx context.Context, usedResource
 		return out[i].Name < out[j].Name
 	})
 
-	return out, nil
+	return out, resourceScore, nil
 }
 
 func (s *CloudletApi) GetCloudletResourceUsage(ctx context.Context, usage *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error) {
@@ -2482,14 +2479,38 @@ func (s *CloudletApi) GetCloudletResourceUsage(ctx context.Context, usage *edgep
 	}
 	cloudletResUsage.Key = usage.Key
 	cloudletResUsage.InfraUsage = usage.InfraUsage
-	cloudletResUsage.Info = resCalc.deps.cloudletInfo.ResourcesSnapshot.Info
-	resInfo := []edgeproto.InfraResource{}
-	resInfo, err = resCalc.convertResourceUsage(ctx, usedResources, usage.InfraUsage)
+	resInfo, resourceScore, err := resCalc.convertResourceUsage(ctx, usedResources, usage.InfraUsage)
 	if err != nil {
 		return &cloudletResUsage, err
 	}
 	cloudletResUsage.Info = resInfo
+	cloudletResUsage.ResourceScore = resourceScore
 	return &cloudletResUsage, err
+}
+
+func (s *CloudletApi) ShowCloudletResourceUsage(in *edgeproto.Cloudlet, cb edgeproto.CloudletApi_ShowCloudletResourceUsageServer) error {
+	ctx := cb.Context()
+	cloudletKeys := map[edgeproto.CloudletKey]struct{}{}
+	err := s.cache.Show(in, func(obj *edgeproto.Cloudlet) error {
+		cloudletKeys[obj.Key] = struct{}{}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	for key := range cloudletKeys {
+		usageIn := &edgeproto.CloudletResourceUsage{
+			Key: key,
+		}
+		usage, err := s.GetCloudletResourceUsage(ctx, usageIn)
+		if err != nil {
+			return fmt.Errorf("failed to get cloudlet resource usage for %s, %s", key.GetKeyString(), err)
+		}
+		if err := cb.Send(usage); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *CloudletApi) GetCloudletResourceQuotaProps(ctx context.Context, in *edgeproto.CloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, error) {

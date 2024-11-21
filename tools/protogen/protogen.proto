@@ -200,6 +200,9 @@ extend google.protobuf.MethodOptions {
   string cli_cmd = 51050;
   // Custom input validator for mc
   bool mc2_custom_validate_input = 51061;
+  // Generate a hook function for customizing the authorization behavior of the
+  // API in MC for custom show APIs.
+  bool mc2_show_custom_authz = 51067;
 }
 
 extend google.protobuf.ServiceOptions {

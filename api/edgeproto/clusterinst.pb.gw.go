@@ -167,6 +167,31 @@ func local_request_ClusterInstApi_DeleteIdleReservableClusterInsts_0(ctx context
 
 }
 
+func request_ClusterInstApi_ShowClusterResourceUsage_0(ctx context.Context, marshaler runtime.Marshaler, client ClusterInstApiClient, req *http.Request, pathParams map[string]string) (ClusterInstApi_ShowClusterResourceUsageClient, runtime.ServerMetadata, error) {
+	var protoReq ClusterInst
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	stream, err := client.ShowClusterResourceUsage(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+
+}
+
 func request_ClusterInstInfoApi_ShowClusterInstInfo_0(ctx context.Context, marshaler runtime.Marshaler, client ClusterInstInfoApiClient, req *http.Request, pathParams map[string]string) (ClusterInstInfoApi_ShowClusterInstInfoClient, runtime.ServerMetadata, error) {
 	var protoReq ClusterInstInfo
 	var metadata runtime.ServerMetadata
@@ -247,6 +272,13 @@ func RegisterClusterInstApiHandlerServer(ctx context.Context, mux *runtime.Serve
 
 		forward_ClusterInstApi_DeleteIdleReservableClusterInsts_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
+	})
+
+	mux.Handle("POST", pattern_ClusterInstApi_ShowClusterResourceUsage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
 	})
 
 	return nil
@@ -406,6 +438,26 @@ func RegisterClusterInstApiHandlerClient(ctx context.Context, mux *runtime.Serve
 
 	})
 
+	mux.Handle("POST", pattern_ClusterInstApi_ShowClusterResourceUsage_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ClusterInstApi_ShowClusterResourceUsage_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ClusterInstApi_ShowClusterResourceUsage_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -419,6 +471,8 @@ var (
 	pattern_ClusterInstApi_ShowClusterInst_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "clusterinst"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_ClusterInstApi_DeleteIdleReservableClusterInsts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"delete", "idlereservableclusterinsts"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_ClusterInstApi_ShowClusterResourceUsage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"show", "clusterinst", "resource", "usage"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -431,6 +485,8 @@ var (
 	forward_ClusterInstApi_ShowClusterInst_0 = runtime.ForwardResponseStream
 
 	forward_ClusterInstApi_DeleteIdleReservableClusterInsts_0 = runtime.ForwardResponseMessage
+
+	forward_ClusterInstApi_ShowClusterResourceUsage_0 = runtime.ForwardResponseStream
 )
 
 // RegisterClusterInstInfoApiHandlerFromEndpoint is same as RegisterClusterInstInfoApiHandler but

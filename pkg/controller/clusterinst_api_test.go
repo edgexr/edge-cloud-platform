@@ -246,6 +246,7 @@ func TestClusterInstApi(t *testing.T) {
 	testClusterInstResourceUsage(t, ctx, apis, ccrm)
 	testClusterInstGPUFlavor(t, ctx, apis)
 	testClusterPotentialCloudlets(t, ctx, apis)
+	testClusterResourceUsage(t, ctx, apis)
 
 	dummy.Stop()
 }
@@ -1244,4 +1245,354 @@ func testPotentialCloudletsCreateDeps(t *testing.T, ctx context.Context, apis *A
 		apis.zoneApi.store.Delete(ctx, zone, syncWait)
 	}
 	return zone, cloudlets, cloudletInfos, cleanup
+}
+
+type InfraRess []*edgeproto.InfraResource
+
+func (s InfraRess) AddVcpus(val, max uint64) InfraRess {
+	return append(s, &edgeproto.InfraResource{
+		Name:          cloudcommon.ResourceVcpus,
+		Value:         val,
+		InfraMaxValue: max,
+	})
+}
+
+func (s InfraRess) AddRam(val, max uint64) InfraRess {
+	return append(s, &edgeproto.InfraResource{
+		Name:          cloudcommon.ResourceRamMb,
+		Value:         val,
+		Units:         cloudcommon.ResourceRamUnits,
+		InfraMaxValue: max,
+	})
+}
+
+func (s InfraRess) AddDisk(val, max uint64) InfraRess {
+	return append(s, &edgeproto.InfraResource{
+		Name:          cloudcommon.ResourceDiskGb,
+		Value:         val,
+		Units:         cloudcommon.ResourceDiskUnits,
+		InfraMaxValue: max,
+	})
+}
+
+func (s InfraRess) AddOptRes(name string, val, max uint64) InfraRess {
+	return append(s, &edgeproto.InfraResource{
+		Name:          name,
+		Value:         val,
+		InfraMaxValue: max,
+	})
+}
+
+func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) {
+	// assumes testutil.CloudletData() cloudlets, cloudletInfos
+	// are present
+	cloudletData := testutil.CloudletData()
+
+	// create app and appinst data for used calculations
+	dockerApp := &edgeproto.App{
+		Key: edgeproto.AppKey{
+			Name:         "dockerApp",
+			Organization: "dev",
+			Version:      "1.0",
+		},
+		Deployment: cloudcommon.DeploymentTypeDocker,
+	}
+	k8sApp := &edgeproto.App{
+		Key: edgeproto.AppKey{
+			Name:         "k8sApp",
+			Organization: "dev",
+			Version:      "1.0",
+		},
+		Deployment: cloudcommon.DeploymentTypeKubernetes,
+	}
+	for _, app := range []*edgeproto.App{dockerApp, k8sApp} {
+		_, err := apis.appApi.store.Put(ctx, app, apis.appApi.sync.SyncWait)
+		require.Nil(t, err)
+		defer apis.appApi.store.Delete(ctx, app, apis.appApi.sync.SyncWait)
+	}
+	// appinsts just need resources for used calculations
+	aiK8sTiny := &edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         "aiK8sTiny",
+			Organization: "dev",
+		},
+		AppKey: k8sApp.Key,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
+				TotalMemory: 100,
+			},
+		},
+	}
+	aiK8sMed := &edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         "aiK8sMed",
+			Organization: "dev",
+		},
+		AppKey: k8sApp.Key,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(2, 0),
+				TotalMemory: 4096,
+			},
+		},
+	}
+	aiK8sGpu := &edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         "aiK8sGpu",
+			Organization: "dev",
+		},
+		AppKey: k8sApp.Key,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			GpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(2, 0),
+				TotalMemory: 4096,
+				TotalOptRes: map[string]string{
+					"gpu": "gpu:1",
+				},
+			},
+		},
+	}
+	aiDocSmall := &edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         "aiDocSmall",
+			Organization: "dev",
+		},
+		AppKey: dockerApp.Key,
+		NodeResources: &edgeproto.NodeResources{
+			Vcpus: 1,
+			Ram:   2048,
+			Disk:  10,
+		},
+	}
+	aiDocMed := &edgeproto.AppInst{
+		Key: edgeproto.AppInstKey{
+			Name:         "aiDocMed",
+			Organization: "dev",
+		},
+		AppKey: dockerApp.Key,
+		NodeResources: &edgeproto.NodeResources{
+			Vcpus: 3,
+			Ram:   3072,
+			Disk:  15,
+		},
+	}
+	for _, ai := range []*edgeproto.AppInst{
+		aiK8sTiny, aiK8sMed, aiK8sGpu, aiDocSmall, aiDocMed,
+	} {
+		_, err := apis.appInstApi.store.Put(ctx, ai, apis.appInstApi.sync.SyncWait)
+		require.Nil(t, err)
+		defer apis.appInstApi.store.Delete(ctx, ai, apis.appInstApi.sync.SyncWait)
+	}
+
+	// run tests
+	var tests = []struct {
+		desc   string
+		ci     edgeproto.ClusterInst
+		usage  edgeproto.ClusterResourceUsage
+		refs   []edgeproto.AppInstKey
+		expErr string
+	}{{
+		desc: "corner case: kubernetes no node pools",
+		ci: edgeproto.ClusterInst{
+			Deployment:  cloudcommon.DeploymentTypeKubernetes,
+			CloudletKey: cloudletData[0].Key,
+		},
+		usage: edgeproto.ClusterResourceUsage{
+			TotalResources:    []*edgeproto.InfraResource{},
+			CpuPoolsResources: []*edgeproto.InfraResource{},
+			GpuPoolsResources: []*edgeproto.InfraResource{},
+		},
+	}, {
+		desc: "corner case: docker no node resources",
+		ci: edgeproto.ClusterInst{
+			Deployment:  cloudcommon.DeploymentTypeDocker,
+			CloudletKey: cloudletData[0].Key,
+		},
+		usage: edgeproto.ClusterResourceUsage{
+			TotalResources: []*edgeproto.InfraResource{},
+		},
+	}, {
+		desc: "kubernetes cpu pool only, no used, flavor based",
+		ci: edgeproto.ClusterInst{
+			Deployment:  cloudcommon.DeploymentTypeKubernetes,
+			CloudletKey: cloudletData[0].Key,
+			NodePools: []*edgeproto.NodePool{{
+				Name:     "cpu1",
+				NumNodes: 2,
+				NodeResources: &edgeproto.NodeResources{
+					InfraNodeFlavor: "flavor.small",
+				},
+			}},
+		},
+		usage: edgeproto.ClusterResourceUsage{
+			TotalResources:        InfraRess{}.AddDisk(0, 40).AddRam(0, 2048).AddVcpus(0, 4),
+			CpuPoolsResources:     InfraRess{}.AddDisk(0, 40).AddRam(0, 2048).AddVcpus(0, 4),
+			GpuPoolsResources:     InfraRess{},
+			ResourceScore:         3024,
+			CpuPoolsResourceScore: 3024,
+		},
+	}, {
+		desc: "kubernetes cpu and gpu pools, no used, flavor and resource based",
+		ci: edgeproto.ClusterInst{
+			Deployment:  cloudcommon.DeploymentTypeKubernetes,
+			CloudletKey: cloudletData[0].Key,
+			NodePools: []*edgeproto.NodePool{{
+				Name:     "cpu1",
+				NumNodes: 2,
+				NodeResources: &edgeproto.NodeResources{
+					InfraNodeFlavor: "flavor.small",
+				},
+			}, {
+				Name:     "gpu1",
+				NumNodes: 3,
+				NodeResources: &edgeproto.NodeResources{
+					Vcpus: 2,
+					Ram:   8192,
+					Disk:  40,
+					OptResMap: map[string]string{
+						"gpu": "gpu:1",
+					},
+				},
+			}, {
+				Name:     "cpu2",
+				NumNodes: 1,
+				NodeResources: &edgeproto.NodeResources{
+					Vcpus: 4,
+					Ram:   8192,
+					Disk:  40,
+				},
+			}},
+		},
+		usage: edgeproto.ClusterResourceUsage{
+			TotalResources:        InfraRess{}.AddDisk(0, 200).AddRam(0, 34816).AddOptRes("gpu:gpu", 0, 3).AddVcpus(0, 14),
+			CpuPoolsResources:     InfraRess{}.AddDisk(0, 80).AddRam(0, 10240).AddVcpus(0, 8),
+			GpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(0, 24576).AddOptRes("gpu:gpu", 0, 3).AddVcpus(0, 6),
+			ResourceScore:         24408,
+			CpuPoolsResourceScore: 9120,
+			GpuPoolsResourceScore: 15288,
+		},
+	}, {
+		desc: "kubernetes cpu and gpu pools, used, resource based",
+		ci: edgeproto.ClusterInst{
+			Deployment:  cloudcommon.DeploymentTypeKubernetes,
+			CloudletKey: cloudletData[0].Key,
+			NodePools: []*edgeproto.NodePool{{
+				Name:     "cpu1",
+				NumNodes: 3,
+				NodeResources: &edgeproto.NodeResources{
+					Vcpus: 2,
+					Ram:   8192,
+					Disk:  40,
+				}, // total: 6, 24576, 120
+			}, {
+				Name:     "gpu1",
+				NumNodes: 3,
+				NodeResources: &edgeproto.NodeResources{
+					Vcpus: 2,
+					Ram:   8192,
+					Disk:  40,
+					OptResMap: map[string]string{
+						"gpu": "gpu:1",
+					},
+				}, // total: 6, 24576, 120, 3
+			}},
+		},
+		refs: []edgeproto.AppInstKey{
+			aiK8sTiny.Key, aiK8sMed.Key, aiK8sGpu.Key,
+			// cpu used: 2.5, 4196, 0
+			// gpu used: 2, 4096, 0, 1
+		},
+		usage: edgeproto.ClusterResourceUsage{
+			TotalResources:        InfraRess{}.AddDisk(0, 240).AddRam(8292, 49152).AddOptRes("gpu:gpu", 1, 3).AddVcpus(4, 12),
+			CpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(4196, 24576).AddVcpus(2, 6),
+			GpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(4096, 24576).AddOptRes("gpu:gpu", 1, 3).AddVcpus(2, 6),
+			ResourceScore:         24180,
+			CpuPoolsResourceScore: 11940,
+			GpuPoolsResourceScore: 12240,
+		},
+	}, {
+		desc: "kubernetes cpu and gpu pools, max used, resource based",
+		ci: edgeproto.ClusterInst{
+			Deployment:  cloudcommon.DeploymentTypeKubernetes,
+			CloudletKey: cloudletData[0].Key,
+			NodePools: []*edgeproto.NodePool{{
+				Name:     "cpu1",
+				NumNodes: 3,
+				NodeResources: &edgeproto.NodeResources{
+					Vcpus: 2,
+					Ram:   8192,
+					Disk:  40,
+				}, // total: 6, 24576, 120
+			}, {
+				Name:     "gpu1",
+				NumNodes: 3,
+				NodeResources: &edgeproto.NodeResources{
+					Vcpus: 2,
+					Ram:   8192,
+					Disk:  40,
+					OptResMap: map[string]string{
+						"gpu": "gpu:1",
+					},
+				}, // total: 6, 24576, 120, 3
+			}},
+		},
+		refs: []edgeproto.AppInstKey{
+			aiK8sMed.Key, aiK8sMed.Key, aiK8sMed.Key,
+			aiK8sGpu.Key, aiK8sGpu.Key, aiK8sGpu.Key,
+			// cpu used: 6, 12288, 0
+			// gpu used: 6, 12288, 0, 3
+		},
+		usage: edgeproto.ClusterResourceUsage{
+			TotalResources:        InfraRess{}.AddDisk(0, 240).AddRam(24576, 49152).AddOptRes("gpu:gpu", 3, 3).AddVcpus(12, 12),
+			CpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(12288, 24576).AddVcpus(6, 6),
+			GpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(12288, 24576).AddOptRes("gpu:gpu", 3, 3).AddVcpus(6, 6),
+			ResourceScore:         12288,
+			CpuPoolsResourceScore: 6144,
+			GpuPoolsResourceScore: 6144,
+		},
+	}, {
+		desc: "docker used",
+		ci: edgeproto.ClusterInst{
+			Deployment:  cloudcommon.DeploymentTypeDocker,
+			CloudletKey: cloudletData[0].Key,
+			NodeResources: &edgeproto.NodeResources{
+				InfraNodeFlavor: "flavor.large",
+			}, // 10, 8192, 40
+		},
+		refs: []edgeproto.AppInstKey{
+			aiDocSmall.Key, aiDocMed.Key,
+		},
+		usage: edgeproto.ClusterResourceUsage{
+			TotalResources: InfraRess{}.AddDisk(25, 40).AddRam(5120, 8192).AddVcpus(4, 10),
+			ResourceScore:  4536,
+		},
+	}}
+	for _, test := range tests {
+		info := &edgeproto.CloudletInfo{}
+		found := apis.cloudletInfoApi.cache.Get(&test.ci.CloudletKey, info)
+		require.True(t, found, test.desc)
+		flavorLookup := info.GetFlavorLookup()
+		// add in refs
+		test.ci.Key.Name = test.desc
+		refs := edgeproto.ClusterRefs{
+			Key:  test.ci.Key,
+			Apps: test.refs,
+		}
+		_, err := apis.clusterRefsApi.store.Put(ctx, &refs, apis.clusterRefsApi.sync.SyncWait)
+		require.Nil(t, err)
+		defer apis.clusterRefsApi.store.Delete(ctx, &refs, apis.clusterRefsApi.sync.SyncWait)
+		// check usage
+		usage, err := apis.clusterInstApi.getClusterResourceUsage(ctx, &test.ci, flavorLookup)
+		if test.expErr != "" {
+			require.NotNil(t, err, test.desc)
+			require.Contains(t, err.Error(), test.expErr, test.desc)
+		} else {
+			test.usage.Key = test.ci.Key
+			test.usage.CloudletKey = test.ci.CloudletKey
+			test.usage.ZoneKey = test.ci.ZoneKey
+			require.Nil(t, err, test.desc)
+			require.Equal(t, &test.usage, usage, test.desc)
+		}
+	}
 }

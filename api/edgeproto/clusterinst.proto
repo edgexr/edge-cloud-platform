@@ -182,6 +182,28 @@ message IdleReservableClusterInsts {
   option (protogen.uses_org) = "none";
 }
 
+message ClusterResourceUsage {
+  // Cluster Key
+  ClusterKey key = 1 [(gogoproto.nullable) = false];
+  // Zone Key
+  ZoneKey zone_key = 2 [(gogoproto.nullable) = false];
+  // Cloudlet Key
+  CloudletKey cloudlet_key = 3 [(gogoproto.nullable) = false];
+  // Total resource info
+  repeated InfraResource total_resources = 4;
+  // CPU Pool resource info for Kubernetes clusters
+  repeated InfraResource cpu_pools_resources = 5;
+  // GPU Pool resource info for Kubernetes clusters
+  repeated InfraResource gpu_pools_resources = 6;
+  // Resource score, higher score means more available resources
+  uint64 resource_score = 7;
+  // CPU Pool Resource score for Kubernetes clusters, higher score means more available resources
+  uint64 cpu_pools_resource_score = 8;
+  // GPU Pool Resource score for Kubernetes clusters, higher score means more available resources
+  uint64 gpu_pools_resource_score = 9;
+  option (protogen.alias) = "cluster=Key.Name,clusterorg=Key.Organization";
+}
+
 service ClusterInstApi {
   // Create Cluster Instance. Creates an instance of a Cluster on a Cloudlet,
   // defined by a Cluster Key and a Cloudlet Key. ClusterInst is a collection of
@@ -230,6 +252,16 @@ service ClusterInstApi {
       body: "*"
     };
     option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,";
+  }
+  // Show Cluster resource information
+  rpc ShowClusterResourceUsage(ClusterInst) returns (stream ClusterResourceUsage) {
+    option (google.api.http) = {
+      post: "/show/clusterinst/resource/usage"
+      body: "*"
+    };
+    option (protogen.non_standard_show) = true;
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.Organization";
+    option (protogen.method_not_required) = "Key.Organization,Key.Name";
   }
 }
 
