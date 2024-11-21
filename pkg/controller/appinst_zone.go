@@ -63,6 +63,11 @@ func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContex
 		if in.ZoneKey.Name == "" {
 			return nil, errors.New("zone not specified")
 		}
+		// check if zone exists
+		zoneBuf := edgeproto.Zone{}
+		if !s.all.zoneApi.cache.Get(&in.ZoneKey, &zoneBuf) {
+			return nil, in.ZoneKey.NotFoundError()
+		}
 		potentialCloudletKeys = s.all.cloudletApi.cache.CloudletsForZone(&in.ZoneKey)
 		if len(potentialCloudletKeys) == 0 {
 			return nil, errors.New("no available edge sites in zone " + in.ZoneKey.Name)

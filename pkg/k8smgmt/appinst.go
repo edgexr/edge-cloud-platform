@@ -79,9 +79,17 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace
 		if line == "" {
 			continue
 		}
-		// there can be multiple pods, one per line. If all
-		// of them are running we can quit the loop
-		if podStateReg.MatchString(line) {
+		if strings.Contains(line, "No resources found") {
+			// If creating, pods may not have taken
+			// effect yet. If deleting, may already
+			// be removed.
+			if waitFor == WaitRunning && time.Since(startTimer) > createWaitNoResources {
+				return done, fmt.Errorf("no resources found for %s on create: %s", createWaitNoResources, line)
+			}
+			break
+		} else if podStateReg.MatchString(line) {
+			// there can be multiple pods, one per line. If all
+			// of them are running we can quit the loop
 			podCount++
 			matches := podStateReg.FindStringSubmatch(line)
 			podName := matches[1]
@@ -122,14 +130,6 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace
 					return done, fmt.Errorf("Pod is unexpected state: %s", podState)
 				}
 			}
-		} else if strings.Contains(line, "No resources found") {
-			// If creating, pods may not have taken
-			// effect yet. If deleting, may already
-			// be removed.
-			if waitFor == WaitRunning && time.Since(startTimer) > createWaitNoResources {
-				return done, fmt.Errorf("no resources found for %s on create: %s", createWaitNoResources, line)
-			}
-			break
 		} else {
 			return done, fmt.Errorf("unable to parse kubectl output: [%s]", line)
 		}
