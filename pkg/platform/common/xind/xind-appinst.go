@@ -108,7 +108,7 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 		if err == nil {
 			err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
 			if err != nil {
-				undoerr := k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
+				undoerr := k8smgmt.DeleteAppInst(ctx, s.platformConfig.AccessApi, client, names, app, appInst)
 				log.SpanLog(ctx, log.DebugLevelInfra, "Undo CreateAppInst", "undoerr", undoerr)
 			}
 		}
@@ -168,7 +168,7 @@ func (s *Xind) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Cluster
 	}
 
 	if DeploymentType == cloudcommon.DeploymentTypeKubernetes {
-		err = k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
+		err = k8smgmt.DeleteAppInst(ctx, s.platformConfig.AccessApi, client, names, app, appInst)
 	} else if DeploymentType == cloudcommon.DeploymentTypeHelm {
 		err = k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
 	} else {

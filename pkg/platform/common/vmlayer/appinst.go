@@ -709,9 +709,9 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 				log.SpanLog(ctx, log.DebugLevelInfra, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}
-
+		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
-			return k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
+			return k8smgmt.DeleteAppInst(ctx, accessApi, client, names, app, appInst)
 		} else {
 			return k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
 		}
