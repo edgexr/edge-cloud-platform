@@ -262,6 +262,7 @@ service ClusterInstApi {
     option (protogen.non_standard_show) = true;
     option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.Organization";
     option (protogen.method_not_required) = "Key.Organization,Key.Name";
+    option (protogen.mc2_show_custom_authz) = true;
   }
 }
 

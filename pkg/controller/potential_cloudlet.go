@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
@@ -85,11 +84,6 @@ func (s SkipReasons) String() string {
 	}
 	sort.Strings(reasons)
 	return strings.Join(reasons, ", ")
-}
-
-var resourceWeights = map[string]uint64{
-	cloudcommon.ResourceVcpus: 1000,
-	cloudcommon.ResourceRamMb: 1,
 }
 
 func (s *potentialInstCloudlet) initResCalc(ctx context.Context, all *AllApis, stm concurrency.STM) error {

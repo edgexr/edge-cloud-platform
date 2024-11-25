@@ -45,6 +45,11 @@ type CloudletResCalcDeps struct {
 	lbFlavor     *edgeproto.FlavorInfo
 }
 
+var resourceWeights = map[string]uint64{
+	cloudcommon.ResourceVcpus: 1000,
+	cloudcommon.ResourceRamMb: 1,
+}
+
 func NewCloudletResCalc(all *AllApis, stm *edgeproto.OptionalSTM, cloudletKey *edgeproto.CloudletKey) *CloudletResCalc {
 	return &CloudletResCalc{
 		all:         all,
