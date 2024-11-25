@@ -114,7 +114,7 @@ func (s *K8sOperator) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		err = k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
+		err = k8smgmt.DeleteAppInst(ctx, s.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst)
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)
 	}

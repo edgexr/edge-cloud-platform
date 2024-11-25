@@ -232,7 +232,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 		}
 
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
-			err = k8smgmt.DeleteAppInst(ctx, client, names, app, appInst)
+			err = k8smgmt.DeleteAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
 		} else {
 			err = k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
 		}

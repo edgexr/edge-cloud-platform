@@ -449,7 +449,10 @@ func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 	return WaitForAppInst(ctx, client, names, app, WaitRunning)
 }
 
-func DeleteAppInst(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst); err != nil {
+		return err
+	}
 	configDir := getConfigDirName(names)
 	configName := getConfigFileName(names, appInst)
 	file := configDir + "/" + configName
