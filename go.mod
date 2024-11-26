@@ -1,8 +1,8 @@
 module github.com/edgexr/edge-cloud-platform
 
-go 1.21
+go 1.22
 
-toolchain go1.21.6
+toolchain go1.22.9
 
 require (
 	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045
@@ -73,6 +73,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.7.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6 v6.1.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice/v6 v6.1.0
+	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/edgexr/dnsproviders v0.0.1
 	github.com/edgexr/edge-proto v1.2.5-0.20220713205721-e2bf489db2b5
@@ -103,7 +104,6 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2 // indirect
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
-	github.com/Masterminds/semver/v3 v3.3.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
