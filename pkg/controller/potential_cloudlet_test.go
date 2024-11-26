@@ -131,7 +131,7 @@ func TestPotentialInstCloudletCalcResourceScore(t *testing.T) {
 		if test.used != nil {
 			used = test.used()
 		}
-		pc.resourceScore = pc.resCalc.calcResourceScore(used)
+		pc.resourceScore = pc.resCalc.calcResourceScoreFromUsed(used)
 		require.Equal(t, test.expScore, pc.resourceScore, fmt.Sprintf("%s: expected %d but was %d", test.desc, test.expScore, pc.resourceScore))
 	}
 }

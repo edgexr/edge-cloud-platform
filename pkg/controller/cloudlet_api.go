@@ -2451,7 +2451,7 @@ func (s *CloudletResCalc) convertResourceUsage(ctx context.Context, usedResource
 		for resName, resInfo := range ctrlResInfo {
 			infraResInfoMap[resName] = *resInfo
 		}
-		resourceScore = s.calcResourceScore(usedVals)
+		resourceScore = s.calcResourceScoreFromUsed(usedVals)
 	}
 	out := []edgeproto.InfraResource{}
 	for _, val := range infraResInfoMap {

@@ -100,7 +100,7 @@ func (s *potentialInstCloudlet) initResCalc(ctx context.Context, all *AllApis, s
 		return err
 	}
 	s.resCalc = resCalc
-	s.resourceScore = resCalc.calcResourceScore(usedVals)
+	s.resourceScore = resCalc.calcResourceScoreFromUsed(usedVals)
 	log.SpanLog(ctx, log.DebugLevelApi, "potentialInstCloudlet calcResourceScore", "cloudlet", resCalc.cloudletKey, "score", s.resourceScore, "used", usedVals.String())
 	return nil
 }

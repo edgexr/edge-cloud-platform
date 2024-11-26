@@ -388,9 +388,9 @@ func (s *CloudletResCalc) getResourceLimits() ResLimitMap {
 	return limits
 }
 
-// calcResourceScore gets a score which represents the available resources
+// calcResourceScoreFromUsed gets a score which represents the available resources
 // on a cloudlet. A higher score means more available resources.
-func (s *CloudletResCalc) calcResourceScore(usedVals resspec.ResValMap) uint64 {
+func (s *CloudletResCalc) calcResourceScoreFromUsed(usedVals resspec.ResValMap) uint64 {
 	// get max value for each resource on cloudlet
 	maxVals := getMaxResourceVals(s.deps.cloudletInfo.ResourcesSnapshot.Info, s.deps.cloudlet.ResourceQuotas)
 	// Calculate score based on weights and free values
