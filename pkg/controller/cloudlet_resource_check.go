@@ -17,6 +17,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	math "math"
 	"slices"
 	"sort"
 	"strings"
@@ -42,6 +43,11 @@ type CloudletResCalcDeps struct {
 	cloudletRefs *edgeproto.CloudletRefs
 	features     *edgeproto.PlatformFeatures
 	lbFlavor     *edgeproto.FlavorInfo
+}
+
+var resourceWeights = map[string]uint64{
+	cloudcommon.ResourceVcpus: 1000,
+	cloudcommon.ResourceRamMb: 1,
 }
 
 func NewCloudletResCalc(all *AllApis, stm *edgeproto.OptionalSTM, cloudletKey *edgeproto.CloudletKey) *CloudletResCalc {
@@ -380,4 +386,44 @@ func (s *CloudletResCalc) getResourceLimits() ResLimitMap {
 		res.AlertThreshold = thresh
 	}
 	return limits
+}
+
+// calcResourceScoreFromUsed gets a score which represents the available resources
+// on a cloudlet. A higher score means more available resources.
+func (s *CloudletResCalc) calcResourceScoreFromUsed(usedVals resspec.ResValMap) uint64 {
+	// get max value for each resource on cloudlet
+	maxVals := getMaxResourceVals(s.deps.cloudletInfo.ResourcesSnapshot.Info, s.deps.cloudlet.ResourceQuotas)
+	// Calculate score based on weights and free values
+	// Because some resources may have no limit, track the number
+	// of resources we've scored. We'll divide by this number to
+	// get an average per-resource score for comparisons.
+	var score, numScored uint64
+	for res, weight := range resourceWeights {
+		max, ok := maxVals[res]
+		if !ok {
+			continue // no limit
+		}
+		free := max * weight
+		if usedVal, ok := usedVals[res]; ok {
+			// make a copy
+			usedDecVal := edgeproto.NewUdec64(usedVal.Value.Whole, usedVal.Value.Nanos)
+			// multiply by weight to try to promote and remove decimal values
+			usedDecVal.Mult(uint32(weight))
+			// subtract from free, dropping decimal value
+			if usedDecVal.Whole > free {
+				// avoid underflow
+				free = 0
+			} else {
+				free -= usedDecVal.Whole
+			}
+		}
+		score += free
+		numScored++
+	}
+	if numScored == 0 {
+		score = math.MaxUint64
+	} else {
+		score /= numScored
+	}
+	return score
 }

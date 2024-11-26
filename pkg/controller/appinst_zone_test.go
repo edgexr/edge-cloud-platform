@@ -287,12 +287,12 @@ func TestPotentialAppInstClusterCalcResourceScore(t *testing.T) {
 		expScore: 7250, // (4.5*1000 + 10000*1)/2
 	}}
 	for _, test := range tests {
-		pc := potentialAppInstCluster{}
+		clusterInstApi := &ClusterInstApi{}
 		var free resspec.ResValMap
 		if test.free != nil {
 			free = test.free()
 		}
-		pc.calcResourceScore(free)
-		require.Equal(t, test.expScore, pc.resourceScore, fmt.Sprintf("%s: expected %d but was %d", test.desc, test.expScore, pc.resourceScore))
+		score := clusterInstApi.calcResourceScore(free)
+		require.Equal(t, test.expScore, score, fmt.Sprintf("%s: expected %d but was %d", test.desc, test.expScore, score))
 	}
 }

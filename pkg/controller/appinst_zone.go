@@ -254,7 +254,7 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 		clust.existingCluster = *defaultClusterKey
 		clust.cloudletKey = pc.cloudlet.Key
 		clust.parentPC = pc
-		clust.calcResourceScore(free)
+		clust.resourceScore = s.all.clusterInstApi.calcResourceScore(free)
 		potentialClusters = append(potentialClusters, &clust)
 		log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential single kubernetes cloudlet", "cloudlet", pc.cloudlet.Key, "free", free.String(), "cluster", *defaultClusterKey, "resourceScore", clust.resourceScore)
 	}
@@ -314,7 +314,7 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 				clust.cloudletKey = pc.cloudlet.Key
 				clust.parentPC = pc
 				clust.scaleSpec = ss
-				clust.calcResourceScore(free)
+				clust.resourceScore = s.all.clusterInstApi.calcResourceScore(free)
 				potentialClusters = append(potentialClusters, &clust)
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential MT kubernetes cluster", "cloudlet", pc.cloudlet.Key, "cluster", clusterKey, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
 				if len(potentialClusters) > MaxPotentialClusters {
@@ -384,7 +384,7 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			clust.cloudletKey = pc.cloudlet.Key
 			clust.parentPC = pc
 			clust.scaleSpec = ss
-			clust.calcResourceScore(free)
+			clust.resourceScore = s.all.clusterInstApi.calcResourceScore(free)
 			potentialClusters = append(potentialClusters, &clust)
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add free reservable cluster", "cloudlet", pc.cloudlet.Key, "cluster", cluster.Key, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
 			if len(potentialClusters) > MaxPotentialClusters {
@@ -435,37 +435,6 @@ func (s *AppInstApi) usePotentialCluster(ctx context.Context, stm concurrency.ST
 		return nil, fmt.Errorf("not enough resources in cluster %s, %s", pc.existingCluster.GetKeyString(), err)
 	}
 	return &clusterInst, nil
-}
-
-// calcResourceScore gets a score which represents the available resources
-// in a cluster. A higher score means more available resources.
-func (s *potentialAppInstCluster) calcResourceScore(free resspec.ResValMap) {
-	if free == nil {
-		s.resourceScore = 0
-		return
-	}
-	// Calculate score based on weights and free values
-	// Because some resources may have no limit, track the number
-	// of resources we've scored. We'll divide by this number to
-	// get an average per-resource score for comparisons.
-	var score, numScored uint64
-	for res, weight := range resourceWeights {
-		if resVal, ok := free[res]; ok {
-			// make a copy
-			freeDecVal := edgeproto.NewUdec64(resVal.Value.Whole, resVal.Value.Nanos)
-			// multiply by weight to try to promote and remove decimal values
-			freeDecVal.Mult(uint32(weight))
-
-			score += freeDecVal.Whole
-			numScored++
-		}
-	}
-	if numScored == 0 {
-		score = 0
-	} else {
-		score /= numScored
-	}
-	s.resourceScore = score
 }
 
 // PotentialAppInstClusterByResource sorts potential clusters based

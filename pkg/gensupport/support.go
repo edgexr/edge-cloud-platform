@@ -712,6 +712,10 @@ func GetNonStandardShow(method *descriptor.MethodDescriptorProto) bool {
 	return proto.GetBoolExtension(method.Options, protogen.E_NonStandardShow, false)
 }
 
+func GetMc2ShowCustomAuthz(method *descriptor.MethodDescriptorProto) bool {
+	return proto.GetBoolExtension(method.Options, protogen.E_Mc2ShowCustomAuthz, false)
+}
+
 func GetGenerateCudStreamout(message *descriptor.DescriptorProto) bool {
 	return proto.GetBoolExtension(message.Options, protogen.E_GenerateCudStreamout, false)
 }
@@ -733,15 +737,16 @@ const (
 )
 
 type MethodInfo struct {
-	Name     string
-	Prefix   string
-	Stream   bool
-	Mc2Api   bool
-	IsShow   bool
-	IsUpdate bool
-	Method   *descriptor.MethodDescriptorProto
-	Out      *generator.Descriptor
-	OutType  string
+	Name              string
+	Prefix            string
+	Stream            bool
+	Mc2Api            bool
+	IsShow            bool
+	IsUpdate          bool
+	IsCustomAuthzShow bool
+	Method            *descriptor.MethodDescriptorProto
+	Out               *generator.Descriptor
+	OutType           string
 }
 
 type MethodGroup struct {
@@ -796,6 +801,9 @@ func GetMethodInfo(g *generator.Generator, method *descriptor.MethodDescriptorPr
 	}
 	if IsShow(method) {
 		info.IsShow = true
+	}
+	if GetMc2ShowCustomAuthz(method) {
+		info.IsCustomAuthzShow = true
 	}
 	if info.Prefix == PrefixUpdate {
 		info.IsUpdate = true

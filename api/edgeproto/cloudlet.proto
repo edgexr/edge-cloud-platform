@@ -696,6 +696,8 @@ message CloudletResourceUsage {
   bool infra_usage = 2;
   // Infra Resource information
   repeated InfraResource info = 3 [(gogoproto.nullable) = false];
+  // Resouce score, higher score means more available resources
+  uint64 resource_score = 4;
   option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,federatedorg=Key.FederatedOrganization";
   option (protogen.not_required) = "Key.FederatedOrganization";
 }
@@ -792,7 +794,17 @@ service CloudletApi {
       body: "*"
     };
     option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
-    option (protogen.method_noconfig) = "Info";
+    option (protogen.method_noconfig) = "ResourceScore,Info";
+  }
+  // Show Cloudlet resource information. Shows cloudlet resources used and their limits for all matching cloudlets
+  rpc ShowCloudletResourceUsage(Cloudlet) returns (stream CloudletResourceUsage) {
+    option (google.api.http) = {
+      post: "/show/cloudlet/resource/usage"
+      body: "*"
+    };
+    option (protogen.non_standard_show) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
+    option (protogen.method_not_required) = "Key.Organization,Key.Name,Key.FederatedOrganization";
   }
 
   // Add Optional Resource tag table

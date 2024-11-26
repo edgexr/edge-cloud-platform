@@ -465,12 +465,90 @@ func DeleteIdleReservableClusterInstsBatch(c *cli.Command, data *edgeproto.IdleR
 	}
 }
 
+var ShowClusterResourceUsageCmd = &cli.Command{
+	Use:          "ShowClusterResourceUsage",
+	RequiredArgs: strings.Join(ShowClusterResourceUsageRequiredArgs, " "),
+	OptionalArgs: strings.Join(ShowClusterResourceUsageOptionalArgs, " "),
+	AliasArgs:    strings.Join(ClusterInstAliasArgs, " "),
+	SpecialArgs:  &ClusterInstSpecialArgs,
+	Comments:     ClusterInstComments,
+	ReqData:      &edgeproto.ClusterInst{},
+	ReplyData:    &edgeproto.ClusterResourceUsage{},
+	Run:          runShowClusterResourceUsage,
+}
+
+func runShowClusterResourceUsage(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.ClusterInst)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowClusterResourceUsage(c, obj)
+}
+
+func ShowClusterResourceUsage(c *cli.Command, in *edgeproto.ClusterInst) error {
+	if ClusterInstApiCmd == nil {
+		return fmt.Errorf("ClusterInstApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := ClusterInstApiCmd.ShowClusterResourceUsage(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowClusterResourceUsage failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.ClusterResourceUsage, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowClusterResourceUsage recv failed: %s", errstr)
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowClusterResourceUsages(c *cli.Command, data []edgeproto.ClusterInst, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowClusterResourceUsage %v\n", data[ii])
+		myerr := ShowClusterResourceUsage(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var ClusterInstApiCmds = []*cobra.Command{
 	CreateClusterInstCmd.GenCmd(),
 	DeleteClusterInstCmd.GenCmd(),
 	UpdateClusterInstCmd.GenCmd(),
 	ShowClusterInstCmd.GenCmd(),
 	DeleteIdleReservableClusterInstsCmd.GenCmd(),
+	ShowClusterResourceUsageCmd.GenCmd(),
 }
 
 var ClusterInstInfoApiCmd edgeproto.ClusterInstInfoApiClient
@@ -739,6 +817,81 @@ var IdleReservableClusterInstsComments = map[string]string{
 	"idletime": "Idle time (duration)",
 }
 var IdleReservableClusterInstsSpecialArgs = map[string]string{}
+var ClusterResourceUsageRequiredArgs = []string{
+	"cluster",
+	"clusterorg",
+}
+var ClusterResourceUsageOptionalArgs = []string{
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
+	"cloudletkey.organization",
+	"cloudletkey.name",
+	"cloudletkey.federatedorganization",
+	"totalresources:#.name",
+	"totalresources:#.value",
+	"totalresources:#.inframaxvalue",
+	"totalresources:#.quotamaxvalue",
+	"totalresources:#.description",
+	"totalresources:#.units",
+	"totalresources:#.alertthreshold",
+	"cpupoolsresources:#.name",
+	"cpupoolsresources:#.value",
+	"cpupoolsresources:#.inframaxvalue",
+	"cpupoolsresources:#.quotamaxvalue",
+	"cpupoolsresources:#.description",
+	"cpupoolsresources:#.units",
+	"cpupoolsresources:#.alertthreshold",
+	"gpupoolsresources:#.name",
+	"gpupoolsresources:#.value",
+	"gpupoolsresources:#.inframaxvalue",
+	"gpupoolsresources:#.quotamaxvalue",
+	"gpupoolsresources:#.description",
+	"gpupoolsresources:#.units",
+	"gpupoolsresources:#.alertthreshold",
+	"resourcescore",
+	"cpupoolsresourcescore",
+	"gpupoolsresourcescore",
+}
+var ClusterResourceUsageAliasArgs = []string{
+	"cluster=key.name",
+	"clusterorg=key.organization",
+}
+var ClusterResourceUsageComments = map[string]string{
+	"cluster":                            "Cluster name",
+	"clusterorg":                         "Name of the organization that this cluster belongs to",
+	"zonekey.organization":               "Organization owner of the Zone",
+	"zonekey.name":                       "Name of the Zone",
+	"zonekey.federatedorganization":      "Federated operator organization who shared this Zone",
+	"cloudletkey.organization":           "Organization of the cloudlet site",
+	"cloudletkey.name":                   "Name of the cloudlet",
+	"cloudletkey.federatedorganization":  "Federated operator organization who shared this cloudlet",
+	"totalresources:#.name":              "Resource name",
+	"totalresources:#.value":             "Resource value",
+	"totalresources:#.inframaxvalue":     "Resource infra max value",
+	"totalresources:#.quotamaxvalue":     "Resource quota max value",
+	"totalresources:#.description":       "Resource description",
+	"totalresources:#.units":             "Resource units",
+	"totalresources:#.alertthreshold":    "Generate alert when more than threshold percentage of resource is used",
+	"cpupoolsresources:#.name":           "Resource name",
+	"cpupoolsresources:#.value":          "Resource value",
+	"cpupoolsresources:#.inframaxvalue":  "Resource infra max value",
+	"cpupoolsresources:#.quotamaxvalue":  "Resource quota max value",
+	"cpupoolsresources:#.description":    "Resource description",
+	"cpupoolsresources:#.units":          "Resource units",
+	"cpupoolsresources:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
+	"gpupoolsresources:#.name":           "Resource name",
+	"gpupoolsresources:#.value":          "Resource value",
+	"gpupoolsresources:#.inframaxvalue":  "Resource infra max value",
+	"gpupoolsresources:#.quotamaxvalue":  "Resource quota max value",
+	"gpupoolsresources:#.description":    "Resource description",
+	"gpupoolsresources:#.units":          "Resource units",
+	"gpupoolsresources:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
+	"resourcescore":                      "Resource score, higher score means more available resources",
+	"cpupoolsresourcescore":              "CPU Pool Resource score for Kubernetes clusters, higher score means more available resources",
+	"gpupoolsresourcescore":              "GPU Pool Resource score for Kubernetes clusters, higher score means more available resources",
+}
+var ClusterResourceUsageSpecialArgs = map[string]string{}
 var ClusterInstInfoRequiredArgs = []string{
 	"key.name",
 	"key.organization",
@@ -819,4 +972,46 @@ var UpdateClusterInstOptionalArgs = []string{
 	"nodepools:#.numnodes",
 	"nodepools:#.scalable",
 	"infraannotations",
+}
+var ShowClusterResourceUsageRequiredArgs = []string{}
+var ShowClusterResourceUsageOptionalArgs = []string{
+	"cluster",
+	"clusterorg",
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
+	"flavor",
+	"crmoverride",
+	"ipaccess",
+	"deployment",
+	"nummasters",
+	"numnodes",
+	"autoscalepolicy",
+	"imagename",
+	"reservable",
+	"sharedvolumesize",
+	"skipcrmcleanuponfailure",
+	"multitenant",
+	"networks",
+	"enableipv6",
+	"objid",
+	"annotations",
+	"dbmodelid",
+	"noderesources.vcpus",
+	"noderesources.ram",
+	"noderesources.disk",
+	"noderesources.optresmap",
+	"noderesources.infranodeflavor",
+	"noderesources.externalvolumesize",
+	"nodepools:#.name",
+	"nodepools:#.numnodes",
+	"nodepools:#.noderesources.vcpus",
+	"nodepools:#.noderesources.ram",
+	"nodepools:#.noderesources.disk",
+	"nodepools:#.noderesources.optresmap",
+	"nodepools:#.noderesources.infranodeflavor",
+	"nodepools:#.noderesources.externalvolumesize",
+	"nodepools:#.scalable",
+	"infraannotations",
+	"kubernetesversion",
 }

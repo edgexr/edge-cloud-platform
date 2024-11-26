@@ -680,6 +680,18 @@ func (r *Run) ClusterInstApi(data *[]edgeproto.ClusterInst, dataMap interface{},
 				}
 				*outp = append(*outp, out...)
 			}
+		case "showclusterresourceusage":
+			out, err := r.client.ShowClusterResourceUsage(r.ctx, obj)
+			if err != nil {
+				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
+				r.logErr(fmt.Sprintf("ClusterInstApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[][]edgeproto.ClusterResourceUsage)
+				if !ok {
+					panic(fmt.Sprintf("RunClusterInstApi expected dataOut type *[][]edgeproto.ClusterResourceUsage, but was %T", dataOut))
+				}
+				*outp = append(*outp, out)
+			}
 		}
 	}
 }
@@ -785,6 +797,25 @@ func (s *DummyServer) ShowClusterInst(in *edgeproto.ClusterInst, server edgeprot
 		err := server.Send(obj)
 		return err
 	})
+	return err
+}
+
+func (s *DummyServer) ShowClusterResourceUsage(in *edgeproto.ClusterInst, server edgeproto.ClusterInstApi_ShowClusterResourceUsageServer) error {
+	var err error
+	if true {
+		for ii := 0; ii < s.ShowDummyCount; ii++ {
+			server.Send(&edgeproto.ClusterResourceUsage{})
+		}
+		if ch, ok := s.MidstreamFailChs["ShowClusterResourceUsage"]; ok {
+			// Wait until client receives the SendMsg, since they
+			// are buffered and dropped once we return err here.
+			select {
+			case <-ch:
+			case <-time.After(5 * time.Second):
+			}
+			return fmt.Errorf("midstream failure!")
+		}
+	}
 	return err
 }
 
@@ -941,12 +972,48 @@ func (s *CliClient) DeleteIdleReservableClusterInsts(ctx context.Context, in *ed
 	return &out, err
 }
 
+type ClusterResourceUsageStream interface {
+	Recv() (*edgeproto.ClusterResourceUsage, error)
+}
+
+func ClusterResourceUsageReadStream(stream ClusterResourceUsageStream) ([]edgeproto.ClusterResourceUsage, error) {
+	output := []edgeproto.ClusterResourceUsage{}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return output, fmt.Errorf("read ClusterResourceUsage stream failed, %v", err)
+		}
+		output = append(output, *obj)
+	}
+	return output, nil
+}
+
+func (s *ApiClient) ShowClusterResourceUsage(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.ClusterResourceUsage, error) {
+	api := edgeproto.NewClusterInstApiClient(s.Conn)
+	stream, err := api.ShowClusterResourceUsage(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return ClusterResourceUsageReadStream(stream)
+}
+
+func (s *CliClient) ShowClusterResourceUsage(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.ClusterResourceUsage, error) {
+	output := []edgeproto.ClusterResourceUsage{}
+	args := append(s.BaseArgs, "controller", "ShowClusterResourceUsage")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
 type ClusterInstApiClient interface {
 	CreateClusterInst(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.Result, error)
 	DeleteClusterInst(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.Result, error)
 	UpdateClusterInst(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.Result, error)
 	ShowClusterInst(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.ClusterInst, error)
 	DeleteIdleReservableClusterInsts(ctx context.Context, in *edgeproto.IdleReservableClusterInsts) (*edgeproto.Result, error)
+	ShowClusterResourceUsage(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.ClusterResourceUsage, error)
 }
 
 type ClusterInstInfoStream interface {

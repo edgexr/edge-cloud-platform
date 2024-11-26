@@ -2240,3 +2240,39 @@ func (s *ClusterInstApi) hasInstanceOfApp(refs *edgeproto.ClusterRefs, app *edge
 	}
 	return false
 }
+
+func (s *ClusterInstApi) ShowClusterResourceUsage(in *edgeproto.ClusterInst, cb edgeproto.ClusterInstApi_ShowClusterResourceUsageServer) error {
+	ctx := cb.Context()
+	cis := []*edgeproto.ClusterInst{}
+	err := s.cache.Show(in, func(obj *edgeproto.ClusterInst) error {
+		cis = append(cis, obj.Clone())
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	flavorLookups := map[edgeproto.CloudletKey]edgeproto.FlavorLookup{}
+	for _, ci := range cis {
+		// cache flavorLookups per cloudlet so we don't have
+		// to rebuild them if multiple clusters are on the same
+		// cloudlet.
+		flavorLookup, ok := flavorLookups[ci.CloudletKey]
+		if !ok {
+			info := &edgeproto.CloudletInfo{}
+			if !s.all.cloudletInfoApi.cache.Get(&ci.CloudletKey, info) {
+				log.SpanLog(ctx, log.DebugLevelApi, "show cluster resource usage, no cloudlet info found", "cloudlet", ci.CloudletKey, "cluster", ci.Key)
+				continue
+			}
+			flavorLookup = info.GetFlavorLookup()
+			flavorLookups[ci.CloudletKey] = flavorLookup
+		}
+		usage, err := s.getClusterResourceUsage(ctx, ci, flavorLookup)
+		if err != nil {
+			return err
+		}
+		if err := cb.Send(usage); err != nil {
+			return err
+		}
+	}
+	return nil
+}

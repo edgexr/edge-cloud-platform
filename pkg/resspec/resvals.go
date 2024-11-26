@@ -53,6 +53,11 @@ func NewWholeResVal(name, units string, value uint64) *ResVal {
 	}
 }
 
+func (s *ResVal) Clone() *ResVal {
+	cp := *s
+	return &cp
+}
+
 type ResValMap map[string]*ResVal
 
 func (s ResValMap) AddRes(name, units string, whole uint64, nanos uint32) {
@@ -163,7 +168,7 @@ func (s ResValMap) GetInt(resName string) uint64 {
 func (s ResValMap) Clone() ResValMap {
 	clone := ResValMap{}
 	for _, v := range s {
-		clone.Add(v)
+		clone.Add(v.Clone())
 	}
 	return clone
 }
