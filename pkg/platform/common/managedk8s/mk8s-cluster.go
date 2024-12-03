@@ -77,7 +77,7 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create done", "annotations", infraAnnotations)
 
-	err = m.SetupClusterKconf(ctx, clusterName, clusterInst, kconf)
+	err = m.SetupClusterKconf(ctx, clusterInst, kconf)
 	if err != nil {
 		return nil, err
 	}

@@ -338,6 +338,10 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 	}
 	s.all.clusterInstApi.cache.Mux.Unlock()
 	for _, pc := range potentialCloudlets {
+		if pc.features.IsSingleKubernetesCluster {
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip free reservable clusters for cloudlet, single kubernetes cluster does not support reservable clusters", "cloudlet", pc.cloudlet.Key)
+			continue
+		}
 		freelist, ok := freeClusterInsts[pc.cloudlet.Key]
 		if !ok || len(freelist) == 0 {
 			// no free reservable cluster insts
