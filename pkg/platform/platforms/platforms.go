@@ -25,7 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fakeinfra"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/gcp"
 	k8sbm "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-baremetal"
-	k8sop "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-operator"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/k8ssite"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kindinfra"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/localhost"
@@ -57,7 +57,7 @@ var builders = []platform.PlatformBuilder{
 	awseks.NewPlatform,
 	fakeinfra.NewPlatform,
 	k8sbm.NewPlatform,
-	k8sop.NewPlatform,
+	k8ssite.NewPlatform,
 	kindinfra.NewPlatform,
 	mock.NewPlatform,
 	localhost.NewPlatform,

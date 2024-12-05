@@ -109,7 +109,7 @@ func (s *DNSMgr) getProvider(ctx context.Context, fqdn string) (dnsapi.Provider,
 		return provider, zone, nil
 	}
 
-	if zone == LocalTestZone {
+	if zone == LocalTestZone || zone == "" {
 		// special case for local testing
 		return &TestProvider{}, zone, nil
 	}

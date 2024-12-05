@@ -15,9 +15,11 @@
 package k8smgmt
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -25,6 +27,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	ssh "github.com/edgexr/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -291,6 +294,41 @@ func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*e
 		info = append(info, nodeInfo)
 	}
 	return info, nil
+}
+
+// GetNodePools converts node infos into node pools
+func GetNodePools(ctx context.Context, nodeInfos []*edgeproto.NodeInfo) []*edgeproto.NodePool {
+	pools := map[string]*edgeproto.NodePool{}
+	poolID := 0
+	for _, nodeInfo := range nodeInfos {
+		// we group nodes by capacity
+		resVals := resspec.ResValMap{}
+		for resName, val := range nodeInfo.Capacity {
+			resVals.Add(resspec.NewDecimalResVal(resName, "", *val))
+		}
+		key := resVals.String()
+		pool, ok := pools[key]
+		if !ok {
+			pool = &edgeproto.NodePool{}
+			pool.Name = fmt.Sprintf("pool%02d", poolID)
+			poolID++
+			pool.NodeResources = &edgeproto.NodeResources{}
+			pool.NodeResources.Vcpus = resVals.GetInt(cloudcommon.ResourceVcpus)
+			pool.NodeResources.Ram = resVals.GetInt(cloudcommon.ResourceRamMb)
+			pool.NodeResources.Disk = resVals.GetInt(cloudcommon.ResourceDiskGb)
+			// TODO: handle gpu resources
+			pools[key] = pool
+		}
+		pool.NumNodes++
+	}
+	orderedPools := []*edgeproto.NodePool{}
+	for _, p := range pools {
+		orderedPools = append(orderedPools, p)
+	}
+	slices.SortFunc(orderedPools, func(a, b *edgeproto.NodePool) int {
+		return cmp.Compare(a.Name, b.Name)
+	})
+	return orderedPools
 }
 
 var unsupportedResource = "unsupported"

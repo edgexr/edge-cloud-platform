@@ -663,6 +663,9 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		in.RootLbFqdn = getCloudletRootLBFQDN(in)
 		in.StaticRootLbFqdn = in.RootLbFqdn
 		if features.IsSingleKubernetesCluster {
+			if in.EnableDefaultServerlessCluster {
+				return errors.New("cannot enable default serverless cluster for single kubernetes cluster platform")
+			}
 			// create ClusterInst representation of Cloudlet
 			err := s.all.clusterInstApi.createCloudletSingularCluster(stm, in, in.SingleKubernetesClusterOwner)
 			if err != nil {

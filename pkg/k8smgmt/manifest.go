@@ -29,6 +29,7 @@ import (
 	yaml "github.com/mobiledgex/yaml/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/printers"
@@ -339,7 +340,15 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 		if err != nil {
 			return kubeManifest, fmt.Errorf("unable to marshal the k8s objects back together, %s", err.Error())
 		} else {
-			files = append(files, buf.String())
+			file := buf.String()
+			if _, ok := o.(*networkingv1.NetworkPolicy); ok {
+				// NetworkPolicyStatus has been removed as of
+				// https://github.com/kubernetes/api/commit/90ceadb2d5f2f1d135492b647c9fb72777db4b36
+				// unfortunately yaml printer writes it as an empty {}
+				// field, we need to remove it
+				file = strings.TrimSuffix(file, "status: {}\n")
+			}
+			files = append(files, file)
 		}
 	}
 	mf = strings.Join(files, "---\n")

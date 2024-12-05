@@ -19,11 +19,13 @@ import (
 	"io/fs"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs/k8swm"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -54,6 +56,7 @@ type ManagedK8sPlatform struct {
 	CommonPf infracommon.CommonPlatform
 	Provider ManagedK8sProvider
 	infracommon.CommonEmbedded
+	k8swm.K8sWorkloadMgr
 }
 
 func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -75,6 +78,7 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 	if err != nil {
 		return err
 	}
+	m.K8sWorkloadMgr.Init(m, features, &m.CommonPf)
 	return m.Provider.Login(ctx)
 }
 
@@ -119,4 +123,9 @@ func (m *ManagedK8sPlatform) GetClusterAdditionalResourceMetric(ctx context.Cont
 
 func (m *ManagedK8sPlatform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error) {
 	return &edgeproto.Flavor{}, nil
+}
+
+func (m *ManagedK8sPlatform) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
+	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
+	return m.Provider.GetCredentials(ctx, clusterName, clusterInst)
 }

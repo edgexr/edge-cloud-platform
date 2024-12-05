@@ -37,7 +37,7 @@ const (
 	PlatformTypeFederation        = "federation"
 	PlatformTypeGCP               = "gcp"
 	PlatformTypeK8SBareMetal      = "k8sbaremetal"
-	PlatformTypeK8SOperator       = "k8soperator"
+	PlatformTypeK8SSite           = "k8ssite"
 	PlatformTypeKind              = "kind" // kubernetes in docker
 	PlatformTypeKindInfra         = "kindinfra"
 	PlatformTypeMock              = "mock"
