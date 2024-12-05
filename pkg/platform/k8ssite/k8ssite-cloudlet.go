@@ -20,8 +20,11 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 )
 
 func (s *K8sSite) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
@@ -47,6 +50,42 @@ func (s *K8sSite) GetCloudletInfraResources(ctx context.Context) (*edgeproto.Inf
 
 func (s *K8sSite) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, flavor *edgeproto.Flavor, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet", "cloudlet", cloudlet)
+
+	platConfig := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
+	err := s.InitCommon(ctx, platConfig, caches, nil, updateCallback)
+	if err != nil {
+		return false, err
+	}
+	kconfNames, err := s.ensureKubeconfig()
+	if err != nil {
+		return false, err
+	}
+	client := s.getClient()
+
+	// since we're installing the cert before ingress controller,
+	// we need to create the namespace first.
+	out, err := client.Output("kubectl create ns " + k8smgmt.IngressNginxNamespace + " --dry-run=client -o yaml | kubectl apply -f -")
+	if err != nil {
+		return false, fmt.Errorf("failed to create ingress-nginx namespace %s: %s, %s", k8smgmt.IngressNginxNamespace, out, err)
+	}
+
+	updateCallback(edgeproto.UpdateTask, "Generating ingress certificate")
+	// install cloudlet cert for ingress
+	wildcardName := certscache.GetWildcardName(cloudlet.RootLbFqdn)
+	err = k8smgmt.RefreshCert(ctx, client, kconfNames, cloudlet, pfInitConfig.ProxyCertsCache, wildcardName, k8smgmt.RefreshCertsOpts{
+		CommerialCerts: true,
+		InitCluster:    true,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	// install ingress-nginx
+	updateCallback(edgeproto.UpdateTask, "Installing ingress controller")
+	err = k8smgmt.InstallIngressNginx(ctx, client, kconfNames, false)
+	if err != nil {
+		return false, err
+	}
 	return false, nil
 }
 

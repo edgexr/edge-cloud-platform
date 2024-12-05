@@ -90,7 +90,7 @@ func TestGenerateEnvoyYaml(t *testing.T) {
 			PublicPort:   5677,
 			Tls:          true,
 		}, {
-			Proto:        dme.LProto_L_PROTO_TCP,
+			Proto:        dme.LProto_L_PROTO_HTTP,
 			InternalPort: 5678,
 			PublicPort:   5678,
 			Tls:          false,

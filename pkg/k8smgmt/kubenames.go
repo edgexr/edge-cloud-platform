@@ -52,6 +52,11 @@ type KubeNames struct {
 	BaseKconfName              string
 }
 
+type KConfNames struct {
+	KconfName string
+	KconfArg  string
+}
+
 type KubeNamesOp func(k *KubeNames) error
 
 func getKconfNameDeprecated(clusterName, cloudletOrg string) string {
@@ -254,4 +259,20 @@ func (k *KubeNames) ContainsService(svc string) bool {
 		}
 	}
 	return false
+}
+
+func (k *KubeNames) GetKConfNames() *KConfNames {
+	return &KConfNames{
+		KconfName: k.KconfName,
+		KconfArg:  k.KconfArg,
+	}
+}
+
+// GetCloudletKConfNames gets the KConfNames for a single cluster
+// acting as a cloudlet
+func GetCloudletKConfNames(key *edgeproto.CloudletKey) *KConfNames {
+	names := KConfNames{}
+	names.KconfName = fmt.Sprintf("%s.%s.cloudlet-kubeconfig", key.Name, key.Organization)
+	names.KconfArg = "--kubeconfig=" + names.KconfName
+	return &names
 }

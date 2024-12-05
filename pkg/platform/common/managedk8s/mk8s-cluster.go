@@ -45,8 +45,7 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 		return nil, errors.New("currently only one node pool is supported")
 	}
 
-	kconf := k8smgmt.GetKconfName(clusterInst)
-	infraAnnotations, err := m.createClusterInstInternal(ctx, client, clusterName, kconf, clusterInst, updateCallback)
+	infraAnnotations, err := m.createClusterInstInternal(ctx, client, clusterName, clusterInst, updateCallback)
 	if err != nil {
 		if !clusterInst.SkipCrmCleanupOnFailure {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst)
@@ -59,7 +58,7 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 	return infraAnnotations, err
 }
 
-func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, client ssh.Client, clusterName string, kconf string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, client ssh.Client, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "createClusterInstInternal", "clusterName", clusterName, "nodePools", clusterInst.NodePools)
 	var err error
 	if err = m.Provider.Login(ctx); err != nil {
@@ -77,7 +76,7 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create done", "annotations", infraAnnotations)
 
-	err = m.SetupClusterKconf(ctx, clusterInst, kconf)
+	err = m.SetupKconf(ctx, clusterInst)
 	if err != nil {
 		return nil, err
 	}

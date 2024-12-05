@@ -176,9 +176,8 @@ type StatusObj interface {
 func StreamRecvWithStatus[Object StatusObj](ctx context.Context, stream GRPCStreamRecv[Object], statusSend func(*edgeproto.Result) error, cb func(obj Object) error) error {
 	lastMsgCnt := 0
 	return StreamRecv(ctx, stream, func(obj Object) error {
-		cb(obj)
-
 		status := obj.GetStatus()
+		cb(obj)
 		if status != nil {
 			for ii := lastMsgCnt; ii < len(status.Msgs); ii++ {
 				err := statusSend(&edgeproto.Result{

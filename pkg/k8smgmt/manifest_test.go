@@ -114,7 +114,7 @@ metadata:
   name: pillimogo100-tcp
 spec:
   ports:
-  - name: tcp443
+  - name: http443
     port: 443
     protocol: TCP
     targetPort: 443

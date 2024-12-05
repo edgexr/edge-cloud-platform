@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -118,6 +119,27 @@ func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	if err != nil {
 		return err
 	}
+	// set up ingress
+	if features.UsesIngress {
+		ingress, err := k8smgmt.CreateIngress(ctx, client, names, appInst)
+		if err != nil {
+			return err
+		}
+		ip, err := k8smgmt.GetIngressExternalIP(ctx, client, names, ingress.ObjectMeta.Name)
+		if err != nil {
+			return err
+		}
+		fqdn := names.AppURI
+		fqdn = strings.TrimPrefix(fqdn, "https://")
+		fqdn = strings.TrimPrefix(fqdn, "http://")
+		// register DNS for ingress
+		action := infracommon.DnsSvcAction{
+			ExternalIP: ip,
+		}
+		if err := m.commonPf.AddDNS(ctx, fqdn, &action); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -190,19 +212,15 @@ func (m *K8sWorkloadMgr) UpdateAppInst(ctx context.Context, clusterInst *edgepro
 
 func (m *K8sWorkloadMgr) SetupKconf(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
 	targetFile := k8smgmt.GetKconfName(clusterInst)
-
-	if _, err := os.Stat(targetFile); err == nil {
-		// already exists
-		return nil
-	}
-	return m.SetupClusterKconf(ctx, clusterInst, targetFile)
-}
-
-func (m *K8sWorkloadMgr) SetupClusterKconf(ctx context.Context, clusterInst *edgeproto.ClusterInst, targetFile string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "SetupKconf", "cluster", clusterInst.Key, "targetFile", targetFile)
+
 	kconfData, err := m.clusterAccess.GetClusterCredentials(ctx, clusterInst)
 	if err != nil {
 		return fmt.Errorf("unable to get cluster %s credentials %v", clusterInst.Key.GetKeyString(), err)
+	}
+	dat, err := os.ReadFile(targetFile)
+	if err == nil && string(dat) == string(kconfData) {
+		return nil
 	}
 	err = os.WriteFile(targetFile, kconfData, KconfPerms)
 	if err != nil {

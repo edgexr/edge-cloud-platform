@@ -382,6 +382,8 @@ type App struct {
 	// (3) maxpktsize (udp-only) - Configures maximum UDP datagram size allowed on port for both upstream/downstream traffic. Ex: "udp:10001:maxpktsize=8000".
 	// (4) intvis (internal-visibility)- Port is not externally accessible. Ex: "tcp:9000:intvis"
 	// (5) id - Port ID. Ex: "tcp:9000:id=p9000"
+	// (6) pathprefix (http-only) - Specifies the path prefix to use in the kubernetes ingress, required if multiple http ports are present, defaults to "/"
+	// (7) svcname - For Kubernetes apps, if there are multiple of the same port on different services, this denotes the service name. Ex: "tcp:9000:tls:svcname=svc1"
 	AccessPorts string `protobuf:"bytes,7,opt,name=access_ports,json=accessPorts,proto3" json:"access_ports,omitempty"`
 	// Default flavor for the App, which may be overridden by the AppInst
 	DefaultFlavor FlavorKey `protobuf:"bytes,9,opt,name=default_flavor,json=defaultFlavor,proto3" json:"default_flavor"`

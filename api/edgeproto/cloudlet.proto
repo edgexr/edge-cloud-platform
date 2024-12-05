@@ -198,6 +198,8 @@ message PlatformFeatures {
   bool supports_multiple_node_pools = 31;
   // Platform manages Kubernetes control nodes
   bool manages_k8s_control_nodes = 32;
+  // Platform uses ingress for inbound Kubernetes HTTP traffic
+  bool uses_ingress = 33;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties

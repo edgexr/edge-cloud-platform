@@ -165,7 +165,7 @@ func isValidKubernetesManifestForResources(objs []runtime.Object, kr *edgeproto.
 	return nil
 }
 
-func IsValidDeploymentManifest(deploymentType, command, manifest string, ports []edgeproto.InstPort, kr *edgeproto.KubernetesResources) error {
+func IsValidDeploymentManifest(ctx context.Context, deploymentType, command, manifest string, ports []edgeproto.InstPort, kr *edgeproto.KubernetesResources) error {
 	if deploymentType == DeploymentTypeVM {
 		if command != "" {
 			return fmt.Errorf("both deploymentmanifest and command cannot be used together for VM based deployment")
@@ -180,15 +180,20 @@ func IsValidDeploymentManifest(deploymentType, command, manifest string, ports [
 			return fmt.Errorf("parse kubernetes deployment yaml failed, %v", err)
 		}
 		// check that any ports specified on App are part of manifest
-		objPorts := make(map[string]struct{})
+		lbPorts := make(map[string]struct{})
+		clusterPorts := make(map[string]struct{})
 		for _, obj := range objs {
 			ksvc, ok := obj.(*v1.Service)
 			if !ok {
 				continue
 			}
-			if ksvc.Spec.Type != v1.ServiceTypeLoadBalancer {
-				// we allow non-LB services such as ClusterIP, but they do not count for validating exposed ports
-				log.DebugLog(log.DebugLevelApi, "skipping non-load balancer service", "type", ksvc.Spec.Type)
+			var portMap map[string]struct{}
+			if ksvc.Spec.Type == v1.ServiceTypeLoadBalancer {
+				portMap = lbPorts
+			} else if ksvc.Spec.Type == v1.ServiceTypeClusterIP {
+				portMap = clusterPorts
+			} else {
+				log.SpanLog(ctx, log.DebugLevelApi, "skipping unsupported service", "type", ksvc.Spec.Type)
 				continue
 			}
 			for _, kp := range ksvc.Spec.Ports {
@@ -199,15 +204,20 @@ func IsValidDeploymentManifest(deploymentType, command, manifest string, ports [
 				}
 				appPort.Proto, err = edgeproto.GetLProto(string(kp.Protocol))
 				if err != nil {
-					log.DebugLog(log.DebugLevelApi, "unrecognized port protocol in kubernetes manifest", "proto", string(kp.Protocol))
+					log.SpanLog(ctx, log.DebugLevelApi, "unrecognized port protocol in kubernetes manifest", "proto", string(kp.Protocol))
 					continue
 				}
 				appPort.InternalPort = kp.Port
-				objPorts[appPort.String()] = struct{}{}
+				portMap[appPort.String()] = struct{}{}
 			}
 		}
 		missingPorts := []string{}
 		for _, appPort := range ports {
+			k8sProto := appPort.Proto
+			if appPort.Proto == dme.LProto_L_PROTO_HTTP {
+				// http ports are TCP ports in kubernetes services
+				k8sProto = dme.LProto_L_PROTO_TCP
+			}
 			if appPort.EndPort != 0 {
 				// We have a range-port notation on the dme.AppPort
 				// while our manifest exhaustively enumerates each as a kubePort
@@ -224,35 +234,44 @@ func IsValidDeploymentManifest(deploymentType, command, manifest string, ports [
 				for i := start; i <= end; i++ {
 					// expand short hand notation to test membership in map
 					tp := dme.AppPort{
-						Proto:        appPort.Proto,
+						Proto:        k8sProto,
 						InternalPort: int32(i),
 						EndPort:      int32(0),
 					}
-
-					if _, found := objPorts[tp.String()]; found {
+					if _, found := lbPorts[tp.String()]; found {
 						continue
+					}
+					if appPort.Proto == dme.LProto_L_PROTO_HTTP {
+						// http ports may also be on cluster IPs,
+						// as they will be routed via an ingress
+						if _, found := clusterPorts[tp.String()]; found {
+							continue
+						}
 					}
 					protoStr, _ := edgeproto.LProtoStr(appPort.Proto)
 					missingPorts = append(missingPorts, fmt.Sprintf("%s:%d", protoStr, tp.InternalPort))
 				}
 				continue
 			}
-			tp := appPort
-			// No need to test TLS or nginx as part of manifest
-			tp.Tls = false
-			tp.Nginx = false
-			tp.InternalVisOnly = false
-			tp.Id = ""
-			// This config is specifically for envoy and hence not required for k8s validation
-			tp.MaxPktSize = 0
-			if _, found := objPorts[tp.String()]; found {
+			tp := edgeproto.InstPort{}
+			tp.Proto = k8sProto
+			tp.InternalPort = appPort.InternalPort
+			if _, found := lbPorts[tp.String()]; found {
 				continue
+			}
+			if appPort.Proto == dme.LProto_L_PROTO_HTTP {
+				// http ports may also be on cluster IPs,
+				// as they will be routed via an ingress
+				if _, found := clusterPorts[tp.String()]; found {
+					continue
+				}
 			}
 			protoStr, _ := edgeproto.LProtoStr(tp.Proto)
 			missingPorts = append(missingPorts, fmt.Sprintf("%s:%d", protoStr, tp.InternalPort))
 		}
 		if len(missingPorts) > 0 {
-			return fmt.Errorf("port %s defined in AccessPorts but missing from kubernetes manifest in a LoadBalancer service", strings.Join(missingPorts, ","))
+			log.SpanLog(ctx, log.DebugLevelApi, "validate deployment manifest failed", "missing ports", missingPorts, "lbPorts", fmt.Sprintf("%v", lbPorts), "clusterPorts", fmt.Sprintf("%v", clusterPorts))
+			return fmt.Errorf("port %s defined in AccessPorts but missing from kubernetes manifest in a LoadBalancer service (TCP/UDP/HTTP) or ClusterIP service (HTTP only)", strings.Join(missingPorts, ","))
 		}
 		err = isValidKubernetesManifestForResources(objs, kr)
 		if err != nil {
@@ -513,4 +532,8 @@ func AppInstToClusterDeployment(deployment string) string {
 
 func AppDeploysToKubernetes(deployment string) bool {
 	return deployment == DeploymentTypeKubernetes || deployment == DeploymentTypeHelm
+}
+
+func AppPortUsesIngress(deployment string, features *edgeproto.PlatformFeatures, proto dme.LProto) bool {
+	return AppDeploysToKubernetes(deployment) && features.UsesIngress && proto == dme.LProto_L_PROTO_HTTP
 }

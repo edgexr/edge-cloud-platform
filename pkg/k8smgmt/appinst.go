@@ -327,6 +327,10 @@ func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst) string {
 	return names.AppInstName + names.AppInstOrg + ".yaml"
 }
 
+func getIngressFileName(names *KubeNames) string {
+	return names.AppInstName + names.AppInstOrg + "-ingress.yaml"
+}
+
 // CreateAllNamespaces creates all the namespaces the app will use. It does not create a manifest for
 // the namespaces, just allows the basic dependencies can be defined against
 // them. Manifest definition can later be used to update the namespaces.

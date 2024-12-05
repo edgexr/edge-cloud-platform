@@ -696,7 +696,7 @@ func (s *ClusterInstInfo) GetStatus() *StatusInfo {
 }
 
 func (s *CloudletInfo) GetStatus() *StatusInfo {
-	return &s.Status
+	return s.Status.Clone()
 }
 
 func (s *CloudletCache) GetZoneFor(ckey *CloudletKey) *ZoneKey {

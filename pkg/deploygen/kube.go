@@ -56,7 +56,7 @@ func kubeBasic(app *AppSpec) (string, error) {
 		files: []string{},
 		ports: setKubePorts(app.Ports),
 	}
-	gen.kubeLb([]string{"tcp"})
+	gen.kubeLb([]string{"tcp", "http"})
 	gen.kubeLb([]string{"udp"})
 	gen.kubeApp()
 	if gen.err != nil {
@@ -99,6 +99,8 @@ func setKubePorts(ports []util.PortSpec) []kubePort {
 				}
 				kp.Name = fmt.Sprintf("%s%s%s%s", kp.Proto, kp.Port, tls, nginx)
 				switch port.Proto {
+				case "http":
+					fallthrough
 				case "tcp":
 					kp.KubeProto = "TCP"
 				case "udp":
@@ -120,6 +122,8 @@ func setKubePorts(ports []util.PortSpec) []kubePort {
 				kp.Name = fmt.Sprintf("%s%s%s%s", kp.Proto, kp.Port, tls, nginx)
 			}
 			switch port.Proto {
+			case "http":
+				fallthrough
 			case "tcp":
 				kp.KubeProto = "TCP"
 			case "udp":

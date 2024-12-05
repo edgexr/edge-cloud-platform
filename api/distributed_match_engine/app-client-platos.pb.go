@@ -1395,7 +1395,7 @@ func EnumDecodeHook(from, to reflect.Type, data interface{}) (interface{}, error
 func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	switch t {
 	case reflect.TypeOf(LProto(0)):
-		return "LProto", ", valid values are one of Unknown, Tcp, Udp, or 0, 1, 2", true
+		return "LProto", ", valid values are one of Unknown, Tcp, Udp, Http, or 0, 1, 2, 3", true
 	case reflect.TypeOf(HealthCheck(0)):
 		return "HealthCheck", ", valid values are one of Unknown, RootlbOffline, ServerFail, Ok, CloudletOffline, or 0, 1, 2, 3, 4", true
 	case reflect.TypeOf(CloudletState(0)):
