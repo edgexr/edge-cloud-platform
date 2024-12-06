@@ -96,7 +96,7 @@ func AppData() []edgeproto.App {
 			Version:      "1.0.0",
 		},
 		ImageType:       edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		AccessPorts:     "tcp:443,tcp:10002,udp:10002",
+		AccessPorts:     "http:443,tcp:10002,udp:10002",
 		AccessType:      edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		AllowServerless: true,
 		KubernetesResources: &edgeproto.KubernetesResources{
@@ -188,7 +188,7 @@ func AppData() []edgeproto.App {
 			Version:      "0.0.2",
 		},
 		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		AccessPorts: "tcp:80,udp:8001,tcp:065535",
+		AccessPorts: "http:80,udp:8001,tcp:065535",
 		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		KubernetesResources: &edgeproto.KubernetesResources{
 			CpuPool: &edgeproto.NodePoolResources{
@@ -200,6 +200,7 @@ func AppData() []edgeproto.App {
 				},
 			},
 		},
+		AllowServerless: true,
 	}, { // edgeproto.App // 7
 		Key: edgeproto.AppKey{
 			Organization: devData[0],
@@ -413,6 +414,7 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 		PlatformType:               "fakesinglecluster",
 		IsSingleKubernetesCluster:  true,
 		SupportsAppInstDedicatedIp: true,
+		UsesIngress:                true,
 	}}
 	// common to all fake platforms
 	for ii := range features {
@@ -1095,6 +1097,20 @@ func AppInstData() []edgeproto.AppInst {
 		AppKey:     appData[15].Key,
 		ClusterKey: clusterInstData[9].Key,
 		PowerState: edgeproto.PowerState_POWER_ON,
+	}, { // edgeproto.AppInst // 18
+		Key: edgeproto.AppInstKey{
+			Name:         appData[0].Key.Name + "7",
+			Organization: appData[0].Key.Organization,
+		},
+		AppKey:  appData[0].Key,
+		ZoneKey: zoneData[4].Key,
+	}, { // edgeproto.AppInst // 19
+		Key: edgeproto.AppInstKey{
+			Name:         appData[6].Key.Name + "3",
+			Organization: appData[6].Key.Organization,
+		},
+		AppKey:  appData[6].Key,
+		ZoneKey: zoneData[4].Key,
 	}}
 }
 
@@ -1130,6 +1146,7 @@ func GetAppInstRefsData() []edgeproto.AppInstRefs {
 			appInstData[1].Key.GetKeyString():  1,
 			appInstData[2].Key.GetKeyString():  1,
 			appInstData[13].Key.GetKeyString(): 1,
+			appInstData[18].Key.GetKeyString(): 1,
 		},
 	}, { // edgeproto.AppInstRefs
 		Key: appData[1].Key,
@@ -1155,8 +1172,9 @@ func GetAppInstRefsData() []edgeproto.AppInstRefs {
 	}, { // edgeproto.AppInstRefs
 		Key: appData[6].Key,
 		Insts: map[string]uint32{
-			appInstData[6].Key.GetKeyString(): 1,
-			appInstData[7].Key.GetKeyString(): 1,
+			appInstData[6].Key.GetKeyString():  1,
+			appInstData[7].Key.GetKeyString():  1,
+			appInstData[19].Key.GetKeyString(): 1,
 		},
 	}, { // edgeproto.AppInstRefs
 		Key: appData[7].Key,
@@ -1534,7 +1552,7 @@ func CloudletRefsWithAppInstsData() []edgeproto.CloudletRefs {
 	appInstData := AppInstData()
 	return []edgeproto.CloudletRefs{{
 		// ClusterInstData[0,3,7,8]: (dedicated,dedicated,shared,shared)
-		// AppInstData[0,1] -> ports[tcp:443;tcp:443]:
+		// AppInstData[0,1] -> App[0] -> ports[http:443;http:443]:
 		// AppInstData[13,14,15,16] -> App[0,9,13,14] -> ports[tcp:443,tcp:10002,udp:10002;;tcp:889;tcp:444]
 		Key: cloudletData[0].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
@@ -1550,7 +1568,7 @@ func CloudletRefsWithAppInstsData() []edgeproto.CloudletRefs {
 		UsedDynamicIps: 2,
 	}, { // edgeproto.CloudletRefs
 		// ClusterInstData[1,4,9], ClusterInstAutoData[0]: (shared,shared,dedicated,shared)
-		// AppInstData[2,3] -> ports[tcp:443;tcp:80,tcp:443,tcp:81,udp:10002]
+		// AppInstData[2,3] -> ports[http:443;tcp:80,tcp:443,tcp:81,udp:10002]
 		Key: cloudletData[1].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
 			clusterInstData[1].Key,
@@ -1563,7 +1581,7 @@ func CloudletRefsWithAppInstsData() []edgeproto.CloudletRefs {
 		UsedDynamicIps:         1,
 	}, { // edgeproto.CloudletRefs
 		// ClusterInstData[2,5], ClusterInstAutoData[1,2]: (shared,dedicated,shared,shared)
-		// AppInstData[4,5,6] -> ports[tcp:443,udp:11111;udp:2024;tcp:80,udp:8001,tcp:65535]
+		// AppInstData[4,5,6] -> ports[tcp:443,udp:11111;udp:2024;http:80,udp:8001,tcp:65535]
 		Key: cloudletData[2].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
 			clusterInstData[2].Key,
@@ -1585,6 +1603,10 @@ func CloudletRefsWithAppInstsData() []edgeproto.CloudletRefs {
 		},
 		RootLbPorts:            map[int32]int32{889: 1},
 		ReservedAutoClusterIds: 1,
+	}, { // 4
+		// AppInstData[18,19] -> AppData[0,6] -> ports[http:443,tcp:10002,udp:10002,http:80,udp:8001,tcp:65535]
+		Key:         cloudletData[4].Key,
+		RootLbPorts: map[int32]int32{8001: 2, 10002: 3, 65535: 1},
 	}}
 }
 
@@ -2523,6 +2545,8 @@ func CreatedAppInstData() []edgeproto.AppInst {
 	for _, cloudlet := range cloudletData {
 		zoneFromCloudlet[cloudlet.Key] = *cloudlet.GetZone()
 	}
+	cloudlet4ClusterKey := *cloudcommon.GetDefaultClustKey(cloudletData[4].Key, cloudletData[4].SingleKubernetesClusterOwner)
+
 	insts := []edgeproto.AppInst{}
 	for ii, appInst := range AppInstData() {
 		switch ii {
@@ -2571,6 +2595,16 @@ func CreatedAppInstData() []edgeproto.AppInst {
 			appInst.ClusterKey = clusterInstData[8].Key
 		case 17:
 			appInst.NodeResources = appData[15].NodeResources
+		case 18:
+			appInst.KubernetesResources = appData[0].KubernetesResources
+			appInst.CloudletKey = cloudletData[4].Key
+			appInst.ClusterKey = cloudlet4ClusterKey
+			appInst.PowerState = edgeproto.PowerState_POWER_ON
+		case 19:
+			appInst.KubernetesResources = appData[6].KubernetesResources
+			appInst.CloudletKey = cloudletData[4].Key
+			appInst.ClusterKey = cloudlet4ClusterKey
+			appInst.PowerState = edgeproto.PowerState_POWER_ON
 		}
 		// fill in cloudlet from cluster if non-VM app
 		if appInst.ClusterKey.Name != "" {

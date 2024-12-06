@@ -24,6 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -45,8 +46,7 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 		return nil, errors.New("currently only one node pool is supported")
 	}
 
-	kconf := k8smgmt.GetKconfName(clusterInst)
-	infraAnnotations, err := m.createClusterInstInternal(ctx, client, clusterName, kconf, clusterInst, updateCallback)
+	infraAnnotations, err := m.createClusterInstInternal(ctx, client, clusterName, clusterInst, updateCallback)
 	if err != nil {
 		if !clusterInst.SkipCrmCleanupOnFailure {
 			log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst)
@@ -59,7 +59,7 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 	return infraAnnotations, err
 }
 
-func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, client ssh.Client, clusterName string, kconf string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, client ssh.Client, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "createClusterInstInternal", "clusterName", clusterName, "nodePools", clusterInst.NodePools)
 	var err error
 	if err = m.Provider.Login(ctx); err != nil {
@@ -76,11 +76,6 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create done", "annotations", infraAnnotations)
-
-	err = m.SetupClusterKconf(ctx, clusterInst, kconf)
-	if err != nil {
-		return nil, err
-	}
 	return infraAnnotations, nil
 }
 
@@ -131,4 +126,8 @@ func (m *ManagedK8sPlatform) GetCloudletInfraResources(ctx context.Context) (*ed
 
 func (m *ManagedK8sPlatform) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
 	return nil, fmt.Errorf("GetClusterInfraResources not implemented for managed k8s")
+}
+
+func (m *ManagedK8sPlatform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
+	return nil
 }

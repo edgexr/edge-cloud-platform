@@ -238,7 +238,7 @@ func NBIApp(in *edgeproto.App) (*nbi.AppManifest, error) {
 	// convert ports
 	for _, p := range ports {
 		ni := nbi.AppManifest_ComponentSpec_NetworkInterfaces{}
-		if p.Proto == dme.LProto_L_PROTO_TCP {
+		if p.Proto == dme.LProto_L_PROTO_TCP || p.Proto == dme.LProto_L_PROTO_HTTP {
 			ni.Protocol = nbi.TCP
 		} else if p.Proto == dme.LProto_L_PROTO_UDP {
 			ni.Protocol = nbi.UDP

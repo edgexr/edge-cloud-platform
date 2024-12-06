@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	k8scommon "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -242,4 +243,8 @@ func (k *K8sBareMetalPlatform) GetRootLBClients(ctx context.Context) (map[string
 
 func (k *K8sBareMetalPlatform) GetVersionProperties(ctx context.Context) map[string]string {
 	return map[string]string{}
+}
+
+func (s *K8sBareMetalPlatform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
+	return nil
 }

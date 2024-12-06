@@ -280,6 +280,8 @@ func generateEnvoyYaml(ctx context.Context, name string, config *ProxyConfig, me
 
 				switch p.Proto {
 				// only support tcp for now
+				case dme.LProto_L_PROTO_HTTP:
+					fallthrough
 				case dme.LProto_L_PROTO_TCP:
 					key := fmt.Sprintf("%s:%d", "tcp", internalPort)
 					_, skipHealthCheck := skipHcPortsMap[key]

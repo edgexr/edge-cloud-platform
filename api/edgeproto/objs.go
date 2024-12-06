@@ -992,6 +992,8 @@ func GetLProto(s string) (dme.LProto, error) {
 		return dme.LProto_L_PROTO_TCP, nil
 	case "udp":
 		return dme.LProto_L_PROTO_UDP, nil
+	case "http":
+		return dme.LProto_L_PROTO_HTTP, nil
 	}
 	return 0, fmt.Errorf("Unsupported protocol: %s", s)
 }
@@ -1002,6 +1004,8 @@ func LProtoStr(proto dme.LProto) (string, error) {
 		return "tcp", nil
 	case dme.LProto_L_PROTO_UDP:
 		return "udp", nil
+	case dme.LProto_L_PROTO_HTTP:
+		return "http", nil
 	}
 	return "", fmt.Errorf("Invalid proto %d", proto)
 }
@@ -1012,8 +1016,23 @@ func L4ProtoStr(proto dme.LProto) (string, error) {
 		return "tcp", nil
 	case dme.LProto_L_PROTO_UDP:
 		return "udp", nil
+	case dme.LProto_L_PROTO_HTTP:
+		return "http", nil
 	}
 	return "", fmt.Errorf("Invalid proto %d", proto)
+}
+
+func (s *InstPort) IsHTTP() bool {
+	return s.Proto == dme.LProto_L_PROTO_HTTP
+}
+
+func (s *AppInst) UsesHTTP() bool {
+	for _, p := range s.MappedPorts {
+		if p.IsHTTP() {
+			return true
+		}
+	}
+	return false
 }
 
 func AppPortLookupKey(ap *InstPort) string {
@@ -1085,6 +1104,8 @@ func ParseAppPorts(ports string) ([]InstPort, error) {
 			MaxPktSize:      portSpec.MaxPktSize,
 			InternalVisOnly: portSpec.InternalVisOnly,
 			Id:              portSpec.ID,
+			PathPrefix:      portSpec.PathPrefix,
+			ServiceName:     portSpec.ServiceName,
 		}
 
 		appports = append(appports, p)
@@ -1092,7 +1113,25 @@ func ParseAppPorts(ports string) ([]InstPort, error) {
 	return appports, nil
 }
 
-func DoPortsOverlap(a, b InstPort) bool {
+func DoPortsOverlap(a, b InstPort, skipHTTP bool) bool {
+	// if platform uses ingress, all HTTP ports map to the
+	// ingress controller so there is no conflict.
+	// Otherwise, if ingress is not used, we treat HTTP ports
+	// as if they are TCP ports.
+	aProto := a.Proto
+	bProto := b.Proto
+	if a.Proto == dme.LProto_L_PROTO_HTTP {
+		if skipHTTP {
+			return false
+		}
+		aProto = dme.LProto_L_PROTO_TCP
+	}
+	if b.Proto == dme.LProto_L_PROTO_HTTP {
+		if skipHTTP {
+			return false
+		}
+		bProto = dme.LProto_L_PROTO_TCP
+	}
 	lastPortA := a.EndPort
 	if lastPortA == 0 {
 		lastPortA = a.InternalPort
@@ -1101,7 +1140,7 @@ func DoPortsOverlap(a, b InstPort) bool {
 	if lastPortB == 0 {
 		lastPortB = b.InternalPort
 	}
-	if a.Proto != b.Proto ||
+	if aProto != bProto ||
 		a.InternalPort > lastPortB ||
 		lastPortA < b.InternalPort {
 		// no overlap

@@ -36,6 +36,8 @@ type PortSpec struct {
 	MaxPktSize      int64
 	InternalVisOnly bool
 	ID              string
+	PathPrefix      string
+	ServiceName     string
 }
 
 func ParsePorts(accessPorts string) ([]PortSpec, error) {
@@ -101,7 +103,7 @@ func ParsePorts(accessPorts string) ([]PortSpec, error) {
 		}
 
 		proto := strings.ToLower(pp[0])
-		if proto != "tcp" && proto != "udp" {
+		if proto != "tcp" && proto != "udp" && proto != "http" {
 			return nil, fmt.Errorf("Unsupported protocol: %s", pp[0])
 		}
 
@@ -123,7 +125,7 @@ func ParsePorts(accessPorts string) ([]PortSpec, error) {
 		for key, val := range annotations {
 			switch key {
 			case "tls":
-				if portSpec.Proto != "tcp" {
+				if portSpec.Proto != "tcp" && portSpec.Proto != "http" {
 					return nil, fmt.Errorf("Invalid protocol %s, not available for tls support", portSpec.Proto)
 				}
 				portSpec.Tls = true
@@ -148,6 +150,13 @@ func ParsePorts(accessPorts string) ([]PortSpec, error) {
 				portSpec.InternalVisOnly = true
 			case "id":
 				portSpec.ID = val
+			case "pathprefix":
+				if portSpec.Proto != "http" {
+					return nil, fmt.Errorf("invalid annotation pathprefix on port %s, only allowed on http ports", portSpec.Port)
+				}
+				portSpec.PathPrefix = val
+			case "svcname":
+				portSpec.ServiceName = val
 			default:
 				return nil, fmt.Errorf("unrecognized annotation %s for port %s", key+"="+val, pp[1])
 			}

@@ -18,7 +18,9 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 )
 
 const (
@@ -31,6 +33,12 @@ var AccessVarProps = map[string]*edgeproto.PropertyInfo{
 		Description: "Contents of Kubernetes cluster config file used with kubectl to access the cluster, must have admin permissions for the cluster",
 		Mandatory:   true,
 	},
+}
+
+var Props = map[string]*edgeproto.PropertyInfo{
+	infracommon.ExternalIPMap:    infracommon.ExternalIPMapProp,
+	cloudcommon.IngressHTTPPort:  cloudcommon.IngressHTTPPortProp,
+	cloudcommon.IngressHTTPSPort: cloudcommon.IngressHTTPSPortProp,
 }
 
 func (s *K8sSite) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {

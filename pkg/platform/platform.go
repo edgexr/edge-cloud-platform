@@ -199,6 +199,8 @@ type Platform interface {
 	// HandleFedAppInstCb handles callbacks from federation partners after we
 	// create an AppInst on the partner federation. Callbacks update the status of the AppInst change.
 	HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent)
+	// RefreshCerts indicates the platform should refresh its certificates
+	RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error
 }
 
 type ClusterSvc interface {

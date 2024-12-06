@@ -83,6 +83,8 @@ func CheckProtocols(name string, ports []edgeproto.InstPort) (bool, bool) {
 	needNginx := false
 	for _, p := range ports {
 		switch p.Proto {
+		case dme.LProto_L_PROTO_HTTP:
+			fallthrough
 		case dme.LProto_L_PROTO_TCP:
 			needEnvoy = true
 		case dme.LProto_L_PROTO_UDP:

@@ -108,10 +108,9 @@ func CleanupClusterConfig(ctx context.Context, client ssh.Client, clusterInst *e
 	if err != nil {
 		return fmt.Errorf("failed to delete cluster config dir %s: %v", configDir, err)
 	}
-	kconfname := GetKconfName(clusterInst)
-	out, err := client.Output("rm " + kconfname)
-	if err != nil && !strings.Contains(out, "No such file or directory") {
-		return fmt.Errorf("failed to delete kubeconf %s: %v, %v", kconfname, out, err)
+	err = RemoveKubeconfigs(ctx, client, names)
+	if err != nil {
+		return err
 	}
 	return nil
 }

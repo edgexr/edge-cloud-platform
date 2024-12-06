@@ -69,14 +69,10 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			return err
 		}
 	}
-	svcs, err := k8smgmt.GetServices(ctx, client, kubeNames)
+	svcs, err := k8smgmt.GetServices(ctx, client, kubeNames, k8smgmt.WithObjectNamespace(kubeNames.MultitenantNamespace))
 	if err != nil {
 		return err
 	}
-	if len(svcs) < 1 {
-		return fmt.Errorf("no load balancer services for %s", kubeNames.AppURI)
-	}
-
 	for _, svc := range svcs {
 		if kubeNames.DeploymentType != cloudcommon.DeploymentTypeDocker && svc.Spec.Type != v1.ServiceTypeLoadBalancer {
 			continue
@@ -120,29 +116,37 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			if overrideDns != "" {
 				fqdn = overrideDns
 			}
-			recordUpdates := []struct {
-				ip         string
-				recordType string
-			}{
-				{action.ExternalIP, dnsapi.RecordTypeA},
-				{action.ExternalIPV6, dnsapi.RecordTypeAAAA},
-				{action.Hostname, dnsapi.RecordTypeCNAME},
-			}
-			for _, record := range recordUpdates {
-				if record.ip == "" {
-					continue
-				}
-				ip := c.GetMappedExternalIP(record.ip)
-				if err := c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, fqdn, record.recordType, ip, 1, false); err != nil {
-					if testMode {
-						log.SpanLog(ctx, log.DebugLevelInfra, "ignoring dns error in testMode", "err", err)
-					} else {
-						return fmt.Errorf("can't create DNS record for %s,%s,%s, %v", fqdn, ip, record.recordType, err)
-					}
-				}
-				log.SpanLog(ctx, log.DebugLevelInfra, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", ip, "recordType", record.recordType)
+			err = c.AddDNS(ctx, fqdn, action)
+			if err != nil {
+				return err
 			}
 		}
+	}
+	return nil
+}
+
+func (c *CommonPlatform) AddDNS(ctx context.Context, fqdn string, action *DnsSvcAction) error {
+	recordUpdates := []struct {
+		ip         string
+		recordType string
+	}{
+		{action.ExternalIP, dnsapi.RecordTypeA},
+		{action.ExternalIPV6, dnsapi.RecordTypeAAAA},
+		{action.Hostname, dnsapi.RecordTypeCNAME},
+	}
+	for _, record := range recordUpdates {
+		if record.ip == "" {
+			continue
+		}
+		ip := c.GetMappedExternalIP(record.ip)
+		if err := c.PlatformConfig.AccessApi.CreateOrUpdateDNSRecord(ctx, fqdn, record.recordType, ip, 1, false); err != nil {
+			if testMode {
+				log.SpanLog(ctx, log.DebugLevelInfra, "ignoring dns error in testMode", "err", err)
+			} else {
+				return fmt.Errorf("can't create DNS record for %s,%s,%s, %v", fqdn, ip, record.recordType, err)
+			}
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "registered DNS name, may still need to wait for propagation", "name", fqdn, "externalIP", ip, "recordType", record.recordType)
 	}
 	return nil
 }

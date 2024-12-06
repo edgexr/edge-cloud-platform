@@ -18,8 +18,7 @@ package k8swm
 import (
 	"context"
 	"fmt"
-	"io/fs"
-	"os"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -44,8 +43,6 @@ type K8sWorkloadMgr struct {
 	commonPf      *infracommon.CommonPlatform
 }
 
-const KconfPerms fs.FileMode = 0644
-
 func (m *K8sWorkloadMgr) Init(clusterAccess ClusterAccess, features *edgeproto.PlatformFeatures, commonPf *infracommon.CommonPlatform) {
 	m.clusterAccess = clusterAccess
 	m.features = features
@@ -56,14 +53,15 @@ func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst", "appInst", appInst)
 	updateSender.SendStatus(edgeproto.UpdateTask, "Creating AppInst")
 
-	if err := m.SetupKconf(ctx, clusterInst); err != nil {
-		return fmt.Errorf("can't set up kconf, %s", err.Error())
-	}
 	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return err
 	}
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return err
+	}
+	err = m.ensureKubeconfigs(ctx, client, clusterInst, names)
 	if err != nil {
 		return err
 	}
@@ -89,6 +87,8 @@ func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 
 			err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
 		}
+	case cloudcommon.DeploymentTypeHelm:
+		err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -118,21 +118,47 @@ func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	if err != nil {
 		return err
 	}
+	// set up ingress
+	if features.UsesIngress && appInst.UsesHTTP() {
+		ingress, err := k8smgmt.CreateIngress(ctx, client, names, appInst)
+		if err != nil {
+			return err
+		}
+		ip, err := k8smgmt.GetIngressExternalIP(ctx, client, names, ingress.ObjectMeta.Name)
+		if err != nil {
+			return err
+		}
+		fqdn := names.AppURI
+		fqdn = strings.TrimPrefix(fqdn, "https://")
+		fqdn = strings.TrimPrefix(fqdn, "http://")
+		// register DNS for ingress
+		// note that we do not register DNS based on the presence of
+		// ingress objects via CreateAppDNSAndPatchKubeSvc,
+		// because helm charts may create ingress objects, but they
+		// won't be using our host names.
+		action := infracommon.DnsSvcAction{
+			ExternalIP: ip,
+		}
+		if err := m.commonPf.AddDNS(ctx, fqdn, &action); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (m *K8sWorkloadMgr) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppInst", "appInst", appInst)
 	var err error
-	// regenerate kconf in case CRM was restarted
-	if err = m.SetupKconf(ctx, clusterInst); err != nil {
-		return fmt.Errorf("can't set up kconf, %s", err.Error())
-	}
 	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return err
 	}
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return err
+	}
+	// regenerate kconf in case CCRM was restarted
+	err = m.ensureKubeconfigs(ctx, client, clusterInst, names)
 	if err != nil {
 		return err
 	}
@@ -141,10 +167,24 @@ func (m *K8sWorkloadMgr) DeleteAppInst(ctx context.Context, clusterInst *edgepro
 			log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete DNS record", "error", err)
 		}
 	}
+	if m.features.UsesIngress && appInst.UsesHTTP() {
+		fqdn := names.AppURI
+		fqdn = strings.TrimPrefix(fqdn, "https://")
+		fqdn = strings.TrimPrefix(fqdn, "http://")
+		err := m.commonPf.DeleteDNSRecords(ctx, fqdn)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete DNS record", "fqdn", fqdn, "error", err)
+		}
+		if err = k8smgmt.DeleteIngress(ctx, client, names, appInst); err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete ingress", "error", err)
+		}
+	}
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
 		err = k8smgmt.DeleteAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
+	case cloudcommon.DeploymentTypeHelm:
+		err = k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", deployment)
 	}
@@ -153,15 +193,15 @@ func (m *K8sWorkloadMgr) DeleteAppInst(ctx context.Context, clusterInst *edgepro
 
 func (m *K8sWorkloadMgr) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAppInstRuntime", "appInst", appInst)
-	if err := m.SetupKconf(ctx, clusterInst); err != nil {
-		return nil, fmt.Errorf("can't set up kconf, %s", err.Error())
-	}
 	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
 		return nil, err
 	}
-
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return nil, err
+	}
+	err = m.ensureKubeconfigs(ctx, client, clusterInst, names)
 	if err != nil {
 		return nil, err
 	}
@@ -188,27 +228,12 @@ func (m *K8sWorkloadMgr) UpdateAppInst(ctx context.Context, clusterInst *edgepro
 	return err
 }
 
-func (m *K8sWorkloadMgr) SetupKconf(ctx context.Context, clusterInst *edgeproto.ClusterInst) error {
-	targetFile := k8smgmt.GetKconfName(clusterInst)
-
-	if _, err := os.Stat(targetFile); err == nil {
-		// already exists
-		return nil
-	}
-	return m.SetupClusterKconf(ctx, clusterInst, targetFile)
-}
-
-func (m *K8sWorkloadMgr) SetupClusterKconf(ctx context.Context, clusterInst *edgeproto.ClusterInst, targetFile string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "SetupKconf", "cluster", clusterInst.Key, "targetFile", targetFile)
+func (m *K8sWorkloadMgr) ensureKubeconfigs(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, names *k8smgmt.KubeNames) error {
 	kconfData, err := m.clusterAccess.GetClusterCredentials(ctx, clusterInst)
 	if err != nil {
 		return fmt.Errorf("unable to get cluster %s credentials %v", clusterInst.Key.GetKeyString(), err)
 	}
-	err = os.WriteFile(targetFile, kconfData, KconfPerms)
-	if err != nil {
-		return fmt.Errorf("failed to write cluster %s kubeconfig %s, %s", clusterInst.Key.GetKeyString(), targetFile, err)
-	}
-	return nil
+	return k8smgmt.EnsureKubeconfigs(ctx, client, names, kconfData)
 }
 
 func (m *K8sWorkloadMgr) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {

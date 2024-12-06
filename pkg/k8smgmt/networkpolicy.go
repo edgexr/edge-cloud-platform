@@ -78,7 +78,7 @@ func GetNetworkPolicy(ctx context.Context, app *edgeproto.App, appInst *edgeprot
 
 	for _, port := range appInst.MappedPorts {
 		npp := networkPolicyPort{}
-		if port.Proto == dme.LProto_L_PROTO_TCP {
+		if port.Proto == dme.LProto_L_PROTO_TCP || port.Proto == dme.LProto_L_PROTO_HTTP {
 			npp.Protocol = "TCP"
 		} else if port.Proto == dme.LProto_L_PROTO_UDP {
 			npp.Protocol = "UDP"

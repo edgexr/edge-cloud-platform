@@ -71,8 +71,8 @@ spec:
 	// Network policy, with ports
 	appInst.MappedPorts = []edgeproto.InstPort{
 		{
-			// tcp
-			Proto:        dme.LProto_L_PROTO_TCP,
+			// http
+			Proto:        dme.LProto_L_PROTO_HTTP,
 			InternalPort: 443,
 			PublicPort:   443,
 		}, {

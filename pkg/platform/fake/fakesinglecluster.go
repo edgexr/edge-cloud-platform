@@ -34,6 +34,7 @@ func (s *PlatformSingleCluster) GetFeatures() *edgeproto.PlatformFeatures {
 	features.PlatformType = platform.PlatformTypeFakeSingleCluster
 	features.IsSingleKubernetesCluster = true
 	features.SupportsAppInstDedicatedIp = true
+	features.UsesIngress = true
 	return features
 }
 

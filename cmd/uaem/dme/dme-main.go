@@ -157,6 +157,8 @@ func (s *server) FindCloudlet(ctx context.Context, req *dme.FindCloudletRequest)
 				protocol = "TCP"
 			} else if port.Proto == dme.LProto_L_PROTO_UDP {
 				protocol = "UDP"
+			} else if port.Proto == dme.LProto_L_PROTO_HTTP {
+				protocol = "HTTP"
 			} else {
 				protocol = ""
 			}
