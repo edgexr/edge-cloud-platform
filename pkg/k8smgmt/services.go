@@ -42,7 +42,7 @@ func GetServices(ctx context.Context, client ssh.Client, names *KubeNames, ops .
 	return GetKubeServices(ctx, client, names.GetKConfNames(), ops...)
 }
 
-func GetKubeServices(ctx context.Context, client ssh.Client, names *KConfNames, ops ...GetObjectsOp) ([]v1.Service, error) {
+func GetKubeServices(ctx context.Context, client ssh.Client, names *KconfNames, ops ...GetObjectsOp) ([]v1.Service, error) {
 	svcs := svcItems{}
 	err := GetObjects(ctx, client, names, "svc", &svcs, ops...)
 	if err != nil {

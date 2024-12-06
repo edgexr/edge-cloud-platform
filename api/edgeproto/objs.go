@@ -1022,6 +1022,19 @@ func L4ProtoStr(proto dme.LProto) (string, error) {
 	return "", fmt.Errorf("Invalid proto %d", proto)
 }
 
+func (s *InstPort) IsHTTP() bool {
+	return s.Proto == dme.LProto_L_PROTO_HTTP
+}
+
+func (s *AppInst) UsesHTTP() bool {
+	for _, p := range s.MappedPorts {
+		if p.IsHTTP() {
+			return true
+		}
+	}
+	return false
+}
+
 func AppPortLookupKey(ap *InstPort) string {
 	protoStr, _ := LProtoStr(ap.Proto)
 	return fmt.Sprintf("%s%d", protoStr, ap.InternalPort)

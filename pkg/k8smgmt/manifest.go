@@ -376,7 +376,7 @@ func getDefaultReplicas(app *edgeproto.App, names *KubeNames, curReplica int32) 
 	return &val
 }
 
-func WaitForDeploymentReady(ctx context.Context, client ssh.Client, names *KConfNames, name, namespace string, retry int, retryDelay time.Duration) error {
+func WaitForDeploymentReady(ctx context.Context, client ssh.Client, names *KconfNames, name, namespace string, retry int, retryDelay time.Duration) error {
 	nsArg := ""
 	if namespace != "" {
 		nsArg = "-n " + namespace

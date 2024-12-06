@@ -99,7 +99,7 @@ func (s *K8sSite) GetInitHAConditionalCompatibilityVersion(ctx context.Context) 
 
 const KconfPerms fs.FileMode = 0644
 
-func (s *K8sSite) ensureKubeconfig() (*k8smgmt.KConfNames, error) {
+func (s *K8sSite) ensureKubeconfig() (*k8smgmt.KconfNames, error) {
 	key := s.CommonPf.PlatformConfig.CloudletKey
 	kconfNames := k8smgmt.GetCloudletKConfNames(key)
 	kconfName := kconfNames.KconfName

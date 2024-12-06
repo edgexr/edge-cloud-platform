@@ -30,7 +30,7 @@ var ErrObjectNotFound = errors.New("not found")
 // GetObjects gets kubernetes objects of the specified type
 // using "kubectl get ...". The output data will be an object
 // with an "items" field which is a list of the expected type.
-func GetObjects(ctx context.Context, client ssh.Client, names *KConfNames, objType string, outData any, ops ...GetObjectsOp) error {
+func GetObjects(ctx context.Context, client ssh.Client, names *KconfNames, objType string, outData any, ops ...GetObjectsOp) error {
 	return GetObject(ctx, client, names, objType, "", outData, ops...)
 }
 
@@ -39,7 +39,7 @@ func GetObjects(ctx context.Context, client ssh.Client, names *KConfNames, objTy
 // type. If the named object does not exist, this will return a
 // not found error that can be checked using:
 // errors.Is(err, ErrObjectNotFound).
-func GetObject(ctx context.Context, client ssh.Client, names *KConfNames, objType, name string, outData any, ops ...GetObjectsOp) error {
+func GetObject(ctx context.Context, client ssh.Client, names *KconfNames, objType, name string, outData any, ops ...GetObjectsOp) error {
 	opts := GetObjectsOptions{}
 	for _, op := range ops {
 		op(&opts)

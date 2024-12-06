@@ -24,12 +24,12 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
-var kubeLbT *template.Template
+var kubeSvcT *template.Template
 var kubeAppDpT *template.Template
 var kubeAppDsT *template.Template
 
 func init() {
-	kubeLbT = template.Must(template.New("lb").Parse(lbTemplate))
+	kubeSvcT = template.Must(template.New("svc").Parse(svcTemplate))
 	kubeAppDpT = template.Must(template.New("appdp").Parse(dpTemplate + podTemplate))
 	kubeAppDsT = template.Must(template.New("appds").Parse(dsTemplate + podTemplate))
 }
@@ -56,8 +56,9 @@ func kubeBasic(app *AppSpec) (string, error) {
 		files: []string{},
 		ports: setKubePorts(app.Ports),
 	}
-	gen.kubeLb([]string{"tcp", "http"})
-	gen.kubeLb([]string{"udp"})
+	gen.kubeSvc("ClusterIP", []string{"http"})
+	gen.kubeSvc("LoadBalancer", []string{"tcp"})
+	gen.kubeSvc("LoadBalancer", []string{"udp"})
 	gen.kubeApp()
 	if gen.err != nil {
 		return "", gen.err
@@ -100,7 +101,7 @@ func setKubePorts(ports []util.PortSpec) []kubePort {
 				kp.Name = fmt.Sprintf("%s%s%s%s", kp.Proto, kp.Port, tls, nginx)
 				switch port.Proto {
 				case "http":
-					fallthrough
+					fallthrough // HTTP ports are TCP in Services
 				case "tcp":
 					kp.KubeProto = "TCP"
 				case "udp":
@@ -140,11 +141,12 @@ func setKubePorts(ports []util.PortSpec) []kubePort {
 // Kubernetes load balancers don't support mixed protocols
 // on load balancers, so we generate a service only for
 // ports of the matching protocol.
-func (g *kubeBasicGen) kubeLb(protos []string) {
+func (g *kubeBasicGen) kubeSvc(svcType string, protos []string) {
 	if g.err != nil {
 		return
 	}
-	lb := lbData{
+	svc := svcData{
+		Type:  svcType,
 		Name:  util.K8SServiceSanitize(appID(g.app) + "-" + protos[0]),
 		Run:   util.K8SSanitize(appID(g.app)),
 		Ports: []kubePort{},
@@ -152,36 +154,37 @@ func (g *kubeBasicGen) kubeLb(protos []string) {
 	for _, port := range g.ports {
 		for ii, _ := range protos {
 			if port.Proto == protos[ii] {
-				lb.Ports = append(lb.Ports, port)
+				svc.Ports = append(svc.Ports, port)
 				break
 			}
 		}
 	}
-	if len(lb.Ports) == 0 {
+	if len(svc.Ports) == 0 {
 		return
 	}
 	buf := bytes.Buffer{}
-	g.err = kubeLbT.Execute(&buf, &lb)
+	g.err = kubeSvcT.Execute(&buf, &svc)
 	if g.err != nil {
 		return
 	}
 	g.files = append(g.files, buf.String())
 }
 
-type lbData struct {
+type svcData struct {
+	Type  string
 	Name  string
 	Run   string
 	Ports []kubePort
 }
 
-var lbTemplate = `apiVersion: v1
+var svcTemplate = `apiVersion: v1
 kind: Service
 metadata:
   name: {{.Name}}
   labels:
     run: {{.Run}}
 spec:
-  type: LoadBalancer
+  type: {{.Type}}
   ports:
 {{- range .Ports}}
   - name: {{.Name}}

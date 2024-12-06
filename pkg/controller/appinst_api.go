@@ -1035,6 +1035,17 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 
 		ports, _ := edgeproto.ParseAppPorts(app.AccessPorts)
+		if !cloudletFeatures.UsesIngress {
+			// If the cloudlet does not support ingress, then
+			// we convert HTTP ports to TCP, and from this point
+			// on throughout all the rest of the platform code,
+			// these ports are treated as TCP ports.
+			for ii := range ports {
+				if ports[ii].IsHTTP() {
+					ports[ii].Proto = dme.LProto_L_PROTO_TCP
+				}
+			}
+		}
 		if !cloudcommon.IsClusterInstReqd(&app) {
 			for ii := range ports {
 				ports[ii].PublicPort = ports[ii].InternalPort
@@ -1053,7 +1064,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				if port.EndPort != 0 {
 					return fmt.Errorf("Shared IP access with port range not allowed")
 				}
-				if cloudcommon.AppPortUsesIngress(app.Deployment, cloudletFeatures, port.Proto) {
+				if port.IsHTTP() {
 					// port will be fronted by ingress
 					var publicPort int32
 					if port.Tls {
@@ -1767,7 +1778,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// shared root load balancer
 			log.SpanLog(ctx, log.DebugLevelApi, "refs", "AppInst", in)
 			for ii := range in.MappedPorts {
-				if cloudcommon.AppPortUsesIngress(app.Deployment, cloudletFeatures, in.MappedPorts[ii].Proto) {
+				if in.MappedPorts[ii].IsHTTP() {
 					// port routed via ingress, no need to track
 					// for conflicts
 					continue
@@ -2294,6 +2305,7 @@ func setPortFQDNPrefix(port *edgeproto.InstPort, objs []runtime.Object) {
 			if err != nil {
 				return
 			}
+			// http proto should not have prefixes
 			if lproto != strings.ToLower(string(kp.Protocol)) {
 				continue
 			}

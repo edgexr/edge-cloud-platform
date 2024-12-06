@@ -24,6 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -75,11 +76,6 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 		return nil, err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create done", "annotations", infraAnnotations)
-
-	err = m.SetupKconf(ctx, clusterInst)
-	if err != nil {
-		return nil, err
-	}
 	return infraAnnotations, nil
 }
 
@@ -130,4 +126,8 @@ func (m *ManagedK8sPlatform) GetCloudletInfraResources(ctx context.Context) (*ed
 
 func (m *ManagedK8sPlatform) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
 	return nil, fmt.Errorf("GetClusterInfraResources not implemented for managed k8s")
+}
+
+func (m *ManagedK8sPlatform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
+	return nil
 }

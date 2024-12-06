@@ -533,7 +533,3 @@ func AppInstToClusterDeployment(deployment string) string {
 func AppDeploysToKubernetes(deployment string) bool {
 	return deployment == DeploymentTypeKubernetes || deployment == DeploymentTypeHelm
 }
-
-func AppPortUsesIngress(deployment string, features *edgeproto.PlatformFeatures, proto dme.LProto) bool {
-	return AppDeploysToKubernetes(deployment) && features.UsesIngress && proto == dme.LProto_L_PROTO_HTTP
-}

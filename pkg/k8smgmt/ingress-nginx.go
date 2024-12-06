@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -48,13 +49,13 @@ type RefreshCertsOpts struct {
 // cloudlet in the cluster pointed to by the KConfNames.
 // The certificate is used as the default certificate for
 // all ingress instances in the cluster.
-func RefreshCert(ctx context.Context, client ssh.Client, names *KConfNames, cloudlet *edgeproto.Cloudlet, cache *certscache.ProxyCertsCache, wildcardName string, opts RefreshCertsOpts) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "k8s refresh ingress certs", "cloudlet", cloudlet.Key, "certName", wildcardName)
+func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, cache *certscache.ProxyCertsCache, wildcardName string, opts RefreshCertsOpts) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "k8s refresh ingress certs", "cloudlet", cloudletKey, "certName", wildcardName)
 	if os.Getenv("E2ETEST_TLS") != "" {
 		opts.CommerialCerts = false
 	}
 
-	cert, updated, err := cache.RefreshCert(ctx, &cloudlet.Key, wildcardName, opts.CommerialCerts)
+	cert, updated, err := cache.RefreshCert(ctx, cloudletKey, wildcardName, opts.CommerialCerts)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "k8s failed to refresh ingress certs", "certName", wildcardName, "err", err)
 		return err
@@ -62,17 +63,19 @@ func RefreshCert(ctx context.Context, client ssh.Client, names *KConfNames, clou
 	if !updated && !opts.InitCluster {
 		return nil
 	}
-	err = pc.WriteFile(client, cloudlet.RootLbFqdn+".crt", cert.CertString, "cert", pc.NoSudo)
+	fileName := strings.Replace(wildcardName, "*", "_", 1)
+
+	err = pc.WriteFile(client, fileName+".crt", cert.CertString, "cert", pc.NoSudo)
 	if err != nil {
-		return fmt.Errorf("failed to write cert file %s.crt, %s", cloudlet.RootLbFqdn, err)
+		return fmt.Errorf("failed to write cert file %s.crt, %s", fileName, err)
 	}
-	err = pc.WriteFile(client, cloudlet.RootLbFqdn+".key", cert.KeyString, "cert", pc.NoSudo)
+	err = pc.WriteFile(client, fileName+".key", cert.KeyString, "cert", pc.NoSudo)
 	if err != nil {
-		return fmt.Errorf("failed to write cert key file %s.key, %s", cloudlet.RootLbFqdn, err)
+		return fmt.Errorf("failed to write cert key file %s.key, %s", fileName, err)
 	}
 	// this command generates a yaml file then applies it, to allow
 	// us to update the secret if it already exists
-	cmd := fmt.Sprintf("kubectl %s create secret -n %s tls %s --key %s.key --cert %s.crt --save-config --dry-run=client -o yaml | kubectl apply -f -", names.KconfArg, IngressNginxNamespace, IngressDefaultCertSecret, cloudlet.RootLbFqdn, cloudlet.RootLbFqdn)
+	cmd := fmt.Sprintf("kubectl %s create secret -n %s tls %s --key %s.key --cert %s.crt --save-config --dry-run=client -o yaml | kubectl %s apply -f -", names.KconfArg, IngressNginxNamespace, IngressDefaultCertSecret, fileName, fileName, names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to write cert secret: %s, %s", out, err)
@@ -82,7 +85,7 @@ func RefreshCert(ctx context.Context, client ssh.Client, names *KConfNames, clou
 
 // InstallIngressNginx installs the ingress-nginx controller
 // in the cluster.
-func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KConfNames, waitForExternalIP bool) error {
+func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, waitForExternalIP bool) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "install ingress nginx")
 
 	// how to determine available versions:
@@ -124,6 +127,32 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KConfNam
 		if externalIP == "" {
 			return errors.New("timed out waiting for ingress nginx external IP to be assigned")
 		}
+	}
+	return nil
+}
+
+// SetupIngressNginx is a convenience function that creates the
+// namespace, creates the default certificate, and installs the
+// ingress-nginx controller.
+func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, certsCache *certscache.ProxyCertsCache, wildcardName string, refreshOpts RefreshCertsOpts, waitForExternalIP bool, updateCallback edgeproto.CacheUpdateCallback) error {
+	// set up namespace so we can write the default cert
+	err := EnsureNamespace(ctx, client, names, IngressNginxNamespace)
+	if err != nil {
+		return err
+	}
+
+	// install default cert for ingress
+	updateCallback(edgeproto.UpdateTask, "Generating ingress certificate")
+	err = RefreshCert(ctx, client, names, cloudletKey, certsCache, wildcardName, refreshOpts)
+	if err != nil {
+		return err
+	}
+
+	// install ingress-nginx
+	updateCallback(edgeproto.UpdateTask, "Installing ingress controller")
+	err = InstallIngressNginx(ctx, client, names, waitForExternalIP)
+	if err != nil {
+		return err
 	}
 	return nil
 }

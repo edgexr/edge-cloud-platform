@@ -62,27 +62,12 @@ func (s *K8sSite) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudl
 	}
 	client := s.getClient()
 
-	// since we're installing the cert before ingress controller,
-	// we need to create the namespace first.
-	out, err := client.Output("kubectl create ns " + k8smgmt.IngressNginxNamespace + " --dry-run=client -o yaml | kubectl apply -f -")
-	if err != nil {
-		return false, fmt.Errorf("failed to create ingress-nginx namespace %s: %s, %s", k8smgmt.IngressNginxNamespace, out, err)
-	}
-
-	updateCallback(edgeproto.UpdateTask, "Generating ingress certificate")
-	// install cloudlet cert for ingress
 	wildcardName := certscache.GetWildcardName(cloudlet.RootLbFqdn)
-	err = k8smgmt.RefreshCert(ctx, client, kconfNames, cloudlet, pfInitConfig.ProxyCertsCache, wildcardName, k8smgmt.RefreshCertsOpts{
-		CommerialCerts: true,
+	refreshOpts := k8smgmt.RefreshCertsOpts{
+		CommerialCerts: s.CommonPf.PlatformConfig.CommercialCerts,
 		InitCluster:    true,
-	})
-	if err != nil {
-		return false, err
 	}
-
-	// install ingress-nginx
-	updateCallback(edgeproto.UpdateTask, "Installing ingress controller")
-	err = k8smgmt.InstallIngressNginx(ctx, client, kconfNames, false)
+	err = k8smgmt.SetupIngressNginx(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, wildcardName, refreshOpts, false, updateCallback)
 	if err != nil {
 		return false, err
 	}
@@ -127,5 +112,29 @@ func (s *K8sSite) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error
 }
 
 func (s *K8sSite) ActiveChanged(ctx context.Context, platformActive bool) error {
+	return nil
+}
+
+func (s *K8sSite) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
+	// there is just one certificate for the cluster
+	cloudletKey := s.CommonPf.PlatformConfig.CloudletKey
+	cloudlet := &edgeproto.Cloudlet{}
+	if !s.caches.CloudletCache.Get(cloudletKey, cloudlet) {
+		return cloudletKey.NotFoundError()
+	}
+	kconfNames, err := s.ensureKubeconfig()
+	if err != nil {
+		return err
+	}
+	client := s.getClient()
+
+	wildcardName := certscache.GetWildcardName(cloudlet.RootLbFqdn)
+	refreshOpts := k8smgmt.RefreshCertsOpts{
+		CommerialCerts: s.CommonPf.PlatformConfig.CommercialCerts,
+	}
+	err = k8smgmt.RefreshCert(ctx, client, kconfNames, cloudletKey, certsCache, wildcardName, refreshOpts)
+	if err != nil {
+		return err
+	}
 	return nil
 }

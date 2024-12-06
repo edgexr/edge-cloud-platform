@@ -15,12 +15,10 @@
 package k8smgmt
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"regexp"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -159,6 +157,7 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 	// wait half as long as the total controller wait time, which includes all tasks
 	log.SpanLog(ctx, log.DebugLevelInfra, "waiting for appinst pods", "appName", app.Key.Name, "maxWait", maxWait, "waitFor", waitFor)
 	start := time.Now()
+	kconfArg := names.GetTenantKconfArg()
 
 	// it might be nicer to pull the state directly rather than parsing it, but the states displayed
 	// are a combination of states and reasons, e.g. ErrImagePull is not actually a state, so it's
@@ -195,7 +194,7 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 				}
 			}
 			selector := fmt.Sprintf("%s=%s", MexAppLabel, name)
-			done, err := CheckPodsStatus(ctx, client, names.KconfArg, namespace, selector, waitFor, start)
+			done, err := CheckPodsStatus(ctx, client, kconfArg, namespace, selector, waitFor, start)
 			if err != nil {
 				return err
 			}
@@ -345,15 +344,10 @@ func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeName
 			continue
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "Creating Namespace", "name", n)
-		cmd := fmt.Sprintf("kubectl create namespace %s --kubeconfig=%s --save-config", n, names.BaseKconfName)
-		out, err := client.Output(cmd)
+		err := EnsureNamespace(ctx, client, names.GetKConfNames(), n)
 		if err != nil {
-			if strings.Contains(out, "already exists") {
-				log.SpanLog(ctx, log.DebugLevelInfra, "namespace already exists")
-			} else {
-				log.SpanLog(ctx, log.DebugLevelInfra, "kubectl create namespace failed", "namespace", n, "out", string(out), "err", err)
-				return fmt.Errorf("kubectl create namespace %s failed - %s,%v", n, string(out), err)
-			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "kubectl create namespace failed", "namespace", n, "err", err)
+			return err
 		}
 	}
 	return nil
@@ -395,7 +389,7 @@ func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.Acces
 
 func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, _ *edgeproto.Flavor, action string) error {
 	if action == createManifest && names.MultitenantNamespace != "" {
-		err := CreateMultitenantNamespace(ctx, client, names)
+		err := EnsureNamespace(ctx, client, names.GetKConfNames(), names.MultitenantNamespace)
 		if err != nil {
 			return err
 		}
@@ -421,10 +415,11 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 	// to use "--all" for old stuff until those old configs eventually
 	// get removed naturally over time.
 	selector := "--all"
+	kconfArg := names.GetTenantKconfArg()
 	if names.MultitenantNamespace != "" {
 		selector = fmt.Sprintf("-l %s=%s", ConfigLabel, getConfigLabel(names))
 	}
-	cmd := fmt.Sprintf("kubectl %s apply -f %s --prune %s", names.KconfArg, configDir, selector)
+	cmd := fmt.Sprintf("kubectl %s apply -f %s --prune %s", kconfArg, configDir, selector)
 	log.SpanLog(ctx, log.DebugLevelInfra, "running kubectl", "action", action, "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil && strings.Contains(string(out), `pruning nonNamespaced object /v1, Kind=Namespace: namespaces "kube-system" is forbidden: this namespace may not be deleted`) {
@@ -457,10 +452,11 @@ func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst); err != nil {
 		return err
 	}
+	kconfArg := names.GetTenantKconfArg()
 	configDir := getConfigDirName(names)
 	configName := getConfigFileName(names, appInst)
 	file := configDir + "/" + configName
-	cmd := fmt.Sprintf("kubectl %s delete -f %s", names.KconfArg, file)
+	cmd := fmt.Sprintf("kubectl %s delete -f %s", kconfArg, file)
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting app", "name", names.AppName, "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -481,19 +477,24 @@ func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 	// remove manifest file since directory contains all AppInst manifests for
 	// the ClusterInst.
 	log.SpanLog(ctx, log.DebugLevelInfra, "remove app manifest", "name", names.AppName, "file", file)
-	err = pc.DeleteFile(client, file, pc.NoSudo)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "error deleting manifest", "file", file, "err", err)
-	}
-	if names.MultitenantNamespace != "" {
-		// clean up namespace
-		if err = DeleteNamespace(ctx, client, names); err != nil {
-			return err
-		}
-		// delete the config dir
-		err := pc.DeleteDir(ctx, client, configDir, pc.NoSudo)
+	if false {
+		err = pc.DeleteFile(client, file, pc.NoSudo)
 		if err != nil {
-			return fmt.Errorf("Unable to delete config dir %s - %v", configDir, err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "error deleting manifest", "file", file, "err", err)
+		}
+		if names.MultitenantNamespace != "" {
+			// clean up namespace
+			if err = DeleteNamespace(ctx, client, names.GetKConfNames(), names.MultitenantNamespace); err != nil {
+				return err
+			}
+			if err = RemoveTenantKubeconfig(ctx, client, names); err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "failed to clean up tenant kubeconfig", "err", err)
+			}
+			// delete the config dir
+			err := pc.DeleteDir(ctx, client, configDir, pc.NoSudo)
+			if err != nil {
+				return fmt.Errorf("Unable to delete config dir %s - %v", configDir, err)
+			}
 		}
 	}
 	return nil
@@ -507,6 +508,7 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, names *KubeNames,
 	if err != nil {
 		return nil, err
 	}
+	kconfArg := names.GetTenantKconfArg()
 	var name string
 	for ii, _ := range objs {
 		name = ""
@@ -540,7 +542,7 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, names *KubeNames,
 		//       Hence, look at table output and then get list of running pods and use this to fetch container names
 		cmd := fmt.Sprintf("kubectl %s get pods -n %s --no-headers --sort-by=.metadata.name --selector=%s=%s "+
 			"| awk '{if ($3 == \"Running\") print $1}'",
-			names.KconfArg, namespace, MexAppLabel, name)
+			kconfArg, namespace, MexAppLabel, name)
 		out, err := client.Output(cmd)
 		if err != nil {
 			return nil, fmt.Errorf("error getting kubernetes pods, %s, %s, %s", cmd, out, err.Error())
@@ -552,7 +554,7 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, names *KubeNames,
 				continue
 			}
 			cmd = fmt.Sprintf("kubectl %s get pod %s -n %s -o json | jq -r '.spec.containers[] | .name'",
-				names.KconfArg, podName, namespace)
+				kconfArg, podName, namespace)
 			out, err = client.Output(cmd)
 			if err != nil {
 				return nil, fmt.Errorf("error getting kubernetes pod %q containers, %s, %s, %s", podName, cmd, out, err.Error())
@@ -606,18 +608,18 @@ func GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst
 	if err != nil {
 		return "", fmt.Errorf("failed to get kube names, %v", err)
 	}
-	kubecfg := "--kubeconfig=" + names.KconfName
+	kconfArg := names.GetTenantKconfArg()
 	if req.Cmd != nil {
 		containerCmd := ""
 		if containerName != "" {
 			containerCmd = fmt.Sprintf("-c %s ", containerName)
 		}
 		cmdStr := fmt.Sprintf("kubectl %s exec -n %s -it %s%s -- %s",
-			kubecfg, namespace, containerCmd, podName, req.Cmd.Command)
+			kconfArg, namespace, containerCmd, podName, req.Cmd.Command)
 		return cmdStr, nil
 	}
 	if req.Log != nil {
-		cmdStr := fmt.Sprintf("kubectl %s logs -n %s ", kubecfg, namespace)
+		cmdStr := fmt.Sprintf("kubectl %s logs -n %s ", kconfArg, namespace)
 		if req.Log.Since != "" {
 			_, perr := time.ParseDuration(req.Log.Since)
 			if perr == nil {
@@ -644,74 +646,4 @@ func GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst
 		return cmdStr, nil
 	}
 	return "", fmt.Errorf("no command or log specified with the exec request")
-}
-
-var namespaceTemplate = template.Must(template.New("namespace").Parse(`apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{.MultitenantNamespace}}
-  labels:
-    name: {{.MultitenantNamespace}}
-`))
-
-func CreateMultitenantNamespace(ctx context.Context, client ssh.Client, names *KubeNames) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "creating namespace", "name", names.MultitenantNamespace)
-	buf := bytes.Buffer{}
-	err := namespaceTemplate.Execute(&buf, names)
-	if err != nil {
-		return err
-	}
-	file := names.MultitenantNamespace + ".yaml"
-	err = pc.WriteFile(client, file, buf.String(), "namespace", pc.NoSudo)
-	if err != nil {
-		return err
-	}
-	cmd := fmt.Sprintf("kubectl apply -f %s --kubeconfig=%s", file, names.BaseKconfName)
-	out, err := client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("Error in creating namespace: %s - %v", out, err)
-	}
-	// copy the kubeconfig
-	log.SpanLog(ctx, log.DebugLevelInfra, "create new kubeconfig for cluster namespace", "clusterKubeConfig", names.BaseKconfName, "namespaceKubeConfig", names.KconfName)
-	err = pc.CopyFile(client, names.BaseKconfName, names.KconfName)
-	if err != nil {
-		return fmt.Errorf("Failed to create new kubeconfig: %v", err)
-	}
-	// set the new kubeconfig to use the namespace
-	cmd = fmt.Sprintf("kubectl %s config set-context --current --namespace=%s", names.KconfArg, names.MultitenantNamespace)
-	out, err = client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("Error in setting new namespace context: %s - %v", out, err)
-	}
-	return nil
-}
-
-func DeleteNamespace(ctx context.Context, client ssh.Client, names *KubeNames) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "deleting namespace", "name", names.MultitenantNamespace)
-	cmd := fmt.Sprintf("kubectl delete namespace %s --kubeconfig=%s", names.MultitenantNamespace, names.BaseKconfName)
-	out, err := client.Output(cmd)
-	if err != nil {
-		if !strings.Contains(out, "not found") {
-			return fmt.Errorf("Error in deleting namespace: %s - %v", out, err)
-		}
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "deleting namespaced kconf", "name", names.KconfName)
-
-	// delete namespaced kconf
-	err = pc.DeleteFile(client, names.KconfName, pc.NoSudo)
-	if err != nil {
-		// just log the error
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to clean up namespaced kconf", "err", err)
-	}
-
-	configYamlFile := names.MultitenantNamespace + ".yaml"
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "deleting namespaced configYamlFile", "name", configYamlFile)
-
-	err = pc.DeleteFile(client, configYamlFile, pc.NoSudo)
-	if err != nil {
-		// just log the error
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to clean up namespace configYamlFile", "err", err)
-	}
-	return nil
 }

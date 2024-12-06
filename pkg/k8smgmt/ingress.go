@@ -45,17 +45,6 @@ const (
 // For complex AppInsts (helm charts) it may need create an
 // ingress per namespace if the AppInst uses multiple namespaces.
 func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) (*networkingv1.Ingress, error) {
-	// quick check, if no http port, we can avoid svcs lookup
-	hasHTTP := false
-	for _, port := range appInst.MappedPorts {
-		if port.Proto == distributed_match_engine.LProto_L_PROTO_HTTP {
-			hasHTTP = true
-			break
-		}
-	}
-	if !hasHTTP {
-		return nil, nil
-	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating ingress", "appInst", appInst.Key.GetKeyString())
 
 	ingressClass := IngressClassName
@@ -152,14 +141,13 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 		return nil, fmt.Errorf("failed to marshal the ingress object to yaml, %s", err)
 	}
 	contents := buf.String()
-	configDir := getConfigDirName(names)
-	ingressFile := getIngressFileName(names)
-	fileName := configDir + "/" + ingressFile
+	kconfArg := names.GetTenantKconfArg()
+	fileName := getIngressManifestName(names)
 	err = pc.WriteFile(client, fileName, contents, "k8s ingress", pc.NoSudo)
 	if err != nil {
 		return nil, err
 	}
-	cmd := fmt.Sprintf("kubectl %s apply -f %s", names.KconfArg, fileName)
+	cmd := fmt.Sprintf("kubectl %s apply -f %s", kconfArg, fileName)
 	log.SpanLog(ctx, log.DebugLevelInfra, "applying ingress", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -169,11 +157,27 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 	return &ingress, nil
 }
 
+func DeleteIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) error {
+	kconfArg := names.GetTenantKconfArg()
+	ingressFile := getIngressManifestName(names)
+	cmd := fmt.Sprintf("kubectl %s delete -f %s", kconfArg, ingressFile)
+	out, err := client.Output(cmd)
+	if err != nil && !strings.Contains(out, "not found") {
+		return fmt.Errorf("failed to delete ingress for %s: %s, %s", ingressFile, out, err)
+	}
+	return nil
+}
+
+func getIngressManifestName(names *KubeNames) string {
+	ingressFile := getIngressFileName(names)
+	return ingressFile
+}
+
 type ingressItems struct {
 	Items []networkingv1.Ingress `json:"items"`
 }
 
-func GetIngresses(ctx context.Context, client ssh.Client, names *KConfNames, ops ...GetObjectsOp) ([]networkingv1.Ingress, error) {
+func GetIngresses(ctx context.Context, client ssh.Client, names *KconfNames, ops ...GetObjectsOp) ([]networkingv1.Ingress, error) {
 	data := &ingressItems{}
 	err := GetObjects(ctx, client, names, "ingress", data, ops...)
 	if err != nil {

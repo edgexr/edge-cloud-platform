@@ -111,13 +111,29 @@ metadata:
   labels:
     config: app-ns
     run: pillimogo1.0.0
-  name: pillimogo100-tcp
+  name: pillimogo100-http
 spec:
   ports:
   - name: http443
     port: 443
     protocol: TCP
     targetPort: 443
+  selector:
+    run: pillimogo1.0.0
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    config: app-ns
+    run: pillimogo1.0.0
+  name: pillimogo100-tcp
+spec:
+  ports:
   - name: tcp10002
     port: 10002
     protocol: TCP

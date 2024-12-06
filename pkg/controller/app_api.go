@@ -562,6 +562,17 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	if err != nil {
 		return err
 	}
+	if !cloudcommon.AppDeploysToKubernetes(in.Deployment) {
+		httpPorts := []int32{}
+		for _, p := range ports {
+			if p.IsHTTP() {
+				httpPorts = append(httpPorts, p.InternalPort)
+			}
+		}
+		if len(httpPorts) > 0 {
+			return fmt.Errorf("http ports %v not allowed for non-Kubernetes application", httpPorts)
+		}
+	}
 
 	if in.DeploymentManifest != "" {
 		err = cloudcommon.IsValidDeploymentManifest(ctx, in.Deployment, in.Command, in.DeploymentManifest, ports, in.KubernetesResources)
