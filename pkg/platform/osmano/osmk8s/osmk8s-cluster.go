@@ -24,6 +24,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmapi"
 	"gopkg.in/yaml.v2"
@@ -257,6 +258,11 @@ func (s *Platform) getCredentialsRaw(ctx context.Context, clusterName, clusterID
 		return nil, fmt.Errorf("failed to unmarshal get creds json data, %s", err)
 	}
 	return info.Credentials, nil
+}
+
+func (a *Platform) GetClusterAddonInfo(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (*k8smgmt.ClusterAddonInfo, error) {
+	info := k8smgmt.ClusterAddonInfo{}
+	return &info, nil
 }
 
 func (s *Platform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
