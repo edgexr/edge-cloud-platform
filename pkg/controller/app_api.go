@@ -570,7 +570,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 			}
 		}
 		if len(httpPorts) > 0 {
-			return fmt.Errorf("http ports %v not allowed for non-Kubernetes application", httpPorts)
+			return fmt.Errorf("http ports %v not allowed for %s deployment", httpPorts, in.Deployment)
 		}
 	}
 

@@ -1556,7 +1556,7 @@ var AllDataComments = map[string]string{
 	"appinstances:#.mappedports:#.maxpktsize":                                    "Maximum datagram size (udp only)",
 	"appinstances:#.mappedports:#.internalvisonly":                               "Internal visibility only",
 	"appinstances:#.mappedports:#.id":                                            "Port ID for NBI compatibility",
-	"appinstances:#.mappedports:#.servicename":                                   "Service name for Kubernetes port, to distinguish if there are multiple of the same port on the App",
+	"appinstances:#.mappedports:#.servicename":                                   "Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.",
 	"appinstances:#.flavor.name":                                                 "Flavor name",
 	"appinstances:#.cloudletflavor":                                              "(_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources.InfraNodeFlavor.",
 	"appinstances:#.state":                                                       "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",

@@ -492,7 +492,7 @@ type InstPort struct {
 	InternalVisOnly bool `protobuf:"varint,10,opt,name=internal_vis_only,json=internalVisOnly,proto3" json:"internal_vis_only,omitempty"`
 	// Port ID for NBI compatibility
 	Id string `protobuf:"bytes,11,opt,name=id,proto3" json:"id,omitempty"`
-	// Service name for Kubernetes port, to distinguish if there are multiple of the same port on the App
+	// Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.
 	ServiceName string `protobuf:"bytes,12,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
 }
 

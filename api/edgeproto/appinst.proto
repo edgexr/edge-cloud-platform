@@ -283,7 +283,7 @@ message InstPort {
   bool internal_vis_only = 10;
   // Port ID for NBI compatibility
   string id = 11;
-  // Service name for Kubernetes port, to distinguish if there are multiple of the same port on the App
+  // Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.
   string service_name = 12;
 }
 

@@ -954,7 +954,7 @@ var AppInstComments = map[string]string{
 	"mappedports:#.maxpktsize":               "Maximum datagram size (udp only)",
 	"mappedports:#.internalvisonly":          "Internal visibility only",
 	"mappedports:#.id":                       "Port ID for NBI compatibility",
-	"mappedports:#.servicename":              "Service name for Kubernetes port, to distinguish if there are multiple of the same port on the App",
+	"mappedports:#.servicename":              "Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.",
 	"flavor":                                 "Flavor name",
 	"cloudletflavor":                         "(_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources.InfraNodeFlavor.",
 	"state":                                  "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
@@ -1067,7 +1067,7 @@ var InstPortComments = map[string]string{
 	"maxpktsize":      "Maximum datagram size (udp only)",
 	"internalvisonly": "Internal visibility only",
 	"id":              "Port ID for NBI compatibility",
-	"servicename":     "Service name for Kubernetes port, to distinguish if there are multiple of the same port on the App",
+	"servicename":     "Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.",
 }
 var InstPortSpecialArgs = map[string]string{}
 var AppInstInfoRequiredArgs = []string{
@@ -1132,7 +1132,7 @@ var AppInstInfoComments = map[string]string{
 	"fedports:#.maxpktsize":      "Maximum datagram size (udp only)",
 	"fedports:#.internalvisonly": "Internal visibility only",
 	"fedports:#.id":              "Port ID for NBI compatibility",
-	"fedports:#.servicename":     "Service name for Kubernetes port, to distinguish if there are multiple of the same port on the App",
+	"fedports:#.servicename":     "Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.",
 }
 var AppInstInfoSpecialArgs = map[string]string{
 	"errors":                   "StringArray",
@@ -1262,7 +1262,7 @@ var FedAppInstEventComments = map[string]string{
 	"ports:#.maxpktsize":      "Maximum datagram size (udp only)",
 	"ports:#.internalvisonly": "Internal visibility only",
 	"ports:#.id":              "Port ID for NBI compatibility",
-	"ports:#.servicename":     "Service name for Kubernetes port, to distinguish if there are multiple of the same port on the App",
+	"ports:#.servicename":     "Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.",
 	"uniqueid":                "Unique Id, matches AppInst.UniqueId",
 }
 var FedAppInstEventSpecialArgs = map[string]string{}

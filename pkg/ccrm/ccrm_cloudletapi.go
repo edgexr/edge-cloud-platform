@@ -151,19 +151,18 @@ func (s *CCRMHandler) RefreshCerts(ctx context.Context, in *edgeproto.Cloudlet) 
 
 	// There are now two possible ways that certs can be updated
 	// below.
-
-	// proxyCerts.RefreshCerts assumes VM-based platforms with
+	// 1. proxyCerts.RefreshCerts assumes VM-based platforms with
 	// a load-balancer VM to ssh to, that is running envoy instances
 	// which hold the certificates. This depends on the platform
 	// returning ssh clients via GetRootLBClients().
+	// 2. Platform.RefreshCerts is a more general way which leaves
+	// how to apply new certificates up to the platform code, and
+	// just supplies the certs cache.
 	proxyCerts := certs.NewProxyCerts(ctx, &in.Key, pf, s.nodeMgr, nil, features, s.flags.CommercialCerts, s.flags.EnvoyWithCurlImage, s.proxyCertsCache)
 	err = proxyCerts.RefreshCerts(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// Platform.RefreshCerts is a more general way which leaves
-	// how to apply new certificates up to the platform code, and
-	// just supplies the certs cache.
 	err = pf.RefreshCerts(ctx, s.proxyCertsCache)
 	if err != nil {
 		return nil, err

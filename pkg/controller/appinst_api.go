@@ -2305,7 +2305,12 @@ func setPortFQDNPrefix(port *edgeproto.InstPort, objs []runtime.Object) {
 			if err != nil {
 				return
 			}
-			// http proto should not have prefixes
+			// in case of HTTP ports, it will never match
+			// any the kubernetes service ports which are only
+			// TCP/UDP, which is what we want because http ports
+			// are routed via ingress and use the App's URI, and
+			// do not need fqdn prefixes which are used to route
+			// to LBs.
 			if lproto != strings.ToLower(string(kp.Protocol)) {
 				continue
 			}
