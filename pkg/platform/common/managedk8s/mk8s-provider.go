@@ -16,7 +16,9 @@ package managedk8s
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
@@ -24,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs/k8swm"
 	ssh "github.com/edgexr/golang-ssh"
@@ -42,6 +45,7 @@ type ManagedK8sProvider interface {
 	// RunClusterCreateCommand creates the specified cluster, returning any infra annotations to add to the cluster.
 	RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
 	RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error
+	GetClusterAddonInfo(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (*k8smgmt.ClusterAddonInfo, error)
 	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource
@@ -57,12 +61,14 @@ type ManagedK8sPlatform struct {
 	Provider ManagedK8sProvider
 	infracommon.CommonEmbedded
 	k8swm.K8sWorkloadMgr
+	caches *platform.Caches
 }
 
 func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init", "type", m.Type)
-	features := m.Provider.GetFeatures()
+	features := m.GetFeatures()
 	props := features.Properties
+	m.caches = caches
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init provider")
 	err := m.Provider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars)
@@ -93,6 +99,7 @@ func (m *ManagedK8sPlatform) GetInitHAConditionalCompatibilityVersion(ctx contex
 func (m *ManagedK8sPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	features := m.Provider.GetFeatures()
 	features.RequiresCrmOffEdge = true
+	features.UsesIngress = true
 	return features
 }
 
@@ -100,12 +107,16 @@ func (m *ManagedK8sPlatform) GatherCloudletInfo(ctx context.Context, info *edgep
 	return m.Provider.GatherCloudletInfo(ctx, info)
 }
 
+func (m *ManagedK8sPlatform) getClient() ssh.Client {
+	return &pc.LocalClient{}
+}
+
 func (m *ManagedK8sPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
-	return &pc.LocalClient{}, nil
+	return m.getClient(), nil
 }
 
 func (m *ManagedK8sPlatform) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode, ops ...pc.SSHClientOp) (ssh.Client, error) {
-	return &pc.LocalClient{}, nil
+	return m.getClient(), nil
 }
 
 func (m *ManagedK8sPlatform) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
@@ -128,4 +139,41 @@ func (m *ManagedK8sPlatform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Fl
 func (m *ManagedK8sPlatform) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
 	return m.Provider.GetCredentials(ctx, clusterName, clusterInst)
+}
+
+func (m *ManagedK8sPlatform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
+	// refresh cert for every cluster if needed
+	clusters := []*edgeproto.ClusterInst{}
+	err := m.caches.ClusterInstCache.Show(&edgeproto.ClusterInst{}, func(clusterInst *edgeproto.ClusterInst) error {
+		cluster := clusterInst.Clone()
+		clusters = append(clusters, cluster)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	client := m.getClient()
+	cloudletKey := m.CommonPf.PlatformConfig.CloudletKey
+
+	errs := []string{}
+	for _, clusterInst := range clusters {
+		names, err := m.ensureKubeconfig(ctx, clusterInst)
+		if err != nil {
+			errs = append(errs, err.Error())
+			continue
+		}
+		wildcardName := certscache.GetWildcardName(clusterInst.Fqdn)
+		refreshOpts := k8smgmt.RefreshCertsOpts{
+			CommerialCerts: m.CommonPf.PlatformConfig.CommercialCerts,
+		}
+		err = k8smgmt.RefreshCert(ctx, client, names.GetKConfNames(), cloudletKey, certsCache, wildcardName, refreshOpts)
+		if err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+	if len(errs) > 0 {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to refresh some cluster certificates", "errs", errs)
+		return fmt.Errorf("failed to refresh some cluster certificates: %s", strings.Join(errs, ", "))
+	}
+	return nil
 }

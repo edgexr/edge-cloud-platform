@@ -111,6 +111,14 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace
 			case "Terminating":
 				log.SpanLog(ctx, log.DebugLevelInfra, "pod is terminating", "podName", podName, "state", podState)
 			default:
+				log.SpanLog(ctx, log.DebugLevelInfra, "pod state unhandled", "podName", podName, "state", podState, "out", out)
+				if podState == "Failed" && waitFor == WaitDeleted {
+					// Failed state can happen momentarily when
+					// pod's container is in state Terminated,
+					// before it's actually removed. If we hit this
+					// while waiting for a delete, let it try again
+					continue
+				}
 				if strings.Contains(podState, "Init") {
 					// Init state cannot be matched exactly, e.g. Init:0/2
 					log.SpanLog(ctx, log.DebugLevelInfra, "pod in init state", "podName", podName, "state", podState)
@@ -408,17 +416,8 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 	// for an AppInst must be stored in their own directory.
 
 	// Selector selects which objects to consider for pruning.
-	// Previously we used "--all", but that ends up deleting extra stuff,
-	// especially in the case of multi-tenant clusters. We want to
-	// transition to using the config label, but we can't use it for
-	// old configs that didn't have it. So we will have to continue
-	// to use "--all" for old stuff until those old configs eventually
-	// get removed naturally over time.
-	selector := "--all"
 	kconfArg := names.GetTenantKconfArg()
-	if names.MultitenantNamespace != "" {
-		selector = fmt.Sprintf("-l %s=%s", ConfigLabel, getConfigLabel(names))
-	}
+	selector := fmt.Sprintf("-l %s=%s", ConfigLabel, getConfigLabel(names))
 	cmd := fmt.Sprintf("kubectl %s apply -f %s --prune %s", kconfArg, configDir, selector)
 	log.SpanLog(ctx, log.DebugLevelInfra, "running kubectl", "action", action, "cmd", cmd)
 	out, err := client.Output(cmd)

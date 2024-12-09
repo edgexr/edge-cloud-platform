@@ -138,7 +138,7 @@ func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.
 			}
 			// we only allow standard DSv3 sizes and NC GPUs
 			// newer v4/v5 DS sizes have no local storage by default.
-			if *v.Family != "standardDSv3Family" && !strings.HasPrefix(*v.Family, "Standard NC") {
+			if *v.Family != "standardDSv3Family" && *v.Family != "standardAv2Family" && !strings.HasPrefix(*v.Family, "Standard NC") {
 				continue
 			}
 			flavor := &edgeproto.FlavorInfo{

@@ -30,7 +30,7 @@ import (
 
 const MaxKubeCredentialsWait = 10 * time.Second
 
-func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
+func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (annotations map[string]string, reterr error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst", "clusterInst", clusterInst)
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
 	updateCallback(edgeproto.UpdateTask, "Creating Kubernetes Cluster: "+clusterName)
@@ -46,15 +46,38 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 		return nil, errors.New("currently only one node pool is supported")
 	}
 
+	defer func() {
+		if reterr == nil || clusterInst.SkipCrmCleanupOnFailure {
+			return
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst)
+		delerr := m.deleteClusterInstInternal(ctx, clusterName, clusterInst, updateCallback)
+		if delerr != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to cleanup cluster", "delerr", delerr)
+		}
+	}()
+
 	infraAnnotations, err := m.createClusterInstInternal(ctx, client, clusterName, clusterInst, updateCallback)
 	if err != nil {
-		if !clusterInst.SkipCrmCleanupOnFailure {
-			log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst)
-			delerr := m.deleteClusterInstInternal(ctx, clusterName, clusterInst, updateCallback)
-			if delerr != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "fail to cleanup cluster")
-			}
-		}
+		return nil, err
+	}
+	addonInfo, err := m.Provider.GetClusterAddonInfo(ctx, clusterName, clusterInst)
+	if err != nil {
+		return nil, err
+	}
+
+	names, err := m.ensureKubeconfig(ctx, clusterInst)
+	if err != nil {
+		return nil, err
+	}
+	wildcardName := certscache.GetWildcardName(clusterInst.Fqdn)
+	refreshOpts := k8smgmt.RefreshCertsOpts{
+		CommerialCerts: m.CommonPf.PlatformConfig.CommercialCerts,
+		InitCluster:    true,
+	}
+	err = k8smgmt.SetupIngressNginx(ctx, client, names.GetKConfNames(), m.CommonPf.PlatformConfig.CloudletKey, m.CommonPf.PlatformConfig.ProxyCertsCache, wildcardName, refreshOpts, updateCallback, addonInfo.IngressNginxOps...)
+	if err != nil {
+		return nil, err
 	}
 	return infraAnnotations, err
 }
@@ -128,6 +151,22 @@ func (m *ManagedK8sPlatform) GetClusterInfraResources(ctx context.Context, clust
 	return nil, fmt.Errorf("GetClusterInfraResources not implemented for managed k8s")
 }
 
-func (m *ManagedK8sPlatform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
-	return nil
+// ensureKubeconfig ensures the cluster's admin kubeconfig is
+// present locally.
+func (m *ManagedK8sPlatform) ensureKubeconfig(ctx context.Context, clusterInst *edgeproto.ClusterInst) (*k8smgmt.KubeNames, error) {
+	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
+	names, err := k8smgmt.GetKubeNames(clusterInst, &edgeproto.App{}, &edgeproto.AppInst{})
+	if err != nil {
+		return nil, err
+	}
+	client := m.getClient()
+	kconfData, err := m.Provider.GetCredentials(ctx, clusterName, clusterInst)
+	if err != nil {
+		return nil, err
+	}
+	err = k8smgmt.EnsureKubeconfigs(ctx, client, names, kconfData)
+	if err != nil {
+		return nil, err
+	}
+	return names, nil
 }

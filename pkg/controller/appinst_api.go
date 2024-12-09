@@ -1035,39 +1035,20 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 
 		ports, _ := edgeproto.ParseAppPorts(app.AccessPorts)
-		if !cloudletFeatures.UsesIngress {
-			// If the cloudlet does not support ingress, then
-			// we convert HTTP ports to TCP, and from this point
-			// on throughout all the rest of the platform code,
-			// these ports are treated as TCP ports.
-			for ii := range ports {
-				if ports[ii].IsHTTP() {
+		for ii := range ports {
+			// HTTP port special handling
+			if ports[ii].IsHTTP() {
+				if !cloudletFeatures.UsesIngress {
+					// If the cloudlet does not support ingress, then
+					// we convert HTTP ports to TCP, and from this point
+					// on throughout all the rest of the platform code,
+					// these ports are treated as TCP ports.
 					ports[ii].Proto = dme.LProto_L_PROTO_TCP
-				}
-			}
-		}
-		if !cloudcommon.IsClusterInstReqd(&app) {
-			for ii := range ports {
-				ports[ii].PublicPort = ports[ii].InternalPort
-			}
-		} else if in.DedicatedIp {
-			// Per AppInst dedicated IP
-			for ii := range ports {
-				ports[ii].PublicPort = ports[ii].InternalPort
-			}
-		} else if ipaccess == edgeproto.IpAccess_IP_ACCESS_SHARED && !app.InternalPorts {
-			if cloudletRefs.RootLbPorts == nil {
-				cloudletRefs.RootLbPorts = make(map[int32]int32)
-			}
-
-			for ii, port := range ports {
-				if port.EndPort != 0 {
-					return fmt.Errorf("Shared IP access with port range not allowed")
-				}
-				if port.IsHTTP() {
-					// port will be fronted by ingress
+				} else {
+					// port will be fronted by ingress, set the
+					// public port for all LB cases
 					var publicPort int32
-					if port.Tls {
+					if ports[ii].Tls {
 						val, err := cloudcommon.GetIngressHTTPSPort(cloudlet.EnvVar)
 						if err != nil {
 							return err
@@ -1081,6 +1062,31 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 						publicPort = val
 					}
 					ports[ii].PublicPort = publicPort
+				}
+			}
+		}
+		if !cloudcommon.IsClusterInstReqd(&app) {
+			for ii := range ports {
+				ports[ii].PublicPort = ports[ii].InternalPort
+			}
+		} else if in.DedicatedIp {
+			// Per AppInst dedicated IP
+			for ii := range ports {
+				if ports[ii].IsHTTP() {
+					continue
+				}
+				ports[ii].PublicPort = ports[ii].InternalPort
+			}
+		} else if ipaccess == edgeproto.IpAccess_IP_ACCESS_SHARED && !app.InternalPorts {
+			if cloudletRefs.RootLbPorts == nil {
+				cloudletRefs.RootLbPorts = make(map[int32]int32)
+			}
+
+			for ii, port := range ports {
+				if port.EndPort != 0 {
+					return fmt.Errorf("Shared IP access with port range not allowed")
+				}
+				if port.IsHTTP() {
 					continue
 				}
 				// platos enabling layer ignores port mapping.
@@ -1125,6 +1131,9 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			if isIPAllocatedPerService(ctx, cloudletPlatformType, cloudletFeatures, in.CloudletKey.Organization) {
 				// dedicated access in which each service gets a different ip
 				for ii := range ports {
+					if ports[ii].IsHTTP() {
+						continue
+					}
 					ports[ii].PublicPort = ports[ii].InternalPort
 				}
 			} else {

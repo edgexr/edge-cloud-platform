@@ -24,6 +24,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice/v6"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 )
@@ -151,6 +152,17 @@ func (a *AzurePlatform) GetCredentials(ctx context.Context, clusterName string, 
 	// Note: although comments for azure sdk code say the data is
 	// base64 encoded, the actual values from Azure are not.
 	return creds.Kubeconfigs[0].Value, nil
+}
+
+func (a *AzurePlatform) GetClusterAddonInfo(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (*k8smgmt.ClusterAddonInfo, error) {
+	info := k8smgmt.ClusterAddonInfo{}
+	// The external traffic policy local is required for
+	// external traffic to be able to reach the ingress
+	info.IngressNginxOps = []k8smgmt.IngressNginxOp{
+		k8smgmt.WithIngressNginxWaitForExternalIP(),
+		k8smgmt.WithIngressNginxHelmSetCmd("--set controller.service.externalTrafficPolicy=Local"),
+	}
+	return &info, nil
 }
 
 func (a *AzurePlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {

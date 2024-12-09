@@ -22,6 +22,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
@@ -113,6 +114,11 @@ func (a *AwsEksPlatform) GetCredentials(ctx context.Context, clusterName string,
 			return fmt.Errorf("Error in write-kubeconfig: %s - %v", string(out), err)
 		}
 	*/
+}
+
+func (a *AwsEksPlatform) GetClusterAddonInfo(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (*k8smgmt.ClusterAddonInfo, error) {
+	info := k8smgmt.ClusterAddonInfo{}
+	return &info, nil
 }
 
 func (a *AwsEksPlatform) SetProperties(props *infracommon.InfraProperties) error {

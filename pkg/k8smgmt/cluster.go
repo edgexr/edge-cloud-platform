@@ -42,6 +42,10 @@ const NoScheduleMasterTaintNone NoScheduleMasterTaintAction = "master-noschedule
 const NoScheduleMasterTaintAnnotaionOld = "node-role.kubernetes.io/master"
 const NoScheduleMasterTaintAnnotaionNew = "node-role.kubernetes.io/control-plane"
 
+type ClusterAddonInfo struct {
+	IngressNginxOps []IngressNginxOp
+}
+
 func DeleteNodes(ctx context.Context, client ssh.Client, kconfArg string, nodes []string) error {
 	for _, node := range nodes {
 		cmd := fmt.Sprintf("kubectl %s delete node %s", kconfArg, node)

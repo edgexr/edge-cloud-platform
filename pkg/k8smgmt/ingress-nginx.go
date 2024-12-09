@@ -50,7 +50,7 @@ type RefreshCertsOpts struct {
 // The certificate is used as the default certificate for
 // all ingress instances in the cluster.
 func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, cache *certscache.ProxyCertsCache, wildcardName string, opts RefreshCertsOpts) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "k8s refresh ingress certs", "cloudlet", cloudletKey, "certName", wildcardName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "k8s refresh ingress certs", "cloudlet", cloudletKey, "certName", wildcardName, "secret", IngressDefaultCertSecret)
 	if os.Getenv("E2ETEST_TLS") != "" {
 		opts.CommerialCerts = false
 	}
@@ -85,11 +85,15 @@ func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, clou
 
 // InstallIngressNginx installs the ingress-nginx controller
 // in the cluster.
-func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, waitForExternalIP bool) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "install ingress nginx")
+func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, ops ...IngressNginxOp) error {
+	opts := &IngressNginxOptions{}
+	for _, op := range ops {
+		op(opts)
+	}
 	// This specifies a default certificate, which should be a
 	// wildcard cert for the entire cluster/cloudlet.
-	cmd := fmt.Sprintf("helm %s upgrade --install %s %s --repo %s --namespace %s --create-namespace --version %s --set controller.extraArgs.default-ssl-certificate=%s/%s", names.KconfArg, IngressNginxName, IngressNginxChart, IngressNginxRepoURL, IngressNginxNamespace, IngressNginxChartVersion, IngressNginxNamespace, IngressDefaultCertSecret)
+	cmd := fmt.Sprintf("helm %s upgrade --install %s %s --repo %s --namespace %s --create-namespace --version %s --set controller.extraArgs.default-ssl-certificate=%s/%s %s", names.KconfArg, IngressNginxName, IngressNginxChart, IngressNginxRepoURL, IngressNginxNamespace, IngressNginxChartVersion, IngressNginxNamespace, IngressDefaultCertSecret, strings.Join(opts.helmSetCmds, " "))
+	log.SpanLog(ctx, log.DebugLevelInfra, "install ingress nginx", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "helm install ingress-nginx failed", "out", string(out), "err", err)
@@ -101,7 +105,7 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 		return err
 	}
 
-	if waitForExternalIP {
+	if opts.waitForExternalIP {
 		externalIP := ""
 		log.SpanLog(ctx, log.DebugLevelInfra, "install ingress nginx waiting for external IP")
 		for ii := 0; ii < IngressNginxExternalIPRetries; ii++ {
@@ -118,6 +122,7 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 					break
 				}
 			}
+			time.Sleep(IngressNginxExternalIPRetry)
 		}
 		if externalIP == "" {
 			return errors.New("timed out waiting for ingress nginx external IP to be assigned")
@@ -129,7 +134,7 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 // SetupIngressNginx is a convenience function that creates the
 // namespace, creates the default certificate, and installs the
 // ingress-nginx controller.
-func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, certsCache *certscache.ProxyCertsCache, wildcardName string, refreshOpts RefreshCertsOpts, waitForExternalIP bool, updateCallback edgeproto.CacheUpdateCallback) error {
+func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, certsCache *certscache.ProxyCertsCache, wildcardName string, refreshOpts RefreshCertsOpts, updateCallback edgeproto.CacheUpdateCallback, ops ...IngressNginxOp) error {
 	// set up namespace so we can write the default cert
 	err := EnsureNamespace(ctx, client, names, IngressNginxNamespace)
 	if err != nil {
@@ -145,9 +150,28 @@ func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames
 
 	// install ingress-nginx
 	updateCallback(edgeproto.UpdateTask, "Installing ingress controller")
-	err = InstallIngressNginx(ctx, client, names, waitForExternalIP)
+	err = InstallIngressNginx(ctx, client, names, ops...)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+type IngressNginxOptions struct {
+	waitForExternalIP bool
+	helmSetCmds       []string
+}
+
+type IngressNginxOp func(*IngressNginxOptions)
+
+func WithIngressNginxWaitForExternalIP() IngressNginxOp {
+	return func(opts *IngressNginxOptions) {
+		opts.waitForExternalIP = true
+	}
+}
+
+func WithIngressNginxHelmSetCmd(cmd string) IngressNginxOp {
+	return func(opts *IngressNginxOptions) {
+		opts.helmSetCmds = append(opts.helmSetCmds, cmd)
+	}
 }

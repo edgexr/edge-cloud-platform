@@ -47,6 +47,9 @@ func GetObject(ctx context.Context, client ssh.Client, names *KconfNames, objTyp
 	log.SpanLog(ctx, log.DebugLevelInfra, "get objects", "objType", objType, "name", name, "kconf", names.KconfName, "opts", opts)
 
 	ns := "-A"
+	if name != "" {
+		ns = "" // if name specified, cannot specify -A
+	}
 	if opts.namespace != "" {
 		ns = "-n " + opts.namespace
 	}
