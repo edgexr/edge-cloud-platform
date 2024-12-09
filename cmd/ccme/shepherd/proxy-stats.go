@@ -283,7 +283,7 @@ func CollectProxyStats(ctx context.Context, appInst *edgeproto.AppInst) string {
 			scrapePoint.App = k8smgmt.NormalizeName(cloudcommon.GetAppInstCloudletScopedName(appInst))
 		}
 		for _, p := range appInst.MappedPorts {
-			if p.Proto == dme.LProto_L_PROTO_TCP {
+			if p.Proto == dme.LProto_L_PROTO_TCP || p.Proto == dme.LProto_L_PROTO_HTTP {
 				scrapePoint.TcpPorts = append(scrapePoint.TcpPorts, p.InternalPort)
 			}
 			if p.Proto == dme.LProto_L_PROTO_UDP && !p.Nginx {

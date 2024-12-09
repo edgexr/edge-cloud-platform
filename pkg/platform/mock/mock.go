@@ -26,6 +26,7 @@ import (
 	k8scommon "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	ssh "github.com/edgexr/golang-ssh"
@@ -262,3 +263,7 @@ func (s *Platform) NameSanitize(name string) string {
 }
 
 func (s *Platform) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {}
+
+func (s *Platform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
+	return nil
+}

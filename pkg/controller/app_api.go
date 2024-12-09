@@ -239,7 +239,7 @@ func validateSkipHcPorts(app *edgeproto.App) error {
 	}
 	for _, skipPort := range skipHcPorts {
 		// for now we only support health checking for tcp ports
-		if skipPort.Proto != dme.LProto_L_PROTO_TCP {
+		if skipPort.Proto != dme.LProto_L_PROTO_TCP && skipPort.Proto != dme.LProto_L_PROTO_HTTP {
 			return fmt.Errorf("Protocol %s unsupported for healthchecks", skipPort.Proto)
 		}
 		endSkip := skipPort.EndPort
@@ -562,9 +562,20 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	if err != nil {
 		return err
 	}
+	if !cloudcommon.AppDeploysToKubernetes(in.Deployment) {
+		httpPorts := []int32{}
+		for _, p := range ports {
+			if p.IsHTTP() {
+				httpPorts = append(httpPorts, p.InternalPort)
+			}
+		}
+		if len(httpPorts) > 0 {
+			return fmt.Errorf("http ports %v not allowed for %s deployment", httpPorts, in.Deployment)
+		}
+	}
 
 	if in.DeploymentManifest != "" {
-		err = cloudcommon.IsValidDeploymentManifest(in.Deployment, in.Command, in.DeploymentManifest, ports, in.KubernetesResources)
+		err = cloudcommon.IsValidDeploymentManifest(ctx, in.Deployment, in.Command, in.DeploymentManifest, ports, in.KubernetesResources)
 		if err != nil {
 			return fmt.Errorf("Invalid deployment manifest, %s, %v", in.DeploymentManifest, err)
 		}

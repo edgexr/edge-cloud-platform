@@ -23,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -132,4 +133,8 @@ func (s *Xind) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error) {
 
 func (s *Xind) NameSanitize(name string) string {
 	return name
+}
+
+func (s *Xind) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
+	return nil
 }

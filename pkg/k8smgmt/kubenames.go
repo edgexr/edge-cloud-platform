@@ -15,6 +15,7 @@
 package k8smgmt
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	ssh "github.com/edgexr/golang-ssh"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 )
@@ -49,7 +51,19 @@ type KubeNames struct {
 	ImagePaths                 []string
 	IsUriIPAddr                bool
 	MultitenantNamespace       string // for apps launched in a multi-tenant cluster
-	BaseKconfName              string
+	TenantKconfName            string
+	TenantKconfArg             string
+}
+
+// In the case of single tenancy, there is only one kubeconfig
+// file and KconfName and BaseKconfName are the same.
+// In the case of multi-tenancy, KconfName is scoped to the tenant,
+// while BaseKconfName grants full access.
+type KconfNames struct {
+	KconfName       string // full or tenant access
+	KconfArg        string
+	TenantKconfName string // full access
+	TenantKconfArg  string
 }
 
 type KubeNamesOp func(k *KubeNames) error
@@ -177,14 +191,15 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 	kubeNames.AppImage = NormalizeName(app.ImagePath)
 	kubeNames.OperatorName = NormalizeName(clusterInst.CloudletKey.Organization)
 	kubeNames.KconfName = GetKconfName(clusterInst)
-	// if clusterInst is multi-tenant and AppInst is specified, use namespaced config
+	kubeNames.KconfArg = "--kubeconfig=" + kubeNames.KconfName
+	// if clusterInst is multi-tenant and AppInst is specified,
+	// set up tenant kubeconfig
 	if clusterInst.MultiTenant && appInstName != "" && !cloudcommon.IsSideCarApp(app) {
 		kubeNames.MultitenantNamespace = GetNamespace(appInst)
-		kubeNames.BaseKconfName = kubeNames.KconfName
 		baseName := strings.TrimSuffix(kubeNames.KconfName, ".kubeconfig")
-		kubeNames.KconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.MultitenantNamespace)
+		kubeNames.TenantKconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.MultitenantNamespace)
+		kubeNames.TenantKconfArg = "--kubeconfig=" + kubeNames.TenantKconfName
 	}
-	kubeNames.KconfArg = GetKconfArg(clusterInst)
 	kubeNames.DeploymentType = app.Deployment
 	if app.ImagePath != "" {
 		kubeNames.ImagePaths = append(kubeNames.ImagePaths, app.ImagePath)
@@ -254,4 +269,50 @@ func (k *KubeNames) ContainsService(svc string) bool {
 		}
 	}
 	return false
+}
+
+func (k *KubeNames) GetTenantKconfArg() string {
+	if k.TenantKconfArg != "" {
+		return k.TenantKconfArg
+	}
+	return k.KconfArg
+}
+
+func (k *KubeNames) GetKConfNames() *KconfNames {
+	return &KconfNames{
+		KconfName: k.KconfName,
+		KconfArg:  k.KconfArg,
+	}
+}
+
+// GetCloudletKConfNames gets the KConfNames for a single cluster
+// acting as a cloudlet
+func GetCloudletKConfNames(key *edgeproto.CloudletKey) *KconfNames {
+	names := KconfNames{}
+	names.KconfName = fmt.Sprintf("%s.%s.cloudlet-kubeconfig", key.Name, key.Organization)
+	names.KconfArg = "--kubeconfig=" + names.KconfName
+	return &names
+}
+
+func EnsureNamespace(ctx context.Context, client ssh.Client, names *KconfNames, namespace string) error {
+	// this creates the yaml and applies it so there is no
+	// failure if the namespace already exists.
+	cmd := fmt.Sprintf("kubectl %s create ns %s --dry-run=client -o yaml | kubectl %s apply -f -", names.KconfArg, namespace, names.KconfArg)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to create namespace %s: %s, %s", namespace, out, err)
+	}
+	return nil
+}
+
+func DeleteNamespace(ctx context.Context, client ssh.Client, names *KconfNames, namespace string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleting namespace", "name", namespace)
+	cmd := fmt.Sprintf("kubectl %s delete namespace %s", names.KconfArg, namespace)
+	out, err := client.Output(cmd)
+	if err != nil {
+		if !strings.Contains(out, "not found") {
+			return fmt.Errorf("Error in deleting namespace: %s - %v", out, err)
+		}
+	}
+	return nil
 }

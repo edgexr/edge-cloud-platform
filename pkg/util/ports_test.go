@@ -104,7 +104,8 @@ func TestParsePorts(t *testing.T) {
 		case 18:
 			require.NotNil(t, err, "Incorrect accessports format")
 		case 19:
-			require.NotNil(t, err, "Only tcp and udp are recognized as valid protocols")
+			require.Nil(t, err, "http proto is valid")
+			require.Equal(t, 1, len(ports), "One http port")
 		case 20:
 			require.Nil(t, err, "valid accessPorts input")
 			require.Equal(t, int64(0), ports[0].MaxPktSize, "valid pkt size can be set for UDP")

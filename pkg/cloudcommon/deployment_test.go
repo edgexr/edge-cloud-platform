@@ -235,6 +235,10 @@ spec:
     targetPort: 1111
     protocol: TCP
     name: g1111
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+    name: http443tls
   selector:
     run: testapp
 ---
@@ -255,9 +259,15 @@ spec:
     targetPort: 3333
     name: g3333
   selector:
-    run: testapp`
+    run: testapp
+`
 
 func TestDeploymentManifest(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
 	var err error
 
 	// ensure that empty protocol in svc manifest defaults to TCP
@@ -270,8 +280,12 @@ func TestDeploymentManifest(t *testing.T) {
 			Proto:        dme.LProto_L_PROTO_TCP,
 			InternalPort: int32(3333),
 		},
+		{
+			Proto:        dme.LProto_L_PROTO_HTTP,
+			InternalPort: int32(443),
+		},
 	}
-	err = IsValidDeploymentManifest(DeploymentTypeKubernetes, "", svcManifest, ports, &testKubernetesResources)
+	err = IsValidDeploymentManifest(ctx, DeploymentTypeKubernetes, "", svcManifest, ports, &testKubernetesResources)
 	require.Nil(t, err, "valid k8s svc manifest")
 
 	// clusterIP should not be considered while validating access ports
@@ -279,7 +293,7 @@ func TestDeploymentManifest(t *testing.T) {
 		Proto:        dme.LProto_L_PROTO_TCP,
 		InternalPort: int32(1111),
 	})
-	err = IsValidDeploymentManifest(DeploymentTypeKubernetes, "", svcManifest, ports, &testKubernetesResources)
+	err = IsValidDeploymentManifest(ctx, DeploymentTypeKubernetes, "", svcManifest, ports, &testKubernetesResources)
 	require.NotNil(t, err, "invalid k8s svc manifest")
 	require.Contains(t, err.Error(), "tcp:1111 defined in AccessPorts but missing from kubernetes manifest")
 

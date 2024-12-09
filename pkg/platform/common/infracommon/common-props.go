@@ -27,13 +27,19 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
+const (
+	ExternalIPMap = "EXTERNAL_IP_MAP"
+)
+
+var ExternalIPMapProp = &edgeproto.PropertyInfo{
+	Name:        "External IP Map",
+	Description: "Comma-separated list of internal IP to external IP translation for when clusters are behind a NAT, to allow registering the external IP as the DNS entry, in the format of internalIP1=externalIP1,internalIP1=externalIP1,...",
+}
+
 // Cloudlet Infra Common Properties
 var InfraCommonProps = map[string]*edgeproto.PropertyInfo{
 	// Property: Default-Value
-	"MEX_EXTERNAL_IP_MAP": &edgeproto.PropertyInfo{
-		Name:        "External IP Map",
-		Description: "External IP Map",
-	},
+	ExternalIPMap: ExternalIPMapProp,
 	"FLAVOR_MATCH_PATTERN": &edgeproto.PropertyInfo{
 		Name:        "Flavor Match Pattern",
 		Description: "Flavors matching this pattern will be used by Cloudlet to bringup VMs",

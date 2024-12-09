@@ -166,7 +166,7 @@ func GetUniqueLoopbackIp(ctx context.Context, ports []edgeproto.InstPort) string
 		if endPort == 0 {
 			endPort = p.PublicPort
 		}
-		if p.Proto == dme.LProto_L_PROTO_TCP {
+		if p.Proto == dme.LProto_L_PROTO_TCP || p.Proto == dme.LProto_L_PROTO_HTTP {
 			if endPort > maxTcp {
 				maxTcp = endPort
 			}

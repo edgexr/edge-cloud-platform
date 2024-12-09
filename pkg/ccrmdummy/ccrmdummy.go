@@ -69,10 +69,10 @@ func StartDummyCCRM(ctx context.Context, vaultConfig *vault.Config, kvstore objs
 		dummy.testutilCloudletInfos[info.Key] = &info
 	}
 	platformBuilders := map[string]platform.PlatformBuilder{
-		platform.PlatformTypeFake:              dummy.NewPlatform,
-		platform.PlatformTypeFakeSingleCluster: fake.NewPlatformSingleCluster,
-		platform.PlatformTypeFakeVMPool:        fake.NewPlatformVMPool,
-		"ccrm":                                 dummy.NewPlatform, // matches platformType from testutil/test_data.go
+		platform.PlatformTypeFake:              dummy.NewPlatform(fake.NewPlatform),
+		platform.PlatformTypeFakeSingleCluster: dummy.NewPlatform(fake.NewPlatformSingleCluster),
+		platform.PlatformTypeFakeVMPool:        dummy.NewPlatform(fake.NewPlatformVMPool),
+		"ccrm":                                 dummy.NewPlatform(fake.NewPlatform), // matches platformType from testutil/test_data.go
 	}
 	nodeMgr := node.NodeMgr{}
 	nodeMgr.VaultConfig = vaultConfig
@@ -122,20 +122,37 @@ func (d *CCRMDummy) GRPCClient() (*grpc.ClientConn, error) {
 	)
 }
 
-func (d *CCRMDummy) NewPlatform() platform.Platform {
-	f := fake.NewPlatform().(*fake.Platform)
-	// For the controller's unit tests we also override the default
-	// set of flavors.
-	f.CustomFlavorList = UnitTestFlavors
-	// Set debug states for new platforms
-	if d.pause {
-		f.SetPause(true)
+func (d *CCRMDummy) NewPlatform(newPlatFunc func() platform.Platform) func() platform.Platform {
+	return func() platform.Platform {
+		p := newPlatFunc()
+		f := castToFakePlatform(p)
+		if f != nil {
+			// For the controller's unit tests we also override the default
+			// set of flavors.
+			f.CustomFlavorList = UnitTestFlavors
+			// Set debug states for new platforms
+			if d.pause {
+				f.SetPause(true)
+			}
+			f.SetSimulateAppCreateFailure(d.simulateAppCreateFailure)
+			f.SetSimulateAppDeleteFailure(d.simulateAppDeleteFailure)
+			f.SetSimulateClusterCreateFailure(d.simulateClusterCreateFailure)
+			f.SetSimulateClusterDeleteFailure(d.simulateClusterDeleteFailure)
+		}
+		return p
 	}
-	f.SetSimulateAppCreateFailure(d.simulateAppCreateFailure)
-	f.SetSimulateAppDeleteFailure(d.simulateAppDeleteFailure)
-	f.SetSimulateClusterCreateFailure(d.simulateClusterCreateFailure)
-	f.SetSimulateClusterDeleteFailure(d.simulateClusterDeleteFailure)
-	return f
+}
+
+func castToFakePlatform(p platform.Platform) *fake.Platform {
+	switch v := p.(type) {
+	case *fake.Platform:
+		return v
+	case *fake.PlatformSingleCluster:
+		return &v.Platform
+	case *fake.PlatformVMPool:
+		return &v.Platform
+	}
+	return nil
 }
 
 type fakeSetFailure interface {
@@ -186,7 +203,7 @@ func (d *CCRMDummy) SetSimulateClusterDeleteFailure(state bool) {
 func (d *CCRMDummy) SetPause(enable bool) {
 	d.pause = enable
 	for _, fp := range d.CCRMHandler.GetPlatformCache().GetAll() {
-		if f, ok := fp.(*fake.Platform); ok {
+		if f := castToFakePlatform(fp); f != nil {
 			f.SetPause(enable)
 		}
 	}
@@ -197,11 +214,11 @@ func (d *CCRMDummy) GetFakePlatform(key *edgeproto.CloudletKey) (*fake.Platform,
 	if !ok {
 		return nil, false
 	}
-	f, ok := pf.(*fake.Platform)
-	if !ok {
-		return nil, false
+	f := castToFakePlatform(pf)
+	if f != nil {
+		return f, true
 	}
-	return f, true
+	return nil, false
 }
 
 func (d *CCRMDummy) GetFakePlatformResources(key *edgeproto.CloudletKey) (*fakecommon.Resources, bool) {

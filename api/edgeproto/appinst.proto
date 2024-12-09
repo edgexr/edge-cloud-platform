@@ -267,8 +267,8 @@ message InstPort {
   int32 internal_port = 2;
   // Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)
   int32 public_port = 3;
-  // path_prefix was removed since we dont need it after removed http
-  reserved 4;
+  // PathPrefix for HTTP ports in Kubernetes ingress
+  string path_prefix = 4;
   // FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.
   string fqdn_prefix = 5;
   // A non-zero end port indicates a port range from internal port to end port, inclusive.
@@ -283,6 +283,8 @@ message InstPort {
   bool internal_vis_only = 10;
   // Port ID for NBI compatibility
   string id = 11;
+  // Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.
+  string service_name = 12;
 }
 
 service AppInstApi {

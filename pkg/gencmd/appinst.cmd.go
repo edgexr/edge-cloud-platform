@@ -943,9 +943,10 @@ var AppInstComments = map[string]string{
 	"staticuri":                              "Static startup FQDN gets set when the object is created and cannot be changed",
 	"liveness":                               "Liveness of instance (see Liveness), one of Unknown, Static, Dynamic, Autoprov",
 	"mappedports:empty":                      "For instances accessible via a shared load balancer, defines the external ports on the shared load balancer that map to the internal ports External ports should be appended to the Uri for L4 access., specify mappedports:empty=true to clear",
-	"mappedports:#.proto":                    "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp",
+	"mappedports:#.proto":                    "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp, Http",
 	"mappedports:#.internalport":             "Container port",
 	"mappedports:#.publicport":               "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
+	"mappedports:#.pathprefix":               "PathPrefix for HTTP ports in Kubernetes ingress",
 	"mappedports:#.fqdnprefix":               "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
 	"mappedports:#.endport":                  "A non-zero end port indicates a port range from internal port to end port, inclusive.",
 	"mappedports:#.tls":                      "TLS termination for this port",
@@ -953,6 +954,7 @@ var AppInstComments = map[string]string{
 	"mappedports:#.maxpktsize":               "Maximum datagram size (udp only)",
 	"mappedports:#.internalvisonly":          "Internal visibility only",
 	"mappedports:#.id":                       "Port ID for NBI compatibility",
+	"mappedports:#.servicename":              "Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.",
 	"flavor":                                 "Flavor name",
 	"cloudletflavor":                         "(_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources.InfraNodeFlavor.",
 	"state":                                  "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
@@ -1042,6 +1044,7 @@ var InstPortOptionalArgs = []string{
 	"proto",
 	"internalport",
 	"publicport",
+	"pathprefix",
 	"fqdnprefix",
 	"endport",
 	"tls",
@@ -1049,12 +1052,14 @@ var InstPortOptionalArgs = []string{
 	"maxpktsize",
 	"internalvisonly",
 	"id",
+	"servicename",
 }
 var InstPortAliasArgs = []string{}
 var InstPortComments = map[string]string{
-	"proto":           "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp",
+	"proto":           "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp, Http",
 	"internalport":    "Container port",
 	"publicport":      "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
+	"pathprefix":      "PathPrefix for HTTP ports in Kubernetes ingress",
 	"fqdnprefix":      "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
 	"endport":         "A non-zero end port indicates a port range from internal port to end port, inclusive.",
 	"tls":             "TLS termination for this port",
@@ -1062,6 +1067,7 @@ var InstPortComments = map[string]string{
 	"maxpktsize":      "Maximum datagram size (udp only)",
 	"internalvisonly": "Internal visibility only",
 	"id":              "Port ID for NBI compatibility",
+	"servicename":     "Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.",
 }
 var InstPortSpecialArgs = map[string]string{}
 var AppInstInfoRequiredArgs = []string{
@@ -1086,6 +1092,7 @@ var AppInstInfoOptionalArgs = []string{
 	"fedports:#.proto",
 	"fedports:#.internalport",
 	"fedports:#.publicport",
+	"fedports:#.pathprefix",
 	"fedports:#.fqdnprefix",
 	"fedports:#.endport",
 	"fedports:#.tls",
@@ -1093,6 +1100,7 @@ var AppInstInfoOptionalArgs = []string{
 	"fedports:#.maxpktsize",
 	"fedports:#.internalvisonly",
 	"fedports:#.id",
+	"fedports:#.servicename",
 }
 var AppInstInfoAliasArgs = []string{}
 var AppInstInfoComments = map[string]string{
@@ -1113,9 +1121,10 @@ var AppInstInfoComments = map[string]string{
 	"uri":                        "Base FQDN for the App based on the cloudlet platform",
 	"fedkey.federationname":      "Federation name",
 	"fedkey.appinstid":           "Federated AppInst ID",
-	"fedports:#.proto":           "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp",
+	"fedports:#.proto":           "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp, Http",
 	"fedports:#.internalport":    "Container port",
 	"fedports:#.publicport":      "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
+	"fedports:#.pathprefix":      "PathPrefix for HTTP ports in Kubernetes ingress",
 	"fedports:#.fqdnprefix":      "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
 	"fedports:#.endport":         "A non-zero end port indicates a port range from internal port to end port, inclusive.",
 	"fedports:#.tls":             "TLS termination for this port",
@@ -1123,6 +1132,7 @@ var AppInstInfoComments = map[string]string{
 	"fedports:#.maxpktsize":      "Maximum datagram size (udp only)",
 	"fedports:#.internalvisonly": "Internal visibility only",
 	"fedports:#.id":              "Port ID for NBI compatibility",
+	"fedports:#.servicename":     "Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.",
 }
 var AppInstInfoSpecialArgs = map[string]string{
 	"errors":                   "StringArray",
@@ -1224,6 +1234,7 @@ var FedAppInstEventOptionalArgs = []string{
 	"ports:#.proto",
 	"ports:#.internalport",
 	"ports:#.publicport",
+	"ports:#.pathprefix",
 	"ports:#.fqdnprefix",
 	"ports:#.endport",
 	"ports:#.tls",
@@ -1231,6 +1242,7 @@ var FedAppInstEventOptionalArgs = []string{
 	"ports:#.maxpktsize",
 	"ports:#.internalvisonly",
 	"ports:#.id",
+	"ports:#.servicename",
 	"uniqueid",
 }
 var FedAppInstEventAliasArgs = []string{}
@@ -1239,9 +1251,10 @@ var FedAppInstEventComments = map[string]string{
 	"key.appinstid":           "Federated AppInst ID",
 	"state":                   "Updated State if any, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"message":                 "Event message or error message",
-	"ports:#.proto":           "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp",
+	"ports:#.proto":           "TCP (L4) or UDP (L4) protocol, one of Unknown, Tcp, Udp, Http",
 	"ports:#.internalport":    "Container port",
 	"ports:#.publicport":      "Public facing port for TCP/UDP (may be mapped on shared LB reverse proxy)",
+	"ports:#.pathprefix":      "PathPrefix for HTTP ports in Kubernetes ingress",
 	"ports:#.fqdnprefix":      "FQDN prefix to append to base FQDN in FindCloudlet response. May be empty.",
 	"ports:#.endport":         "A non-zero end port indicates a port range from internal port to end port, inclusive.",
 	"ports:#.tls":             "TLS termination for this port",
@@ -1249,6 +1262,7 @@ var FedAppInstEventComments = map[string]string{
 	"ports:#.maxpktsize":      "Maximum datagram size (udp only)",
 	"ports:#.internalvisonly": "Internal visibility only",
 	"ports:#.id":              "Port ID for NBI compatibility",
+	"ports:#.servicename":     "Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.",
 	"uniqueid":                "Unique Id, matches AppInst.UniqueId",
 }
 var FedAppInstEventSpecialArgs = map[string]string{}

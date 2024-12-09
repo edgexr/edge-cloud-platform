@@ -16,8 +16,6 @@ package k8smgmt
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -29,11 +27,11 @@ type svcItems struct {
 	Items []v1.Service `json:"items"`
 }
 
-func GetServices(ctx context.Context, client ssh.Client, names *KubeNames) ([]v1.Service, error) {
+func GetServices(ctx context.Context, client ssh.Client, names *KubeNames, ops ...GetObjectsOp) ([]v1.Service, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get services", "kconf", names.KconfName)
-	svcs := svcItems{}
 	if names.DeploymentType == cloudcommon.DeploymentTypeDocker {
 		// just populate the service names
+		svcs := svcItems{}
 		for _, sn := range names.ServiceNames {
 			item := v1.Service{}
 			item.Name = sn
@@ -41,15 +39,14 @@ func GetServices(ctx context.Context, client ssh.Client, names *KubeNames) ([]v1
 		}
 		return svcs.Items, nil
 	}
-	cmd := fmt.Sprintf("kubectl %s get svc -o json -A", names.KconfArg)
-	out, err := client.Output(cmd)
+	return GetKubeServices(ctx, client, names.GetKConfNames(), ops...)
+}
+
+func GetKubeServices(ctx context.Context, client ssh.Client, names *KconfNames, ops ...GetObjectsOp) ([]v1.Service, error) {
+	svcs := svcItems{}
+	err := GetObjects(ctx, client, names, "svc", &svcs, ops...)
 	if err != nil {
-		return nil, fmt.Errorf("can not get list of services: %s, %s, %v", cmd, out, err)
-	}
-	err = json.Unmarshal([]byte(out), &svcs)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "cannot unmarshal svc json", "out", out, "err", err)
-		return nil, fmt.Errorf("cannot unmarshal svc json, %s", err.Error())
+		return nil, err
 	}
 	return svcs.Items, nil
 }

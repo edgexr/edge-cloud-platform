@@ -297,13 +297,13 @@ func (s *AppInstApi) CreateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 func getProtocolBitMap(proto dme.LProto) (int32, error) {
 	var bitmap int32
 	switch proto {
+	case dme.LProto_L_PROTO_HTTP:
+		fallthrough // HTTP ports are treated as TCP for conflicts
 	case dme.LProto_L_PROTO_TCP:
 		bitmap = 1 //01
-		break
 	//put all "UDP" protocols below here
 	case dme.LProto_L_PROTO_UDP:
 		bitmap = 2 //10
-		break
 	default:
 		return 0, errors.New("Unknown protocol in use for this app")
 	}
@@ -351,7 +351,7 @@ const (
 	MultiTenantAutoCluster
 )
 
-func (s *AppInstApi) checkPortOverlapDedicatedLB(stm concurrency.STM, appPorts []edgeproto.InstPort, appInstKey *edgeproto.AppInstKey, clusterKey *edgeproto.ClusterKey) error {
+func (s *AppInstApi) checkPortOverlapDedicatedLB(stm concurrency.STM, appPorts []edgeproto.InstPort, appInstKey *edgeproto.AppInstKey, clusterKey *edgeproto.ClusterKey, skipHTTP bool) error {
 	clustRefs := edgeproto.ClusterRefs{}
 	if !s.all.clusterRefsApi.store.STMGet(stm, clusterKey, &clustRefs) {
 		return nil
@@ -377,7 +377,7 @@ func (s *AppInstApi) checkPortOverlapDedicatedLB(stm concurrency.STM, appPorts [
 		}
 		for ii := range appPorts {
 			for jj := range obj.MappedPorts {
-				if edgeproto.DoPortsOverlap(appPorts[ii], obj.MappedPorts[jj]) {
+				if edgeproto.DoPortsOverlap(appPorts[ii], obj.MappedPorts[jj], skipHTTP) {
 					if appPorts[ii].EndPort != appPorts[ii].InternalPort && appPorts[ii].EndPort != 0 {
 						return fmt.Errorf("port range %d-%d overlaps with ports in use on the cluster", appPorts[ii].InternalPort, appPorts[ii].EndPort)
 					}
@@ -694,6 +694,9 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		cloudletFeatures, err = s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 		if err != nil {
 			return fmt.Errorf("failed to get features for platform, %s", err)
+		}
+		if err := cloudcommon.ValidateProps(cloudlet.EnvVar); err != nil {
+			return err
 		}
 		// set zone in case caller did not specify
 		in.ZoneKey = *cloudlet.GetZone()
@@ -1032,6 +1035,17 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 
 		ports, _ := edgeproto.ParseAppPorts(app.AccessPorts)
+		if !cloudletFeatures.UsesIngress {
+			// If the cloudlet does not support ingress, then
+			// we convert HTTP ports to TCP, and from this point
+			// on throughout all the rest of the platform code,
+			// these ports are treated as TCP ports.
+			for ii := range ports {
+				if ports[ii].IsHTTP() {
+					ports[ii].Proto = dme.LProto_L_PROTO_TCP
+				}
+			}
+		}
 		if !cloudcommon.IsClusterInstReqd(&app) {
 			for ii := range ports {
 				ports[ii].PublicPort = ports[ii].InternalPort
@@ -1049,6 +1063,25 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			for ii, port := range ports {
 				if port.EndPort != 0 {
 					return fmt.Errorf("Shared IP access with port range not allowed")
+				}
+				if port.IsHTTP() {
+					// port will be fronted by ingress
+					var publicPort int32
+					if port.Tls {
+						val, err := cloudcommon.GetIngressHTTPSPort(cloudlet.EnvVar)
+						if err != nil {
+							return err
+						}
+						publicPort = val
+					} else {
+						val, err := cloudcommon.GetIngressHTTPPort(cloudlet.EnvVar)
+						if err != nil {
+							return err
+						}
+						publicPort = val
+					}
+					ports[ii].PublicPort = publicPort
+					continue
 				}
 				// platos enabling layer ignores port mapping.
 				// Attempt to use the internal port as the
@@ -1096,7 +1129,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				}
 			} else {
 				// we need to prevent overlapping ports on the dedicated rootLB
-				if err = s.checkPortOverlapDedicatedLB(stm, ports, &in.Key, &clusterKey); !cctx.Undo && err != nil {
+				skipHTTP := cloudcommon.AppDeploysToKubernetes(app.Deployment) && cloudletFeatures.UsesIngress
+				if err = s.checkPortOverlapDedicatedLB(stm, ports, &in.Key, &clusterKey, skipHTTP); !cctx.Undo && err != nil {
 					return err
 				}
 				for ii := range ports {
@@ -1717,6 +1751,11 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
 			return fmt.Errorf("For AppInst, %v", in.CloudletKey.NotFoundError())
 		}
+		cloudletFeatures, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		if err != nil {
+			return fmt.Errorf("failed to get features for platform, %s", err)
+		}
+
 		crmOnEdge = cloudlet.CrmOnEdge
 		app = edgeproto.App{}
 		if !s.all.appApi.store.STMGet(stm, &in.AppKey, &app) {
@@ -1739,7 +1778,11 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// shared root load balancer
 			log.SpanLog(ctx, log.DebugLevelApi, "refs", "AppInst", in)
 			for ii := range in.MappedPorts {
-
+				if in.MappedPorts[ii].IsHTTP() {
+					// port routed via ingress, no need to track
+					// for conflicts
+					continue
+				}
 				p := in.MappedPorts[ii].PublicPort
 				protocol, err := getProtocolBitMap(in.MappedPorts[ii].Proto)
 
@@ -1780,10 +1823,6 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				cloudletRefs.VmAppInsts = a[:len(a)-1]
 				cloudletRefsChanged = true
 			}
-		}
-		cloudletFeatures, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
-		if err != nil {
-			return fmt.Errorf("Failed to get features for platform: %s", err)
 		}
 		nodeType = cloudletFeatures.NodeType
 		if cloudletRefsChanged {
@@ -2266,6 +2305,12 @@ func setPortFQDNPrefix(port *edgeproto.InstPort, objs []runtime.Object) {
 			if err != nil {
 				return
 			}
+			// in case of HTTP ports, it will never match
+			// any the kubernetes service ports which are only
+			// TCP/UDP, which is what we want because http ports
+			// are routed via ingress and use the App's URI, and
+			// do not need fqdn prefixes which are used to route
+			// to LBs.
 			if lproto != strings.ToLower(string(kp.Protocol)) {
 				continue
 			}

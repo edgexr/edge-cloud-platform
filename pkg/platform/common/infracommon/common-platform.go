@@ -91,11 +91,11 @@ func SetEdgeboxMode(mode bool) {
 	edgeboxMode = mode
 }
 
-// initMappedIPs takes the env var MEX_EXTERNAL_IP_MAP contents like:
+// initMappedIPs takes the env var EXTERNAL_IP_MAP contents like:
 // fromip1=toip1,fromip2=toip2 and populates mappedExternalIPs
 func (c *CommonPlatform) initMappedIPs() error {
 	c.MappedExternalIPs = make(map[string]string)
-	meip, _ := c.Properties.GetValue("MEX_EXTERNAL_IP_MAP")
+	meip, _ := c.Properties.GetValue(ExternalIPMap)
 	if meip != "" {
 		ippair := strings.Split(meip, ",")
 		for _, i := range ippair {

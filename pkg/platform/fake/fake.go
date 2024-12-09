@@ -34,6 +34,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	ssh "github.com/edgexr/golang-ssh"
@@ -641,6 +642,10 @@ func (s *Platform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, erro
 
 func (s *Platform) ActiveChanged(ctx context.Context, platformActive bool) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "ActiveChanged", "platformActive", platformActive)
+	return nil
+}
+
+func (s *Platform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
 	return nil
 }
 

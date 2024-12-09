@@ -668,6 +668,7 @@ func testAppResourceConsistency(t *testing.T, ctx context.Context, apis *AllApis
 	app.NodeResources = nil
 	app.KubernetesResources = nil
 	app.AllowServerless = false
+	app.AccessPorts = "tcp:80"
 
 	getKR := func(size string) *edgeproto.KubernetesResources {
 		if size == "small" {

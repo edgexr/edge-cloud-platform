@@ -151,6 +151,8 @@ github.com/edgexr/dnsproviders v0.0.1 h1:fPj66fuc5TaIoj1a22RS/iPsrSMN0k41RcAewWU
 github.com/edgexr/dnsproviders v0.0.1/go.mod h1:h+dkNVzTvrbbC0luCaOQVcMtdwM77klYBynItIHjg+M=
 github.com/edgexr/edge-proto v1.2.5-0.20220713205721-e2bf489db2b5 h1:PDioma0jRcj5Nji3QO5L5y5J7SUXQU5Cx3DABhU6XKs=
 github.com/edgexr/edge-proto v1.2.5-0.20220713205721-e2bf489db2b5/go.mod h1:msQhE9gtWxN9+eRXg5c+0tdCxEQj4/4u5P3jjqSJrrw=
+github.com/edgexr/edge-proto v1.2.5-0.20241203202848-1d6c23e97b28 h1:rrU5Wt9Vak13ltB1iOx4QCUII9rrqwwMS8A3dtnYQXc=
+github.com/edgexr/edge-proto v1.2.5-0.20241203202848-1d6c23e97b28/go.mod h1:msQhE9gtWxN9+eRXg5c+0tdCxEQj4/4u5P3jjqSJrrw=
 github.com/edgexr/golang-ssh v0.0.13 h1:mFYoGsQ5sTUJkbbfVh3hijZFBqVOgp4RRHHtrBEC560=
 github.com/edgexr/golang-ssh v0.0.13/go.mod h1:g/R9hpx8sbwxy6DPZe3zFW36pUgeb5i+0GNyt2sgShU=
 github.com/edgexr/jsonparser v0.0.0-20230606233159-ad7db8cef4c2 h1:5dqmPEv2YYm43gUCc5GOYX3+fUXrsmWvBkzJ/aCDoQk=

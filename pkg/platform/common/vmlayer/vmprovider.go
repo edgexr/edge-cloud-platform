@@ -29,6 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/proxy/certs"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/gogo/protobuf/types"
@@ -705,4 +706,8 @@ func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, cluster *edge
 
 	clusterName := v.VMProvider.NameSanitize(k8smgmt.GetCloudletClusterName(cluster))
 	return v.VMProvider.GetServerGroupResources(ctx, clusterName)
+}
+
+func (v *VMPlatform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
+	return nil
 }

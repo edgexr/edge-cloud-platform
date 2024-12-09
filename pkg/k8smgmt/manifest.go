@@ -17,8 +17,10 @@ package k8smgmt
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -26,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	ssh "github.com/edgexr/golang-ssh"
 	yaml "github.com/mobiledgex/yaml/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -371,4 +374,29 @@ func getDefaultReplicas(app *edgeproto.App, names *KubeNames, curReplica int32) 
 		val = int32(app.ServerlessConfig.MinReplicas)
 	}
 	return &val
+}
+
+func WaitForDeploymentReady(ctx context.Context, client ssh.Client, names *KconfNames, name, namespace string, retry int, retryDelay time.Duration) error {
+	nsArg := ""
+	if namespace != "" {
+		nsArg = "-n " + namespace
+	}
+	dep := appsv1.Deployment{}
+	cmd := fmt.Sprintf("kubectl %s %s get deployment %s -o json", names.KconfArg, nsArg, name)
+	for ii := 0; ii < retry; ii++ {
+		out, err := client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("failed to check if deployment %s is ready: %s, %s", name, string(out), err)
+		}
+		err = json.Unmarshal([]byte(out), &dep)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal deployment json, %s", err)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "wait deployment ready", "deployment", name, "namespace", namespace, "ready", fmt.Sprintf("%d/%d", dep.Status.ReadyReplicas, dep.Status.Replicas))
+		if dep.Status.Replicas > 0 && dep.Status.Replicas == dep.Status.ReadyReplicas {
+			return nil
+		}
+		time.Sleep(retryDelay)
+	}
+	return fmt.Errorf("failed to wait for deployment %s namespace %s to be ready (%d/%d)", name, namespace, dep.Status.ReadyReplicas, dep.Status.Replicas)
 }

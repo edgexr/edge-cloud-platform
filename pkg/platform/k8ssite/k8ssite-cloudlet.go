@@ -20,8 +20,11 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 )
 
 func (s *K8sSite) PerformUpgrades(ctx context.Context, caches *platform.Caches, cloudletState dme.CloudletState) error {
@@ -47,6 +50,27 @@ func (s *K8sSite) GetCloudletInfraResources(ctx context.Context) (*edgeproto.Inf
 
 func (s *K8sSite) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudlet, pfConfig *edgeproto.PlatformConfig, pfInitConfig *platform.PlatformInitConfig, flavor *edgeproto.Flavor, caches *platform.Caches, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateCloudlet", "cloudlet", cloudlet)
+
+	platConfig := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
+	err := s.InitCommon(ctx, platConfig, caches, nil, updateCallback)
+	if err != nil {
+		return false, err
+	}
+	kconfNames, err := s.ensureKubeconfig()
+	if err != nil {
+		return false, err
+	}
+	client := s.getClient()
+
+	wildcardName := certscache.GetWildcardName(cloudlet.RootLbFqdn)
+	refreshOpts := k8smgmt.RefreshCertsOpts{
+		CommerialCerts: s.CommonPf.PlatformConfig.CommercialCerts,
+		InitCluster:    true,
+	}
+	err = k8smgmt.SetupIngressNginx(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, wildcardName, refreshOpts, false, updateCallback)
+	if err != nil {
+		return false, err
+	}
 	return false, nil
 }
 
@@ -88,5 +112,29 @@ func (s *K8sSite) GetRootLBFlavor(ctx context.Context) (*edgeproto.Flavor, error
 }
 
 func (s *K8sSite) ActiveChanged(ctx context.Context, platformActive bool) error {
+	return nil
+}
+
+func (s *K8sSite) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
+	// there is just one certificate for the cluster
+	cloudletKey := s.CommonPf.PlatformConfig.CloudletKey
+	cloudlet := &edgeproto.Cloudlet{}
+	if !s.caches.CloudletCache.Get(cloudletKey, cloudlet) {
+		return cloudletKey.NotFoundError()
+	}
+	kconfNames, err := s.ensureKubeconfig()
+	if err != nil {
+		return err
+	}
+	client := s.getClient()
+
+	wildcardName := certscache.GetWildcardName(cloudlet.RootLbFqdn)
+	refreshOpts := k8smgmt.RefreshCertsOpts{
+		CommerialCerts: s.CommonPf.PlatformConfig.CommercialCerts,
+	}
+	err = k8smgmt.RefreshCert(ctx, client, kconfNames, cloudletKey, certsCache, wildcardName, refreshOpts)
+	if err != nil {
+		return err
+	}
 	return nil
 }

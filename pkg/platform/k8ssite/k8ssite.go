@@ -19,6 +19,9 @@ package k8ssite
 import (
 	"context"
 	"errors"
+	"fmt"
+	"io/fs"
+	"os"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -57,8 +60,10 @@ func (s *K8sSite) GetFeatures() *edgeproto.PlatformFeatures {
 		IsSingleKubernetesCluster:     true,
 		IsPrebuiltKubernetesCluster:   true,
 		RequiresCrmOffEdge:            true,
+		UsesIngress:                   true,
 		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,
 		AccessVars:                    AccessVarProps,
+		Properties:                    Props,
 	}
 }
 
@@ -92,6 +97,26 @@ func (s *K8sSite) GetInitHAConditionalCompatibilityVersion(ctx context.Context) 
 	return "k8sop-1.0"
 }
 
+const KconfPerms fs.FileMode = 0644
+
+func (s *K8sSite) ensureKubeconfig() (*k8smgmt.KconfNames, error) {
+	key := s.CommonPf.PlatformConfig.CloudletKey
+	kconfNames := k8smgmt.GetCloudletKConfNames(key)
+	kconfName := kconfNames.KconfName
+	data := s.accessVars[KUBECONFIG]
+	// check if file exists and is correct
+	out, err := os.ReadFile(kconfName)
+	if err == nil && string(out) == data {
+		return kconfNames, nil
+	}
+	// write out file
+	err = os.WriteFile(kconfName, []byte(s.accessVars[KUBECONFIG]), KconfPerms)
+	if err != nil {
+		return nil, fmt.Errorf("failed to write kubeconfig file %s, %s", kconfName, err)
+	}
+	return kconfNames, nil
+}
+
 func (s *K8sSite) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GatherCloudletInfo")
 	var err error
@@ -99,7 +124,11 @@ func (s *K8sSite) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloudl
 	if err != nil {
 		return err
 	}
-	info.NodeInfos, err = k8smgmt.GetNodeInfos(ctx, s.getClient(), NoKubeconfig)
+	kconfNames, err := s.ensureKubeconfig()
+	if err != nil {
+		return err
+	}
+	info.NodeInfos, err = k8smgmt.GetNodeInfos(ctx, s.getClient(), kconfNames.KconfArg)
 	if err != nil {
 		return err
 	}
