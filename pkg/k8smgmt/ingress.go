@@ -32,7 +32,9 @@ import (
 )
 
 const (
-	IngressClassName = "nginx"
+	IngressClassName         = "nginx"
+	IngressExternalIPRetries = 60
+	IngressExternalIPRetry   = 2 * time.Second
 )
 
 // CreateIngress creates an ingress to handle HTTP ports for the
@@ -188,13 +190,13 @@ func GetIngresses(ctx context.Context, client ssh.Client, names *KconfNames, ops
 
 func GetIngressExternalIP(ctx context.Context, client ssh.Client, names *KubeNames, name string) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get ingress IP", "kconf", names.KconfName)
-	for i := 0; i < 60; i++ {
+	for i := 0; i < IngressExternalIPRetries; i++ {
 		ingress := &networkingv1.Ingress{}
 		err := GetObject(ctx, client, names.GetKConfNames(), "ingress", name, ingress, WithObjectNamespace(names.MultitenantNamespace))
 		if err != nil {
 			if errors.Is(err, ErrObjectNotFound) && i < 5 {
 				// maybe not present yet, wait a bit
-				time.Sleep(2 * time.Second)
+				time.Sleep(IngressExternalIPRetry)
 				continue
 			}
 			return "", err
@@ -204,7 +206,7 @@ func GetIngressExternalIP(ctx context.Context, client ssh.Client, names *KubeNam
 				return ingress.Status.LoadBalancer.Ingress[0].IP, nil
 			}
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(IngressExternalIPRetry)
 	}
 	return "", fmt.Errorf("unable to get external IP for ingress %s", name)
 }

@@ -477,24 +477,22 @@ func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 	// remove manifest file since directory contains all AppInst manifests for
 	// the ClusterInst.
 	log.SpanLog(ctx, log.DebugLevelInfra, "remove app manifest", "name", names.AppName, "file", file)
-	if false {
-		err = pc.DeleteFile(client, file, pc.NoSudo)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "error deleting manifest", "file", file, "err", err)
+	err = pc.DeleteFile(client, file, pc.NoSudo)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "error deleting manifest", "file", file, "err", err)
+	}
+	if names.MultitenantNamespace != "" {
+		// clean up namespace
+		if err = DeleteNamespace(ctx, client, names.GetKConfNames(), names.MultitenantNamespace); err != nil {
+			return err
 		}
-		if names.MultitenantNamespace != "" {
-			// clean up namespace
-			if err = DeleteNamespace(ctx, client, names.GetKConfNames(), names.MultitenantNamespace); err != nil {
-				return err
-			}
-			if err = RemoveTenantKubeconfig(ctx, client, names); err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "failed to clean up tenant kubeconfig", "err", err)
-			}
-			// delete the config dir
-			err := pc.DeleteDir(ctx, client, configDir, pc.NoSudo)
-			if err != nil {
-				return fmt.Errorf("Unable to delete config dir %s - %v", configDir, err)
-			}
+		if err = RemoveTenantKubeconfig(ctx, client, names); err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to clean up tenant kubeconfig", "err", err)
+		}
+		// delete the config dir
+		err := pc.DeleteDir(ctx, client, configDir, pc.NoSudo)
+		if err != nil {
+			return fmt.Errorf("Unable to delete config dir %s - %v", configDir, err)
 		}
 	}
 	return nil

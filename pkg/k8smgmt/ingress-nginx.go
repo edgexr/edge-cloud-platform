@@ -87,11 +87,6 @@ func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, clou
 // in the cluster.
 func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, waitForExternalIP bool) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "install ingress nginx")
-
-	// how to determine available versions:
-	// helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-	// helm search repo ingress-nginx/ingress-nginx --versions
-
 	// This specifies a default certificate, which should be a
 	// wildcard cert for the entire cluster/cloudlet.
 	cmd := fmt.Sprintf("helm %s upgrade --install %s %s --repo %s --namespace %s --create-namespace --version %s --set controller.extraArgs.default-ssl-certificate=%s/%s", names.KconfArg, IngressNginxName, IngressNginxChart, IngressNginxRepoURL, IngressNginxNamespace, IngressNginxChartVersion, IngressNginxNamespace, IngressDefaultCertSecret)

@@ -15,7 +15,6 @@
 package k8smgmt
 
 import (
-	_ "embed"
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
