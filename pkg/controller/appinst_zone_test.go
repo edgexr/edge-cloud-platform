@@ -17,6 +17,7 @@ package controller
 import (
 	"context"
 	fmt "fmt"
+	"sort"
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -29,10 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAppInstGetPotentialClusters tests the algorithm to choose
-// the best cluster from pre-existing clusters when the AppInst
-// does not specify a specific one.
-func TestAppInstGetPotentialClusters(t *testing.T) {
+func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
@@ -49,6 +47,7 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 	apis := NewAllApis(sync)
 	sync.Start()
 	defer sync.Done()
+
 	responder := DefaultDummyInfoResponder(apis)
 	responder.InitDummyInfoResponder()
 	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
@@ -57,22 +56,17 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 
 	reduceInfoTimeouts(t, ctx, apis)
 
-	// group all cloudlets into a single zone.
-	zone := testutil.ZoneData()[0]
-	cloudletData := testutil.CloudletData()
-	for ii := range cloudletData {
-		cloudletData[ii].Key.Organization = zone.Key.Organization
-		cloudletData[ii].Zone = zone.Key.Name
-	}
-	cloudletData[0].EnableDefaultServerlessCluster = true
-	// match cloudletInfos
-	cloudletInfoData := testutil.CloudletInfoData()
-	for ii := range cloudletInfoData {
-		cloudletInfoData[ii].Key.Organization = zone.Key.Organization
-	}
+	devorg := "devorg"
+	other := "other"
+	docker := cloudcommon.DeploymentTypeDocker
+	kubernetes := cloudcommon.DeploymentTypeKubernetes
 
-	// create supporting data
-	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
+	cloudletData := testutil.CloudletData()
+	cloudletInfoData := testutil.CloudletInfoData()
+	features := testutil.PlatformFeaturesData()
+
+	// supporting data
+	addTestPlatformFeatures(t, ctx, apis, features)
 	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
 	testutil.InternalGPUDriverCreate(t, apis.gpuDriverApi, testutil.GPUDriverData())
 	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
@@ -80,174 +74,363 @@ func TestAppInstGetPotentialClusters(t *testing.T) {
 	testutil.InternalCloudletCreate(t, apis.cloudletApi, cloudletData)
 	insertCloudletInfo(ctx, apis, cloudletInfoData)
 
-	// create reservable ClusterInsts
-	flavorData := testutil.FlavorData()
-	reservD := edgeproto.ClusterInst{
-		Key: edgeproto.ClusterKey{
-			Name:         cloudcommon.BuildReservableClusterName(0, &cloudletData[2].Key),
-			Organization: edgeproto.OrganizationEdgeCloud,
-		},
-		ZoneKey:     zone.Key,
-		CloudletKey: cloudletData[2].Key,
-		Flavor:      flavorData[0].Key,
-		IpAccess:    edgeproto.IpAccess_IP_ACCESS_SHARED,
-		Deployment:  cloudcommon.DeploymentTypeDocker,
-		Reservable:  true,
-		NodeResources: &edgeproto.NodeResources{
-			Vcpus: 2,
-			Ram:   4096,
-			Disk:  100,
-		},
+	makePC := func() *potentialInstCloudlet {
+		pc := &potentialInstCloudlet{
+			cloudlet:     cloudletData[0],
+			cloudletInfo: cloudletInfoData[0],
+			features:     &features[0],
+			flavorLookup: cloudletInfoData[0].GetFlavorLookup(),
+		}
+		err := pc.initResCalc(ctx, apis, nil)
+		require.Nil(t, err)
+		return pc
 	}
-	reservK := edgeproto.ClusterInst{
-		Key: edgeproto.ClusterKey{
-			Name:         cloudcommon.BuildReservableClusterName(0, &cloudletData[3].Key),
-			Organization: edgeproto.OrganizationEdgeCloud,
-		},
-		ZoneKey:     zone.Key,
-		CloudletKey: cloudletData[3].Key,
-		Flavor:      flavorData[0].Key,
-		IpAccess:    edgeproto.IpAccess_IP_ACCESS_SHARED,
-		Deployment:  cloudcommon.DeploymentTypeKubernetes,
-		Reservable:  true,
-		NodePools: []*edgeproto.NodePool{{
-			Name:     "cpupool",
-			NumNodes: 2,
+	makeClust := func(name, org string) *edgeproto.ClusterInst {
+		return &edgeproto.ClusterInst{
+			Key: edgeproto.ClusterKey{
+				Name:         name,
+				Organization: org,
+			},
+			IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
+			Deployment: cloudcommon.DeploymentTypeKubernetes,
 			NodeResources: &edgeproto.NodeResources{
 				Vcpus: 2,
 				Ram:   4096,
 				Disk:  100,
 			},
-		}},
-		KubernetesVersion: "1.29",
+			NodePools: []*edgeproto.NodePool{{
+				Name:     "cpupool",
+				NumNodes: 1,
+				NodeResources: &edgeproto.NodeResources{
+					Vcpus: 2,
+					Ram:   4096,
+					Disk:  100,
+				},
+			}},
+			KubernetesVersion: "1.29",
+		}
 	}
-	_, err = apis.clusterInstApi.store.Put(ctx, &reservD, sync.SyncWait)
-	require.Nil(t, err)
-	_, err = apis.clusterInstApi.store.Put(ctx, &reservK, sync.SyncWait)
-	require.Nil(t, err)
-	// cloudlet 0 should have default MT cluster
-	defaultMT0Key := cloudcommon.GetDefaultMTClustKey(cloudletData[0].Key)
-	var defaultMT0 edgeproto.ClusterInst
-	found := apis.clusterInstApi.store.Get(ctx, defaultMT0Key, &defaultMT0)
-	require.True(t, found)
-	// cloudlet 4 is a single k8s cluster platform
-	singleMT4Key := cloudcommon.GetDefaultClustKey(cloudletData[4].Key, cloudletData[4].SingleKubernetesClusterOwner)
-	var singleMT4 edgeproto.ClusterInst
-	found = apis.clusterInstApi.store.Get(ctx, singleMT4Key, &singleMT4)
-	require.True(t, found)
-
-	appKey := edgeproto.AppKey{
-		Organization: "devorg",
-		Name:         "testapp",
-		Version:      "1.0",
-	}
-	getApp := func() *edgeproto.App {
-		return &edgeproto.App{
-			Key:             appKey,
+	makeApp := func(name, deployment string) *edgeproto.App {
+		app := &edgeproto.App{
+			Key: edgeproto.AppKey{
+				Name:         name,
+				Version:      "1.0",
+				Organization: devorg,
+			},
 			ImageType:       edgeproto.ImageType_IMAGE_TYPE_DOCKER,
 			AccessPorts:     "tcp:443",
 			AccessType:      edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-			DefaultFlavor:   flavorData[0].Key,
-			AllowServerless: false,
+			Deployment:      deployment,
+			AllowServerless: true,
 		}
-	}
-	getAppInst := func() *edgeproto.AppInst {
-		return &edgeproto.AppInst{
-			Key: edgeproto.AppInstKey{
-				Name:         "testinst",
-				Organization: "devorg",
-			},
-			AppKey:  appKey,
-			ZoneKey: zone.Key,
-			Flavor:  flavorData[0].Key,
-			KubernetesResources: &edgeproto.KubernetesResources{
-				CpuPool: &edgeproto.NodePoolResources{
-					TotalVcpus:  *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
-					TotalMemory: 20,
-				},
-			},
-			NodeResources: &edgeproto.NodeResources{
-				Vcpus: 1,
+		if deployment == docker {
+			app.NodeResources = &edgeproto.NodeResources{
+				Vcpus: 2,
 				Ram:   1024,
 				Disk:  20,
+			}
+		} else {
+			app.KubernetesResources = &edgeproto.KubernetesResources{
+				CpuPool: &edgeproto.NodePoolResources{
+					TotalVcpus:  *edgeproto.NewUdec64(2, 0),
+					TotalMemory: 20,
+				},
+			}
+		}
+		return app
+	}
+	makeAppInst := func(name string, app *edgeproto.App) *edgeproto.AppInst {
+		return &edgeproto.AppInst{
+			Key: edgeproto.AppInstKey{
+				Name:         name,
+				Organization: devorg,
+			},
+			AppKey:              app.Key,
+			KubernetesResources: app.KubernetesResources,
+			NodeResources:       app.NodeResources,
+		}
+	}
+	type usedAppInst struct {
+		ci  *edgeproto.ClusterInst
+		app *edgeproto.App
+		ai  *edgeproto.AppInst
+	}
+	var noused []*usedAppInst
+
+	runTest := func(app *edgeproto.App, ai *edgeproto.AppInst, cis []*edgeproto.ClusterInst, used []*usedAppInst, expNames []string) {
+		pc := makePC()
+		refs := &edgeproto.CloudletRefs{
+			Key: pc.cloudlet.Key,
+		}
+		// create test clusters
+		for _, ci := range cis {
+			_, err = apis.clusterInstApi.store.Put(ctx, ci, sync.SyncWait)
+			require.Nil(t, err)
+			refs.ClusterInsts = append(refs.ClusterInsts, ci.Key)
+		}
+		// create "used" data
+		for _, u := range used {
+			_, err = apis.appApi.store.Put(ctx, u.app, sync.SyncWait)
+			require.Nil(t, err)
+			_, err = apis.appInstApi.store.Put(ctx, u.ai, sync.SyncWait)
+			require.Nil(t, err)
+			refs := &edgeproto.ClusterRefs{}
+			if !apis.clusterRefsApi.store.Get(ctx, &u.ci.Key, refs) {
+				refs.Key = u.ci.Key
+			}
+			refs.Apps = append(refs.Apps, u.ai.Key)
+			_, err = apis.clusterRefsApi.store.Put(ctx, refs, sync.SyncWait)
+			require.Nil(t, err)
+		}
+		// create cloudlet refs for clusters
+		_, err = apis.cloudletRefsApi.store.Put(ctx, refs, sync.SyncWait)
+		require.Nil(t, err)
+		cctx := DefCallContext()
+		// test call
+		pclusts, err := apis.appInstApi.getPotentialCloudletClusters(ctx, cctx, ai, app, pc)
+		require.Nil(t, err)
+		names := []string{}
+		// verify results
+		for _, pclust := range pclusts {
+			names = append(names, pclust.existingCluster.Name)
+		}
+		require.Equal(t, expNames, names)
+		// clean up
+		_, err = apis.cloudletRefsApi.store.Delete(ctx, refs, sync.SyncWait)
+		require.Nil(t, err)
+		for _, u := range used {
+			_, err = apis.appApi.store.Delete(ctx, u.app, sync.SyncWait)
+			require.Nil(t, err)
+			_, err = apis.appInstApi.store.Delete(ctx, u.ai, sync.SyncWait)
+			require.Nil(t, err)
+			refs := &edgeproto.ClusterRefs{
+				Key: u.ci.Key,
+			}
+			_, err = apis.clusterRefsApi.store.Delete(ctx, refs, sync.SyncWait)
+			require.Nil(t, err)
+		}
+		for _, ci := range cis {
+			_, err = apis.clusterInstApi.store.Delete(ctx, ci, sync.SyncWait)
+			require.Nil(t, err)
+		}
+	}
+
+	t.Run("deployment-filter", func(t *testing.T) {
+		// test that we filter by deployment type
+		cik := makeClust("k", devorg)
+		cik.Deployment = kubernetes
+		cid := makeClust("d", devorg)
+		cid.Deployment = docker
+		clusts := []*edgeproto.ClusterInst{cik, cid}
+
+		app := makeApp("app", kubernetes)
+		ai := makeAppInst("ai", app)
+		runTest(app, ai, clusts, noused, []string{"k"})
+
+		app = makeApp("app", docker)
+		ai = makeAppInst("ai", app)
+		runTest(app, ai, clusts, noused, []string{"d"})
+
+		app = makeApp("app", cloudcommon.DeploymentTypeHelm)
+		ai = makeAppInst("ai", app)
+		runTest(app, ai, clusts, noused, []string{"k"})
+
+		app = makeApp("app", cloudcommon.DeploymentTypeVM)
+		ai = makeAppInst("ai", app)
+		runTest(app, ai, clusts, noused, []string{})
+	})
+	t.Run("serverless-filter", func(t *testing.T) {
+		cik := makeClust("k", devorg)
+		cikmt := makeClust("mt", devorg)
+		cikmt.MultiTenant = true
+		clusts := []*edgeproto.ClusterInst{cik, cikmt}
+
+		app := makeApp("app", kubernetes)
+		app.AllowServerless = false
+		ai := makeAppInst("ai", app)
+		runTest(app, ai, clusts, noused, []string{"k"})
+
+		app.AllowServerless = true
+		runTest(app, ai, clusts, noused, []string{"k", "mt"})
+	})
+	t.Run("k8sversion-filter", func(t *testing.T) {
+		ci129 := makeClust("k1.29", devorg)
+		ci129.KubernetesVersion = "1.29"
+		ci130 := makeClust("k1.30", devorg)
+		ci130.KubernetesVersion = "1.30"
+		ci131 := makeClust("k1.31", devorg)
+		ci131.KubernetesVersion = "1.31"
+		clusts := []*edgeproto.ClusterInst{ci129, ci130, ci131}
+
+		app := makeApp("app", kubernetes)
+		app.KubernetesResources.MinKubernetesVersion = "1.29"
+		ai := makeAppInst("ai", app)
+		runTest(app, ai, clusts, noused, []string{"k1.29", "k1.30", "k1.31"})
+
+		app.KubernetesResources.MinKubernetesVersion = "1.30"
+		runTest(app, ai, clusts, noused, []string{"k1.30", "k1.31"})
+
+		app.KubernetesResources.MinKubernetesVersion = "1.31"
+		runTest(app, ai, clusts, noused, []string{"k1.31"})
+
+		app.KubernetesResources.MinKubernetesVersion = "1.32"
+		runTest(app, ai, clusts, noused, []string{})
+
+		app.KubernetesResources.MinKubernetesVersion = ""
+		runTest(app, ai, clusts, noused, []string{"k1.29", "k1.30", "k1.31"})
+	})
+	t.Run("owner-filter", func(t *testing.T) {
+		owned := makeClust("owned", devorg)
+		ownedOther := makeClust("other", other)
+		resOwned := makeClust("resOwned", edgeproto.OrganizationEdgeCloud)
+		resOwned.Reservable = true
+		resOwned.ReservedBy = devorg
+		resOther := makeClust("resOther", edgeproto.OrganizationEdgeCloud)
+		resOther.Reservable = true
+		resOther.ReservedBy = other
+		resFree := makeClust("resFree", edgeproto.OrganizationEdgeCloud)
+		resFree.Reservable = true
+		resFree.ReservedBy = ""
+		mt := makeClust("mt", edgeproto.OrganizationEdgeCloud)
+		mt.MultiTenant = true
+		clusts := []*edgeproto.ClusterInst{owned, ownedOther, resOwned, resOther, resFree, mt}
+
+		// match devorg
+		app := makeApp("app", kubernetes)
+		ai := makeAppInst("ai", app)
+		runTest(app, ai, clusts, noused, []string{"owned", "resOwned", "resFree", "mt"})
+
+		// match other org
+		app = makeApp("app", kubernetes)
+		app.Key.Organization = other
+		ai = makeAppInst("ai", app)
+		ai.Key.Organization = other
+		runTest(app, ai, clusts, noused, []string{"other", "resOther", "resFree", "mt"})
+	})
+	t.Run("resfits-filter", func(t *testing.T) {
+		space := makeClust("space", devorg)
+		lowspace := makeClust("lowspace", devorg)
+		lowspace.NodePools[0].NodeResources.Vcpus = 1
+		lowspaceScalable := makeClust("lowspaceScalable", devorg)
+		lowspaceScalable.NodePools[0].NodeResources.Vcpus = 1
+		lowspaceScalable.NodePools[0].Scalable = true
+		// these clusters have an AppInst already deployed that is
+		// using up all the resources
+		blockerApp := makeApp("bocker", kubernetes)
+		used := makeClust("used", devorg)
+		usedAi := &usedAppInst{
+			ci:  used,
+			app: blockerApp,
+			ai:  makeAppInst("blocker", blockerApp),
+		}
+		usedScalable := makeClust("usedScalable", devorg)
+		usedScalable.NodePools[0].Scalable = true
+		usedScalableAi := &usedAppInst{
+			ci:  usedScalable,
+			app: blockerApp,
+			ai:  makeAppInst("blockerScalable", blockerApp),
+		}
+		clusts := []*edgeproto.ClusterInst{space, lowspace, lowspaceScalable, used, usedScalable}
+		usedAIs := []*usedAppInst{usedAi, usedScalableAi}
+
+		reqRes := &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(2, 0),
+				TotalMemory: 20,
 			},
 		}
-	}
-	cctx := DefCallContext()
-
-	verifyCloudlets := func(pcs []*potentialInstCloudlet, idxs ...int) {
-		require.Equal(t, len(idxs), len(pcs))
-		for ii, idx := range idxs {
-			key := cloudletData[idx].Key
-			require.Equal(t, key, pcs[ii].cloudlet.Key, "verify potentialCloudlet[%d] is cloudletData[%d], %s", ii, idx, key.GetKeyString())
+		reqResLow := &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 20,
+			},
 		}
+		reqResHigh := &edgeproto.KubernetesResources{
+			CpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(5, 0),
+				TotalMemory: 20,
+			},
+		}
+
+		// test default resources
+		app := makeApp("app", kubernetes)
+		app.KubernetesResources = reqRes
+		ai := makeAppInst("ai", app)
+		runTest(app, ai, clusts, usedAIs, []string{"space", "lowspaceScalable", "usedScalable"})
+
+		// test low resources
+		app = makeApp("app", kubernetes)
+		app.KubernetesResources = reqResLow
+		ai = makeAppInst("ai", app)
+		runTest(app, ai, clusts, usedAIs, []string{"space", "lowspace", "lowspaceScalable", "usedScalable"})
+
+		// test high resources
+		app = makeApp("app", kubernetes)
+		app.KubernetesResources = reqResHigh
+		ai = makeAppInst("ai", app)
+		runTest(app, ai, clusts, usedAIs, []string{"lowspaceScalable", "usedScalable"})
+	})
+}
+
+func TestPotentialAppInstClusterSort(t *testing.T) {
+	type spec struct {
+		name           string
+		clusterType    ClusterType
+		hasScaleSpec   bool
+		resScore       uint64
+		parentResScore uint64
 	}
-
-	// Docker app without serverless config
-	// should find reservD cluster
-	// check potential cloudlets
-	app := getApp()
-	app.Deployment = cloudcommon.DeploymentTypeDocker
-	ai := getAppInst()
-	pclos, err := apis.appInstApi.getPotentialCloudlets(ctx, cctx, ai, app)
-	require.Nil(t, err)
-	verifyCloudlets(pclos, 3, 1, 2, 0)
-	pclus, err := apis.appInstApi.getPotentialClusters(ctx, cctx, ai, app, pclos)
-	require.Nil(t, err)
-	require.Equal(t, 1, len(pclus))
-	require.Equal(t, reservD.Key, pclus[0].existingCluster)
-
-	// Kubernetes app without serverless config
-	// should find reservK cluster
-	app.Deployment = cloudcommon.DeploymentTypeKubernetes
-	pclos, err = apis.appInstApi.getPotentialCloudlets(ctx, cctx, ai, app)
-	require.Nil(t, err)
-	verifyCloudlets(pclos, 3, 1, 2, 0)
-	pclus, err = apis.appInstApi.getPotentialClusters(ctx, cctx, ai, app, pclos)
-	require.Nil(t, err)
-	require.Equal(t, 1, len(pclus))
-	require.Equal(t, reservK.Key, pclus[0].existingCluster)
-
-	// Docker app with serverless config
-	// should find only reservD cluster
-	// Just tests that docker behaves the same way regardless of AllowServerless
-	app.Deployment = cloudcommon.DeploymentTypeDocker
-	app.AllowServerless = true
-	pclos, err = apis.appInstApi.getPotentialCloudlets(ctx, cctx, ai, app)
-	require.Nil(t, err)
-	verifyCloudlets(pclos, 3, 1, 2, 0)
-	pclus, err = apis.appInstApi.getPotentialClusters(ctx, cctx, ai, app, pclos)
-	require.Nil(t, err)
-	require.Equal(t, 1, len(pclus))
-	require.Equal(t, reservD.Key, pclus[0].existingCluster)
-
-	// Kubernetes app with serverless should find
-	// singleMT, defaultMT, and reservK
-	app.Deployment = cloudcommon.DeploymentTypeKubernetes
-	app.AllowServerless = true
-	pclos, err = apis.appInstApi.getPotentialCloudlets(ctx, cctx, ai, app)
-	require.Nil(t, err)
-	verifyCloudlets(pclos, 3, 1, 4, 2, 0)
-	pclus, err = apis.appInstApi.getPotentialClusters(ctx, cctx, ai, app, pclos)
-	require.Nil(t, err)
-	require.Equal(t, 3, len(pclus))
-	require.Equal(t, *singleMT4Key, pclus[0].existingCluster)
-	require.Equal(t, *defaultMT0Key, pclus[1].existingCluster)
-	require.Equal(t, reservK.Key, pclus[2].existingCluster)
-
-	// Kubernetes app with serverless but minK8s version
-	// should find singleMT, defaultMT
-	app.Deployment = cloudcommon.DeploymentTypeKubernetes
-	app.AllowServerless = true
-	ai.KubernetesResources.MinKubernetesVersion = "1.30"
-	pclos, err = apis.appInstApi.getPotentialCloudlets(ctx, cctx, ai, app)
-	require.Nil(t, err)
-	verifyCloudlets(pclos, 3, 1, 4, 2, 0)
-	pclus, err = apis.appInstApi.getPotentialClusters(ctx, cctx, ai, app, pclos)
-	require.Nil(t, err)
-	require.Equal(t, 2, len(pclus))
-	require.Equal(t, *singleMT4Key, pclus[0].existingCluster)
-	require.Equal(t, *defaultMT0Key, pclus[1].existingCluster)
+	runTest := func(specs []spec, expOrder []string) {
+		pcs := []*potentialAppInstCluster{}
+		for _, s := range specs {
+			pc := potentialAppInstCluster{}
+			pc.existingCluster.Name = s.name
+			pc.clusterType = s.clusterType
+			pc.resourceScore = s.resScore
+			pc.parentPC = &potentialInstCloudlet{}
+			pc.parentPC.resourceScore = s.parentResScore
+			if s.hasScaleSpec {
+				pc.scaleSpec = &resspec.KubeResScaleSpec{}
+			}
+			pcs = append(pcs, &pc)
+		}
+		sort.Sort(PotentialAppInstClusterByResource(pcs))
+		order := []string{}
+		for _, pc := range pcs {
+			order = append(order, pc.existingCluster.Name)
+		}
+		require.Equal(t, expOrder, order)
+	}
+	t.Run("sort-by-scalespec", func(t *testing.T) {
+		specs := []spec{
+			{"noscale", ClusterTypeOwned, false, 1, 1},
+			{"scale1", ClusterTypeOwned, true, 1, 1},
+			{"scale2", ClusterTypeOwned, true, 1, 2},
+			{"scale3", ClusterTypeOwned, true, 1, 30304},
+		}
+		runTest(specs, []string{"noscale", "scale3", "scale2", "scale1"})
+	})
+	t.Run("sort-by-type", func(t *testing.T) {
+		specs := []spec{
+			{"unknown", ClusterTypeUnknown, false, 1, 1},
+			{"mt", ClusterTypeMultiTenant, false, 1, 1},
+			{"owned", ClusterTypeOwned, false, 1, 1},
+			{"ownedres", ClusterTypeOwnedReservable, false, 1, 1},
+			{"freeres", ClusterTypeFreeReservable, false, 1, 1},
+		}
+		runTest(specs, []string{"owned", "ownedres", "mt", "freeres", "unknown"})
+	})
+	t.Run("sort-by-res", func(t *testing.T) {
+		specs := []spec{
+			{"3", ClusterTypeOwned, false, 3, 0},
+			{"1", ClusterTypeOwned, false, 1, 0},
+			{"9", ClusterTypeOwned, false, 9, 0},
+			{"7", ClusterTypeOwned, false, 7, 0},
+			{"0", ClusterTypeOwned, false, 0, 0},
+			{"3000", ClusterTypeOwned, false, 3000, 0},
+		}
+		runTest(specs, []string{"3000", "9", "7", "3", "1", "0"})
+	})
 }
 
 func TestPotentialAppInstClusterCalcResourceScore(t *testing.T) {

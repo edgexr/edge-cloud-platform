@@ -711,6 +711,7 @@ var ClusterInstOptionalArgs = []string{
 	"nodepools:#.scalable",
 	"infraannotations",
 	"kubernetesversion",
+	"disabledynamicappinstplacement",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=key.name",
@@ -798,6 +799,7 @@ var ClusterInstComments = map[string]string{
 	"nodepools:#.scalable":                         "Scalable indicates the system may scale the number of nodes",
 	"infraannotations":                             "Annotations added by the implementing infrastructure, specify infraannotations:empty=true to clear",
 	"kubernetesversion":                            "Kubernetes version of cluster if applicable",
+	"disabledynamicappinstplacement":               "Disables dynamic placement of AppInsts on this cluster",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"annotations":                         "StringToString",
@@ -972,6 +974,7 @@ var UpdateClusterInstOptionalArgs = []string{
 	"nodepools:#.numnodes",
 	"nodepools:#.scalable",
 	"infraannotations",
+	"disabledynamicappinstplacement",
 }
 var ShowClusterResourceUsageRequiredArgs = []string{}
 var ShowClusterResourceUsageOptionalArgs = []string{
@@ -1014,4 +1017,5 @@ var ShowClusterResourceUsageOptionalArgs = []string{
 	"nodepools:#.scalable",
 	"infraannotations",
 	"kubernetesversion",
+	"disabledynamicappinstplacement",
 }

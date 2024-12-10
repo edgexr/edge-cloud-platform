@@ -159,6 +159,8 @@ message ClusterInst {
   map<string, string> infra_annotations = 47 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // Kubernetes version of cluster if applicable
   string kubernetes_version = 48;
+  // Disables dynamic placement of AppInsts on this cluster
+  bool disable_dynamic_appinst_placement = 49;
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
   option (protogen.generate_cud_test) = true;

@@ -688,16 +688,18 @@ func ClusterInstData() []edgeproto.ClusterInst {
 				Disk:  1,
 			},
 		}},
+		DisableDynamicAppinstPlacement: true,
 	}, { // edgeproto.ClusterInst // 1
 		Key: edgeproto.ClusterKey{
 			Name:         "Pillimos2",
 			Organization: devData[0],
 		},
-		ZoneKey:    zoneData[1].Key,
-		Flavor:     flavorData[0].Key,
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-		NumMasters: 1,
-		NumNodes:   2,
+		ZoneKey:                        zoneData[1].Key,
+		Flavor:                         flavorData[0].Key,
+		IpAccess:                       edgeproto.IpAccess_IP_ACCESS_SHARED,
+		NumMasters:                     1,
+		NumNodes:                       2,
+		DisableDynamicAppinstPlacement: true,
 	}, { // edgeproto.ClusterInst // 2
 		Key: edgeproto.ClusterKey{
 			Name:         "Pillimos3",
@@ -715,38 +717,42 @@ func ClusterInstData() []edgeproto.ClusterInst {
 				Disk:  1,
 			},
 		}},
-		KubernetesVersion: "1.29",
+		KubernetesVersion:              "1.29",
+		DisableDynamicAppinstPlacement: true,
 	}, { // edgeproto.ClusterInst // 3
 		Key: edgeproto.ClusterKey{
 			Name:         "Ever.Ai",
 			Organization: devData[0],
 		},
-		ZoneKey:         zoneData[0].Key,
-		Flavor:          flavorData[1].Key,
-		IpAccess:        edgeproto.IpAccess_IP_ACCESS_DEDICATED,
-		NumMasters:      1,
-		NumNodes:        3,
-		AutoScalePolicy: autoScalePolicyData[0].Key.Name,
+		ZoneKey:                        zoneData[0].Key,
+		Flavor:                         flavorData[1].Key,
+		IpAccess:                       edgeproto.IpAccess_IP_ACCESS_DEDICATED,
+		NumMasters:                     1,
+		NumNodes:                       3,
+		AutoScalePolicy:                autoScalePolicyData[0].Key.Name,
+		DisableDynamicAppinstPlacement: true,
 	}, { // edgeproto.ClusterInst // 4
 		Key: edgeproto.ClusterKey{
 			Name:         "Ever.Ai2",
 			Organization: devData[0],
 		},
-		ZoneKey:    zoneData[1].Key,
-		Flavor:     flavorData[1].Key,
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
-		NumMasters: 1,
-		NumNodes:   3,
+		ZoneKey:                        zoneData[1].Key,
+		Flavor:                         flavorData[1].Key,
+		IpAccess:                       edgeproto.IpAccess_IP_ACCESS_SHARED,
+		NumMasters:                     1,
+		NumNodes:                       3,
+		DisableDynamicAppinstPlacement: true,
 	}, { // edgeproto.ClusterInst // 5
 		Key: edgeproto.ClusterKey{
 			Name:         "Untomt",
 			Organization: devData[3],
 		},
-		ZoneKey:    zoneData[2].Key,
-		Flavor:     flavorData[2].Key,
-		IpAccess:   edgeproto.IpAccess_IP_ACCESS_DEDICATED,
-		NumMasters: 1,
-		NumNodes:   4,
+		ZoneKey:                        zoneData[2].Key,
+		Flavor:                         flavorData[2].Key,
+		IpAccess:                       edgeproto.IpAccess_IP_ACCESS_DEDICATED,
+		NumMasters:                     1,
+		NumNodes:                       4,
+		DisableDynamicAppinstPlacement: true,
 	}, { // edgeproto.ClusterInst // 6
 		Key: edgeproto.ClusterKey{
 			Name:         "Big-Pillimos",
@@ -764,6 +770,7 @@ func ClusterInstData() []edgeproto.ClusterInst {
 				Disk:  4,
 			},
 		}},
+		DisableDynamicAppinstPlacement: true,
 	}, { // edgeproto.ClusterInst // 7
 		Key: edgeproto.ClusterKey{
 			Name:         "Reservable",
@@ -814,6 +821,7 @@ func ClusterInstData() []edgeproto.ClusterInst {
 			Ram:   1024,
 			Disk:  1,
 		},
+		DisableDynamicAppinstPlacement: true,
 	}}
 }
 
@@ -1539,6 +1547,11 @@ func CloudletRefsData() []edgeproto.CloudletRefs {
 		ClusterInsts: []edgeproto.ClusterKey{
 			clusterInstData[6].Key,
 		},
+	}, { // 4: defaultClust for cloudletData[4]
+		Key: cloudletData[4].Key,
+		ClusterInsts: []edgeproto.ClusterKey{
+			*cloudcommon.GetDefaultClustKey(cloudletData[4].Key, cloudletData[4].SingleKubernetesClusterOwner),
+		},
 	}}
 }
 
@@ -1607,6 +1620,9 @@ func CloudletRefsWithAppInstsData() []edgeproto.CloudletRefs {
 		// AppInstData[18,19] -> AppData[0,6] -> ports[http:443,tcp:10002,udp:10002,http:80,udp:8001,tcp:65535]
 		Key:         cloudletData[4].Key,
 		RootLbPorts: map[int32]int32{8001: 2, 10002: 3, 65535: 1},
+		ClusterInsts: []edgeproto.ClusterKey{
+			*cloudcommon.GetDefaultClustKey(cloudletData[4].Key, cloudletData[4].SingleKubernetesClusterOwner),
+		},
 	}}
 }
 

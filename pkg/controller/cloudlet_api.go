@@ -1577,7 +1577,7 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		}
 		refs := edgeproto.CloudletRefs{}
 		if s.all.cloudletRefsApi.store.STMGet(stm, &in.Key, &refs) {
-			err = s.all.clusterInstApi.deleteCloudletOk(stm, &refs, clDynInsts)
+			err = s.all.clusterInstApi.deleteCloudletOk(stm, in, &refs, clDynInsts)
 			if err != nil {
 				return err
 			}
