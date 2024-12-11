@@ -67,7 +67,7 @@ func (s *K8sSite) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudl
 		CommerialCerts: s.CommonPf.PlatformConfig.CommercialCerts,
 		InitCluster:    true,
 	}
-	err = k8smgmt.SetupIngressNginx(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, wildcardName, refreshOpts, false, updateCallback)
+	err = k8smgmt.SetupIngressNginx(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, wildcardName, refreshOpts, updateCallback)
 	if err != nil {
 		return false, err
 	}

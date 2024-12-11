@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 )
@@ -97,6 +98,11 @@ func (g *GCPPlatform) GetCredentials(ctx context.Context, clusterName string, cl
 		return nil, fmt.Errorf("failed to read file %s, %s", kconf, err)
 	}
 	return data, nil
+}
+
+func (a *GCPPlatform) GetClusterAddonInfo(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (*k8smgmt.ClusterAddonInfo, error) {
+	info := k8smgmt.ClusterAddonInfo{}
+	return &info, nil
 }
 
 func (g *GCPPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
