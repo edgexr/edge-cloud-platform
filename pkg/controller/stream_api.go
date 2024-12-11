@@ -355,11 +355,12 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 		fn(&streamOps)
 	}
 
-	// If this is an undo, then caller has already performed
-	// the same operation, so reuse the existing callback
+	// If stream already exists in the context, resuse it.
+	// This can happen in the case of undo.
 	if ss := cctx.GetStreamSend(streamKey); ss != nil {
 		// make a copy so we know not to terminate the stream
-		// during stopStream, as the caller will terminate it.
+		// during stopStream, as the function that originally
+		// created the stream will terminate it.
 		return ss.Copy(), nil
 	}
 
@@ -502,7 +503,8 @@ func (s *StreamObjApi) stopStream(ctx context.Context, cctx *CallContext, stream
 	id := streamSendObj.id
 	log.SpanLog(ctx, log.DebugLevelApi, "stop stream", "key", streamKey, "cctx", cctx, "modRev", modRev, "id", id, "err", objErr, "invalid", streamSendObj.invalid, "cleanup", cleanupStream, "iscopy", streamSendObj.isCopy)
 
-	// If this is a copy, then caller will terminate the stream.
+	// If this is a copy, then the original creator will terminate
+	// the stream.
 	if streamSendObj.isCopy {
 		return nil
 	}

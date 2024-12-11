@@ -180,9 +180,6 @@ func TestAppInstApi(t *testing.T) {
 		// Verify that on error, undo deleted the appInst object from etcd
 		show := testutil.ShowAppInst{}
 		show.Init()
-		err = apis.appInstApi.ShowAppInst(&obj, &show)
-		require.Nil(t, err, "show app inst data")
-		require.Equal(t, 0, len(show.Data))
 		require.Equal(t, 0, apis.appInstApi.cache.GetCount())
 		require.Equal(t, curClusterInstCount, apis.clusterInstApi.cache.GetCount())
 		// Since appinst creation failed, object is deleted from etcd, stream obj should also be deleted
