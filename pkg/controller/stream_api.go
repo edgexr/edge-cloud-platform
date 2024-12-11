@@ -91,6 +91,7 @@ var (
 const streamNoID = "NO_ID"
 
 type streamSend struct {
+	streamKey string
 	cb        GenericCb
 	mux       sync.Mutex
 	crmPubSub *redis.PubSub
@@ -98,6 +99,20 @@ type streamSend struct {
 	invalid   bool
 	id        string
 	modRev    int64
+	isCopy    bool
+}
+
+func (s *streamSend) Copy() *streamSend {
+	cp := streamSend{}
+	cp.streamKey = s.streamKey
+	cp.cb = s.cb
+	cp.crmPubSub = s.crmPubSub
+	cp.crmMsgCh = s.crmMsgCh
+	cp.invalid = s.invalid
+	cp.id = s.id
+	cp.modRev = s.modRev
+	cp.isCopy = true
+	return &cp
 }
 
 type StreamObjApi struct {
@@ -342,9 +357,10 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 
 	// If this is an undo, then caller has already performed
 	// the same operation, so reuse the existing callback
-	if cctx.Undo {
-		streamSendObj := streamSend{cb: streamCb.GenericCb}
-		return &streamSendObj, nil
+	if ss := cctx.GetStreamSend(streamKey); ss != nil {
+		// make a copy so we know not to terminate the stream
+		// during stopStream, as the caller will terminate it.
+		return ss.Copy(), nil
 	}
 
 	streamInvalidErr := errors.New("stream invalid error")
@@ -466,6 +482,7 @@ func (s *StreamObjApi) startStream(ctx context.Context, cctx *CallContext, strea
 	ch := pubsub.Channel()
 
 	streamSendObj := streamSend{}
+	streamSendObj.streamKey = streamKey
 	streamSendObj.crmPubSub = pubsub
 	streamSendObj.crmMsgCh = ch
 	streamSendObj.cb = streamCb.GenericCb
@@ -483,11 +500,10 @@ func (s *StreamObjApi) stopStream(ctx context.Context, cctx *CallContext, stream
 	}
 	modRev := streamSendObj.modRev
 	id := streamSendObj.id
-	log.SpanLog(ctx, log.DebugLevelApi, "stop stream", "key", streamKey, "cctx", cctx, "modRev", modRev, "id", id, "err", objErr, "invalid", streamSendObj.invalid, "cleanup", cleanupStream)
+	log.SpanLog(ctx, log.DebugLevelApi, "stop stream", "key", streamKey, "cctx", cctx, "modRev", modRev, "id", id, "err", objErr, "invalid", streamSendObj.invalid, "cleanup", cleanupStream, "iscopy", streamSendObj.isCopy)
 
-	// If this is an undo, then caller has already performed the same operation,
-	// so skip performing any cleanup
-	if cctx.Undo {
+	// If this is a copy, then caller will terminate the stream.
+	if streamSendObj.isCopy {
 		return nil
 	}
 

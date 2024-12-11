@@ -28,7 +28,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
-	"github.com/go-redis/redis/v8"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	context "golang.org/x/net/context"
@@ -60,19 +59,6 @@ var ReservedPlatformPorts = map[string]string{
 	"tcp:20800": "Kubernetes master join server",
 	"udp:53":    "dns udp",
 	"tcp:53":    "dns tcp",
-}
-
-type WaitStateSpec struct {
-	CrmMsgCh <-chan *redis.Message
-}
-
-type WaitStateOps func(wSpec *WaitStateSpec) error
-
-func WithCrmMsgCh(crmCh <-chan *redis.Message) WaitStateOps {
-	return func(wSpec *WaitStateSpec) error {
-		wSpec.CrmMsgCh = crmCh
-		return nil
-	}
 }
 
 // sort each slice by key

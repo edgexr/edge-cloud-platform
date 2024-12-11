@@ -973,7 +973,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		defer func() {
 			if reterr != nil && !cctx.Undo {
 				cb.Send(&edgeproto.Result{Message: "Deleting auto-ClusterInst due to failure"})
-				undoErr := s.all.clusterInstApi.deleteClusterInstInternal(cctxauto.WithUndo().WithCRMUndo(), &clusterInst, cb)
+				undoErr := s.all.clusterInstApi.deleteClusterInstInternal(cctxauto.WithUndo().WithCRMUndo().WithStream(sendObj), &clusterInst, cb)
 				if undoErr != nil {
 					log.SpanLog(ctx, log.DebugLevelApi,
 						"Undo create auto-ClusterInst failed",
@@ -1180,8 +1180,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			return edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, s.store,
 				edgeproto.TrackedState_READY,
 				CreateAppInstTransitions, edgeproto.TrackedState_CREATE_ERROR,
-				successMsg, cb.Send,
-				edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+				successMsg, cb.Send, sendObj.crmMsgCh,
 			)
 		} else {
 			conn, err := services.platformServiceConnCache.GetConn(ctx, cloudletFeatures.NodeType)
@@ -1218,7 +1217,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		// if no other changes were made to appInst in the meantime.
 		// crm failed or some other err, undo
 		cb.Send(&edgeproto.Result{Message: "Deleting AppInst due to failure"})
-		undoErr := s.deleteAppInstInternal(cctx.WithUndo(), in, cb)
+		undoErr := s.deleteAppInstInternal(cctx.WithUndo().WithStream(sendObj), in, cb)
 		if undoErr != nil {
 			log.InfoLog("Undo create AppInst", "undoErr", undoErr)
 		}
@@ -1408,7 +1407,7 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 		if cloudlet.CrmOnEdge {
 			err = edgeproto.WaitForAppInstInfo(reqCtx, &key, s.store, edgeproto.TrackedState_READY,
 				UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
-				"", cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+				"", cb.Send, sendObj.crmMsgCh,
 			)
 		} else {
 			features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
@@ -1890,8 +1889,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			if crmOnEdge {
 				return edgeproto.WaitForAppInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_NOT_PRESENT,
 					DeleteAppInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
-					successMsg, cb.Send,
-					edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+					successMsg, cb.Send, sendObj.crmMsgCh,
 				)
 			} else {
 				conn, err := services.platformServiceConnCache.GetConn(ctx, nodeType)
@@ -1926,7 +1924,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if err != nil {
 			// crm failed or some other err, undo
 			cb.Send(&edgeproto.Result{Message: "Recreating AppInst due to failure"})
-			undoErr := s.createAppInstInternal(cctx.WithUndo(), in, cb)
+			undoErr := s.createAppInstInternal(cctx.WithUndo().WithStream(sendObj), in, cb)
 			if undoErr != nil {
 				log.InfoLog("Undo delete AppInst", "undoErr", undoErr)
 			}
@@ -2484,7 +2482,7 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 	successMsg := fmt.Sprintf("AppInst %s updated successfully", key.Name)
 	return edgeproto.WaitForAppInstInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
 		UpdateAppInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
-		successMsg, cb.Send, edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+		successMsg, cb.Send, sendObj.crmMsgCh)
 
 }
 

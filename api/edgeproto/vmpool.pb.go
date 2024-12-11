@@ -12,6 +12,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
+	"github.com/go-redis/redis/v8"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
@@ -4499,7 +4500,7 @@ func (s *VMPoolInfoPrintUpdater) Update(obj *VMPoolInfo) error {
 	return nil
 }
 
-func WaitForVMPoolInfo(ctx context.Context, key *VMPoolKey, store VMPoolStore, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitForVMPoolInfo(ctx context.Context, key *VMPoolKey, store VMPoolStore, targetState TrackedState, transitionStates map[TrackedState]struct{}, errorState TrackedState, successMsg string, send func(*Result) error, crmMsgCh <-chan *redis.Message) error {
 	var lastMsgCnt int
 	var err error
 
@@ -4529,20 +4530,14 @@ func WaitForVMPoolInfo(ctx context.Context, key *VMPoolKey, store VMPoolStore, t
 		return nil
 	}
 
-	var wSpec WaitStateSpec
-	for _, op := range opts {
-		if err := op(&wSpec); err != nil {
-			return err
-		}
-	}
-
-	if wSpec.CrmMsgCh == nil {
-		return nil
+	if crmMsgCh == nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "wait for VMPoolInfo func missing crmMsgCh", "key", key)
+		return fmt.Errorf("wait for VMPoolInfo missing redis message channel")
 	}
 
 	for {
 		select {
-		case chObj := <-wSpec.CrmMsgCh:
+		case chObj := <-crmMsgCh:
 			if chObj == nil {
 				// Since msg chan is a receive-only chan, it will return nil if
 				// connection to redis server is disrupted. But the object might
