@@ -246,7 +246,7 @@ func (s *AppInstApi) getPotentialCloudletClusters(ctx context.Context, cctx *Cal
 	for _, key := range candidates {
 		clust, logReason, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, key, userSpecified)
 		if err != nil {
-			if logReason || true {
+			if logReason {
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential cluster", "appinst", in.Key, "cluster", key, "reason", err)
 			}
 			continue
