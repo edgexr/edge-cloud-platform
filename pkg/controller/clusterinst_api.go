@@ -105,7 +105,7 @@ func (s *ClusterInstApi) UsesAutoScalePolicy(key *edgeproto.PolicyKey) *edgeprot
 	return nil
 }
 
-func (s *ClusterInstApi) deleteCloudletOk(stm concurrency.STM, refs *edgeproto.CloudletRefs, dynInsts map[edgeproto.ClusterKey]struct{}) error {
+func (s *ClusterInstApi) deleteCloudletOk(stm concurrency.STM, cloudlet *edgeproto.Cloudlet, refs *edgeproto.CloudletRefs, dynInsts map[edgeproto.ClusterKey]struct{}) error {
 	for _, clusterKey := range refs.ClusterInsts {
 		ci := edgeproto.ClusterInst{}
 		if !s.all.clusterInstApi.store.STMGet(stm, &clusterKey, &ci) {
@@ -121,6 +121,11 @@ func (s *ClusterInstApi) deleteCloudletOk(stm concurrency.STM, refs *edgeproto.C
 		if ci.Key.Matches(cloudcommon.GetDefaultMTClustKey(refs.Key)) {
 			// delete default multi-tenant cluster
 			dynInsts[ci.Key] = struct{}{}
+			continue
+		}
+		if ci.Key.Matches(cloudcommon.GetDefaultClustKey(refs.Key, cloudlet.SingleKubernetesClusterOwner)) {
+			// single cluster-as-a-cloudlet, it will get deleted
+			// with cloudlet
 			continue
 		}
 
@@ -1974,8 +1979,12 @@ func (s *ClusterInstApi) createCloudletSingularCluster(stm concurrency.STM, clou
 	}
 	clusterInst.Fqdn = getClusterInstFQDN(&clusterInst, cloudlet)
 	clusterInst.StaticFqdn = clusterInst.Fqdn
+	refs := &edgeproto.CloudletRefs{}
+	refs.Key = cloudlet.Key
+	refs.ClusterInsts = append(refs.ClusterInsts, clusterInst.Key)
 	s.store.STMPut(stm, &clusterInst)
 	s.dnsLabelStore.STMPut(stm, &cloudlet.Key, clusterInst.DnsLabel)
+	s.all.cloudletRefsApi.store.STMPut(stm, refs)
 	return nil
 }
 
@@ -1987,6 +1996,7 @@ func (s *ClusterInstApi) deleteCloudletSingularCluster(stm concurrency.STM, key 
 	}
 	s.store.STMDel(stm, clusterKey)
 	s.dnsLabelStore.STMDel(stm, key, clusterInst.DnsLabel)
+	s.all.cloudletRefsApi.store.STMDel(stm, key)
 	s.all.clusterRefsApi.deleteRef(stm, clusterKey)
 }
 
@@ -2205,24 +2215,6 @@ func (s *ClusterInstApi) getClusterInstByID(ctx context.Context, id string) (*ed
 		return nil, err
 	}
 	return ci, nil
-}
-
-func (s *ClusterInstApi) getMTClusters(ctx context.Context, cloudletKey *edgeproto.CloudletKey) ([]*edgeproto.ClusterInst, error) {
-	filter := &edgeproto.ClusterInst{
-		MultiTenant: true,
-	}
-	if cloudletKey != nil {
-		filter.CloudletKey = *cloudletKey
-	}
-	insts := []*edgeproto.ClusterInst{}
-	err := s.cache.Show(filter, func(obj *edgeproto.ClusterInst) error {
-		insts = append(insts, obj.Clone())
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return insts, nil
 }
 
 func (s *ClusterInstApi) hasInstanceOfApp(refs *edgeproto.ClusterRefs, app *edgeproto.App) bool {

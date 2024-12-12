@@ -190,12 +190,6 @@ func TestAppInstApi(t *testing.T) {
 	RequireAppInstPortConsistency = true
 	require.Equal(t, 0, len(apis.appInstApi.cache.Objs))
 	require.Equal(t, clusterInstCnt, len(apis.clusterInstApi.cache.Objs))
-	// delete refs for single k8s cloudlet, because it normally only
-	// gets cleaned up on cloudlet delete, but that messes up the check here
-	singleClusterRefs := edgeproto.CloudletRefs{}
-	singleClusterRefs.Key = testutil.CloudletData()[4].Key
-	_, err := apis.cloudletRefsApi.store.Delete(ctx, &singleClusterRefs, apis.cloudletRefsApi.sync.SyncWait)
-	require.Nil(t, err)
 	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsData())
 
 	testutil.InternalAppInstTest(t, "cud", apis.appInstApi, testutil.AppInstData(), testutil.WithCreatedAppInstTestData(testutil.CreatedAppInstData()))
@@ -213,7 +207,7 @@ func TestAppInstApi(t *testing.T) {
 	// ensure two appinsts of same app cannot deploy to same cluster
 	dup := testutil.AppInstData()[0]
 	dup.Key.Name = "dup"
-	err = apis.appInstApi.CreateAppInst(&dup, testutil.NewCudStreamoutAppInst(ctx))
+	err := apis.appInstApi.CreateAppInst(&dup, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err, "create duplicate instance of app in cluster")
 	require.Contains(t, err.Error(), "cannot deploy another instance of App")
 

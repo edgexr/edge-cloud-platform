@@ -72,7 +72,10 @@ func KubernetesResourcesFits(ctx context.Context, clusterInst *edgeproto.Cluster
 	if fitsErr == nil {
 		return nil, free, nil
 	}
-	return &kubeSS, free, fitsErr
+	if kubeSS.CPUPoolScale != nil || kubeSS.GPUPoolScale != nil {
+		return &kubeSS, free, fitsErr
+	}
+	return nil, free, fitsErr
 }
 
 // NodePoolFits checks if the specified resources can fit into the Node Pools.
@@ -166,10 +169,10 @@ func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used R
 	free := total.Clone()
 	underflow := false
 	free.SubFloorAll(used, &underflow)
-
-	log.SpanLog(ctx, log.DebugLevelApi, "node pool fits", "reqs", reqTotals.String(), "total", total.String(), "used", used.String(), "free", free.String(), "skippools", reasons, "underflow", underflow)
-
 	fitsErr := ResValsFits(reqTotals, free, reasons)
+
+	log.SpanLog(ctx, log.DebugLevelApi, "node pool fits", "reqs", reqTotals.String(), "total", total.String(), "used", used.String(), "free", free.String(), "skippools", reasons, "underflow", underflow, "fitsErr", fitsErr)
+
 	if fitsErr == nil {
 		return nil, free, nil
 	}
