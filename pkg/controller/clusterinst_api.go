@@ -1020,10 +1020,10 @@ func (s *ClusterInstApi) DeleteClusterInst(in *edgeproto.ClusterInst, cb edgepro
 }
 
 func (s *ClusterInstApi) UpdateClusterInst(in *edgeproto.ClusterInst, cb edgeproto.ClusterInstApi_UpdateClusterInstServer) error {
-	return s.updateClusterInstInternal(DefCallContext(), in, cb)
+	return s.updateClusterInstInternal(DefCallContext(), in, nil, cb)
 }
 
-func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgeproto.ClusterInst, inCb edgeproto.ClusterInstApi_DeleteClusterInstServer) (reterr error) {
+func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgeproto.ClusterInst, scaleSpec *resspec.KubeResScaleSpec, inCb edgeproto.ClusterInstApi_DeleteClusterInstServer) (reterr error) {
 	ctx := inCb.Context()
 	log.SpanLog(ctx, log.DebugLevelApi, "updateClusterInstInternal")
 
@@ -1119,11 +1119,27 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 		if fmap.Has(edgeproto.ClusterInstFieldNumNodes) || fmap.Has(edgeproto.ClusterInstFieldNumMasters) || fmap.HasOrHasChild(edgeproto.ClusterInstFieldNodePools) {
 			resChange = true
 		}
-		if resChange {
+		if resChange || scaleSpec != nil {
 			oldClusterInst = inbuf.Clone()
 		}
 
 		changeCount = inbuf.CopyInFields(in)
+		if scaleSpec != nil {
+			cpuScale := scaleSpec.CPUPoolScale
+			gpuScale := scaleSpec.GPUPoolScale
+			for _, np := range inbuf.NodePools {
+				if cpuScale != nil && np.Name == cpuScale.PoolName {
+					np.NumNodes += cpuScale.NumNodesChange
+					changeCount++
+					resChange = true
+				}
+				if gpuScale != nil && np.Name == gpuScale.PoolName {
+					np.NumNodes += gpuScale.NumNodesChange
+					changeCount++
+					resChange = true
+				}
+			}
+		}
 		if changeCount == 0 && !retry {
 			// nothing changed
 			return nil
@@ -2144,6 +2160,10 @@ func setClusterResourcesForReqs(ctx context.Context, ci *edgeproto.ClusterInst, 
 		}
 		ci.NodePools = nodePools
 		ci.KubernetesVersion = ai.KubernetesResources.MinKubernetesVersion
+		// reservable clusterinst pools are scalable
+		for _, pool := range nodePools {
+			pool.Scalable = true
+		}
 	} else {
 		nr, err := GetNodeResourcesFromReqs(ctx, ai.NodeResources)
 		if err != nil {
@@ -2215,19 +2235,6 @@ func (s *ClusterInstApi) getClusterInstByID(ctx context.Context, id string) (*ed
 		return nil, err
 	}
 	return ci, nil
-}
-
-func (s *ClusterInstApi) hasInstanceOfApp(refs *edgeproto.ClusterRefs, app *edgeproto.App) bool {
-	for _, aiKey := range refs.Apps {
-		ai := &edgeproto.AppInst{}
-		if !s.all.appInstApi.cache.Get(&aiKey, ai) {
-			continue
-		}
-		if ai.AppKey.Matches(&app.Key) {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *ClusterInstApi) ShowClusterResourceUsage(in *edgeproto.ClusterInst, cb edgeproto.ClusterInstApi_ShowClusterResourceUsageServer) error {

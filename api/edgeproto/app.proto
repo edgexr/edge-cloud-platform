@@ -269,6 +269,8 @@ message App {
   string obj_id = 52 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // Internal Annotations
   map<string, string> app_annotations = 53;
+  // A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster
+  bool is_standalone = 54;
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

@@ -360,7 +360,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	require.NotEqual(t, appinst.Key.Organization, appinst2.Key.Organization)
 	err = apis.appInstApi.CreateAppInst(&appinst2, streamOut)
 	require.NotNil(t, err, "create AppInst on already reserved ClusterInst")
-	// Cannot create another AppInst on it from the same developer
+	// Can create another AppInst on it from the same developer
 	appKey3 := testutil.AppData()[1].Key
 	appinst3 := edgeproto.AppInst{}
 	appinst3.Key.Name = "appinst3"
@@ -371,7 +371,7 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	appinst3.Flavor = flavor.Key
 	require.Equal(t, appinst.Key.Organization, appinst3.Key.Organization)
 	err = apis.appInstApi.CreateAppInst(&appinst3, streamOut)
-	require.NotNil(t, err, "create AppInst on already reserved ClusterInst")
+	require.Nil(t, err)
 
 	// Make sure above changes have not affected ReservedBy setting
 	checkReservedBy(t, ctx, api, &cinst.Key, appinst.Key.Organization)
@@ -388,6 +388,8 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 
 	// Delete AppInst
 	err = apis.appInstApi.DeleteAppInst(&appinst2, streamOut)
+	require.Nil(t, err, "delete AppInst on reservable ClusterInst")
+	err = apis.appInstApi.DeleteAppInst(&appinst3, streamOut)
 	require.Nil(t, err, "delete AppInst on reservable ClusterInst")
 	checkReservedBy(t, ctx, api, &cinst.Key, "")
 

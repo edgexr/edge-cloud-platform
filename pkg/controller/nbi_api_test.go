@@ -73,7 +73,7 @@ func TestNBIAPI(t *testing.T) {
 			Body: appData.NBI,
 		}
 		resp, err := nbiApis.SubmitApp(ctx, req)
-		require.Nil(t, err)
+		require.Nil(t, err, *appData.NBI)
 		resp201, ok := resp.(nbi.SubmitApp201JSONResponse)
 		require.True(t, ok)
 		require.NotNil(t, resp201.Body.AppId)

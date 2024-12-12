@@ -501,6 +501,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	var cloudletLoc dme.Loc
 	var platformSupportsIPV6 bool
 	crmOnEdge := false
+	var scaleSpec *resspec.KubeResScaleSpec
 
 	in.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
 
@@ -531,6 +532,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		platformSupportsIPV6 = false
 		in.DeepCopyIn(&inCopy)
 		app = edgeproto.App{}
+		scaleSpec = nil
 
 		// lookup App so we can get flavor for reservable ClusterInst
 		if !s.all.appApi.store.STMGet(stm, &in.AppKey, &app) {
@@ -559,6 +561,9 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			if err := validateAutoDeployApp(stm, &app); err != nil {
 				return err
 			}
+		}
+		if app.IsStandalone {
+			in.IsStandalone = true
 		}
 
 		// if no resources specified, inherit from app
@@ -631,11 +636,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				return err
 			}
 			for _, pc := range potentialClusters {
-				if pc.scaleSpec != nil {
-					// no support for scaling up clusters yet
-					log.SpanLog(ctx, log.DebugLevelApi, "skipping cluster that requires scaling", "pc-cluster", pc.existingCluster)
-					continue
-				}
 				clusterInst, err := s.usePotentialCluster(ctx, stm, in, &app, sidecarApp, pc)
 				if err != nil && pc.userSpecified {
 					// user specified this cluster, so this is a hard failure
@@ -644,6 +644,23 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelApi, "failed to use potential cluster, will try another", "cluster", pc.existingCluster, "cloudlet", pc.cloudletKey, "err", err)
 					continue
+				}
+				if pc.scaleSpec != nil {
+					// resources are not available right now, so
+					// we defer the resource check until after the
+					// cluster has been scaled
+					log.SpanLog(ctx, log.DebugLevelApi, "target cluster requires scaling", "pc-cluster", pc.existingCluster, "scaleSpec", pc.scaleSpec)
+					scaleSpec = pc.scaleSpec
+				} else {
+					err := s.potentialClusterResourceCheck(ctx, stm, in, &app, clusterInst, pc.parentPC.flavorLookup)
+					if err != nil && pc.userSpecified {
+						// user specified this cluster, so this is a hard failure
+						return err
+					}
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelApi, "failed to confirm potential cluster resources, will try another", "cluster", pc.existingCluster, "cloudlet", pc.cloudletKey, "err", err)
+						continue
+					}
 				}
 				// ok to use
 				if clusterInst.MultiTenant {
@@ -659,6 +676,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				in.ClusterKey = pc.existingCluster
 				in.CloudletKey = pc.cloudletKey
 				in.EnableIpv6 = clusterInst.EnableIpv6
+				log.SpanLog(ctx, log.DebugLevelApi, "chose existing cluster", "appinst", in.Key, "cluster", pc.existingCluster, "cloudlet", pc.cloudletKey, "scaleSpec", pc.scaleSpec)
 				break
 			}
 		}
@@ -680,7 +698,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// and moving it into the createClusterInst code.
 			sort.Sort(PotentialInstCloudletsByResource(potentialCloudlets))
 			in.CloudletKey = potentialCloudlets[0].cloudlet.Key
-			log.SpanLog(ctx, log.DebugLevelApi, "chose cloudlet for autocluster", "cloudlet", in.CloudletKey)
+			log.SpanLog(ctx, log.DebugLevelApi, "chose cloudlet for autocluster", "appinst", in.Key, "cloudlet", in.CloudletKey)
 		}
 
 		// validate chosen cloudlet
@@ -982,6 +1000,22 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				}
 			}
 		}()
+	} else if scaleSpec != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "scale existing cluster", "cluster", clusterKey, "AppInst", in.Key, "scaleSpec", scaleSpec)
+		clusterInst.Key = clusterKey
+		clusterInst.CloudletKey = in.CloudletKey
+		clusterInst.Fields = []string{
+			// bypass empty fields check
+			edgeproto.ClusterInstFieldKey,
+		}
+		updateStart := time.Now()
+		err := s.all.clusterInstApi.updateClusterInstInternal(cctx, &clusterInst, scaleSpec, cb)
+		nodeMgr.TimedEvent(ctx, "AppInst Cluster Scale", in.Key.Organization, node.EventType, in.GetTags(), err, updateStart, time.Now())
+		if err != nil {
+			return err
+		}
+		// TODO: we need some mechanism to scale back down a
+		// scalable node pool if it hasn't been in use for some time
 	}
 
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
@@ -1006,6 +1040,10 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, &cloudlet) {
 			return in.CloudletKey.NotFoundError()
 		}
+		info := edgeproto.CloudletInfo{}
+		if !s.all.cloudletInfoApi.store.STMGet(stm, &in.CloudletKey, &info) {
+			return fmt.Errorf("no resource information found for Cloudlet %s", in.CloudletKey)
+		}
 		clusterInst := edgeproto.ClusterInst{}
 		ipaccess := edgeproto.IpAccess_IP_ACCESS_SHARED
 		if cloudcommon.IsClusterInstReqd(&app) {
@@ -1026,6 +1064,14 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				return fmt.Errorf("Cannot deploy %s App into %s ClusterInst", app.Deployment, clusterInst.Deployment)
 			}
 			ipaccess = clusterInst.IpAccess
+			if scaleSpec != nil {
+				// we deferred the STM resource check until after
+				// the cluster was scaled, so do it now.
+				err := s.potentialClusterResourceCheck(ctx, stm, in, &app, &clusterInst, info.GetFlavorLookup())
+				if err != nil {
+					return err
+				}
+			}
 		}
 
 		cloudletRefs := edgeproto.CloudletRefs{}
@@ -1245,7 +1291,7 @@ func (s *AppInstApi) useReservableClusterInst(stm concurrency.STM, ctx context.C
 		// no restrictions, no reservation
 		return nil
 	}
-	if cibuf.ReservedBy != "" {
+	if cibuf.ReservedBy != "" && cibuf.ReservedBy != in.Key.Organization {
 		return fmt.Errorf("ClusterInst already reserved")
 	}
 	targetDeployment := app.Deployment
@@ -1282,9 +1328,6 @@ func useMultiTenantClusterInst(stm concurrency.STM, ctx context.Context, in *edg
 	if in.EnableIpv6 && !cibuf.EnableIpv6 {
 		return fmt.Errorf("AppInst requests for IPv6 but cluster does not have it enabled")
 	}
-	// TODO: check and reserve resources.
-	// May need to trigger adding more nodes to multi-tenant
-	// cluster if not enough resources.
 	return nil
 }
 

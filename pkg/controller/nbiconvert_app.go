@@ -50,6 +50,7 @@ func ProtoApp(in *nbi.AppManifest) (*edgeproto.App, error) {
 		// use kubernetes, no way to do Docker deployments
 		app.Deployment = cloudcommon.DeploymentTypeKubernetes
 		app.ImageType = edgeproto.ImageType_IMAGE_TYPE_DOCKER
+		app.AllowServerless = true
 	case nbi.HELM:
 		app.Deployment = cloudcommon.DeploymentTypeHelm
 		app.ImageType = edgeproto.ImageType_IMAGE_TYPE_HELM
@@ -136,7 +137,7 @@ func ProtoApp(in *nbi.AppManifest) (*edgeproto.App, error) {
 	switch rr := rrVal.(type) {
 	case nbi.KubernetesResources:
 		// IsStandalone true means dedicated cluster for app
-		app.AllowServerless = !rr.IsStandalone
+		app.IsStandalone = rr.IsStandalone
 		kr, err := protoKubernetesResources(&rr)
 		if err != nil {
 			return nil, err
@@ -268,7 +269,7 @@ func NBIApp(in *edgeproto.App) (*nbi.AppManifest, error) {
 		am.OperatingSystem = os
 	}
 	if in.KubernetesResources != nil {
-		kr := nbiKubernetesResources(in.KubernetesResources, !in.AllowServerless)
+		kr := nbiKubernetesResources(in.KubernetesResources, in.IsStandalone)
 		am.RequiredResources.FromKubernetesResources(*kr)
 	}
 	return &am, nil

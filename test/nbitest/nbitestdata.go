@@ -181,6 +181,7 @@ func AppData() []*AppDataSet {
 				"NBIAppComponentName": "comp0",
 				"NBIAppRepoType":      string(nbi.PUBLICREPO),
 			},
+			IsStandalone: true,
 		},
 		InstTemplate: &nbi.AppInstanceInfo{
 			AppProvider: "devorg1",

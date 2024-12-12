@@ -1011,6 +1011,7 @@ func AppInstData() []edgeproto.AppInst {
 				},
 			},
 		},
+		IsStandalone: true,
 	}, { // edgeproto.AppInst // 7
 		Key: edgeproto.AppInstKey{
 			Name:         appData[6].Key.Name + "2",

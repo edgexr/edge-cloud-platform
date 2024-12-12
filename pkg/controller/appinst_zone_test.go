@@ -108,6 +108,7 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 				},
 			}},
 			KubernetesVersion: "1.29",
+			State:             edgeproto.TrackedState_READY,
 		}
 	}
 	makeApp := func(name, deployment string) *edgeproto.App {
@@ -159,14 +160,12 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 
 	runTest := func(app *edgeproto.App, ai *edgeproto.AppInst, cis []*edgeproto.ClusterInst, used []*usedAppInst, expNames []string) {
 		pc := makePC()
-		refs := &edgeproto.CloudletRefs{
-			Key: pc.cloudlet.Key,
-		}
+		candidates := []edgeproto.ClusterKey{}
 		// create test clusters
 		for _, ci := range cis {
 			_, err = apis.clusterInstApi.store.Put(ctx, ci, sync.SyncWait)
 			require.Nil(t, err)
-			refs.ClusterInsts = append(refs.ClusterInsts, ci.Key)
+			candidates = append(candidates, ci.Key)
 		}
 		// create "used" data
 		for _, u := range used {
@@ -182,13 +181,9 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 			_, err = apis.clusterRefsApi.store.Put(ctx, refs, sync.SyncWait)
 			require.Nil(t, err)
 		}
-		// create cloudlet refs for clusters
-		_, err = apis.cloudletRefsApi.store.Put(ctx, refs, sync.SyncWait)
-		require.Nil(t, err)
 		cctx := DefCallContext()
 		// test call
-		pclusts, err := apis.appInstApi.getPotentialCloudletClusters(ctx, cctx, ai, app, pc)
-		require.Nil(t, err)
+		pclusts := apis.appInstApi.getPotentialCloudletClusters(ctx, cctx, ai, app, pc, candidates)
 		names := []string{}
 		// verify results
 		for _, pclust := range pclusts {
@@ -196,8 +191,6 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 		}
 		require.Equal(t, expNames, names)
 		// clean up
-		_, err = apis.cloudletRefsApi.store.Delete(ctx, refs, sync.SyncWait)
-		require.Nil(t, err)
 		for _, u := range used {
 			_, err = apis.appApi.store.Delete(ctx, u.app, sync.SyncWait)
 			require.Nil(t, err)

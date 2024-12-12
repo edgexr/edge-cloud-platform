@@ -48,7 +48,7 @@ func (s *CCRMHandler) refreshAppInstRuntime(ctx context.Context, cloudletKey *ed
 		} else if rt != nil {
 			_, err := s.sync.GetKVStore().ApplySTM(ctx, func(stm concurrency.STM) error {
 				inst := edgeproto.AppInst{}
-				if !s.crmHandler.AppInstCache.Store.STMGet(stm, &appInst.Key, &inst) {
+				if !s.crmHandler.AppInstCache.Store.STMGet(stm, key, &inst) {
 					// deleted in the meantime?
 					return nil
 				}
