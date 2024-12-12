@@ -13,6 +13,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
+	"github.com/go-redis/redis/v8"
 	_ "github.com/gogo/googleapis/google/api"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
@@ -17979,7 +17980,7 @@ func (s *CloudletInfoPrintUpdater) Update(obj *CloudletInfo) error {
 	return nil
 }
 
-func WaitForCloudletInfo(ctx context.Context, key *CloudletKey, store CloudletInfoStore, targetState distributed_match_engine.CloudletState, transitionStates map[distributed_match_engine.CloudletState]struct{}, errorState distributed_match_engine.CloudletState, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitForCloudletInfo(ctx context.Context, key *CloudletKey, store CloudletInfoStore, targetState distributed_match_engine.CloudletState, transitionStates map[distributed_match_engine.CloudletState]struct{}, errorState distributed_match_engine.CloudletState, successMsg string, send func(*Result) error, crmMsgCh <-chan *redis.Message) error {
 	var lastMsgCnt int
 	var err error
 
@@ -18006,20 +18007,14 @@ func WaitForCloudletInfo(ctx context.Context, key *CloudletKey, store CloudletIn
 		return nil
 	}
 
-	var wSpec WaitStateSpec
-	for _, op := range opts {
-		if err := op(&wSpec); err != nil {
-			return err
-		}
-	}
-
-	if wSpec.CrmMsgCh == nil {
-		return nil
+	if crmMsgCh == nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "wait for CloudletInfo func missing crmMsgCh", "key", key)
+		return fmt.Errorf("wait for CloudletInfo missing redis message channel")
 	}
 
 	for {
 		select {
-		case chObj := <-wSpec.CrmMsgCh:
+		case chObj := <-crmMsgCh:
 			if chObj == nil {
 				// Since msg chan is a receive-only chan, it will return nil if
 				// connection to redis server is disrupted. But the object might

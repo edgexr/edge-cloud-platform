@@ -135,6 +135,8 @@ func TestAppInstApi(t *testing.T) {
 		require.NotNil(t, err, "Create app inst without apps/cloudlets")
 		// Verify stream AppInst fails
 		GetAppInstStreamMsgs(t, ctx, &obj.Key, apis, Fail)
+		require.Equal(t, 0, apis.appInstApi.cache.GetCount())
+		require.Equal(t, 0, apis.clusterInstApi.cache.GetCount())
 	}
 
 	// create supporting data
@@ -153,6 +155,7 @@ func TestAppInstApi(t *testing.T) {
 	clusterInstCnt := len(apis.clusterInstApi.cache.Objs)
 	require.Equal(t, len(testutil.ClusterInstData())+testutil.GetDefaultClusterCount(), clusterInstCnt)
 
+	curClusterInstCount := apis.clusterInstApi.cache.GetCount()
 	// Set responder to fail. This should clean up the object after
 	// the fake crm returns a failure. If it doesn't, the next test to
 	// create all the app insts will fail.
@@ -177,9 +180,8 @@ func TestAppInstApi(t *testing.T) {
 		// Verify that on error, undo deleted the appInst object from etcd
 		show := testutil.ShowAppInst{}
 		show.Init()
-		err = apis.appInstApi.ShowAppInst(&obj, &show)
-		require.Nil(t, err, "show app inst data")
-		require.Equal(t, 0, len(show.Data))
+		require.Equal(t, 0, apis.appInstApi.cache.GetCount())
+		require.Equal(t, curClusterInstCount, apis.clusterInstApi.cache.GetCount())
 		// Since appinst creation failed, object is deleted from etcd, stream obj should also be deleted
 		GetAppInstStreamMsgs(t, ctx, &obj.Key, apis, Fail)
 	}

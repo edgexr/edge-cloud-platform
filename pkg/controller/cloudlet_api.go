@@ -730,7 +730,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			cb.Send(&edgeproto.Result{Message: reterr.Error()})
 			cb.Send(&edgeproto.Result{Message: "Deleting Cloudlet due to failures"})
 			log.SpanLog(ctx, log.DebugLevelInfo, "deleting cloudlet due to failures")
-			undoErr := s.deleteCloudletInternal(cctx.WithUndo(), in, cb, cloudletResourcesCreated)
+			undoErr := s.deleteCloudletInternal(cctx.WithUndo().WithStream(sendObj), in, cb, cloudletResourcesCreated)
 			if undoErr != nil {
 				log.SpanLog(ctx, log.DebugLevelInfo, "Undo create Cloudlet", "undoErr", undoErr)
 			}
@@ -813,8 +813,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			reqCtx, &in.Key, s.all.cloudletInfoApi.store,
 			dme.CloudletState_CLOUDLET_STATE_READY,
 			CreateCloudletTransitions, dme.CloudletState_CLOUDLET_STATE_ERRORS,
-			successMsg, cb.Send,
-			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+			successMsg, cb.Send, sendObj.crmMsgCh)
 		if err != nil {
 			return err
 		}
@@ -1311,8 +1310,7 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 			reqCtx, &in.Key, s.all.cloudletInfoApi.store,
 			dme.CloudletState_CLOUDLET_STATE_READY,
 			UpdateCloudletTransitions, dme.CloudletState_CLOUDLET_STATE_ERRORS,
-			successMsg, cb.Send,
-			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+			successMsg, cb.Send, sendObj.crmMsgCh)
 		return err
 	} else if crmUpdateReqd && !ignoreCRM(cctx) {
 		conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
@@ -2837,8 +2835,7 @@ func (s *CloudletApi) ChangeCloudletDNS(key *edgeproto.CloudletKey, inCb edgepro
 				reqCtx, key, s.all.cloudletInfoApi.store,
 				dme.CloudletState_CLOUDLET_STATE_READY,
 				UpdateCloudletTransitions, dme.CloudletState_CLOUDLET_STATE_ERRORS,
-				successMsg, cb.Send,
-				edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+				successMsg, cb.Send, sendObj.crmMsgCh)
 			if err != nil {
 				// revert the fqdn back to the original state
 				undoErr := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {

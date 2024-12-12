@@ -24,6 +24,7 @@ type CallContext struct {
 	Override               edgeproto.CRMOverride
 	AutoCluster            bool
 	SkipCloudletReadyCheck bool
+	StreamObjs             map[string]*streamSend
 }
 
 func DefCallContext() *CallContext {
@@ -44,15 +45,31 @@ func (c *CallContext) WithUndo() *CallContext {
 // In that case, we need to have the undo function apply the
 // CRM changes.
 func (c *CallContext) WithCRMUndo() *CallContext {
-	cc := *c
+	cc := c.Clone()
 	cc.CRMUndo = true
-	return &cc
+	return cc
 }
 
 func (c *CallContext) WithAutoCluster() *CallContext {
-	cc := *c
+	cc := c.Clone()
 	cc.AutoCluster = true
-	return &cc
+	return cc
+}
+
+func (c *CallContext) WithStream(stream *streamSend) *CallContext {
+	cc := c.Clone()
+	if cc.StreamObjs == nil {
+		cc.StreamObjs = make(map[string]*streamSend)
+	}
+	cc.StreamObjs[stream.streamKey] = stream
+	return cc
+}
+
+func (c *CallContext) GetStreamSend(streamKey string) *streamSend {
+	if c.StreamObjs == nil {
+		return nil
+	}
+	return c.StreamObjs[streamKey]
 }
 
 // SetOverride takes the override specified from the user,
@@ -71,5 +88,11 @@ func (c *CallContext) SetOverride(o *edgeproto.CRMOverride) {
 
 func (c *CallContext) Clone() *CallContext {
 	clone := *c
+	if c.StreamObjs != nil {
+		clone.StreamObjs = make(map[string]*streamSend)
+		for k, v := range c.StreamObjs {
+			clone.StreamObjs[k] = v
+		}
+	}
 	return &clone
 }

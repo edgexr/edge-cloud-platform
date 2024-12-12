@@ -968,8 +968,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	if crmOnEdge {
 		err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_READY, CreateClusterInstTransitions,
 			edgeproto.TrackedState_CREATE_ERROR,
-			successMsg, cb.Send,
-			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+			successMsg, cb.Send, sendObj.crmMsgCh)
 	} else {
 		api := edgeproto.NewClusterPlatformAPIClient(conn)
 		var outStream edgeproto.ClusterPlatformAPI_ApplyClusterInstClient
@@ -999,7 +998,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		// if no other changes were made to appInst in the meantime.
 		// crm failed or some other err, undo
 		cb.Send(&edgeproto.Result{Message: "DELETING ClusterInst due to failures"})
-		undoErr := s.deleteClusterInstInternal(cctx.WithUndo(), in, cb)
+		undoErr := s.deleteClusterInstInternal(cctx.WithUndo().WithStream(sendObj), in, cb)
 		if undoErr != nil {
 			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Failed to undo ClusterInst creation: %v", undoErr)})
 			log.InfoLog("Undo create ClusterInst", "undoErr", undoErr)
@@ -1187,8 +1186,7 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 	if crmOnEdge {
 		err = edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_READY,
 			UpdateClusterInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
-			successMsg, cb.Send,
-			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+			successMsg, cb.Send, sendObj.crmMsgCh,
 		)
 	} else {
 		conn, err := services.platformServiceConnCache.GetConn(ctx, nodeType)
@@ -1483,8 +1481,7 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 		if crmOnEdge {
 			return edgeproto.WaitForClusterInstInfo(reqCtx, &in.Key, s.store, edgeproto.TrackedState_NOT_PRESENT,
 				DeleteClusterInstTransitions, edgeproto.TrackedState_DELETE_ERROR,
-				successMsg, cb.Send,
-				edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+				successMsg, cb.Send, sendObj.crmMsgCh,
 			)
 		} else {
 			features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, platformType)
@@ -1523,7 +1520,7 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 	if err != nil {
 		// crm failed or some other err, undo
 		cb.Send(&edgeproto.Result{Message: "Recreating ClusterInst due to failure"})
-		undoErr := s.createClusterInstInternal(cctx.WithUndo(), in, cb)
+		undoErr := s.createClusterInstInternal(cctx.WithUndo().WithStream(sendObj), in, cb)
 		if undoErr != nil {
 			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Failed to undo ClusterInst deletion: %v", undoErr)})
 			log.SpanLog(ctx, log.DebugLevelApi, "Undo delete ClusterInst", "name", in.Key, "undoErr", undoErr)
@@ -2107,7 +2104,7 @@ func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *e
 	return edgeproto.WaitForClusterInstInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
 		UpdateClusterInstTransitions, edgeproto.TrackedState_UPDATE_ERROR,
 		successMsg, cb.Send,
-		edgeproto.WithCrmMsgCh(sendObj.crmMsgCh),
+		sendObj.crmMsgCh,
 	)
 }
 

@@ -66,6 +66,7 @@ type mex struct {
 	importSync             bool
 	importObjstore         bool
 	importContext          bool
+	importRedis            bool
 	firstFile              string
 	support                gensupport.PluginSupport
 	refData                *gensupport.RefData
@@ -123,6 +124,7 @@ func (m *mex) Generate(file *generator.FileDescriptor) {
 	m.importSync = false
 	m.importObjstore = false
 	m.importContext = false
+	m.importRedis = false
 	if m.firstFile == *file.FileDescriptorProto.Name {
 		m.refData = m.support.GatherRefData(m.gen)
 		m.checkDeletePrepares()
@@ -210,6 +212,9 @@ func (m *mex) GenerateImports(file *generator.FileDescriptor) {
 	if m.importCmp {
 		m.gen.PrintImport("", "github.com/google/go-cmp/cmp")
 		m.gen.PrintImport("", "github.com/google/go-cmp/cmp/cmpopts")
+	}
+	if m.importRedis {
+		m.gen.PrintImport("", "github.com/go-redis/redis/v8")
 	}
 	m.support.PrintUsedImportsPlugin(m.gen, fileDeps)
 }
@@ -2287,9 +2292,9 @@ func (s *{{.Name}}PrintUpdater) Update(obj *{{.Name}}) error {
 
 {{if ne (.WaitForState) ("")}}
 {{if eq (.WaitForState) ("TrackedState")}}
-func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, store {{.ParentObjName}}Store, targetState {{.WaitForState}}, transitionStates map[{{.WaitForState}}]struct{}, errorState {{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, store {{.ParentObjName}}Store, targetState {{.WaitForState}}, transitionStates map[{{.WaitForState}}]struct{}, errorState {{.WaitForState}}, successMsg string, send func(*Result) error, crmMsgCh <-chan *redis.Message) error {
 {{- else}}
-func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, store {{.Name}}Store, targetState distributed_match_engine.{{.WaitForState}}, transitionStates map[distributed_match_engine.{{.WaitForState}}]struct{}, errorState distributed_match_engine.{{.WaitForState}}, successMsg string, send func(*Result) error, opts ...WaitStateOps) error {
+func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, store {{.Name}}Store, targetState distributed_match_engine.{{.WaitForState}}, transitionStates map[distributed_match_engine.{{.WaitForState}}]struct{}, errorState distributed_match_engine.{{.WaitForState}}, successMsg string, send func(*Result) error, crmMsgCh <-chan *redis.Message) error {
 {{- end}}
 	var lastMsgCnt int
 	var err error
@@ -2327,20 +2332,14 @@ func WaitFor{{.Name}}(ctx context.Context, key *{{.KeyType}}, store {{.Name}}Sto
 		return nil
 	}
 
-	var wSpec WaitStateSpec
-	for _, op := range opts {
-		if err := op(&wSpec); err != nil {
-		       return err
-		}
-	}
-
-    if wSpec.CrmMsgCh == nil {
-		return nil
+    if crmMsgCh == nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "wait for {{.Name}} func missing crmMsgCh", "key", key)
+		return fmt.Errorf("wait for {{.Name}} missing redis message channel")
 	}
 
 	for {
 		select {
-		case chObj := <-wSpec.CrmMsgCh:
+		case chObj := <-crmMsgCh:
 			if chObj == nil {
 				// Since msg chan is a receive-only chan, it will return nil if
 				// connection to redis server is disrupted. But the object might
@@ -2901,6 +2900,7 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		if args.WaitForState != "" {
 			m.importErrors = true
 			m.importStrings = true
+			m.importRedis = true
 		}
 		if args.ParentObjName != "" {
 			m.importSync = true

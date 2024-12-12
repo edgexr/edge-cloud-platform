@@ -359,7 +359,7 @@ func (s *VMPoolApi) updateVMPoolInternal(cctx *CallContext, ctx context.Context,
 		err = edgeproto.WaitForVMPoolInfo(reqCtx, key, s.store, edgeproto.TrackedState_READY,
 			UpdateVMPoolTransitions, edgeproto.TrackedState_UPDATE_ERROR,
 			"Updated VM Pool Successfully", nil,
-			edgeproto.WithCrmMsgCh(sendObj.crmMsgCh))
+			sendObj.crmMsgCh)
 	} else {
 		// VMPool not supported for CCRM
 		return fmt.Errorf("vm pool not supported off edge-site")
