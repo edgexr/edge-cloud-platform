@@ -987,6 +987,10 @@ var UpdateAlertPolicyFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *AlertPolicy) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateAlertPolicyFieldsMap)
+}
+
+func (m *AlertPolicy) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -996,7 +1000,7 @@ func (m *AlertPolicy) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateAlertPolicyFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := AlertPolicyAllFieldsStringMap[field]; !ok {
 				continue
 			}

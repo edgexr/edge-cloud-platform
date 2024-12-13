@@ -963,6 +963,10 @@ var UpdateResTagTableFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *ResTagTable) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateResTagTableFieldsMap)
+}
+
+func (m *ResTagTable) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -972,7 +976,7 @@ func (m *ResTagTable) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateResTagTableFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := ResTagTableAllFieldsStringMap[field]; !ok {
 				continue
 			}

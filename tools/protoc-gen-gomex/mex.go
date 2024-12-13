@@ -1383,6 +1383,10 @@ type cudTemplateArgs struct {
 
 var fieldsValTemplate = `
 func (m *{{.Name}}) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(Update{{.Name}}FieldsMap)
+}
+
+func (m *{{.Name}}) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -1392,7 +1396,7 @@ func (m *{{.Name}}) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !Update{{.Name}}FieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := {{.Name}}AllFieldsStringMap[field]; !ok {
 				continue
 			}

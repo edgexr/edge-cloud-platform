@@ -1038,6 +1038,10 @@ var UpdateNetworkFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *Network) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateNetworkFieldsMap)
+}
+
+func (m *Network) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -1047,7 +1051,7 @@ func (m *Network) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateNetworkFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := NetworkAllFieldsStringMap[field]; !ok {
 				continue
 			}

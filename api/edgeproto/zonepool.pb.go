@@ -1014,6 +1014,10 @@ var UpdateZonePoolFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *ZonePool) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateZonePoolFieldsMap)
+}
+
+func (m *ZonePool) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -1023,7 +1027,7 @@ func (m *ZonePool) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateZonePoolFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := ZonePoolAllFieldsStringMap[field]; !ok {
 				continue
 			}

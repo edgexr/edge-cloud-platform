@@ -1935,6 +1935,10 @@ var UpdateVMPoolFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *VMPool) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateVMPoolFieldsMap)
+}
+
+func (m *VMPool) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -1944,7 +1948,7 @@ func (m *VMPool) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateVMPoolFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := VMPoolAllFieldsStringMap[field]; !ok {
 				continue
 			}

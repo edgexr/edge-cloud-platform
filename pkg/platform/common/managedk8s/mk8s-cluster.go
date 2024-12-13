@@ -125,7 +125,26 @@ func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clus
 }
 
 func (m *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
-	return nil, fmt.Errorf("Update cluster inst not implemented")
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateClusterInst", "clusterInst", clusterInst)
+	if len(clusterInst.NodePools) == 0 {
+		return nil, errors.New("no node pools specified for cluster")
+	}
+	// for now, only support a single node pool
+	if len(clusterInst.NodePools) > 1 {
+		return nil, errors.New("currently only one node pool is supported")
+	}
+	if err := m.Provider.Login(ctx); err != nil {
+		return nil, err
+	}
+	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
+
+	infraAnnotations, err := m.Provider.RunClusterUpdateCommand(ctx, clusterName, clusterInst)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "Error in updating cluster", "err", err)
+		return nil, err
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "cluster update done", "annotations", infraAnnotations)
+	return infraAnnotations, nil
 }
 
 func (s *ManagedK8sPlatform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {

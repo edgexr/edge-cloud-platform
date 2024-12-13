@@ -3328,6 +3328,10 @@ var UpdateClusterInstFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *ClusterInst) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateClusterInstFieldsMap)
+}
+
+func (m *ClusterInst) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -3337,7 +3341,7 @@ func (m *ClusterInst) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateClusterInstFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := ClusterInstAllFieldsStringMap[field]; !ok {
 				continue
 			}

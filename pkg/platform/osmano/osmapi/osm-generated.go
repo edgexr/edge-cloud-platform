@@ -323,6 +323,7 @@ type CloneKsu struct {
 // CreateClusterInfo defines model for CreateClusterInfo.
 type CreateClusterInfo struct {
 	AppProfiles             *[]string `json:"app_profiles,omitempty"`
+	Bootstrap               *bool     `json:"bootstrap,omitempty"`
 	Description             *string   `json:"description,omitempty"`
 	InfraConfigProfiles     *[]string `json:"infra_config_profiles,omitempty"`
 	InfraControllerProfiles *[]string `json:"infra_controller_profiles,omitempty"`

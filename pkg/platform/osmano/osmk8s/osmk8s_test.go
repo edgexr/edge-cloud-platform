@@ -49,7 +49,7 @@ var getTestClusterInst = func() *edgeproto.ClusterInst {
 		NodePools: []*edgeproto.NodePool{{
 			NumNodes: 1,
 			NodeResources: &edgeproto.NodeResources{
-				InfraNodeFlavor: "Standard_D2s_v3", // Azure flavor
+				InfraNodeFlavor: "Standard_A2_v2", // Azure flavor
 			},
 		}},
 		InfraAnnotations: map[string]string{},
@@ -95,6 +95,26 @@ func TestGetCredentials(t *testing.T) {
 	err = os.WriteFile(testClusterName+".kconf", creds, 0644)
 	require.Nil(t, err)
 	fmt.Println("wrote kubeconfig to " + testClusterName + ".kconf")
+}
+
+func TestScaleCluster(t *testing.T) {
+	// assumes TestCreateCluster was run and cluster is present
+	s := createTestPlatform()
+	if s.accessVars[OSM_USERNAME] == "" {
+		t.Skip("no creds")
+	}
+	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	ci := getTestClusterInst()
+	ci.NodePools[0].NumNodes = 2
+	ci.Fields = []string{
+		edgeproto.ClusterInstFieldNodePoolsNumNodes,
+	}
+	_, err := s.RunClusterUpdateCommand(ctx, testClusterName, ci)
+	require.Nil(t, err)
 }
 
 func TestDeleteCluster(t *testing.T) {
