@@ -11479,6 +11479,8 @@ components:
           type: string
         resource_group:
           type: string
+        bootstrap:
+          type: boolean
         infra_controller_profiles:
           type: array
           items:

@@ -44,6 +44,9 @@ type ManagedK8sProvider interface {
 	CreateClusterPrerequisites(ctx context.Context, clusterName string) error
 	// RunClusterCreateCommand creates the specified cluster, returning any infra annotations to add to the cluster.
 	RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
+	// RunClusterUpdateCommand updates the specified cluster, returning any infra annotations to add to the cluster.
+	// Check clusterInst.Fields to see which fields are updated.
+	RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
 	RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error
 	GetClusterAddonInfo(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (*k8smgmt.ClusterAddonInfo, error)
 	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error

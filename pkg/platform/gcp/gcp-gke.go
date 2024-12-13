@@ -16,6 +16,7 @@ package gcp
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -64,6 +65,10 @@ func (g *GCPPlatform) RunClusterCreateCommand(ctx context.Context, clusterName s
 		return nil, fmt.Errorf("Error in cluster create: %s - %v", string(out), err)
 	}
 	return nil, nil
+}
+
+func (s *GCPPlatform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+	return nil, errors.New("update cluster instance not implemented")
 }
 
 // RunClusterDeleteCommand removes kubernetes cluster on gcloud

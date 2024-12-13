@@ -17,6 +17,7 @@ package awseks
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -89,6 +90,10 @@ func (a *AwsEksPlatform) RunClusterCreateCommand(ctx context.Context, clusterNam
 		return nil, fmt.Errorf("Create eks cluster failed: %s - %v", string(out), err)
 	}
 	return nil, nil
+}
+
+func (s *AwsEksPlatform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+	return nil, errors.New("update cluster instance not implemented")
 }
 
 // RunClusterDeleteCommand removes the kubernetes cluster on AWS

@@ -772,6 +772,10 @@ var UpdateTrustPolicyFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *TrustPolicy) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateTrustPolicyFieldsMap)
+}
+
+func (m *TrustPolicy) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -781,7 +785,7 @@ func (m *TrustPolicy) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateTrustPolicyFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := TrustPolicyAllFieldsStringMap[field]; !ok {
 				continue
 			}

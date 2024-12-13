@@ -871,6 +871,10 @@ var UpdateFlavorFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *Flavor) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateFlavorFieldsMap)
+}
+
+func (m *Flavor) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -880,7 +884,7 @@ func (m *Flavor) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateFlavorFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := FlavorAllFieldsStringMap[field]; !ok {
 				continue
 			}

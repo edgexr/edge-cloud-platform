@@ -62,8 +62,12 @@ func (a *AzurePlatform) CreateClusterPrerequisites(ctx context.Context, clusterN
 
 // RunClusterCreateCommand creates a kubernetes cluster on azure
 func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+	return a.createOrUpdateCluster(ctx, clusterName, clusterInst, "create")
+}
+
+func (a *AzurePlatform) createOrUpdateCluster(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, action string) (map[string]string, error) {
 	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
-	log.SpanLog(ctx, log.DebugLevelInfra, "Create Cluster", "clusterName", clusterName, "resourcegroup", resourceGroup)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Create or Update Cluster", "action", action, "clusterName", clusterName, "resourceGroup", resourceGroup)
 	managedClustersClient, err := a.getManagedClusterClient(ctx)
 	if err != nil {
 		return nil, err
@@ -94,19 +98,23 @@ func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName
 	pollerResp, err := managedClustersClient.BeginCreateOrUpdate(ctx, resourceGroup, clusterName, managedCluster, nil)
 	if err != nil {
 		if azerr, ok := err.(*azcore.ResponseError); ok {
-			return nil, fmt.Errorf("failed to create cluster (%s), %s", azerr.ErrorCode, azerr.Error())
+			return nil, fmt.Errorf("failed to %s cluster (%s), %s", action, azerr.ErrorCode, azerr.Error())
 		}
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create in progress", "cluster", clusterName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create or update in progress", "action", action, "cluster", clusterName)
 	_, err = pollerResp.PollUntilDone(ctx, &runtime.PollUntilDoneOptions{
 		Frequency: 15 * time.Second,
 	})
+	log.SpanLog(ctx, log.DebugLevelInfra, "cluster "+action+" finished", "cluster", clusterName, "took", time.Since(start).String(), "err", err)
 	if err != nil {
 		return nil, err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "cluster create finished", "cluster", clusterName, "took", time.Since(start).String())
 	return nil, nil
+}
+
+func (a *AzurePlatform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+	return a.createOrUpdateCluster(ctx, clusterName, clusterInst, "update")
 }
 
 // RunClusterDeleteCommand removes the kubernetes cluster on azure

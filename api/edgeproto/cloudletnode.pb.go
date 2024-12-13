@@ -956,6 +956,10 @@ var UpdateCloudletNodeFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *CloudletNode) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateCloudletNodeFieldsMap)
+}
+
+func (m *CloudletNode) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -965,7 +969,7 @@ func (m *CloudletNode) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateCloudletNodeFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := CloudletNodeAllFieldsStringMap[field]; !ok {
 				continue
 			}

@@ -877,6 +877,10 @@ var UpdateAutoScalePolicyFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *AutoScalePolicy) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateAutoScalePolicyFieldsMap)
+}
+
+func (m *AutoScalePolicy) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -886,7 +890,7 @@ func (m *AutoScalePolicy) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateAutoScalePolicyFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := AutoScalePolicyAllFieldsStringMap[field]; !ok {
 				continue
 			}

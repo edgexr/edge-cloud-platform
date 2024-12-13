@@ -10062,6 +10062,10 @@ var UpdateGPUDriverFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *GPUDriver) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateGPUDriverFieldsMap)
+}
+
+func (m *GPUDriver) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -10071,7 +10075,7 @@ func (m *GPUDriver) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateGPUDriverFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := GPUDriverAllFieldsStringMap[field]; !ok {
 				continue
 			}
@@ -12594,6 +12598,10 @@ var UpdateCloudletFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *Cloudlet) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateCloudletFieldsMap)
+}
+
+func (m *Cloudlet) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -12603,7 +12611,7 @@ func (m *Cloudlet) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateCloudletFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := CloudletAllFieldsStringMap[field]; !ok {
 				continue
 			}

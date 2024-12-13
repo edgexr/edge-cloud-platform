@@ -72,6 +72,7 @@ func (s *Platform) RunClusterCreateCommand(ctx context.Context, clusterName stri
 		kubeVersion = "1.29"
 	}
 
+	bootstrap := true
 	createCluster := osmapi.CreateClusterInfo{
 		Name:          &clusterName,
 		NodeSize:      &pool.NodeResources.InfraNodeFlavor,
@@ -81,6 +82,7 @@ func (s *Platform) RunClusterCreateCommand(ctx context.Context, clusterName stri
 		ResourceGroup: &resourceGroup,
 		K8sVersion:    &kubeVersion,
 		Description:   &clusterName,
+		Bootstrap:     &bootstrap,
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating OSM cluster", "clusterName", clusterName, "req", createCluster)
 	resp, err := client.Createk8sClusterWithResponse(ctx, createCluster)
@@ -139,6 +141,49 @@ func (s *Platform) RunClusterDeleteCommand(ctx context.Context, clusterName stri
 		return err
 	}
 	return nil
+}
+
+var allowedClusterUpdateFields = edgeproto.NewFieldMap(map[string]struct{}{
+	edgeproto.ClusterInstFieldNodePoolsNumNodes: {},
+})
+
+func (s *Platform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "Update Cluster", "clusterName", clusterName, "vim", s.getVIMAccount(), "region", s.getRegion(), "fields", clusterInst.Fields)
+	// only allow node scaling
+	if err := clusterInst.ValidateUpdateFieldsCustom(allowedClusterUpdateFields); err != nil {
+		return nil, err
+	}
+	client, err := s.getClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	id, err := s.getClusterID(ctx, clusterName, clusterInst)
+	if err != nil {
+		return nil, err
+	}
+
+	fmap := edgeproto.MakeFieldMap(clusterInst.Fields)
+	if fmap.Has(edgeproto.ClusterInstFieldNodePoolsNumNodes) {
+		// scale cluster nodes
+		// mk8s provider only supports one node pool, so we
+		// just look at the first pool
+		newNumNodes := int(clusterInst.NodePools[0].NumNodes)
+		scale := osmapi.ScaleNodeInfo{
+			NodeCount: &newNumNodes,
+		}
+		resp, err := client.NodeScalingWithResponse(ctx, id, scale)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scale cluster %s, %s", clusterName, err)
+		}
+		if resp.StatusCode() != http.StatusCreated {
+			return nil, fmt.Errorf("failed to scale cluster %s (%d), %s", clusterName, resp.StatusCode(), string(resp.Body))
+		}
+	}
+	// wait for cluster ready
+	if err := s.waitForClusterDone(ctx, clusterName, id, cloudcommon.Create); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func (s *Platform) waitForClusterDone(ctx context.Context, clusterName, clusterID string, action cloudcommon.Action) error {
@@ -239,6 +284,22 @@ func (s *Platform) getCredentialsRaw(ctx context.Context, clusterName, clusterID
 	if err != nil {
 		return nil, err
 	}
+	if true {
+		// the REST API for /k8scluster/v1/clusters/<id>/get_creds
+		// doesn't actually get the credentials, it just returns a
+		// single op_id. The osm cli in fact just gets the cluster info,
+		// which includes the credentials. This looks like something
+		// which is broken.
+		info, status, err := s.getClusterInfo(ctx, clusterName, clusterID)
+		if err != nil {
+			return nil, err
+		}
+		if status == http.StatusNotFound {
+			return nil, fmt.Errorf("cluster %s(%s) not found", clusterName, clusterID)
+		}
+		return info.Credentials, nil
+	}
+
 	// TODO: Openapi spec doesn't define a 200 response, so we can't
 	// use the "WithResponse" version of the auto-generated API.
 	resp, err := client.GetCreds(ctx, clusterID)

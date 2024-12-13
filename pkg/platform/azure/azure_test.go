@@ -2,7 +2,6 @@ package azure
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"testing"
@@ -14,13 +13,15 @@ import (
 )
 
 func TestFlavors(t *testing.T) {
-	t.Skip("debug test requires real credentials")
+	a := createTestPlatform()
+	if a.accessVars[AZURE_CLIENT_ID] == "" {
+		t.Skip("no creds")
+	}
 	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	a := createTestPlatform()
 	err := a.Login(ctx)
 	require.Nil(t, err)
 
@@ -28,26 +29,36 @@ func TestFlavors(t *testing.T) {
 	require.Nil(t, err)
 }
 
+func getTestClusterName() string {
+	return "unit-test-cluster-" + os.Getenv("USER")
+}
+
+func getTestClusterInst() edgeproto.ClusterInst {
+	return edgeproto.ClusterInst{
+		NodePools: []*edgeproto.NodePool{{
+			NumNodes: 2,
+			NodeResources: &edgeproto.NodeResources{
+				InfraNodeFlavor: "Standard_A2_v2",
+			},
+		}},
+	}
+}
+
 func TestClusterCreate(t *testing.T) {
-	t.Skip("debug test requires real credentials")
+	a := createTestPlatform()
+	if a.accessVars[AZURE_CLIENT_ID] == "" {
+		t.Skip("no creds")
+	}
 	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	a := createTestPlatform()
 	err := a.Login(ctx)
 	require.Nil(t, err)
 
-	clusterName := "unit-test-cluster"
-	ci := edgeproto.ClusterInst{
-		NodePools: []*edgeproto.NodePool{{
-			NumNodes: 1,
-			NodeResources: &edgeproto.NodeResources{
-				InfraNodeFlavor: "Standard_D2s_v3",
-			},
-		}},
-	}
+	clusterName := getTestClusterName()
+	ci := getTestClusterInst()
 	_, err = a.RunClusterCreateCommand(ctx, clusterName, &ci)
 	require.Nil(t, err)
 
@@ -59,12 +70,26 @@ func TestClusterCreate(t *testing.T) {
 	cmd := exec.Command("kubectl", "get", "pods")
 	cmd.Env = append(cmd.Env, "KUBECONFIG="+kubeconfig)
 	out, err := cmd.CombinedOutput()
-	require.Nil(t, err)
-	fmt.Println(string(out))
+	require.Nil(t, err, string(out))
+}
 
+func TestClusterDelete(t *testing.T) {
+	a := createTestPlatform()
+	if a.accessVars[AZURE_CLIENT_ID] == "" {
+		t.Skip("no creds")
+	}
+	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	err := a.Login(ctx)
+	require.Nil(t, err)
+
+	clusterName := getTestClusterName()
+	ci := getTestClusterInst()
 	err = a.RunClusterDeleteCommand(ctx, clusterName, &ci)
 	require.Nil(t, err)
-	os.Remove(kubeconfig)
 }
 
 func createTestPlatform() *AzurePlatform {

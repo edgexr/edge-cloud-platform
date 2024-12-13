@@ -1217,6 +1217,10 @@ var UpdateAutoProvPolicyFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *AutoProvPolicy) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateAutoProvPolicyFieldsMap)
+}
+
+func (m *AutoProvPolicy) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -1226,7 +1230,7 @@ func (m *AutoProvPolicy) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateAutoProvPolicyFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := AutoProvPolicyAllFieldsStringMap[field]; !ok {
 				continue
 			}

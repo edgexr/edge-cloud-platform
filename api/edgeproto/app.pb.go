@@ -3754,6 +3754,10 @@ var UpdateAppFieldsMap = NewFieldMap(map[string]struct{}{
 })
 
 func (m *App) ValidateUpdateFields() error {
+	return m.ValidateUpdateFieldsCustom(UpdateAppFieldsMap)
+}
+
+func (m *App) ValidateUpdateFieldsCustom(allowedFields *FieldMap) error {
 	if m.Fields == nil {
 		return fmt.Errorf("nothing specified to update")
 	}
@@ -3763,7 +3767,7 @@ func (m *App) ValidateUpdateFields() error {
 		if m.IsKeyField(field) {
 			continue
 		}
-		if !UpdateAppFieldsMap.Has(field) {
+		if !allowedFields.Has(field) {
 			if _, ok := AppAllFieldsStringMap[field]; !ok {
 				continue
 			}
