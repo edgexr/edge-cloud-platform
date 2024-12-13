@@ -2368,122 +2368,64 @@ func (s *CloudletApi) totalCloudletResources(ctx context.Context, stm *edgeproto
 	return resVals, nil
 }
 
-type InfraResources map[string]*edgeproto.InfraResource
-
-// convertToInfraRes converts a ResValMap to an InfraResource map,
-// adding in extra data around max values and quotas.
-func convertToInfraRes(ctx context.Context, cloudlet *edgeproto.Cloudlet, resVals resspec.ResValMap, snapshotResInfo map[string]edgeproto.InfraResource) InfraResources {
-	resQuotasInfo := make(map[string]edgeproto.InfraResource)
-	for _, resQuota := range cloudlet.ResourceQuotas {
-		resQuotasInfo[resQuota.Name] = edgeproto.InfraResource{
-			Name:           resQuota.Name,
-			Value:          resQuota.Value,
-			AlertThreshold: resQuota.AlertThreshold,
-		}
-	}
-
-	infraResources := InfraResources{}
-	for resName, resVal := range resVals {
-		infraRes := edgeproto.InfraResource{}
-		infraRes.Name = resName
-		infraRes.Value = resVal.Value.Whole
-		infraRes.Units = resVal.Units
-		if ssInfo, ok := snapshotResInfo[resName]; ok {
-			infraRes.InfraMaxValue = ssInfo.InfraMaxValue
-		}
-		if quota, ok := resQuotasInfo[resName]; ok {
-			infraRes.QuotaMaxValue = quota.Value
-			thresh := cloudlet.DefaultResourceAlertThreshold
-			if quota.AlertThreshold > 0 {
-				// Set threshold values from Resource quotas
-				thresh = quota.AlertThreshold
-			}
-			infraRes.AlertThreshold = thresh
-		}
-		infraResources[resName] = &infraRes
-	}
-	return infraResources
-}
-
-// Get actual resource info used by the cloudlet
-func (s *CloudletResCalc) convertResourceUsage(ctx context.Context, usedResources *CloudletResources, infraUsage bool) ([]edgeproto.InfraResource, uint64, error) {
-	stm := s.stm
-	cloudlet := s.deps.cloudlet
-	cloudletInfo := s.deps.cloudletInfo
-
-	infraResInfo := cloudletInfo.ResourcesSnapshot.Info
-	resQuotasInfo := make(map[string]edgeproto.InfraResource)
-	for _, resQuota := range cloudlet.ResourceQuotas {
-		resQuotasInfo[resQuota.Name] = edgeproto.InfraResource{
-			Name:           resQuota.Name,
-			Value:          resQuota.Value,
-			AlertThreshold: resQuota.AlertThreshold,
-		}
-	}
-	defaultAlertThresh := cloudlet.DefaultResourceAlertThreshold
-	infraResInfoMap := make(map[string]edgeproto.InfraResource)
-	for _, resInfo := range infraResInfo {
-		thresh := defaultAlertThresh
-		// look up quota if any
-		if quota, found := resQuotasInfo[resInfo.Name]; found {
-			if quota.Value > 0 {
-				// Set max values from Resource quotas
-				resInfo.QuotaMaxValue = quota.Value
-			}
-			if quota.AlertThreshold > 0 {
-				// Set threshold values from Resource quotas
-				thresh = quota.AlertThreshold
-			}
-		}
-		if !infraUsage {
-			resInfo.Value = 0
-		}
-		resInfo.AlertThreshold = thresh
-		infraResInfoMap[resInfo.Name] = resInfo
-	}
-	resourceScore := uint64(0)
-	if !infraUsage {
-		usedVals, err := s.all.cloudletApi.totalCloudletResources(ctx, stm, cloudlet, cloudletInfo, usedResources)
-		if err != nil {
-			return nil, 0, err
-		}
-		ctrlResInfo := convertToInfraRes(ctx, cloudlet, usedVals, infraResInfoMap)
-
-		for resName, resInfo := range ctrlResInfo {
-			infraResInfoMap[resName] = *resInfo
-		}
-		resourceScore = s.calcResourceScoreFromUsed(usedVals)
-	}
-	out := []edgeproto.InfraResource{}
-	for _, val := range infraResInfoMap {
-		out = append(out, val)
-	}
-	// sort keys for stable output order
-	sort.Slice(out[:], func(i, j int) bool {
-		return out[i].Name < out[j].Name
-	})
-
-	return out, resourceScore, nil
-}
-
 func (s *CloudletApi) GetCloudletResourceUsage(ctx context.Context, usage *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "GetCloudletResourceUsage", "key", usage.Key)
-	cloudletResUsage := edgeproto.CloudletResourceUsage{}
+	// get used values
 	stm := edgeproto.NewOptionalSTM(nil)
 	resCalc := NewCloudletResCalc(s.all, stm, &usage.Key)
 	if err := resCalc.InitDeps(ctx); err != nil {
-		return &cloudletResUsage, err
+		return nil, err
 	}
-	usedResources, err := resCalc.getCloudletUsedResources(ctx)
-	if err != nil {
-		return &cloudletResUsage, err
+	var usedVals resspec.ResValMap
+	var err error
+	if usage.InfraUsage {
+		// used values as reported by infra platform
+		usedVals = resspec.ResValMap{}
+		for _, res := range resCalc.deps.cloudletInfo.ResourcesSnapshot.Info {
+			usedVals.AddRes(res.Name, res.Units, res.Value, 0)
+		}
+	} else {
+		usedVals, err = resCalc.getUsedResVals(ctx)
+		if err != nil {
+			return nil, err
+		}
 	}
+	// convert usedVals and add in limits
+	resInfo := []edgeproto.InfraResource{}
+	limits := resCalc.getResourceLimits()
+	for resName, resVal := range usedVals {
+		infraRes := edgeproto.InfraResource{
+			Name:  resName,
+			Value: resVal.Value.Whole,
+			Units: resVal.Units,
+		}
+		// add in limits
+		if limit := limits[resName]; limit != nil {
+			infraRes.QuotaMaxValue = limit.QuotaMaxValue
+			infraRes.InfraMaxValue = limit.InfraMaxValue
+			infraRes.AlertThreshold = limit.AlertThreshold
+		}
+		delete(limits, resName)
+		resInfo = append(resInfo, infraRes)
+	}
+	// add in limits for anything that wasn't in use
+	for resName, limit := range limits {
+		res := edgeproto.InfraResource{
+			Name:           resName,
+			Units:          limit.Units,
+			InfraMaxValue:  limit.InfraMaxValue,
+			QuotaMaxValue:  limit.QuotaMaxValue,
+			AlertThreshold: limit.AlertThreshold,
+		}
+		resInfo = append(resInfo, res)
+	}
+	sort.Slice(resInfo[:], func(i, j int) bool {
+		return resInfo[i].Name < resInfo[j].Name
+	})
+	resourceScore := resCalc.calcResourceScoreFromUsed(usedVals)
+	cloudletResUsage := edgeproto.CloudletResourceUsage{}
 	cloudletResUsage.Key = usage.Key
 	cloudletResUsage.InfraUsage = usage.InfraUsage
-	resInfo, resourceScore, err := resCalc.convertResourceUsage(ctx, usedResources, usage.InfraUsage)
-	if err != nil {
-		return &cloudletResUsage, err
-	}
 	cloudletResUsage.Info = resInfo
 	cloudletResUsage.ResourceScore = resourceScore
 	return &cloudletResUsage, err
