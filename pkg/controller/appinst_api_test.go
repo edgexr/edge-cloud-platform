@@ -26,6 +26,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/api/nbi"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -138,6 +139,9 @@ func TestAppInstApi(t *testing.T) {
 		require.Equal(t, 0, apis.appInstApi.cache.GetCount())
 		require.Equal(t, 0, apis.clusterInstApi.cache.GetCount())
 	}
+	// verify no instances are present
+	require.Equal(t, 0, apis.clusterInstApi.cache.GetCount())
+	require.Equal(t, 0, apis.appInstApi.cache.GetCount())
 
 	// create supporting data
 	addTestPlatformFeatures(t, ctx, apis, testutil.PlatformFeaturesData())
@@ -392,6 +396,7 @@ func TestAppInstApi(t *testing.T) {
 	testAppFlavorRequest(t, ctx, commonApi, responder, apis)
 	testSingleKubernetesCloudlet(t, ctx, apis, appDnsRoot)
 	testAppInstPotentialCloudlets(t, ctx, apis)
+	testAppInstScaleSpec(t, ctx, apis)
 
 	// cleanup unused reservable auto clusters
 	apis.clusterInstApi.cleanupIdleReservableAutoClusters(ctx, time.Duration(0))
@@ -685,15 +690,20 @@ func testAppFlavorRequest(t *testing.T, ctx context.Context, api *testutil.AppIn
 // on both side-car auto-apps and an underlying auto-cluster.
 func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *testutil.AppInstCommonApi, responder *DummyInfoResponder, ccrm *ccrmdummy.CCRMDummy, apis *AllApis) {
 	// autocluster app
-	appKey := testutil.AppData()[0].Key
+	app := testutil.AppData()[0]
+	appKey := app.Key
 	ai := edgeproto.AppInst{
 		Key: edgeproto.AppInstKey{
-			Name:         "testApp",
+			Name:         "testAppTransientOverride",
 			Organization: appKey.Organization,
 		},
-		AppKey:      appKey,
-		CloudletKey: testutil.CloudletData()[1].Key,
+		AppKey:              appKey,
+		CloudletKey:         testutil.CloudletData()[1].Key,
+		KubernetesResources: app.KubernetesResources,
 	}
+	// force creation of new autocluster, otherwise it tries
+	// to resuse clusterInstAutoData[0]
+	ai.KubernetesResources.MinKubernetesVersion = "9.99"
 	// autoapp
 	require.Equal(t, edgeproto.DeleteType_AUTO_DELETE, testutil.AppData()[9].DelOpt)
 	aiautoAppKey := testutil.AppData()[9].Key // auto-delete app
@@ -732,6 +742,7 @@ func testAppInstOverrideTransientDelete(t *testing.T, ctx context.Context, api *
 		obj = aiauto
 		obj.ClusterKey = clKey
 		// create auto app
+		log.SpanLog(ctx, log.DebugLevelApi, "creating autotest app on cluster", "aiauto", obj.Key, "cluster", obj.ClusterKey)
 		err = apis.appInstApi.CreateAppInst(&obj, testutil.NewCudStreamoutAppInst(ctx))
 		require.Nil(t, err, "create AppInst on cluster %v", obj.ClusterKey)
 		err = forceAppInstState(ctx, &obj, state, responder, apis)
@@ -1423,4 +1434,386 @@ func testAppInstPotentialCloudlets(t *testing.T, ctx context.Context, apis *AllA
 	err = apis.appInstApi.CreateAppInst(ai, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err)
 	require.Equal(t, "not enough resources available: required RAM is 86016MB but only 66560MB out of 81920MB is available, required vCPUs is 84 but only 5 out of 20 is available", err.Error())
+}
+
+func testAppInstScaleSpec(t *testing.T, ctx context.Context, apis *AllApis) {
+	zoneData := testutil.ZoneData()
+	ci := &edgeproto.ClusterInst{
+		Key: edgeproto.ClusterKey{
+			Name:         "scaleTarget",
+			Organization: "devorg",
+		},
+		ZoneKey:    zoneData[0].Key,
+		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
+		NumMasters: 1,
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "cpupool",
+			NumNodes: 1,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 2,
+				Ram:   1024,
+			},
+			Scalable: true,
+		}},
+	}
+	deployAppInst := func(name string) (*edgeproto.App, *edgeproto.AppInst) {
+		app := &edgeproto.App{
+			Key: edgeproto.AppKey{
+				Name:         name,
+				Organization: "devorg",
+				Version:      "1.0",
+			},
+			ImageType:       edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+			AccessPorts:     "http:443",
+			AllowServerless: true,
+			KubernetesResources: &edgeproto.KubernetesResources{
+				CpuPool: &edgeproto.NodePoolResources{
+					TotalVcpus:  *edgeproto.NewUdec64(2, 0),
+					TotalMemory: 100,
+				},
+			},
+		}
+		ai := &edgeproto.AppInst{}
+		ai.Key.Name = name
+		ai.Key.Organization = app.Key.Organization
+		ai.AppKey = app.Key
+		ai.ClusterKey = ci.Key
+		_, err := apis.appApi.CreateApp(ctx, app)
+		require.Nil(t, err)
+		err = apis.appInstApi.CreateAppInst(ai, testutil.NewCudStreamoutAppInst(ctx))
+		require.Nil(t, err)
+		return app, ai
+	}
+	cleanupAppInst := func(app *edgeproto.App, ai *edgeproto.AppInst) {
+		err := apis.appInstApi.DeleteAppInst(ai, testutil.NewCudStreamoutAppInst(ctx))
+		require.Nil(t, err)
+		_, err = apis.appApi.DeleteApp(ctx, app)
+		require.Nil(t, err)
+	}
+
+	getClusterNumNodes := func() int {
+		buf := &edgeproto.ClusterInst{}
+		found := apis.clusterInstApi.cache.Get(&ci.Key, buf)
+		require.True(t, found)
+		return int(buf.NodePools[0].NumNodes)
+	}
+
+	// create target cluster
+	err := apis.clusterInstApi.CreateClusterInst(ci, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err)
+
+	// deploy first appinst, should not trigger scaling
+	app1, ai1 := deployAppInst("inst1")
+	require.Equal(t, 1, getClusterNumNodes())
+
+	// deploy second appinst, should trigger scaling
+	app2, ai2 := deployAppInst("inst2")
+	require.Equal(t, 2, getClusterNumNodes())
+
+	// deploy third appinst, should trigger scaling
+	app3, ai3 := deployAppInst("inst3")
+	require.Equal(t, 3, getClusterNumNodes())
+
+	// cleanup
+	cleanupAppInst(app1, ai1)
+	cleanupAppInst(app2, ai2)
+	cleanupAppInst(app3, ai3)
+	err = apis.clusterInstApi.DeleteClusterInst(ci, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err)
+}
+
+func TestNBIUseCase(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+	appDnsRoot := "testappinstapi.net"
+	*appDNSRoot = appDnsRoot
+	testSvcs := testinit(ctx, t)
+	defer testfinish(testSvcs)
+
+	dummy := regiondata.InMemoryStore{}
+	dummy.Start()
+	defer dummy.Stop()
+
+	sync := regiondata.InitSync(&dummy)
+	apis := NewAllApis(sync)
+	sync.Start()
+	defer sync.Done()
+	responder := DefaultDummyInfoResponder(apis)
+	responder.InitDummyInfoResponder()
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, testSvcs.DummyVault.Config, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
+
+	reduceInfoTimeouts(t, ctx, apis)
+	nbiapi := NewNBIAPI(apis)
+
+	devorg := "devorg"
+	operorg := "operorg"
+
+	// set up zones
+	zoneA := edgeproto.Zone{
+		Key: edgeproto.ZoneKey{
+			Name:         "zoneA",
+			Organization: operorg,
+		},
+		Description: "zoneA",
+	}
+	zoneB := edgeproto.Zone{
+		Key: edgeproto.ZoneKey{
+			Name:         "zoneB",
+			Organization: operorg,
+		},
+		Description: "zoneB",
+	}
+	zones := []edgeproto.Zone{zoneA, zoneB}
+
+	// set up features
+	features := fake.NewPlatformPublicCloud().GetFeatures()
+	features.PlatformType = "fake"
+	features.NodeType = "ccrm" // unit-test route to dummy CCRM
+
+	// set up cloudlets
+	buildSite := func(name, zone string, vcpuQuota uint64) (edgeproto.Cloudlet, edgeproto.CloudletInfo) {
+		cloudlet := edgeproto.Cloudlet{
+			Key: edgeproto.CloudletKey{
+				Name:         name,
+				Organization: operorg,
+			},
+			Zone:          zone,
+			NumDynamicIps: 10,
+			PlatformType:  "fake",
+			Location: dme.Loc{
+				Latitude:  1,
+				Longitude: 1,
+			},
+			ResourceQuotas: []edgeproto.ResourceQuota{{
+				Name:  cloudcommon.ResourceVcpus,
+				Value: vcpuQuota,
+			}},
+		}
+		cloudletInfo := edgeproto.CloudletInfo{
+			Key:     cloudlet.Key,
+			Flavors: ccrmdummy.UnitTestFlavors,
+		}
+		return cloudlet, cloudletInfo
+	}
+	site1, site1Info := buildSite("site1", zoneA.Key.Name, 4)
+	site2, site2Info := buildSite("site2", zoneA.Key.Name, 2)
+	site3, site3Info := buildSite("site3", zoneA.Key.Name, 6)
+	site4, site4Info := buildSite("site4", zoneB.Key.Name, 6)
+	sites := []edgeproto.Cloudlet{site1, site2, site3, site4}
+	siteInfos := []edgeproto.CloudletInfo{site1Info, site2Info, site3Info, site4Info}
+
+	buildCluster := func(name, site, k8svers string, numVcpu uint64) edgeproto.ClusterInst {
+		cluster := edgeproto.ClusterInst{
+			Key: edgeproto.ClusterKey{
+				Name:         name,
+				Organization: devorg,
+			},
+			CloudletKey: edgeproto.CloudletKey{
+				Name:         site,
+				Organization: operorg,
+			},
+			NumMasters: 1,
+			NodePools: []*edgeproto.NodePool{{
+				Name:     "cpupool",
+				NumNodes: uint32(numVcpu / 2),
+				NodeResources: &edgeproto.NodeResources{
+					Vcpus: 2,
+					Ram:   1024,
+				},
+			}},
+			KubernetesVersion: k8svers,
+		}
+		return cluster
+	}
+	cluster1 := buildCluster("cluster1", site2.Key.Name, "1.30", 2)
+	cluster2 := buildCluster("cluster2", site3.Key.Name, "1.29", 6)
+	cluster3 := buildCluster("cluster3", site4.Key.Name, "1.30", 4)
+	clusters := []edgeproto.ClusterInst{cluster1, cluster2, cluster3}
+
+	buildApp := func(name, k8svers string, totalVcpu int) nbi.AppManifest {
+		am := nbi.AppManifest{}
+		am.Name = name
+		am.AppProvider = devorg
+		am.Version = "1.0"
+		am.PackageType = nbi.CONTAINER
+		am.AppRepo.ImagePath = "hashicorp/http-echo:1.0"
+		am.AppRepo.Type = nbi.PUBLICREPO
+		am.ComponentSpec = []nbi.AppManifest_ComponentSpec{{
+			ComponentName: "comp0",
+			NetworkInterfaces: []nbi.AppManifest_ComponentSpec_NetworkInterfaces{{
+				InterfaceId:    "http",
+				Port:           5678,
+				Protocol:       nbi.TCP,
+				VisibilityType: nbi.VISIBILITYEXTERNAL,
+			}},
+		}}
+		kr := nbi.KubernetesResources{
+			ApplicationResources: nbi.KubernetesResources_ApplicationResources{
+				CpuPool: &nbi.KubernetesResources_ApplicationResources_CpuPool{
+					NumCPU: totalVcpu,
+					Memory: 100,
+					Topology: nbi.KubernetesResources_ApplicationResources_CpuPool_Topology{
+						MinNodeCpu:       2,
+						MinNumberOfNodes: 1,
+					},
+				},
+			},
+			InfraKind: nbi.Kubernetes,
+			Version:   &k8svers,
+		}
+		am.RequiredResources.FromKubernetesResources(kr)
+		return am
+	}
+	app1 := buildApp("app1", "1.30", 2)
+	app2 := buildApp("app2", "1.30", 2)
+	app3 := buildApp("app3", "1.30", 2)
+	app4 := buildApp("app4", "1.30", 4)
+	app5 := buildApp("app5", "1.31", 2)
+	apps := []nbi.AppManifest{app1, app2, app3, app4, app5}
+
+	// create test env
+	apis.platformFeaturesApi.Update(ctx, features, 0)
+	testutil.InternalZoneCreate(t, apis.zoneApi, zones)
+	testutil.InternalCloudletCreate(t, apis.cloudletApi, sites)
+	testutil.InternalClusterInstCreate(t, apis.clusterInstApi, clusters)
+	insertCloudletInfo(ctx, apis, siteInfos)
+
+	// create apps
+	appIDs := []string{}
+	for _, app := range apps {
+		req := nbi.SubmitAppRequestObject{
+			Body: &app,
+		}
+		resp, err := nbiapi.SubmitApp(ctx, req)
+		require.Nil(t, err)
+		resp201, ok := resp.(nbi.SubmitApp201JSONResponse)
+		require.True(t, ok)
+		require.NotNil(t, resp201.Body.AppId)
+		appIDs = append(appIDs, *resp201.Body.AppId)
+	}
+	// get zone IDs for deployment requests
+	err := apis.zoneApi.cache.Show(&edgeproto.Zone{}, func(obj *edgeproto.Zone) error {
+		switch obj.Key.Name {
+		case zoneA.Key.Name:
+			zoneA.ObjId = obj.ObjId
+		case zoneB.Key.Name:
+			zoneB.ObjId = obj.ObjId
+		}
+		return nil
+	})
+	require.Nil(t, err)
+
+	deployApp := func(name, appId, zoneId string) (string, error) {
+		req := nbi.CreateAppInstanceRequestObject{
+			Body: &nbi.CreateAppInstanceJSONRequestBody{
+				Name:            name,
+				AppId:           appId,
+				EdgeCloudZoneId: zoneId,
+			},
+		}
+		resp, err := nbiapi.CreateAppInstance(ctx, req)
+		if err != nil {
+			return "", err
+		}
+		require.Nil(t, err)
+		resp202, ok := resp.(nbi.CreateAppInstance202JSONResponse)
+		require.True(t, ok)
+		require.NotNil(t, resp202.Body.AppInstanceId)
+		return resp202.Body.AppInstanceId, nil
+	}
+	verifyInstanceLocation := func(appInstId string, clusterKey edgeproto.ClusterKey) {
+		filter := &edgeproto.AppInst{
+			ObjId: appInstId,
+		}
+		err := apis.appInstApi.cache.Show(filter, func(obj *edgeproto.AppInst) error {
+			require.Equal(t, clusterKey, obj.ClusterKey)
+			return nil
+		})
+		require.Nil(t, err)
+	}
+	getSiteCluster := func(key edgeproto.CloudletKey) *edgeproto.ClusterInst {
+		clusterFilter := edgeproto.ClusterInst{
+			CloudletKey: key,
+		}
+		clusterCount := 0
+		var foundCluster *edgeproto.ClusterInst
+		err = apis.clusterInstApi.cache.Show(&clusterFilter, func(obj *edgeproto.ClusterInst) error {
+			clusterCount++
+			foundCluster = obj.Clone()
+			return nil
+		})
+		require.Nil(t, err)
+		require.Equal(t, 1, clusterCount)
+		return foundCluster
+	}
+	// verify clusters are present
+	getSiteCluster(site2.Key)
+	getSiteCluster(site3.Key)
+	getSiteCluster(site4.Key)
+
+	// scenario 1: deploy in existing cluster
+	ai1, err := deployApp("scenario1", appIDs[0], zoneA.ObjId)
+	require.Nil(t, err)
+	// verify that instance is in site2 (cluster1)
+	verifyInstanceLocation(ai1, cluster1.Key)
+
+	// scenario 2: create new cluster
+	ai2, err := deployApp("scenario2", appIDs[1], zoneA.ObjId)
+	require.Nil(t, err)
+	// this should have created a new cluster
+	site1Cluster := getSiteCluster(site1.Key)
+	// verify that instance is in new cluster on site1
+	verifyInstanceLocation(ai2, site1Cluster.Key)
+	// verify the cluster has 2 vcpus (1 node)
+	require.Equal(t, uint32(1), site1Cluster.NodePools[0].NumNodes)
+	require.Equal(t, "1.30", site1Cluster.KubernetesVersion)
+
+	// scenario 3: scale existing cluster
+	ai3, err := deployApp("scenario3", appIDs[2], zoneA.ObjId)
+	require.Nil(t, err)
+	// look up cluster again to verify scaling
+	site1Cluster = getSiteCluster(site1.Key)
+	// verify that instance is in new cluster on site1
+	verifyInstanceLocation(ai3, site1Cluster.Key)
+	// verify the cluster has scaled up to 4 vcpus (2 nodes)
+	require.Equal(t, uint32(2), site1Cluster.NodePools[0].NumNodes)
+
+	// scenario 4: rejection
+	_, err = deployApp("scenario4", appIDs[3], zoneA.ObjId)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "not enough resources available: required vCPUs is 2 but only 0")
+
+	// scanario 5: delete ai3, check that ai5 deploy fails
+	// due to kubernetes version mismatch
+	_, err = nbiapi.DeleteAppInstance(ctx, nbi.DeleteAppInstanceRequestObject{
+		AppInstanceId: ai3,
+	})
+	require.Nil(t, err)
+	// verify resources are free on site1cluster
+	site1Cluster = getSiteCluster(site1.Key)
+	usage, err := apis.clusterInstApi.getClusterResourceUsage(ctx, site1Cluster, site1Info.GetFlavorLookup())
+	require.Nil(t, err)
+	getRes := func(resList []*edgeproto.InfraResource, typ string) *edgeproto.InfraResource {
+		for _, res := range usage.TotalResources {
+			if res.Name == typ {
+				return res
+			}
+		}
+		return nil
+	}
+	totalVcpus := getRes(usage.TotalResources, cloudcommon.ResourceVcpus)
+	require.NotNil(t, totalVcpus)
+	require.Equal(t, 2, int(totalVcpus.Value))
+	require.Equal(t, 4, int(totalVcpus.InfraMaxValue))
+	// deploy app
+	_, err = deployApp("scenario5", appIDs[4], zoneA.ObjId)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "not enough resources available: required vCPUs is 2 but only 0")
+	// redeploy ai3 should work
+	_, err = deployApp("scenario5.1", appIDs[2], zoneA.ObjId)
+	require.Nil(t, err)
 }

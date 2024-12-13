@@ -570,7 +570,7 @@ func (s *AppChecker) checkPolicy(ctx context.Context, app *edgeproto.App, pname 
 				if site == nil {
 					break
 				}
-				log.SpanLog(ctx, log.DebugLevelMetrics, "auto-prov create min worker", "workerNum", workerNum, "attempt", attempt)
+				log.SpanLog(ctx, log.DebugLevelMetrics, "auto-prov create min worker", "workerNum", workerNum, "site", site, "attempt", attempt)
 				inst := edgeproto.AppInst{}
 				inst.Key = cloudcommon.GetAutoProvAppInstKey(&app.Key, &site.zoneKey)
 				inst.AppKey = app.Key

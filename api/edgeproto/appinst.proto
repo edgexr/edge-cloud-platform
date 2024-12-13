@@ -233,6 +233,8 @@ message AppInst {
   KubernetesResources kubernetes_resources = 55;
   // Required node resources for VM/Docker deployments
   NodeResources node_resources = 56;
+  // A standalone AppInst will not share a cluster with another AppInst unless explicitly targeted to the same cluster
+  bool is_standalone = 57;
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

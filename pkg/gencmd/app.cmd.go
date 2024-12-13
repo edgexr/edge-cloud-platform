@@ -759,6 +759,7 @@ var AppOptionalArgs = []string{
 	"noderesources.externalvolumesize",
 	"objid",
 	"appannotations",
+	"isstandalone",
 }
 var AppAliasArgs = []string{
 	"apporg=key.organization",
@@ -849,6 +850,7 @@ var AppComments = map[string]string{
 	"noderesources.externalvolumesize":                      "Size of external volume to be attached to nodes. This is for the root partition",
 	"objid":                                                 "Universally unique object ID",
 	"appannotations":                                        "Internal Annotations, specify appannotations:empty=true to clear",
+	"isstandalone":                                          "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
 }
 var AppSpecialArgs = map[string]string{
 	"alertpolicies":    "StringArray",
@@ -1016,6 +1018,7 @@ var DeploymentZoneRequestOptionalArgs = []string{
 	"app.noderesources.externalvolumesize",
 	"app.objid",
 	"app.appannotations",
+	"app.isstandalone",
 	"dryrundeploy",
 	"numnodes",
 }
@@ -1104,6 +1107,7 @@ var DeploymentZoneRequestComments = map[string]string{
 	"app.noderesources.externalvolumesize":                      "Size of external volume to be attached to nodes. This is for the root partition",
 	"app.objid":                                                 "Universally unique object ID",
 	"app.appannotations":                                        "Internal Annotations",
+	"app.isstandalone":                                          "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
 	"dryrundeploy":                                              "Attempt to qualify zones resources for deployment",
 	"numnodes":                                                  "Optional number of worker VMs in dry run K8s Cluster, default = 2",
 }
@@ -1197,6 +1201,7 @@ var CreateAppOptionalArgs = []string{
 	"noderesources.externalvolumesize",
 	"objid",
 	"appannotations",
+	"isstandalone",
 }
 var DeleteAppRequiredArgs = []string{
 	"apporg",
@@ -1274,6 +1279,7 @@ var DeleteAppOptionalArgs = []string{
 	"noderesources.externalvolumesize",
 	"objid",
 	"appannotations",
+	"isstandalone",
 }
 var ShowAppRequiredArgs = []string{
 	"apporg",
@@ -1351,4 +1357,5 @@ var ShowAppOptionalArgs = []string{
 	"noderesources.externalvolumesize",
 	"objid",
 	"appannotations",
+	"isstandalone",
 }

@@ -902,6 +902,7 @@ var AppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"isstandalone",
 }
 var AppInstAliasArgs = []string{
 	"appinstname=key.name",
@@ -1015,6 +1016,7 @@ var AppInstComments = map[string]string{
 	"noderesources.optresmap":                               "Optional resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1, specify noderesources.optresmap:empty=true to clear",
 	"noderesources.infranodeflavor":                         "Infrastructure specific node flavor",
 	"noderesources.externalvolumesize":                      "Size of external volume to be attached to nodes. This is for the root partition",
+	"isstandalone":                                          "A standalone AppInst will not share a cluster with another AppInst unless explicitly targeted to the same cluster",
 }
 var AppInstSpecialArgs = map[string]string{
 	"annotations":        "StringToString",
@@ -1315,6 +1317,7 @@ var CreateAppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"isstandalone",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1367,6 +1370,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"isstandalone",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1415,6 +1419,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"isstandalone",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1462,4 +1467,5 @@ var UpdateAppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"isstandalone",
 }
