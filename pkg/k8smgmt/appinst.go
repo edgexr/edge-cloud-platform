@@ -209,6 +209,10 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 			if done {
 				break
 			}
+			if err := ctx.Err(); err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "context error, aboring wait for appinst", "app", app.Key, "err", err)
+				return err
+			}
 			elapsed := time.Since(start)
 			if elapsed >= (maxWait) {
 				// for now we will return no errors when we time out.  In future we will use some other state or status

@@ -76,6 +76,17 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 	}
 	svcNameByPort := map[int32]string{}
 	for _, svc := range svcs {
+		// for non-multitenant, typically everything will be in the
+		// default namespace, but there may be Helm charts or an
+		// operator which installs in other namespaces.
+		// The GetKubeServices command thus looks in all
+		// namespaces. We should probably add a namespace annotation
+		// to the ports spec so we know which namespace to look in.
+		// For now at least skip kube-system and ingress-nginx
+		// namespaces.
+		if svc.GetNamespace() == "kube-system" || svc.GetNamespace() == IngressNginxNamespace {
+			continue
+		}
 		for _, port := range svc.Spec.Ports {
 			if port.Protocol != "TCP" {
 				continue
