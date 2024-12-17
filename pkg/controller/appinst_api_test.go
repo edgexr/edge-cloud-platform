@@ -1456,20 +1456,22 @@ func testAppInstScaleSpec(t *testing.T, ctx context.Context, apis *AllApis) {
 			Scalable: true,
 		}},
 	}
-	deployAppInst := func(name string) (*edgeproto.App, *edgeproto.AppInst) {
+	deployAppInst := func(name string, ciTarget *edgeproto.ClusterInst) (*edgeproto.App, *edgeproto.AppInst) {
 		app := &edgeproto.App{
 			Key: edgeproto.AppKey{
 				Name:         name,
 				Organization: "devorg",
 				Version:      "1.0",
 			},
-			ImageType:       edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-			AccessPorts:     "http:443",
-			AllowServerless: true,
+			ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+			AccessPorts: "http:443",
 			KubernetesResources: &edgeproto.KubernetesResources{
 				CpuPool: &edgeproto.NodePoolResources{
 					TotalVcpus:  *edgeproto.NewUdec64(2, 0),
 					TotalMemory: 100,
+					Topology: edgeproto.NodePoolTopology{
+						MinNodeVcpus: 2,
+					},
 				},
 			},
 		}
@@ -1477,7 +1479,11 @@ func testAppInstScaleSpec(t *testing.T, ctx context.Context, apis *AllApis) {
 		ai.Key.Name = name
 		ai.Key.Organization = app.Key.Organization
 		ai.AppKey = app.Key
-		ai.ClusterKey = ci.Key
+		if ciTarget != nil {
+			ai.ClusterKey = ciTarget.Key
+		} else {
+			ai.ZoneKey = zoneData[0].Key
+		}
 		_, err := apis.appApi.CreateApp(ctx, app)
 		require.Nil(t, err)
 		err = apis.appInstApi.CreateAppInst(ai, testutil.NewCudStreamoutAppInst(ctx))
@@ -1491,11 +1497,17 @@ func testAppInstScaleSpec(t *testing.T, ctx context.Context, apis *AllApis) {
 		require.Nil(t, err)
 	}
 
-	getClusterNumNodes := func() int {
+	getClusterNumNodes := func(target *edgeproto.ClusterInst) int {
 		buf := &edgeproto.ClusterInst{}
-		found := apis.clusterInstApi.cache.Get(&ci.Key, buf)
+		found := apis.clusterInstApi.cache.Get(&target.Key, buf)
 		require.True(t, found)
 		return int(buf.NodePools[0].NumNodes)
+	}
+	getCluster := func(key *edgeproto.ClusterKey) *edgeproto.ClusterInst {
+		buf := &edgeproto.ClusterInst{}
+		found := apis.clusterInstApi.cache.Get(key, buf)
+		require.True(t, found)
+		return buf
 	}
 
 	// create target cluster
@@ -1503,22 +1515,53 @@ func testAppInstScaleSpec(t *testing.T, ctx context.Context, apis *AllApis) {
 	require.Nil(t, err)
 
 	// deploy first appinst, should not trigger scaling
-	app1, ai1 := deployAppInst("inst1")
-	require.Equal(t, 1, getClusterNumNodes())
+	app1, ai1 := deployAppInst("inst1", ci)
+	require.Equal(t, 1, getClusterNumNodes(ci))
 
 	// deploy second appinst, should trigger scaling
-	app2, ai2 := deployAppInst("inst2")
-	require.Equal(t, 2, getClusterNumNodes())
+	app2, ai2 := deployAppInst("inst2", ci)
+	require.Equal(t, 2, getClusterNumNodes(ci))
 
 	// deploy third appinst, should trigger scaling
-	app3, ai3 := deployAppInst("inst3")
-	require.Equal(t, 3, getClusterNumNodes())
+	app3, ai3 := deployAppInst("inst3", ci)
+	require.Equal(t, 3, getClusterNumNodes(ci))
 
 	// cleanup
 	cleanupAppInst(app1, ai1)
 	cleanupAppInst(app2, ai2)
 	cleanupAppInst(app3, ai3)
 	err = apis.clusterInstApi.DeleteClusterInst(ci, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err)
+
+	// Test with reservable AutoCluster
+
+	// deploy first appinst, should create reservable cluster
+	app1, ai1 = deployAppInst("inst1", nil)
+	clust := getCluster(&ai1.ClusterKey)
+	log.SpanLog(ctx, log.DebugLevelApi, "Deployed to clusterinst", "clusterInst", clust)
+	require.True(t, clust.Reservable)
+	require.Equal(t, "devorg", clust.ReservedBy)
+	require.Equal(t, 1, int(clust.NodePools[0].NumNodes))
+
+	// deploy second appinst, should scale up reservable cluster
+	app2, ai2 = deployAppInst("inst2", nil)
+	clust = getCluster(&ai2.ClusterKey)
+	require.True(t, clust.Reservable)
+	require.Equal(t, "devorg", clust.ReservedBy)
+	require.Equal(t, ai1.ClusterKey, ai2.ClusterKey)
+	require.Equal(t, 2, int(clust.NodePools[0].NumNodes))
+
+	// delete ai2, ensure cluster is still reserved
+	cleanupAppInst(app2, ai2)
+	clust = getCluster(&ai1.ClusterKey)
+	require.Equal(t, "devorg", clust.ReservedBy)
+	// delete ai1, ensure cluster is no longer reserved
+	cleanupAppInst(app1, ai1)
+	clust = getCluster(&ai1.ClusterKey)
+	require.Equal(t, "", clust.ReservedBy)
+
+	// delete reservable cluster
+	err = apis.clusterInstApi.DeleteClusterInst(clust, testutil.NewCudStreamoutClusterInst(ctx))
 	require.Nil(t, err)
 }
 

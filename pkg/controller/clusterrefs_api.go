@@ -90,3 +90,25 @@ func (s *ClusterRefsApi) removeRef(stm concurrency.STM, appInst *edgeproto.AppIn
 		s.store.STMPut(stm, &refs)
 	}
 }
+
+func (s *ClusterRefsApi) canReleaseReservation(stm concurrency.STM, appInst *edgeproto.AppInst) bool {
+	// For a reservable clusterinst, we check that if the specified
+	// appInst is removed, if there are any other AppInsts owned
+	// by the same Organization in the cluster. If not, the cluster
+	// can free the reservation, otherwise we need to keep the
+	// reservation.
+	key := appInst.GetClusterKey()
+	refs := edgeproto.ClusterRefs{}
+	if !s.store.STMGet(stm, key, &refs) {
+		return true
+	}
+	for _, aikey := range refs.Apps {
+		if appInst.Key.Matches(&aikey) {
+			continue
+		}
+		if aikey.Organization == appInst.Key.Organization {
+			return false
+		}
+	}
+	return true
+}
