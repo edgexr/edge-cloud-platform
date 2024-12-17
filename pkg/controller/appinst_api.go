@@ -1879,7 +1879,7 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if cloudletRefsChanged {
 			s.all.cloudletRefsApi.store.STMPut(stm, &cloudletRefs)
 		}
-		if clusterInstReqd && clusterInst.ReservedBy != "" && clusterInst.ReservedBy == in.Key.Organization {
+		if clusterInstReqd && clusterInst.ReservedBy != "" && clusterInst.ReservedBy == in.Key.Organization && s.all.clusterRefsApi.canReleaseReservation(stm, in) {
 			clusterInst.ReservedBy = ""
 			clusterInst.ReservationEndedAt = dme.TimeToTimestamp(time.Now())
 			s.all.clusterInstApi.store.STMPut(stm, &clusterInst)

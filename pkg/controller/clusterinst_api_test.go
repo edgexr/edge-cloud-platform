@@ -376,6 +376,11 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	// Make sure above changes have not affected ReservedBy setting
 	checkReservedBy(t, ctx, api, &cinst.Key, appinst.Key.Organization)
 
+	// Delete second AppInst should not clear reservation
+	err = apis.appInstApi.DeleteAppInst(&appinst3, streamOut)
+	require.Nil(t, err, "delete AppInst on reservable ClusterInst")
+	checkReservedBy(t, ctx, api, &cinst.Key, appinst.Key.Organization)
+
 	// Deleting AppInst should removed ReservedBy
 	err = apis.appInstApi.DeleteAppInst(&appinst, streamOut)
 	require.Nil(t, err, "delete AppInst")
@@ -388,8 +393,6 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 
 	// Delete AppInst
 	err = apis.appInstApi.DeleteAppInst(&appinst2, streamOut)
-	require.Nil(t, err, "delete AppInst on reservable ClusterInst")
-	err = apis.appInstApi.DeleteAppInst(&appinst3, streamOut)
 	require.Nil(t, err, "delete AppInst on reservable ClusterInst")
 	checkReservedBy(t, ctx, api, &cinst.Key, "")
 
