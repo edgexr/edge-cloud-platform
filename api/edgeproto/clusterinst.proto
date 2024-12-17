@@ -204,6 +204,8 @@ message ClusterResourceUsage {
   // GPU Pool Resource score for Kubernetes clusters, higher score means more available resources
   uint64 gpu_pools_resource_score = 9;
   option (protogen.alias) = "cluster=Key.Name,clusterorg=Key.Organization";
+  // For reservable clusters in use, the organization that has reserved the cluster
+  string ReservedBy = 10;
 }
 
 service ClusterInstApi {
