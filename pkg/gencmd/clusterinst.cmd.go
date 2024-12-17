@@ -854,6 +854,7 @@ var ClusterResourceUsageOptionalArgs = []string{
 	"resourcescore",
 	"cpupoolsresourcescore",
 	"gpupoolsresourcescore",
+	"reservedby",
 }
 var ClusterResourceUsageAliasArgs = []string{
 	"cluster=key.name",
@@ -892,6 +893,7 @@ var ClusterResourceUsageComments = map[string]string{
 	"resourcescore":                      "Resource score, higher score means more available resources",
 	"cpupoolsresourcescore":              "CPU Pool Resource score for Kubernetes clusters, higher score means more available resources",
 	"gpupoolsresourcescore":              "GPU Pool Resource score for Kubernetes clusters, higher score means more available resources",
+	"reservedby":                         "For reservable clusters in use, the organization that has reserved the cluster",
 }
 var ClusterResourceUsageSpecialArgs = map[string]string{}
 var ClusterInstInfoRequiredArgs = []string{

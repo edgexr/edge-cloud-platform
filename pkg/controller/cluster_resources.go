@@ -283,6 +283,9 @@ func (s *ClusterInstApi) getClusterResourceUsage(ctx context.Context, ci *edgepr
 	usage.Key = ci.Key
 	usage.ZoneKey = ci.ZoneKey
 	usage.CloudletKey = ci.CloudletKey
+	if ci.Reservable {
+		usage.ReservedBy = ci.ReservedBy
+	}
 	if ci.Deployment == cloudcommon.DeploymentTypeKubernetes {
 		// For Kubernetes, resource decisions are made independently
 		// based on whether nodes have GPU resources or not.
