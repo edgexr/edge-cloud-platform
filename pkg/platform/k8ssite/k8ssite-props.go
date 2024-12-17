@@ -36,9 +36,10 @@ var AccessVarProps = map[string]*edgeproto.PropertyInfo{
 }
 
 var Props = map[string]*edgeproto.PropertyInfo{
-	infracommon.ExternalIPMap:    infracommon.ExternalIPMapProp,
-	cloudcommon.IngressHTTPPort:  cloudcommon.IngressHTTPPortProp,
-	cloudcommon.IngressHTTPSPort: cloudcommon.IngressHTTPSPortProp,
+	infracommon.ExternalIPMap:            infracommon.ExternalIPMapProp,
+	cloudcommon.IngressHTTPPort:          cloudcommon.IngressHTTPPortProp,
+	cloudcommon.IngressHTTPSPort:         cloudcommon.IngressHTTPSPortProp,
+	cloudcommon.IngressControllerPresent: cloudcommon.IngressControllerPresentProp,
 }
 
 func (s *K8sSite) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {

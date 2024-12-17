@@ -81,11 +81,12 @@ func (s *K8sSite) InitCommon(ctx context.Context, platformConfig *platform.Platf
 		return err
 	}
 
-	if err := s.CommonPf.InitInfraCommon(ctx, platformConfig, map[string]*edgeproto.PropertyInfo{}); err != nil {
+	features := s.GetFeatures()
+	if err := s.CommonPf.InitInfraCommon(ctx, platformConfig, features.Properties); err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err")
 		return err
 	}
-	s.K8sWorkloadMgr.Init(s, s.GetFeatures(), &s.CommonPf)
+	s.K8sWorkloadMgr.Init(s, features, &s.CommonPf)
 	return nil
 }
 

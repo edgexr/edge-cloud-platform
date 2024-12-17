@@ -433,7 +433,19 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 				Name:        "API Key",
 				Description: "API Key for authentication",
 				Secret:      true,
-			}}
+			},
+		}
+		features[ii].Properties = map[string]*edgeproto.PropertyInfo{
+			"FAKE_RAM_MAX": {
+				Name: "Fake RAM Max",
+			},
+			"FAKE_VCPUS_MAX": {
+				Name: "Fake VCPUs Max",
+			},
+			"FLAVORS": {
+				Name: "Flavors",
+			},
+		}
 	}
 	return features
 }

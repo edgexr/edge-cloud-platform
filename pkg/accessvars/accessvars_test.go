@@ -77,7 +77,7 @@ func TestValidateAccessVars(t *testing.T) {
 		}, "Invalid access vars",
 	}}
 	for _, test := range tests {
-		err := ValidateAccessVars(test.vars, props)
+		err := ValidatePropVars(test.vars, props, "access")
 		if test.expErr == "" {
 			require.Nil(t, err, test.desc)
 		} else {

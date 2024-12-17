@@ -22,8 +22,9 @@ import (
 )
 
 const (
-	IngressHTTPPort  = "INGRESS_HTTP_PORT"
-	IngressHTTPSPort = "INGRESS_HTTPS_PORT"
+	IngressHTTPPort          = "INGRESS_HTTP_PORT"
+	IngressHTTPSPort         = "INGRESS_HTTPS_PORT"
+	IngressControllerPresent = "INGRESS_CONTROLLER_PRESENT"
 )
 
 var IngressHTTPPortProp = &edgeproto.PropertyInfo{
@@ -34,6 +35,11 @@ var IngressHTTPPortProp = &edgeproto.PropertyInfo{
 var IngressHTTPSPortProp = &edgeproto.PropertyInfo{
 	Name:        "Ingress HTTPS Port",
 	Description: "Port number to override the default port 443 for HTTPS ports with TLS using ingress objects in Kubernetes clusters, typically used when a NAT fronts the ingress",
+}
+
+var IngressControllerPresentProp = &edgeproto.PropertyInfo{
+	Name:        "Ingress Controller is Present",
+	Description: "Pre-existing clusters or clusters deployed by cluster manager come with the ingress controller already installed",
 }
 
 func ValidateProps(vars map[string]string) error {

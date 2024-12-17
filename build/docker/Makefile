@@ -25,6 +25,11 @@ gobuild:
 gobuild-publish:
 	docker push $(REGISTRY)/build:$(GOVERS)
 
+alpine-wget:
+	docker build -t edgexr/alpine-wget:$(VERSION) -f Dockerfile.alpine-wget .
+	docker tag edgexr/alpine-wget:$(VERSION) $(REGISTRY)/alpine-wget:$(VERSION)
+	docker push $(REGISTRY)/alpine-wget:$(VERSION)
+
 # Image to be used for services that don't need infra-specific clients
 # Ideally this should be a non-debug version, but using debug for
 # now to include shell.
