@@ -14,7 +14,7 @@
 ARG REGISTRY=ghcr.io/edgexr
 ARG EDGE_CLOUD_INFRA_BASE=scratch
 
-FROM $REGISTRY/build:go1.21.6 AS build
+FROM $REGISTRY/build:go1.22.9 AS build
 
 ENV GOPATH=/go
 ENV PATH="/go/bin:${PATH}"
