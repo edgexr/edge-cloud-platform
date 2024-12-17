@@ -75,9 +75,12 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 		CommerialCerts: m.CommonPf.PlatformConfig.CommercialCerts,
 		InitCluster:    true,
 	}
-	err = k8smgmt.SetupIngressNginx(ctx, client, names.GetKConfNames(), m.CommonPf.PlatformConfig.CloudletKey, m.CommonPf.PlatformConfig.ProxyCertsCache, wildcardName, refreshOpts, updateCallback, addonInfo.IngressNginxOps...)
-	if err != nil {
-		return nil, err
+	hasIngressController, ok := m.CommonPf.Properties.GetValue(cloudcommon.IngressControllerPresent)
+	if !ok || hasIngressController == "" {
+		err = k8smgmt.SetupIngressNginx(ctx, client, names.GetKConfNames(), m.CommonPf.PlatformConfig.CloudletKey, m.CommonPf.PlatformConfig.ProxyCertsCache, wildcardName, refreshOpts, updateCallback, addonInfo.IngressNginxOps...)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return infraAnnotations, err
 }

@@ -536,7 +536,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	}()
 
 	if len(accessVars) > 0 {
-		err = accessvars.ValidateAccessVars(accessVars, features.AccessVars)
+		err = accessvars.ValidatePropVars(accessVars, features.AccessVars, "access")
 		if err != nil {
 			return err
 		}
@@ -546,6 +546,12 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		}
 		// NOTE: If accessvars is successfully stored then do not delete it on cleanup
 		//       as it can be shared amongst other cloudlets
+	}
+	if len(in.EnvVar) > 0 {
+		err = accessvars.ValidatePropVars(in.EnvVar, features.Properties, "env")
+		if err != nil {
+			return err
+		}
 	}
 
 	vmPool := edgeproto.VMPool{}

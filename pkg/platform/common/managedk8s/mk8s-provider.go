@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -103,6 +104,10 @@ func (m *ManagedK8sPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	features := m.Provider.GetFeatures()
 	features.RequiresCrmOffEdge = true
 	features.UsesIngress = true
+	if features.Properties == nil {
+		features.Properties = make(map[string]*edgeproto.PropertyInfo)
+	}
+	features.Properties[cloudcommon.IngressControllerPresent] = cloudcommon.IngressControllerPresentProp
 	return features
 }
 

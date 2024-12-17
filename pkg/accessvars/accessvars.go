@@ -93,9 +93,9 @@ func DeleteCloudletAccessVars(ctx context.Context, region string, cloudlet *edge
 	return vault.DeleteData(vaultConfig, path)
 }
 
-func ValidateAccessVars(accessVars map[string]string, props map[string]*edgeproto.PropertyInfo) error {
+func ValidatePropVars(vars map[string]string, props map[string]*edgeproto.PropertyInfo, varType string) error {
 	invalid := []string{}
-	for key := range accessVars {
+	for key := range vars {
 		if _, ok := props[key]; !ok {
 			invalid = append(invalid, key)
 		}
@@ -107,19 +107,19 @@ func ValidateAccessVars(accessVars map[string]string, props map[string]*edgeprot
 		}
 		sort.Strings(invalid)
 		sort.Strings(validVars)
-		return fmt.Errorf("Invalid access vars %s, valid vars are %s", strings.Join(invalid, ", "), strings.Join(validVars, ", "))
+		return fmt.Errorf("Invalid %s vars %s, valid vars are %s", varType, strings.Join(invalid, ", "), strings.Join(validVars, ", "))
 	}
 	notFound := []string{}
 	for key, prop := range props {
 		if prop.Mandatory {
-			if _, found := accessVars[key]; !found {
+			if _, found := vars[key]; !found {
 				notFound = append(notFound, key)
 			}
 		}
 	}
 	if len(notFound) > 0 {
 		sort.Strings(notFound)
-		return fmt.Errorf("Missing required access vars %s", strings.Join(notFound, ", "))
+		return fmt.Errorf("Missing required %s vars %s", varType, strings.Join(notFound, ", "))
 	}
 	return nil
 }

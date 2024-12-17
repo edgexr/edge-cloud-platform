@@ -102,6 +102,22 @@ var fakeProps = map[string]*edgeproto.PropertyInfo{
 		Description: "[]edgeproto.FlavorInfo as JSON string",
 		Mandatory:   false,
 	},
+	"FAKE_RAM_MAX": {
+		Name: "Fake RAM max",
+	},
+	"FAKE_VCPUS_MAX": {
+		Name: "Fake VCPUs max",
+	},
+	"FAKE_DISK_MAX": {
+		Name: "Fake VCPUs max",
+	},
+	"foo": {
+		Name: "foo",
+	},
+	"FAKE_PLATFORM_APPINST_CREATE_FAIL": {
+		Name:        "fake platform appinst create fail",
+		Description: "for e2e tests, make appinst create fail",
+	},
 }
 
 var AccessVarProps = map[string]*edgeproto.PropertyInfo{

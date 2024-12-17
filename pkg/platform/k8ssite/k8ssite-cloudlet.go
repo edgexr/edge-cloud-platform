@@ -20,6 +20,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -67,9 +68,12 @@ func (s *K8sSite) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudl
 		CommerialCerts: s.CommonPf.PlatformConfig.CommercialCerts,
 		InitCluster:    true,
 	}
-	err = k8smgmt.SetupIngressNginx(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, wildcardName, refreshOpts, updateCallback)
-	if err != nil {
-		return false, err
+	hasIngressController, ok := s.CommonPf.Properties.GetValue(cloudcommon.IngressControllerPresent)
+	if !ok || hasIngressController == "" {
+		err = k8smgmt.SetupIngressNginx(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, wildcardName, refreshOpts, updateCallback)
+		if err != nil {
+			return false, err
+		}
 	}
 	return false, nil
 }
