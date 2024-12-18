@@ -1385,6 +1385,7 @@ func testAppInstPotentialCloudlets(t *testing.T, ctx context.Context, apis *AllA
 			CpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(uint64(6-ii), 0),
 				TotalMemory: uint64(1024 * (6 - ii)),
+				TotalDisk:   2,
 				Topology: edgeproto.NodePoolTopology{
 					MinNodeVcpus:     1,
 					MinNodeMemory:    1024,
@@ -1433,7 +1434,7 @@ func testAppInstPotentialCloudlets(t *testing.T, ctx context.Context, apis *AllA
 	}
 	err = apis.appInstApi.CreateAppInst(ai, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err)
-	require.Equal(t, "not enough resources available: required RAM is 86016MB but only 66560MB out of 81920MB is available, required vCPUs is 84 but only 5 out of 20 is available", err.Error())
+	require.Equal(t, "no available cloudlet sites to create a new cluster", err.Error())
 }
 
 func testAppInstScaleSpec(t *testing.T, ctx context.Context, apis *AllApis) {
@@ -1828,7 +1829,7 @@ func TestNBIUseCase(t *testing.T) {
 	// scenario 4: rejection
 	_, err = deployApp("scenario4", appIDs[3], zoneA.ObjId)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "not enough resources available: required vCPUs is 2 but only 0")
+	require.Contains(t, err.Error(), "no available cloudlet sites to create a new cluster")
 
 	// scanario 5: delete ai3, check that ai5 deploy fails
 	// due to kubernetes version mismatch
@@ -1855,7 +1856,7 @@ func TestNBIUseCase(t *testing.T) {
 	// deploy app
 	_, err = deployApp("scenario5", appIDs[4], zoneA.ObjId)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "not enough resources available: required vCPUs is 2 but only 0")
+	require.Contains(t, err.Error(), "no available cloudlet sites to create a new cluster")
 	// redeploy ai3 should work
 	_, err = deployApp("scenario5.1", appIDs[2], zoneA.ObjId)
 	require.Nil(t, err)
