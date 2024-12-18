@@ -493,7 +493,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	createCluster := false
 	autoClusterType := NoAutoCluster
 	sidecarApp := false
-	appDeploymentType := ""
 	reservedAutoClusterId := -1
 	var reservedCluster *edgeproto.ClusterInst
 	var cloudletFeatures *edgeproto.PlatformFeatures
@@ -697,8 +696,30 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			// logic in the this STM which depends on the target cloudlet,
 			// and moving it into the createClusterInst code.
 			sort.Sort(PotentialInstCloudletsByResource(potentialCloudlets))
-			in.CloudletKey = potentialCloudlets[0].cloudlet.Key
-			log.SpanLog(ctx, log.DebugLevelApi, "chose cloudlet for autocluster", "appinst", in.Key, "cloudlet", in.CloudletKey)
+			found := false
+			log.SpanLog(ctx, log.DebugLevelApi, "no existing clusterinst found, search potential cloudlets")
+			for _, pc := range potentialCloudlets {
+				ciKey := edgeproto.ClusterKey{
+					Name: "potentialClusterInst",
+				}
+				autoCi, err := s.buildAutocluster(ctx, ciKey, pc.cloudlet.Key, pc.features, &app, in)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "failed to build auto cluster for potential cloudlet check, skipping", "err", err)
+					continue
+				}
+				_, err = pc.resCalc.CloudletFitsCluster(ctx, autoCi, nil)
+				if err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "skip potential cloudlet for reservable clusterinst", "cloudlet", pc.cloudlet.Key, "err", err)
+					continue
+				}
+				found = true
+				in.CloudletKey = pc.cloudlet.Key
+				log.SpanLog(ctx, log.DebugLevelApi, "chose cloudlet for autocluster", "appinst", in.Key, "cloudlet", in.CloudletKey)
+				break
+			}
+			if !found {
+				return fmt.Errorf("no available cloudlet sites to create a new cluster")
+			}
 		}
 
 		// validate chosen cloudlet
@@ -774,7 +795,6 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 
 		in.Revision = app.Revision
-		appDeploymentType = app.Deployment
 		// there may be direct access apps still defined, disallow them from being instantiated.
 		if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_DIRECT {
 			return fmt.Errorf("Direct Access Apps are no longer supported, please re-create App as ACCESS_TYPE_LOAD_BALANCER")
@@ -949,35 +969,16 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 	if createCluster {
 		// auto-create cluster inst
-		clusterInst.Key = clusterKey
-		clusterInst.CloudletKey = in.CloudletKey
-		clusterInst.Auto = true
-		clusterInst.Reservable = true
-		clusterInst.ReservedBy = in.Key.Organization
-		log.SpanLog(ctx, log.DebugLevelApi,
-			"Create auto-ClusterInst",
-			"key", clusterInst.Key,
-			"AppInst", in)
-
-		// To reduce the proliferation of different reservable ClusterInst
-		// configurations, we restrict reservable ClusterInst configs.
-		if err := setClusterResourcesForReqs(ctx, &clusterInst, &app, in); err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "Create auto-ClusterInst", "key", clusterInst.Key, "AppInst", in)
+		ci, err := s.buildAutocluster(ctx, clusterKey, in.CloudletKey, cloudletFeatures, &app, in)
+		if err != nil {
 			return err
 		}
-		// Prefer IP access shared, but some platforms (gcp, etc) only
-		// support dedicated.
-		clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
-		clusterInst.Deployment = appDeploymentType
-		clusterInst.EnableIpv6 = platformSupportsIPV6
-		if cloudcommon.AppDeploysToKubernetes(appDeploymentType) {
-			clusterInst.Deployment = cloudcommon.DeploymentTypeKubernetes
-			clusterInst.NumMasters = 1
-			clusterInst.EnableIpv6 = false
-		}
-		clusterInst.Liveness = edgeproto.Liveness_LIVENESS_DYNAMIC
+		clusterInst = *ci
+
 		createStart := time.Now()
 		cctxauto := cctx.WithAutoCluster()
-		err := s.all.clusterInstApi.createClusterInstInternal(cctxauto, &clusterInst, cb)
+		err = s.all.clusterInstApi.createClusterInstInternal(cctxauto, &clusterInst, cb)
 		nodeMgr.TimedEvent(ctx, "AutoCluster create", in.Key.Organization, node.EventType, in.GetTags(), err, createStart, time.Now())
 		clusterInstReservationEvent(ctx, cloudcommon.ReserveClusterEvent, in)
 		if err != nil {
@@ -1281,6 +1282,33 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		s.updateCloudletResourcesMetric(ctx, in)
 	}
 	return err
+}
+
+func (s *AppInstApi) buildAutocluster(ctx context.Context, clusterKey edgeproto.ClusterKey, cloudletKey edgeproto.CloudletKey, features *edgeproto.PlatformFeatures, app *edgeproto.App, in *edgeproto.AppInst) (*edgeproto.ClusterInst, error) {
+	clusterInst := edgeproto.ClusterInst{}
+	clusterInst.Key = clusterKey
+	clusterInst.CloudletKey = cloudletKey
+	clusterInst.Auto = true
+	clusterInst.Reservable = true
+	clusterInst.ReservedBy = in.Key.Organization
+
+	// To reduce the proliferation of different reservable ClusterInst
+	// configurations, we restrict reservable ClusterInst configs.
+	if err := setClusterResourcesForReqs(ctx, &clusterInst, app, in); err != nil {
+		return nil, err
+	}
+	// Prefer IP access shared, but some platforms (gcp, etc) only
+	// support dedicated.
+	clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_UNKNOWN
+	clusterInst.Deployment = app.Deployment
+	clusterInst.EnableIpv6 = features.SupportsIpv6
+	if cloudcommon.AppDeploysToKubernetes(app.Deployment) {
+		clusterInst.Deployment = cloudcommon.DeploymentTypeKubernetes
+		clusterInst.NumMasters = 1
+		clusterInst.EnableIpv6 = false
+	}
+	clusterInst.Liveness = edgeproto.Liveness_LIVENESS_DYNAMIC
+	return &clusterInst, nil
 }
 
 func (s *AppInstApi) useReservableClusterInst(stm concurrency.STM, ctx context.Context, in *edgeproto.AppInst, app *edgeproto.App, sidecarApp bool, cibuf *edgeproto.ClusterInst) error {

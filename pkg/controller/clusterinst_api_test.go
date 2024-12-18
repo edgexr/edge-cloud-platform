@@ -1200,7 +1200,7 @@ func testClusterPotentialCloudlets(t *testing.T, ctx context.Context, apis *AllA
 	}}
 	err := apis.clusterInstApi.CreateClusterInst(ci, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err)
-	require.Equal(t, "not enough resources available: required RAM is 82944MB but only 81920MB out of 81920MB is available, required vCPUs is 81 but only 20 out of 20 is available", err.Error())
+	require.Equal(t, "not enough resources available to create the cluster", err.Error())
 }
 
 func testPotentialCloudletsCreateDeps(t *testing.T, ctx context.Context, apis *AllApis) (*edgeproto.Zone, []*edgeproto.Cloudlet, []*edgeproto.CloudletInfo, func()) {
@@ -1217,17 +1217,26 @@ func testPotentialCloudletsCreateDeps(t *testing.T, ctx context.Context, apis *A
 	cloudletInfoData := testutil.CloudletInfoData()
 	cloudlets := []*edgeproto.Cloudlet{}
 	cloudletInfos := []*edgeproto.CloudletInfo{}
-	for ii := 0; ii < 3; ii++ {
+	for ii := 0; ii < 4; ii++ {
 		cloudlet := cloudletData[0].Clone()
 		cloudlet.Key.Name = fmt.Sprintf("c%d", ii)
 		cloudlet.Key.Organization = zone.Key.Organization
 		cloudlet.Zone = zone.Key.Name
+		disk := 0 // no quota
+		if ii == 3 {
+			// add in a disk quota that prevents this cloudlet
+			// from being used at all
+			disk = 1
+		}
 		cloudlet.ResourceQuotas = []edgeproto.ResourceQuota{{
 			Name:  cloudcommon.ResourceVcpus,
 			Value: 20,
 		}, {
 			Name:  cloudcommon.ResourceRamMb,
 			Value: 81920,
+		}, {
+			Name:  cloudcommon.ResourceDiskGb,
+			Value: uint64(disk),
 		}}
 		_, err := apis.cloudletApi.store.Put(ctx, cloudlet, syncWait)
 		require.Nil(t, err)

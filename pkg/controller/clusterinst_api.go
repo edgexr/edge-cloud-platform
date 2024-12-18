@@ -937,8 +937,8 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		break
 	}
 	if err != nil {
-		// no valid cloudlets found, return last resource error
-		return err
+		// if we get here, then all sites had resourceFailures.
+		return fmt.Errorf("not enough resources available to create the cluster")
 	}
 
 	sendObj, err := s.startClusterInstStream(ctx, cctx, streamCb, modRev)
