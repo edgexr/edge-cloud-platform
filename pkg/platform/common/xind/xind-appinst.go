@@ -104,13 +104,9 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 	ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 
 	if DeploymentType == cloudcommon.DeploymentTypeKubernetes {
-		err = k8smgmt.CreateAppInst(ctx, nil, client, names, app, appInst, flavor)
+		err = k8smgmt.CreateAppInst(ctx, nil, client, names, app, appInst)
 		if err == nil {
-			err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
-			if err != nil {
-				undoerr := k8smgmt.DeleteAppInst(ctx, s.platformConfig.AccessApi, client, names, app, appInst)
-				log.SpanLog(ctx, log.DebugLevelInfra, "Undo CreateAppInst", "undoerr", undoerr)
-			}
+			return err
 		}
 	} else if DeploymentType == cloudcommon.DeploymentTypeHelm {
 		err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
@@ -218,7 +214,7 @@ func (s *Xind) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Cluster
 	ctx = context.WithValue(ctx, deployvars.DeploymentReplaceVarsKey, &deploymentVars)
 
 	if DeploymentType == cloudcommon.DeploymentTypeKubernetes {
-		return k8smgmt.UpdateAppInst(ctx, nil, client, names, app, appInst, flavor)
+		return k8smgmt.UpdateAppInst(ctx, nil, client, names, app, appInst)
 	} else if DeploymentType == cloudcommon.DeploymentTypeHelm {
 		return k8smgmt.UpdateHelmAppInst(ctx, client, names, app, appInst)
 	}

@@ -171,16 +171,10 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			if err != nil {
 				return err
 			}*/
-		err = k8smgmt.CreateAppInst(ctx, s.platformConfig.AccessApi, client, names, app, appInst, &edgeproto.Flavor{})
+		err = k8smgmt.CreateAppInst(ctx, s.platformConfig.AccessApi, client, names, app, appInst)
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if reterr != nil {
-				k8smgmt.DeleteAppInst(ctx, s.platformConfig.AccessApi, client, names, app, appInst)
-			}
-		}()
-		return k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
 	case cloudcommon.DeploymentTypeHelm:
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {
