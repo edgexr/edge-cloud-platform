@@ -79,14 +79,10 @@ func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 		}
 	}
 
+	updateSender.SendStatus(edgeproto.UpdateTask, "Deploying App Instance")
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		err = k8smgmt.CreateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, app, appInst, flavor)
-		if err == nil {
-			updateSender.SendStatus(edgeproto.UpdateTask, "Waiting for AppInst to Start")
-
-			err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
-		}
+		err = k8smgmt.CreateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
 	case cloudcommon.DeploymentTypeHelm:
 		err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
 	default:
@@ -95,7 +91,7 @@ func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	if err != nil {
 		return err
 	}
-	updateSender.SendStatus(edgeproto.UpdateTask, "Waiting for Load Balancer External IP")
+	updateSender.SendStatus(edgeproto.UpdateTask, "Waiting for External IPs")
 
 	// set up dns
 	getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
@@ -220,7 +216,7 @@ func (m *K8sWorkloadMgr) UpdateAppInst(ctx context.Context, clusterInst *edgepro
 		return err
 	}
 
-	err = k8smgmt.UpdateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, app, appInst, flavor)
+	err = k8smgmt.UpdateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
 	if err == nil {
 		updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
 		err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)

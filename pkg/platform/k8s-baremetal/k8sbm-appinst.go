@@ -105,7 +105,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
 			updateCallback(edgeproto.UpdateTask, "Creating Kubernetes App")
-			err = k8smgmt.CreateAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, app, appInst, appInstFlavor)
+			err = k8smgmt.CreateAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, app, appInst, k8smgmt.WithAppInstNoWait())
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Creating Helm App")
 			err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
@@ -266,7 +266,7 @@ func (k *K8sBareMetalPlatform) UpdateAppInst(ctx context.Context, clusterInst *e
 	if err != nil {
 		return err
 	}
-	return k8smgmt.UpdateAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, app, appInst, appInstFlavor)
+	return k8smgmt.UpdateAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
 }
 
 func (k *K8sBareMetalPlatform) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {

@@ -922,19 +922,19 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	}, {
 		"MT specified correct cluster",
 		0, &zoneMT, mtOrg, mtClust, notDedicatedIp,
-		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
+		"pillimogo1-atlanticinc.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT any clust name blank org",
 		0, &zoneMT, "", "", notDedicatedIp,
-		"shared.singlek8smt-unittest.local." + appDnsRoot, PASS,
+		"pillimogo1-atlanticinc.singlek8smt-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST specified correct cluster",
 		0, &zoneST, stOrg, stClust, notDedicatedIp,
-		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
+		"pillimogo1-atlanticinc.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"ST blank clust name blank org",
 		0, &zoneST, "", "", notDedicatedIp,
-		"shared.singlek8sst-unittest.local." + appDnsRoot, PASS,
+		"pillimogo1-atlanticinc.singlek8sst-unittest.local." + appDnsRoot, PASS,
 	}, {
 		"MT blank clust name dedicated",
 		0, &zoneMT, "", "", dedicatedIp,

@@ -155,7 +155,8 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 	}
 	contents := buf.String()
 	kconfArg := names.GetTenantKconfArg()
-	fileName := getIngressManifestName(names)
+	configDir := getConfigDirName(names)
+	fileName := configDir + "/" + getIngressManifestName(names)
 	err = pc.WriteFile(client, fileName, contents, "k8s ingress", pc.NoSudo)
 	if err != nil {
 		return nil, err
@@ -172,11 +173,16 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 
 func DeleteIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) error {
 	kconfArg := names.GetTenantKconfArg()
-	ingressFile := getIngressManifestName(names)
+	configDir := getConfigDirName(names)
+	ingressFile := configDir + "/" + getIngressManifestName(names)
 	cmd := fmt.Sprintf("kubectl %s delete -f %s", kconfArg, ingressFile)
 	out, err := client.Output(cmd)
 	if err != nil && !strings.Contains(out, "not found") {
 		return fmt.Errorf("failed to delete ingress for %s: %s, %s", ingressFile, out, err)
+	}
+	err = pc.DeleteFile(client, ingressFile, pc.NoSudo)
+	if err != nil {
+		return fmt.Errorf("failed to delete ingress file %s, %s", ingressFile, err)
 	}
 	return nil
 }

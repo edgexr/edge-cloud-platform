@@ -16,6 +16,7 @@ package k8smgmt
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -51,6 +52,40 @@ var createManifest = "create"
 var podStateRegString = "(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(.*)\\s*"
 var podStateReg = regexp.MustCompile(podStateRegString)
 
+type AppInstOptions struct {
+	undo bool
+	wait bool
+}
+
+type AppInstOp func(*AppInstOptions)
+
+// WithAppInstNoWait don't wait for pods to reach expected state,
+// typically used if caller wants to run the wait separately in
+// parallel with other tasks.
+func WithAppInstNoWait() AppInstOp {
+	return func(opts *AppInstOptions) {
+		opts.wait = false
+	}
+}
+
+// WithAppInstUndo indicates the action is undoing a previous action,
+// so don't trigger any further undos.
+func WithAppInstUndo() AppInstOp {
+	return func(opts *AppInstOptions) {
+		opts.undo = true
+	}
+}
+
+func getAppInstOptions(ops []AppInstOp) *AppInstOptions {
+	opts := &AppInstOptions{
+		wait: true, // by default, we wait for pods
+	}
+	for _, op := range ops {
+		op(opts)
+	}
+	return opts
+}
+
 func LbServicePortToString(p *v1.ServicePort) string {
 	proto := p.Protocol
 	port := p.Port
@@ -60,86 +95,54 @@ func LbServicePortToString(p *v1.ServicePort) string {
 func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace, selector, waitFor string, startTimer time.Time) (bool, error) {
 	done := false
 	log.SpanLog(ctx, log.DebugLevelInfra, "check pods status", "namespace", namespace, "selector", selector)
-	// custom columns will show <none> if there is nothing to display
-	cmd := fmt.Sprintf("kubectl %s get pods --no-headers -n %s --selector=%s -o=custom-columns='Name:metadata.name,Status:status.phase,Reason:status.conditions[].reason,Message:status.conditions[].message'", kConfArg, namespace, selector)
+	cmd := fmt.Sprintf("kubectl %s get pods -n %s --selector=%s -o json", kConfArg, namespace, selector)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error getting pods", "err", err, "out", out)
 		return done, fmt.Errorf("error getting pods: %v", err)
 	}
-	lines := strings.Split(out, "\n")
-	// there are potentially multiple pods in the lines loop, we will quit processing this obj
-	// only when they are all up, i.e. no non-
-	podCount := 0
-	runningCount := 0
+	podList := v1.PodList{}
+	if err := json.Unmarshal([]byte(out), &podList); err != nil {
+		return done, fmt.Errorf("failed to unmarshal pods info, %s", err)
+	}
+	podCount := len(podList.Items)
 
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		if strings.Contains(line, "No resources found") {
-			// If creating, pods may not have taken
-			// effect yet. If deleting, may already
-			// be removed.
-			if waitFor == WaitRunning && time.Since(startTimer) > createWaitNoResources {
-				return done, fmt.Errorf("no resources found for %s on create: %s", createWaitNoResources, line)
-			}
-			break
-		} else if podStateReg.MatchString(line) {
-			// there can be multiple pods, one per line. If all
-			// of them are running we can quit the loop
-			podCount++
-			matches := podStateReg.FindStringSubmatch(line)
-			podName := matches[1]
-			podState := matches[2]
-			reason := matches[3]
-			message := matches[4]
-			switch podState {
-			case "Running":
-				log.SpanLog(ctx, log.DebugLevelInfra, "pod is running", "podName", podName)
-				runningCount++
-			case "Pending":
-				if reason == "Unschedulable" {
-					log.SpanLog(ctx, log.DebugLevelInfra, "pod cannot be scheduled", "podName", podName, "message", message)
-					return done, fmt.Errorf("Run container failed, pod could not be scheduled, message: %s", message)
-				}
-				fallthrough
-			case "ContainerCreating":
-				fallthrough
-			case "CreateContainerConfigError": // this can be a transient state for some deployments
-				log.SpanLog(ctx, log.DebugLevelInfra, "still waiting for pod", "podName", podName, "state", podState)
-			case "Terminating":
-				log.SpanLog(ctx, log.DebugLevelInfra, "pod is terminating", "podName", podName, "state", podState)
-			default:
-				log.SpanLog(ctx, log.DebugLevelInfra, "pod state unhandled", "podName", podName, "state", podState, "out", out)
-				if podState == "Failed" && waitFor == WaitDeleted {
-					// Failed state can happen momentarily when
-					// pod's container is in state Terminated,
-					// before it's actually removed. If we hit this
-					// while waiting for a delete, let it try again
-					continue
-				}
-				if strings.Contains(podState, "Init") {
-					// Init state cannot be matched exactly, e.g. Init:0/2
-					log.SpanLog(ctx, log.DebugLevelInfra, "pod in init state", "podName", podName, "state", podState)
+	statuses := []string{}
+	failReason := false
+	allPodsRunning := false
+	if len(podList.Items) > 0 {
+		allPodsRunning = true
+		for _, pod := range podList.Items {
+			phase := string(pod.Status.Phase)
+			// Running state is set if at least one container is
+			// Ready, but we want to wait until all containers are
+			// Ready.
+			runningCount := 0
+			reasons := []string{}
+			for _, st := range pod.Status.ContainerStatuses {
+				if st.State.Running != nil {
+					runningCount++
 				} else {
-					// try to find out what error was
-					// TODO: pull events and send
-					// them back as status updates
-					// rather than sending back
-					// full "describe" dump
-					cmd := fmt.Sprintf("kubectl %s describe pod -n %s --selector=%s", kConfArg, namespace, selector)
-					out, derr := client.Output(cmd)
-					if derr == nil {
-						return done, fmt.Errorf("Run container failed, pod state: %s - %s", podState, out)
+					allPodsRunning = false
+					reason := "unknown"
+					if st.State.Waiting != nil {
+						reason = st.State.Waiting.Reason
+					} else if st.State.Terminated != nil {
+						reason = st.State.Terminated.Reason
 					}
-					return done, fmt.Errorf("Pod is unexpected state: %s", podState)
+					if reason == "Unschedulable" {
+						failReason = true
+					}
+					reasons = append(reasons, fmt.Sprintf("container %s: %s", st.Name, reason))
 				}
 			}
-		} else {
-			return done, fmt.Errorf("unable to parse kubectl output: [%s]", line)
+			status := fmt.Sprintf("pod %s: %s (%d/%d), %s", pod.Name, phase, runningCount, len(pod.Status.ContainerStatuses), strings.Join(reasons, ", "))
+			phase += fmt.Sprintf("(%d/%d)", runningCount, len(pod.Status.ContainerStatuses))
+			statuses = append(statuses, status)
 		}
 	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "wait for AppInst", "selector", selector, "status", statuses)
+
 	if waitFor == WaitDeleted {
 		if podCount == 0 {
 			log.SpanLog(ctx, log.DebugLevelInfra, "all pods gone", "selector", selector)
@@ -148,10 +151,17 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace
 	} else {
 		if podCount == 0 {
 			// race condition, may not find anything if run before pods show up
+			if time.Since(startTimer) > createWaitNoResources {
+				// still no resources, likely a failure
+				return false, fmt.Errorf("no pods found")
+			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "not delete, but no pods found, assume command run before pods deployed", "selector", selector)
 			return false, nil
 		}
-		if podCount == runningCount {
+		if failReason {
+			return false, fmt.Errorf("invalid pod state, %s", strings.Join(statuses, "; "))
+		}
+		if allPodsRunning {
 			log.SpanLog(ctx, log.DebugLevelInfra, "all pods up", "selector", selector)
 			done = true
 		}
@@ -210,7 +220,7 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 				break
 			}
 			if err := ctx.Err(); err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "context error, aboring wait for appinst", "app", app.Key, "err", err)
+				log.SpanLog(ctx, log.DebugLevelInfra, "context error, aborting wait for appinst", "app", app.Key, "err", err)
 				return err
 			}
 			elapsed := time.Since(start)
@@ -220,7 +230,7 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 				log.InfoLog("AppInst wait timed out", "appName", app.Key.Name)
 				break
 			}
-			time.Sleep(1 * time.Second)
+			time.Sleep(2 * time.Second)
 		}
 	}
 	return nil
@@ -399,7 +409,8 @@ func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.Acces
 	return nil
 }
 
-func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, _ *edgeproto.Flavor, action string) error {
+func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, action string, ops ...AppInstOp) (reterr error) {
+	opts := getAppInstOptions(ops)
 	if action == createManifest && names.MultitenantNamespace != "" {
 		err := EnsureNamespace(ctx, client, names.GetKConfNames(), names.MultitenantNamespace)
 		if err != nil {
@@ -411,6 +422,16 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 		return err
 	}
 	configDir := getConfigDirName(names)
+
+	defer func() {
+		if reterr == nil || opts.undo {
+			return
+		}
+		// undo changes
+		log.SpanLog(ctx, log.DebugLevelInfra, "undoing createOrUpdateAppInst due to failure", "err", reterr)
+		undoErr := DeleteAppInst(ctx, accessApi, client, names, app, appInst, WithAppInstUndo())
+		log.SpanLog(ctx, log.DebugLevelInfra, "undo createOrUpdateAppInst done", "undoErr", undoErr)
+	}()
 
 	// Kubernetes provides 3 styles of object management.
 	// We use the Declarative Object configuration style, to be able to
@@ -434,24 +455,26 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 	if err != nil {
 		return fmt.Errorf("error running kubectl command %s: %s, %v", cmd, out, err)
 	}
+	if opts.wait {
+		err := WaitForAppInst(ctx, client, names, app, WaitRunning)
+		if err != nil {
+			return err
+		}
+	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "done kubectl", "action", action)
 	return nil
 
 }
 
-func CreateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
-	return createOrUpdateAppInst(ctx, accessApi, client, names, app, appInst, appInstFlavor, createManifest)
+func CreateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...AppInstOp) error {
+	return createOrUpdateAppInst(ctx, accessApi, client, names, app, appInst, createManifest, ops...)
 }
 
-func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, appInstFlavor *edgeproto.Flavor) error {
-	err := createOrUpdateAppInst(ctx, accessApi, client, names, app, appInst, appInstFlavor, applyManifest)
-	if err != nil {
-		return err
-	}
-	return WaitForAppInst(ctx, client, names, app, WaitRunning)
+func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...AppInstOp) error {
+	return createOrUpdateAppInst(ctx, accessApi, client, names, app, appInst, applyManifest, ops...)
 }
 
-func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...AppInstOp) (reterr error) {
 	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst); err != nil {
 		return err
 	}
@@ -466,7 +489,7 @@ func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 		if strings.Contains(string(out), "not found") {
 			log.SpanLog(ctx, log.DebugLevelInfra, "app not found, cannot delete", "name", names.AppName)
 		} else {
-			return fmt.Errorf("error deleting kuberknetes app, %s, %s, %s, %v", names.AppName, cmd, out, err)
+			return fmt.Errorf("error deleting kubernetes app, %s, %s, %s, %v", names.AppName, cmd, out, err)
 		}
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleted deployment", "name", names.AppName)
