@@ -2264,7 +2264,8 @@ func (s *ClusterInstApi) ShowClusterResourceUsage(in *edgeproto.ClusterInst, cb 
 		}
 		usage, err := s.getClusterResourceUsage(ctx, ci, flavorLookup)
 		if err != nil {
-			return err
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to get cluster resource usage, skipping", "cluster", ci.Key, "err", err)
+			continue
 		}
 		if err := cb.Send(usage); err != nil {
 			return err

@@ -420,7 +420,9 @@ func getAppInstURI(ctx context.Context, appInst *edgeproto.AppInst, app *edgepro
 	}
 
 	// uri is specific to appinst if it has dedicated IP, or no cluster
-	if !cloudcommon.IsClusterInstReqd(app) || appInst.DedicatedIp {
+	// also, if an AppInst has HTTP ports and uses ingress, it
+	// needs its own URI for host-based routing.
+	if !cloudcommon.IsClusterInstReqd(app) || appInst.DedicatedIp || appInst.UsesHTTP() {
 		return getAppInstFQDN(appInst, cloudlet)
 	}
 
@@ -2004,7 +2006,12 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if err != nil {
 			// crm failed or some other err, undo
 			cb.Send(&edgeproto.Result{Message: "Recreating AppInst due to failure"})
-			undoErr := s.createAppInstInternal(cctx.WithUndo().WithStream(sendObj), in, cb)
+			// Note that we use CRMUndo here, because the CRM
+			// delete will continue on failure and delete evrything
+			// without restoring on failure. So we need to ensure
+			// the create will call the CRM functions to recreate
+			// everything.
+			undoErr := s.createAppInstInternal(cctx.WithUndo().WithCRMUndo().WithStream(sendObj), in, cb)
 			if undoErr != nil {
 				log.InfoLog("Undo delete AppInst", "undoErr", undoErr)
 			}

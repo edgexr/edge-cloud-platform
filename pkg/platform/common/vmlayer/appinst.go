@@ -486,7 +486,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
 			updateCallback(edgeproto.UpdateTask, "Creating Kubernetes App")
-			err = k8smgmt.CreateAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst, appFlavor)
+			err = k8smgmt.CreateAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst, k8smgmt.WithAppInstNoWait())
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Creating Helm App")
 
@@ -902,7 +902,7 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		return k8smgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst, flavor)
+		return k8smgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst)
 	case cloudcommon.DeploymentTypeHelm:
 		return k8smgmt.UpdateHelmAppInst(ctx, client, names, app, appInst)
 
