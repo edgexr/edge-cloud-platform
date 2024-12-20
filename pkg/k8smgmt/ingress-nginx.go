@@ -49,7 +49,7 @@ type RefreshCertsOpts struct {
 // cloudlet in the cluster pointed to by the KConfNames.
 // The certificate is used as the default certificate for
 // all ingress instances in the cluster.
-func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, cache *certscache.ProxyCertsCache, wildcardName string, opts RefreshCertsOpts) error {
+func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, cache *certscache.ProxyCertsCache, namespace, wildcardName string, opts RefreshCertsOpts) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "k8s refresh ingress certs", "cloudlet", cloudletKey, "certName", wildcardName, "secret", IngressDefaultCertSecret)
 	if os.Getenv("E2ETEST_TLS") != "" {
 		opts.CommerialCerts = false
@@ -75,7 +75,7 @@ func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, clou
 	}
 	// this command generates a yaml file then applies it, to allow
 	// us to update the secret if it already exists
-	cmd := fmt.Sprintf("kubectl %s create secret -n %s tls %s --key %s.key --cert %s.crt --save-config --dry-run=client -o yaml | kubectl %s apply -f -", names.KconfArg, IngressNginxNamespace, IngressDefaultCertSecret, fileName, fileName, names.KconfArg)
+	cmd := fmt.Sprintf("kubectl %s create secret -n %s tls %s --key %s.key --cert %s.crt --save-config --dry-run=client -o yaml | kubectl %s apply -f -", names.KconfArg, namespace, IngressDefaultCertSecret, fileName, fileName, names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to write cert secret: %s, %s", out, err)
@@ -143,7 +143,7 @@ func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames
 
 	// install default cert for ingress
 	updateCallback(edgeproto.UpdateTask, "Generating ingress certificate")
-	err = RefreshCert(ctx, client, names, cloudletKey, certsCache, wildcardName, refreshOpts)
+	err = RefreshCert(ctx, client, names, cloudletKey, certsCache, IngressNginxNamespace, wildcardName, refreshOpts)
 	if err != nil {
 		return err
 	}

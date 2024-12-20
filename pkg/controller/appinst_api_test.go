@@ -902,7 +902,7 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	}{{
 		"MT non-serverless app",
 		3, &zoneMT, "", "", notDedicatedIp, "",
-		"platform only supports serverless apps",
+		"no available cloudlet sites to create a new cluster",
 	}, {
 		"MT bad cluster org",
 		0, &zoneMT, "foo", mtClust, notDedicatedIp, "",

@@ -262,9 +262,10 @@ const (
 )
 
 const (
-	AnnotationCloudletScopedName = "cloudlet-scoped-name"
-	AnnotationBadUpgrade55Name   = "bad-upgrade55-name"
-	AnnotationPreviousDNSName    = "previous-dns-name"
+	AnnotationCloudletScopedName      = "cloudlet-scoped-name"
+	AnnotationBadUpgrade55Name        = "bad-upgrade55-name"
+	AnnotationPreviousDNSName         = "previous-dns-name"
+	AnnotationFedPartnerAppProviderID = "fed-partner-app-provider-id"
 )
 
 var InstanceUp = "UP"

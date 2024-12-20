@@ -1612,3 +1612,10 @@ func (s *Cloudlet) AddAnnotation(key, val string) bool {
 	s.Annotations[key] = val
 	return true
 }
+
+type OrgName string
+
+func (s OrgName) Matches(o OrgName) bool {
+	// organization names are case insensitive
+	return strings.EqualFold(string(s), string(o))
+}

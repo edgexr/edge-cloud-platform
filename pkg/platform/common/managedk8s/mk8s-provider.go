@@ -174,7 +174,7 @@ func (m *ManagedK8sPlatform) RefreshCerts(ctx context.Context, certsCache *certs
 		refreshOpts := k8smgmt.RefreshCertsOpts{
 			CommerialCerts: m.CommonPf.PlatformConfig.CommercialCerts,
 		}
-		err = k8smgmt.RefreshCert(ctx, client, names.GetKConfNames(), cloudletKey, certsCache, wildcardName, refreshOpts)
+		err = k8smgmt.RefreshCert(ctx, client, names.GetKConfNames(), cloudletKey, certsCache, k8smgmt.IngressNginxNamespace, wildcardName, refreshOpts)
 		if err != nil {
 			errs = append(errs, err.Error())
 		}

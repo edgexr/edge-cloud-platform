@@ -173,12 +173,18 @@ func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallCo
 		if !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
 			return nil, KubernetesOnly, fmt.Errorf("app deployment %s, but cloudlet only supports kubernetes", app.Deployment)
 		}
-		if !app.AllowServerless {
-			return nil, ServerlessOnly, errors.New(ServerlessOnly)
-		}
-		if pc.cloudlet.SingleKubernetesClusterOwner != "" && pc.cloudlet.SingleKubernetesClusterOwner != in.Key.Organization {
+		// TODO: to allow a partner app provider to deploy over
+		// federation, the cloudlet should be able to specify the
+		// partner app provider for each federation. For now we
+		// just check if it's the same as the local regardless of
+		// federation partner.
+		appInstOwner := cloudcommon.GetAppInstOwner(in)
+		clusterOwner := edgeproto.OrgName(pc.cloudlet.SingleKubernetesClusterOwner)
+		// note: skip allow serverless check, as that is meant to
+		// avoid multi-tenant clusters, but this is not multi-tenant.
+		if clusterOwner != "" && !appInstOwner.Matches(clusterOwner) {
 			// no permission for cluster
-			err := fmt.Errorf("single kubernetes cluster mismatched owner, appinst owner is %s but cluster owner is %s", in.Key.Organization, pc.cloudlet.SingleKubernetesClusterOwner)
+			err := fmt.Errorf("single kubernetes cluster mismatched owner, appinst owner is %s but cluster owner is %s", appInstOwner, pc.cloudlet.SingleKubernetesClusterOwner)
 			if in.ClusterKey.Name != "" {
 				// return the reason that they cannot use this cluster
 				return nil, MTClusterOrgInvalid, err
@@ -227,6 +233,7 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 		refs := edgeproto.CloudletRefs{}
 		if !s.all.cloudletRefsApi.cache.Get(&pc.cloudlet.Key, &refs) {
 			// no clusters
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy get no clusters", "cloudlet", pc.cloudlet.Key)
 			continue
 		}
 		cloudletPcs := s.getPotentialCloudletClusters(ctx, cctx, in, app, pc, refs.ClusterInsts)
@@ -246,7 +253,7 @@ func (s *AppInstApi) getPotentialCloudletClusters(ctx context.Context, cctx *Cal
 	for _, key := range candidates {
 		clust, logReason, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, key, userSpecified)
 		if err != nil {
-			if logReason {
+			if logReason || true {
 				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential cluster", "appinst", in.Key, "cluster", key, "reason", err)
 			}
 			continue
@@ -282,13 +289,14 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 			return nil, false, fmt.Errorf("cluster reserved by another tenant")
 		}
 	} else {
+		appInstOwner := cloudcommon.GetAppInstOwner(in)
 		if cloudcommon.IsSideCarApp(app) {
 			// always allow sidecar apps, but they must directly
 			// target the cluster.
 			if !userSpecified {
 				return nil, true, fmt.Errorf("sidecar app must specify target cluster")
 			}
-		} else if clusterInst.Key.Organization == in.Key.Organization {
+		} else if appInstOwner.Matches(edgeproto.OrgName(clusterInst.Key.Organization)) {
 			if clusterInst.DisableDynamicAppinstPlacement && !userSpecified {
 				return nil, true, fmt.Errorf("found cluster but dynamic appinst placement is disabled")
 			}
@@ -399,9 +407,10 @@ func (s *AppInstApi) usePotentialCluster(ctx context.Context, stm concurrency.ST
 			return nil, err
 		}
 	} else {
+		appInstOwner := cloudcommon.GetAppInstOwner(in)
 		// user-specified cluster
-		if !sidecarApp && in.Key.Organization != clusterInst.Key.Organization {
-			return nil, fmt.Errorf("developer organization mismatch between AppInst: %s and ClusterInst: %s", in.Key.Organization, clusterInst.Key.Organization)
+		if !sidecarApp && !appInstOwner.Matches(edgeproto.OrgName(clusterInst.Key.Organization)) {
+			return nil, fmt.Errorf("developer organization mismatch between AppInst: %s and ClusterInst: %s", appInstOwner, clusterInst.Key.Organization)
 		}
 	}
 	return &clusterInst, nil
