@@ -74,6 +74,16 @@ func (s *K8sSite) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudl
 		if err != nil {
 			return false, err
 		}
+	} else {
+		// TODO: for now we're only maintaining the cert in the
+		// default namespace, but we'd need to populate it for
+		// all namespaces.
+		updateCallback(edgeproto.UpdateTask, "Generating ingress certificate")
+		// set up certificate in default namespace
+		err = k8smgmt.RefreshCert(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, k8smgmt.DefaultNamespace, wildcardName, refreshOpts)
+		if err != nil {
+			return false, err
+		}
 	}
 	return false, nil
 }
@@ -132,11 +142,19 @@ func (s *K8sSite) RefreshCerts(ctx context.Context, certsCache *certscache.Proxy
 	}
 	client := s.getClient()
 
+	var namespace string
+	hasIngressController, ok := s.CommonPf.Properties.GetValue(cloudcommon.IngressControllerPresent)
+	if !ok || hasIngressController == "" {
+		namespace = k8smgmt.IngressNginxNamespace
+	} else {
+		namespace = k8smgmt.DefaultNamespace
+	}
+
 	wildcardName := certscache.GetWildcardName(cloudlet.RootLbFqdn)
 	refreshOpts := k8smgmt.RefreshCertsOpts{
 		CommerialCerts: s.CommonPf.PlatformConfig.CommercialCerts,
 	}
-	err = k8smgmt.RefreshCert(ctx, client, kconfNames, cloudletKey, certsCache, wildcardName, refreshOpts)
+	err = k8smgmt.RefreshCert(ctx, client, kconfNames, cloudletKey, certsCache, namespace, wildcardName, refreshOpts)
 	if err != nil {
 		return err
 	}

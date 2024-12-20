@@ -49,6 +49,7 @@ const (
 func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) (*networkingv1.Ingress, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating ingress", "appInst", appInst.Key.GetKeyString())
 
+	kconfArg := names.GetTenantKconfArg()
 	ingressClass := IngressClassName
 
 	ingress := networkingv1.Ingress{}
@@ -137,15 +138,21 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 	rule.HTTP = &httpRule
 	ingress.Spec.Rules = []networkingv1.IngressRule{rule}
 	if hasTLS {
-		// Note the TLS secret is left blank to allow nginx to use
-		// the default SSL certificate.
 		tls := networkingv1.IngressTLS{
 			Hosts: []string{hostName},
+		}
+		cmd := fmt.Sprintf("kubectl %s get secret %s", kconfArg, IngressDefaultCertSecret)
+		out, err := client.Output(cmd)
+		if err == nil && strings.Contains(out, IngressDefaultCertSecret) {
+			// found cert in local namespace, insert it into ingress
+			tls.SecretName = IngressDefaultCertSecret
+		} else {
+			//TLS secret is left blank to allow nginx to use
+			// the default SSL certificate.
 		}
 		ingress.Spec.TLS = append(ingress.Spec.TLS, tls)
 		ingress.ObjectMeta.Labels["nginx.ingress.kubernetes.io/ssl-redirect"] = "true"
 	}
-
 	// Apply the ingress spec
 	printer := &printers.YAMLPrinter{}
 	buf := bytes.Buffer{}
@@ -154,7 +161,6 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 		return nil, fmt.Errorf("failed to marshal the ingress object to yaml, %s", err)
 	}
 	contents := buf.String()
-	kconfArg := names.GetTenantKconfArg()
 	configDir := getConfigDirName(names)
 	fileName := configDir + "/" + getIngressManifestName(names)
 	err = pc.WriteFile(client, fileName, contents, "k8s ingress", pc.NoSudo)

@@ -533,3 +533,17 @@ func AppInstToClusterDeployment(deployment string) string {
 func AppDeploysToKubernetes(deployment string) bool {
 	return deployment == DeploymentTypeKubernetes || deployment == DeploymentTypeHelm
 }
+
+// GetAppInstOwner gets the org "owner". For local appInsts, the
+// owner is the Key.Organization. For federated AppInsts, the owner
+// is the AppProviderId (Key.Organization is set to the fedhost).
+// This assumes AppProviderId is globally unique and comparable
+// across all platforms, which is probably not true. It should be
+// reworked to be able to map a partner fed + remote AppProviderId
+// to a local Organization.
+func GetAppInstOwner(appInst *edgeproto.AppInst) edgeproto.OrgName {
+	if partnerAppProviderID, found := appInst.Annotations[AnnotationFedPartnerAppProviderID]; found {
+		return edgeproto.OrgName(partnerAppProviderID)
+	}
+	return edgeproto.OrgName(appInst.Key.Organization)
+}

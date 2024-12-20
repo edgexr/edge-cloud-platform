@@ -704,6 +704,11 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				ciKey := edgeproto.ClusterKey{
 					Name: "potentialClusterInst",
 				}
+				if pc.features.IsSingleKubernetesCluster {
+					// can't create new clusters
+					log.SpanLog(ctx, log.DebugLevelApi, "skip potential cloudlet for reservable clusterinst, single kubernetes clusters cannot create new clusters", "cloudlet", pc.cloudlet.Key, "err", err)
+					continue
+				}
 				autoCi, err := s.buildAutocluster(ctx, ciKey, pc.cloudlet.Key, pc.features, &app, in)
 				if err != nil {
 					log.SpanLog(ctx, log.DebugLevelApi, "failed to build auto cluster for potential cloudlet check, skipping", "err", err)
@@ -1004,6 +1009,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			}
 		}()
 	} else if scaleSpec != nil {
+		cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Scaling existing cluster %s to deploy AppInst", clusterKey.Name)})
 		log.SpanLog(ctx, log.DebugLevelApi, "scale existing cluster", "cluster", clusterKey, "AppInst", in.Key, "scaleSpec", scaleSpec)
 		clusterInst.Key = clusterKey
 		clusterInst.CloudletKey = in.CloudletKey

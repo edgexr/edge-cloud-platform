@@ -23,7 +23,7 @@ ENV DOCKER_BUILD=yes
 
 # Can be overridden with an argument
 ARG KUBECTL_WRAPPER_ARCHIVES=https://github.com/edgexr/kubectl/archive/refs/tags
-ARG KUBECTL_WRAPPER_VERSION=0.0.1
+ARG KUBECTL_WRAPPER_VERSION=0.0.2
 
 WORKDIR /kubectl
 RUN wget ${KUBECTL_WRAPPER_ARCHIVES}/v${KUBECTL_WRAPPER_VERSION}.tar.gz && \

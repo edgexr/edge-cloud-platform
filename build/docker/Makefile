@@ -4,7 +4,7 @@ VERSION ?= $(shell echo $$USER | tr -cd 'a-zA-Z' )-$(shell date +'%Y-%m-%d' )
 REGISTRY ?= ghcr.io/edgexr
 PUSH ?= --push
 KUBECTL_WRAPPER_ARCHIVES ?= https://github.com/edgexr/kubectl/archive/refs/tags
-KUBECTL_WRAPPER_VERSION ?= 0.0.1
+KUBECTL_WRAPPER_VERSION ?= 0.0.2
 
 # TOP refers to repository root
 TOP = ../..
