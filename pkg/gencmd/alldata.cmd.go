@@ -1105,7 +1105,7 @@ var AllDataComments = map[string]string{
 	"platformfeatures:#.supportsipv6":                                            "Supports IPv6",
 	"platformfeatures:#.requirescrmonedge":                                       "Requires on-edge-site CRM",
 	"platformfeatures:#.requirescrmoffedge":                                      "Requires off-edge-site CRM, i.e. CCRM",
-	"platformfeatures:#.requirescertrefresh":                                     "Requires certificate refresh",
+	"platformfeatures:#.requirescertrefresh":                                     "Requires certificate refresh (deprecated, not used)",
 	"platformfeatures:#.supportsmultiplenodepools":                               "Kubernetes clusters support more than one node pool",
 	"platformfeatures:#.managesk8scontrolnodes":                                  "Platform manages Kubernetes control nodes",
 	"platformfeatures:#.usesingress":                                             "Platform uses ingress for inbound Kubernetes HTTP traffic",

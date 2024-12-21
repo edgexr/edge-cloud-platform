@@ -192,7 +192,7 @@ message PlatformFeatures {
   bool requires_crm_on_edge = 28;
   // Requires off-edge-site CRM, i.e. CCRM
   bool requires_crm_off_edge = 29;
-  // Requires certificate refresh
+  // Requires certificate refresh (deprecated, not used)
   bool requires_cert_refresh = 30;
   // Kubernetes clusters support more than one node pool
   bool supports_multiple_node_pools = 31;
@@ -909,6 +909,16 @@ service CloudletApi {
     };
     option (protogen.stream_out_incremental) = true;
     option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
+  }
+  // Refresh LB and Ingress TLS certificates for Cloudlet. This only works for cloudlets with CrmOnEdge=false.
+  rpc RefreshCerts(CloudletKey) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/cloudlet/refreshcert"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
+    option (protogen.method_not_required) = "Name,Organization";
   }
 }
 

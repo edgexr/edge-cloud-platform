@@ -2325,6 +2325,87 @@ func ChangeCloudletDNSs(c *cli.Command, data []edgeproto.CloudletKey, err *error
 	}
 }
 
+var RefreshCertsCmd = &cli.Command{
+	Use:          "RefreshCerts",
+	RequiredArgs: strings.Join(RefreshCertsRequiredArgs, " "),
+	OptionalArgs: strings.Join(RefreshCertsOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
+	SpecialArgs:  &CloudletKeySpecialArgs,
+	Comments:     CloudletKeyComments,
+	ReqData:      &edgeproto.CloudletKey{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRefreshCerts,
+}
+
+func runRefreshCerts(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.CloudletKey)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return RefreshCerts(c, obj)
+}
+
+func RefreshCerts(c *cli.Command, in *edgeproto.CloudletKey) error {
+	if CloudletApiCmd == nil {
+		return fmt.Errorf("CloudletApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := CloudletApiCmd.RefreshCerts(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("RefreshCerts failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.Result, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("RefreshCerts recv failed: %s", errstr)
+		}
+		if cli.OutputStream {
+			c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+			continue
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func RefreshCertss(c *cli.Command, data []edgeproto.CloudletKey, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("RefreshCerts %v\n", data[ii])
+		myerr := RefreshCerts(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var CloudletApiCmds = []*cobra.Command{
 	CreateCloudletCmd.GenCmd(),
 	DeleteCloudletCmd.GenCmd(),
@@ -2346,6 +2427,7 @@ var CloudletApiCmds = []*cobra.Command{
 	GenerateAccessKeyCmd.GenCmd(),
 	GetCloudletGPUDriverLicenseConfigCmd.GenCmd(),
 	ChangeCloudletDNSCmd.GenCmd(),
+	RefreshCertsCmd.GenCmd(),
 }
 
 var CloudletInfoApiCmd edgeproto.CloudletInfoApiClient
@@ -2809,7 +2891,7 @@ var PlatformFeaturesComments = map[string]string{
 	"supportsipv6":                             "Supports IPv6",
 	"requirescrmonedge":                        "Requires on-edge-site CRM",
 	"requirescrmoffedge":                       "Requires off-edge-site CRM, i.e. CCRM",
-	"requirescertrefresh":                      "Requires certificate refresh",
+	"requirescertrefresh":                      "Requires certificate refresh (deprecated, not used)",
 	"supportsmultiplenodepools":                "Kubernetes clusters support more than one node pool",
 	"managesk8scontrolnodes":                   "Platform manages Kubernetes control nodes",
 	"usesingress":                              "Platform uses ingress for inbound Kubernetes HTTP traffic",
@@ -3966,5 +4048,11 @@ var ShowFlavorsForZoneRequiredArgs = []string{}
 var ShowFlavorsForZoneOptionalArgs = []string{
 	"zoneorg",
 	"zone",
+	"federatororg",
+}
+var RefreshCertsRequiredArgs = []string{}
+var RefreshCertsOptionalArgs = []string{
+	"cloudletorg",
+	"cloudlet",
 	"federatororg",
 }

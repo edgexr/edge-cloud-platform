@@ -2857,3 +2857,66 @@ func redactAccessVars(accessVars map[string]string) map[string]string {
 	}
 	return vars
 }
+
+func canRunRefreshCerts(cloudlet *edgeproto.Cloudlet, features *edgeproto.PlatformFeatures) bool {
+	// For CRM on edge, CRM runs cert refresh
+	return !cloudlet.CrmOnEdge
+}
+
+func (s *CloudletApi) RefreshCerts(key *edgeproto.CloudletKey, cb edgeproto.CloudletApi_RefreshCertsServer) error {
+	ctx := cb.Context()
+	ptof := s.all.platformFeaturesApi.FeaturesByPlatform()
+
+	filter := &edgeproto.Cloudlet{
+		Key: *key,
+	}
+	cloudlets := []edgeproto.Cloudlet{}
+	err := s.cache.Show(filter, func(obj *edgeproto.Cloudlet) error {
+		features, ok := ptof[obj.PlatformType]
+		if !ok {
+			cb.Send(&edgeproto.Result{
+				Message: fmt.Sprintf("%s: no features found", obj.Key.GetKeyString()),
+			})
+			return nil
+		}
+		if !canRunRefreshCerts(obj, &features) {
+			cb.Send(&edgeproto.Result{
+				Message: fmt.Sprintf("%s: skip CRM on edge", obj.Key.GetKeyString()),
+			})
+			return nil
+		}
+		cloudlets = append(cloudlets, *obj.Clone())
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	for ii := range cloudlets {
+		cloudlet := &cloudlets[ii]
+		features, ok := ptof[cloudlet.PlatformType]
+		if !ok {
+			// should not happen since we already looked it up once
+			continue
+		}
+		conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
+		if err != nil {
+			cb.Send(&edgeproto.Result{
+				Message: fmt.Sprintf("%s: no connection, %s", cloudlet.Key.GetKeyString(), err),
+			})
+			continue
+		}
+		api := edgeproto.NewCloudletPlatformAPIClient(conn)
+		_, err = api.RefreshCerts(ctx, cloudlet)
+		if err != nil {
+			cb.Send(&edgeproto.Result{
+				Message: fmt.Sprintf("%s: failed, %s", cloudlet.Key.GetKeyString(), err),
+			})
+		} else {
+			cb.Send(&edgeproto.Result{
+				Message: fmt.Sprintf("%s: done", cloudlet.Key.GetKeyString()),
+			})
+		}
+	}
+	return nil
+}
