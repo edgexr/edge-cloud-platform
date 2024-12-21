@@ -31,6 +31,7 @@ import (
 	ssh "github.com/edgexr/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	apimachineryversion "k8s.io/apimachinery/pkg/version"
 )
 
 type NoScheduleMasterTaintAction string
@@ -251,9 +252,40 @@ func ClearClusterConfig(ctx context.Context, client ssh.Client, configDir, names
 	return nil
 }
 
-type Nodes struct {
-	ApiVersion string    `json:"apiVersion"`
-	Items      []v1.Node `json:"items"`
+func filterWarnings(out string) string {
+	lines := strings.Split(out, "\n")
+	linesFiltered := []string{}
+	for _, line := range lines {
+		if strings.HasPrefix(line, "WARNING: ") {
+			continue
+		}
+		linesFiltered = append(linesFiltered, line)
+	}
+	return strings.Join(linesFiltered, "\n")
+}
+
+type KubectlVersion struct {
+	ClientVersion    apimachineryversion.Info `json:"clientVersion"`
+	ServerVersion    apimachineryversion.Info `json:"serverVersion"`
+	KustomizeVersion string                   `json:"kustomizeVersion"`
+}
+
+func GetClusterVersion(ctx context.Context, client ssh.Client, kconfArg string) (string, error) {
+	cmd := fmt.Sprintf("kubectl %s version --output=json", kconfArg)
+	log.SpanLog(ctx, log.DebugLevelInfra, "k8s version", "cmd", cmd)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return "", fmt.Errorf("get cluster version failed, %s, %v", out, err)
+	}
+	// dispose of warnings
+	out = filterWarnings(out)
+	// parse output
+	kv := KubectlVersion{}
+	err = json.Unmarshal([]byte(out), &kv)
+	if err != nil {
+		return "", fmt.Errorf("failed to unmarshal kubectl version data, %s", err)
+	}
+	return fmt.Sprintf("%s.%s", kv.ServerVersion.Major, kv.ServerVersion.Minor), nil
 }
 
 func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*edgeproto.NodeInfo, error) {
@@ -263,7 +295,7 @@ func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*e
 	if err != nil {
 		return nil, fmt.Errorf("get nodes failed, %s, %v", out, err)
 	}
-	nodes := Nodes{}
+	nodes := v1.NodeList{}
 	err = json.Unmarshal([]byte(out), &nodes)
 	if err != nil {
 		return nil, err

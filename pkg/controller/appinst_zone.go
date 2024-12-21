@@ -49,7 +49,7 @@ const (
 
 const MaxPotentialClusters = 5
 
-func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App) ([]*potentialInstCloudlet, error) {
+func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App) ([]*potentialInstCloudlet, SkipReasons, error) {
 	// determine the potential cloudlets to deploy the instance to
 	var potentialCloudletKeys []edgeproto.CloudletKey
 	clusterSpecified := false
@@ -59,7 +59,7 @@ func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContex
 		// from the cluster
 		inCluster := edgeproto.ClusterInst{}
 		if !s.all.clusterInstApi.cache.Get(&in.ClusterKey, &inCluster) {
-			return nil, in.ClusterKey.NotFoundError()
+			return nil, nil, in.ClusterKey.NotFoundError()
 		}
 		potentialCloudletKeys = []edgeproto.CloudletKey{inCluster.CloudletKey}
 		clusterSpecified = true
@@ -72,16 +72,16 @@ func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContex
 	} else {
 		// in general we pick from the cloudlets in the specified zone
 		if in.ZoneKey.Name == "" {
-			return nil, errors.New("zone not specified")
+			return nil, nil, errors.New("zone not specified")
 		}
 		// check if zone exists
 		zoneBuf := edgeproto.Zone{}
 		if !s.all.zoneApi.cache.Get(&in.ZoneKey, &zoneBuf) {
-			return nil, in.ZoneKey.NotFoundError()
+			return nil, nil, in.ZoneKey.NotFoundError()
 		}
 		potentialCloudletKeys = s.all.cloudletApi.cache.CloudletsForZone(&in.ZoneKey)
 		if len(potentialCloudletKeys) == 0 {
-			return nil, errors.New("no available edge sites in zone " + in.ZoneKey.Name)
+			return nil, nil, errors.New("no available edge sites in zone " + in.ZoneKey.Name)
 		}
 	}
 
@@ -101,7 +101,7 @@ func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContex
 		if err != nil {
 			if cloudletSpecified {
 				// specific cloudlet set by internal tool, return actual error
-				return nil, err
+				return nil, nil, err
 			}
 			log.SpanLog(ctx, log.DebugLevelApi, "skipping potential cloudlet from AppInst create", "cloudlet", ckey, "err", err)
 			skipReasons.add(skipReason)
@@ -121,14 +121,14 @@ func (s *AppInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallContex
 			}
 		}
 		if clusterSpecified {
-			return nil, fmt.Errorf("cannot deploy to cluster %s%s", in.ClusterKey.Name, reasonsStr)
+			return nil, nil, fmt.Errorf("cannot deploy to cluster %s%s", in.ClusterKey.Name, reasonsStr)
 		} else if cloudletSpecified {
-			return nil, fmt.Errorf("cannot deploy to cloudlet %s%s", in.CloudletKey.Name, reasonsStr)
+			return nil, nil, fmt.Errorf("cannot deploy to cloudlet %s%s", in.CloudletKey.Name, reasonsStr)
 		} else {
-			return nil, fmt.Errorf("no available edge sites in zone %s%s", in.ZoneKey.Name, reasonsStr)
+			return nil, nil, fmt.Errorf("no available edge sites in zone %s%s", in.ZoneKey.Name, reasonsStr)
 		}
 	}
-	return potentialCloudlets, nil
+	return potentialCloudlets, skipReasons, nil
 }
 
 func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, ckey *edgeproto.CloudletKey) (*potentialInstCloudlet, SkipReason, error) {
@@ -210,25 +210,26 @@ func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallCo
 	return pc, NoSkipReason, nil
 }
 
-func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, potentialCloudlets []*potentialInstCloudlet) ([]*potentialAppInstCluster, error) {
+func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, potentialCloudlets []*potentialInstCloudlet) ([]*potentialAppInstCluster, SkipReasons, error) {
 	potentialClusters := []*potentialAppInstCluster{}
 
 	if in.ClusterKey.Name != "" {
 		// cluster specified by user
 		pc := potentialCloudlets[0]
 		userSpecified := true
-		clust, _, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, in.ClusterKey, userSpecified)
+		clust, _, _, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, in.ClusterKey, userSpecified)
 		log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy validate target cluster", "appInst", in.Key, "cluster", in.ClusterKey, "err", err)
 		if err != nil {
 			// return error if we can't use the cluster specified
-			return nil, err
+			return nil, nil, err
 		}
 		potentialClusters = append(potentialClusters, clust)
-		return potentialClusters, nil
+		return potentialClusters, SkipReasons{}, nil
 	}
 
 	log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy get potential clusters", "app", app.Key, "appInst", in.Key)
 
+	skipReasons := SkipReasons{}
 	for _, pc := range potentialCloudlets {
 		refs := edgeproto.CloudletRefs{}
 		if !s.all.cloudletRefsApi.cache.Get(&pc.cloudlet.Key, &refs) {
@@ -236,43 +237,50 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy get no clusters", "cloudlet", pc.cloudlet.Key)
 			continue
 		}
-		cloudletPcs := s.getPotentialCloudletClusters(ctx, cctx, in, app, pc, refs.ClusterInsts)
+		cloudletPcs, srs := s.getPotentialCloudletClusters(ctx, cctx, in, app, pc, refs.ClusterInsts)
 		potentialClusters = append(potentialClusters, cloudletPcs...)
+		skipReasons.addAll(srs)
 	}
 	sort.Sort(PotentialAppInstClusterByResource(potentialClusters))
 	if len(potentialClusters) > MaxPotentialClusters {
-		return potentialClusters[:MaxPotentialClusters], nil
+		return potentialClusters[:MaxPotentialClusters], skipReasons, nil
 	}
-	return potentialClusters, nil
+	return potentialClusters, skipReasons, nil
 }
 
-func (s *AppInstApi) getPotentialCloudletClusters(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, pc *potentialInstCloudlet, candidates []edgeproto.ClusterKey) []*potentialAppInstCluster {
+func (s *AppInstApi) getPotentialCloudletClusters(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, pc *potentialInstCloudlet, candidates []edgeproto.ClusterKey) ([]*potentialAppInstCluster, SkipReasons) {
 	potentialClusters := []*potentialAppInstCluster{}
 	userSpecified := false
+	skipReasons := SkipReasons{}
 	log.SpanLog(ctx, log.DebugLevelApi, "get potential cloudlet clusters", "appinst", in.Key, "cloudlet", pc.cloudlet.Key)
 	for _, key := range candidates {
-		clust, logReason, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, key, userSpecified)
+		clust, skipReason, logReason, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, key, userSpecified)
 		if err != nil {
-			if logReason || true {
-				log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential cluster", "appinst", in.Key, "cluster", key, "reason", err)
+			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential cluster", "appinst", in.Key, "cluster", key, "reason", skipReason, "err", err)
+			if logReason {
+				// only notify users of potential misconfigurations
+				// or lack of resources. Common skip reasons, like
+				// mismatched deployment types or cluster owned by
+				// a different tenant should not be shown.
+				skipReasons.add(skipReason)
 			}
 			continue
 		}
 		potentialClusters = append(potentialClusters, clust)
 	}
-	return potentialClusters
+	return potentialClusters, skipReasons
 }
 
-func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, pc *potentialInstCloudlet, key edgeproto.ClusterKey, userSpecified bool) (*potentialAppInstCluster, bool, error) {
+func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, pc *potentialInstCloudlet, key edgeproto.ClusterKey, userSpecified bool) (*potentialAppInstCluster, SkipReason, bool, error) {
 	clusterInst := &edgeproto.ClusterInst{}
 	if !s.all.clusterInstApi.cache.Get(&key, clusterInst) {
-		return nil, false, key.NotFoundError()
+		return nil, ClusterMissing, false, key.NotFoundError()
 	}
 	if cloudcommon.AppInstToClusterDeployment(app.Deployment) != clusterInst.Deployment {
-		return nil, false, fmt.Errorf("cannot deploy %s app to %s cluster", app.Deployment, clusterInst.Deployment)
+		return nil, DeploymentMismatch, false, fmt.Errorf("cannot deploy %s app to %s cluster", app.Deployment, clusterInst.Deployment)
 	}
 	if clusterInst.MultiTenant && !app.AllowServerless {
-		return nil, true, fmt.Errorf("app must be serverless to deploy to multi-tenant cluster")
+		return nil, AppNotServerless, true, fmt.Errorf("app must be serverless to deploy to multi-tenant cluster")
 	}
 	clusterType := ClusterTypeUnknown
 	if clusterInst.MultiTenant {
@@ -286,7 +294,7 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 			clusterType = ClusterTypeOwnedReservable
 		} else {
 			// clusterInst reserved by another tenant
-			return nil, false, fmt.Errorf("cluster reserved by another tenant")
+			return nil, ClusterReserved, false, fmt.Errorf("cluster reserved by another tenant")
 		}
 	} else {
 		appInstOwner := cloudcommon.GetAppInstOwner(in)
@@ -294,23 +302,23 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 			// always allow sidecar apps, but they must directly
 			// target the cluster.
 			if !userSpecified {
-				return nil, true, fmt.Errorf("sidecar app must specify target cluster")
+				return nil, SidecarAppMustTargetCluster, true, fmt.Errorf("sidecar app must specify target cluster")
 			}
 		} else if appInstOwner.Matches(edgeproto.OrgName(clusterInst.Key.Organization)) {
 			if clusterInst.DisableDynamicAppinstPlacement && !userSpecified {
-				return nil, true, fmt.Errorf("found cluster but dynamic appinst placement is disabled")
+				return nil, NoDynamicPlacement, true, fmt.Errorf("found cluster but dynamic appinst placement is disabled")
 			}
 		} else {
 			// clusterInst owned by another tenant
-			return nil, false, fmt.Errorf("cluster owned by another tenant")
+			return nil, ClusterOwned, false, fmt.Errorf("cluster owned by another tenant")
 		}
 		clusterType = ClusterTypeOwned
 	}
 	if err := s.all.clusterInstApi.checkMinKubernetesVersion(clusterInst, in); err != nil {
-		return nil, true, fmt.Errorf("k8s version check failed, %s", err)
+		return nil, K8SVersionFail, true, fmt.Errorf("k8s version check failed, %s", err)
 	}
 	if in.EnableIpv6 && !clusterInst.EnableIpv6 {
-		return nil, true, fmt.Errorf("app requested IPV6 but cluster does not support it")
+		return nil, ClusterNoIPV6, true, fmt.Errorf("app requested IPV6 but cluster does not support it")
 	}
 	refs := edgeproto.ClusterRefs{}
 	if !s.all.clusterRefsApi.cache.Get(&clusterInst.Key, &refs) {
@@ -338,17 +346,17 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 			if refAi.AppKey.Matches(&app.Key) {
 				// we don't support multiple instances of the same app in the
 				// same cluster
-				return nil, true, fmt.Errorf("cannot deploy another instance of App %s in the cluster", app.Key.GetKeyString())
+				return nil, NoAppDuplicates, true, fmt.Errorf("cannot deploy another instance of App %s in the cluster", app.Key.GetKeyString())
 			}
 			if cloudcommon.IsSideCarApp(app) || cloudcommon.IsSideCarApp(refApp) {
 				// ignore standalone requirements for sidecar apps
 				continue
 			}
 			if in.IsStandalone && !userSpecified {
-				return nil, true, fmt.Errorf("standalone app cannot be deployed to a cluster that already has an app instance")
+				return nil, StandaloneConflict, true, fmt.Errorf("standalone app cannot be deployed to a cluster that already has an app instance")
 			}
 			if refAi.IsStandalone && !userSpecified {
-				return nil, true, fmt.Errorf("cluster already in use by standalone app %s", refApp.Key.GetKeyString())
+				return nil, StandaloneConflict, true, fmt.Errorf("cluster already in use by standalone app %s", refApp.Key.GetKeyString())
 			}
 		}
 	}
@@ -360,20 +368,20 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 	}
 	if err != nil && ss != nil {
 		if pc.resCalc == nil {
-			return nil, true, fmt.Errorf("internal error, resCalc is nil")
+			return nil, NoSkipReason, true, fmt.Errorf("internal error, resCalc is nil")
 		}
 		// cluster does not have enough resources, but can potentially
 		// scale up to provide enough. check if the cloudlet can
 		// support the scaled up cluster.
 		_, scaleErr := pc.resCalc.CloudletFitsScaledSpec(ctx, ss)
 		if scaleErr != nil {
-			return nil, true, fmt.Errorf("cluster does not have enough resources, and cloudlet does not have enough resources to scale up cluster, %s", err)
+			return nil, ClusterNoResources, true, fmt.Errorf("cluster does not have enough resources, and cloudlet does not have enough resources to scale up cluster, %s", err)
 		}
 		if clusterInst.State != edgeproto.TrackedState_READY {
-			return nil, true, fmt.Errorf("cluster requires scaling but is not in ready state, state is %s", clusterInst.State.String())
+			return nil, ClusterNoResources, true, fmt.Errorf("cluster requires scaling but is not in ready state, state is %s", clusterInst.State.String())
 		}
 	} else if ss == nil && err != nil {
-		return nil, true, fmt.Errorf("not enough resources in cluster, %s", err)
+		return nil, ClusterNoResources, true, fmt.Errorf("not enough resources in cluster, %s", err)
 	}
 	clust := potentialAppInstCluster{}
 	clust.existingCluster = key
@@ -384,7 +392,7 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 	clust.resourceScore = s.all.clusterInstApi.calcResourceScore(free)
 	clust.userSpecified = userSpecified
 	log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential cluster", "appinst", in.Key, "cloudlet", pc.cloudlet.Key, "cluster", key, "clusterType", clusterType, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
-	return &clust, false, nil
+	return &clust, NoSkipReason, false, nil
 }
 
 func (s *AppInstApi) usePotentialCluster(ctx context.Context, stm concurrency.STM, in *edgeproto.AppInst, app *edgeproto.App, sidecarApp bool, pc *potentialAppInstCluster) (*edgeproto.ClusterInst, error) {
