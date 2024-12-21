@@ -504,7 +504,6 @@ func (v *VMPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgeproto.Clo
 
 func (v *VMPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	features := v.VMProvider.GetFeatures()
-	features.RequiresCertRefresh = true
 	// add in vmprovider common properties
 	for k, v := range VMProviderProps {
 		features.Properties[k] = v
