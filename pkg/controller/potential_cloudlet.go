@@ -43,6 +43,7 @@ type potentialInstCloudlet struct {
 // from developers.
 type SkipReason string
 
+// cloudlet skip reasons
 const (
 	NoSkipReason                SkipReason = ""
 	SiteUnavailable                        = "site is unavailable"
@@ -66,11 +67,33 @@ const (
 	NoSupportMultipleNodePools             = "site does not support multiple node pools"
 )
 
+// cluster skip reasons
+const (
+	ClusterMissing              SkipReason = "cluster missing"
+	DeploymentMismatch                     = "deployment type mismatch"
+	AppNotServerless                       = "app is not serverless"
+	ClusterReserved                        = "cluster reserved"
+	ClusterOwned                           = "cluster owned by another tenant"
+	SidecarAppMustTargetCluster            = "sidecar app must target cluster"
+	NoDynamicPlacement                     = "cluster has dynamic placement disabled"
+	K8SVersionFail                         = "k8s version not supported"
+	ClusterNoIPV6                          = "cluster does not support IPV6"
+	NoAppDuplicates                        = "instance of App already present"
+	StandaloneConflict                     = "standalone App conflict"
+	ClusterNoResources                     = "not enough resources"
+)
+
 type SkipReasons map[SkipReason]struct{}
 
 func (s SkipReasons) add(reason SkipReason) {
 	if reason != NoSkipReason {
 		s[reason] = struct{}{}
+	}
+}
+
+func (s SkipReasons) addAll(reasons SkipReasons) {
+	for reason := range reasons {
+		s.add(reason)
 	}
 }
 

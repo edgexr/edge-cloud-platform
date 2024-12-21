@@ -522,6 +522,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	inCopy := edgeproto.AppInst{}
 	inCopy.DeepCopyIn(in)
 	var app edgeproto.App
+	var sendMsgs []string
 
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		// reset modified state in case STM hits conflict and runs again
@@ -534,6 +535,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		in.DeepCopyIn(&inCopy)
 		app = edgeproto.App{}
 		scaleSpec = nil
+		sendMsgs = nil
 
 		// lookup App so we can get flavor for reservable ClusterInst
 		if !s.all.appApi.store.STMGet(stm, &in.AppKey, &app) {
@@ -623,19 +625,33 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 		// We need to determine which cloudlet in the target zone will
 		// host the instance.
-		potentialCloudlets, err := s.getPotentialCloudlets(ctx, cctx, in, &app)
+		potentialCloudlets, skipCloudletsReasons, err := s.getPotentialCloudlets(ctx, cctx, in, &app)
 		if err != nil {
 			return err
 		}
+		skipMsg := ""
+		if len(skipCloudletsReasons) > 0 {
+			skipMsg = ", some skipped because " + skipCloudletsReasons.String()
+		}
+		sendMsgs = append(sendMsgs, fmt.Sprintf("Found %d potential cloudlets for deployment%s", len(potentialCloudlets), skipMsg))
+
 		if cloudcommon.IsClusterInstReqd(&app) {
 			// Check if we will use a pre-existing cluster.
 			// This may be a cluster specified by the caller, or it may
 			// be a system-provided reservable/multi-tenant cluster.
 			autoClusterType = ChooseAutoCluster
-			potentialClusters, err := s.getPotentialClusters(ctx, cctx, in, &app, potentialCloudlets)
+			potentialClusters, skipClusterReasons, err := s.getPotentialClusters(ctx, cctx, in, &app, potentialCloudlets)
 			if err != nil {
 				return err
 			}
+			if len(potentialClusters) > 0 || len(skipClusterReasons) > 0 {
+				skipMsg := ""
+				if len(skipClusterReasons) > 0 {
+					skipMsg = ", some skipped because " + skipClusterReasons.String()
+				}
+				sendMsgs = append(sendMsgs, fmt.Sprintf("Found %d potential clusters for deployment%s", len(potentialClusters), skipMsg))
+			}
+
 			for _, pc := range potentialClusters {
 				clusterInst, err := s.usePotentialCluster(ctx, stm, in, &app, sidecarApp, pc)
 				if err != nil && pc.userSpecified {
@@ -664,28 +680,32 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 					}
 				}
 				// ok to use
+				var msg string
 				if clusterInst.MultiTenant {
-					cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Chose multi-tenant ClusterInst %s to deploy AppInst", clusterInst.Key.Name)})
+					msg = fmt.Sprintf("Chose multi-tenant cluster %s to deploy AppInst", clusterInst.Key.Name)
 					autoClusterType = MultiTenantAutoCluster
 				} else if clusterInst.Reservable {
 					autoClusterType = ReservableAutoCluster
 					reservedCluster = clusterInst
-					cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Chose reservable ClusterInst %s to deploy AppInst", clusterInst.Key.Name)})
+					msg = fmt.Sprintf("Chose reservable cluster %s to deploy AppInst", clusterInst.Key.Name)
 				} else {
+					msg = fmt.Sprintf("Chose cluster %s to deploy AppInst", clusterInst.Key.Name)
 					autoClusterType = NoAutoCluster
 				}
+				sendMsgs = append(sendMsgs, msg)
 				in.ClusterKey = pc.existingCluster
 				in.CloudletKey = pc.cloudletKey
 				in.EnableIpv6 = clusterInst.EnableIpv6
 				log.SpanLog(ctx, log.DebugLevelApi, "chose existing cluster", "appinst", in.Key, "cluster", pc.existingCluster, "cloudlet", pc.cloudletKey, "scaleSpec", pc.scaleSpec)
 				break
 			}
+			if in.CloudletKey.Name == "" {
+				sendMsgs = append(sendMsgs, "No existing cluster available")
+			}
 		}
 		if in.CloudletKey.Name == "" {
 			// No cloudlet chosen, we will choose one based on available resources.
 			// Sort potential cloudlets by available resources.
-			// TODO: filter this list based on the actual resource requirements
-			// for the instance.
 			// TODO: Currently we choose the cloudlet with the best free
 			// resource score. However that score is calculated on cached
 			// data, not part of a transaction. So, we could still fail with
@@ -706,26 +726,34 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 				}
 				if pc.features.IsSingleKubernetesCluster {
 					// can't create new clusters
-					log.SpanLog(ctx, log.DebugLevelApi, "skip potential cloudlet for reservable clusterinst, single kubernetes clusters cannot create new clusters", "cloudlet", pc.cloudlet.Key, "err", err)
+					log.SpanLog(ctx, log.DebugLevelApi, "skip single kubernetes cluster-as-a-cloudlet, already considered in potential clusters", "cloudlet", pc.cloudlet.Key)
 					continue
 				}
-				autoCi, err := s.buildAutocluster(ctx, ciKey, pc.cloudlet.Key, pc.features, &app, in)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelApi, "failed to build auto cluster for potential cloudlet check, skipping", "err", err)
-					continue
-				}
-				_, err = pc.resCalc.CloudletFitsCluster(ctx, autoCi, nil)
-				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelApi, "skip potential cloudlet for reservable clusterinst", "cloudlet", pc.cloudlet.Key, "err", err)
-					continue
+				if cloudcommon.IsClusterInstReqd(&app) {
+					autoCi, err := s.buildAutocluster(ctx, ciKey, pc.cloudlet.Key, pc.features, &app, in)
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelApi, "failed to build auto cluster for potential cloudlet check, skipping", "err", err)
+						continue
+					}
+					_, err = pc.resCalc.CloudletFitsCluster(ctx, autoCi, nil)
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelApi, "skip potential cloudlet for reservable clusterinst", "cloudlet", pc.cloudlet.Key, "err", err)
+						continue
+					}
+				} else {
+					_, err := pc.resCalc.CloudletFitsVMApp(ctx, &app, in)
+					if err != nil {
+						log.SpanLog(ctx, log.DebugLevelApi, "skip potential cloudlet for VMApp", "cloudlet", pc.cloudlet.Key, "err", err)
+						continue
+					}
 				}
 				found = true
 				in.CloudletKey = pc.cloudlet.Key
-				log.SpanLog(ctx, log.DebugLevelApi, "chose cloudlet for autocluster", "appinst", in.Key, "cloudlet", in.CloudletKey)
+				log.SpanLog(ctx, log.DebugLevelApi, "chose cloudlet for deployment", "appinst", in.Key, "cloudlet", in.CloudletKey)
 				break
 			}
 			if !found {
-				return fmt.Errorf("no available cloudlet sites to create a new cluster")
+				return fmt.Errorf("no resources available for deployment")
 			}
 		}
 
@@ -785,7 +813,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			in.ClusterKey.Name = cloudcommon.BuildReservableClusterName(id, &in.CloudletKey)
 			in.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
 			in.EnableIpv6 = platformSupportsIPV6
-			cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Creating new auto-cluster named %s to deploy AppInst", in.ClusterKey.Name)})
+			sendMsgs = append(sendMsgs, fmt.Sprintf("Creating new auto-cluster named %s to deploy AppInst", in.ClusterKey.Name))
 			log.SpanLog(ctx, log.DebugLevelApi, "Creating new auto-cluster", "key", in.GetClusterKey())
 		}
 
@@ -886,6 +914,12 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 		return nil
 	})
+	// send accumulated messages for only the last run of the
+	// STM func, otherwise it's confusing if the STM reruns and
+	// the messages get sent multiple times.
+	for _, msg := range sendMsgs {
+		cb.Send(&edgeproto.Result{Message: msg})
+	}
 	if err != nil {
 		return err
 	}

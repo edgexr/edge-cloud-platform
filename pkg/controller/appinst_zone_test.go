@@ -158,7 +158,7 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 	}
 	var noused []*usedAppInst
 
-	runTest := func(app *edgeproto.App, ai *edgeproto.AppInst, cis []*edgeproto.ClusterInst, used []*usedAppInst, expNames []string) {
+	runTest := func(app *edgeproto.App, ai *edgeproto.AppInst, cis []*edgeproto.ClusterInst, used []*usedAppInst, expNames []string, skipReasons []SkipReason) {
 		pc := makePC()
 		candidates := []edgeproto.ClusterKey{}
 		// create test clusters
@@ -183,13 +183,17 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 		}
 		cctx := DefCallContext()
 		// test call
-		pclusts := apis.appInstApi.getPotentialCloudletClusters(ctx, cctx, ai, app, pc, candidates)
+		pclusts, srs := apis.appInstApi.getPotentialCloudletClusters(ctx, cctx, ai, app, pc, candidates)
 		names := []string{}
 		// verify results
 		for _, pclust := range pclusts {
 			names = append(names, pclust.existingCluster.Name)
 		}
 		require.Equal(t, expNames, names)
+		require.Equal(t, len(skipReasons), len(srs), fmt.Sprintf("expected reasons %v but got %v", skipReasons, srs))
+		for _, reason := range skipReasons {
+			require.Contains(t, srs, reason)
+		}
 		// clean up
 		for _, u := range used {
 			_, err = apis.appApi.store.Delete(ctx, u.app, sync.SyncWait)
@@ -218,19 +222,19 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 
 		app := makeApp("app", kubernetes)
 		ai := makeAppInst("ai", app)
-		runTest(app, ai, clusts, noused, []string{"k"})
+		runTest(app, ai, clusts, noused, []string{"k"}, []SkipReason{})
 
 		app = makeApp("app", docker)
 		ai = makeAppInst("ai", app)
-		runTest(app, ai, clusts, noused, []string{"d"})
+		runTest(app, ai, clusts, noused, []string{"d"}, []SkipReason{})
 
 		app = makeApp("app", cloudcommon.DeploymentTypeHelm)
 		ai = makeAppInst("ai", app)
-		runTest(app, ai, clusts, noused, []string{"k"})
+		runTest(app, ai, clusts, noused, []string{"k"}, []SkipReason{})
 
 		app = makeApp("app", cloudcommon.DeploymentTypeVM)
 		ai = makeAppInst("ai", app)
-		runTest(app, ai, clusts, noused, []string{})
+		runTest(app, ai, clusts, noused, []string{}, []SkipReason{})
 	})
 	t.Run("serverless-filter", func(t *testing.T) {
 		cik := makeClust("k", devorg)
@@ -241,10 +245,10 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 		app := makeApp("app", kubernetes)
 		app.AllowServerless = false
 		ai := makeAppInst("ai", app)
-		runTest(app, ai, clusts, noused, []string{"k"})
+		runTest(app, ai, clusts, noused, []string{"k"}, []SkipReason{AppNotServerless})
 
 		app.AllowServerless = true
-		runTest(app, ai, clusts, noused, []string{"k", "mt"})
+		runTest(app, ai, clusts, noused, []string{"k", "mt"}, []SkipReason{})
 	})
 	t.Run("k8sversion-filter", func(t *testing.T) {
 		ci129 := makeClust("k1.29", devorg)
@@ -258,19 +262,19 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 		app := makeApp("app", kubernetes)
 		app.KubernetesResources.MinKubernetesVersion = "1.29"
 		ai := makeAppInst("ai", app)
-		runTest(app, ai, clusts, noused, []string{"k1.29", "k1.30", "k1.31"})
+		runTest(app, ai, clusts, noused, []string{"k1.29", "k1.30", "k1.31"}, []SkipReason{})
 
 		app.KubernetesResources.MinKubernetesVersion = "1.30"
-		runTest(app, ai, clusts, noused, []string{"k1.30", "k1.31"})
+		runTest(app, ai, clusts, noused, []string{"k1.30", "k1.31"}, []SkipReason{K8SVersionFail})
 
 		app.KubernetesResources.MinKubernetesVersion = "1.31"
-		runTest(app, ai, clusts, noused, []string{"k1.31"})
+		runTest(app, ai, clusts, noused, []string{"k1.31"}, []SkipReason{K8SVersionFail})
 
 		app.KubernetesResources.MinKubernetesVersion = "1.32"
-		runTest(app, ai, clusts, noused, []string{})
+		runTest(app, ai, clusts, noused, []string{}, []SkipReason{K8SVersionFail})
 
 		app.KubernetesResources.MinKubernetesVersion = ""
-		runTest(app, ai, clusts, noused, []string{"k1.29", "k1.30", "k1.31"})
+		runTest(app, ai, clusts, noused, []string{"k1.29", "k1.30", "k1.31"}, []SkipReason{})
 	})
 	t.Run("owner-filter", func(t *testing.T) {
 		owned := makeClust("owned", devorg)
@@ -291,14 +295,14 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 		// match devorg
 		app := makeApp("app", kubernetes)
 		ai := makeAppInst("ai", app)
-		runTest(app, ai, clusts, noused, []string{"owned", "resOwned", "resFree", "mt"})
+		runTest(app, ai, clusts, noused, []string{"owned", "resOwned", "resFree", "mt"}, []SkipReason{})
 
 		// match other org
 		app = makeApp("app", kubernetes)
 		app.Key.Organization = other
 		ai = makeAppInst("ai", app)
 		ai.Key.Organization = other
-		runTest(app, ai, clusts, noused, []string{"other", "resOther", "resFree", "mt"})
+		runTest(app, ai, clusts, noused, []string{"other", "resOther", "resFree", "mt"}, []SkipReason{})
 	})
 	t.Run("resfits-filter", func(t *testing.T) {
 		space := makeClust("space", devorg)
@@ -349,19 +353,19 @@ func TestAppInstGetPotentialCloudletClusters(t *testing.T) {
 		app := makeApp("app", kubernetes)
 		app.KubernetesResources = reqRes
 		ai := makeAppInst("ai", app)
-		runTest(app, ai, clusts, usedAIs, []string{"space", "lowspaceScalable", "usedScalable"})
+		runTest(app, ai, clusts, usedAIs, []string{"space", "lowspaceScalable", "usedScalable"}, []SkipReason{ClusterNoResources})
 
 		// test low resources
 		app = makeApp("app", kubernetes)
 		app.KubernetesResources = reqResLow
 		ai = makeAppInst("ai", app)
-		runTest(app, ai, clusts, usedAIs, []string{"space", "lowspace", "lowspaceScalable", "usedScalable"})
+		runTest(app, ai, clusts, usedAIs, []string{"space", "lowspace", "lowspaceScalable", "usedScalable"}, []SkipReason{ClusterNoResources})
 
 		// test high resources
 		app = makeApp("app", kubernetes)
 		app.KubernetesResources = reqResHigh
 		ai = makeAppInst("ai", app)
-		runTest(app, ai, clusts, usedAIs, []string{"lowspaceScalable", "usedScalable"})
+		runTest(app, ai, clusts, usedAIs, []string{"lowspaceScalable", "usedScalable"}, []SkipReason{ClusterNoResources})
 	})
 }
 

@@ -266,6 +266,7 @@ const (
 	AnnotationBadUpgrade55Name        = "bad-upgrade55-name"
 	AnnotationPreviousDNSName         = "previous-dns-name"
 	AnnotationFedPartnerAppProviderID = "fed-partner-app-provider-id"
+	AnnotationKubernetesVersion       = "kubernetes-version"
 )
 
 var InstanceUp = "UP"

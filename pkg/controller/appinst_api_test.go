@@ -902,7 +902,7 @@ func testSingleKubernetesCloudlet(t *testing.T, ctx context.Context, apis *AllAp
 	}{{
 		"MT non-serverless app",
 		3, &zoneMT, "", "", notDedicatedIp, "",
-		"no available cloudlet sites to create a new cluster",
+		"no resources available for deployment",
 	}, {
 		"MT bad cluster org",
 		0, &zoneMT, "foo", mtClust, notDedicatedIp, "",
@@ -1434,7 +1434,7 @@ func testAppInstPotentialCloudlets(t *testing.T, ctx context.Context, apis *AllA
 	}
 	err = apis.appInstApi.CreateAppInst(ai, testutil.NewCudStreamoutAppInst(ctx))
 	require.NotNil(t, err)
-	require.Equal(t, "no available cloudlet sites to create a new cluster", err.Error())
+	require.Equal(t, "no resources available for deployment", err.Error())
 }
 
 func testAppInstScaleSpec(t *testing.T, ctx context.Context, apis *AllApis) {
@@ -1829,7 +1829,7 @@ func TestNBIUseCase(t *testing.T) {
 	// scenario 4: rejection
 	_, err = deployApp("scenario4", appIDs[3], zoneA.ObjId)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "no available cloudlet sites to create a new cluster")
+	require.Contains(t, err.Error(), "no resources available for deployment")
 
 	// scanario 5: delete ai3, check that ai5 deploy fails
 	// due to kubernetes version mismatch
@@ -1856,7 +1856,7 @@ func TestNBIUseCase(t *testing.T) {
 	// deploy app
 	_, err = deployApp("scenario5", appIDs[4], zoneA.ObjId)
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "no available cloudlet sites to create a new cluster")
+	require.Contains(t, err.Error(), "no resources available for deployment")
 	// redeploy ai3 should work
 	_, err = deployApp("scenario5.1", appIDs[2], zoneA.ObjId)
 	require.Nil(t, err)
