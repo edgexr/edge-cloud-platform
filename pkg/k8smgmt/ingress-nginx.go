@@ -60,8 +60,15 @@ func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, clou
 		log.SpanLog(ctx, log.DebugLevelInfra, "k8s failed to refresh ingress certs", "certName", wildcardName, "err", err)
 		return err
 	}
+
 	if !updated && !opts.InitCluster {
-		return nil
+		// make sure secret exists
+		cmd := fmt.Sprintf("kubectl %s get secret -n %s %s", names.KconfArg, namespace, IngressDefaultCertSecret)
+		_, err := client.Output(cmd)
+		if err == nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "cert not updated and secret exists, no need to refresh", "secret", IngressDefaultCertSecret, "namespace", namespace)
+			return nil
+		}
 	}
 	fileName := strings.Replace(wildcardName, "*", "_", 1)
 
@@ -80,6 +87,7 @@ func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, clou
 	if err != nil {
 		return fmt.Errorf("failed to write cert secret: %s, %s", out, err)
 	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "refreshed cert", "cmd", cmd)
 	return nil
 }
 

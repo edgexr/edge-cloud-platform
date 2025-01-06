@@ -68,8 +68,7 @@ func (s *CloudletCertRefreshTaskable) StartSpan() opentracing.Span {
 }
 
 func (s *CloudletCertRefreshTaskable) shouldRun(ctx context.Context, cloudlet *edgeproto.Cloudlet, features *edgeproto.PlatformFeatures) bool {
-	// For CRM on edge, CRM runs cert refresh
-	return !cloudlet.CrmOnEdge && features.RequiresCertRefresh
+	return canRunRefreshCerts(cloudlet, features)
 }
 
 func (s *CloudletCertRefreshTaskable) runAPI(ctx context.Context, cloudlet *edgeproto.Cloudlet, conn *grpc.ClientConn) error {
