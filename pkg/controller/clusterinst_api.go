@@ -1992,6 +1992,7 @@ func (s *ClusterInstApi) createCloudletSingularCluster(stm concurrency.STM, clou
 	info := edgeproto.CloudletInfo{}
 	if s.all.cloudletInfoApi.store.STMGet(stm, &cloudlet.Key, &info) {
 		clusterInst.NodePools = info.NodePools
+		clusterInst.KubernetesVersion = info.Properties[cloudcommon.AnnotationKubernetesVersion]
 	}
 	clusterInst.Fqdn = getClusterInstFQDN(&clusterInst, cloudlet)
 	clusterInst.StaticFqdn = clusterInst.Fqdn
@@ -2016,7 +2017,7 @@ func (s *ClusterInstApi) deleteCloudletSingularCluster(stm concurrency.STM, key 
 	s.all.clusterRefsApi.deleteRef(stm, clusterKey)
 }
 
-func (s *ClusterInstApi) updateCloudletSingleClusterResources(ctx context.Context, key *edgeproto.CloudletKey, ownerOrg string, nodePools []*edgeproto.NodePool) {
+func (s *ClusterInstApi) updateCloudletSingleClusterResources(ctx context.Context, key *edgeproto.CloudletKey, ownerOrg string, nodePools []*edgeproto.NodePool, props map[string]string) {
 	log.SpanLog(ctx, log.DebugLevelApi, "update cloudlet single cluster resources", "cluster", key, "nodepools", nodePools)
 	clusterKey := cloudcommon.GetDefaultClustKey(*key, ownerOrg)
 	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
@@ -2025,6 +2026,9 @@ func (s *ClusterInstApi) updateCloudletSingleClusterResources(ctx context.Contex
 			return nil
 		}
 		clusterInst.NodePools = nodePools
+		if kubeVersion, ok := props[cloudcommon.AnnotationKubernetesVersion]; ok {
+			clusterInst.KubernetesVersion = kubeVersion
+		}
 		s.store.STMPut(stm, &clusterInst)
 		return nil
 	})

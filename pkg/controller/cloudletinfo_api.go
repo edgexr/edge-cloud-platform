@@ -156,7 +156,7 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 	}
 	if fmap.HasOrHasChild(edgeproto.CloudletInfoFieldNodePools) && features != nil && features.IsSingleKubernetesCluster {
 		// copy node pool resource info to single cluster
-		s.all.clusterInstApi.updateCloudletSingleClusterResources(ctx, &cloudlet.Key, cloudlet.SingleKubernetesClusterOwner, in.NodePools)
+		s.all.clusterInstApi.updateCloudletSingleClusterResources(ctx, &cloudlet.Key, cloudlet.SingleKubernetesClusterOwner, in.NodePools, in.Properties)
 	}
 
 	newState := edgeproto.TrackedState_TRACKED_STATE_UNKNOWN

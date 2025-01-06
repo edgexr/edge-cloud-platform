@@ -133,6 +133,15 @@ func (s *K8sSite) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloudl
 	if err != nil {
 		return err
 	}
+	clusterVersion, err := k8smgmt.GetClusterVersion(ctx, s.getClient(), kconfNames.KconfArg)
+	if err != nil {
+		return err
+	}
+	if info.Properties == nil {
+		info.Properties = make(map[string]string)
+	}
+	info.Properties[cloudcommon.AnnotationKubernetesVersion] = clusterVersion
+
 	// set total resource limits based on sum of all nodes
 	vcpus := edgeproto.Udec64{}
 	ram := edgeproto.Udec64{}
