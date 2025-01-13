@@ -284,21 +284,14 @@ func (s *Platform) getCredentialsRaw(ctx context.Context, clusterName, clusterID
 	if err != nil {
 		return nil, err
 	}
-	if true {
-		// the REST API for /k8scluster/v1/clusters/<id>/get_creds
-		// doesn't actually get the credentials, it just returns a
-		// single op_id. The osm cli in fact just gets the cluster info,
-		// which includes the credentials. This looks like something
-		// which is broken.
-		info, status, err := s.getClusterInfo(ctx, clusterName, clusterID)
-		if err != nil {
-			return nil, err
-		}
-		if status == http.StatusNotFound {
-			return nil, fmt.Errorf("cluster %s(%s) not found", clusterName, clusterID)
-		}
-		return info.Credentials, nil
-	}
+	// the REST API for /k8scluster/v1/clusters/<id>/get_creds
+	// doesn't actually get the credentials, it just returns a
+	// single op_id. The osm cli in fact just gets the cluster info,
+	// which includes the credentials.
+	// We have been told this is the correct behavior, and that
+	// the get_creds API is required to ensure the credentials
+	// are up to date. So this must be run first, before calling
+	// the cluster list API which will then have the creds.
 
 	// TODO: Openapi spec doesn't define a 200 response, so we can't
 	// use the "WithResponse" version of the auto-generated API.
@@ -314,9 +307,13 @@ func (s *Platform) getCredentialsRaw(ctx context.Context, clusterName, clusterID
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to get creds for cluster %s, %d %s", clusterName, resp.StatusCode, string(data))
 	}
-	info := GetClusterInfo{}
-	if err := json.Unmarshal(data, &info); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal get creds json data, %s", err)
+	// creds should now be ready in cluster info
+	info, status, err := s.getClusterInfo(ctx, clusterName, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	if status == http.StatusNotFound {
+		return nil, fmt.Errorf("cluster %s(%s) not found", clusterName, clusterID)
 	}
 	return info.Credentials, nil
 }

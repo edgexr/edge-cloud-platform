@@ -208,7 +208,7 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 			newCloudlet.ContainerVersion = in.ContainerVersion
 			updateObj = true
 		}
-		if newCloudlet.Key.FederatedOrganization == "" && len(newCloudlet.InfraFlavors) != len(in.Flavors) {
+		if newCloudlet.Key.FederatedOrganization == "" && fmap.HasOrHasChild(edgeproto.CloudletInfoFieldFlavors) {
 			// Copy CloudletInfo.Flavors to Cloudlet.InfraFlavors so
 			// that developers can see and use cloudlet-specific
 			// flavors. Don't do this for federated cloudlets
