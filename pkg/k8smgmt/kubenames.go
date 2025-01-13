@@ -300,6 +300,7 @@ func EnsureNamespace(ctx context.Context, client ssh.Client, names *KconfNames, 
 	cmd := fmt.Sprintf("kubectl %s create ns %s --dry-run=client -o yaml | kubectl %s apply -f -", names.KconfArg, namespace, names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to ensure namespace", "name", namespace, "cmd", cmd, "out", out, "err", err)
 		return fmt.Errorf("failed to create namespace %s: %s, %s", namespace, out, err)
 	}
 	return nil

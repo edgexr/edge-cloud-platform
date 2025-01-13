@@ -19,10 +19,14 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/test-go/testify/require"
 )
 
@@ -46,13 +50,18 @@ func createTestPlatform() *Platform {
 var testClusterName = "unitTestCluster"
 var getTestClusterInst = func() *edgeproto.ClusterInst {
 	return &edgeproto.ClusterInst{
+		Key: edgeproto.ClusterKey{
+			Name:         testClusterName,
+			Organization: "dev",
+		},
 		NodePools: []*edgeproto.NodePool{{
 			NumNodes: 1,
 			NodeResources: &edgeproto.NodeResources{
 				InfraNodeFlavor: "Standard_A2_v2", // Azure flavor
 			},
 		}},
-		InfraAnnotations: map[string]string{},
+		InfraAnnotations:     map[string]string{},
+		CompatibilityVersion: cloudcommon.GetClusterInstCompatibilityVersion(),
 	}
 }
 
@@ -68,15 +77,26 @@ func TestCreateCluster(t *testing.T) {
 
 	ci := getTestClusterInst()
 
+	start := time.Now()
 	_, err := s.RunClusterCreateCommand(ctx, testClusterName, ci)
 	require.Nil(t, err)
+	dur := time.Since(start)
+	fmt.Printf("Cluster create command took %s\n", dur.String())
+
+	nn, err := k8smgmt.GetKubeNames(ci, &edgeproto.App{}, &edgeproto.AppInst{})
+	require.Nil(t, err)
+	names := nn.GetKConfNames()
 
 	// write credentials to file
 	creds, err := s.GetCredentials(ctx, testClusterName, ci)
 	require.Nil(t, err)
-	err = os.WriteFile(testClusterName+".kconf", creds, 0644)
+	err = os.WriteFile(names.KconfName, creds, 0644)
 	require.Nil(t, err)
-	fmt.Println("wrote kubeconfig to " + testClusterName + ".kconf")
+	fmt.Println("wrote kubeconfig to " + names.KconfName)
+
+	client := &pc.LocalClient{}
+	err = k8smgmt.EnsureNamespace(ctx, client, nn.GetKConfNames(), k8smgmt.IngressNginxNamespace)
+	require.Nil(t, err)
 }
 
 func TestGetCredentials(t *testing.T) {
@@ -92,9 +112,16 @@ func TestGetCredentials(t *testing.T) {
 	ci := getTestClusterInst()
 	creds, err := s.GetCredentials(ctx, testClusterName, ci)
 	require.Nil(t, err)
-	err = os.WriteFile(testClusterName+".kconf", creds, 0644)
+	nn, err := k8smgmt.GetKubeNames(ci, &edgeproto.App{}, &edgeproto.AppInst{})
 	require.Nil(t, err)
-	fmt.Println("wrote kubeconfig to " + testClusterName + ".kconf")
+	names := nn.GetKConfNames()
+	err = os.WriteFile(names.KconfName, creds, 0644)
+	require.Nil(t, err)
+	fmt.Println("wrote kubeconfig to " + names.KconfName)
+
+	client := &pc.LocalClient{}
+	err = k8smgmt.EnsureNamespace(ctx, client, nn.GetKConfNames(), k8smgmt.IngressNginxNamespace)
+	require.Nil(t, err)
 }
 
 func TestScaleCluster(t *testing.T) {
