@@ -26,7 +26,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/test-go/testify/require"
 )
 
@@ -93,10 +92,6 @@ func TestCreateCluster(t *testing.T) {
 	err = os.WriteFile(names.KconfName, creds, 0644)
 	require.Nil(t, err)
 	fmt.Println("wrote kubeconfig to " + names.KconfName)
-
-	client := &pc.LocalClient{}
-	err = k8smgmt.EnsureNamespace(ctx, client, nn.GetKConfNames(), k8smgmt.IngressNginxNamespace)
-	require.Nil(t, err)
 }
 
 func TestGetCredentials(t *testing.T) {
@@ -118,10 +113,6 @@ func TestGetCredentials(t *testing.T) {
 	err = os.WriteFile(names.KconfName, creds, 0644)
 	require.Nil(t, err)
 	fmt.Println("wrote kubeconfig to " + names.KconfName)
-
-	client := &pc.LocalClient{}
-	err = k8smgmt.EnsureNamespace(ctx, client, nn.GetKConfNames(), k8smgmt.IngressNginxNamespace)
-	require.Nil(t, err)
 }
 
 func TestScaleCluster(t *testing.T) {
