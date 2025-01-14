@@ -760,6 +760,7 @@ var AppOptionalArgs = []string{
 	"objid",
 	"appannotations",
 	"isstandalone",
+	"tags",
 }
 var AppAliasArgs = []string{
 	"apporg=key.organization",
@@ -851,6 +852,7 @@ var AppComments = map[string]string{
 	"objid":                                                 "Universally unique object ID",
 	"appannotations":                                        "Internal Annotations, specify appannotations:empty=true to clear",
 	"isstandalone":                                          "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
+	"tags":                                                  "Vendor-specific data, specify tags:empty=true to clear",
 }
 var AppSpecialArgs = map[string]string{
 	"alertpolicies":    "StringArray",
@@ -865,6 +867,7 @@ var AppSpecialArgs = map[string]string{
 	"kubernetesresources.gpupool.totaloptres":            "StringToString",
 	"noderesources.optresmap":                            "StringToString",
 	"secretenvvars":                                      "StringToString",
+	"tags":                                               "StringToString",
 }
 var ServerlessConfigRequiredArgs = []string{}
 var ServerlessConfigOptionalArgs = []string{
@@ -1019,6 +1022,7 @@ var DeploymentZoneRequestOptionalArgs = []string{
 	"app.objid",
 	"app.appannotations",
 	"app.isstandalone",
+	"app.tags",
 	"dryrundeploy",
 	"numnodes",
 }
@@ -1108,6 +1112,7 @@ var DeploymentZoneRequestComments = map[string]string{
 	"app.objid":                                                 "Universally unique object ID",
 	"app.appannotations":                                        "Internal Annotations",
 	"app.isstandalone":                                          "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
+	"app.tags":                                                  "Vendor-specific data",
 	"dryrundeploy":                                              "Attempt to qualify zones resources for deployment",
 	"numnodes":                                                  "Optional number of worker VMs in dry run K8s Cluster, default = 2",
 }
@@ -1124,6 +1129,7 @@ var DeploymentZoneRequestSpecialArgs = map[string]string{
 	"app.kubernetesresources.gpupool.totaloptres":            "StringToString",
 	"app.noderesources.optresmap":                            "StringToString",
 	"app.secretenvvars":                                      "StringToString",
+	"app.tags":                                               "StringToString",
 }
 var CreateAppRequiredArgs = []string{
 	"apporg",
@@ -1202,6 +1208,7 @@ var CreateAppOptionalArgs = []string{
 	"objid",
 	"appannotations",
 	"isstandalone",
+	"tags",
 }
 var DeleteAppRequiredArgs = []string{
 	"apporg",
@@ -1280,6 +1287,7 @@ var DeleteAppOptionalArgs = []string{
 	"objid",
 	"appannotations",
 	"isstandalone",
+	"tags",
 }
 var ShowAppRequiredArgs = []string{
 	"apporg",
@@ -1358,4 +1366,5 @@ var ShowAppOptionalArgs = []string{
 	"objid",
 	"appannotations",
 	"isstandalone",
+	"tags",
 }
