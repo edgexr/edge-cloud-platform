@@ -231,6 +231,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 		if _, found := tags["nocmp"]; found {
 			in.Apps[i0].ObjId = ""
 		}
+		if _, found := tags["nocmp"]; found {
+			in.Apps[i0].CompatibilityVersion = 0
+		}
 	}
 	for i0 := 0; i0 < len(in.AppInstances); i0++ {
 		for i1 := 0; i1 < len(in.AppInstances[i0].MappedPorts); i1++ {
@@ -829,6 +832,8 @@ var AllDataOptionalArgs = []string{
 	"apps:#.objid",
 	"apps:#.appannotations",
 	"apps:#.isstandalone",
+	"apps:#.managesownnamespaces",
+	"apps:#.compatibilityversion",
 	"apps:#.tags",
 	"appinstances:#.fields",
 	"appinstances:#.key.name",
@@ -1529,6 +1534,8 @@ var AllDataComments = map[string]string{
 	"apps:#.objid":                                                               "Universally unique object ID",
 	"apps:#.appannotations":                                                      "Internal Annotations",
 	"apps:#.isstandalone":                                                        "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
+	"apps:#.managesownnamespaces":                                                "Specifies if the kubernetes application manages creating and deleting its own namespaces. If true, it is disallowed from deployment to multi-tenant clusters, and it is up to the application developer to manage namespace conflicts if they deploy multiple applications to the same cluster. If false, each application instance is deployed to its own namespace set by the platform.",
+	"apps:#.compatibilityversion":                                                "Internal compatibility version",
 	"apps:#.tags":                                                                "Vendor-specific data",
 	"appinstances:#.fields":                                                      "Fields are used for the Update API to specify which fields to apply",
 	"appinstances:#.key.name":                                                    "App Instance name",

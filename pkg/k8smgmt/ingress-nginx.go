@@ -50,7 +50,7 @@ type RefreshCertsOpts struct {
 // The certificate is used as the default certificate for
 // all ingress instances in the cluster.
 func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, cache *certscache.ProxyCertsCache, namespace, wildcardName string, opts RefreshCertsOpts) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "k8s refresh ingress certs", "cloudlet", cloudletKey, "certName", wildcardName, "secret", IngressDefaultCertSecret)
+	log.SpanLog(ctx, log.DebugLevelInfra, "k8s refresh ingress certs", "cloudlet", cloudletKey, "certName", wildcardName, "secret", IngressDefaultCertSecret, "opts", opts)
 	if os.Getenv("E2ETEST_TLS") != "" {
 		opts.CommerialCerts = false
 	}
@@ -142,9 +142,9 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 // SetupIngressNginx is a convenience function that creates the
 // namespace, creates the default certificate, and installs the
 // ingress-nginx controller.
-func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, certsCache *certscache.ProxyCertsCache, wildcardName string, refreshOpts RefreshCertsOpts, updateCallback edgeproto.CacheUpdateCallback, ops ...IngressNginxOp) error {
+func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, certsCache *certscache.ProxyCertsCache, wildcardName string, refreshOpts RefreshCertsOpts, namespaceLabels map[string]string, updateCallback edgeproto.CacheUpdateCallback, ops ...IngressNginxOp) error {
 	// set up namespace so we can write the default cert
-	err := EnsureNamespace(ctx, client, names, IngressNginxNamespace)
+	err := EnsureNamespace(ctx, client, names, IngressNginxNamespace, namespaceLabels)
 	if err != nil {
 		return err
 	}

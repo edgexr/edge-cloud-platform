@@ -53,8 +53,8 @@ func EnsureKubeconfigs(ctx context.Context, client ssh.Client, names *KubeNames,
 	if err != nil {
 		return err
 	}
-	// ensure the tenant access kubeconfig is present if needed
-	if names.MultitenantNamespace != "" {
+	// ensure the namespace-scoped kubeconfig is present if needed
+	if names.InstanceNamespace != "" {
 		// kconfData must be scoped to namespace
 		// TODO: this just defaults to the namespace, but does not
 		// enforce. In the future the kubeconfig should not allow
@@ -65,7 +65,7 @@ func EnsureKubeconfigs(ctx context.Context, client ssh.Client, names *KubeNames,
 		}
 		context, ok := config.Contexts[config.CurrentContext]
 		if ok {
-			context.Namespace = names.MultitenantNamespace
+			context.Namespace = names.InstanceNamespace
 		}
 		out, err := clientcmd.Write(*config)
 		if err != nil {

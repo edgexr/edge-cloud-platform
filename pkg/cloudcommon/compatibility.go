@@ -52,3 +52,12 @@ const (
 func GetClusterInstCompatibilityVersion() uint32 {
 	return ClusterInstCompatibilityRegionScopeName
 }
+
+const (
+	AppCompatibilityInitial              uint32 = 0
+	AppCompatibilityPerInstanceNamespace uint32 = 1
+)
+
+func GetAppCompatibilityVersion() uint32 {
+	return AppCompatibilityPerInstanceNamespace
+}

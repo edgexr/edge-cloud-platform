@@ -572,6 +572,9 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		if len(httpPorts) > 0 {
 			return fmt.Errorf("http ports %v not allowed for %s deployment", httpPorts, in.Deployment)
 		}
+		if in.ManagesOwnNamespaces {
+			return errors.New("cannot specify Manages Own Namespaces for non-Kubernetes app")
+		}
 	}
 
 	if in.DeploymentManifest != "" {
@@ -641,6 +644,7 @@ func (s *AppApi) CreateApp(ctx context.Context, in *edgeproto.App) (res *edgepro
 			return err
 		}
 		in.ObjId = ulid.Make().String()
+		in.CompatibilityVersion = cloudcommon.GetAppCompatibilityVersion()
 		s.all.appInstRefsApi.createRef(stm, &in.Key)
 
 		in.CreatedAt = dme.TimeToTimestamp(time.Now())

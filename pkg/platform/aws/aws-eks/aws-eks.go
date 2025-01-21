@@ -55,6 +55,11 @@ func NewPlatform() platform.Platform {
 	}
 }
 
+func (a *AwsEksPlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties) error {
+	a.awsGenPf = &awsgen.AwsGenericPlatform{Properties: properties}
+	return nil
+}
+
 func (o *AwsEksPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
 		PlatformType:                  platform.PlatformTypeAWSEKS,
@@ -137,10 +142,6 @@ func (a *AwsEksPlatform) Login(ctx context.Context) error {
 
 func (a *AwsEksPlatform) NameSanitize(clusterName string) string {
 	return strings.NewReplacer(".", "").Replace(clusterName)
-}
-
-func (a *AwsEksPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
-	return nil
 }
 
 func (a *AwsEksPlatform) getClusterList(ctx context.Context) ([]awsgen.AWSCluster, error) {

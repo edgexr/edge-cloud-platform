@@ -63,7 +63,19 @@ func NewPlatform() platform.Platform {
 	}
 }
 
-func (o *GCPPlatform) GetFeatures() *edgeproto.PlatformFeatures {
+func (g *GCPPlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties) error {
+	g.accessVars = accessVars
+	g.properties = properties
+	var err error
+	g.gcpRegion, err = g.GetGcpRegionFromZone(g.GetGcpZone())
+	if authKeyJSON, ok := accessVars[gcpAuthKeyName]; ok {
+		g.authKeyJSON = authKeyJSON
+		delete(accessVars, gcpAuthKeyName)
+	}
+	return err
+}
+
+func (g *GCPPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
 		PlatformType:                  platform.PlatformTypeGCP,
 		SupportsMultiTenantCluster:    true,
@@ -185,13 +197,6 @@ func (g *GCPPlatform) NameSanitize(clusterName string) string {
 		clusterName = clusterName[:GcpMaxClusterNameLen]
 	}
 	return clusterName
-}
-
-func (g *GCPPlatform) SetProperties(props *infracommon.InfraProperties) error {
-	g.properties = props
-	var err error
-	g.gcpRegion, err = g.GetGcpRegionFromZone(g.GetGcpZone())
-	return err
 }
 
 func (g *GCPPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {

@@ -454,7 +454,8 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		if err != nil {
 			return err
 		}
-		err = k8smgmt.CreateAllNamespaces(ctx, client, names)
+		nsLabels := map[string]string{}
+		err = k8smgmt.CreateAllNamespaces(ctx, client, names, nsLabels)
 		if err != nil {
 			return err
 		}
@@ -486,7 +487,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
 			updateCallback(edgeproto.UpdateTask, "Creating Kubernetes App")
-			err = k8smgmt.CreateAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst, k8smgmt.WithAppInstNoWait())
+			err = k8smgmt.CreateAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithAppInstNoWait())
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Creating Helm App")
 
@@ -711,7 +712,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 		}
 		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
-			return k8smgmt.DeleteAppInst(ctx, accessApi, client, names, app, appInst)
+			return k8smgmt.DeleteAppInst(ctx, accessApi, client, names, clusterInst, app, appInst)
 		} else {
 			return k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
 		}
@@ -889,7 +890,8 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			if err != nil {
 				return err
 			}
-			err = k8smgmt.CreateAllNamespaces(ctx, client, names)
+			nsLabels := map[string]string{}
+			err = k8smgmt.CreateAllNamespaces(ctx, client, names, nsLabels)
 			if err != nil {
 				return err
 			}
@@ -902,7 +904,7 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 
 	switch deployment := app.Deployment; deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		return k8smgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst)
+		return k8smgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst)
 	case cloudcommon.DeploymentTypeHelm:
 		return k8smgmt.UpdateHelmAppInst(ctx, client, names, app, appInst)
 

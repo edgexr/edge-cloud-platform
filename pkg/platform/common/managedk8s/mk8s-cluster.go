@@ -30,9 +30,13 @@ import (
 
 const MaxKubeCredentialsWait = 10 * time.Second
 
+func (m *ManagedK8sPlatform) GetClusterName(clusterInst *edgeproto.ClusterInst) string {
+	return m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
+}
+
 func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (annotations map[string]string, reterr error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst", "clusterInst", clusterInst)
-	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
+	clusterName := m.GetClusterName(clusterInst)
 	updateCallback(edgeproto.UpdateTask, "Creating Kubernetes Cluster: "+clusterName)
 	client, err := m.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
@@ -77,7 +81,11 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 	}
 	hasIngressController, ok := m.CommonPf.Properties.GetValue(cloudcommon.IngressControllerPresent)
 	if !ok || hasIngressController == "" {
-		err = k8smgmt.SetupIngressNginx(ctx, client, names.GetKConfNames(), m.CommonPf.PlatformConfig.CloudletKey, m.CommonPf.PlatformConfig.ProxyCertsCache, wildcardName, refreshOpts, updateCallback, addonInfo.IngressNginxOps...)
+		nsLabels, err := m.CommonPf.Properties.GetJSONMapValue(cloudcommon.NamespaceLabels)
+		if err != nil {
+			return nil, err
+		}
+		err = k8smgmt.SetupIngressNginx(ctx, client, names.GetKConfNames(), m.CommonPf.PlatformConfig.CloudletKey, m.CommonPf.PlatformConfig.ProxyCertsCache, wildcardName, refreshOpts, nsLabels, updateCallback, addonInfo.IngressNginxOps...)
 		if err != nil {
 			return nil, err
 		}

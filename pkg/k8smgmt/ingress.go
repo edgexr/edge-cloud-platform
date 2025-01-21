@@ -24,8 +24,8 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/cli-runtime/pkg/printers"
@@ -35,6 +35,7 @@ const (
 	IngressClassName         = "nginx"
 	IngressExternalIPRetries = 60
 	IngressExternalIPRetry   = 2 * time.Second
+	IngressManifestSuffix    = "-ingress"
 )
 
 // CreateIngress creates an ingress to handle HTTP ports for the
@@ -49,6 +50,18 @@ const (
 func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) (*networkingv1.Ingress, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating ingress", "appInst", appInst.Key.GetKeyString())
 
+	ingress, err := WriteIngressFile(ctx, client, names, appInst)
+	if err != nil {
+		return nil, err
+	}
+	err = ApplyManifest(ctx, client, names, appInst, IngressManifestSuffix, cloudcommon.Create)
+	if err != nil {
+		return nil, err
+	}
+	return ingress, nil
+}
+
+func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) (*networkingv1.Ingress, error) {
 	kconfArg := names.GetTenantKconfArg()
 	ingressClass := IngressClassName
 
@@ -68,8 +81,8 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 	// are port conflicts, user must specify the service name in the
 	// App.AccessPorts spec.
 	svcsOps := []GetObjectsOp{}
-	if names.MultitenantNamespace != "" {
-		svcsOps = append(svcsOps, WithObjectNamespace(names.MultitenantNamespace))
+	if names.InstanceNamespace != "" {
+		svcsOps = append(svcsOps, WithObjectNamespace(names.InstanceNamespace))
 	}
 	svcs, err := GetKubeServices(ctx, client, names.GetKConfNames(), svcsOps...)
 	if err != nil {
@@ -161,41 +174,29 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 		return nil, fmt.Errorf("failed to marshal the ingress object to yaml, %s", err)
 	}
 	contents := buf.String()
-	configDir := getConfigDirName(names)
-	fileName := configDir + "/" + getIngressManifestName(names)
-	err = pc.WriteFile(client, fileName, contents, "k8s ingress", pc.NoSudo)
+
+	err = WriteManifest(ctx, client, names, appInst, IngressManifestSuffix, contents)
 	if err != nil {
 		return nil, err
 	}
-	cmd := fmt.Sprintf("kubectl %s apply -f %s", kconfArg, fileName)
-	log.SpanLog(ctx, log.DebugLevelInfra, "applying ingress", "cmd", cmd)
-	out, err := client.Output(cmd)
-	if err != nil {
-		return nil, fmt.Errorf("failed to apply ingress command %s: %s, %s", cmd, out, err)
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "applied ingress")
 	return &ingress, nil
 }
 
 func DeleteIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) error {
-	kconfArg := names.GetTenantKconfArg()
-	configDir := getConfigDirName(names)
-	ingressFile := configDir + "/" + getIngressManifestName(names)
-	cmd := fmt.Sprintf("kubectl %s delete -f %s", kconfArg, ingressFile)
-	out, err := client.Output(cmd)
-	if err != nil && !strings.Contains(out, "not found") {
-		return fmt.Errorf("failed to delete ingress for %s: %s, %s", ingressFile, out, err)
-	}
-	err = pc.DeleteFile(client, ingressFile, pc.NoSudo)
+	// make sure the ingress file exists
+	_, err := WriteIngressFile(ctx, client, names, appInst)
 	if err != nil {
-		return fmt.Errorf("failed to delete ingress file %s, %s", ingressFile, err)
+		return err
+	}
+	err = ApplyManifest(ctx, client, names, appInst, IngressManifestSuffix, cloudcommon.Delete)
+	if err != nil {
+		return err
+	}
+	err = CleanupManifest(ctx, client, names, appInst, IngressManifestSuffix)
+	if err != nil {
+		return err
 	}
 	return nil
-}
-
-func getIngressManifestName(names *KubeNames) string {
-	ingressFile := getIngressFileName(names)
-	return ingressFile
 }
 
 type ingressItems struct {
@@ -215,7 +216,7 @@ func GetIngressExternalIP(ctx context.Context, client ssh.Client, names *KubeNam
 	log.SpanLog(ctx, log.DebugLevelInfra, "get ingress IP", "kconf", names.KconfName)
 	for i := 0; i < IngressExternalIPRetries; i++ {
 		ingress := &networkingv1.Ingress{}
-		err := GetObject(ctx, client, names.GetKConfNames(), "ingress", name, ingress, WithObjectNamespace(names.MultitenantNamespace))
+		err := GetObject(ctx, client, names.GetKConfNames(), "ingress", name, ingress, WithObjectNamespace(names.InstanceNamespace))
 		if err != nil {
 			if errors.Is(err, ErrObjectNotFound) && i < 5 {
 				// maybe not present yet, wait a bit

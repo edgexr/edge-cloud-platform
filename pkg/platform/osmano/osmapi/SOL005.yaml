@@ -688,7 +688,7 @@ paths:
   '/nsd/v1/ns_config_template':
     get:
       tags:
-        - "Ns packages"
+        - "NS Config Templates"
       summary: Query information about multiple Ns config templates
       description: Query information about multiple Ns config templates
       operationId: getNsconfigtemplates
@@ -728,7 +728,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
     post:
       tags:
-        - "Ns packages"
+        - "NS Config Templates"
       summary: Create a new Ns config template
       description: |
         NS config templates are specific configuration templates
@@ -787,7 +787,7 @@ paths:
           type: string
     get:
       tags:
-        - "Ns packages"
+        - "NS Config Templates"
       summary: Read information about an individual Ns config template resource
       description: Read information about an individual Ns config template resource
       operationId: getNsconfigtemplate
@@ -827,7 +827,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
     delete:
       tags:
-        - "Ns packages"
+        - "NS Config Templates"
       summary: Delete an individual NS config template
       description: Delete an individual NS config template
       operationId: deleteNsconfigtemplate
@@ -868,7 +868,7 @@ paths:
           type: string
     get:
       tags:
-        - "Ns packages"
+        - "NS Config Templates"
       summary: Fetch the content of a Ns config template
       description: Fetch the content of a Ns config template
       operationId: getTemplatecontent
@@ -921,7 +921,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
     put:
       tags:
-        - "Ns packages"
+        - "NS Config Templates"
       summary: Modify the content of a Ns config template
       description: |
         Template name and instantiation parameters
@@ -4425,6 +4425,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfClusterInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfClusterInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4456,7 +4463,7 @@ paths:
       description: This API is used to create cluster
       operationId: createk8sCluster
       requestBody:
-        $ref: '#/components/requestBodies/CreateCluster'
+        $ref: '#/components/requestBodies/CreateClusterInfo'
       responses:
         '201':
           description: Created
@@ -4508,6 +4515,55 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ClusterInfo'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '5XX':
+          $ref: '#/components/responses/UnexpectedError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+    patch:
+      tags:
+        - "K8s Cluster"
+      summary: Patching Cluster
+      description: This API is used to edit name and description of the cluster
+      operationId: patchCluster
+      requestBody:
+        $ref: '#/components/requestBodies/ClusterEditRequest'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4565,6 +4621,90 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         default:
           $ref: '#/components/responses/UnexpectedError'
+  '/k8scluster/v1/clusters/register':
+    post:
+      tags:
+        - "K8s Cluster"
+      summary: Registering a Cluster
+      description: This API is used to register a cluster
+      operationId: registerk8sCluster
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterClusterInfo'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ObjectId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '5XX':
+          $ref: '#/components/responses/UnexpectedError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  '/k8scluster/v1/clusters/{cluster_id}/deregister':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        description: cluster_id
+        schema:
+          type: string
+    delete:
+      tags:
+        - "K8s Cluster"
+      summary: Deregister a Cluster
+      description: This API is used to deregister a specified cluster.
+      operationId: deregisterk8sCluster
+      responses:
+        '202':
+          description: Accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '5XX':
+          $ref: '#/components/responses/UnexpectedError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
   '/k8scluster/v1/clusters/{cluster_id}/get_creds':
     parameters:
       - name: cluster_id
@@ -4582,6 +4722,67 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '5XX':
+          $ref: '#/components/responses/UnexpectedError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  '/k8scluster/v1/clusters/{cluster_id}/get_creds_file/{operation_id}':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        description: cluster_id
+        schema:
+          type: string
+      - name: operation_id
+        in: path
+        required: true
+        description: operation_id
+        schema:
+          type: string
+    get:
+      tags:
+        - "K8s Cluster"
+      summary: Get Credentials of the cluster in file format
+      description: This API is used to obtain a kube_config file of a specified cluster.
+      operationId: getCredsfile
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClusterCreds'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ClusterCreds'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4625,6 +4826,13 @@ paths:
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4668,6 +4876,63 @@ paths:
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
+        '406':
+          $ref: '#/components/responses/NotAcceptable'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '5XX':
+          $ref: '#/components/responses/UnexpectedError'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  '/k8scluster/v1/clusters/{cluster_id}/update':
+    parameters:
+      - name: cluster_id
+        in: path
+        required: true
+        description: cluster_id
+        schema:
+          type: string
+    post:
+      tags:
+        - "K8s Cluster"
+      summary: Update a Cluster
+      description: This API is used to Update k8s_version, node_count and node_size of a Cluster
+      operationId: updateCluster
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateClusterRequest'
+      responses:
+        '202':
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4700,7 +4965,7 @@ paths:
       description: This API is used to create App-profiles
       operationId: createAppProfile
       requestBody:
-        $ref: '#/components/requestBodies/ProfileInfo'
+        $ref: '#/components/requestBodies/CreateProfileInfo'
       responses:
         '201':
           description: Created
@@ -4744,6 +5009,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4785,6 +5057,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4816,10 +5095,17 @@ paths:
       description: This API is used to patch specific App-profile
       operationId: patchAppProfile
       requestBody:
-        $ref: '#/components/requestBodies/ProfileInfo'
+        $ref: '#/components/requestBodies/PatchProfileInfo'
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4929,6 +5215,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -4961,7 +5254,7 @@ paths:
       description: This API is used to create Infra controllerprofiles
       operationId: createInfraControllerProfile
       requestBody:
-        $ref: '#/components/requestBodies/ProfileInfo'
+        $ref: '#/components/requestBodies/CreateProfileInfo'
       responses:
         '201':
           description: Created
@@ -5005,6 +5298,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5046,6 +5346,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5077,10 +5384,17 @@ paths:
       description: This API is used to patch specific Infra controller profile
       operationId: patchInfraControllerProfile
       requestBody:
-        $ref: '#/components/requestBodies/ProfileInfo'
+        $ref: '#/components/requestBodies/PatchProfileInfo'
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5190,6 +5504,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5222,7 +5543,7 @@ paths:
       description: This API is used to create Infra config profiles
       operationId: createInfraConfigProfile
       requestBody:
-        $ref: '#/components/requestBodies/ProfileInfo'
+        $ref: '#/components/requestBodies/CreateProfileInfo'
       responses:
         '201':
           description: Created
@@ -5266,6 +5587,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5307,6 +5635,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5338,10 +5673,17 @@ paths:
       description: This API is used to patch specific Infra config profile
       operationId: patchInfraConfigProfile
       requestBody:
-        $ref: '#/components/requestBodies/ProfileInfo'
+        $ref: '#/components/requestBodies/PatchProfileInfo'
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5451,6 +5793,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5483,7 +5832,7 @@ paths:
       description: This API is used to create resource profiles
       operationId: createResourceProfile
       requestBody:
-        $ref: '#/components/requestBodies/ProfileInfo'
+        $ref: '#/components/requestBodies/CreateProfileInfo'
       responses:
         '201':
           description: Created
@@ -5527,6 +5876,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5568,6 +5924,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5599,10 +5962,17 @@ paths:
       description: This API is used to patch specific resource profile
       operationId: patchResourceProfile
       requestBody:
-        $ref: '#/components/requestBodies/ProfileInfo'
+        $ref: '#/components/requestBodies/PatchProfileInfo'
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5712,6 +6082,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfProfileInfo'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5749,6 +6126,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfOkaPackage'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfOkaPackage'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5835,6 +6219,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OkaPackageList'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OkaPackageList'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5873,6 +6264,13 @@ paths:
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5943,6 +6341,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayOfKsuList'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ArrayOfKsuList'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -5974,7 +6379,7 @@ paths:
       description: This API is used to Add KSU
       operationId: addKSU
       requestBody:
-        $ref: '#/components/requestBodies/MultipleKsu'
+        $ref: '#/components/requestBodies/ArrayOfKsu'
       responses:
         '201':
           description: Created
@@ -6026,6 +6431,13 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KsuList'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/KsuList'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6061,6 +6473,13 @@ paths:
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6126,10 +6545,17 @@ paths:
       description: This API is used to Update multiple KSU
       operationId: updateMultipleKSU
       requestBody:
-        $ref: '#/components/requestBodies/MultipleKsu'
+        $ref: '#/components/requestBodies/ArrayOfKsu'
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6166,6 +6592,13 @@ paths:
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6212,10 +6645,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ObjectId'
+                $ref: '#/components/schemas/OpId'
             application/yaml:
               schema:
-                $ref: '#/components/schemas/ObjectId'
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -6259,6 +6692,13 @@ paths:
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpId'
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/OpId'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -11458,6 +11898,96 @@ components:
           enum:
             - GRACEFUL
             - FORCEFUL
+    operationHistory:
+      type: array
+      items:
+        type: object
+        properties:
+          operationType:
+            type: string
+          gitOperationInfo:
+            type: string
+          op_id:
+            type: integer
+          result:
+            type: string
+          workflowState:
+            type: string
+          resourceState:
+            type: string
+          operationState:
+            type: string
+          creationDate:
+            type: string
+          endDate:
+            type: string
+          operationParams:
+            type: object
+    ArrayOfClusterInfo:
+      type: array
+      items:
+        $ref: '#/components/schemas/ClusterInfo'
+    ClusterInfo:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        vim_account:
+          type: string
+        location:
+          type: string
+        k8s_version:
+          type: string
+        node_size:
+          type: string
+        node_count:
+          type: integer
+        description:
+          type: string
+        region_name:
+          type: string
+        resource_group:
+          type: string
+        infra_controller_profiles:
+          type: array
+          items:
+            type: integer
+        infra_config_profiles:
+          type: array
+          items:
+            type: integer
+        resource_profiles:
+          type: array
+          items:
+            type: integer
+        app_profiles:
+          type: array
+          items:
+            type: integer
+        credentials:
+          type: object
+        git_name:
+          type: string
+        age_privkey:
+          type: string
+        age_pubkey:
+          type: string
+        operationHistory:
+          $ref: '#/components/schemas/operationHistory'
+        current_operation:
+          type: integer
+        state:
+          type: string
+        operatingState:
+          type: string
+        resourceState:
+          type: string
+        created:
+          type: boolean
+        bootstrap:
+          type: boolean
     CreateClusterInfo:
       type: object
       properties:
@@ -11479,36 +12009,96 @@ components:
           type: string
         resource_group:
           type: string
-        bootstrap:
-          type: boolean
         infra_controller_profiles:
           type: array
           items:
-            type: string
+            type: integer
         infra_config_profiles:
           type: array
           items:
-            type: string
+            type: integer
         resource_profiles:
           type: array
           items:
-            type: string
+            type: integer
         app_profiles:
           type: array
           items:
-            type: string
-    ScaleNodeInfo:
+            type: integer
+        bootstrap:
+          type: boolean
+    RegisterClusterInfo:
       type: object
       properties:
-        node_count:
-          type: integer
-    ProfileInfo:
+        name:
+          type: string
+        credentials:
+          type: string
+          format: yaml|json
+        vim_account:
+          type: string
+        description:
+          type: string
+        bootstrap:
+          type: boolean
+    ClusterCreds:
+      type: string
+      format: yaml|json
+    ClusterEditRequest:
       type: object
       properties:
         name:
           type: string
         description:
           type: string
+    UpdateClusterRequest:
+      type: object
+      properties:
+        k8s_version:
+          type: string
+        node_count:
+          type: integer
+        node_size:
+          type: string
+    ScaleNodeInfo:
+      type: object
+      properties:
+        node_count:
+          type: integer
+    CreateProfileInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    ArrayOfProfileInfo:
+      type: array
+      items:
+        $ref: '#/components/schemas/ProfileInfo'
+    ProfileInfo:
+      type: object
+      properties:
+        _id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        default:
+          type: string
+        git_name:
+          type: string
+        state:
+          type: string
+        operatingState:
+          type: string
+        resourceState:
+          type: string
+        current_operation:
+          type: integer
+        operationHistory:
+          $ref: '#/components/schemas/operationHistory'
     UpgradeClusterInfo:
       type: object
       properties:
@@ -11531,6 +12121,31 @@ components:
               properties:
                 _id:
                   type: string
+    OkaPackageList:
+      type: object
+      properties:
+        _id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        git_name:
+          type: string
+        state:
+          type: string
+        operatingState:
+          type: string
+        resourceState:
+          type: string
+        current_operation:
+          type: integer
+        operationHistory:
+          $ref: '#/components/schemas/operationHistory'
+    ArrayOfOkaPackage:
+      type: array
+      items:
+        $ref: '#/components/schemas/OkaPackageList'
     OkaPackage:
       type: object
       properties:
@@ -11541,36 +12156,6 @@ components:
         package:
           type: string
           format: binary
-    MultipleKsu:
-      type: object
-      properties:
-        ksus:
-          type: array
-          items:
-            type: object
-            properties:
-              name:
-                type: string
-              profile:
-                type: object
-                properties:
-                  _id:
-                    type: string
-                  profile_type:
-                    type: string
-              oka:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    _id:
-                      type: string
-                    sw_catalog_path:
-                      type: string
-                    transformation:
-                      type: object
-              description:
-                type: string
     Ksu:
       type: object
       properties:
@@ -11596,6 +12181,56 @@ components:
                 type: string
               transformation:
                 type: object
+    ArrayOfKsu:
+      type: object
+      properties:
+        ksus:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ksu'
+    KsuList:
+      type: object
+      properties:
+        _id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        profile:
+          type: object
+          properties:
+            id:
+              type: string
+            profile_type:
+                type: string
+        oka:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+              sw_catalog_path:
+                type: string
+              transformation:
+                type: object
+        git_name:
+          type: string
+        state:
+          type: string
+        operatingState:
+          type: string
+        resourceState:
+          type: string
+        current_operation:
+          type: integer
+        operationHistory:
+          $ref: '#/components/schemas/operationHistory'
+    ArrayOfKsuList:
+      type: array
+      items:
+        $ref: '#/components/schemas/KsuList'
     DeleteMultipleKsu:
       type: object
       properties:
@@ -11997,7 +12632,7 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/CancelNSLCMOpOccRequest'
-    CreateCluster:
+    CreateClusterInfo:
       content:
         application/json:
           schema:
@@ -12005,6 +12640,30 @@ components:
         application/yaml:
           schema:
             $ref: '#/components/schemas/CreateClusterInfo'
+    RegisterClusterInfo:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterClusterInfo'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/RegisterClusterInfo'
+    ClusterEditRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ClusterEditRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/ClusterEditRequest'
+    UpdateClusterRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateClusterRequest'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/UpdateClusterRequest'
     ScaleNode:
       content:
           application/json:
@@ -12021,14 +12680,22 @@ components:
           application/yaml:
             schema:
               $ref: '#/components/schemas/UpgradeClusterInfo'
-    ProfileInfo:
+    CreateProfileInfo:
       content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProfileInfo'
+              $ref: '#/components/schemas/CreateProfileInfo'
           application/yaml:
             schema:
-              $ref: '#/components/schemas/ProfileInfo'
+              $ref: '#/components/schemas/CreateProfileInfo'
+    PatchProfileInfo:
+      content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProfileInfo'
+          application/yaml:
+            schema:
+              $ref: '#/components/schemas/CreateProfileInfo'
     AttachDetachProfile:
       content:
           application/json:
@@ -12037,14 +12704,14 @@ components:
           application/yaml:
             schema:
               $ref: '#/components/schemas/AttachDetachProfile'
-    MultipleKsu:
+    ArrayOfKsu:
       content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MultipleKsu'
+              $ref: '#/components/schemas/ArrayOfKsu'
           application/yaml:
             schema:
-              $ref: '#/components/schemas/MultipleKsu'
+              $ref: '#/components/schemas/ArrayOfKsu'
     Ksu:
       content:
           application/json:

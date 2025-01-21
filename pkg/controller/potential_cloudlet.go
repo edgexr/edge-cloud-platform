@@ -81,6 +81,7 @@ const (
 	NoAppDuplicates                        = "instance of App already present"
 	StandaloneConflict                     = "standalone App conflict"
 	ClusterNoResources                     = "not enough resources"
+	AppManagesOwnNamespace                 = "cluster is multi-tenant but App manages its own namespaces"
 )
 
 type SkipReasons map[SkipReason]struct{}

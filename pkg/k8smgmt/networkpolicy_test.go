@@ -56,11 +56,11 @@ func TestGetNetworkPolicy(t *testing.T) {
 	testGetNetworkPolicy(t, ctx, &app, &ci, &appInst, "", `apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  labels:
+    config: appinst1-devorg
   name: networkpolicy-appinst1-devorg
   namespace: appinst1-devorg
 spec:
-  podSelector:
-    matchLabels:
   ingress:
   - from:
     - namespaceSelector:
@@ -101,11 +101,11 @@ spec:
 	testGetNetworkPolicy(t, ctx, &app, &ci, &oldAppInst, "", `apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  labels:
+    config: devorg-myapp-10-autocluster1
   name: networkpolicy-devorg-myapp-10-autocluster1
   namespace: devorg-myapp-10-autocluster1
 spec:
-  podSelector:
-    matchLabels:
   ingress:
   - from:
     - namespaceSelector:
@@ -115,41 +115,41 @@ spec:
     - ipBlock:
         cidr: 0.0.0.0/0
     ports:
-    - protocol: TCP
-      port: 443
-    - protocol: TCP
-      port: 888
-    - protocol: UDP
-      port: 10101
-    - protocol: TCP
-      port: 51000
-    - protocol: TCP
-      port: 51001
-    - protocol: TCP
-      port: 51002
-    - protocol: TCP
-      port: 51003
-    - protocol: TCP
-      port: 51004
-    - protocol: TCP
-      port: 51005
-    - protocol: TCP
-      port: 51006
-    - protocol: TCP
-      port: 51007
-    - protocol: TCP
-      port: 51008
-    - protocol: TCP
-      port: 51009
+    - port: 443
+      protocol: TCP
+    - port: 888
+      protocol: TCP
+    - port: 10101
+      protocol: UDP
+    - port: 51000
+      protocol: TCP
+    - port: 51001
+      protocol: TCP
+    - port: 51002
+      protocol: TCP
+    - port: 51003
+      protocol: TCP
+    - port: 51004
+      protocol: TCP
+    - port: 51005
+      protocol: TCP
+    - port: 51006
+      protocol: TCP
+    - port: 51007
+      protocol: TCP
+    - port: 51008
+      protocol: TCP
+    - port: 51009
+      protocol: TCP
 `)
 	testGetNetworkPolicy(t, ctx, &app, &ci, &appInst, "", `apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+  labels:
+    config: appinst1-devorg
   name: networkpolicy-appinst1-devorg
   namespace: appinst1-devorg
 spec:
-  podSelector:
-    matchLabels:
   ingress:
   - from:
     - namespaceSelector:
@@ -159,32 +159,32 @@ spec:
     - ipBlock:
         cidr: 0.0.0.0/0
     ports:
-    - protocol: TCP
-      port: 443
-    - protocol: TCP
-      port: 888
-    - protocol: UDP
-      port: 10101
-    - protocol: TCP
-      port: 51000
-    - protocol: TCP
-      port: 51001
-    - protocol: TCP
-      port: 51002
-    - protocol: TCP
-      port: 51003
-    - protocol: TCP
-      port: 51004
-    - protocol: TCP
-      port: 51005
-    - protocol: TCP
-      port: 51006
-    - protocol: TCP
-      port: 51007
-    - protocol: TCP
-      port: 51008
-    - protocol: TCP
-      port: 51009
+    - port: 443
+      protocol: TCP
+    - port: 888
+      protocol: TCP
+    - port: 10101
+      protocol: UDP
+    - port: 51000
+      protocol: TCP
+    - port: 51001
+      protocol: TCP
+    - port: 51002
+      protocol: TCP
+    - port: 51003
+      protocol: TCP
+    - port: 51004
+      protocol: TCP
+    - port: 51005
+      protocol: TCP
+    - port: 51006
+      protocol: TCP
+    - port: 51007
+      protocol: TCP
+    - port: 51008
+      protocol: TCP
+    - port: 51009
+      protocol: TCP
 `)
 }
 

@@ -30,6 +30,7 @@ type networkPolicyPort struct {
 }
 
 type networkPolicyArgs struct {
+	Labels         map[string]string
 	Namespace      string
 	ConfigLabelKey string
 	ConfigLabelVal string
@@ -45,11 +46,15 @@ type networkPolicyArgs struct {
 var k8sNetworkPolicyTemplate = template.Must(template.New("networkpolicy").Parse(`apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
+{{- if .Labels }}
+  labels:
+{{- range $key, $value := .Labels }}
+    {{ $key }}: {{ $value }}
+{{- end }}
+{{- end }}
   name: networkpolicy-{{.Namespace}}
   namespace: {{.Namespace}}
 spec:
-  podSelector:
-    matchLabels:
   ingress:
   - from:
     - namespaceSelector:
@@ -61,20 +66,21 @@ spec:
         cidr: 0.0.0.0/0
     ports:
 {{- range .Ports}}
-    - protocol: {{.Protocol}}
-      port: {{.Port}}
+    - port: {{.Port}}
+      protocol: {{.Protocol}}
 {{- end}}
 {{- end}}
 `))
 
 func GetNetworkPolicy(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, names *KubeNames) (string, error) {
-	if names.MultitenantNamespace == "" {
+	if names.InstanceNamespace == "" {
 		return "", fmt.Errorf("NetworkPolicy only valid for namespaced instances")
 	}
 	args := networkPolicyArgs{}
-	args.Namespace = names.MultitenantNamespace
-	//args.ConfigLabelKey = ConfigLabel
-	//args.ConfigLabelVal = getConfigLabel(names)
+	args.Namespace = names.InstanceNamespace
+	args.Labels = map[string]string{
+		ConfigLabel: getConfigLabel(names),
+	}
 
 	for _, port := range appInst.MappedPorts {
 		npp := networkPolicyPort{}

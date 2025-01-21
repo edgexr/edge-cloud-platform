@@ -49,12 +49,17 @@ var createWaitNoResources = 10 * time.Second
 var applyManifest = "apply"
 var createManifest = "create"
 
+const PolicyManifestSuffix = "-policy"
+const DeploymentManifestSuffix = ""
+
 var podStateRegString = "(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(.*)\\s*"
 var podStateReg = regexp.MustCompile(podStateRegString)
 
 type AppInstOptions struct {
-	undo bool
-	wait bool
+	Undo            bool
+	Wait            bool
+	WM              WorkloadMgr
+	NamespaceLabels map[string]string
 }
 
 type AppInstOp func(*AppInstOptions)
@@ -64,7 +69,7 @@ type AppInstOp func(*AppInstOptions)
 // parallel with other tasks.
 func WithAppInstNoWait() AppInstOp {
 	return func(opts *AppInstOptions) {
-		opts.wait = false
+		opts.Wait = false
 	}
 }
 
@@ -72,16 +77,34 @@ func WithAppInstNoWait() AppInstOp {
 // so don't trigger any further undos.
 func WithAppInstUndo() AppInstOp {
 	return func(opts *AppInstOptions) {
-		opts.undo = true
+		opts.Undo = true
 	}
 }
 
-func getAppInstOptions(ops []AppInstOp) *AppInstOptions {
+func WithWorkloadManager(wm WorkloadMgr) AppInstOp {
+	return func(opts *AppInstOptions) {
+		opts.WM = wm
+	}
+}
+
+func WithNamespaceLabels(labels map[string]string) AppInstOp {
+	return func(opts *AppInstOptions) {
+		opts.NamespaceLabels = labels
+	}
+}
+
+func GetAppInstOptions(ops []AppInstOp) *AppInstOptions {
 	opts := &AppInstOptions{
-		wait: true, // by default, we wait for pods
+		Wait: true, // by default, we wait for pods
 	}
 	for _, op := range ops {
 		op(opts)
+	}
+	if opts.WM == nil {
+		opts.WM = &K8SWorkloadMgr{}
+	}
+	if opts.NamespaceLabels == nil {
+		opts.NamespaceLabels = map[string]string{}
 	}
 	return opts
 }
@@ -153,7 +176,16 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace
 			// race condition, may not find anything if run before pods show up
 			if time.Since(startTimer) > createWaitNoResources {
 				// still no resources, likely a failure
-				return false, fmt.Errorf("no pods found")
+				// check replicasets for status
+				// TODO: check deployment for status if no
+				// replicasets
+				st, stErr := CheckReplicaSetStatus(ctx, client, kConfArg, namespace, selector)
+				if stErr != nil {
+					log.SpanLog(ctx, log.DebugLevelInfra, "no pods found and failed to check replicaset status, %s", err)
+					return false, fmt.Errorf("no pods found")
+				} else {
+					return false, fmt.Errorf("no pods found, replicaset statuses: %s", st)
+				}
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "not delete, but no pods found, assume command run before pods deployed", "selector", selector)
 			return false, nil
@@ -167,6 +199,33 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace
 		}
 	}
 	return done, nil
+}
+
+func CheckReplicaSetStatus(ctx context.Context, client ssh.Client, kConfArg, namespace, selector string) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "check replicaset status", "namespace", namespace, "selector", selector)
+	cmd := fmt.Sprintf("kubectl %s get replicaset -n %s --selector=%s -o json", kConfArg, namespace, selector)
+	out, err := client.Output(cmd)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "error getting replicaset", "err", err, "out", out)
+		return "", err
+	}
+	rsList := appsv1.ReplicaSetList{}
+	if err := json.Unmarshal([]byte(out), &rsList); err != nil {
+		return "", fmt.Errorf("failed to unmarshal replicaset info, %s", err)
+	}
+	if len(rsList.Items) == 0 {
+		return "", fmt.Errorf("no replicasets found")
+	}
+	statuses := []string{}
+	for _, rs := range rsList.Items {
+		conditions := rs.Status.Conditions
+		if len(conditions) > 0 {
+			cond := conditions[len(conditions)-1]
+			status := fmt.Sprintf("%s: %s", rs.GetName(), cond.Message)
+			statuses = append(statuses, status)
+		}
+	}
+	return strings.Join(statuses, ","), nil
 }
 
 // WaitForAppInst waits for pods to either start or result in an error if WaitRunning specified,
@@ -205,8 +264,8 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 				break
 			}
 			if namespace == "" {
-				if names.MultitenantNamespace != "" {
-					namespace = names.MultitenantNamespace
+				if names.InstanceNamespace != "" {
+					namespace = names.InstanceNamespace
 				} else {
 					namespace = DefaultNamespace
 				}
@@ -243,7 +302,7 @@ func UpdateLoadBalancerPortMap(ctx context.Context, client ssh.Client, names *Ku
 	if err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateLoadBalancerPortMap", "names.MultitenantNamespace", names.MultitenantNamespace)
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateLoadBalancerPortMap", "names.InstanceNamespace", names.InstanceNamespace)
 
 	for _, s := range services {
 		lbip := ""
@@ -252,9 +311,9 @@ func UpdateLoadBalancerPortMap(ctx context.Context, client ssh.Client, names *Ku
 			continue
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "service name match found in kubenames", "svc name", s.Name)
-		if names.MultitenantNamespace != "" {
+		if names.InstanceNamespace != "" {
 			svcNamespace := s.ObjectMeta.Namespace
-			if svcNamespace != names.MultitenantNamespace {
+			if svcNamespace != names.InstanceNamespace {
 				continue
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "UpdateLoadBalancerPortMap match", "svcNamespace", svcNamespace)
@@ -306,7 +365,7 @@ func PopulateAppInstLoadBalancerIps(ctx context.Context, client ssh.Client, name
 			}
 			lbip, ok := appinst.InternalPortToLbIp[portString]
 			if ok {
-				log.SpanLog(ctx, log.DebugLevelInfra, "found load balancer ip for port", "portString", portString, "lbip", lbip, "names.MultitenantNamespace", names.MultitenantNamespace)
+				log.SpanLog(ctx, log.DebugLevelInfra, "found load balancer ip for port", "portString", portString, "lbip", lbip, "names.InstanceNamespace", names.InstanceNamespace)
 				appinst.InternalPortToLbIp[portString] = lbip
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "did not find load balancer ip for port", "portString", portString)
@@ -328,15 +387,25 @@ func PopulateAppInstLoadBalancerIps(ctx context.Context, client ssh.Client, name
 	}
 }
 
-func getConfigDirName(names *KubeNames) string {
+func GetConfigDirName(names *KubeNames) string {
 	dir := names.ClusterName
-	if names.MultitenantNamespace != "" {
-		dir += "." + names.MultitenantNamespace
+	if names.InstanceNamespace != "" {
+		dir += "." + names.InstanceNamespace
 	}
 	return dir
 }
 
-func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst) string {
+func EnsureConfigDir(ctx context.Context, client ssh.Client, names *KubeNames) error {
+	configDir := GetConfigDirName(names)
+	return pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
+}
+
+func RemoveConfigDir(ctx context.Context, client ssh.Client, names *KubeNames) error {
+	configDir := GetConfigDirName(names)
+	return pc.DeleteDir(ctx, client, configDir, pc.NoSudo)
+}
+
+func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst, suffix string) string {
 	if appInst.CompatibilityVersion < cloudcommon.AppInstCompatibilityUniqueNameKeyConfig {
 		// backwards compatibility, may clobber other instances
 		// using the same app definition in multi-tenant clusters.
@@ -345,28 +414,24 @@ func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst) string {
 		appInstName := cloudcommon.GetAppInstCloudletScopedName(appInst)
 		return appInstName + names.AppInstOrg + ".yaml"
 	}
-	return names.AppInstName + names.AppInstOrg + ".yaml"
-}
-
-func getIngressFileName(names *KubeNames) string {
-	return names.AppInstName + names.AppInstOrg + "-ingress.yaml"
+	return names.AppInstName + names.AppInstOrg + suffix + ".yaml"
 }
 
 // CreateAllNamespaces creates all the namespaces the app will use. It does not create a manifest for
 // the namespaces, just allows the basic dependencies can be defined against
 // them. Manifest definition can later be used to update the namespaces.
-func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeNames) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAllNamespaces", "names", names)
+func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeNames, labels map[string]string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAllNamespaces", "names", names, "labels", labels)
 	namespaces := names.DeveloperDefinedNamespaces
-	if names.MultitenantNamespace != "" {
-		namespaces = append(namespaces, names.MultitenantNamespace)
+	if names.InstanceNamespace != "" {
+		namespaces = append(namespaces, names.InstanceNamespace)
 	}
 	for _, n := range namespaces {
 		if n == DefaultNamespace {
 			continue
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "Creating Namespace", "name", n)
-		err := EnsureNamespace(ctx, client, names.GetKConfNames(), n)
+		err := EnsureNamespace(ctx, client, names.GetKConfNames(), n, labels)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "kubectl create namespace failed", "namespace", n, "err", err)
 			return err
@@ -375,147 +440,128 @@ func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeName
 	return nil
 }
 
-func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
-	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, app.DeploymentManifest)
-	if err != nil {
-		return err
-	}
-	if names.MultitenantNamespace != "" {
+func GenerateAppInstPolicyManifest(ctx context.Context, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
+	mf := ""
+	if names.MultiTenantRestricted {
 		// Mulit-tenant cluster, add network policy
 		np, err := GetNetworkPolicy(ctx, app, appInst, names)
 		if err != nil {
-			return err
+			return "", err
 		}
 		mf = AddManifest(mf, np)
+		// For now, ResourceQuota is only for multi-tenancy.
+		// It is pretty strict, in that any deployment that
+		// does not define resource limits will not be allowed
+		// to be deployed. We can evaluate later if it should
+		// also be applied in a non-multi-tenant context.
+		rq, err := GetResourceQuota(ctx, names, appInst.KubernetesResources)
+		if err != nil {
+			return "", err
+		}
+		mf = AddManifest(mf, rq)
+	}
+	return mf, nil
+}
+
+func GenerateAppInstManifest(ctx context.Context, accessApi platform.AccessApi, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
+	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, app.DeploymentManifest)
+	if err != nil {
+		return "", err
 	}
 	mf, err = MergeEnvVars(ctx, accessApi, app, appInst, mf, names.ImagePullSecrets, names, appInst.KubernetesResources)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to merge env vars", "error", err)
-		return fmt.Errorf("error merging environment variables config file: %s", err)
+		return "", fmt.Errorf("error merging environment variables config file: %s", err)
 	}
-	configDir := getConfigDirName(names)
-	configName := getConfigFileName(names, appInst)
-	err = pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
+	return mf, nil
+}
+
+func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	mf, err := GenerateAppInstManifest(ctx, accessApi, names, app, appInst)
 	if err != nil {
 		return err
 	}
-	file := configDir + "/" + configName
-	log.SpanLog(ctx, log.DebugLevelInfra, "writing config file", "file", file, "kubeManifest", mf)
-	err = pc.WriteFile(client, file, mf, "K8s Deployment", pc.NoSudo)
+	return WriteManifest(ctx, client, names, appInst, DeploymentManifestSuffix, mf)
+}
+
+// ApplyAppInstPolicy creates and applies a manifest that contains
+// policies like the NetworkPolicy and ResourceQuota. To be able
+// apply ResourceQuota restrictions to the AppInst, it must be
+// applied before the AppInst is deployed.
+func ApplyAppInstPolicy(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, action cloudcommon.Action) error {
+	policyManifest, err := GenerateAppInstPolicyManifest(ctx, names, app, appInst)
 	if err != nil {
 		return err
+	}
+	if policyManifest == "" {
+		return nil
 	}
 
+	// ensure manifest is present on delete as well, in case
+	// CCRM container was restarted and manifest is no longer present.
+	err = WriteManifest(ctx, client, names, appInst, PolicyManifestSuffix, policyManifest)
+	if err != nil {
+		return err
+	}
+	err = ApplyManifest(ctx, client, names, appInst, PolicyManifestSuffix, action)
+	if err != nil {
+		return err
+	}
+	if action == cloudcommon.Delete {
+		if err := CleanupManifest(ctx, client, names, appInst, PolicyManifestSuffix); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, action string, ops ...AppInstOp) (reterr error) {
-	opts := getAppInstOptions(ops)
-	if action == createManifest && names.MultitenantNamespace != "" {
-		err := EnsureNamespace(ctx, client, names.GetKConfNames(), names.MultitenantNamespace)
+func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, action string, ops ...AppInstOp) (reterr error) {
+	opts := GetAppInstOptions(ops)
+	if action == createManifest && names.InstanceNamespace != "" {
+		err := EnsureNamespace(ctx, client, names.GetKConfNames(), names.InstanceNamespace, opts.NamespaceLabels)
 		if err != nil {
 			return err
 		}
 	}
-
-	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst); err != nil {
+	if err := ApplyAppInstPolicy(ctx, client, names, app, appInst, cloudcommon.Create); err != nil {
 		return err
 	}
-	configDir := getConfigDirName(names)
 
-	defer func() {
-		if reterr == nil || opts.undo {
-			return
-		}
-		// undo changes
-		log.SpanLog(ctx, log.DebugLevelInfra, "undoing createOrUpdateAppInst due to failure", "err", reterr)
-		undoErr := DeleteAppInst(ctx, accessApi, client, names, app, appInst, WithAppInstUndo())
-		log.SpanLog(ctx, log.DebugLevelInfra, "undo createOrUpdateAppInst done", "undoErr", undoErr)
-	}()
-
-	// Kubernetes provides 3 styles of object management.
-	// We use the Declarative Object configuration style, to be able to
-	// update and prune.
-	// Note that "kubectl create" does NOT fall under this style.
-	// Only "apply" and "delete" should be used. All configuration files
-	// for an AppInst must be stored in their own directory.
-
-	// Selector selects which objects to consider for pruning.
-	kconfArg := names.GetTenantKconfArg()
-	selector := fmt.Sprintf("-l %s=%s", ConfigLabel, getConfigLabel(names))
-	cmd := fmt.Sprintf("kubectl %s apply -f %s --prune %s", kconfArg, configDir, selector)
-	log.SpanLog(ctx, log.DebugLevelInfra, "running kubectl", "action", action, "cmd", cmd)
-	out, err := client.Output(cmd)
-	if err != nil && strings.Contains(string(out), `pruning nonNamespaced object /v1, Kind=Namespace: namespaces "kube-system" is forbidden: this namespace may not be deleted`) {
-		// odd error that occurs on Azure, probably due to some system
-		// object they have in their k8s cluster setup. Ignore it
-		// since it doesn't affect the other aspects of the apply.
-		err = nil
+	if err := opts.WM.ApplyAppInstWorkload(ctx, accessApi, client, names, clusterInst, app, appInst, ops...); err != nil {
+		return err
 	}
-	if err != nil {
-		return fmt.Errorf("error running kubectl command %s: %s, %v", cmd, out, err)
-	}
-	if opts.wait {
-		err := WaitForAppInst(ctx, client, names, app, WaitRunning)
-		if err != nil {
-			return err
-		}
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "done kubectl", "action", action)
 	return nil
-
 }
 
-func CreateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...AppInstOp) error {
-	return createOrUpdateAppInst(ctx, accessApi, client, names, app, appInst, createManifest, ops...)
+func CreateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...AppInstOp) error {
+	return createOrUpdateAppInst(ctx, accessApi, client, names, clusterInst, app, appInst, createManifest, ops...)
 }
 
-func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...AppInstOp) error {
-	return createOrUpdateAppInst(ctx, accessApi, client, names, app, appInst, applyManifest, ops...)
+func UpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...AppInstOp) error {
+	return createOrUpdateAppInst(ctx, accessApi, client, names, clusterInst, app, appInst, applyManifest, ops...)
 }
 
-func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...AppInstOp) (reterr error) {
-	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst); err != nil {
-		return err
-	}
-	kconfArg := names.GetTenantKconfArg()
-	configDir := getConfigDirName(names)
-	configName := getConfigFileName(names, appInst)
-	file := configDir + "/" + configName
-	cmd := fmt.Sprintf("kubectl %s delete -f %s", kconfArg, file)
-	log.SpanLog(ctx, log.DebugLevelInfra, "deleting app", "name", names.AppName, "cmd", cmd)
-	out, err := client.Output(cmd)
-	if err != nil {
-		if strings.Contains(string(out), "not found") {
-			log.SpanLog(ctx, log.DebugLevelInfra, "app not found, cannot delete", "name", names.AppName)
-		} else {
-			return fmt.Errorf("error deleting kubernetes app, %s, %s, %s, %v", names.AppName, cmd, out, err)
-		}
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "deleted deployment", "name", names.AppName)
-	//Note wait for deletion of appinst can be done here in a generic place, but wait for creation is split
-	// out in each platform specific task so that we can optimize the time taken for create by allowing the
-	// wait to be run in parallel with other tasks
-	err = WaitForAppInst(ctx, client, names, app, WaitDeleted)
+func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...AppInstOp) (reterr error) {
+	opts := GetAppInstOptions(ops)
+	err := opts.WM.DeleteAppInstWorkload(ctx, accessApi, client, names, clusterInst, app, appInst, ops...)
 	if err != nil {
 		return err
 	}
-	// remove manifest file since directory contains all AppInst manifests for
-	// the ClusterInst.
-	log.SpanLog(ctx, log.DebugLevelInfra, "remove app manifest", "name", names.AppName, "file", file)
-	err = pc.DeleteFile(client, file, pc.NoSudo)
+	err = ApplyAppInstPolicy(ctx, client, names, app, appInst, cloudcommon.Delete)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "error deleting manifest", "file", file, "err", err)
+		return err
 	}
-	if names.MultitenantNamespace != "" {
+
+	if names.InstanceNamespace != "" {
 		// clean up namespace
-		if err = DeleteNamespace(ctx, client, names.GetKConfNames(), names.MultitenantNamespace); err != nil {
+		if err = DeleteNamespace(ctx, client, names.GetKConfNames(), names.InstanceNamespace); err != nil {
 			return err
 		}
 		if err = RemoveTenantKubeconfig(ctx, client, names); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to clean up tenant kubeconfig", "err", err)
 		}
 		// delete the config dir
+		configDir := GetConfigDirName(names)
 		err := pc.DeleteDir(ctx, client, configDir, pc.NoSudo)
 		if err != nil {
 			return fmt.Errorf("Unable to delete config dir %s - %v", configDir, err)
@@ -552,8 +598,8 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, names *KubeNames,
 			continue
 		}
 		if namespace == "" {
-			if names.MultitenantNamespace != "" {
-				namespace = names.MultitenantNamespace
+			if names.InstanceNamespace != "" {
+				namespace = names.InstanceNamespace
 			} else {
 				namespace = DefaultNamespace
 			}

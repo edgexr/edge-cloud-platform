@@ -50,7 +50,8 @@ type KubeNames struct {
 	ImagePullSecrets           []string
 	ImagePaths                 []string
 	IsUriIPAddr                bool
-	MultitenantNamespace       string // for apps launched in a multi-tenant cluster
+	InstanceNamespace          string
+	MultiTenantRestricted      bool
 	TenantKconfName            string
 	TenantKconfArg             string
 }
@@ -124,6 +125,16 @@ func GetNamespace(appInst *edgeproto.AppInst) string {
 	}
 }
 
+func SetNamespace(clusterInst *edgeproto.ClusterInst, app *edgeproto.App) bool {
+	if app.CompatibilityVersion >= cloudcommon.AppCompatibilityPerInstanceNamespace {
+		return !app.ManagesOwnNamespaces
+	} else {
+		// for older apps, namespaces were only set in a multi
+		// tenant cluster.
+		return clusterInst.MultiTenant && !cloudcommon.IsSideCarApp(app)
+	}
+}
+
 func NormalizeName(name string) string {
 	return util.K8SSanitize(name)
 }
@@ -192,14 +203,16 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 	kubeNames.OperatorName = NormalizeName(clusterInst.CloudletKey.Organization)
 	kubeNames.KconfName = GetKconfName(clusterInst)
 	kubeNames.KconfArg = "--kubeconfig=" + kubeNames.KconfName
-	// if clusterInst is multi-tenant and AppInst is specified,
-	// set up tenant kubeconfig
-	if clusterInst.MultiTenant && appInstName != "" && !cloudcommon.IsSideCarApp(app) {
-		kubeNames.MultitenantNamespace = GetNamespace(appInst)
+	// Configure namespace
+	if SetNamespace(clusterInst, app) && appInstName != "" {
+		kubeNames.InstanceNamespace = GetNamespace(appInst)
 		baseName := strings.TrimSuffix(kubeNames.KconfName, ".kubeconfig")
-		kubeNames.TenantKconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.MultitenantNamespace)
+		// The tenant kubeconfig is scoped to the instance namespace
+		kubeNames.TenantKconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.InstanceNamespace)
 		kubeNames.TenantKconfArg = "--kubeconfig=" + kubeNames.TenantKconfName
 	}
+	kubeNames.MultiTenantRestricted = clusterInst.MultiTenant && !cloudcommon.IsSideCarApp(app)
+
 	kubeNames.DeploymentType = app.Deployment
 	if app.ImagePath != "" {
 		kubeNames.ImagePaths = append(kubeNames.ImagePaths, app.ImagePath)
@@ -226,7 +239,7 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 				template = &obj.Spec.Template
 			case *v1.Namespace:
 				// if this is not a multi tenant case, any additional namespaces are from a developer manifest
-				if kubeNames.MultitenantNamespace == "" {
+				if kubeNames.InstanceNamespace == "" {
 					kubeNames.DeveloperDefinedNamespaces = append(kubeNames.DeveloperDefinedNamespaces, obj.Name)
 				}
 			}
@@ -294,14 +307,28 @@ func GetCloudletKConfNames(key *edgeproto.CloudletKey) *KconfNames {
 	return &names
 }
 
-func EnsureNamespace(ctx context.Context, client ssh.Client, names *KconfNames, namespace string) error {
+func EnsureNamespace(ctx context.Context, client ssh.Client, names *KconfNames, namespace string, labels map[string]string) error {
 	// this creates the yaml and applies it so there is no
 	// failure if the namespace already exists.
+	log.SpanLog(ctx, log.DebugLevelInfra, "ensuring namespace", "namespace", namespace, "labels", labels)
 	cmd := fmt.Sprintf("kubectl %s create ns %s --dry-run=client -o yaml | kubectl %s apply -f -", names.KconfArg, namespace, names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to ensure namespace", "name", namespace, "cmd", cmd, "out", out, "err", err)
 		return fmt.Errorf("failed to create namespace %s: %s, %s", namespace, out, err)
+	}
+	// add labels
+	if len(labels) > 0 {
+		strs := []string{}
+		for k, v := range labels {
+			strs = append(strs, k+"="+v)
+		}
+		cmd := fmt.Sprintf("kubectl %s label ns %s %s", names.KconfArg, namespace, strings.Join(strs, " "))
+		out, err := client.Output(cmd)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to label namespace", "name", namespace, "cmd", cmd, "out", out, "err", err)
+			return fmt.Errorf("failed to label namespace %s: %s, %s", namespace, out, err)
+		}
 	}
 	return nil
 }
