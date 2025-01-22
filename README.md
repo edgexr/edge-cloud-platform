@@ -86,3 +86,8 @@ To build without pushing:
 ``` shell
 make build-platform-local
 ```
+
+# Development
+
+Please see [README_dev.md](./README_dev.md) for getting started
+on understanding the code and contributing improvements.
