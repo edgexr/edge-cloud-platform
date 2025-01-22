@@ -32,6 +32,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -66,6 +67,12 @@ func NewPlatform() platform.Platform {
 	return &managedk8s.ManagedK8sPlatform{
 		Provider: &AzurePlatform{},
 	}
+}
+
+func (o *AzurePlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties) error {
+	o.accessVars = accessVars
+	o.properties = properties
+	return nil
 }
 
 func (o *AzurePlatform) GetFeatures() *edgeproto.PlatformFeatures {
@@ -256,11 +263,10 @@ func (a *AzurePlatform) NameSanitize(clusterName string) string {
 	return clusterName
 }
 
-func (a *AzurePlatform) SetProperties(props *infracommon.InfraProperties) error {
-	a.properties = props
-	return nil
+func (a *AzurePlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
+	return nil, nil
 }
 
-func (a *AzurePlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
+func (s *AzurePlatform) GetWorkloadManager() (workloadmgrs.WorkloadMgr, error) {
 	return nil, nil
 }

@@ -43,7 +43,7 @@ type K8sSite struct {
 	CommonPf   infracommon.CommonPlatform
 	caches     *platform.Caches
 	infracommon.CommonEmbedded
-	k8swm.K8sWorkloadMgr
+	k8swm.K8sPlatformMgr
 }
 
 func NewPlatform() platform.Platform {
@@ -86,7 +86,8 @@ func (s *K8sSite) InitCommon(ctx context.Context, platformConfig *platform.Platf
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err")
 		return err
 	}
-	s.K8sWorkloadMgr.Init(s, features, &s.CommonPf)
+	workloadMgr := k8swm.NewK8sWorkloadMgr(s, &s.CommonPf)
+	s.K8sPlatformMgr.Init(s, features, &s.CommonPf, workloadMgr)
 	return nil
 }
 

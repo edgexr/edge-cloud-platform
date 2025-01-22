@@ -42,3 +42,9 @@ func (s *K8sSite) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgepro
 func (s *K8sSite) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
 	return nil, fmt.Errorf("GetClusterInfraResources not supported")
 }
+
+func (s *K8sSite) GetClusterName(cluster *edgeproto.ClusterInst) string {
+	// GetClusterName is used for OSMWM,
+	// but k8ssite does not support OSM
+	return "not-supported"
+}

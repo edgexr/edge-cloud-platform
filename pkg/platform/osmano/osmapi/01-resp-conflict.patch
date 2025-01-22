@@ -1,0 +1,24 @@
+--- SOL005.yaml.last	2025-01-16 11:01:34.553187786 -0800
++++ SOL005.yaml	2025-01-16 11:02:47.243187759 -0800
+@@ -2288,10 +2288,10 @@
+           content:
+             application/json:
+               schema:
+-                $ref: '#/components/schemas/CreateNSinstanceContentResponse'
++                $ref: '#/components/schemas/CreateNSinstanceContentResp'
+             application/yaml:
+               schema:
+-                $ref: '#/components/schemas/CreateNSinstanceContentResponse'
++                $ref: '#/components/schemas/CreateNSinstanceContentResp'
+         '400':
+           $ref: '#/components/responses/BadRequest'
+         '401':
+@@ -10022,7 +10022,7 @@
+       additionalProperties: false
+     # CreateNSinstanceContentRequest:
+       # Substituted by InstantiateNsRequest
+-    CreateNSinstanceContentResponse:
++    CreateNSinstanceContentResp:
+       type: object
+       properties:
+         id:

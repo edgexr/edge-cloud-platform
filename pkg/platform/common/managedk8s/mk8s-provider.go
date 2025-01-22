@@ -26,9 +26,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmwm"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
+	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
 	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs/k8swm"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -37,7 +39,7 @@ import (
 type ManagedK8sProvider interface {
 	GetFeatures() *edgeproto.PlatformFeatures
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
-	SetProperties(props *infracommon.InfraProperties) error
+	Init(accessVars map[string]string, properties *infracommon.InfraProperties) error
 	Login(ctx context.Context) error
 	// GetCredentials retrieves kubeconfig credentials from the cluster
 	GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error)
@@ -50,10 +52,11 @@ type ManagedK8sProvider interface {
 	RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
 	RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error
 	GetClusterAddonInfo(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (*k8smgmt.ClusterAddonInfo, error)
-	InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
+	// Allows for the provider to specify a workload manager
+	GetWorkloadManager() (workloadmgrs.WorkloadMgr, error)
 }
 
 const KconfPerms fs.FileMode = 0644
@@ -64,7 +67,7 @@ type ManagedK8sPlatform struct {
 	CommonPf infracommon.CommonPlatform
 	Provider ManagedK8sProvider
 	infracommon.CommonEmbedded
-	k8swm.K8sWorkloadMgr
+	k8swm.K8sPlatformMgr
 	caches *platform.Caches
 }
 
@@ -75,7 +78,7 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 	m.caches = caches
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init provider")
-	err := m.Provider.InitApiAccessProperties(ctx, platformConfig.AccessApi, platformConfig.EnvVars)
+	accessVars, err := platformConfig.AccessApi.GetCloudletAccessVars(ctx)
 	if err != nil {
 		return err
 	}
@@ -84,11 +87,22 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	err = m.Provider.SetProperties(&m.CommonPf.Properties)
+	err = m.Provider.Init(accessVars, &m.CommonPf.Properties)
 	if err != nil {
 		return err
 	}
-	m.K8sWorkloadMgr.Init(m, features, &m.CommonPf)
+	var workloadMgr workloadmgrs.WorkloadMgr
+	val, ok := m.CommonPf.Properties.GetValue(cloudcommon.WorkloadManager)
+	if ok && val == "osm" {
+		wm := &osmwm.OSMWorkloadMgr{}
+		if err := wm.Init(m, accessVars, &m.CommonPf.Properties); err != nil {
+			return err
+		}
+		workloadMgr = wm
+	} else {
+		workloadMgr = k8swm.NewK8sWorkloadMgr(m, &m.CommonPf)
+	}
+	m.K8sPlatformMgr.Init(m, features, &m.CommonPf, workloadMgr)
 	return m.Provider.Login(ctx)
 }
 
@@ -108,6 +122,7 @@ func (m *ManagedK8sPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		features.Properties = make(map[string]*edgeproto.PropertyInfo)
 	}
 	features.Properties[cloudcommon.IngressControllerPresent] = cloudcommon.IngressControllerPresentProp
+	features.Properties[cloudcommon.WorkloadManager] = cloudcommon.WorkloadManagerProp
 	return features
 }
 

@@ -82,15 +82,22 @@ func (s *Client) PostJson(uri, token string, reqData interface{}, replyData inte
 	return status, err
 }
 
+type fileData struct {
+	Name string
+	Data []byte
+}
+
 type MultiPartFormData struct {
-	fields map[string]interface{}
-	files  map[string]*os.File
+	fields    map[string]interface{}
+	files     map[string]*os.File
+	dataFiles map[string]fileData
 }
 
 func NewMultiPartFormData() *MultiPartFormData {
 	data := MultiPartFormData{
-		fields: make(map[string]interface{}),
-		files:  make(map[string]*os.File),
+		fields:    make(map[string]interface{}),
+		files:     make(map[string]*os.File),
+		dataFiles: make(map[string]fileData),
 	}
 	return &data
 }
@@ -101,6 +108,13 @@ func (s *MultiPartFormData) AddField(key string, val interface{}) {
 
 func (s *MultiPartFormData) AddFile(key string, val *os.File) {
 	s.files[key] = val
+}
+
+func (s *MultiPartFormData) AddFileData(key, fileName string, data []byte) {
+	s.dataFiles[key] = fileData{
+		Name: fileName,
+		Data: data,
+	}
 }
 
 func (s *MultiPartFormData) Write(buf *bytes.Buffer) (string, error) {
@@ -135,6 +149,16 @@ func (s *MultiPartFormData) Write(buf *bytes.Buffer) (string, error) {
 			return "", err
 		}
 		_, err = io.Copy(fw, file)
+		if err != nil {
+			return "", err
+		}
+	}
+	for key, file := range s.dataFiles {
+		fw, err := wr.CreateFormFile(key, file.Name)
+		if err != nil {
+			return "", err
+		}
+		_, err = fw.Write(file.Data)
 		if err != nil {
 			return "", err
 		}

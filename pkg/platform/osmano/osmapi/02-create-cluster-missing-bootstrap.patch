@@ -1,0 +1,20 @@
+--- SOL005.yaml.last	2025-01-16 14:22:17.063189049 -0800
++++ SOL005.yaml	2025-01-16 14:29:15.223187683 -0800
+@@ -11931,7 +11931,7 @@
+       type: object
+       properties:
+         _id:
+-          type: integer
++          type: string
+         name:
+           type: string
+         vim_account:
+@@ -12025,6 +12025,8 @@
+           type: array
+           items:
+             type: integer
++        bootstrap:
++          type: boolean
+     RegisterClusterInfo:
+       type: object
+       properties:

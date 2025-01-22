@@ -29,6 +29,7 @@ import (
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
+	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
 )
 
 type AwsEksPlatform struct {
@@ -53,6 +54,11 @@ func NewPlatform() platform.Platform {
 	return &managedk8s.ManagedK8sPlatform{
 		Provider: &AwsEksPlatform{},
 	}
+}
+
+func (a *AwsEksPlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties) error {
+	a.awsGenPf = &awsgen.AwsGenericPlatform{Properties: properties}
+	return nil
 }
 
 func (o *AwsEksPlatform) GetFeatures() *edgeproto.PlatformFeatures {
@@ -137,10 +143,6 @@ func (a *AwsEksPlatform) Login(ctx context.Context) error {
 
 func (a *AwsEksPlatform) NameSanitize(clusterName string) string {
 	return strings.NewReplacer(".", "").Replace(clusterName)
-}
-
-func (a *AwsEksPlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
-	return nil
 }
 
 func (a *AwsEksPlatform) getClusterList(ctx context.Context) ([]awsgen.AWSCluster, error) {
@@ -350,4 +352,8 @@ func (a *AwsEksPlatform) GetClusterAdditionalResourceMetric(ctx context.Context,
 	resMetric.AddIntVal(cloudcommon.ResourceMetricTotalK8sNodes, eksRes.TotalK8sNodesUsed)
 	resMetric.AddIntVal(cloudcommon.ResourceMetricNetworkLBs, eksRes.NetworkLBsUsed)
 	return nil
+}
+
+func (s *AwsEksPlatform) GetWorkloadManager() (workloadmgrs.WorkloadMgr, error) {
+	return nil, nil
 }

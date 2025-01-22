@@ -15,10 +15,7 @@
 package azure
 
 import (
-	"context"
-
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
 
 const (
@@ -74,13 +71,4 @@ func (a *AzurePlatform) GetAzureUser() string {
 
 func (a *AzurePlatform) GetAzurePass() string {
 	return a.accessVars[AZURE_CLIENT_SECRET]
-}
-
-func (a *AzurePlatform) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
-	accessVars, err := accessApi.GetCloudletAccessVars(ctx)
-	if err != nil {
-		return err
-	}
-	a.accessVars = accessVars
-	return nil
 }

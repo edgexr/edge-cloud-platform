@@ -30,9 +30,13 @@ import (
 
 const MaxKubeCredentialsWait = 10 * time.Second
 
+func (m *ManagedK8sPlatform) GetClusterName(clusterInst *edgeproto.ClusterInst) string {
+	return m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
+}
+
 func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (annotations map[string]string, reterr error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst", "clusterInst", clusterInst)
-	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
+	clusterName := m.GetClusterName(clusterInst)
 	updateCallback(edgeproto.UpdateTask, "Creating Kubernetes Cluster: "+clusterName)
 	client, err := m.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {

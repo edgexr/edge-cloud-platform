@@ -1,4 +1,4 @@
-// Copyright 2024 EdgeXR, Inc
+// Copyright 2025 EdgeXR, Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package osmk8s
+package osmclient
 
 import (
 	"context"
@@ -20,31 +20,34 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/test-go/testify/require"
 )
 
-func TestGatherCloudletInfo(t *testing.T) {
+func getTestAppInst(t *testing.T, app *edgeproto.App, clusterName string) *edgeproto.AppInst {
+	ai := edgeproto.AppInst{}
+	ai.Key.Organization = app.Key.Organization
+	ai.Key.Name = "test-appinst2"
+	ai.AppKey = app.Key
+	ai.ClusterKey.Name = clusterName
+	ai.ClusterKey.Organization = app.Key.Organization
+	ai.KubernetesResources = app.KubernetesResources
+	return &ai
+}
+
+func TestCreateAppInst(t *testing.T) {
+	s := createTestClient(t)
+
 	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
 
-	s := Platform{}
-	s.properties = &infracommon.InfraProperties{
-		Properties: make(map[string]*edgeproto.PropertyInfo),
-	}
-	s.properties.SetProperties(Props)
-	s.properties.SetValue(OSM_FLAVORS, `[{"name":"Standard_D2s_v3","vcpus":2,"ram":8192,"disk":16}]`)
+	// assumes a test cluster must exist
+	clusterName := testClusterName
 
-	flavors := []*edgeproto.FlavorInfo{{
-		Name:  "Standard_D2s_v3",
-		Vcpus: 2,
-		Ram:   8192,
-		Disk:  16,
-	}}
-	info := &edgeproto.CloudletInfo{}
-	err := s.GatherCloudletInfo(ctx, info)
+	app := getTestApp(t)
+	appInst := getTestAppInst(t, app, clusterName)
+
+	_, err := s.CreateAppInst(ctx, clusterName, app, appInst)
 	require.Nil(t, err)
-	require.Equal(t, flavors, info.Flavors)
 }
