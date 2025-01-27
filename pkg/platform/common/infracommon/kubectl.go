@@ -100,8 +100,8 @@ func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 		return nil
 	}
 	namespaces := append(names.DeveloperDefinedNamespaces, k8smgmt.DefaultNamespace)
-	if names.MultitenantNamespace != "" {
-		namespaces = append(namespaces, names.MultitenantNamespace)
+	if names.InstanceNamespace != "" {
+		namespaces = append(namespaces, names.InstanceNamespace)
 	}
 	for _, namespace := range namespaces {
 		// Note that the registry secret name must be per-app, since a developer
@@ -161,7 +161,7 @@ func GetSvcExternalIpOrHost(ctx context.Context, client ssh.Client, kubeNames *k
 	dnsName := ""
 	//wait for Load Balancer to assign external IP address. It takes a variable amount of time.
 	for i := 0; i < 100; i++ {
-		svcs, err := k8smgmt.GetServices(ctx, client, kubeNames, k8smgmt.WithObjectNamespace(kubeNames.MultitenantNamespace))
+		svcs, err := k8smgmt.GetServices(ctx, client, kubeNames, k8smgmt.WithObjectNamespace(kubeNames.InstanceNamespace))
 		if err != nil {
 			return "", "", err
 		}

@@ -69,7 +69,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			return err
 		}
 	}
-	svcs, err := k8smgmt.GetServices(ctx, client, kubeNames, k8smgmt.WithObjectNamespace(kubeNames.MultitenantNamespace))
+	svcs, err := k8smgmt.GetServices(ctx, client, kubeNames, k8smgmt.WithObjectNamespace(kubeNames.InstanceNamespace))
 	if err != nil {
 		return err
 	}

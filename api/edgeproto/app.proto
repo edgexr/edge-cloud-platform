@@ -271,6 +271,10 @@ message App {
   map<string, string> app_annotations = 53;
   // A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster
   bool is_standalone = 54;
+  // Specifies if the kubernetes application manages creating and deleting its own namespaces. If true, it is disallowed from deployment to multi-tenant clusters, and it is up to the application developer to manage namespace conflicts if they deploy multiple applications to the same cluster. If false, each application instance is deployed to its own namespace set by the platform.
+  bool manages_own_namespaces = 55;
+  // Internal compatibility version
+  uint32 compatibility_version = 56 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

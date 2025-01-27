@@ -15,13 +15,16 @@
 package cloudcommon
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	yaml "github.com/mobiledgex/yaml/v2"
+	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
@@ -67,4 +70,28 @@ func DecodeDockerComposeYaml(manifest string) (map[string]DockerContainer, error
 		return nil, err
 	}
 	return containers, nil
+}
+
+func EncodeK8SYaml(objs []runtime.Object) (string, error) {
+	var files []string
+	printer := &printers.YAMLPrinter{}
+	for _, o := range objs {
+		buf := bytes.Buffer{}
+		err := printer.PrintObj(o, &buf)
+		if err != nil {
+			return "", fmt.Errorf("unable to marshal the k8s objects back together, %s", err.Error())
+		} else {
+			file := buf.String()
+			if _, ok := o.(*networkingv1.NetworkPolicy); ok {
+				// NetworkPolicyStatus has been removed as of
+				// https://github.com/kubernetes/api/commit/90ceadb2d5f2f1d135492b647c9fb72777db4b36
+				// unfortunately yaml printer writes it as an empty {}
+				// field, we need to remove it
+				file = strings.TrimSuffix(file, "status: {}\n")
+			}
+			files = append(files, file)
+		}
+	}
+	mf := strings.Join(files, "---\n")
+	return mf, nil
 }

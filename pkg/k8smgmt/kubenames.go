@@ -50,7 +50,8 @@ type KubeNames struct {
 	ImagePullSecrets           []string
 	ImagePaths                 []string
 	IsUriIPAddr                bool
-	MultitenantNamespace       string // for apps launched in a multi-tenant cluster
+	InstanceNamespace          string
+	MultiTenantRestricted      bool
 	TenantKconfName            string
 	TenantKconfArg             string
 }
@@ -123,6 +124,15 @@ func GetNamespace(appInst *edgeproto.AppInst) string {
 		return util.NamespaceSanitize(fmt.Sprintf("%s-%s-%s-%s", appInst.AppKey.Organization, appInst.AppKey.Name, appInst.AppKey.Version, vclust.Name))
 	}
 }
+func SetNamespace(clusterInst *edgeproto.ClusterInst, app *edgeproto.App) bool {
+	if app.CompatibilityVersion >= cloudcommon.AppCompatibilityPerInstanceNamespace {
+		return !app.ManagesOwnNamespaces
+	} else {
+		// for older apps, namespaces were only set in a multi
+		// tenant cluster.
+		return clusterInst.MultiTenant && !cloudcommon.IsSideCarApp(app)
+	}
+}
 
 func NormalizeName(name string) string {
 	return util.K8SSanitize(name)
@@ -192,14 +202,16 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 	kubeNames.OperatorName = NormalizeName(clusterInst.CloudletKey.Organization)
 	kubeNames.KconfName = GetKconfName(clusterInst)
 	kubeNames.KconfArg = "--kubeconfig=" + kubeNames.KconfName
-	// if clusterInst is multi-tenant and AppInst is specified,
-	// set up tenant kubeconfig
-	if clusterInst.MultiTenant && appInstName != "" && !cloudcommon.IsSideCarApp(app) {
-		kubeNames.MultitenantNamespace = GetNamespace(appInst)
+	// Configure namespace
+	if SetNamespace(clusterInst, app) && appInstName != "" {
+		kubeNames.InstanceNamespace = GetNamespace(appInst)
 		baseName := strings.TrimSuffix(kubeNames.KconfName, ".kubeconfig")
-		kubeNames.TenantKconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.MultitenantNamespace)
+		// The tenant kubeconfig is scoped to the instance namespace
+		kubeNames.TenantKconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.InstanceNamespace)
 		kubeNames.TenantKconfArg = "--kubeconfig=" + kubeNames.TenantKconfName
 	}
+	kubeNames.MultiTenantRestricted = clusterInst.MultiTenant && !cloudcommon.IsSideCarApp(app)
+
 	kubeNames.DeploymentType = app.Deployment
 	if app.ImagePath != "" {
 		kubeNames.ImagePaths = append(kubeNames.ImagePaths, app.ImagePath)
@@ -226,7 +238,7 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 				template = &obj.Spec.Template
 			case *v1.Namespace:
 				// if this is not a multi tenant case, any additional namespaces are from a developer manifest
-				if kubeNames.MultitenantNamespace == "" {
+				if kubeNames.InstanceNamespace == "" {
 					kubeNames.DeveloperDefinedNamespaces = append(kubeNames.DeveloperDefinedNamespaces, obj.Name)
 				}
 			}

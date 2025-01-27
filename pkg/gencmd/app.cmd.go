@@ -54,6 +54,9 @@ func AppHideTags(in *edgeproto.App) {
 	if _, found := tags["nocmp"]; found {
 		in.ObjId = ""
 	}
+	if _, found := tags["nocmp"]; found {
+		in.CompatibilityVersion = 0
+	}
 }
 
 func DeploymentZoneRequestHideTags(in *edgeproto.DeploymentZoneRequest) {
@@ -82,6 +85,9 @@ func DeploymentZoneRequestHideTags(in *edgeproto.DeploymentZoneRequest) {
 	}
 	if _, found := tags["nocmp"]; found {
 		in.App.ObjId = ""
+	}
+	if _, found := tags["nocmp"]; found {
+		in.App.CompatibilityVersion = 0
 	}
 }
 
@@ -760,6 +766,8 @@ var AppOptionalArgs = []string{
 	"objid",
 	"appannotations",
 	"isstandalone",
+	"managesownnamespaces",
+	"compatibilityversion",
 }
 var AppAliasArgs = []string{
 	"apporg=key.organization",
@@ -851,6 +859,8 @@ var AppComments = map[string]string{
 	"objid":                                                 "Universally unique object ID",
 	"appannotations":                                        "Internal Annotations, specify appannotations:empty=true to clear",
 	"isstandalone":                                          "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
+	"managesownnamespaces":                                  "Specifies if the kubernetes application manages creating and deleting its own namespaces. If true, it is disallowed from deployment to multi-tenant clusters, and it is up to the application developer to manage namespace conflicts if they deploy multiple applications to the same cluster. If false, each application instance is deployed to its own namespace set by the platform.",
+	"compatibilityversion":                                  "Internal compatibility version",
 }
 var AppSpecialArgs = map[string]string{
 	"alertpolicies":    "StringArray",
@@ -1019,6 +1029,8 @@ var DeploymentZoneRequestOptionalArgs = []string{
 	"app.objid",
 	"app.appannotations",
 	"app.isstandalone",
+	"app.managesownnamespaces",
+	"app.compatibilityversion",
 	"dryrundeploy",
 	"numnodes",
 }
@@ -1108,6 +1120,8 @@ var DeploymentZoneRequestComments = map[string]string{
 	"app.objid":                                                 "Universally unique object ID",
 	"app.appannotations":                                        "Internal Annotations",
 	"app.isstandalone":                                          "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
+	"app.managesownnamespaces":                                  "Specifies if the kubernetes application manages creating and deleting its own namespaces. If true, it is disallowed from deployment to multi-tenant clusters, and it is up to the application developer to manage namespace conflicts if they deploy multiple applications to the same cluster. If false, each application instance is deployed to its own namespace set by the platform.",
+	"app.compatibilityversion":                                  "Internal compatibility version",
 	"dryrundeploy":                                              "Attempt to qualify zones resources for deployment",
 	"numnodes":                                                  "Optional number of worker VMs in dry run K8s Cluster, default = 2",
 }
@@ -1202,6 +1216,8 @@ var CreateAppOptionalArgs = []string{
 	"objid",
 	"appannotations",
 	"isstandalone",
+	"managesownnamespaces",
+	"compatibilityversion",
 }
 var DeleteAppRequiredArgs = []string{
 	"apporg",
@@ -1280,6 +1296,8 @@ var DeleteAppOptionalArgs = []string{
 	"objid",
 	"appannotations",
 	"isstandalone",
+	"managesownnamespaces",
+	"compatibilityversion",
 }
 var ShowAppRequiredArgs = []string{
 	"apporg",
@@ -1358,4 +1376,6 @@ var ShowAppOptionalArgs = []string{
 	"objid",
 	"appannotations",
 	"isstandalone",
+	"managesownnamespaces",
+	"compatibilityversion",
 }

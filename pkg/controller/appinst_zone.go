@@ -282,6 +282,9 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 	if clusterInst.MultiTenant && !app.AllowServerless {
 		return nil, AppNotServerless, true, fmt.Errorf("app must be serverless to deploy to multi-tenant cluster")
 	}
+	if clusterInst.MultiTenant && app.ManagesOwnNamespaces {
+		return nil, AppManagesOwnNamespace, true, fmt.Errorf("cannot deploy app that manages its own namespaces to a multi-tenant cluster")
+	}
 	clusterType := ClusterTypeUnknown
 	if clusterInst.MultiTenant {
 		clusterType = ClusterTypeMultiTenant
