@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"text/template"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -32,10 +33,8 @@ import (
 	yaml "github.com/mobiledgex/yaml/v2"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/printers"
 )
 
 const MexAppLabel = "mex-app"
@@ -127,34 +126,65 @@ func addAppInstLabels(meta *metav1.ObjectMeta, appInst *edgeproto.AppInst) {
 // the config label. Typically this would be all the AppInsts in the
 // Cluster (or namespace for multi-tenant clusters).
 func getConfigLabel(names *KubeNames) string {
-	if names.MultitenantNamespace != "" {
-		return names.MultitenantNamespace
+	if names.InstanceNamespace != "" {
+		return names.InstanceNamespace
 	}
 	return names.ClusterName
 }
 
-func addResourceLimits(ctx context.Context, template *v1.PodTemplateSpec, config *edgeproto.ServerlessConfig) error {
-	// This assumes there's only one container.
-	// Kubernetes does not give a way to specify resource limits per pod.
-	// It's either per container, or per namespace.
-	cpu, err := resource.ParseQuantity(config.Vcpus.DecString())
+type resourceQuotaArgs struct {
+	Name         string
+	Namespace    string
+	LimitsCPU    string
+	LimitsMemory string
+}
+
+var k8sResourceQuotaTemplate = template.Must(template.New("resourcequota").Parse(`apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ .Name }}
+  namespace: {{ .Namespace }}
+spec:
+  hard:
+    limits.cpu: "{{ .LimitsCPU }}"
+    limits.memory: "{{ .LimitsMemory }}"
+`))
+
+// GetResourceQuota returns a resource quota that limits the
+// resources in the namespace for an appinst.
+func GetResourceQuota(ctx context.Context, namespace string, kr *edgeproto.KubernetesResources) (string, error) {
+	if namespace == "" || kr == nil {
+		return "", fmt.Errorf("ResourceQuota only valid for namespaced instances with Kubernetes Resources defined")
+	}
+	args := resourceQuotaArgs{}
+	args.Name = namespace
+	args.Namespace = namespace
+	vcpus := edgeproto.NewUdec64(0, 0)
+	ram := uint64(0)
+	if kr.CpuPool != nil {
+		vcpus.Add(&kr.CpuPool.TotalVcpus)
+		ram += kr.CpuPool.TotalMemory
+	}
+	if kr.GpuPool != nil {
+		vcpus.Add(&kr.GpuPool.TotalVcpus)
+		ram += kr.GpuPool.TotalMemory
+	}
+	cpu, err := resource.ParseQuantity(vcpus.DecString())
 	if err != nil {
-		return err
+		return "", err
 	}
-	mem, err := resource.ParseQuantity(fmt.Sprintf("%dMi", config.Ram))
+	mem, err := resource.ParseQuantity(fmt.Sprintf("%dMi", ram))
 	if err != nil {
-		return err
+		return "", err
 	}
-	for j, _ := range template.Spec.Containers {
-		resources := &template.Spec.Containers[j].Resources
-		resources.Limits = v1.ResourceList{}
-		resources.Limits[v1.ResourceCPU] = cpu
-		resources.Limits[v1.ResourceMemory] = mem
-		resources.Requests = v1.ResourceList{}
-		resources.Requests[v1.ResourceCPU] = cpu
-		resources.Requests[v1.ResourceMemory] = mem
+	args.LimitsCPU = cpu.String()
+	args.LimitsMemory = mem.String()
+	buf := bytes.Buffer{}
+	err = k8sResourceQuotaTemplate.Execute(&buf, &args)
+	if err != nil {
+		return "", err
 	}
-	return nil
+	return buf.String(), nil
 }
 
 func GetAppEnvVars(ctx context.Context, app *edgeproto.App, authApi cloudcommon.RegistryAuthApi, deploymentVars *deployvars.DeploymentReplaceVars) (*[]v1.EnvVar, error) {
@@ -187,10 +217,10 @@ func GetAppEnvVars(ctx context.Context, app *edgeproto.App, authApi cloudcommon.
 	return &envVars, nil
 }
 
-// Merge in all the environment variables into
-func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgeproto.App, appInst *edgeproto.AppInst, kubeManifest string, imagePullSecrets []string, names *KubeNames, kr *edgeproto.KubernetesResources) (string, error) {
-	var files []string
-	log.SpanLog(ctx, log.DebugLevelInfra, "MergeEnvVars", "kubeManifest", kubeManifest)
+// MergeEnvVars merges in all the environment variables into
+// the manifest.
+func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgeproto.App, appInst *edgeproto.AppInst, mf string, imagePullSecrets []string, names *KubeNames, kr *edgeproto.KubernetesResources) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "MergeEnvVars", "kubeManifest", mf)
 
 	deploymentVars, varsFound := ctx.Value(deployvars.DeploymentReplaceVarsKey).(*deployvars.DeploymentReplaceVars)
 	log.SpanLog(ctx, log.DebugLevelInfra, "MergeEnvVars", "deploymentVars", deploymentVars, "varsFound", varsFound)
@@ -199,10 +229,6 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 		return "", err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Merging environment variables", "envVars", envVars)
-	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, kubeManifest)
-	if err != nil {
-		return mf, err
-	}
 	// Fill in the Deployment Vars passed as a variable through the context
 	if varsFound {
 		mf, err = deployvars.ReplaceDeploymentVars(mf, app.TemplateDelimiter, deploymentVars)
@@ -218,12 +244,12 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 	//decode the objects so we can find the container objects, where we'll add the env vars
 	objs, _, err := cloudcommon.DecodeK8SYaml(mf)
 	if err != nil {
-		return kubeManifest, fmt.Errorf("invalid kubernetes deployment yaml, %s", err.Error())
+		return "", fmt.Errorf("invalid kubernetes deployment yaml, %s", err.Error())
 	}
 
 	var appEnvVars *v1.ConfigMap
 	if len(app.EnvVars) > 0 {
-		appEnvVarsFrom := names.AppName + names.AppVersion
+		appEnvVarsFrom := names.AppName + names.AppVersion + "-envvars"
 		appEnvVars = &v1.ConfigMap{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: "v1",
@@ -240,10 +266,10 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 	if len(app.SecretEnvVars) > 0 {
 		secretVars, err := accessApi.GetAppSecretVars(ctx, &app.Key)
 		if err != nil {
-			return kubeManifest, err
+			return "", err
 		}
 		if len(secretVars) != len(app.SecretEnvVars) {
-			return kubeManifest, fmt.Errorf("failed to get the correct number of App secret vars from encrypted storage, expected %d but only got %d", len(app.SecretEnvVars), len(secretVars))
+			return "", fmt.Errorf("failed to get the correct number of App secret vars from encrypted storage, expected %d but only got %d", len(app.SecretEnvVars), len(secretVars))
 		}
 		secretVarsFrom := names.AppName + names.AppVersion
 		appSecretVars = &v1.Secret{
@@ -305,12 +331,6 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 		if imagePullSecrets != nil {
 			addImagePullSecret(ctx, template, imagePullSecrets)
 		}
-		if names.MultitenantNamespace != "" && app.ServerlessConfig != nil {
-			err := addResourceLimits(ctx, template, app.ServerlessConfig)
-			if err != nil {
-				return "", err
-			}
-		}
 		gpuCount := cloudcommon.KuberentesResourcesGPUCount(kr)
 		if gpuCount > 0 {
 			// just set GPU resource limit for manifest generated by our
@@ -336,25 +356,10 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 	}
 
 	//marshal the objects back together and return as one string
-	printer := &printers.YAMLPrinter{}
-	for _, o := range objs {
-		buf := bytes.Buffer{}
-		err := printer.PrintObj(o, &buf)
-		if err != nil {
-			return kubeManifest, fmt.Errorf("unable to marshal the k8s objects back together, %s", err.Error())
-		} else {
-			file := buf.String()
-			if _, ok := o.(*networkingv1.NetworkPolicy); ok {
-				// NetworkPolicyStatus has been removed as of
-				// https://github.com/kubernetes/api/commit/90ceadb2d5f2f1d135492b647c9fb72777db4b36
-				// unfortunately yaml printer writes it as an empty {}
-				// field, we need to remove it
-				file = strings.TrimSuffix(file, "status: {}\n")
-			}
-			files = append(files, file)
-		}
+	mf, err = cloudcommon.EncodeK8SYaml(objs)
+	if err != nil {
+		return "", err
 	}
-	mf = strings.Join(files, "---\n")
 	return mf, nil
 }
 
@@ -370,7 +375,7 @@ func getDefaultReplicas(app *edgeproto.App, names *KubeNames, curReplica int32) 
 	if curReplica != 0 {
 		val = curReplica
 	}
-	if names.MultitenantNamespace != "" && app.ServerlessConfig != nil {
+	if names.InstanceNamespace != "" && app.ServerlessConfig != nil {
 		val = int32(app.ServerlessConfig.MinReplicas)
 	}
 	return &val

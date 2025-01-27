@@ -68,8 +68,8 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 	// are port conflicts, user must specify the service name in the
 	// App.AccessPorts spec.
 	svcsOps := []GetObjectsOp{}
-	if names.MultitenantNamespace != "" {
-		svcsOps = append(svcsOps, WithObjectNamespace(names.MultitenantNamespace))
+	if names.InstanceNamespace != "" {
+		svcsOps = append(svcsOps, WithObjectNamespace(names.InstanceNamespace))
 	}
 	svcs, err := GetKubeServices(ctx, client, names.GetKConfNames(), svcsOps...)
 	if err != nil {
@@ -161,7 +161,7 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 		return nil, fmt.Errorf("failed to marshal the ingress object to yaml, %s", err)
 	}
 	contents := buf.String()
-	configDir := getConfigDirName(names)
+	configDir := GetConfigDirName(names)
 	fileName := configDir + "/" + getIngressManifestName(names)
 	err = pc.WriteFile(client, fileName, contents, "k8s ingress", pc.NoSudo)
 	if err != nil {
@@ -179,7 +179,7 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 
 func DeleteIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) error {
 	kconfArg := names.GetTenantKconfArg()
-	configDir := getConfigDirName(names)
+	configDir := GetConfigDirName(names)
 	ingressFile := configDir + "/" + getIngressManifestName(names)
 	cmd := fmt.Sprintf("kubectl %s delete -f %s", kconfArg, ingressFile)
 	out, err := client.Output(cmd)
@@ -215,7 +215,7 @@ func GetIngressExternalIP(ctx context.Context, client ssh.Client, names *KubeNam
 	log.SpanLog(ctx, log.DebugLevelInfra, "get ingress IP", "kconf", names.KconfName)
 	for i := 0; i < IngressExternalIPRetries; i++ {
 		ingress := &networkingv1.Ingress{}
-		err := GetObject(ctx, client, names.GetKConfNames(), "ingress", name, ingress, WithObjectNamespace(names.MultitenantNamespace))
+		err := GetObject(ctx, client, names.GetKConfNames(), "ingress", name, ingress, WithObjectNamespace(names.InstanceNamespace))
 		if err != nil {
 			if errors.Is(err, ErrObjectNotFound) && i < 5 {
 				// maybe not present yet, wait a bit

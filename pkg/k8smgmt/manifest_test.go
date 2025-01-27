@@ -17,8 +17,6 @@ package k8smgmt
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -29,17 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var envVars = `- name: SOME_ENV1
-  value: value1
-- name: SOME_ENV2
-  valueFrom:
-    configMapKeyRef:
-      key: CloudletName
-      name: mexcluster-info
-      optional: true
-`
-
-func TestEnvVars(t *testing.T) {
+func TestGenerateAppInstManifest(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
@@ -49,48 +37,22 @@ func TestEnvVars(t *testing.T) {
 	app := &testutil.AppData()[0]
 	app.Deployment = cloudcommon.DeploymentTypeKubernetes
 	app.DeploymentGenerator = ""
-	config := &edgeproto.ConfigFile{
-		Kind:   edgeproto.AppConfigEnvYaml,
-		Config: envVars,
+	app.EnvVars = map[string]string{
+		"SOME_ENV1": "value1",
+		"SOME_ENV2": "value2",
 	}
-	app.Configs = append(app.Configs, config)
-
-	// start up http server to serve envVars
-	tsEnvVars := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, envVars)
-	}))
-	defer tsEnvVars.Close()
-
-	names := &KubeNames{}
-
-	defaultFlavor := edgeproto.KubernetesResources{
-		CpuPool: &edgeproto.NodePoolResources{
-			TotalVcpus:  *edgeproto.NewUdec64(1, 0),
-			TotalMemory: 1024,
-		},
-	}
-
-	accessApi := &accessapi.TestHandler{}
-	// Test Deployment manifest with inline EnvVars
 	baseMf, err := cloudcommon.GetAppDeploymentManifest(ctx, nil, app)
 	require.Nil(t, err)
-	envVarsMf, err := MergeEnvVars(ctx, accessApi, app, appInst, baseMf, nil, names, &defaultFlavor)
-	require.Nil(t, err)
-	// make envVars remote
-	app.Configs[0].Config = tsEnvVars.URL
-	remoteEnvVars, err := MergeEnvVars(ctx, accessApi, app, appInst, baseMf, nil, names, &defaultFlavor)
-	require.Nil(t, err)
-	require.Equal(t, envVarsMf, remoteEnvVars)
+	app.DeploymentManifest = baseMf
+	app.CompatibilityVersion = cloudcommon.GetAppCompatibilityVersion()
 
-	// Test resource limit injection with namespace
-	names.MultitenantNamespace = "app-ns"
+	accessApi := &accessapi.TestHandler{}
+
 	app.AllowServerless = true
-	app.ServerlessConfig = &edgeproto.ServerlessConfig{
-		Vcpus:       *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
-		Ram:         20,
-		MinReplicas: 2,
-	}
-	gpuFlavor := edgeproto.KubernetesResources{
+	ports, err := edgeproto.ParseAppPorts(app.AccessPorts)
+	require.Nil(t, err)
+	appInst.MappedPorts = ports
+	appInst.KubernetesResources = &edgeproto.KubernetesResources{
 		GpuPool: &edgeproto.NodePoolResources{
 			TotalVcpus:  *edgeproto.NewUdec64(1, 0),
 			TotalMemory: 1024,
@@ -99,9 +61,18 @@ func TestEnvVars(t *testing.T) {
 			},
 		},
 	}
-	merged, err := MergeEnvVars(ctx, accessApi, app, appInst, baseMf, nil, names, &gpuFlavor)
+	appInst.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
+	names, err := GetKubeNames(&edgeproto.ClusterInst{}, app, appInst)
 	require.Nil(t, err)
-	require.Equal(t, expectedFullManifest, merged)
+	require.NotEqual(t, "", names.InstanceNamespace)
+	names.MultiTenantRestricted = true // add in Network Policy
+
+	mf, err := GenerateAppInstManifest(ctx, accessApi, names, app, appInst)
+	require.Nil(t, err)
+	if expectedFullManifest != mf {
+		fmt.Println(mf)
+	}
+	require.Equal(t, expectedFullManifest, mf)
 }
 
 var expectedFullManifest = `apiVersion: v1
@@ -109,7 +80,7 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    config: app-ns
+    config: pillimogo1-atlanticinc
     run: pillimogo1.0.0
   name: pillimogo100-http
 spec:
@@ -129,7 +100,7 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    config: app-ns
+    config: pillimogo1-atlanticinc
     run: pillimogo1.0.0
   name: pillimogo100-tcp
 spec:
@@ -149,7 +120,7 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    config: app-ns
+    config: pillimogo1-atlanticinc
     run: pillimogo1.0.0
   name: pillimogo100-udp
 spec:
@@ -169,10 +140,10 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    config: app-ns
+    config: pillimogo1-atlanticinc
   name: pillimogo100-deployment
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       run: pillimogo1.0.0
@@ -188,10 +159,9 @@ spec:
         run: pillimogo1.0.0
     spec:
       containers:
-      - env:
-        - name: SOME_ENV1
-          value: value1
-        - name: SOME_ENV2
+      - envFrom:
+        - configMapRef:
+            name: pillimogo1.0.0-envvars
         imagePullPolicy: Always
         name: pillimogo100
         ports:
@@ -203,15 +173,61 @@ spec:
           protocol: UDP
         resources:
           limits:
-            cpu: 500m
-            memory: 20Mi
             nvidia.com/gpu: "1"
-          requests:
-            cpu: 500m
-            memory: 20Mi
       imagePullSecrets:
       - {}
 status: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  creationTimestamp: null
+  labels:
+    config: pillimogo1-atlanticinc
+  name: networkpolicy-pillimogo1-atlanticinc
+  namespace: pillimogo1-atlanticinc
+spec:
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: pillimogo1-atlanticinc
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - port: 443
+      protocol: TCP
+    - port: 10002
+      protocol: TCP
+    - port: 10002
+      protocol: UDP
+  podSelector: {}
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  creationTimestamp: null
+  labels:
+    config: pillimogo1-atlanticinc
+  name: pillimogo1-atlanticinc
+  namespace: pillimogo1-atlanticinc
+spec:
+  hard:
+    limits.cpu: "1"
+    limits.memory: 1Gi
+status: {}
+---
+apiVersion: v1
+data:
+  SOME_ENV1: value1
+  SOME_ENV2: value2
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    config: pillimogo1-atlanticinc
+  name: pillimogo1.0.0-envvars
 `
 
 var deploymentManifest = `apiVersion: v1

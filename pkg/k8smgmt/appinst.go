@@ -205,8 +205,8 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 				break
 			}
 			if namespace == "" {
-				if names.MultitenantNamespace != "" {
-					namespace = names.MultitenantNamespace
+				if names.InstanceNamespace != "" {
+					namespace = names.InstanceNamespace
 				} else {
 					namespace = DefaultNamespace
 				}
@@ -243,7 +243,7 @@ func UpdateLoadBalancerPortMap(ctx context.Context, client ssh.Client, names *Ku
 	if err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateLoadBalancerPortMap", "names.MultitenantNamespace", names.MultitenantNamespace)
+	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateLoadBalancerPortMap", "names.MultitenantNamespace", names.InstanceNamespace)
 
 	for _, s := range services {
 		lbip := ""
@@ -252,9 +252,9 @@ func UpdateLoadBalancerPortMap(ctx context.Context, client ssh.Client, names *Ku
 			continue
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "service name match found in kubenames", "svc name", s.Name)
-		if names.MultitenantNamespace != "" {
+		if names.InstanceNamespace != "" {
 			svcNamespace := s.ObjectMeta.Namespace
-			if svcNamespace != names.MultitenantNamespace {
+			if svcNamespace != names.InstanceNamespace {
 				continue
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "UpdateLoadBalancerPortMap match", "svcNamespace", svcNamespace)
@@ -306,7 +306,7 @@ func PopulateAppInstLoadBalancerIps(ctx context.Context, client ssh.Client, name
 			}
 			lbip, ok := appinst.InternalPortToLbIp[portString]
 			if ok {
-				log.SpanLog(ctx, log.DebugLevelInfra, "found load balancer ip for port", "portString", portString, "lbip", lbip, "names.MultitenantNamespace", names.MultitenantNamespace)
+				log.SpanLog(ctx, log.DebugLevelInfra, "found load balancer ip for port", "portString", portString, "lbip", lbip, "names.MultitenantNamespace", names.InstanceNamespace)
 				appinst.InternalPortToLbIp[portString] = lbip
 			} else {
 				log.SpanLog(ctx, log.DebugLevelInfra, "did not find load balancer ip for port", "portString", portString)
@@ -328,10 +328,10 @@ func PopulateAppInstLoadBalancerIps(ctx context.Context, client ssh.Client, name
 	}
 }
 
-func getConfigDirName(names *KubeNames) string {
+func GetConfigDirName(names *KubeNames) string {
 	dir := names.ClusterName
-	if names.MultitenantNamespace != "" {
-		dir += "." + names.MultitenantNamespace
+	if names.InstanceNamespace != "" {
+		dir += "." + names.InstanceNamespace
 	}
 	return dir
 }
@@ -358,8 +358,8 @@ func getIngressFileName(names *KubeNames) string {
 func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeNames) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAllNamespaces", "names", names)
 	namespaces := names.DeveloperDefinedNamespaces
-	if names.MultitenantNamespace != "" {
-		namespaces = append(namespaces, names.MultitenantNamespace)
+	if names.InstanceNamespace != "" {
+		namespaces = append(namespaces, names.InstanceNamespace)
 	}
 	for _, n := range namespaces {
 		if n == DefaultNamespace {
@@ -375,25 +375,41 @@ func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeName
 	return nil
 }
 
-func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func GenerateAppInstManifest(ctx context.Context, accessApi platform.AccessApi, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
 	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, app.DeploymentManifest)
 	if err != nil {
-		return err
+		return "", err
 	}
-	if names.MultitenantNamespace != "" {
+	if names.MultiTenantRestricted {
 		// Mulit-tenant cluster, add network policy
 		np, err := GetNetworkPolicy(ctx, app, appInst, names)
 		if err != nil {
-			return err
+			return "", err
 		}
 		mf = AddManifest(mf, np)
+	}
+	if names.InstanceNamespace != "" {
+		rq, err := GetResourceQuota(ctx, names.InstanceNamespace, appInst.KubernetesResources)
+		if err != nil {
+			return "", err
+		}
+		mf = AddManifest(mf, rq)
 	}
 	mf, err = MergeEnvVars(ctx, accessApi, app, appInst, mf, names.ImagePullSecrets, names, appInst.KubernetesResources)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to merge env vars", "error", err)
-		return fmt.Errorf("error merging environment variables config file: %s", err)
+		return "", fmt.Errorf("error merging environment variables config file: %s", err)
 	}
-	configDir := getConfigDirName(names)
+	return mf, nil
+}
+
+func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	mf, err := GenerateAppInstManifest(ctx, accessApi, names, app, appInst)
+	if err != nil {
+		return err
+	}
+
+	configDir := GetConfigDirName(names)
 	configName := getConfigFileName(names, appInst)
 	err = pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
 	if err != nil {
@@ -411,8 +427,8 @@ func WriteDeploymentManifestToFile(ctx context.Context, accessApi platform.Acces
 
 func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst, action string, ops ...AppInstOp) (reterr error) {
 	opts := getAppInstOptions(ops)
-	if action == createManifest && names.MultitenantNamespace != "" {
-		err := EnsureNamespace(ctx, client, names.GetKConfNames(), names.MultitenantNamespace)
+	if action == createManifest && names.InstanceNamespace != "" {
+		err := EnsureNamespace(ctx, client, names.GetKConfNames(), names.InstanceNamespace)
 		if err != nil {
 			return err
 		}
@@ -421,7 +437,7 @@ func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, cl
 	if err := WriteDeploymentManifestToFile(ctx, accessApi, client, names, app, appInst); err != nil {
 		return err
 	}
-	configDir := getConfigDirName(names)
+	configDir := GetConfigDirName(names)
 
 	defer func() {
 		if reterr == nil || opts.undo {
@@ -479,7 +495,7 @@ func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 		return err
 	}
 	kconfArg := names.GetTenantKconfArg()
-	configDir := getConfigDirName(names)
+	configDir := GetConfigDirName(names)
 	configName := getConfigFileName(names, appInst)
 	file := configDir + "/" + configName
 	cmd := fmt.Sprintf("kubectl %s delete -f %s", kconfArg, file)
@@ -507,9 +523,9 @@ func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error deleting manifest", "file", file, "err", err)
 	}
-	if names.MultitenantNamespace != "" {
+	if names.InstanceNamespace != "" {
 		// clean up namespace
-		if err = DeleteNamespace(ctx, client, names.GetKConfNames(), names.MultitenantNamespace); err != nil {
+		if err = DeleteNamespace(ctx, client, names.GetKConfNames(), names.InstanceNamespace); err != nil {
 			return err
 		}
 		if err = RemoveTenantKubeconfig(ctx, client, names); err != nil {
@@ -552,8 +568,8 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, names *KubeNames,
 			continue
 		}
 		if namespace == "" {
-			if names.MultitenantNamespace != "" {
-				namespace = names.MultitenantNamespace
+			if names.InstanceNamespace != "" {
+				namespace = names.InstanceNamespace
 			} else {
 				namespace = DefaultNamespace
 			}

@@ -106,7 +106,7 @@ func upgradeVersionSingleClusterConfigDir(ctx context.Context, caches *platform.
 
 		// make new config dir if necessary (may already have been created
 		// if multiple AppInsts in ClusterInst)
-		configDir := getConfigDirName(names)
+		configDir := GetConfigDirName(names)
 		configName := getConfigFileName(names, appInst)
 		err = pc.CreateDir(ctx, client, configDir, pc.NoOverwrite, pc.NoSudo)
 		if err != nil {
