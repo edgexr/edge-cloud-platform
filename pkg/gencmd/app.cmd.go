@@ -767,7 +767,6 @@ var AppOptionalArgs = []string{
 	"appannotations",
 	"isstandalone",
 	"managesownnamespaces",
-	"compatibilityversion",
 }
 var AppAliasArgs = []string{
 	"apporg=key.organization",
@@ -1217,7 +1216,6 @@ var CreateAppOptionalArgs = []string{
 	"appannotations",
 	"isstandalone",
 	"managesownnamespaces",
-	"compatibilityversion",
 }
 var DeleteAppRequiredArgs = []string{
 	"apporg",
@@ -1297,7 +1295,6 @@ var DeleteAppOptionalArgs = []string{
 	"appannotations",
 	"isstandalone",
 	"managesownnamespaces",
-	"compatibilityversion",
 }
 var ShowAppRequiredArgs = []string{
 	"apporg",
@@ -1377,5 +1374,4 @@ var ShowAppOptionalArgs = []string{
 	"appannotations",
 	"isstandalone",
 	"managesownnamespaces",
-	"compatibilityversion",
 }
