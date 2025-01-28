@@ -309,6 +309,7 @@ func GetCloudletKConfNames(key *edgeproto.CloudletKey) *KconfNames {
 func EnsureNamespace(ctx context.Context, client ssh.Client, names *KconfNames, namespace string) error {
 	// this creates the yaml and applies it so there is no
 	// failure if the namespace already exists.
+	log.SpanLog(ctx, log.DebugLevelInfra, "ensuring namespace", "namespace", namespace)
 	cmd := fmt.Sprintf("kubectl %s create ns %s --dry-run=client -o yaml | kubectl %s apply -f -", names.KconfArg, namespace, names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
