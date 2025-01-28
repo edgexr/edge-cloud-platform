@@ -472,7 +472,7 @@ func ApplyAppInstPolicy(ctx context.Context, client ssh.Client, names *KubeNames
 	}
 
 	// ensure manifest is present on delete as well, in case
-	// container was restarted and manifest is no longer present.
+	// CCRM container was restarted and manifest is no longer present.
 	err = WriteManifest(ctx, client, names, appInst, PolicyManifestSuffix, policyManifest)
 	if err != nil {
 		return err
