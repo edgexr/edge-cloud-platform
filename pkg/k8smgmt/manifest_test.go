@@ -73,6 +73,13 @@ func TestGenerateAppInstManifest(t *testing.T) {
 		fmt.Println(mf)
 	}
 	require.Equal(t, expectedFullManifest, mf)
+
+	mf, err = GenerateAppInstPolicyManifest(ctx, names, app, appInst)
+	require.Nil(t, err)
+	if expectedPolicyManifest != mf {
+		fmt.Println(mf)
+	}
+	require.Equal(t, expectedPolicyManifest, mf)
 }
 
 var expectedFullManifest = `apiVersion: v1
@@ -173,15 +180,31 @@ spec:
           protocol: UDP
         resources:
           limits:
+            cpu: "1"
+            memory: 1Gi
             nvidia.com/gpu: "1"
+          requests:
+            cpu: "1"
+            memory: 1Gi
       imagePullSecrets:
       - {}
 status: {}
 ---
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+apiVersion: v1
+data:
+  SOME_ENV1: value1
+  SOME_ENV2: value2
+kind: ConfigMap
 metadata:
   creationTimestamp: null
+  labels:
+    config: pillimogo1-atlanticinc
+  name: pillimogo1.0.0-envvars
+`
+
+var expectedPolicyManifest = `apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
   labels:
     config: pillimogo1-atlanticinc
   name: networkpolicy-pillimogo1-atlanticinc
@@ -202,12 +225,10 @@ spec:
       protocol: TCP
     - port: 10002
       protocol: UDP
-  podSelector: {}
 ---
 apiVersion: v1
 kind: ResourceQuota
 metadata:
-  creationTimestamp: null
   labels:
     config: pillimogo1-atlanticinc
   name: pillimogo1-atlanticinc
@@ -216,18 +237,6 @@ spec:
   hard:
     limits.cpu: "1"
     limits.memory: 1Gi
-status: {}
----
-apiVersion: v1
-data:
-  SOME_ENV1: value1
-  SOME_ENV2: value2
-kind: ConfigMap
-metadata:
-  creationTimestamp: null
-  labels:
-    config: pillimogo1-atlanticinc
-  name: pillimogo1.0.0-envvars
 `
 
 var deploymentManifest = `apiVersion: v1
