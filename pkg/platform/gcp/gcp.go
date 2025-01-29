@@ -30,7 +30,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
-	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
 )
 
 const GcpMaxClusterNameLen int = 40
@@ -201,9 +200,5 @@ func (g *GCPPlatform) NameSanitize(clusterName string) string {
 }
 
 func (g *GCPPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
-	return nil, nil
-}
-
-func (g *GCPPlatform) GetWorkloadManager() (workloadmgrs.WorkloadMgr, error) {
 	return nil, nil
 }

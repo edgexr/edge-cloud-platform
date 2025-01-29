@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"os"
 	"reflect"
@@ -83,8 +84,9 @@ func (s *Client) PostJson(uri, token string, reqData interface{}, replyData inte
 }
 
 type fileData struct {
-	Name string
-	Data []byte
+	Name        string
+	Data        []byte
+	ContentType string
 }
 
 type MultiPartFormData struct {
@@ -110,10 +112,11 @@ func (s *MultiPartFormData) AddFile(key string, val *os.File) {
 	s.files[key] = val
 }
 
-func (s *MultiPartFormData) AddFileData(key, fileName string, data []byte) {
+func (s *MultiPartFormData) AddFileData(key, fileName, contentType string, data []byte) {
 	s.dataFiles[key] = fileData{
-		Name: fileName,
-		Data: data,
+		Name:        fileName,
+		Data:        data,
+		ContentType: contentType,
 	}
 }
 
@@ -154,7 +157,10 @@ func (s *MultiPartFormData) Write(buf *bytes.Buffer) (string, error) {
 		}
 	}
 	for key, file := range s.dataFiles {
-		fw, err := wr.CreateFormFile(key, file.Name)
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, key, file.Name))
+		h.Set("Content-Type", file.ContentType)
+		fw, err := wr.CreatePart(h)
 		if err != nil {
 			return "", err
 		}

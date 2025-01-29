@@ -171,7 +171,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 			if err != nil {
 				return err
 			}*/
-		err = k8smgmt.CreateAppInst(ctx, s.platformConfig.AccessApi, client, names, app, appInst)
+		err = k8smgmt.CreateAppInst(ctx, s.platformConfig.AccessApi, client, names, clusterInst, app, appInst)
 		if err != nil {
 			return err
 		}
@@ -205,7 +205,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		}
 		proxy := s.getAppInstProxy(clusterInst, appInst)
 		proxy.StopLocal()
-		return k8smgmt.DeleteAppInst(ctx, s.platformConfig.AccessApi, client, names, app, appInst)
+		return k8smgmt.DeleteAppInst(ctx, s.platformConfig.AccessApi, client, names, clusterInst, app, appInst)
 	case cloudcommon.DeploymentTypeHelm:
 		names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 		if err != nil {

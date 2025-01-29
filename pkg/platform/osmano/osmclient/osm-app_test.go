@@ -33,7 +33,7 @@ import (
 func getTestApp(t *testing.T) *edgeproto.App {
 	app := edgeproto.App{
 		Key: edgeproto.AppKey{
-			Name:         "testApp",
+			Name:         "testapp",
 			Organization: "devorg",
 			Version:      "1.0",
 		},
@@ -46,7 +46,8 @@ func getTestApp(t *testing.T) *edgeproto.App {
 				TotalMemory: 200,
 			},
 		},
-		AllowServerless: true,
+		AllowServerless:      true,
+		CompatibilityVersion: cloudcommon.GetAppCompatibilityVersion(),
 	}
 	app.DeploymentGenerator = deploygen.KubernetesBasic
 	manifest, err := cloudcommon.GenerateManifest(&app)
@@ -71,6 +72,10 @@ func TestCreateAppArchive(t *testing.T) {
 		hdr, err := trdr.Next()
 		if err == io.EOF {
 			break
+		}
+		if tar.TypeDir == int32(hdr.Typeflag) {
+			fmt.Printf("Dir %s\n", hdr.Name)
+			continue
 		}
 		require.Equal(t, tar.TypeReg, int32(hdr.Typeflag))
 

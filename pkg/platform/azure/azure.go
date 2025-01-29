@@ -32,7 +32,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -264,9 +263,5 @@ func (a *AzurePlatform) NameSanitize(clusterName string) string {
 }
 
 func (a *AzurePlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
-	return nil, nil
-}
-
-func (s *AzurePlatform) GetWorkloadManager() (workloadmgrs.WorkloadMgr, error) {
 	return nil, nil
 }

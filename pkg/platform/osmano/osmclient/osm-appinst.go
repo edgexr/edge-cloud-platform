@@ -24,6 +24,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -62,7 +63,7 @@ func (s *OSMClient) GetAppProfile(ctx context.Context, name string) (*AppProfile
 }
 
 func getOSMAppInstName(appInst *edgeproto.AppInst) string {
-	return fmt.Sprintf("%s-%s", appInst.Key.Organization, appInst.Key.Name)
+	return NameSanitize(fmt.Sprintf("%s-%s", appInst.Key.Organization, appInst.Key.Name))
 }
 
 type ArrayOfKsu struct {
@@ -80,7 +81,8 @@ type Ksu struct {
 }
 
 type KsuOka struct {
-	ID string `json:"_id,omitempty"`
+	ID             string         `json:"_id,omitempty"`
+	Transformation map[string]any `json:"transformation,omitempty"`
 }
 
 type KsuProfile struct {
@@ -92,7 +94,7 @@ type CreateKsuResp struct {
 	IDs []string `json:"_id,omitempty"`
 }
 
-func (s *OSMClient) CreateAppInst(ctx context.Context, clusterName string, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
+func (s *OSMClient) CreateAppInst(ctx context.Context, names *k8smgmt.KubeNames, clusterName string, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
 	name := getOSMAppInstName(appInst)
 
 	cluster, err := s.FindClusterInfo(ctx, clusterName)
@@ -112,11 +114,19 @@ func (s *OSMClient) CreateAppInst(ctx context.Context, clusterName string, app *
 	if err != nil {
 		return "", err
 	}
+	ns := names.InstanceNamespace
+	if ns == "" {
+		ns = k8smgmt.DefaultNamespace
+	}
+
 	ksu := Ksu{}
 	ksu.Name = name
 	ksu.Description = name
 	ksu.Oka = []KsuOka{{
 		ID: oka.ID,
+		Transformation: map[string]any{
+			"namespace": ns,
+		},
 	}}
 	ksu.Profile.ID = cluster.AppProfiles[0]
 	ksu.Profile.ProfileType = "app_profiles"
@@ -143,6 +153,12 @@ func (s *OSMClient) CreateAppInst(ctx context.Context, clusterName string, app *
 	if err != nil {
 		return "", err
 	}
+	// XXX Remove me
+	// KSU goes ready before it's actually ready,
+	// sleep to test that things work until the OSM bug gets fixed
+	//log.SpanLog(ctx, log.DebugLevelInfra, "KSU is ready, but because of OSM bug, app is not actually deployed yet. Waiting.")
+	//time.Sleep(3 * time.Minute)
+
 	return createResp.IDs[0], nil
 }
 
@@ -233,6 +249,10 @@ func (s *OSMClient) waitAppInstStatus(ctx context.Context, name string, action c
 	id := ksu.ID
 	resState := "unknown"
 	for ii := 0; ii < 100; ii++ {
+		if err := ctx.Err(); err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "context error, aborting wait for appinst", "name", name, "err", err)
+			return nil, err
+		}
 		ksu, err = s.ReadKSU(ctx, id)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "check appinst status failed", "name", name, "err", err)

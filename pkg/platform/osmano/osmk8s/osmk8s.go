@@ -30,7 +30,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
-	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -117,8 +116,4 @@ func (s *Platform) GetRootLBClients(ctx context.Context) (map[string]platform.Ro
 
 func (s *Platform) getClient(ctx context.Context) (*osmapi.ClientWithResponses, error) {
 	return s.osmClient.GetClient(ctx)
-}
-
-func (s *Platform) GetWorkloadManager() (workloadmgrs.WorkloadMgr, error) {
-	return nil, nil
 }

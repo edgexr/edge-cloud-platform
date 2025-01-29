@@ -26,13 +26,13 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8spm"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	k8scommon "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-common"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs/k8swm"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -43,7 +43,7 @@ type K8sSite struct {
 	CommonPf   infracommon.CommonPlatform
 	caches     *platform.Caches
 	infracommon.CommonEmbedded
-	k8swm.K8sPlatformMgr
+	k8spm.K8sPlatformMgr
 }
 
 func NewPlatform() platform.Platform {
@@ -86,7 +86,7 @@ func (s *K8sSite) InitCommon(ctx context.Context, platformConfig *platform.Platf
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err")
 		return err
 	}
-	workloadMgr := k8swm.NewK8sWorkloadMgr(s, &s.CommonPf)
+	workloadMgr := &k8smgmt.K8SWorkloadMgr{}
 	s.K8sPlatformMgr.Init(s, features, &s.CommonPf, workloadMgr)
 	return nil
 }
@@ -164,6 +164,10 @@ func (s *K8sSite) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloudl
 	info.OsMaxVolGb = disk.Whole
 	info.NodePools = k8smgmt.GetNodePools(ctx, info.NodeInfos)
 	return err
+}
+
+func (s *K8sSite) GetClusterClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
+	return s.getClient(), nil
 }
 
 func (s *K8sSite) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {

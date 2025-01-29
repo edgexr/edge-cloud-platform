@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package k8swm provides a Kubernetes workload manager.
-package k8swm
+// Package k8spm provides a Kubernetes platform manager for
+// deploying applications
+package k8spm
 
 import (
 	"context"
@@ -25,19 +26,29 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
 	ssh "github.com/edgexr/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 )
 
-type K8sPlatformMgr struct {
-	clusterAccess workloadmgrs.ClusterAccess
-	features      *edgeproto.PlatformFeatures
-	commonPf      *infracommon.CommonPlatform
-	wm            workloadmgrs.WorkloadMgr
+// ClusterAccess interface defines APIs for gaining access to a cluster
+type ClusterAccess interface {
+	// GetClusterClient gets an ssh client to access the
+	// node that will have the local kubeconfig and manifest files.
+	GetClusterClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error)
+	// GetClusterCredentials retrieves kubeconfig credentials from the cluster
+	GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error)
+	// GetClusterName gets the name used for the cluster
+	GetClusterName(clusterInst *edgeproto.ClusterInst) string
 }
 
-func (m *K8sPlatformMgr) Init(clusterAccess workloadmgrs.ClusterAccess, features *edgeproto.PlatformFeatures, commonPf *infracommon.CommonPlatform, wm workloadmgrs.WorkloadMgr) {
+type K8sPlatformMgr struct {
+	clusterAccess ClusterAccess
+	features      *edgeproto.PlatformFeatures
+	commonPf      *infracommon.CommonPlatform
+	wm            k8smgmt.WorkloadMgr
+}
+
+func (m *K8sPlatformMgr) Init(clusterAccess ClusterAccess, features *edgeproto.PlatformFeatures, commonPf *infracommon.CommonPlatform, wm k8smgmt.WorkloadMgr) {
 	m.clusterAccess = clusterAccess
 	m.features = features
 	m.commonPf = commonPf
@@ -48,7 +59,7 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst", "appInst", appInst)
 	updateSender.SendStatus(edgeproto.UpdateTask, "Creating AppInst")
 
-	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	client, err := m.clusterAccess.GetClusterClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -62,7 +73,31 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	}
 	features := m.features
 
-	err = m.wm.CreateAppInst(ctx, clusterInst, app, appInst, flavor, updateSender)
+	updateSender.SendStatus(edgeproto.UpdateTask, "Creating Registry Secret")
+	err = k8smgmt.CreateAllNamespaces(ctx, client, names)
+	if err != nil {
+		return err
+	}
+	for _, imagePath := range names.ImagePaths {
+		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, m.commonPf.PlatformConfig.AccessApi, names, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	updateSender.SendStatus(edgeproto.UpdateTask, "Deploying App Instance")
+	// TODO: We should handle helm the same as a
+	// manifest-based appinst inside the workload manager,
+	// so that the surrounding handlers for namespaces and
+	// policies are common to both.
+	switch app.Deployment {
+	case cloudcommon.DeploymentTypeKubernetes:
+		err = k8smgmt.CreateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithWorkloadManager(m.wm))
+	case cloudcommon.DeploymentTypeHelm:
+		err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
+	default:
+		err = fmt.Errorf("unsupported deployment type %s", app.Deployment)
+	}
 	if err != nil {
 		return err
 	}
@@ -120,7 +155,7 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 func (m *K8sPlatformMgr) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppInst", "appInst", appInst)
 	var err error
-	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	client, err := m.clusterAccess.GetClusterClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -151,12 +186,31 @@ func (m *K8sPlatformMgr) DeleteAppInst(ctx context.Context, clusterInst *edgepro
 		}
 	}
 
-	return m.wm.DeleteAppInst(ctx, clusterInst, app, appInst, updateCallback)
+	switch app.Deployment {
+	case cloudcommon.DeploymentTypeKubernetes:
+		err = k8smgmt.DeleteAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithWorkloadManager(m.wm))
+	case cloudcommon.DeploymentTypeHelm:
+		err = k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
+	default:
+		err = fmt.Errorf("unsupported deployment type %s", app.Deployment)
+	}
+	if err != nil {
+		return err
+	}
+	// In case of using an external workload manager that does not
+	// use the config dir, but we applied an ingress which did
+	// create the config dir, make sure it is removed now.
+	// This is a no-op if the config dir has already been removed.
+	err = k8smgmt.RemoveConfigDir(ctx, client, names)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, failed to clean up config dir", "error", err)
+	}
+	return nil
 }
 
 func (m *K8sPlatformMgr) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAppInstRuntime", "appInst", appInst)
-	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	client, err := m.clusterAccess.GetClusterClient(ctx, clusterInst)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +228,19 @@ func (m *K8sPlatformMgr) GetAppInstRuntime(ctx context.Context, clusterInst *edg
 func (m *K8sPlatformMgr) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateAppInst", "appInst", appInst)
 	updateCallback(edgeproto.UpdateTask, "Updating AppInst")
-	return m.wm.UpdateAppInst(ctx, clusterInst, app, appInst, flavor, updateCallback)
+	client, err := m.clusterAccess.GetClusterClient(ctx, clusterInst)
+	if err != nil {
+		return err
+	}
+	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
+	if err != nil {
+		return err
+	}
+	err = m.ensureKubeconfigs(ctx, client, clusterInst, names)
+	if err != nil {
+		return err
+	}
+	return k8smgmt.UpdateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithWorkloadManager(m.wm))
 }
 
 func (m *K8sPlatformMgr) ensureKubeconfigs(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, names *k8smgmt.KubeNames) error {

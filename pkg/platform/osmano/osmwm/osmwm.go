@@ -17,20 +17,22 @@ package osmwm
 
 import (
 	"context"
-	"errors"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8spm"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmclient"
-	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 type OSMWorkloadMgr struct {
-	clusterAccess workloadmgrs.ClusterAccess
+	clusterAccess k8spm.ClusterAccess
 	osmClient     osmclient.OSMClient
 }
 
-func (s *OSMWorkloadMgr) Init(clusterAccess workloadmgrs.ClusterAccess, accessVars map[string]string, properties *infracommon.InfraProperties) error {
+func (s *OSMWorkloadMgr) Init(clusterAccess k8spm.ClusterAccess, accessVars map[string]string, properties *infracommon.InfraProperties) error {
 	s.clusterAccess = clusterAccess
 	if err := s.osmClient.Init(accessVars, properties); err != nil {
 		return err
@@ -38,7 +40,7 @@ func (s *OSMWorkloadMgr) Init(clusterAccess workloadmgrs.ClusterAccess, accessVa
 	return nil
 }
 
-func (s *OSMWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
+func (s *OSMWorkloadMgr) ApplyAppInstWorkload(ctx context.Context, accessAPI platform.AccessApi, client ssh.Client, names *k8smgmt.KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...k8smgmt.AppInstOp) error {
 	// make sure app has been registered
 	_, err := s.osmClient.CreateApp(ctx, app)
 	if err != nil {
@@ -46,18 +48,17 @@ func (s *OSMWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	}
 	clusterName := s.clusterAccess.GetClusterName(clusterInst)
 
-	_, err = s.osmClient.CreateAppInst(ctx, clusterName, app, appInst)
+	_, err = s.osmClient.CreateAppInst(ctx, names, clusterName, app, appInst)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func (s *OSMWorkloadMgr) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return s.osmClient.DeleteAppInst(ctx, appInst)
-}
-
-func (s *OSMWorkloadMgr) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
-	return errors.New("unsupported")
+func (s *OSMWorkloadMgr) DeleteAppInstWorkload(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *k8smgmt.KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, ops ...k8smgmt.AppInstOp) error {
+	err := s.osmClient.DeleteAppInst(ctx, appInst)
+	if err != nil {
+		return err
+	}
+	return nil
 }

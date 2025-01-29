@@ -26,5 +26,6 @@ var Props = map[string]*edgeproto.PropertyInfo{
 	OSM_FLAVORS: {
 		Name:        "List of flavors in JSON format since OSM does not provide a way to query for VIM flavors",
 		Description: `JSON formatted list of edgeproto.FlavorInfo, i.e. [{"name":"Standard_D2s_v3","vcpus":2,"ram":8192,"disk":16}]`,
+		Mandatory:   true,
 	},
 }

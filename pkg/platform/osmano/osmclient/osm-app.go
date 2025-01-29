@@ -30,6 +30,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -37,7 +38,7 @@ const (
 )
 
 func getOSMAppName(app *edgeproto.App) string {
-	return fmt.Sprintf("%s-%s%s", app.Key.Organization, app.Key.Name, app.Key.Version)
+	return NameSanitize(fmt.Sprintf("%s-%s%s", app.Key.Organization, app.Key.Name, app.Key.Version))
 }
 
 func (s *OSMClient) CreateApp(ctx context.Context, app *edgeproto.App) (*OKAApp, error) {
@@ -64,7 +65,7 @@ func (s *OSMClient) CreateApp(ctx context.Context, app *edgeproto.App) (*OKAApp,
 		mpfd.AddField("name", name)
 		mpfd.AddField("profile_type", "app_profiles")
 		mpfd.AddField("description", name)
-		mpfd.AddFileData("package", name+".tar.gz", archive)
+		mpfd.AddFileData("package", name+".tar.gz", "application/gzip", archive)
 
 		buf := bytes.Buffer{}
 		contentType, err := mpfd.Write(&buf)
@@ -205,10 +206,37 @@ func createAppArchive(app *edgeproto.App) ([]byte, error) {
 	name := getOSMAppName(app)
 	now := time.Now()
 
+	// To be able to deploy the manifest to a namespace,
+	// it must be parameterized with a target_ns variable.
+	// Otherwise there's no other way to deploy to a specific
+	// namespace.
+	objs, _, err := cloudcommon.DecodeK8SYaml(app.DeploymentManifest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse deployment manifest, %s", err)
+	}
+	for ii := range objs {
+		if metaObj, ok := objs[ii].(metav1.Object); ok {
+			metaObj.SetNamespace("${target_ns}")
+		}
+	}
+	mf, err := cloudcommon.EncodeK8SYaml(objs)
+	if err != nil {
+		return nil, err
+	}
+	// write manifest dir
+	manifestDir := tar.Header{
+		Name:     "./manifests/",
+		Mode:     0755,
+		ModTime:  now,
+		Typeflag: tar.TypeDir,
+	}
+	if err := tw.WriteHeader(&manifestDir); err != nil {
+		return nil, fmt.Errorf("failed to write manifest directory %v, %s", manifestDir, err)
+	}
 	// write manifest
 	manifestHdr := tar.Header{
-		Name:     "manifests/" + name + ".yml",
-		Size:     int64(len(app.DeploymentManifest)),
+		Name:     "./manifests/" + name + ".yml",
+		Size:     int64(len(mf)),
 		Mode:     0644,
 		ModTime:  now,
 		Typeflag: tar.TypeReg, // file
@@ -216,18 +244,27 @@ func createAppArchive(app *edgeproto.App) ([]byte, error) {
 	if err := tw.WriteHeader(&manifestHdr); err != nil {
 		return nil, fmt.Errorf("failed to write manifest header %v, %s", manifestHdr, err)
 	}
-	num, err := tw.Write([]byte(app.DeploymentManifest))
+	num, err := tw.Write([]byte(mf))
 	if err != nil {
 		return nil, fmt.Errorf("failed to write manifest to archive, %s", err)
 	}
-	if num != len(app.DeploymentManifest) {
-		return nil, fmt.Errorf("failed to write manifest, only wrote %d of %d bytes", num, len(app.DeploymentManifest))
+	if num != len(mf) {
+		return nil, fmt.Errorf("failed to write manifest, only wrote %d of %d bytes", num, len(mf))
 	}
 
+	// write template dir
+	templateDir := tar.Header{
+		Name:     "./templates/",
+		Mode:     0755,
+		ModTime:  now,
+		Typeflag: tar.TypeDir,
+	}
+	if err := tw.WriteHeader(&templateDir); err != nil {
+		return nil, fmt.Errorf("failed to write template directory %v, %s", templateDir, err)
+	}
 	// write template
 	args := appTArgs{
-		Name:      name,
-		Namespace: "default",
+		Name: name,
 	}
 	tempBuf := bytes.Buffer{}
 	err = appT.Execute(&tempBuf, &args)
@@ -236,7 +273,7 @@ func createAppArchive(app *edgeproto.App) ([]byte, error) {
 	}
 	dat := tempBuf.Bytes()
 	templateHdr := tar.Header{
-		Name:     "templates/" + name + "-ks.yml",
+		Name:     "./templates/" + name + "-ks.yml",
 		Size:     int64(len(dat)),
 		Mode:     0644,
 		ModTime:  now,
@@ -259,22 +296,16 @@ func createAppArchive(app *edgeproto.App) ([]byte, error) {
 }
 
 type appTArgs struct {
-	Name      string
-	Namespace string
+	Name string
 }
 
 var appT = template.Must(template.New("appT").Parse(appTemplate))
 
-var appTemplate = `apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ .Namespace }}
----
-apiVersion: kustomize.toolkit.fluxcd.io/v1
+var appTemplate = `apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: {{ .Name }}
-  namespace: {{ .Namespace }}
+  namespace: ${TARGET_NS}
 spec:
   interval: 1h0m0s
   path: ./apps/{{ .Name }}/manifests
@@ -284,4 +315,15 @@ spec:
     kind: GitRepository
     name: sw-catalogs
     namespace: flux-system
+  postBuild:
+    substitute:
+      target_ns: ${TARGET_NS}
 `
+
+/*
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${TARGET_NS}
+---
+*/

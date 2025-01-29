@@ -23,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8spm"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
@@ -30,8 +31,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
-	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
-	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs/k8swm"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -55,8 +54,6 @@ type ManagedK8sProvider interface {
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
-	// Allows for the provider to specify a workload manager
-	GetWorkloadManager() (workloadmgrs.WorkloadMgr, error)
 }
 
 const KconfPerms fs.FileMode = 0644
@@ -67,7 +64,7 @@ type ManagedK8sPlatform struct {
 	CommonPf infracommon.CommonPlatform
 	Provider ManagedK8sProvider
 	infracommon.CommonEmbedded
-	k8swm.K8sPlatformMgr
+	k8spm.K8sPlatformMgr
 	caches *platform.Caches
 }
 
@@ -91,7 +88,7 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 	if err != nil {
 		return err
 	}
-	var workloadMgr workloadmgrs.WorkloadMgr
+	var workloadMgr k8smgmt.WorkloadMgr
 	val, ok := m.CommonPf.Properties.GetValue(cloudcommon.WorkloadManager)
 	if ok && val == "osm" {
 		wm := &osmwm.OSMWorkloadMgr{}
@@ -100,7 +97,7 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 		}
 		workloadMgr = wm
 	} else {
-		workloadMgr = k8swm.NewK8sWorkloadMgr(m, &m.CommonPf)
+		workloadMgr = &k8smgmt.K8SWorkloadMgr{}
 	}
 	m.K8sPlatformMgr.Init(m, features, &m.CommonPf, workloadMgr)
 	return m.Provider.Login(ctx)
@@ -132,6 +129,10 @@ func (m *ManagedK8sPlatform) GatherCloudletInfo(ctx context.Context, info *edgep
 
 func (m *ManagedK8sPlatform) getClient() ssh.Client {
 	return &pc.LocalClient{}
+}
+
+func (m *ManagedK8sPlatform) GetClusterClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
+	return m.getClient(), nil
 }
 
 func (m *ManagedK8sPlatform) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {

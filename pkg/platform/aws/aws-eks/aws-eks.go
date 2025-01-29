@@ -29,7 +29,6 @@ import (
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
-	"github.com/edgexr/edge-cloud-platform/pkg/workloadmgrs"
 )
 
 type AwsEksPlatform struct {
@@ -352,8 +351,4 @@ func (a *AwsEksPlatform) GetClusterAdditionalResourceMetric(ctx context.Context,
 	resMetric.AddIntVal(cloudcommon.ResourceMetricTotalK8sNodes, eksRes.TotalK8sNodesUsed)
 	resMetric.AddIntVal(cloudcommon.ResourceMetricNetworkLBs, eksRes.NetworkLBsUsed)
 	return nil
-}
-
-func (s *AwsEksPlatform) GetWorkloadManager() (workloadmgrs.WorkloadMgr, error) {
-	return nil, nil
 }

@@ -24,13 +24,13 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 )
 
 type OSMClient struct {
@@ -186,7 +186,6 @@ func mustResp(desc string, resp *http.Response, err error, wantCode int, respObj
 	return parseResp(desc, body, respObj)
 }
 
-func NameSanitize(clusterName string) string {
-	clusterName = strings.NewReplacer(".", "").Replace(clusterName)
-	return clusterName
+func NameSanitize(name string) string {
+	return util.K8SSanitize(name)
 }
