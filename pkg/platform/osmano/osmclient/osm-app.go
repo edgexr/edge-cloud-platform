@@ -319,11 +319,3 @@ spec:
     substitute:
       target_ns: ${TARGET_NS}
 `
-
-/*
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ${TARGET_NS}
----
-*/

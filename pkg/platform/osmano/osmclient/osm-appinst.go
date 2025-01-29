@@ -153,11 +153,6 @@ func (s *OSMClient) CreateAppInst(ctx context.Context, names *k8smgmt.KubeNames,
 	if err != nil {
 		return "", err
 	}
-	// XXX Remove me
-	// KSU goes ready before it's actually ready,
-	// sleep to test that things work until the OSM bug gets fixed
-	//log.SpanLog(ctx, log.DebugLevelInfra, "KSU is ready, but because of OSM bug, app is not actually deployed yet. Waiting.")
-	//time.Sleep(3 * time.Minute)
 
 	return createResp.IDs[0], nil
 }
