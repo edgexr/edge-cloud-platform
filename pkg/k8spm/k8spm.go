@@ -73,11 +73,17 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	}
 	features := m.features
 
-	updateSender.SendStatus(edgeproto.UpdateTask, "Creating Registry Secret")
-	err = k8smgmt.CreateAllNamespaces(ctx, client, names)
+	nsLabels, err := m.commonPf.Properties.GetJSONMapValue(cloudcommon.NamespaceLabels)
 	if err != nil {
 		return err
 	}
+
+	updateSender.SendStatus(edgeproto.UpdateTask, "Creating Namespaces")
+	err = k8smgmt.CreateAllNamespaces(ctx, client, names, nsLabels)
+	if err != nil {
+		return err
+	}
+	updateSender.SendStatus(edgeproto.UpdateTask, "Creating Registry Secret")
 	for _, imagePath := range names.ImagePaths {
 		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, m.commonPf.PlatformConfig.AccessApi, names, nil)
 		if err != nil {

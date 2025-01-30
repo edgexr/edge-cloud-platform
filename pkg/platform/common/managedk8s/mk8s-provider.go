@@ -120,6 +120,7 @@ func (m *ManagedK8sPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	}
 	features.Properties[cloudcommon.IngressControllerPresent] = cloudcommon.IngressControllerPresentProp
 	features.Properties[cloudcommon.WorkloadManager] = cloudcommon.WorkloadManagerProp
+	features.Properties[cloudcommon.NamespaceLabels] = cloudcommon.NamespaceLabelsProp
 	return features
 }
 

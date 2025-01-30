@@ -15,6 +15,7 @@
 package cloudcommon
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -26,6 +27,7 @@ const (
 	IngressHTTPSPort         = "INGRESS_HTTPS_PORT"
 	IngressControllerPresent = "INGRESS_CONTROLLER_PRESENT"
 	WorkloadManager          = "WORKLOAD_MANAGER"
+	NamespaceLabels          = "NAMESPACE_LABELS"
 )
 
 var IngressHTTPPortProp = &edgeproto.PropertyInfo{
@@ -48,11 +50,19 @@ var WorkloadManagerProp = &edgeproto.PropertyInfo{
 	Description: "Set to \"osm\" to use OSM as the workload manager, otherwise defaults to the Edge Cloud k8s workload manager.",
 }
 
+var NamespaceLabelsProp = &edgeproto.PropertyInfo{
+	Name:        "Namespace labels",
+	Description: `Namespace labels to add to dynamically created Kubernetes namespaces. Set to a JSON map of labels, for example: {"label1": "value1", "label2": "value2"}`,
+}
+
 func ValidateProps(vars map[string]string) error {
 	if _, err := GetIngressHTTPPort(vars); err != nil {
 		return err
 	}
 	if _, err := GetIngressHTTPSPort(vars); err != nil {
+		return err
+	}
+	if _, err := GetNamespaceLabels(vars); err != nil {
 		return err
 	}
 	return nil
@@ -84,4 +94,24 @@ func GetIngressHTTPSPort(vars map[string]string) (int32, error) {
 		return int32(v), nil
 	}
 	return 443, nil
+}
+
+func GetNamespaceLabels(vars map[string]string) (map[string]string, error) {
+	val := vars[NamespaceLabels]
+	labels, err := ParseJSONMapValue(val)
+	if err != nil {
+		return labels, fmt.Errorf("%s: %s", NamespaceLabels, err)
+	}
+	return labels, nil
+}
+
+func ParseJSONMapValue(val string) (map[string]string, error) {
+	labels := map[string]string{}
+	if val != "" {
+		err := json.Unmarshal([]byte(val), &labels)
+		if err != nil {
+			return labels, fmt.Errorf("failed to unmarshal JSON map %s, %s", val, err)
+		}
+	}
+	return labels, nil
 }
