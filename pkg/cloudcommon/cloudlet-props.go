@@ -25,6 +25,7 @@ const (
 	IngressHTTPPort          = "INGRESS_HTTP_PORT"
 	IngressHTTPSPort         = "INGRESS_HTTPS_PORT"
 	IngressControllerPresent = "INGRESS_CONTROLLER_PRESENT"
+	WorkloadManager          = "WORKLOAD_MANAGER"
 )
 
 var IngressHTTPPortProp = &edgeproto.PropertyInfo{
@@ -40,6 +41,11 @@ var IngressHTTPSPortProp = &edgeproto.PropertyInfo{
 var IngressControllerPresentProp = &edgeproto.PropertyInfo{
 	Name:        "Ingress Controller is Present",
 	Description: "Pre-existing clusters or clusters deployed by cluster manager come with the ingress controller already installed",
+}
+
+var WorkloadManagerProp = &edgeproto.PropertyInfo{
+	Name:        "Specify the workload manager",
+	Description: "Set to \"osm\" to use OSM as the workload manager, otherwise defaults to the Edge Cloud k8s workload manager.",
 }
 
 func ValidateProps(vars map[string]string) error {

@@ -124,6 +124,7 @@ func GetNamespace(appInst *edgeproto.AppInst) string {
 		return util.NamespaceSanitize(fmt.Sprintf("%s-%s-%s-%s", appInst.AppKey.Organization, appInst.AppKey.Name, appInst.AppKey.Version, vclust.Name))
 	}
 }
+
 func SetNamespace(clusterInst *edgeproto.ClusterInst, app *edgeproto.App) bool {
 	if app.CompatibilityVersion >= cloudcommon.AppCompatibilityPerInstanceNamespace {
 		return !app.ManagesOwnNamespaces

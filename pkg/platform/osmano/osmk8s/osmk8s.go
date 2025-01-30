@@ -19,30 +19,24 @@ package osmk8s
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strings"
-	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/managedk8s"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmapi"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmclient"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
 type Platform struct {
-	properties     *infracommon.InfraProperties
-	accessVars     map[string]string
-	client         *osmapi.ClientWithResponses
-	token          *osmapi.TokenInfo
-	tokenExpiresAt *time.Time
+	properties *infracommon.InfraProperties
+	accessVars map[string]string
+	osmClient  osmclient.OSMClient
 }
 
 func NewPlatform() platform.Platform {
@@ -51,15 +45,31 @@ func NewPlatform() platform.Platform {
 	}
 }
 
+func (s *Platform) Init(accessVars map[string]string, properties *infracommon.InfraProperties) error {
+	s.accessVars = accessVars
+	s.properties = properties
+	if err := s.osmClient.Init(accessVars, properties); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
+	props := make(map[string]*edgeproto.PropertyInfo)
+	for k, v := range osmclient.Props {
+		props[k] = v
+	}
+	for k, v := range Props {
+		props[k] = v
+	}
 	return &edgeproto.PlatformFeatures{
 		PlatformType:                  platform.PlatformTypeOSMK8S,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
 		IpAllocatedPerService:         true,
-		AccessVars:                    AccessVarProps,
-		Properties:                    Props,
+		AccessVars:                    osmclient.AccessVarProps,
+		Properties:                    props,
 		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,
 		RequiresCrmOffEdge:            true,
 	}
@@ -97,13 +107,7 @@ func (s *Platform) Login(ctx context.Context) error {
 }
 
 func (s *Platform) NameSanitize(clusterName string) string {
-	clusterName = strings.NewReplacer(".", "").Replace(clusterName)
-	return clusterName
-}
-
-func (s *Platform) SetProperties(props *infracommon.InfraProperties) error {
-	s.properties = props
-	return nil
+	return osmclient.NameSanitize(clusterName)
 }
 
 func (s *Platform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
@@ -111,87 +115,5 @@ func (s *Platform) GetRootLBClients(ctx context.Context) (map[string]platform.Ro
 }
 
 func (s *Platform) getClient(ctx context.Context) (*osmapi.ClientWithResponses, error) {
-	if s.client != nil {
-		if err := s.ensureValidToken(ctx); err != nil {
-			return nil, err
-		}
-		return s.client, nil
-	}
-
-	skipVerify := false
-	if val, _ := s.properties.GetValue(OSM_SKIPVERIFY); val != "" {
-		skipVerify = true
-	}
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: skipVerify,
-			},
-		},
-	}
-	addToken := func(ctx context.Context, req *http.Request) error {
-		if s.token != nil && s.token.Id != nil {
-			req.Header.Add("Authorization", "Bearer "+*s.token.Id)
-		}
-		req.Header.Add("Accept", "application/json")
-		return nil
-	}
-	auditedClient := &log.HTTPRequestDoerAuditor{}
-	auditedClient.Doer = httpClient
-	client, err := osmapi.NewClientWithResponses(s.getAPIURL(),
-		osmapi.WithHTTPClient(auditedClient),
-		osmapi.WithRequestEditorFn(addToken),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to setup osmapi client, %s", err)
-	}
-	s.client = client
-
-	err = s.ensureValidToken(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return client, nil
-}
-
-func (s *Platform) ensureValidToken(ctx context.Context) error {
-	if s.token != nil {
-		if s.tokenExpiresAt == nil || time.Now().Before(*s.tokenExpiresAt) {
-			// token is still valid or does not expire
-			return nil
-		}
-		// fallthrough to get token
-	}
-	if s.client == nil {
-		return fmt.Errorf("ensure token failure, client not initialized yet")
-	}
-	req := osmapi.CreateTokenRequest{
-		Username: s.accessVars[OSM_USERNAME],
-		Password: s.accessVars[OSM_PASSWORD],
-	}
-	resp, err := s.client.CreateTokenWithResponse(ctx, req)
-	if err != nil {
-		return fmt.Errorf("failed to get token, %s", err)
-	}
-	if resp.StatusCode() != http.StatusOK {
-		return fmt.Errorf("failed token request (%d), %s", resp.StatusCode(), string(resp.Body))
-	}
-	token := osmapi.TokenInfo{}
-	err = json.Unmarshal(resp.Body, &token)
-	if err != nil {
-		return fmt.Errorf("failed to unmarshal token response, %s", err)
-	}
-	if token.Id == nil {
-		return fmt.Errorf("ensure token failed, token response missing ID")
-	}
-	if token.Expires != nil {
-		sec := int64(*token.Expires)
-		nanosec := int64((*token.Expires - float32(sec)) * 1e9)
-		expiresAt := time.Unix(sec, nanosec)
-		s.tokenExpiresAt = &expiresAt
-	} else {
-		s.tokenExpiresAt = nil
-	}
-	s.token = &token
-	return nil
+	return s.osmClient.GetClient(ctx)
 }

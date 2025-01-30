@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package k8swm provides a Kubernetes workload manager.
-package k8swm
+// Package k8spm provides a Kubernetes platform manager for
+// deploying applications
+package k8spm
 
 import (
 	"context"
@@ -29,31 +30,36 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// ClusterAccess interface defines APIs for gaining access to a cluster
 type ClusterAccess interface {
-	// GetClusterPlatformClient gets an ssh client to access the
+	// GetClusterClient gets an ssh client to access the
 	// node that will have the local kubeconfig and manifest files.
-	GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error)
+	GetClusterClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error)
 	// GetClusterCredentials retrieves kubeconfig credentials from the cluster
 	GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error)
+	// GetClusterName gets the name used for the cluster
+	GetClusterName(clusterInst *edgeproto.ClusterInst) string
 }
 
-type K8sWorkloadMgr struct {
+type K8sPlatformMgr struct {
 	clusterAccess ClusterAccess
 	features      *edgeproto.PlatformFeatures
 	commonPf      *infracommon.CommonPlatform
+	wm            k8smgmt.WorkloadMgr
 }
 
-func (m *K8sWorkloadMgr) Init(clusterAccess ClusterAccess, features *edgeproto.PlatformFeatures, commonPf *infracommon.CommonPlatform) {
+func (m *K8sPlatformMgr) Init(clusterAccess ClusterAccess, features *edgeproto.PlatformFeatures, commonPf *infracommon.CommonPlatform, wm k8smgmt.WorkloadMgr) {
 	m.clusterAccess = clusterAccess
 	m.features = features
 	m.commonPf = commonPf
+	m.wm = wm
 }
 
-func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
+func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppInst", "appInst", appInst)
 	updateSender.SendStatus(edgeproto.UpdateTask, "Creating AppInst")
 
-	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	client, err := m.clusterAccess.GetClusterClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -67,11 +73,11 @@ func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	}
 	features := m.features
 
+	updateSender.SendStatus(edgeproto.UpdateTask, "Creating Registry Secret")
 	err = k8smgmt.CreateAllNamespaces(ctx, client, names)
 	if err != nil {
 		return err
 	}
-	updateSender.SendStatus(edgeproto.UpdateTask, "Creating Registry Secret")
 	for _, imagePath := range names.ImagePaths {
 		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, m.commonPf.PlatformConfig.AccessApi, names, nil)
 		if err != nil {
@@ -80,13 +86,17 @@ func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	}
 
 	updateSender.SendStatus(edgeproto.UpdateTask, "Deploying App Instance")
-	switch deployment := app.Deployment; deployment {
+	// TODO: We should handle helm the same as a
+	// manifest-based appinst inside the workload manager,
+	// so that the surrounding handlers for namespaces and
+	// policies are common to both.
+	switch app.Deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		err = k8smgmt.CreateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
+		err = k8smgmt.CreateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithWorkloadManager(m.wm))
 	case cloudcommon.DeploymentTypeHelm:
 		err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
 	default:
-		err = fmt.Errorf("unsupported deployment type %s", deployment)
+		err = fmt.Errorf("unsupported deployment type %s", app.Deployment)
 	}
 	if err != nil {
 		return err
@@ -142,10 +152,10 @@ func (m *K8sWorkloadMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	return nil
 }
 
-func (m *K8sWorkloadMgr) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *K8sPlatformMgr) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppInst", "appInst", appInst)
 	var err error
-	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	client, err := m.clusterAccess.GetClusterClient(ctx, clusterInst)
 	if err != nil {
 		return err
 	}
@@ -176,20 +186,31 @@ func (m *K8sWorkloadMgr) DeleteAppInst(ctx context.Context, clusterInst *edgepro
 		}
 	}
 
-	switch deployment := app.Deployment; deployment {
+	switch app.Deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		err = k8smgmt.DeleteAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
+		err = k8smgmt.DeleteAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithWorkloadManager(m.wm))
 	case cloudcommon.DeploymentTypeHelm:
 		err = k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
 	default:
-		err = fmt.Errorf("unsupported deployment type %s", deployment)
+		err = fmt.Errorf("unsupported deployment type %s", app.Deployment)
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	// In case of using an external workload manager that does not
+	// use the config dir, but we applied an ingress which did
+	// create the config dir, make sure it is removed now.
+	// This is a no-op if the config dir has already been removed.
+	err = k8smgmt.RemoveConfigDir(ctx, client, names)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, failed to clean up config dir", "error", err)
+	}
+	return nil
 }
 
-func (m *K8sWorkloadMgr) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
+func (m *K8sPlatformMgr) GetAppInstRuntime(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) (*edgeproto.AppInstRuntime, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetAppInstRuntime", "appInst", appInst)
-	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	client, err := m.clusterAccess.GetClusterClient(ctx, clusterInst)
 	if err != nil {
 		return nil, err
 	}
@@ -204,27 +225,25 @@ func (m *K8sWorkloadMgr) GetAppInstRuntime(ctx context.Context, clusterInst *edg
 	return k8smgmt.GetAppInstRuntime(ctx, client, names, app, appInst)
 }
 
-func (m *K8sWorkloadMgr) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *K8sPlatformMgr) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "UpdateAppInst", "appInst", appInst)
 	updateCallback(edgeproto.UpdateTask, "Updating AppInst")
+	client, err := m.clusterAccess.GetClusterClient(ctx, clusterInst)
+	if err != nil {
+		return err
+	}
 	names, err := k8smgmt.GetKubeNames(clusterInst, app, appInst)
 	if err != nil {
 		return err
 	}
-	client, err := m.clusterAccess.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	err = m.ensureKubeconfigs(ctx, client, clusterInst, names)
 	if err != nil {
 		return err
 	}
-
-	err = k8smgmt.UpdateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, app, appInst)
-	if err == nil {
-		updateCallback(edgeproto.UpdateTask, "Waiting for AppInst to Start")
-		err = k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
-	}
-	return err
+	return k8smgmt.UpdateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithWorkloadManager(m.wm))
 }
 
-func (m *K8sWorkloadMgr) ensureKubeconfigs(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, names *k8smgmt.KubeNames) error {
+func (m *K8sPlatformMgr) ensureKubeconfigs(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, names *k8smgmt.KubeNames) error {
 	kconfData, err := m.clusterAccess.GetClusterCredentials(ctx, clusterInst)
 	if err != nil {
 		return fmt.Errorf("unable to get cluster %s credentials %v", clusterInst.Key.GetKeyString(), err)
@@ -232,21 +251,21 @@ func (m *K8sWorkloadMgr) ensureKubeconfigs(ctx context.Context, client ssh.Clien
 	return k8smgmt.EnsureKubeconfigs(ctx, client, names, kconfData)
 }
 
-func (m *K8sWorkloadMgr) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
+func (m *K8sPlatformMgr) GetContainerCommand(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, req *edgeproto.ExecRequest) (string, error) {
 	return k8smgmt.GetContainerCommand(ctx, clusterInst, app, appInst, req)
 }
 
-func (m *K8sWorkloadMgr) GetConsoleUrl(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
+func (m *K8sPlatformMgr) GetConsoleUrl(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
 	return "", fmt.Errorf("Unsupported command for platform")
 }
 
-func (m *K8sWorkloadMgr) SetPowerState(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (m *K8sPlatformMgr) SetPowerState(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Unsupported command for platform")
 }
 
-func (m *K8sWorkloadMgr) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {
+func (m *K8sPlatformMgr) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent) {
 }
 
-func (v *K8sWorkloadMgr) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
+func (v *K8sPlatformMgr) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Updating DNS is not supported")
 }

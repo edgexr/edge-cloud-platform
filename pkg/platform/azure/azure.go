@@ -68,6 +68,12 @@ func NewPlatform() platform.Platform {
 	}
 }
 
+func (o *AzurePlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties) error {
+	o.accessVars = accessVars
+	o.properties = properties
+	return nil
+}
+
 func (o *AzurePlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
 		PlatformType:                  platform.PlatformTypeAzure,
@@ -254,11 +260,6 @@ func (a *AzurePlatform) NameSanitize(clusterName string) string {
 		clusterName = clusterName[:AzureMaxResourceGroupNameLen]
 	}
 	return clusterName
-}
-
-func (a *AzurePlatform) SetProperties(props *infracommon.InfraProperties) error {
-	a.properties = props
-	return nil
 }
 
 func (a *AzurePlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {

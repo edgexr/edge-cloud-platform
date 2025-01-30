@@ -53,7 +53,7 @@ func EnsureKubeconfigs(ctx context.Context, client ssh.Client, names *KubeNames,
 	if err != nil {
 		return err
 	}
-	// ensure the tenant access kubeconfig is present if needed
+	// ensure the namespace-scoped kubeconfig is present if needed
 	if names.InstanceNamespace != "" {
 		// kconfData must be scoped to namespace
 		// TODO: this just defaults to the namespace, but does not

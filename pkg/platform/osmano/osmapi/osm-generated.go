@@ -218,11 +218,22 @@ type ArrayEditionSchema map[string]interface{}
 // ArrayOfAlarm defines model for ArrayOfAlarm.
 type ArrayOfAlarm = []Alarm
 
+// ArrayOfClusterInfo defines model for ArrayOfClusterInfo.
+type ArrayOfClusterInfo = []ClusterInfo
+
 // ArrayOfK8sClusterInfo defines model for ArrayOfK8sClusterInfo.
 type ArrayOfK8sClusterInfo = []K8sClusterInfo
 
 // ArrayOfK8sRepoInfo defines model for ArrayOfK8sRepoInfo.
 type ArrayOfK8sRepoInfo = []K8sRepoInfo
+
+// ArrayOfKsu defines model for ArrayOfKsu.
+type ArrayOfKsu struct {
+	Ksus *[]Ksu `json:"ksus,omitempty"`
+}
+
+// ArrayOfKsuList defines model for ArrayOfKsuList.
+type ArrayOfKsuList = []KsuList
 
 // ArrayOfNetSliceInstance defines model for ArrayOfNetSliceInstance.
 type ArrayOfNetSliceInstance = []NetSliceInstance
@@ -248,8 +259,14 @@ type ArrayOfNslcmSubscriptionInfo = []NslcmSubscriptionInfo
 // ArrayOfNstInfo defines model for ArrayOfNstInfo.
 type ArrayOfNstInfo = []NstInfo
 
+// ArrayOfOkaPackage defines model for ArrayOfOkaPackage.
+type ArrayOfOkaPackage = []OkaPackageList
+
 // ArrayOfPduInfo defines model for ArrayOfPduInfo.
 type ArrayOfPduInfo = []PduInfo
+
+// ArrayOfProfileInfo defines model for ArrayOfProfileInfo.
+type ArrayOfProfileInfo = []ProfileInfo
 
 // ArrayOfProjectInfo defines model for ArrayOfProjectInfo.
 type ArrayOfProjectInfo = []ProjectInfo
@@ -320,22 +337,60 @@ type CloneKsu struct {
 	} `json:"profile,omitempty"`
 }
 
+// ClusterCreds defines model for ClusterCreds.
+type ClusterCreds = string
+
+// ClusterEditRequest defines model for ClusterEditRequest.
+type ClusterEditRequest struct {
+	Description *string `json:"description,omitempty"`
+	Name        *string `json:"name,omitempty"`
+}
+
+// ClusterInfo defines model for ClusterInfo.
+type ClusterInfo struct {
+	Uid                      *string                 `json:"_id,omitempty"`
+	AgePrivkey              *string                 `json:"age_privkey,omitempty"`
+	AgePubkey               *string                 `json:"age_pubkey,omitempty"`
+	AppProfiles             *[]int                  `json:"app_profiles,omitempty"`
+	Bootstrap               *bool                   `json:"bootstrap,omitempty"`
+	Created                 *bool                   `json:"created,omitempty"`
+	Credentials             *map[string]interface{} `json:"credentials,omitempty"`
+	CurrentOperation        *int                    `json:"current_operation,omitempty"`
+	Description             *string                 `json:"description,omitempty"`
+	GitName                 *string                 `json:"git_name,omitempty"`
+	InfraConfigProfiles     *[]int                  `json:"infra_config_profiles,omitempty"`
+	InfraControllerProfiles *[]int                  `json:"infra_controller_profiles,omitempty"`
+	K8sVersion              *string                 `json:"k8s_version,omitempty"`
+	Location                *string                 `json:"location,omitempty"`
+	Name                    *string                 `json:"name,omitempty"`
+	NodeCount               *int                    `json:"node_count,omitempty"`
+	NodeSize                *string                 `json:"node_size,omitempty"`
+	OperatingState          *string                 `json:"operatingState,omitempty"`
+	OperationHistory        *OperationHistory       `json:"operationHistory,omitempty"`
+	RegionName              *string                 `json:"region_name,omitempty"`
+	ResourceState           *string                 `json:"resourceState,omitempty"`
+	ResourceGroup           *string                 `json:"resource_group,omitempty"`
+	ResourceProfiles        *[]int                  `json:"resource_profiles,omitempty"`
+	State                   *string                 `json:"state,omitempty"`
+	VimAccount              *string                 `json:"vim_account,omitempty"`
+}
+
 // CreateClusterInfo defines model for CreateClusterInfo.
 type CreateClusterInfo struct {
-	AppProfiles             *[]string `json:"app_profiles,omitempty"`
-	Bootstrap               *bool     `json:"bootstrap,omitempty"`
-	Description             *string   `json:"description,omitempty"`
-	InfraConfigProfiles     *[]string `json:"infra_config_profiles,omitempty"`
-	InfraControllerProfiles *[]string `json:"infra_controller_profiles,omitempty"`
-	K8sVersion              *string   `json:"k8s_version,omitempty"`
-	Location                *string   `json:"location,omitempty"`
-	Name                    *string   `json:"name,omitempty"`
-	NodeCount               *int      `json:"node_count,omitempty"`
-	NodeSize                *string   `json:"node_size,omitempty"`
-	RegionName              *string   `json:"region_name,omitempty"`
-	ResourceGroup           *string   `json:"resource_group,omitempty"`
-	ResourceProfiles        *[]string `json:"resource_profiles,omitempty"`
-	VimAccount              *string   `json:"vim_account,omitempty"`
+	AppProfiles             *[]int  `json:"app_profiles,omitempty"`
+	Bootstrap               *bool   `json:"bootstrap,omitempty"`
+	Description             *string `json:"description,omitempty"`
+	InfraConfigProfiles     *[]int  `json:"infra_config_profiles,omitempty"`
+	InfraControllerProfiles *[]int  `json:"infra_controller_profiles,omitempty"`
+	K8sVersion              *string `json:"k8s_version,omitempty"`
+	Location                *string `json:"location,omitempty"`
+	Name                    *string `json:"name,omitempty"`
+	NodeCount               *int    `json:"node_count,omitempty"`
+	NodeSize                *string `json:"node_size,omitempty"`
+	RegionName              *string `json:"region_name,omitempty"`
+	ResourceGroup           *string `json:"resource_group,omitempty"`
+	ResourceProfiles        *[]int  `json:"resource_profiles,omitempty"`
+	VimAccount              *string `json:"vim_account,omitempty"`
 }
 
 // CreateK8sClusterRequest defines model for CreateK8sClusterRequest.
@@ -387,6 +442,12 @@ type CreatePduRequest struct {
 	Type        string        `json:"type"`
 	VimAccounts *[]string     `json:"vim_accounts,omitempty"`
 	Vims        *[]string     `json:"vims,omitempty"`
+}
+
+// CreateProfileInfo defines model for CreateProfileInfo.
+type CreateProfileInfo struct {
+	Description *string `json:"description,omitempty"`
+	Name        *string `json:"name,omitempty"`
 }
 
 // CreateProjectRequest defines model for CreateProjectRequest.
@@ -1087,6 +1148,28 @@ type Ksu struct {
 	} `json:"profile,omitempty"`
 }
 
+// KsuList defines model for KsuList.
+type KsuList struct {
+	Uid               *int    `json:"_id,omitempty"`
+	CurrentOperation *int    `json:"current_operation,omitempty"`
+	Description      *string `json:"description,omitempty"`
+	GitName          *string `json:"git_name,omitempty"`
+	Name             *string `json:"name,omitempty"`
+	Oka              *[]struct {
+		Uid             *string                 `json:"_id,omitempty"`
+		SwCatalogPath  *string                 `json:"sw_catalog_path,omitempty"`
+		Transformation *map[string]interface{} `json:"transformation,omitempty"`
+	} `json:"oka,omitempty"`
+	OperatingState   *string           `json:"operatingState,omitempty"`
+	OperationHistory *OperationHistory `json:"operationHistory,omitempty"`
+	Profile          *struct {
+		Id          *string `json:"id,omitempty"`
+		ProfileType *string `json:"profile_type,omitempty"`
+	} `json:"profile,omitempty"`
+	ResourceState *string `json:"resourceState,omitempty"`
+	State         *string `json:"state,omitempty"`
+}
+
 // MoveKsu defines model for MoveKsu.
 type MoveKsu struct {
 	Profile *struct {
@@ -1102,23 +1185,6 @@ type MultiNsTerminateRequest struct {
 
 	// NsIds List of Ns instance Ids to be deleted
 	NsIds *[]openapi_types.UUID `json:"ns_ids,omitempty"`
-}
-
-// MultipleKsu defines model for MultipleKsu.
-type MultipleKsu struct {
-	Ksus *[]struct {
-		Description *string `json:"description,omitempty"`
-		Name        *string `json:"name,omitempty"`
-		Oka         *[]struct {
-			Uid             *string                 `json:"_id,omitempty"`
-			SwCatalogPath  *string                 `json:"sw_catalog_path,omitempty"`
-			Transformation *map[string]interface{} `json:"transformation,omitempty"`
-		} `json:"oka,omitempty"`
-		Profile *struct {
-			Uid          *string `json:"_id,omitempty"`
-			ProfileType *string `json:"profile_type,omitempty"`
-		} `json:"profile,omitempty"`
-	} `json:"ksus,omitempty"`
 }
 
 // NSinstanceActionRequest defines model for NSinstanceActionRequest.
@@ -1448,6 +1514,19 @@ type OkaPackage struct {
 	Package     *openapi_types.File `json:"package,omitempty"`
 }
 
+// OkaPackageList defines model for OkaPackageList.
+type OkaPackageList struct {
+	Uid               *int              `json:"_id,omitempty"`
+	CurrentOperation *int              `json:"current_operation,omitempty"`
+	Description      *string           `json:"description,omitempty"`
+	GitName          *string           `json:"git_name,omitempty"`
+	Name             *string           `json:"name,omitempty"`
+	OperatingState   *string           `json:"operatingState,omitempty"`
+	OperationHistory *OperationHistory `json:"operationHistory,omitempty"`
+	ResourceState    *string           `json:"resourceState,omitempty"`
+	State            *string           `json:"state,omitempty"`
+}
+
 // OpId defines model for OpId.
 type OpId struct {
 	OpId *openapi_types.UUID `json:"op_id,omitempty"`
@@ -1502,8 +1581,16 @@ type ProblemDetails struct {
 
 // ProfileInfo defines model for ProfileInfo.
 type ProfileInfo struct {
-	Description *string `json:"description,omitempty"`
-	Name        *string `json:"name,omitempty"`
+	Uid               *int              `json:"_id,omitempty"`
+	CurrentOperation *int              `json:"current_operation,omitempty"`
+	Default          *string           `json:"default,omitempty"`
+	Description      *string           `json:"description,omitempty"`
+	GitName          *string           `json:"git_name,omitempty"`
+	Name             *string           `json:"name,omitempty"`
+	OperatingState   *string           `json:"operatingState,omitempty"`
+	OperationHistory *OperationHistory `json:"operationHistory,omitempty"`
+	ResourceState    *string           `json:"resourceState,omitempty"`
+	State            *string           `json:"state,omitempty"`
 }
 
 // ProjectInfo defines model for ProjectInfo.
@@ -1540,6 +1627,15 @@ type QuotasInfo struct {
 	VimAccounts    *int `json:"vim_accounts,omitempty"`
 	Vnfds          *int `json:"vnfds,omitempty"`
 	WimAccounts    *int `json:"wim_accounts,omitempty"`
+}
+
+// RegisterClusterInfo defines model for RegisterClusterInfo.
+type RegisterClusterInfo struct {
+	Bootstrap   *bool   `json:"bootstrap,omitempty"`
+	Credentials *string `json:"credentials,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	VimAccount  *string `json:"vim_account,omitempty"`
 }
 
 // RoleInfo defines model for RoleInfo.
@@ -1663,6 +1759,13 @@ type TokenInfo struct {
 	UserId   *openapi_types.UUID `json:"user_id,omitempty"`
 	UserShow *bool               `json:"user_show,omitempty"`
 	Username *string             `json:"username,omitempty"`
+}
+
+// UpdateClusterRequest defines model for UpdateClusterRequest.
+type UpdateClusterRequest struct {
+	K8sVersion *string `json:"k8s_version,omitempty"`
+	NodeCount  *int    `json:"node_count,omitempty"`
+	NodeSize   *string `json:"node_size,omitempty"`
 }
 
 // UpdateNsRequest This type represents request parameters for the "Update NS" operation. This operation supports the update of an NS instance by updating one or more of the VNFs that are part of this NS.
@@ -1831,6 +1934,20 @@ type NsInstanceNames = []string
 // NsdIds defines model for nsdIds.
 type NsdIds = []string
 
+// OperationHistory defines model for operationHistory.
+type OperationHistory = []struct {
+	CreationDate     *string                 `json:"creationDate,omitempty"`
+	EndDate          *string                 `json:"endDate,omitempty"`
+	GitOperationInfo *string                 `json:"gitOperationInfo,omitempty"`
+	OpId             *int                    `json:"op_id,omitempty"`
+	OperationParams  *map[string]interface{} `json:"operationParams,omitempty"`
+	OperationState   *string                 `json:"operationState,omitempty"`
+	OperationType    *string                 `json:"operationType,omitempty"`
+	ResourceState    *string                 `json:"resourceState,omitempty"`
+	Result           *string                 `json:"result,omitempty"`
+	WorkflowState    *string                 `json:"workflowState,omitempty"`
+}
+
 // PnfdIds defines model for pnfdIds.
 type PnfdIds = []string
 
@@ -1870,9 +1987,6 @@ type UnexpectedError = ProblemDetails
 // UnprocessableEntity defines model for UnprocessableEntity.
 type UnprocessableEntity = ProblemDetails
 
-// CreateCluster defines model for CreateCluster.
-type CreateCluster = CreateClusterInfo
-
 // CreateNsConfigTemplateInfoRequest defines model for CreateNsConfigTemplateInfoRequest.
 type CreateNsConfigTemplateInfoRequest = CreateNsdInfoRequest
 
@@ -1881,6 +1995,9 @@ type CreateNsConfigTemplateInfoRequest = CreateNsdInfoRequest
 // For a full specification of the NS Descriptor see:
 // http://osm-download.etsi.org/ftp/osm-doc/nsd.html
 type NsConfigTemplateInfoModifications = NsdInfoModifications
+
+// PatchProfileInfo defines model for PatchProfileInfo.
+type PatchProfileInfo = CreateProfileInfo
 
 // ScaleNode defines model for ScaleNode.
 type ScaleNode = ScaleNodeInfo
@@ -1961,13 +2078,19 @@ type CreateWimAccountJSONRequestBody = CreateWimRequest
 type EditWimAccountJSONRequestBody = EditWimRequest
 
 // CreateAppProfileJSONRequestBody defines body for CreateAppProfile for application/json ContentType.
-type CreateAppProfileJSONRequestBody = ProfileInfo
+type CreateAppProfileJSONRequestBody = CreateProfileInfo
 
 // PatchAppProfileJSONRequestBody defines body for PatchAppProfile for application/json ContentType.
-type PatchAppProfileJSONRequestBody = ProfileInfo
+type PatchAppProfileJSONRequestBody = CreateProfileInfo
 
 // Createk8sClusterJSONRequestBody defines body for Createk8sCluster for application/json ContentType.
 type Createk8sClusterJSONRequestBody = CreateClusterInfo
+
+// Registerk8sClusterJSONRequestBody defines body for Registerk8sCluster for application/json ContentType.
+type Registerk8sClusterJSONRequestBody = RegisterClusterInfo
+
+// PatchClusterJSONRequestBody defines body for PatchCluster for application/json ContentType.
+type PatchClusterJSONRequestBody = ClusterEditRequest
 
 // AddRemoveAppProfileJSONRequestBody defines body for AddRemoveAppProfile for application/json ContentType.
 type AddRemoveAppProfileJSONRequestBody = AttachDetachProfile
@@ -1984,35 +2107,38 @@ type AddremoveResourceProfileJSONRequestBody = AttachDetachProfile
 // NodeScalingJSONRequestBody defines body for NodeScaling for application/json ContentType.
 type NodeScalingJSONRequestBody = ScaleNodeInfo
 
+// UpdateClusterJSONRequestBody defines body for UpdateCluster for application/json ContentType.
+type UpdateClusterJSONRequestBody = UpdateClusterRequest
+
 // UpgradeClusterJSONRequestBody defines body for UpgradeCluster for application/json ContentType.
 type UpgradeClusterJSONRequestBody = UpgradeClusterInfo
 
 // CreateInfraConfigProfileJSONRequestBody defines body for CreateInfraConfigProfile for application/json ContentType.
-type CreateInfraConfigProfileJSONRequestBody = ProfileInfo
+type CreateInfraConfigProfileJSONRequestBody = CreateProfileInfo
 
 // PatchInfraConfigProfileJSONRequestBody defines body for PatchInfraConfigProfile for application/json ContentType.
-type PatchInfraConfigProfileJSONRequestBody = ProfileInfo
+type PatchInfraConfigProfileJSONRequestBody = CreateProfileInfo
 
 // CreateInfraControllerProfileJSONRequestBody defines body for CreateInfraControllerProfile for application/json ContentType.
-type CreateInfraControllerProfileJSONRequestBody = ProfileInfo
+type CreateInfraControllerProfileJSONRequestBody = CreateProfileInfo
 
 // PatchInfraControllerProfileJSONRequestBody defines body for PatchInfraControllerProfile for application/json ContentType.
-type PatchInfraControllerProfileJSONRequestBody = ProfileInfo
+type PatchInfraControllerProfileJSONRequestBody = CreateProfileInfo
 
 // CreateResourceProfileJSONRequestBody defines body for CreateResourceProfile for application/json ContentType.
-type CreateResourceProfileJSONRequestBody = ProfileInfo
+type CreateResourceProfileJSONRequestBody = CreateProfileInfo
 
 // PatchResourceProfileJSONRequestBody defines body for PatchResourceProfile for application/json ContentType.
-type PatchResourceProfileJSONRequestBody = ProfileInfo
+type PatchResourceProfileJSONRequestBody = CreateProfileInfo
 
 // AddKSUJSONRequestBody defines body for AddKSU for application/json ContentType.
-type AddKSUJSONRequestBody = MultipleKsu
+type AddKSUJSONRequestBody = ArrayOfKsu
 
 // DeleteMultipleKSUJSONRequestBody defines body for DeleteMultipleKSU for application/json ContentType.
 type DeleteMultipleKSUJSONRequestBody = DeleteMultipleKsu
 
 // UpdateMultipleKSUJSONRequestBody defines body for UpdateMultipleKSU for application/json ContentType.
-type UpdateMultipleKSUJSONRequestBody = MultipleKsu
+type UpdateMultipleKSUJSONRequestBody = ArrayOfKsu
 
 // UpdateKSUJSONRequestBody defines body for UpdateKSU for application/json ContentType.
 type UpdateKSUJSONRequestBody = Ksu
@@ -3470,11 +3596,21 @@ type ClientInterface interface {
 
 	Createk8sCluster(ctx context.Context, body Createk8sClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// Registerk8sClusterWithBody request with any body
+	Registerk8sClusterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Registerk8sCluster(ctx context.Context, body Registerk8sClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// Deletek8sCluster request
 	Deletek8sCluster(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// Readk8sCluster request
 	Readk8sCluster(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PatchClusterWithBody request with any body
+	PatchClusterWithBody(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchCluster(ctx context.Context, clusterId string, body PatchClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetAppProfile request
 	GetAppProfile(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3484,8 +3620,14 @@ type ClientInterface interface {
 
 	AddRemoveAppProfile(ctx context.Context, clusterId string, body AddRemoveAppProfileJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// Deregisterk8sCluster request
+	Deregisterk8sCluster(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetCreds request
 	GetCreds(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetCredsfile request
+	GetCredsfile(ctx context.Context, clusterId string, operationId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetInfraConfigProfile request
 	GetInfraConfigProfile(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3515,6 +3657,11 @@ type ClientInterface interface {
 	NodeScalingWithBody(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	NodeScaling(ctx context.Context, clusterId string, body NodeScalingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateClusterWithBody request with any body
+	UpdateClusterWithBody(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateCluster(ctx context.Context, clusterId string, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpgradeClusterWithBody request with any body
 	UpgradeClusterWithBody(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -4983,6 +5130,30 @@ func (c *Client) Createk8sCluster(ctx context.Context, body Createk8sClusterJSON
 	return c.Client.Do(req)
 }
 
+func (c *Client) Registerk8sClusterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRegisterk8sClusterRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Registerk8sCluster(ctx context.Context, body Registerk8sClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRegisterk8sClusterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) Deletek8sCluster(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDeletek8sClusterRequest(c.Server, clusterId)
 	if err != nil {
@@ -4997,6 +5168,30 @@ func (c *Client) Deletek8sCluster(ctx context.Context, clusterId string, reqEdit
 
 func (c *Client) Readk8sCluster(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewReadk8sClusterRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchClusterWithBody(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchClusterRequestWithBody(c.Server, clusterId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchCluster(ctx context.Context, clusterId string, body PatchClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchClusterRequest(c.Server, clusterId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5043,8 +5238,32 @@ func (c *Client) AddRemoveAppProfile(ctx context.Context, clusterId string, body
 	return c.Client.Do(req)
 }
 
+func (c *Client) Deregisterk8sCluster(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeregisterk8sClusterRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetCreds(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetCredsRequest(c.Server, clusterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetCredsfile(ctx context.Context, clusterId string, operationId string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetCredsfileRequest(c.Server, clusterId, operationId)
 	if err != nil {
 		return nil, err
 	}
@@ -5177,6 +5396,30 @@ func (c *Client) NodeScalingWithBody(ctx context.Context, clusterId string, cont
 
 func (c *Client) NodeScaling(ctx context.Context, clusterId string, body NodeScalingJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewNodeScalingRequest(c.Server, clusterId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateClusterWithBody(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterRequestWithBody(c.Server, clusterId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateCluster(ctx context.Context, clusterId string, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateClusterRequest(c.Server, clusterId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -9375,6 +9618,46 @@ func NewCreatek8sClusterRequestWithBody(server string, contentType string, body 
 	return req, nil
 }
 
+// NewRegisterk8sClusterRequest calls the generic Registerk8sCluster builder with application/json body
+func NewRegisterk8sClusterRequest(server string, body Registerk8sClusterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRegisterk8sClusterRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewRegisterk8sClusterRequestWithBody generates requests for Registerk8sCluster with any type of body
+func NewRegisterk8sClusterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/k8scluster/v1/clusters/register")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewDeletek8sClusterRequest generates requests for Deletek8sCluster
 func NewDeletek8sClusterRequest(server string, clusterId string) (*http.Request, error) {
 	var err error
@@ -9439,6 +9722,53 @@ func NewReadk8sClusterRequest(server string, clusterId string) (*http.Request, e
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewPatchClusterRequest calls the generic PatchCluster builder with application/json body
+func NewPatchClusterRequest(server string, clusterId string, body PatchClusterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchClusterRequestWithBody(server, clusterId, "application/json", bodyReader)
+}
+
+// NewPatchClusterRequestWithBody generates requests for PatchCluster with any type of body
+func NewPatchClusterRequestWithBody(server string, clusterId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/k8scluster/v1/clusters/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -9524,6 +9854,40 @@ func NewAddRemoveAppProfileRequestWithBody(server string, clusterId string, cont
 	return req, nil
 }
 
+// NewDeregisterk8sClusterRequest generates requests for Deregisterk8sCluster
+func NewDeregisterk8sClusterRequest(server string, clusterId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/k8scluster/v1/clusters/%s/deregister", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetCredsRequest generates requests for GetCreds
 func NewGetCredsRequest(server string, clusterId string) (*http.Request, error) {
 	var err error
@@ -9541,6 +9905,47 @@ func NewGetCredsRequest(server string, clusterId string) (*http.Request, error) 
 	}
 
 	operationPath := fmt.Sprintf("/k8scluster/v1/clusters/%s/get_creds", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetCredsfileRequest generates requests for GetCredsfile
+func NewGetCredsfileRequest(server string, clusterId string, operationId string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "operation_id", runtime.ParamLocationPath, operationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/k8scluster/v1/clusters/%s/get_creds_file/%s", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -9829,6 +10234,53 @@ func NewNodeScalingRequestWithBody(server string, clusterId string, contentType 
 	}
 
 	operationPath := fmt.Sprintf("/k8scluster/v1/clusters/%s/scale", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateClusterRequest calls the generic UpdateCluster builder with application/json body
+func NewUpdateClusterRequest(server string, clusterId string, body UpdateClusterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateClusterRequestWithBody(server, clusterId, "application/json", bodyReader)
+}
+
+// NewUpdateClusterRequestWithBody generates requests for UpdateCluster with any type of body
+func NewUpdateClusterRequestWithBody(server string, clusterId string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "cluster_id", runtime.ParamLocationPath, clusterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/k8scluster/v1/clusters/%s/update", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -14682,11 +15134,21 @@ type ClientWithResponsesInterface interface {
 
 	Createk8sClusterWithResponse(ctx context.Context, body Createk8sClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*Createk8sClusterResponse, error)
 
+	// Registerk8sClusterWithBodyWithResponse request with any body
+	Registerk8sClusterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*Registerk8sClusterResponse, error)
+
+	Registerk8sClusterWithResponse(ctx context.Context, body Registerk8sClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*Registerk8sClusterResponse, error)
+
 	// Deletek8sClusterWithResponse request
 	Deletek8sClusterWithResponse(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*Deletek8sClusterResponse, error)
 
 	// Readk8sClusterWithResponse request
 	Readk8sClusterWithResponse(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*Readk8sClusterResponse, error)
+
+	// PatchClusterWithBodyWithResponse request with any body
+	PatchClusterWithBodyWithResponse(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchClusterResponse, error)
+
+	PatchClusterWithResponse(ctx context.Context, clusterId string, body PatchClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchClusterResponse, error)
 
 	// GetAppProfileWithResponse request
 	GetAppProfileWithResponse(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*GetAppProfileResponse, error)
@@ -14696,8 +15158,14 @@ type ClientWithResponsesInterface interface {
 
 	AddRemoveAppProfileWithResponse(ctx context.Context, clusterId string, body AddRemoveAppProfileJSONRequestBody, reqEditors ...RequestEditorFn) (*AddRemoveAppProfileResponse, error)
 
+	// Deregisterk8sClusterWithResponse request
+	Deregisterk8sClusterWithResponse(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*Deregisterk8sClusterResponse, error)
+
 	// GetCredsWithResponse request
 	GetCredsWithResponse(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*GetCredsResponse, error)
+
+	// GetCredsfileWithResponse request
+	GetCredsfileWithResponse(ctx context.Context, clusterId string, operationId string, reqEditors ...RequestEditorFn) (*GetCredsfileResponse, error)
 
 	// GetInfraConfigProfileWithResponse request
 	GetInfraConfigProfileWithResponse(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*GetInfraConfigProfileResponse, error)
@@ -14727,6 +15195,11 @@ type ClientWithResponsesInterface interface {
 	NodeScalingWithBodyWithResponse(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*NodeScalingResponse, error)
 
 	NodeScalingWithResponse(ctx context.Context, clusterId string, body NodeScalingJSONRequestBody, reqEditors ...RequestEditorFn) (*NodeScalingResponse, error)
+
+	// UpdateClusterWithBodyWithResponse request with any body
+	UpdateClusterWithBodyWithResponse(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
+
+	UpdateClusterWithResponse(ctx context.Context, clusterId string, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error)
 
 	// UpgradeClusterWithBodyWithResponse request with any body
 	UpgradeClusterWithBodyWithResponse(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpgradeClusterResponse, error)
@@ -17058,6 +17531,8 @@ func (r EditWimAccountResponse) StatusCode() int {
 type ListAppProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfProfileInfo
+	YAML200      *ArrayOfProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17159,6 +17634,8 @@ func (r DeleteAppProfileResponse) StatusCode() int {
 type ReadAppProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ProfileInfo
+	YAML200      *ProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17192,6 +17669,8 @@ func (r ReadAppProfileResponse) StatusCode() int {
 type PatchAppProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17225,6 +17704,8 @@ func (r PatchAppProfileResponse) StatusCode() int {
 type Listk8sClusterResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfClusterInfo
+	YAML200      *ArrayOfClusterInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17290,6 +17771,41 @@ func (r Createk8sClusterResponse) StatusCode() int {
 	return 0
 }
 
+type Registerk8sClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON201      *ObjectId
+	YAML201      *ObjectId
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON405      *MethodNotAllowed
+	JSON406      *NotAcceptable
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON500      *InternalServerError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *UnexpectedError
+	JSONDefault  *UnexpectedError
+}
+
+// Status returns HTTPResponse.Status
+func (r Registerk8sClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r Registerk8sClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type Deletek8sClusterResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -17326,6 +17842,8 @@ func (r Deletek8sClusterResponse) StatusCode() int {
 type Readk8sClusterResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ClusterInfo
+	YAML200      *ClusterInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17356,9 +17874,46 @@ func (r Readk8sClusterResponse) StatusCode() int {
 	return 0
 }
 
+type PatchClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON405      *MethodNotAllowed
+	JSON406      *NotAcceptable
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON500      *InternalServerError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *UnexpectedError
+	JSONDefault  *UnexpectedError
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetAppProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfProfileInfo
+	YAML200      *ArrayOfProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17422,9 +17977,44 @@ func (r AddRemoveAppProfileResponse) StatusCode() int {
 	return 0
 }
 
+type Deregisterk8sClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON405      *MethodNotAllowed
+	JSON406      *NotAcceptable
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON500      *InternalServerError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *UnexpectedError
+	JSONDefault  *UnexpectedError
+}
+
+// Status returns HTTPResponse.Status
+func (r Deregisterk8sClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r Deregisterk8sClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetCredsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *OpId
+	YAML200      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17455,9 +18045,46 @@ func (r GetCredsResponse) StatusCode() int {
 	return 0
 }
 
+type GetCredsfileResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ClusterCreds
+	YAML200      *ClusterCreds
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON405      *MethodNotAllowed
+	JSON406      *NotAcceptable
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON500      *InternalServerError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *UnexpectedError
+	JSONDefault  *UnexpectedError
+}
+
+// Status returns HTTPResponse.Status
+func (r GetCredsfileResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetCredsfileResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetInfraConfigProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfProfileInfo
+	YAML200      *ArrayOfProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17524,6 +18151,8 @@ func (r AddremoveInfraConfigProfileResponse) StatusCode() int {
 type GetInfraControllerProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfProfileInfo
+	YAML200      *ArrayOfProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17590,6 +18219,8 @@ func (r AddremoveInfraControllerProfileResponse) StatusCode() int {
 type GetResourceProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfProfileInfo
+	YAML200      *ArrayOfProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17656,6 +18287,8 @@ func (r AddremoveResourceProfileResponse) StatusCode() int {
 type NodeScalingResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17686,9 +18319,46 @@ func (r NodeScalingResponse) StatusCode() int {
 	return 0
 }
 
+type UpdateClusterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
+	JSON400      *BadRequest
+	JSON401      *Unauthorized
+	JSON403      *Forbidden
+	JSON404      *NotFound
+	JSON405      *MethodNotAllowed
+	JSON406      *NotAcceptable
+	JSON409      *Conflict
+	JSON422      *UnprocessableEntity
+	JSON500      *InternalServerError
+	JSON503      *ServiceUnavailable
+	JSON5XX      *UnexpectedError
+	JSONDefault  *UnexpectedError
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateClusterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateClusterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type UpgradeClusterResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17722,6 +18392,8 @@ func (r UpgradeClusterResponse) StatusCode() int {
 type ListInfraConfigProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfProfileInfo
+	YAML200      *ArrayOfProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17823,6 +18495,8 @@ func (r DeleteInfraConfigProfileResponse) StatusCode() int {
 type ReadInfraConfigProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ProfileInfo
+	YAML200      *ProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17856,6 +18530,8 @@ func (r ReadInfraConfigProfileResponse) StatusCode() int {
 type PatchInfraConfigProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17889,6 +18565,8 @@ func (r PatchInfraConfigProfileResponse) StatusCode() int {
 type ListInfraControllerProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfProfileInfo
+	YAML200      *ArrayOfProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -17990,6 +18668,8 @@ func (r DeleteInfraControllerProfileResponse) StatusCode() int {
 type ReadInfraControllerProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ProfileInfo
+	YAML200      *ProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18023,6 +18703,8 @@ func (r ReadInfraControllerProfileResponse) StatusCode() int {
 type PatchInfraControllerProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18056,6 +18738,8 @@ func (r PatchInfraControllerProfileResponse) StatusCode() int {
 type ListResourceProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfProfileInfo
+	YAML200      *ArrayOfProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18157,6 +18841,8 @@ func (r DeleteResourceProfileResponse) StatusCode() int {
 type ReadResourceProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ProfileInfo
+	YAML200      *ProfileInfo
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18190,6 +18876,8 @@ func (r ReadResourceProfileResponse) StatusCode() int {
 type PatchResourceProfileResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18223,6 +18911,8 @@ func (r PatchResourceProfileResponse) StatusCode() int {
 type GetKSUResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfKsuList
+	YAML200      *ArrayOfKsuList
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18291,6 +18981,8 @@ func (r AddKSUResponse) StatusCode() int {
 type DeleteMultipleKSUResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18324,6 +19016,8 @@ func (r DeleteMultipleKSUResponse) StatusCode() int {
 type UpdateMultipleKSUResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18390,6 +19084,8 @@ func (r DeleteKSUResponse) StatusCode() int {
 type ReadKSUResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *KsuList
+	YAML200      *KsuList
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18423,6 +19119,8 @@ func (r ReadKSUResponse) StatusCode() int {
 type UpdateKSUResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18456,8 +19154,8 @@ func (r UpdateKSUResponse) StatusCode() int {
 type CloneKSUResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON202      *ObjectId
-	YAML202      *ObjectId
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -18491,6 +19189,8 @@ func (r CloneKSUResponse) StatusCode() int {
 type MoveKSUResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -21099,6 +21799,8 @@ func (r UpdateNstIdContentResponse) StatusCode() int {
 type GetOKAPackageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *ArrayOfOkaPackage
+	YAML200      *ArrayOfOkaPackage
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -21200,6 +21902,8 @@ func (r DeleteOKAPackageResponse) StatusCode() int {
 type ReadOKAPackageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON200      *OkaPackageList
+	YAML200      *OkaPackageList
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -21233,6 +21937,8 @@ func (r ReadOKAPackageResponse) StatusCode() int {
 type UpdateOKAPackageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
+	JSON202      *OpId
+	YAML202      *OpId
 	JSON400      *BadRequest
 	JSON401      *Unauthorized
 	JSON403      *Forbidden
@@ -22641,6 +23347,23 @@ func (c *ClientWithResponses) Createk8sClusterWithResponse(ctx context.Context, 
 	return ParseCreatek8sClusterResponse(rsp)
 }
 
+// Registerk8sClusterWithBodyWithResponse request with arbitrary body returning *Registerk8sClusterResponse
+func (c *ClientWithResponses) Registerk8sClusterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*Registerk8sClusterResponse, error) {
+	rsp, err := c.Registerk8sClusterWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRegisterk8sClusterResponse(rsp)
+}
+
+func (c *ClientWithResponses) Registerk8sClusterWithResponse(ctx context.Context, body Registerk8sClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*Registerk8sClusterResponse, error) {
+	rsp, err := c.Registerk8sCluster(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRegisterk8sClusterResponse(rsp)
+}
+
 // Deletek8sClusterWithResponse request returning *Deletek8sClusterResponse
 func (c *ClientWithResponses) Deletek8sClusterWithResponse(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*Deletek8sClusterResponse, error) {
 	rsp, err := c.Deletek8sCluster(ctx, clusterId, reqEditors...)
@@ -22657,6 +23380,23 @@ func (c *ClientWithResponses) Readk8sClusterWithResponse(ctx context.Context, cl
 		return nil, err
 	}
 	return ParseReadk8sClusterResponse(rsp)
+}
+
+// PatchClusterWithBodyWithResponse request with arbitrary body returning *PatchClusterResponse
+func (c *ClientWithResponses) PatchClusterWithBodyWithResponse(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchClusterResponse, error) {
+	rsp, err := c.PatchClusterWithBody(ctx, clusterId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchClusterResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchClusterWithResponse(ctx context.Context, clusterId string, body PatchClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchClusterResponse, error) {
+	rsp, err := c.PatchCluster(ctx, clusterId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchClusterResponse(rsp)
 }
 
 // GetAppProfileWithResponse request returning *GetAppProfileResponse
@@ -22685,6 +23425,15 @@ func (c *ClientWithResponses) AddRemoveAppProfileWithResponse(ctx context.Contex
 	return ParseAddRemoveAppProfileResponse(rsp)
 }
 
+// Deregisterk8sClusterWithResponse request returning *Deregisterk8sClusterResponse
+func (c *ClientWithResponses) Deregisterk8sClusterWithResponse(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*Deregisterk8sClusterResponse, error) {
+	rsp, err := c.Deregisterk8sCluster(ctx, clusterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeregisterk8sClusterResponse(rsp)
+}
+
 // GetCredsWithResponse request returning *GetCredsResponse
 func (c *ClientWithResponses) GetCredsWithResponse(ctx context.Context, clusterId string, reqEditors ...RequestEditorFn) (*GetCredsResponse, error) {
 	rsp, err := c.GetCreds(ctx, clusterId, reqEditors...)
@@ -22692,6 +23441,15 @@ func (c *ClientWithResponses) GetCredsWithResponse(ctx context.Context, clusterI
 		return nil, err
 	}
 	return ParseGetCredsResponse(rsp)
+}
+
+// GetCredsfileWithResponse request returning *GetCredsfileResponse
+func (c *ClientWithResponses) GetCredsfileWithResponse(ctx context.Context, clusterId string, operationId string, reqEditors ...RequestEditorFn) (*GetCredsfileResponse, error) {
+	rsp, err := c.GetCredsfile(ctx, clusterId, operationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetCredsfileResponse(rsp)
 }
 
 // GetInfraConfigProfileWithResponse request returning *GetInfraConfigProfileResponse
@@ -22787,6 +23545,23 @@ func (c *ClientWithResponses) NodeScalingWithResponse(ctx context.Context, clust
 		return nil, err
 	}
 	return ParseNodeScalingResponse(rsp)
+}
+
+// UpdateClusterWithBodyWithResponse request with arbitrary body returning *UpdateClusterResponse
+func (c *ClientWithResponses) UpdateClusterWithBodyWithResponse(ctx context.Context, clusterId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error) {
+	rsp, err := c.UpdateClusterWithBody(ctx, clusterId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateClusterWithResponse(ctx context.Context, clusterId string, body UpdateClusterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateClusterResponse, error) {
+	rsp, err := c.UpdateCluster(ctx, clusterId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateClusterResponse(rsp)
 }
 
 // UpgradeClusterWithBodyWithResponse request with arbitrary body returning *UpgradeClusterResponse
@@ -30403,6 +31178,13 @@ func ParseListAppProfileResponse(rsp *http.Response) (*ListAppProfileResponse, e
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -30486,6 +31268,13 @@ func ParseListAppProfileResponse(rsp *http.Response) (*ListAppProfileResponse, e
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -30726,6 +31515,13 @@ func ParseReadAppProfileResponse(rsp *http.Response) (*ReadAppProfileResponse, e
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -30809,6 +31605,13 @@ func ParseReadAppProfileResponse(rsp *http.Response) (*ReadAppProfileResponse, e
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -30829,6 +31632,13 @@ func ParsePatchAppProfileResponse(rsp *http.Response) (*PatchAppProfileResponse,
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -30912,6 +31722,13 @@ func ParsePatchAppProfileResponse(rsp *http.Response) (*PatchAppProfileResponse,
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -30932,6 +31749,13 @@ func ParseListk8sClusterResponse(rsp *http.Response) (*Listk8sClusterResponse, e
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfClusterInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -31016,6 +31840,13 @@ func ParseListk8sClusterResponse(rsp *http.Response) (*Listk8sClusterResponse, e
 		}
 		response.JSONDefault = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfClusterInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
 	}
 
 	return response, nil
@@ -31030,6 +31861,123 @@ func ParseCreatek8sClusterResponse(rsp *http.Response) (*Createk8sClusterRespons
 	}
 
 	response := &Createk8sClusterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest ObjectId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 405:
+		var dest MethodNotAllowed
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON405 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 406:
+		var dest NotAcceptable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON406 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 201:
+		var dest ObjectId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML201 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRegisterk8sClusterResponse parses an HTTP response from a Registerk8sClusterWithResponse call
+func ParseRegisterk8sClusterResponse(rsp *http.Response) (*Registerk8sClusterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &Registerk8sClusterResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -31255,6 +32203,13 @@ func ParseReadk8sClusterResponse(rsp *http.Response) (*Readk8sClusterResponse, e
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClusterInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -31338,6 +32293,130 @@ func ParseReadk8sClusterResponse(rsp *http.Response) (*Readk8sClusterResponse, e
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ClusterInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePatchClusterResponse parses an HTTP response from a PatchClusterWithResponse call
+func ParsePatchClusterResponse(rsp *http.Response) (*PatchClusterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchClusterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 405:
+		var dest MethodNotAllowed
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON405 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 406:
+		var dest NotAcceptable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON406 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -31358,6 +32437,13 @@ func ParseGetAppProfileResponse(rsp *http.Response) (*GetAppProfileResponse, err
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -31441,6 +32527,13 @@ func ParseGetAppProfileResponse(rsp *http.Response) (*GetAppProfileResponse, err
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -31550,15 +32643,15 @@ func ParseAddRemoveAppProfileResponse(rsp *http.Response) (*AddRemoveAppProfileR
 	return response, nil
 }
 
-// ParseGetCredsResponse parses an HTTP response from a GetCredsWithResponse call
-func ParseGetCredsResponse(rsp *http.Response) (*GetCredsResponse, error) {
+// ParseDeregisterk8sClusterResponse parses an HTTP response from a Deregisterk8sClusterWithResponse call
+func ParseDeregisterk8sClusterResponse(rsp *http.Response) (*Deregisterk8sClusterResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetCredsResponse{
+	response := &Deregisterk8sClusterResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -31653,20 +32746,27 @@ func ParseGetCredsResponse(rsp *http.Response) (*GetCredsResponse, error) {
 	return response, nil
 }
 
-// ParseGetInfraConfigProfileResponse parses an HTTP response from a GetInfraConfigProfileWithResponse call
-func ParseGetInfraConfigProfileResponse(rsp *http.Response) (*GetInfraConfigProfileResponse, error) {
+// ParseGetCredsResponse parses an HTTP response from a GetCredsWithResponse call
+func ParseGetCredsResponse(rsp *http.Response) (*GetCredsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetInfraConfigProfileResponse{
+	response := &GetCredsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -31750,6 +32850,247 @@ func ParseGetInfraConfigProfileResponse(rsp *http.Response) (*GetInfraConfigProf
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetCredsfileResponse parses an HTTP response from a GetCredsfileWithResponse call
+func ParseGetCredsfileResponse(rsp *http.Response) (*GetCredsfileResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetCredsfileResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClusterCreds
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 405:
+		var dest MethodNotAllowed
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON405 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 406:
+		var dest NotAcceptable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON406 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ClusterCreds
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetInfraConfigProfileResponse parses an HTTP response from a GetInfraConfigProfileWithResponse call
+func ParseGetInfraConfigProfileResponse(rsp *http.Response) (*GetInfraConfigProfileResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetInfraConfigProfileResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 405:
+		var dest MethodNotAllowed
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON405 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 406:
+		var dest NotAcceptable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON406 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -31873,6 +33214,13 @@ func ParseGetInfraControllerProfileResponse(rsp *http.Response) (*GetInfraContro
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -31956,6 +33304,13 @@ func ParseGetInfraControllerProfileResponse(rsp *http.Response) (*GetInfraContro
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -32079,6 +33434,13 @@ func ParseGetResourceProfileResponse(rsp *http.Response) (*GetResourceProfileRes
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -32162,6 +33524,13 @@ func ParseGetResourceProfileResponse(rsp *http.Response) (*GetResourceProfileRes
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -32285,6 +33654,13 @@ func ParseNodeScalingResponse(rsp *http.Response) (*NodeScalingResponse, error) 
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -32368,6 +33744,130 @@ func ParseNodeScalingResponse(rsp *http.Response) (*NodeScalingResponse, error) 
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateClusterResponse parses an HTTP response from a UpdateClusterWithResponse call
+func ParseUpdateClusterResponse(rsp *http.Response) (*UpdateClusterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateClusterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 405:
+		var dest MethodNotAllowed
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON405 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 406:
+		var dest NotAcceptable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON406 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -32388,6 +33888,13 @@ func ParseUpgradeClusterResponse(rsp *http.Response) (*UpgradeClusterResponse, e
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -32471,6 +33978,13 @@ func ParseUpgradeClusterResponse(rsp *http.Response) (*UpgradeClusterResponse, e
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -32491,6 +34005,13 @@ func ParseListInfraConfigProfileResponse(rsp *http.Response) (*ListInfraConfigPr
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -32574,6 +34095,13 @@ func ParseListInfraConfigProfileResponse(rsp *http.Response) (*ListInfraConfigPr
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -32814,6 +34342,13 @@ func ParseReadInfraConfigProfileResponse(rsp *http.Response) (*ReadInfraConfigPr
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -32897,6 +34432,13 @@ func ParseReadInfraConfigProfileResponse(rsp *http.Response) (*ReadInfraConfigPr
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -32917,6 +34459,13 @@ func ParsePatchInfraConfigProfileResponse(rsp *http.Response) (*PatchInfraConfig
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -33000,6 +34549,13 @@ func ParsePatchInfraConfigProfileResponse(rsp *http.Response) (*PatchInfraConfig
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -33020,6 +34576,13 @@ func ParseListInfraControllerProfileResponse(rsp *http.Response) (*ListInfraCont
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -33103,6 +34666,13 @@ func ParseListInfraControllerProfileResponse(rsp *http.Response) (*ListInfraCont
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -33343,6 +34913,13 @@ func ParseReadInfraControllerProfileResponse(rsp *http.Response) (*ReadInfraCont
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -33426,6 +35003,13 @@ func ParseReadInfraControllerProfileResponse(rsp *http.Response) (*ReadInfraCont
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -33446,6 +35030,13 @@ func ParsePatchInfraControllerProfileResponse(rsp *http.Response) (*PatchInfraCo
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -33529,6 +35120,13 @@ func ParsePatchInfraControllerProfileResponse(rsp *http.Response) (*PatchInfraCo
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -33549,6 +35147,13 @@ func ParseListResourceProfileResponse(rsp *http.Response) (*ListResourceProfileR
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -33632,6 +35237,13 @@ func ParseListResourceProfileResponse(rsp *http.Response) (*ListResourceProfileR
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -33872,6 +35484,13 @@ func ParseReadResourceProfileResponse(rsp *http.Response) (*ReadResourceProfileR
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ProfileInfo
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -33955,6 +35574,13 @@ func ParseReadResourceProfileResponse(rsp *http.Response) (*ReadResourceProfileR
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ProfileInfo
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -33975,6 +35601,13 @@ func ParsePatchResourceProfileResponse(rsp *http.Response) (*PatchResourceProfil
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -34058,6 +35691,13 @@ func ParsePatchResourceProfileResponse(rsp *http.Response) (*PatchResourceProfil
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -34078,6 +35718,13 @@ func ParseGetKSUResponse(rsp *http.Response) (*GetKSUResponse, error) {
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfKsuList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -34161,6 +35808,13 @@ func ParseGetKSUResponse(rsp *http.Response) (*GetKSUResponse, error) {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfKsuList
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -34298,6 +35952,13 @@ func ParseDeleteMultipleKSUResponse(rsp *http.Response) (*DeleteMultipleKSURespo
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -34381,6 +36042,13 @@ func ParseDeleteMultipleKSUResponse(rsp *http.Response) (*DeleteMultipleKSURespo
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -34401,6 +36069,13 @@ func ParseUpdateMultipleKSUResponse(rsp *http.Response) (*UpdateMultipleKSURespo
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -34484,6 +36159,13 @@ func ParseUpdateMultipleKSUResponse(rsp *http.Response) (*UpdateMultipleKSURespo
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -34607,6 +36289,13 @@ func ParseReadKSUResponse(rsp *http.Response) (*ReadKSUResponse, error) {
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest KsuList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -34690,6 +36379,13 @@ func ParseReadKSUResponse(rsp *http.Response) (*ReadKSUResponse, error) {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest KsuList
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -34710,111 +36406,8 @@ func ParseUpdateKSUResponse(rsp *http.Response) (*UpdateKSUResponse, error) {
 	}
 
 	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest BadRequest
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest Unauthorized
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest Forbidden
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest NotFound
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 405:
-		var dest MethodNotAllowed
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON405 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 406:
-		var dest NotAcceptable
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON406 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
-		var dest Conflict
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON409 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
-		var dest UnprocessableEntity
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON422 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest InternalServerError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
-		var dest ServiceUnavailable
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON503 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
-		var dest UnexpectedError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON5XX = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest UnexpectedError
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseCloneKSUResponse parses an HTTP response from a CloneKSUWithResponse call
-func ParseCloneKSUResponse(rsp *http.Response) (*CloneKSUResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &CloneKSUResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
-		var dest ObjectId
+		var dest OpId
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -34905,7 +36498,7 @@ func ParseCloneKSUResponse(rsp *http.Response) (*CloneKSUResponse, error) {
 		response.JSONDefault = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
-		var dest ObjectId
+		var dest OpId
 		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -34916,20 +36509,27 @@ func ParseCloneKSUResponse(rsp *http.Response) (*CloneKSUResponse, error) {
 	return response, nil
 }
 
-// ParseMoveKSUResponse parses an HTTP response from a MoveKSUWithResponse call
-func ParseMoveKSUResponse(rsp *http.Response) (*MoveKSUResponse, error) {
+// ParseCloneKSUResponse parses an HTTP response from a CloneKSUWithResponse call
+func ParseCloneKSUResponse(rsp *http.Response) (*CloneKSUResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &MoveKSUResponse{
+	response := &CloneKSUResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -35013,6 +36613,130 @@ func ParseMoveKSUResponse(rsp *http.Response) (*MoveKSUResponse, error) {
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseMoveKSUResponse parses an HTTP response from a MoveKSUWithResponse call
+func ParseMoveKSUResponse(rsp *http.Response) (*MoveKSUResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MoveKSUResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest BadRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest Unauthorized
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest Forbidden
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest NotFound
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 405:
+		var dest MethodNotAllowed
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON405 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 406:
+		var dest NotAcceptable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON406 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest Conflict
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest UnprocessableEntity
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest InternalServerError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 503:
+		var dest ServiceUnavailable
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON503 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode/100 == 5:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON5XX = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest UnexpectedError
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 
@@ -43458,6 +45182,13 @@ func ParseGetOKAPackageResponse(rsp *http.Response) (*GetOKAPackageResponse, err
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArrayOfOkaPackage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -43541,6 +45272,13 @@ func ParseGetOKAPackageResponse(rsp *http.Response) (*GetOKAPackageResponse, err
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest ArrayOfOkaPackage
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -43781,6 +45519,13 @@ func ParseReadOKAPackageResponse(rsp *http.Response) (*ReadOKAPackageResponse, e
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest OkaPackageList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -43864,6 +45609,13 @@ func ParseReadOKAPackageResponse(rsp *http.Response) (*ReadOKAPackageResponse, e
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 200:
+		var dest OkaPackageList
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML200 = &dest
 
 	}
 
@@ -43884,6 +45636,13 @@ func ParseUpdateOKAPackageResponse(rsp *http.Response) (*UpdateOKAPackageRespons
 	}
 
 	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON202 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest BadRequest
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -43967,6 +45726,13 @@ func ParseUpdateOKAPackageResponse(rsp *http.Response) (*UpdateOKAPackageRespons
 			return nil, err
 		}
 		response.JSONDefault = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "yaml") && rsp.StatusCode == 202:
+		var dest OpId
+		if err := yaml.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.YAML202 = &dest
 
 	}
 

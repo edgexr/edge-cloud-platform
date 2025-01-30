@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"os"
 	"reflect"
@@ -82,15 +83,23 @@ func (s *Client) PostJson(uri, token string, reqData interface{}, replyData inte
 	return status, err
 }
 
+type fileData struct {
+	Name        string
+	Data        []byte
+	ContentType string
+}
+
 type MultiPartFormData struct {
-	fields map[string]interface{}
-	files  map[string]*os.File
+	fields    map[string]interface{}
+	files     map[string]*os.File
+	dataFiles map[string]fileData
 }
 
 func NewMultiPartFormData() *MultiPartFormData {
 	data := MultiPartFormData{
-		fields: make(map[string]interface{}),
-		files:  make(map[string]*os.File),
+		fields:    make(map[string]interface{}),
+		files:     make(map[string]*os.File),
+		dataFiles: make(map[string]fileData),
 	}
 	return &data
 }
@@ -101,6 +110,14 @@ func (s *MultiPartFormData) AddField(key string, val interface{}) {
 
 func (s *MultiPartFormData) AddFile(key string, val *os.File) {
 	s.files[key] = val
+}
+
+func (s *MultiPartFormData) AddFileData(key, fileName, contentType string, data []byte) {
+	s.dataFiles[key] = fileData{
+		Name:        fileName,
+		Data:        data,
+		ContentType: contentType,
+	}
 }
 
 func (s *MultiPartFormData) Write(buf *bytes.Buffer) (string, error) {
@@ -135,6 +152,19 @@ func (s *MultiPartFormData) Write(buf *bytes.Buffer) (string, error) {
 			return "", err
 		}
 		_, err = io.Copy(fw, file)
+		if err != nil {
+			return "", err
+		}
+	}
+	for key, file := range s.dataFiles {
+		h := make(textproto.MIMEHeader)
+		h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, key, file.Name))
+		h.Set("Content-Type", file.ContentType)
+		fw, err := wr.CreatePart(h)
+		if err != nil {
+			return "", err
+		}
+		_, err = fw.Write(file.Data)
 		if err != nil {
 			return "", err
 		}

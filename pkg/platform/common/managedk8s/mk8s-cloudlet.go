@@ -54,7 +54,7 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 	}
 	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
 	props := m.Provider.GetFeatures().Properties
-	err := m.Provider.InitApiAccessProperties(ctx, platCfg.AccessApi, cloudlet.EnvVar)
+	accessVars, err := platCfg.AccessApi.GetCloudletAccessVars(ctx)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -62,8 +62,7 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return cloudletResourcesCreated, err
 	}
-
-	err = m.Provider.SetProperties(&m.CommonPf.Properties)
+	err = m.Provider.Init(accessVars, &m.CommonPf.Properties)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -105,7 +104,7 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteCloudlet", "cloudlet", cloudlet)
 	platCfg := infracommon.GetPlatformConfig(cloudlet, pfConfig, pfInitConfig)
 	props := m.Provider.GetFeatures().Properties
-	err := m.Provider.InitApiAccessProperties(ctx, platCfg.AccessApi, cloudlet.EnvVar)
+	accessVars, err := platCfg.AccessApi.GetCloudletAccessVars(ctx)
 	if err != nil {
 		return err
 	}
@@ -113,7 +112,7 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	err = m.Provider.SetProperties(&m.CommonPf.Properties)
+	err = m.Provider.Init(accessVars, &m.CommonPf.Properties)
 	if err != nil {
 		return err
 	}
