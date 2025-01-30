@@ -50,7 +50,7 @@ type RefreshCertsOpts struct {
 // The certificate is used as the default certificate for
 // all ingress instances in the cluster.
 func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, cache *certscache.ProxyCertsCache, namespace, wildcardName string, opts RefreshCertsOpts) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "k8s refresh ingress certs", "cloudlet", cloudletKey, "certName", wildcardName, "secret", IngressDefaultCertSecret)
+	log.SpanLog(ctx, log.DebugLevelInfra, "k8s refresh ingress certs", "cloudlet", cloudletKey, "certName", wildcardName, "secret", IngressDefaultCertSecret, "opts", opts)
 	if os.Getenv("E2ETEST_TLS") != "" {
 		opts.CommerialCerts = false
 	}

@@ -122,7 +122,7 @@ func (s *ProxyCertsCache) GetCert(ctx context.Context, key *edgeproto.CloudletKe
 }
 
 func (s *ProxyCertsCache) newCert(ctx context.Context, key *edgeproto.CloudletKey, wildcardName string, commercialCerts bool) (access.TLSCert, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCerts new cert", "cloudlet", *key, "wildcardName", wildcardName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCerts new cert", "cloudlet", *key, "wildcardName", wildcardName, "commercialCerts", commercialCerts)
 	var err error
 	tls := access.TLSCert{}
 	if commercialCerts {
@@ -148,7 +148,7 @@ func (s *ProxyCertsCache) newCert(ctx context.Context, key *edgeproto.CloudletKe
 
 // RefreshCert returns the new cert and true if was refreshed
 func (s *ProxyCertsCache) RefreshCert(ctx context.Context, key *edgeproto.CloudletKey, wildcardName string, commercialCerts bool) (access.TLSCert, bool, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCertsCache refresh cert", "wildcardName", wildcardName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ProxyCertsCache refresh cert", "wildcardName", wildcardName, "commercialCerts", commercialCerts)
 
 	needsUpdate := true
 	s.mux.Lock()
