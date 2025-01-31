@@ -56,9 +56,10 @@ var podStateRegString = "(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(.*)\\s*"
 var podStateReg = regexp.MustCompile(podStateRegString)
 
 type AppInstOptions struct {
-	Undo bool
-	Wait bool
-	WM   WorkloadMgr
+	Undo            bool
+	Wait            bool
+	WM              WorkloadMgr
+	NamespaceLabels map[string]string
 }
 
 type AppInstOp func(*AppInstOptions)
@@ -86,6 +87,12 @@ func WithWorkloadManager(wm WorkloadMgr) AppInstOp {
 	}
 }
 
+func WithNamespaceLabels(labels map[string]string) AppInstOp {
+	return func(opts *AppInstOptions) {
+		opts.NamespaceLabels = labels
+	}
+}
+
 func GetAppInstOptions(ops []AppInstOp) *AppInstOptions {
 	opts := &AppInstOptions{
 		Wait: true, // by default, we wait for pods
@@ -95,6 +102,9 @@ func GetAppInstOptions(ops []AppInstOp) *AppInstOptions {
 	}
 	if opts.WM == nil {
 		opts.WM = &K8SWorkloadMgr{}
+	}
+	if opts.NamespaceLabels == nil {
+		opts.NamespaceLabels = map[string]string{}
 	}
 	return opts
 }
@@ -410,8 +420,8 @@ func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst, suffix stri
 // CreateAllNamespaces creates all the namespaces the app will use. It does not create a manifest for
 // the namespaces, just allows the basic dependencies can be defined against
 // them. Manifest definition can later be used to update the namespaces.
-func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeNames) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAllNamespaces", "names", names)
+func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeNames, labels map[string]string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAllNamespaces", "names", names, "labels", labels)
 	namespaces := names.DeveloperDefinedNamespaces
 	if names.InstanceNamespace != "" {
 		namespaces = append(namespaces, names.InstanceNamespace)
@@ -421,7 +431,7 @@ func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeName
 			continue
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "Creating Namespace", "name", n)
-		err := EnsureNamespace(ctx, client, names.GetKConfNames(), n)
+		err := EnsureNamespace(ctx, client, names.GetKConfNames(), n, labels)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "kubectl create namespace failed", "namespace", n, "err", err)
 			return err
@@ -508,7 +518,7 @@ func ApplyAppInstPolicy(ctx context.Context, client ssh.Client, names *KubeNames
 func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, action string, ops ...AppInstOp) (reterr error) {
 	opts := GetAppInstOptions(ops)
 	if action == createManifest && names.InstanceNamespace != "" {
-		err := EnsureNamespace(ctx, client, names.GetKConfNames(), names.InstanceNamespace)
+		err := EnsureNamespace(ctx, client, names.GetKConfNames(), names.InstanceNamespace, opts.NamespaceLabels)
 		if err != nil {
 			return err
 		}

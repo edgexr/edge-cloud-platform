@@ -307,15 +307,28 @@ func GetCloudletKConfNames(key *edgeproto.CloudletKey) *KconfNames {
 	return &names
 }
 
-func EnsureNamespace(ctx context.Context, client ssh.Client, names *KconfNames, namespace string) error {
+func EnsureNamespace(ctx context.Context, client ssh.Client, names *KconfNames, namespace string, labels map[string]string) error {
 	// this creates the yaml and applies it so there is no
 	// failure if the namespace already exists.
-	log.SpanLog(ctx, log.DebugLevelInfra, "ensuring namespace", "namespace", namespace)
+	log.SpanLog(ctx, log.DebugLevelInfra, "ensuring namespace", "namespace", namespace, "labels", labels)
 	cmd := fmt.Sprintf("kubectl %s create ns %s --dry-run=client -o yaml | kubectl %s apply -f -", names.KconfArg, namespace, names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to ensure namespace", "name", namespace, "cmd", cmd, "out", out, "err", err)
 		return fmt.Errorf("failed to create namespace %s: %s, %s", namespace, out, err)
+	}
+	// add labels
+	if len(labels) > 0 {
+		strs := []string{}
+		for k, v := range labels {
+			strs = append(strs, k+"="+v)
+		}
+		cmd := fmt.Sprintf("kubectl %s label ns %s %s", names.KconfArg, namespace, strings.Join(strs, " "))
+		out, err := client.Output(cmd)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to label namespace", "name", namespace, "cmd", cmd, "out", out, "err", err)
+			return fmt.Errorf("failed to label namespace %s: %s, %s", namespace, out, err)
+		}
 	}
 	return nil
 }

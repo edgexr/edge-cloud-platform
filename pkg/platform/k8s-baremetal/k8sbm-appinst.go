@@ -72,7 +72,8 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 
 		updateCallback(edgeproto.UpdateTask, "Setting up registry secret")
 		for _, imagePath := range names.ImagePaths {
-			err = k8smgmt.CreateAllNamespaces(ctx, client, names)
+			nsLabels := map[string]string{}
+			err = k8smgmt.CreateAllNamespaces(ctx, client, names, nsLabels)
 			if err != nil {
 				return err
 			}

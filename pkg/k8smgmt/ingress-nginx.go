@@ -142,9 +142,9 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 // SetupIngressNginx is a convenience function that creates the
 // namespace, creates the default certificate, and installs the
 // ingress-nginx controller.
-func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, certsCache *certscache.ProxyCertsCache, wildcardName string, refreshOpts RefreshCertsOpts, updateCallback edgeproto.CacheUpdateCallback, ops ...IngressNginxOp) error {
+func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, certsCache *certscache.ProxyCertsCache, wildcardName string, refreshOpts RefreshCertsOpts, namespaceLabels map[string]string, updateCallback edgeproto.CacheUpdateCallback, ops ...IngressNginxOp) error {
 	// set up namespace so we can write the default cert
-	err := EnsureNamespace(ctx, client, names, IngressNginxNamespace)
+	err := EnsureNamespace(ctx, client, names, IngressNginxNamespace, namespaceLabels)
 	if err != nil {
 		return err
 	}

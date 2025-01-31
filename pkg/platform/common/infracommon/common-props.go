@@ -24,6 +24,7 @@ import (
 
 	sh "github.com/codeskyblue/go-sh"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -116,6 +117,16 @@ func (p *InfraProperties) GetValue(key string) (string, bool) {
 		return out.Value, ok
 	}
 	return "", false
+}
+
+func (p *InfraProperties) GetJSONMapValue(key string) (map[string]string, error) {
+	p.Mux.Lock()
+	defer p.Mux.Unlock()
+	val := ""
+	if out, ok := p.Properties[key]; ok {
+		val = out.Value
+	}
+	return cloudcommon.ParseJSONMapValue(val)
 }
 
 func (p *InfraProperties) SetValue(key, value string) {

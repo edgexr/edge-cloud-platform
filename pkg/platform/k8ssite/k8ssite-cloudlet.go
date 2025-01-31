@@ -70,7 +70,11 @@ func (s *K8sSite) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudl
 	}
 	hasIngressController, ok := s.CommonPf.Properties.GetValue(cloudcommon.IngressControllerPresent)
 	if !ok || hasIngressController == "" {
-		err = k8smgmt.SetupIngressNginx(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, wildcardName, refreshOpts, updateCallback)
+		nsLabels, err := s.CommonPf.Properties.GetJSONMapValue(cloudcommon.NamespaceLabels)
+		if err != nil {
+			return false, err
+		}
+		err = k8smgmt.SetupIngressNginx(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, wildcardName, refreshOpts, nsLabels, updateCallback)
 		if err != nil {
 			return false, err
 		}

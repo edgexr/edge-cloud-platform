@@ -40,6 +40,7 @@ var Props = map[string]*edgeproto.PropertyInfo{
 	cloudcommon.IngressHTTPPort:          cloudcommon.IngressHTTPPortProp,
 	cloudcommon.IngressHTTPSPort:         cloudcommon.IngressHTTPSPortProp,
 	cloudcommon.IngressControllerPresent: cloudcommon.IngressControllerPresentProp,
+	cloudcommon.NamespaceLabels:          cloudcommon.NamespaceLabelsProp,
 }
 
 func (s *K8sSite) InitApiAccessProperties(ctx context.Context, accessApi platform.AccessApi, vars map[string]string) error {
