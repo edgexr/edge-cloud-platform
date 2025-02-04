@@ -262,22 +262,6 @@ vault write auth/approle/role/$REGION.frm period="720h" policies="$REGION.frm"
 vault read auth/approle/role/$REGION.frm/role-id
 vault write -f auth/approle/role/$REGION.frm/secret-id
 
-# set inference-mgr approle
-cat > $TMP/inference-mgr-pol.hcl <<EOF
-path "auth/approle/login" {
-  capabilities = [ "create", "read" ]
-}
-path "pki-regional/issue/$REGION" {
-  capabilities = [ "read", "update" ]
-}
-EOF
-vault policy write $REGION.inference-mgr $TMP/inference-mgr-pol.hcl
-rm $TMP/inference-mgr-pol.hcl
-vault write auth/approle/role/$REGION.inference-mgr period="720h" policies="$REGION.inference-mgr"
-# get inference-mgr app roleID and generate secretID
-vault read auth/approle/role/$REGION.inference-mgr/role-id
-vault write -f auth/approle/role/$REGION.inference-mgr/secret-id
-
 # Note: Shepherd uses CRM's Vault access creds.
 
 rm -Rf $TMP

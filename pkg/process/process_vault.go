@@ -70,22 +70,20 @@ type VaultRoles struct {
 }
 
 type VaultRegionRoles struct {
-	DmeRoleID            string `json:"dmeroleid"`
-	DmeSecretID          string `json:"dmesecretid"`
-	RotatorRoleID        string `json:"rotatorroleid"`
-	RotatorSecretID      string `json:"rotatorsecretid"`
-	CtrlRoleID           string `json:"controllerroleid"`
-	CtrlSecretID         string `json:"controllersecretid"`
-	ClusterSvcRoleID     string `json:"clustersvcroleid"`
-	ClusterSvcSecretID   string `json:"clustersvcsecretid"`
-	EdgeTurnRoleID       string `json:"edgeturnroleid"`
-	EdgeTurnSecretID     string `json:"edgeturnsecretid"`
-	AutoProvRoleID       string `json:"autoprovroleid"`
-	AutoProvSecretID     string `json:"autoprovsecretid"`
-	FrmRoleID            string `json:"frmroleid"`
-	FrmSecretID          string `json:"frmsecretid"`
-	InferenceSvcRoleID   string `json:"inferencesvcroleid"`
-	InferenceSvcSecretID string `json:"inferencesvcsecretid"`
+	DmeRoleID          string `json:"dmeroleid"`
+	DmeSecretID        string `json:"dmesecretid"`
+	RotatorRoleID      string `json:"rotatorroleid"`
+	RotatorSecretID    string `json:"rotatorsecretid"`
+	CtrlRoleID         string `json:"controllerroleid"`
+	CtrlSecretID       string `json:"controllersecretid"`
+	ClusterSvcRoleID   string `json:"clustersvcroleid"`
+	ClusterSvcSecretID string `json:"clustersvcsecretid"`
+	EdgeTurnRoleID     string `json:"edgeturnroleid"`
+	EdgeTurnSecretID   string `json:"edgeturnsecretid"`
+	AutoProvRoleID     string `json:"autoprovroleid"`
+	AutoProvSecretID   string `json:"autoprovsecretid"`
+	FrmRoleID          string `json:"frmroleid"`
+	FrmSecretID        string `json:"frmsecretid"`
 }
 
 func (s *VaultRoles) GetRegionRoles(region string) *VaultRegionRoles {
@@ -211,7 +209,6 @@ func (p *Vault) Setup(opts ...StartOp) error {
 		p.GetAppRole(region, "rotator", &roles.RotatorRoleID, &roles.RotatorSecretID, &err)
 		p.GetAppRole(region, "controller", &roles.CtrlRoleID, &roles.CtrlSecretID, &err)
 		p.GetAppRole(region, "cluster-svc", &roles.ClusterSvcRoleID, &roles.ClusterSvcSecretID, &err)
-		p.GetAppRole(region, "inference-mgr", &roles.InferenceSvcRoleID, &roles.InferenceSvcSecretID, &err)
 		p.GetAppRole(region, "edgeturn", &roles.EdgeTurnRoleID, &roles.EdgeTurnSecretID, &err)
 		p.GetAppRole(region, "autoprov", &roles.AutoProvRoleID, &roles.AutoProvSecretID, &err)
 		p.GetAppRole(region, "frm", &roles.FrmRoleID, &roles.FrmSecretID, &err)
