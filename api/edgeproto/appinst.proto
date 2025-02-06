@@ -235,6 +235,8 @@ message AppInst {
   NodeResources node_resources = 56;
   // A standalone AppInst will not share a cluster with another AppInst unless explicitly targeted to the same cluster
   bool is_standalone = 57;
+  // Vendor-specific data
+  map<string, string> tags = 100;
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

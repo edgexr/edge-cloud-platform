@@ -712,6 +712,7 @@ var ClusterInstOptionalArgs = []string{
 	"infraannotations",
 	"kubernetesversion",
 	"disabledynamicappinstplacement",
+	"tags",
 }
 var ClusterInstAliasArgs = []string{
 	"cluster=key.name",
@@ -800,6 +801,7 @@ var ClusterInstComments = map[string]string{
 	"infraannotations":                             "Annotations added by the implementing infrastructure, specify infraannotations:empty=true to clear",
 	"kubernetesversion":                            "Kubernetes version of cluster if applicable",
 	"disabledynamicappinstplacement":               "Disables dynamic placement of AppInsts on this cluster",
+	"tags":                                         "Vendor-specific data, specify tags:empty=true to clear",
 }
 var ClusterInstSpecialArgs = map[string]string{
 	"annotations":                         "StringToString",
@@ -809,6 +811,7 @@ var ClusterInstSpecialArgs = map[string]string{
 	"networks":                            "StringArray",
 	"nodepools:#.noderesources.optresmap": "StringToString",
 	"noderesources.optresmap":             "StringToString",
+	"tags":                                "StringToString",
 }
 var IdleReservableClusterInstsRequiredArgs = []string{}
 var IdleReservableClusterInstsOptionalArgs = []string{
@@ -977,6 +980,7 @@ var UpdateClusterInstOptionalArgs = []string{
 	"nodepools:#.scalable",
 	"infraannotations",
 	"disabledynamicappinstplacement",
+	"tags",
 }
 var ShowClusterResourceUsageRequiredArgs = []string{}
 var ShowClusterResourceUsageOptionalArgs = []string{
@@ -1020,4 +1024,5 @@ var ShowClusterResourceUsageOptionalArgs = []string{
 	"infraannotations",
 	"kubernetesversion",
 	"disabledynamicappinstplacement",
+	"tags",
 }

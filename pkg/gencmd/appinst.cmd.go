@@ -903,6 +903,7 @@ var AppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"tags",
 }
 var AppInstAliasArgs = []string{
 	"appinstname=key.name",
@@ -1020,6 +1021,7 @@ var AppInstComments = map[string]string{
 	"noderesources.infranodeflavor":                         "Infrastructure specific node flavor",
 	"noderesources.externalvolumesize":                      "Size of external volume to be attached to nodes. This is for the root partition",
 	"isstandalone":                                          "A standalone AppInst will not share a cluster with another AppInst unless explicitly targeted to the same cluster",
+	"tags":                                                  "Vendor-specific data, specify tags:empty=true to clear",
 }
 var AppInstSpecialArgs = map[string]string{
 	"annotations":        "StringToString",
@@ -1032,6 +1034,7 @@ var AppInstSpecialArgs = map[string]string{
 	"kubernetesresources.gpupool.totaloptres":            "StringToString",
 	"noderesources.optresmap":                            "StringToString",
 	"runtimeinfo.containerids":                           "StringArray",
+	"tags":                                               "StringToString",
 }
 var AppInstRuntimeRequiredArgs = []string{}
 var AppInstRuntimeOptionalArgs = []string{
@@ -1321,6 +1324,7 @@ var CreateAppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"tags",
 }
 var DeleteAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1374,6 +1378,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"tags",
 }
 var RefreshAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1423,6 +1428,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"tags",
 }
 var UpdateAppInstRequiredArgs = []string{
 	"appinstname",
@@ -1471,4 +1477,5 @@ var UpdateAppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"tags",
 }

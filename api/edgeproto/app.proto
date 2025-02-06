@@ -275,6 +275,8 @@ message App {
   bool manages_own_namespaces = 55;
   // Internal compatibility version
   uint32 compatibility_version = 56 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+  // Vendor-specific data
+  map<string, string> tags = 100;
 
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;
