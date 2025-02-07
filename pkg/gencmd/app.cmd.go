@@ -650,6 +650,84 @@ func ShowZonesForAppDeployments(c *cli.Command, data []edgeproto.DeploymentZoneR
 	}
 }
 
+var ShowInferenceModelCmd = &cli.Command{
+	Use:          "ShowInferenceModel",
+	RequiredArgs: strings.Join(ShowInferenceModelRequiredArgs, " "),
+	OptionalArgs: strings.Join(ShowInferenceModelOptionalArgs, " "),
+	AliasArgs:    strings.Join(AppAliasArgs, " "),
+	SpecialArgs:  &AppSpecialArgs,
+	Comments:     AppComments,
+	ReqData:      &edgeproto.App{},
+	ReplyData:    &edgeproto.App{},
+	Run:          runShowInferenceModel,
+}
+
+func runShowInferenceModel(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.App)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowInferenceModel(c, obj)
+}
+
+func ShowInferenceModel(c *cli.Command, in *edgeproto.App) error {
+	if AppApiCmd == nil {
+		return fmt.Errorf("AppApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := AppApiCmd.ShowInferenceModel(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowInferenceModel failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.App, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowInferenceModel recv failed: %s", errstr)
+		}
+		AppHideTags(obj)
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowInferenceModels(c *cli.Command, data []edgeproto.App, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowInferenceModel %v\n", data[ii])
+		myerr := ShowInferenceModel(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var AppApiCmds = []*cobra.Command{
 	CreateAppCmd.GenCmd(),
 	DeleteAppCmd.GenCmd(),
@@ -660,6 +738,7 @@ var AppApiCmds = []*cobra.Command{
 	AddAppAlertPolicyCmd.GenCmd(),
 	RemoveAppAlertPolicyCmd.GenCmd(),
 	ShowZonesForAppDeploymentCmd.GenCmd(),
+	ShowInferenceModelCmd.GenCmd(),
 }
 
 var AppKeyRequiredArgs = []string{}
@@ -1310,6 +1389,85 @@ var ShowAppRequiredArgs = []string{
 	"appvers",
 }
 var ShowAppOptionalArgs = []string{
+	"imagepath",
+	"imagetype",
+	"accessports",
+	"defaultflavor",
+	"authpublickey",
+	"command",
+	"commandargs",
+	"annotations",
+	"deployment",
+	"deploymentmanifest",
+	"deploymentgenerator",
+	"androidpackagename",
+	"configs:#.kind",
+	"configs:#.config",
+	"scalewithcluster",
+	"internalports",
+	"revision",
+	"officialfqdn",
+	"md5sum",
+	"accesstype",
+	"autoprovpolicies",
+	"templatedelimiter",
+	"skiphcports",
+	"trusted",
+	"requiredoutboundconnections:#.protocol",
+	"requiredoutboundconnections:#.portrangemin",
+	"requiredoutboundconnections:#.portrangemax",
+	"requiredoutboundconnections:#.remotecidr",
+	"allowserverless",
+	"serverlessconfig.vcpus",
+	"serverlessconfig.ram",
+	"serverlessconfig.minreplicas",
+	"serverlessconfig.gpuconfig.type",
+	"serverlessconfig.gpuconfig.model",
+	"serverlessconfig.gpuconfig.numgpu",
+	"serverlessconfig.gpuconfig.ram",
+	"vmappostype",
+	"alertpolicies",
+	"qossessionprofile",
+	"qossessionduration",
+	"globalid",
+	"envvars",
+	"secretenvvars",
+	"kubernetesresources.cpupool.totalvcpus",
+	"kubernetesresources.cpupool.totalmemory",
+	"kubernetesresources.cpupool.totaldisk",
+	"kubernetesresources.cpupool.totaloptres",
+	"kubernetesresources.cpupool.topology.minnodevcpus",
+	"kubernetesresources.cpupool.topology.minnodememory",
+	"kubernetesresources.cpupool.topology.minnodedisk",
+	"kubernetesresources.cpupool.topology.minnodeoptres",
+	"kubernetesresources.cpupool.topology.minnumberofnodes",
+	"kubernetesresources.gpupool.totalvcpus",
+	"kubernetesresources.gpupool.totalmemory",
+	"kubernetesresources.gpupool.totaldisk",
+	"kubernetesresources.gpupool.totaloptres",
+	"kubernetesresources.gpupool.topology.minnodevcpus",
+	"kubernetesresources.gpupool.topology.minnodememory",
+	"kubernetesresources.gpupool.topology.minnodedisk",
+	"kubernetesresources.gpupool.topology.minnodeoptres",
+	"kubernetesresources.gpupool.topology.minnumberofnodes",
+	"kubernetesresources.minkubernetesversion",
+	"noderesources.vcpus",
+	"noderesources.ram",
+	"noderesources.disk",
+	"noderesources.optresmap",
+	"noderesources.infranodeflavor",
+	"noderesources.externalvolumesize",
+	"objid",
+	"appannotations",
+	"isstandalone",
+	"managesownnamespaces",
+	"tags",
+}
+var ShowInferenceModelRequiredArgs = []string{}
+var ShowInferenceModelOptionalArgs = []string{
+	"apporg",
+	"appname",
+	"appvers",
 	"imagepath",
 	"imagetype",
 	"accessports",
