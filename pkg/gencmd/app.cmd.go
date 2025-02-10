@@ -767,6 +767,7 @@ var AppOptionalArgs = []string{
 	"appannotations",
 	"isstandalone",
 	"managesownnamespaces",
+	"tags",
 }
 var AppAliasArgs = []string{
 	"apporg=key.organization",
@@ -860,6 +861,7 @@ var AppComments = map[string]string{
 	"isstandalone":                                          "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
 	"managesownnamespaces":                                  "Specifies if the kubernetes application manages creating and deleting its own namespaces. If true, it is disallowed from deployment to multi-tenant clusters, and it is up to the application developer to manage namespace conflicts if they deploy multiple applications to the same cluster. If false, each application instance is deployed to its own namespace set by the platform.",
 	"compatibilityversion":                                  "Internal compatibility version",
+	"tags":                                                  "Vendor-specific data, specify tags:empty=true to clear",
 }
 var AppSpecialArgs = map[string]string{
 	"alertpolicies":    "StringArray",
@@ -874,6 +876,7 @@ var AppSpecialArgs = map[string]string{
 	"kubernetesresources.gpupool.totaloptres":            "StringToString",
 	"noderesources.optresmap":                            "StringToString",
 	"secretenvvars":                                      "StringToString",
+	"tags":                                               "StringToString",
 }
 var ServerlessConfigRequiredArgs = []string{}
 var ServerlessConfigOptionalArgs = []string{
@@ -1030,6 +1033,7 @@ var DeploymentZoneRequestOptionalArgs = []string{
 	"app.isstandalone",
 	"app.managesownnamespaces",
 	"app.compatibilityversion",
+	"app.tags",
 	"dryrundeploy",
 	"numnodes",
 }
@@ -1121,6 +1125,7 @@ var DeploymentZoneRequestComments = map[string]string{
 	"app.isstandalone":                                          "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
 	"app.managesownnamespaces":                                  "Specifies if the kubernetes application manages creating and deleting its own namespaces. If true, it is disallowed from deployment to multi-tenant clusters, and it is up to the application developer to manage namespace conflicts if they deploy multiple applications to the same cluster. If false, each application instance is deployed to its own namespace set by the platform.",
 	"app.compatibilityversion":                                  "Internal compatibility version",
+	"app.tags":                                                  "Vendor-specific data",
 	"dryrundeploy":                                              "Attempt to qualify zones resources for deployment",
 	"numnodes":                                                  "Optional number of worker VMs in dry run K8s Cluster, default = 2",
 }
@@ -1137,6 +1142,7 @@ var DeploymentZoneRequestSpecialArgs = map[string]string{
 	"app.kubernetesresources.gpupool.totaloptres":            "StringToString",
 	"app.noderesources.optresmap":                            "StringToString",
 	"app.secretenvvars":                                      "StringToString",
+	"app.tags":                                               "StringToString",
 }
 var CreateAppRequiredArgs = []string{
 	"apporg",
@@ -1216,6 +1222,7 @@ var CreateAppOptionalArgs = []string{
 	"appannotations",
 	"isstandalone",
 	"managesownnamespaces",
+	"tags",
 }
 var DeleteAppRequiredArgs = []string{
 	"apporg",
@@ -1295,6 +1302,7 @@ var DeleteAppOptionalArgs = []string{
 	"appannotations",
 	"isstandalone",
 	"managesownnamespaces",
+	"tags",
 }
 var ShowAppRequiredArgs = []string{
 	"apporg",
@@ -1374,4 +1382,5 @@ var ShowAppOptionalArgs = []string{
 	"appannotations",
 	"isstandalone",
 	"managesownnamespaces",
+	"tags",
 }
