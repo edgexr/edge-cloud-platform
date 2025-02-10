@@ -44,6 +44,7 @@ var NodeTypeEdgeTurn = "edgeturn"
 var NodeTypeMC = "mc"
 var NodeTypeAutoProv = "autoprov"
 var NodeTypeFRM = "frm"
+var NodeTypeAddonMgr = "addonmgr"
 
 // Node tracks all the nodes connected via notify, and handles common
 // requests over all nodes.

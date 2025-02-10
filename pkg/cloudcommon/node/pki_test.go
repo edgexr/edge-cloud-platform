@@ -790,6 +790,8 @@ func getVaultConfig(nodetype, region, addr string, vroles *process.VaultRoles) *
 		case node.NodeTypeController:
 			roleid = rr.CtrlRoleID
 			secretid = rr.CtrlSecretID
+		case node.NodeTypeAddonMgr:
+			fallthrough
 		case node.NodeTypeClusterSvc:
 			roleid = rr.ClusterSvcRoleID
 			secretid = rr.ClusterSvcSecretID
