@@ -45,16 +45,8 @@ func (s *Platform) RunClusterDeleteCommand(ctx context.Context, clusterName stri
 	return nil
 }
 
-var allowedClusterUpdateFields = edgeproto.NewFieldMap(map[string]struct{}{
-	edgeproto.ClusterInstFieldNodePoolsNumNodes: {},
-})
-
 func (s *Platform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
-	// only allow node scaling
-	if err := clusterInst.ValidateUpdateFieldsCustom(allowedClusterUpdateFields); err != nil {
-		return nil, err
-	}
-
+	// only perform node scaling
 	fmap := edgeproto.MakeFieldMap(clusterInst.Fields)
 	if fmap.Has(edgeproto.ClusterInstFieldNodePoolsNumNodes) {
 		err := s.osmClient.ScaleCluster(ctx, clusterName, clusterInst)

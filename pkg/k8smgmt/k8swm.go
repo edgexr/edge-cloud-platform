@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	ssh "github.com/edgexr/golang-ssh"
@@ -52,6 +53,7 @@ func (s *K8SWorkloadMgr) ApplyAppInstWorkload(ctx context.Context, accessAPI pla
 			return
 		}
 		// undo changes
+		ctx = context.WithValue(ctx, cloudcommon.ContextKeyUndo, true)
 		log.SpanLog(ctx, log.DebugLevelInfra, "undoing createOrUpdateAppInst due to failure", "err", reterr)
 		undoErr := s.DeleteAppInstWorkload(ctx, accessAPI, client, names, clusterInst, app, appInst, WithAppInstUndo())
 		log.SpanLog(ctx, log.DebugLevelInfra, "undo createOrUpdateAppInst done", "undoErr", undoErr)
@@ -93,16 +95,23 @@ func (s *K8SWorkloadMgr) DeleteAppInstWorkload(ctx context.Context, accessAPI pl
 	if err := WriteDeploymentManifestToFile(ctx, accessAPI, client, names, app, appInst); err != nil {
 		return err
 	}
+	undo := false
+	if ctx.Value(cloudcommon.ContextKeyUndo) != nil {
+		undo = true
+	}
+
 	kconfArg := names.GetTenantKconfArg()
 	configDir := GetConfigDirName(names)
 	configName := getConfigFileName(names, appInst, DeploymentManifestSuffix)
 	file := configDir + "/" + configName
 	cmd := fmt.Sprintf("kubectl %s delete -f %s", kconfArg, file)
-	log.SpanLog(ctx, log.DebugLevelInfra, "deleting app", "name", names.AppName, "cmd", cmd)
+	log.SpanLog(ctx, log.DebugLevelInfra, "deleting appinst", "name", names.AppInstName, "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
 		if strings.Contains(string(out), "not found") {
 			log.SpanLog(ctx, log.DebugLevelInfra, "delete appinst workload ignoring not found error", "name", names.AppName, "err", err)
+		} else if undo {
+			log.SpanLog(ctx, log.DebugLevelInfra, "delete appinst workload ignoring error because undo", "name", names.AppName, "err", err)
 		} else {
 			return fmt.Errorf("error deleting kubernetes app, %s, %s, %s, %v", names.AppName, cmd, out, err)
 		}
@@ -113,7 +122,11 @@ func (s *K8SWorkloadMgr) DeleteAppInstWorkload(ctx context.Context, accessAPI pl
 	// wait to be run in parallel with other tasks
 	err = WaitForAppInst(ctx, client, names, app, WaitDeleted)
 	if err != nil {
-		return err
+		if undo {
+			log.SpanLog(ctx, log.DebugLevelInfra, "ignoring wait delete failed error because undo", "err", err)
+		} else {
+			return err
+		}
 	}
 	// delete manifest file
 	return CleanupManifest(ctx, client, names, appInst, DeploymentManifestSuffix)

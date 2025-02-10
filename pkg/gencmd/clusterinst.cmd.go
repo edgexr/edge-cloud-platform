@@ -673,8 +673,8 @@ var ClusterInstRequiredArgs = []string{
 	"clusterorg",
 }
 var ClusterInstOptionalArgs = []string{
-	"zonekey.organization",
-	"zonekey.name",
+	"zoneorg",
+	"zone",
 	"zonekey.federatedorganization",
 	"flavor",
 	"crmoverride",
@@ -720,6 +720,8 @@ var ClusterInstAliasArgs = []string{
 	"cloudletorg=cloudletkey.organization",
 	"cloudlet=cloudletkey.name",
 	"federatedorg=cloudletkey.federatedorganization",
+	"zoneorg=zonekey.organization",
+	"zone=zonekey.name",
 	"flavor=flavor.name",
 }
 var ClusterInstComments = map[string]string{
@@ -729,8 +731,8 @@ var ClusterInstComments = map[string]string{
 	"cloudletorg":                       "Organization of the cloudlet site",
 	"cloudlet":                          "Name of the cloudlet",
 	"federatedorg":                      "Federated operator organization who shared this cloudlet",
-	"zonekey.organization":              "Organization owner of the Zone",
-	"zonekey.name":                      "Name of the Zone",
+	"zoneorg":                           "Organization owner of the Zone",
+	"zone":                              "Name of the Zone",
 	"zonekey.federatedorganization":     "Federated operator organization who shared this Zone",
 	"flavor":                            "Flavor name",
 	"liveness":                          "Liveness of instance (see Liveness), one of Unknown, Static, Dynamic, Autoprov",
@@ -964,8 +966,8 @@ var UpdateClusterInstRequiredArgs = []string{
 	"clusterorg",
 }
 var UpdateClusterInstOptionalArgs = []string{
-	"zonekey.organization",
-	"zonekey.name",
+	"zoneorg",
+	"zone",
 	"zonekey.federatedorganization",
 	"crmoverride",
 	"numnodes",
@@ -986,8 +988,8 @@ var ShowClusterResourceUsageRequiredArgs = []string{}
 var ShowClusterResourceUsageOptionalArgs = []string{
 	"cluster",
 	"clusterorg",
-	"zonekey.organization",
-	"zonekey.name",
+	"zoneorg",
+	"zone",
 	"zonekey.federatedorganization",
 	"flavor",
 	"crmoverride",

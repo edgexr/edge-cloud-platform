@@ -30,6 +30,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/kindinfra"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/localhost"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/mock"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/mockmanagedk8s"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/openstack"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmk8s"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/vcd"
@@ -60,6 +61,7 @@ var builders = []platform.PlatformBuilder{
 	k8ssite.NewPlatform,
 	kindinfra.NewPlatform,
 	mock.NewPlatform,
+	mockmanagedk8s.NewPlatform,
 	localhost.NewPlatform,
 	osmk8s.NewPlatform,
 }

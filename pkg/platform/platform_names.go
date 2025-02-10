@@ -41,6 +41,7 @@ const (
 	PlatformTypeKind              = "kind" // kubernetes in docker
 	PlatformTypeKindInfra         = "kindinfra"
 	PlatformTypeMock              = "mock"
+	PlatformTypeMockManagedK8S    = "mockmanagedk8s"
 	PlatformTypeOpenstack         = "openstack"
 	PlatformTypeVCD               = "vcd"
 	PlatformTypeVMPool            = "vmpool"

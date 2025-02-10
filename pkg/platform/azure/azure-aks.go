@@ -95,6 +95,9 @@ func (a *AzurePlatform) createOrUpdateCluster(ctx context.Context, clusterName s
 			DNSPrefix:  to.Ptr(clusterName),
 		},
 	}
+	if clusterInst.KubernetesVersion != "" {
+		managedCluster.Properties.KubernetesVersion = &clusterInst.KubernetesVersion
+	}
 	pollerResp, err := managedClustersClient.BeginCreateOrUpdate(ctx, resourceGroup, clusterName, managedCluster, nil)
 	if err != nil {
 		if azerr, ok := err.(*azcore.ResponseError); ok {

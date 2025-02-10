@@ -306,6 +306,10 @@ var RootLBHostname = "shared"
 const IdAlphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 const IdAlphabetLC = "0123456789abcdefghijklmnopqrstuvwxyz"
 
+type CommonContextKey string
+
+var ContextKeyUndo = CommonContextKey("undo")
+
 // Fully Qualified Domain Names (FQDNs) primarily come in the
 // the following format of 4 "labels" (where domain can actually
 // be more than one label itself, i.e. edgecloud.net):
