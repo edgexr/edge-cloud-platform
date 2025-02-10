@@ -57,6 +57,7 @@ func getTestClusterInst() edgeproto.ClusterInst {
 				InfraNodeFlavor: "Standard_A2_v2",
 			},
 		}},
+		KubernetesVersion: "1.29",
 	}
 }
 

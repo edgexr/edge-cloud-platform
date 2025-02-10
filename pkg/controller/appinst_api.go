@@ -1542,11 +1542,7 @@ func (s *AppInstApi) refreshAppInstInternal(cctx *CallContext, key edgeproto.App
 			}
 			api := edgeproto.NewAppInstPlatformAPIClient(conn)
 			curr.Fields = []string{edgeproto.AppInstFieldState}
-			if updateDiffFields != nil {
-				for _, k := range updateDiffFields.Fields() {
-					curr.Fields = append(curr.Fields, k)
-				}
-			}
+			curr.Fields = updateDiffFields.Fields()
 			outStream, err := api.ApplyAppInst(reqCtx, &curr)
 			if err != nil {
 				return false, cloudcommon.GRPCErrorUnwrap(err)

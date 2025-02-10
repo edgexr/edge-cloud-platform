@@ -471,6 +471,7 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 			err := fmt.Errorf("Create App Inst failed: %s", err)
 			sender.SendState(edgeproto.TrackedState_CREATE_ERROR, edgeproto.WithStateError(err))
 			log.SpanLog(ctx, log.DebugLevelInfra, "can't create app inst", "error", err, "key", new.Key)
+			ctx = context.WithValue(ctx, cloudcommon.ContextKeyUndo, true)
 			derr := pf.DeleteAppInst(ctx, &clusterInst, &app, new, updateAppCacheCallback)
 			if derr != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "can't cleanup app inst", "error", derr, "key", new.Key)

@@ -30,7 +30,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/restclient"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -206,23 +205,15 @@ func createAppArchive(app *edgeproto.App) ([]byte, error) {
 	name := getOSMAppName(app)
 	now := time.Now()
 
-	// To be able to deploy the manifest to a namespace,
-	// it must be parameterized with a target_ns variable.
-	// Otherwise there's no other way to deploy to a specific
-	// namespace.
-	objs, _, err := cloudcommon.DecodeK8SYaml(app.DeploymentManifest)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse deployment manifest, %s", err)
-	}
-	for ii := range objs {
-		if metaObj, ok := objs[ii].(metav1.Object); ok {
-			metaObj.SetNamespace("${target_ns}")
-		}
-	}
-	mf, err := cloudcommon.EncodeK8SYaml(objs)
-	if err != nil {
-		return nil, err
-	}
+	// To deploy to a specific namespace, we can either
+	// parameterize the manifest with "namespace: ${target_ns}"
+	// and then add the target_ns to the postBuild section in
+	// the kustomize.toolkit.fluxcd.io/v1 manifest,
+	// or we can specify the targetNamespace parameter in the
+	// kustomize.toolkit.fluxcd.io/v1 manifest.
+	// We're doing the latter to avoid having to modify the
+	// app manifest.
+	mf := app.DeploymentManifest
 	// write manifest dir
 	manifestDir := tar.Header{
 		Name:     "./manifests/",
@@ -304,18 +295,16 @@ var appT = template.Must(template.New("appT").Parse(appTemplate))
 var appTemplate = `apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: {{ .Name }}
+  name: ${APPNAME}
   namespace: ${TARGET_NS}
 spec:
   interval: 1h0m0s
   path: ./apps/{{ .Name }}/manifests
   prune: true
+  targetNamespace: ${TARGET_NS}
   wait: true
   sourceRef:
     kind: GitRepository
     name: sw-catalogs
     namespace: flux-system
-  postBuild:
-    substitute:
-      target_ns: ${TARGET_NS}
 `

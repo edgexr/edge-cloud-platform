@@ -139,12 +139,17 @@ func (s *OSMClient) DeleteCluster(ctx context.Context, clusterName string, clust
 	if err != nil {
 		return err
 	}
-	resp, err := client.Deletek8sClusterWithResponse(ctx, id)
+	resp, err := client.Deletek8sCluster(ctx, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete cluster %s, %s", clusterName, err)
 	}
-	if resp.StatusCode() != http.StatusAccepted {
-		return fmt.Errorf("failed to delete cluster %s (%d), %s", clusterName, resp.StatusCode(), string(resp.Body))
+	if resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusNoContent {
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("failed to delete cluster, got status %d, failed to read response body, %s", resp.StatusCode, err)
+		}
+		return fmt.Errorf("failed to delete cluster %s (%d), %s", clusterName, resp.StatusCode, string(body))
 	}
 	// wait for cluster to be deleted
 	if err := s.waitForClusterDone(ctx, clusterName, id, cloudcommon.Delete, ClusterActionTimeout, WaitForClusterDoneInterval); err != nil {
@@ -227,6 +232,7 @@ func (s *OSMClient) RegisterCluster(ctx context.Context, clusterName, kubeconfig
 	}
 	rdr := bytes.NewReader(bodyData)
 
+	log.SpanLog(ctx, log.DebugLevelInfra, "register existing cluster with OSM", "clusterName", clusterName, "req", string(bodyData))
 	resp, err := client.Registerk8sClusterWithBodyWithResponse(ctx, "application/json", rdr)
 	if err != nil {
 		return "", fmt.Errorf("failed to register cluster %s, %s", clusterName, err)
