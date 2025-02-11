@@ -40,17 +40,31 @@ func getOSMAppName(app *edgeproto.App) string {
 	return NameSanitize(fmt.Sprintf("%s-%s%s", app.Key.Organization, app.Key.Name, app.Key.Version))
 }
 
+func getOSMAppDesc(app *edgeproto.App) string {
+	// return a desc that can be used to track the state
+	// of the app and if the OKA needs to be recreated.
+	return fmt.Sprintf("%s.%s", app.ObjId, app.Revision)
+}
+
 func (s *OSMClient) CreateApp(ctx context.Context, app *edgeproto.App) (*OKAApp, error) {
 	client, err := s.GetClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 	name := getOSMAppName(app)
+	desc := getOSMAppDesc(app)
 
 	// check if already exists
 	oka, err := s.GetApp(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to lookup app %s, %s", name, err)
+	}
+	if oka != nil && oka.Description != desc {
+		log.SpanLog(ctx, log.DebugLevelInfra, "create OKA app already exists but marker has changed, deleting and recreating", "name", name, "existing", oka.Description, "desired", desc)
+		if err := s.DeleteApp(ctx, app); err != nil {
+			return nil, fmt.Errorf("failed to delete old version of app %s [%s], %s", name, oka.Description, err)
+		}
+		oka = nil
 	}
 	if oka == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "create new OKA app", "name", name)
@@ -63,7 +77,7 @@ func (s *OSMClient) CreateApp(ctx context.Context, app *edgeproto.App) (*OKAApp,
 		mpfd := restclient.NewMultiPartFormData()
 		mpfd.AddField("name", name)
 		mpfd.AddField("profile_type", "app_profiles")
-		mpfd.AddField("description", name)
+		mpfd.AddField("description", desc)
 		mpfd.AddFileData("package", name+".tar.gz", "application/gzip", archive)
 
 		buf := bytes.Buffer{}

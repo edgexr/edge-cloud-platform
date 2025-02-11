@@ -98,9 +98,13 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 	for _, op := range ops {
 		op(opts)
 	}
+	// This annotation is needed for ingress to work if deploying
+	// on Azure
+	azureArgs := `--set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz`
+
 	// This specifies a default certificate, which should be a
 	// wildcard cert for the entire cluster/cloudlet.
-	cmd := fmt.Sprintf("helm %s upgrade --install %s %s --repo %s --namespace %s --create-namespace --version %s --set controller.extraArgs.default-ssl-certificate=%s/%s %s", names.KconfArg, IngressNginxName, IngressNginxChart, IngressNginxRepoURL, IngressNginxNamespace, IngressNginxChartVersion, IngressNginxNamespace, IngressDefaultCertSecret, strings.Join(opts.helmSetCmds, " "))
+	cmd := fmt.Sprintf("helm %s upgrade --install %s %s --repo %s --namespace %s --create-namespace --version %s --set controller.extraArgs.default-ssl-certificate=%s/%s %s %s", names.KconfArg, IngressNginxName, IngressNginxChart, IngressNginxRepoURL, IngressNginxNamespace, IngressNginxChartVersion, IngressNginxNamespace, IngressDefaultCertSecret, azureArgs, strings.Join(opts.helmSetCmds, " "))
 	log.SpanLog(ctx, log.DebugLevelInfra, "install ingress nginx", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
