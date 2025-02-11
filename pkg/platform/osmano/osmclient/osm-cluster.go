@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -137,6 +138,10 @@ func (s *OSMClient) DeleteCluster(ctx context.Context, clusterName string, clust
 	}
 	id, err := s.GetClusterID(ctx, clusterName, clusterInst)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			log.SpanLog(ctx, log.DebugLevelInfra, "cluster not found, skipping delete", "clusterName", clusterName)
+			return nil
+		}
 		return err
 	}
 	resp, err := client.Deletek8sCluster(ctx, id)
