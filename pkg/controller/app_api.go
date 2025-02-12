@@ -918,6 +918,17 @@ func (s *AppApi) ShowApp(in *edgeproto.App, cb edgeproto.AppApi_ShowAppServer) e
 	return err
 }
 
+func (s *AppApi) ShowInferenceModel(in *edgeproto.App, cb edgeproto.AppApi_ShowInferenceModelServer) error {
+	err := s.cache.Show(in, func(obj *edgeproto.App) error {
+		if len(obj.Tags) == 0 {
+			return nil
+		}
+		err := cb.Send(obj)
+		return err
+	})
+	return err
+}
+
 func (s *AppApi) AddAppAutoProvPolicy(ctx context.Context, in *edgeproto.AppAutoProvPolicy) (*edgeproto.Result, error) {
 	cur := edgeproto.App{}
 	err := s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {

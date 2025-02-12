@@ -439,4 +439,18 @@ service AppApi {
     option (protogen.mc2_custom_authz) = true;
     option (protogen.stream_out_incremental) = true;
   }
+
+  // Show Inference Model Applications.
+  rpc ShowInferenceModel(App) returns (stream App) {
+    option (google.api.http) = {
+      post: "/show/inferencemodel"
+      body: "*"
+    };
+    option (protogen.non_standard_show) = true;
+    option (protogen.mc2_api) = "ResourceApps,ActionView,Key.Organization";
+    option (protogen.mc2_show_custom_authz) = true;
+    option (protogen.method_noconfig) = "UpdateListAction";
+    option (protogen.method_not_required) = "Key.Name,Key.Organization,Key.Version";
+  }
+
 }
