@@ -321,7 +321,7 @@ func request_AppApi_ShowZonesForAppDeployment_0(ctx context.Context, marshaler r
 
 }
 
-func request_AppApi_ShowInferenceModel_0(ctx context.Context, marshaler runtime.Marshaler, client AppApiClient, req *http.Request, pathParams map[string]string) (AppApi_ShowInferenceModelClient, runtime.ServerMetadata, error) {
+func request_AppApi_ShowPublicApp_0(ctx context.Context, marshaler runtime.Marshaler, client AppApiClient, req *http.Request, pathParams map[string]string) (AppApi_ShowPublicAppClient, runtime.ServerMetadata, error) {
 	var protoReq App
 	var metadata runtime.ServerMetadata
 
@@ -333,7 +333,7 @@ func request_AppApi_ShowInferenceModel_0(ctx context.Context, marshaler runtime.
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.ShowInferenceModel(ctx, &protoReq)
+	stream, err := client.ShowPublicApp(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -527,7 +527,7 @@ func RegisterAppApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		return
 	})
 
-	mux.Handle("POST", pattern_AppApi_ShowInferenceModel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_AppApi_ShowPublicApp_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -755,7 +755,7 @@ func RegisterAppApiHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 
 	})
 
-	mux.Handle("POST", pattern_AppApi_ShowInferenceModel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_AppApi_ShowPublicApp_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
@@ -764,14 +764,14 @@ func RegisterAppApiHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_AppApi_ShowInferenceModel_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_AppApi_ShowPublicApp_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_AppApi_ShowInferenceModel_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_AppApi_ShowPublicApp_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -797,7 +797,7 @@ var (
 
 	pattern_AppApi_ShowZonesForAppDeployment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"showmapping", "deploymentzones"}, "", runtime.AssumeColonVerbOpt(true)))
 
-	pattern_AppApi_ShowInferenceModel_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "inferencemodel"}, "", runtime.AssumeColonVerbOpt(true)))
+	pattern_AppApi_ShowPublicApp_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "publicapps"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -819,5 +819,5 @@ var (
 
 	forward_AppApi_ShowZonesForAppDeployment_0 = runtime.ForwardResponseStream
 
-	forward_AppApi_ShowInferenceModel_0 = runtime.ForwardResponseStream
+	forward_AppApi_ShowPublicApp_0 = runtime.ForwardResponseStream
 )

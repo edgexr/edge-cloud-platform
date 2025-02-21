@@ -650,19 +650,19 @@ func ShowZonesForAppDeployments(c *cli.Command, data []edgeproto.DeploymentZoneR
 	}
 }
 
-var ShowInferenceModelCmd = &cli.Command{
-	Use:          "ShowInferenceModel",
-	RequiredArgs: strings.Join(ShowInferenceModelRequiredArgs, " "),
-	OptionalArgs: strings.Join(ShowInferenceModelOptionalArgs, " "),
+var ShowPublicAppCmd = &cli.Command{
+	Use:          "ShowPublicApp",
+	RequiredArgs: strings.Join(ShowPublicAppRequiredArgs, " "),
+	OptionalArgs: strings.Join(ShowPublicAppOptionalArgs, " "),
 	AliasArgs:    strings.Join(AppAliasArgs, " "),
 	SpecialArgs:  &AppSpecialArgs,
 	Comments:     AppComments,
 	ReqData:      &edgeproto.App{},
 	ReplyData:    &edgeproto.App{},
-	Run:          runShowInferenceModel,
+	Run:          runShowPublicApp,
 }
 
-func runShowInferenceModel(c *cli.Command, args []string) error {
+func runShowPublicApp(c *cli.Command, args []string) error {
 	if cli.SilenceUsage {
 		c.CobraCmd.SilenceUsage = true
 	}
@@ -671,22 +671,22 @@ func runShowInferenceModel(c *cli.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	return ShowInferenceModel(c, obj)
+	return ShowPublicApp(c, obj)
 }
 
-func ShowInferenceModel(c *cli.Command, in *edgeproto.App) error {
+func ShowPublicApp(c *cli.Command, in *edgeproto.App) error {
 	if AppApiCmd == nil {
 		return fmt.Errorf("AppApi client not initialized")
 	}
 	ctx := context.Background()
-	stream, err := AppApiCmd.ShowInferenceModel(ctx, in)
+	stream, err := AppApiCmd.ShowPublicApp(ctx, in)
 	if err != nil {
 		errstr := err.Error()
 		st, ok := status.FromError(err)
 		if ok {
 			errstr = st.Message()
 		}
-		return fmt.Errorf("ShowInferenceModel failed: %s", errstr)
+		return fmt.Errorf("ShowPublicApp failed: %s", errstr)
 	}
 
 	objs := make([]*edgeproto.App, 0)
@@ -701,7 +701,7 @@ func ShowInferenceModel(c *cli.Command, in *edgeproto.App) error {
 			if ok {
 				errstr = st.Message()
 			}
-			return fmt.Errorf("ShowInferenceModel recv failed: %s", errstr)
+			return fmt.Errorf("ShowPublicApp recv failed: %s", errstr)
 		}
 		AppHideTags(obj)
 		objs = append(objs, obj)
@@ -714,13 +714,13 @@ func ShowInferenceModel(c *cli.Command, in *edgeproto.App) error {
 }
 
 // this supports "Create" and "Delete" commands on ApplicationData
-func ShowInferenceModels(c *cli.Command, data []edgeproto.App, err *error) {
+func ShowPublicApps(c *cli.Command, data []edgeproto.App, err *error) {
 	if *err != nil {
 		return
 	}
 	for ii, _ := range data {
-		fmt.Printf("ShowInferenceModel %v\n", data[ii])
-		myerr := ShowInferenceModel(c, &data[ii])
+		fmt.Printf("ShowPublicApp %v\n", data[ii])
+		myerr := ShowPublicApp(c, &data[ii])
 		if myerr != nil {
 			*err = myerr
 			break
@@ -738,7 +738,7 @@ var AppApiCmds = []*cobra.Command{
 	AddAppAlertPolicyCmd.GenCmd(),
 	RemoveAppAlertPolicyCmd.GenCmd(),
 	ShowZonesForAppDeploymentCmd.GenCmd(),
-	ShowInferenceModelCmd.GenCmd(),
+	ShowPublicAppCmd.GenCmd(),
 }
 
 var AppKeyRequiredArgs = []string{}
@@ -1463,8 +1463,8 @@ var ShowAppOptionalArgs = []string{
 	"managesownnamespaces",
 	"tags",
 }
-var ShowInferenceModelRequiredArgs = []string{}
-var ShowInferenceModelOptionalArgs = []string{
+var ShowPublicAppRequiredArgs = []string{}
+var ShowPublicAppOptionalArgs = []string{
 	"apporg",
 	"appname",
 	"appvers",

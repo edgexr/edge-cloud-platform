@@ -440,10 +440,10 @@ service AppApi {
     option (protogen.stream_out_incremental) = true;
   }
 
-  // Show Inference Model Applications.
-  rpc ShowInferenceModel(App) returns (stream App) {
+  // Show Public Applications. Lists all public application definitions.
+  rpc ShowPublicApp(App) returns (stream App) {
     option (google.api.http) = {
-      post: "/show/inferencemodel"
+      post: "/show/publicapps"
       body: "*"
     };
     option (protogen.non_standard_show) = true;

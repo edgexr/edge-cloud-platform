@@ -918,9 +918,9 @@ func (s *AppApi) ShowApp(in *edgeproto.App, cb edgeproto.AppApi_ShowAppServer) e
 	return err
 }
 
-func (s *AppApi) ShowInferenceModel(in *edgeproto.App, cb edgeproto.AppApi_ShowInferenceModelServer) error {
+func (s *AppApi) ShowPublicApp(in *edgeproto.App, cb edgeproto.AppApi_ShowPublicAppServer) error {
 	err := s.cache.Show(in, func(obj *edgeproto.App) error {
-		if len(obj.Tags) == 0 {
+		if obj.Key.Organization != edgeproto.OrganizationEdgeCloud {
 			return nil
 		}
 		err := cb.Send(obj)

@@ -446,8 +446,8 @@ func (r *Run) AppApi(data *[]edgeproto.App, dataMap interface{}, dataOut interfa
 				}
 				*outp = append(*outp, out...)
 			}
-		case "showinferencemodel":
-			out, err := r.client.ShowInferenceModel(r.ctx, obj)
+		case "showpublicapp":
+			out, err := r.client.ShowPublicApp(r.ctx, obj)
 			if err != nil {
 				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
 				r.logErr(fmt.Sprintf("AppApi[%d]", ii), err)
@@ -606,14 +606,14 @@ func (s *DummyServer) ShowApp(in *edgeproto.App, server edgeproto.AppApi_ShowApp
 	return err
 }
 
-func (s *DummyServer) ShowInferenceModel(in *edgeproto.App, server edgeproto.AppApi_ShowInferenceModelServer) error {
+func (s *DummyServer) ShowPublicApp(in *edgeproto.App, server edgeproto.AppApi_ShowPublicAppServer) error {
 	var err error
 	obj := &edgeproto.App{}
 	if obj.Matches(in, edgeproto.MatchFilter()) {
 		for ii := 0; ii < s.ShowDummyCount; ii++ {
 			server.Send(&edgeproto.App{})
 		}
-		if ch, ok := s.MidstreamFailChs["ShowInferenceModel"]; ok {
+		if ch, ok := s.MidstreamFailChs["ShowPublicApp"]; ok {
 			// Wait until client receives the SendMsg, since they
 			// are buffered and dropped once we return err here.
 			select {
@@ -784,18 +784,18 @@ func (s *CliClient) ShowZonesForAppDeployment(ctx context.Context, in *edgeproto
 	return output, err
 }
 
-func (s *ApiClient) ShowInferenceModel(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error) {
+func (s *ApiClient) ShowPublicApp(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error) {
 	api := edgeproto.NewAppApiClient(s.Conn)
-	stream, err := api.ShowInferenceModel(ctx, in)
+	stream, err := api.ShowPublicApp(ctx, in)
 	if err != nil {
 		return nil, err
 	}
 	return AppReadStream(stream)
 }
 
-func (s *CliClient) ShowInferenceModel(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error) {
+func (s *CliClient) ShowPublicApp(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error) {
 	output := []edgeproto.App{}
-	args := append(s.BaseArgs, "controller", "ShowInferenceModel")
+	args := append(s.BaseArgs, "controller", "ShowPublicApp")
 	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
 	return output, err
 }
@@ -810,5 +810,5 @@ type AppApiClient interface {
 	AddAppAlertPolicy(ctx context.Context, in *edgeproto.AppAlertPolicy) (*edgeproto.Result, error)
 	RemoveAppAlertPolicy(ctx context.Context, in *edgeproto.AppAlertPolicy) (*edgeproto.Result, error)
 	ShowZonesForAppDeployment(ctx context.Context, in *edgeproto.DeploymentZoneRequest) ([]edgeproto.ZoneKey, error)
-	ShowInferenceModel(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error)
+	ShowPublicApp(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error)
 }
