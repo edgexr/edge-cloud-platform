@@ -446,6 +446,18 @@ func (r *Run) AppApi(data *[]edgeproto.App, dataMap interface{}, dataOut interfa
 				}
 				*outp = append(*outp, out...)
 			}
+		case "showpublicapp":
+			out, err := r.client.ShowPublicApp(r.ctx, obj)
+			if err != nil {
+				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
+				r.logErr(fmt.Sprintf("AppApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[][]edgeproto.App)
+				if !ok {
+					panic(fmt.Sprintf("RunAppApi expected dataOut type *[][]edgeproto.App, but was %T", dataOut))
+				}
+				*outp = append(*outp, out)
+			}
 		}
 	}
 }
@@ -578,6 +590,30 @@ func (s *DummyServer) ShowApp(in *edgeproto.App, server edgeproto.AppApi_ShowApp
 			server.Send(&edgeproto.App{})
 		}
 		if ch, ok := s.MidstreamFailChs["ShowApp"]; ok {
+			// Wait until client receives the SendMsg, since they
+			// are buffered and dropped once we return err here.
+			select {
+			case <-ch:
+			case <-time.After(5 * time.Second):
+			}
+			return fmt.Errorf("midstream failure!")
+		}
+	}
+	err = s.AppCache.Show(in, func(obj *edgeproto.App) error {
+		err := server.Send(obj)
+		return err
+	})
+	return err
+}
+
+func (s *DummyServer) ShowPublicApp(in *edgeproto.App, server edgeproto.AppApi_ShowPublicAppServer) error {
+	var err error
+	obj := &edgeproto.App{}
+	if obj.Matches(in, edgeproto.MatchFilter()) {
+		for ii := 0; ii < s.ShowDummyCount; ii++ {
+			server.Send(&edgeproto.App{})
+		}
+		if ch, ok := s.MidstreamFailChs["ShowPublicApp"]; ok {
 			// Wait until client receives the SendMsg, since they
 			// are buffered and dropped once we return err here.
 			select {
@@ -748,6 +784,22 @@ func (s *CliClient) ShowZonesForAppDeployment(ctx context.Context, in *edgeproto
 	return output, err
 }
 
+func (s *ApiClient) ShowPublicApp(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error) {
+	api := edgeproto.NewAppApiClient(s.Conn)
+	stream, err := api.ShowPublicApp(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return AppReadStream(stream)
+}
+
+func (s *CliClient) ShowPublicApp(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error) {
+	output := []edgeproto.App{}
+	args := append(s.BaseArgs, "controller", "ShowPublicApp")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
 type AppApiClient interface {
 	CreateApp(ctx context.Context, in *edgeproto.App) (*edgeproto.Result, error)
 	DeleteApp(ctx context.Context, in *edgeproto.App) (*edgeproto.Result, error)
@@ -758,4 +810,5 @@ type AppApiClient interface {
 	AddAppAlertPolicy(ctx context.Context, in *edgeproto.AppAlertPolicy) (*edgeproto.Result, error)
 	RemoveAppAlertPolicy(ctx context.Context, in *edgeproto.AppAlertPolicy) (*edgeproto.Result, error)
 	ShowZonesForAppDeployment(ctx context.Context, in *edgeproto.DeploymentZoneRequest) ([]edgeproto.ZoneKey, error)
+	ShowPublicApp(ctx context.Context, in *edgeproto.App) ([]edgeproto.App, error)
 }
