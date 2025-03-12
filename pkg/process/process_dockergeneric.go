@@ -106,13 +106,27 @@ func AddHostDockerInternal(args []string) ([]string, error) {
 	kernelRelease := strings.TrimSpace(string(out))
 	if strings.Contains(kernelRelease, "microsoft") && strings.Contains(kernelRelease, "WSL") {
 		// get wsl ip
-		out, err = exec.Command("sh", "-c", `ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'`).CombinedOutput()
-		if err != nil {
-			return args, fmt.Errorf("Unable to determine WSL ip address, %s, %v", string(out), err)
+		ip := ""
+		for ii := range 10 {
+			out, err = exec.Command("sh", "-c", `ip addr show eth`+fmt.Sprintf("%d", ii)+` | grep -oP '(?<=inet\s)\d+(\.\d+){3}'`).CombinedOutput()
+			if err != nil && string(out) == "" {
+				continue
+			}
+			if err != nil {
+				return args, fmt.Errorf("Unable to determine WSL ip address, %s, %v", string(out), err)
+			}
+			ip = strings.TrimSpace(string(out))
 		}
-		ip := strings.TrimSpace(string(out))
-		// remap host.docker.internal to wsl ip instead of windows ip
-		args = append(args, "--add-host", "host.docker.internal:"+ip)
+		if ip == "" {
+			return args, fmt.Errorf("Unable to determine WSL ip address")
+		}
+		if ip != "" {
+			// remap host.docker.internal to wsl ip instead of windows ip
+			args = append(args, "--add-host", "host.docker.internal:"+ip)
+		} else {
+			// fall back to host-gateway
+			args = append(args, "--add-host", "host.docker.internal:host-gateway")
+		}
 	} else if strings.Contains(kernelRelease, "generic") {
 		// standard linux
 		args = append(args, "--add-host", "host.docker.internal:host-gateway")

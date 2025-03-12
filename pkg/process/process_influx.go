@@ -49,6 +49,7 @@ type LocalAuth struct {
 }
 
 var InfluxCredsFile = "/tmp/influx.json"
+var InfluxClientTimeout = 5 * time.Second
 
 func (p *Influx) StartLocal(logfile string, opts ...StartOp) (reterr error) {
 	var prefix string
@@ -151,7 +152,7 @@ func (p *Influx) StartLocal(logfile string, opts ...StartOp) (reterr error) {
 	if prefix == "" {
 		prefix = "http://" + p.HttpAddr
 	}
-	client, err := influxsup.GetClient(prefix, p.Auth.User, p.Auth.Pass)
+	client, err := influxsup.GetClient(prefix, p.Auth.User, p.Auth.Pass, InfluxClientTimeout)
 	if err != nil {
 		return err
 	}
@@ -202,7 +203,7 @@ func (p *Influx) GetClient() (influxclient.Client, error) {
 	} else {
 		httpaddr = "http://" + p.HttpAddr
 	}
-	return influxsup.GetClient(httpaddr, p.Auth.User, p.Auth.Pass)
+	return influxsup.GetClient(httpaddr, p.Auth.User, p.Auth.Pass, InfluxClientTimeout)
 }
 
 func (p *Influx) GetBindAddrs() []string {

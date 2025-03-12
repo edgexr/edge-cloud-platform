@@ -51,6 +51,8 @@ var promTargetTemplate *template.Template
 var targetsLock sync.Mutex
 var alertRulesLock sync.Mutex
 
+var PrometheusClientTimeout = 30 * time.Second
+
 var promTargetT = `
 {
 	"targets": ["{{.MetricsProxyAddr}}"],
@@ -234,7 +236,14 @@ func writeCloudletPrometheusAlerts(ctx context.Context, file string, alertsBuf [
 
 func reloadCloudletProm(ctx context.Context) {
 	log.SpanLog(ctx, log.DebugLevelInfo, "reloading prometheus config")
-	resp, err := http.Post("http://0.0.0.0:9092/-/reload", "", bytes.NewBuffer([]byte{}))
+	reqCtx, cancel := context.WithTimeout(ctx, PrometheusClientTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(reqCtx, "POST", "http://0.0.0.0:9092/-/reload", nil)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfo, "failed to create http request to reload prometheus", "err", err)
+		return
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfo, "Failed to reload prometheus", "err", err)
 		return

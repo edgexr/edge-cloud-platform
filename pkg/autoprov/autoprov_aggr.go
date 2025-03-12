@@ -69,6 +69,8 @@ type apZoneTracker struct {
 	deployIntervalsMet uint32
 }
 
+const influxDBConnTimeout = 10 * time.Second
+
 func NewAutoProvAggr(intervalSec, offsetSec float64, caches *CacheData) *AutoProvAggr {
 	s := AutoProvAggr{}
 	s.intervalSec = intervalSec
@@ -160,7 +162,7 @@ func (s *AutoProvAggr) runIter(ctx context.Context, init bool) error {
 	if err != nil {
 		return err
 	}
-	client, err := influxsup.GetClient(*influxAddr, creds.User, creds.Pass)
+	client, err := influxsup.GetClient(*influxAddr, creds.User, creds.Pass, influxDBConnTimeout)
 	if err != nil {
 		return err
 	}

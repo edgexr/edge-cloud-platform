@@ -127,6 +127,8 @@ var nodeMgr node.NodeMgr
 var redisCfg rediscache.RedisConfig
 var redisClient *redis.Client
 
+var InfluxClientTimeout = 10 * time.Second
+
 type Services struct {
 	etcdLocal                   *process.Etcd
 	objStore                    *regiondata.EtcdClient
@@ -318,7 +320,7 @@ func startServices() error {
 	}
 
 	// downsampled metrics influx
-	downsampledMetricsInfluxQ := influxq.NewInfluxQ(cloudcommon.DownsampledMetricsDbName, influxAuth.User, influxAuth.Pass)
+	downsampledMetricsInfluxQ := influxq.NewInfluxQ(cloudcommon.DownsampledMetricsDbName, influxAuth.User, influxAuth.Pass, InfluxClientTimeout)
 	downsampledMetricsInfluxQ.InitRetentionPolicy(allApis.settingsApi.Get().InfluxDbDownsampledMetricsRetention.TimeDuration())
 	err = downsampledMetricsInfluxQ.Start(*influxAddr)
 	if err != nil {
@@ -328,7 +330,7 @@ func startServices() error {
 	services.downsampledMetricsInfluxQ = downsampledMetricsInfluxQ
 
 	// metrics influx
-	influxQ := influxq.NewInfluxQ(InfluxDBName, influxAuth.User, influxAuth.Pass)
+	influxQ := influxq.NewInfluxQ(InfluxDBName, influxAuth.User, influxAuth.Pass, InfluxClientTimeout)
 	influxQ.InitRetentionPolicy(allApis.settingsApi.Get().InfluxDbMetricsRetention.TimeDuration())
 	err = influxQ.Start(*influxAddr)
 	if err != nil {
@@ -338,7 +340,7 @@ func startServices() error {
 	services.influxQ = influxQ
 
 	// events influx
-	events := influxq.NewInfluxQ(cloudcommon.EventsDbName, influxAuth.User, influxAuth.Pass)
+	events := influxq.NewInfluxQ(cloudcommon.EventsDbName, influxAuth.User, influxAuth.Pass, InfluxClientTimeout)
 	err = events.Start(*influxAddr)
 	if err != nil {
 		return fmt.Errorf("Failed to start influx queue address %s, %v",
@@ -347,7 +349,7 @@ func startServices() error {
 	services.events = events
 
 	// persistent stats influx
-	edgeEventsInfluxQ := influxq.NewInfluxQ(cloudcommon.EdgeEventsMetricsDbName, influxAuth.User, influxAuth.Pass)
+	edgeEventsInfluxQ := influxq.NewInfluxQ(cloudcommon.EdgeEventsMetricsDbName, influxAuth.User, influxAuth.Pass, InfluxClientTimeout)
 	edgeEventsInfluxQ.InitRetentionPolicy(allApis.settingsApi.Get().InfluxDbEdgeEventsMetricsRetention.TimeDuration())
 	err = edgeEventsInfluxQ.Start(*influxAddr)
 	if err != nil {
@@ -357,7 +359,7 @@ func startServices() error {
 	services.edgeEventsInfluxQ = edgeEventsInfluxQ
 
 	// cloudlet resources influx
-	cloudletResourcesInfluxQ := influxq.NewInfluxQ(cloudcommon.CloudletResourceUsageDbName, influxAuth.User, influxAuth.Pass)
+	cloudletResourcesInfluxQ := influxq.NewInfluxQ(cloudcommon.CloudletResourceUsageDbName, influxAuth.User, influxAuth.Pass, InfluxClientTimeout)
 	cloudletResourcesInfluxQ.InitRetentionPolicy(allApis.settingsApi.Get().InfluxDbCloudletUsageMetricsRetention.TimeDuration())
 	err = cloudletResourcesInfluxQ.Start(*influxAddr)
 	if err != nil {

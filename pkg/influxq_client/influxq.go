@@ -42,32 +42,34 @@ var InfluxQPrecision = "us"
 var InfluxQReconnectDelay time.Duration = 10 * time.Second
 
 type InfluxQ struct {
-	dbName    string
-	user      string
-	password  string
-	client    client.Client
-	data      []*edgeproto.Metric
-	done      bool
-	dbcreated bool
-	doPush    chan bool
-	mux       sync.Mutex
-	wg        sync.WaitGroup
-	ErrBatch  uint64
-	ErrPoint  uint64
-	Qfull     uint64
-	QWrites   uint64
-	DatWrites uint64
-	initRP    bool
-	initRPDur time.Duration
+	dbName      string
+	user        string
+	password    string
+	client      client.Client
+	data        []*edgeproto.Metric
+	done        bool
+	dbcreated   bool
+	doPush      chan bool
+	mux         sync.Mutex
+	wg          sync.WaitGroup
+	ErrBatch    uint64
+	ErrPoint    uint64
+	Qfull       uint64
+	QWrites     uint64
+	DatWrites   uint64
+	initRP      bool
+	initRPDur   time.Duration
+	connTimeout time.Duration
 }
 
-func NewInfluxQ(DBName, username, password string) *InfluxQ {
+func NewInfluxQ(DBName, username, password string, timeout time.Duration) *InfluxQ {
 	q := InfluxQ{}
 	q.dbName = DBName
 	q.data = make([]*edgeproto.Metric, 0)
 	q.doPush = make(chan bool, 1)
 	q.user = username
 	q.password = password
+	q.connTimeout = timeout
 	return &q
 }
 
@@ -78,7 +80,7 @@ func (q *InfluxQ) InitRetentionPolicy(dur time.Duration) {
 }
 
 func (q *InfluxQ) Start(addr string) error {
-	cl, err := influxsup.GetClient(addr, q.user, q.password)
+	cl, err := influxsup.GetClient(addr, q.user, q.password, q.connTimeout)
 	if err != nil {
 		return err
 	}

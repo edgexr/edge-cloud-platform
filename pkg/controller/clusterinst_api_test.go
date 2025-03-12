@@ -979,7 +979,7 @@ var testInfluxProc *process.Influx
 func influxUsageUnitTestSetup(t *testing.T) string {
 	testInfluxProc = influxq_testutil.StartInfluxd(t)
 
-	q := influxq.NewInfluxQ(cloudcommon.EventsDbName, "", "")
+	q := influxq.NewInfluxQ(cloudcommon.EventsDbName, "", "", InfluxClientTimeout)
 	err := q.Start("http://" + testInfluxProc.HttpAddr)
 	if err != nil {
 		influxUsageUnitTestStop()

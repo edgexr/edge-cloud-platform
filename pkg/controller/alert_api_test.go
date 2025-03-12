@@ -219,9 +219,10 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	svcs.DummyVault = vault.NewDummyServer()
 	vaultConfig = svcs.DummyVault.Config
 	nodeMgr.VaultConfig = vaultConfig
+	InfluxClientTimeout = time.Millisecond // no actual influx running
 	services.regAuthMgr = cloudcommon.NewRegistryAuthMgr(vaultConfig, "example.ut")
-	services.events = influxq.NewInfluxQ("events", "user", "pass")
-	services.cloudletResourcesInfluxQ = influxq.NewInfluxQ(cloudcommon.CloudletResourceUsageDbName, "user", "pass")
+	services.events = influxq.NewInfluxQ("events", "user", "pass", InfluxClientTimeout)
+	services.cloudletResourcesInfluxQ = influxq.NewInfluxQ(cloudcommon.CloudletResourceUsageDbName, "user", "pass", InfluxClientTimeout)
 	cleanupCloudletInfoTimeout = 100 * time.Millisecond
 	RequireAppInstPortConsistency = true
 	zplookup := &node.ZonePoolCache{}
