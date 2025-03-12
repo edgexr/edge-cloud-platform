@@ -69,7 +69,7 @@ type apZoneTracker struct {
 	deployIntervalsMet uint32
 }
 
-const influxDBConnTimeout = 10 * time.Second
+const influxDBConnTimeout = 30 * time.Second
 
 func NewAutoProvAggr(intervalSec, offsetSec float64, caches *CacheData) *AutoProvAggr {
 	s := AutoProvAggr{}

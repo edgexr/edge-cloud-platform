@@ -47,7 +47,7 @@ func TestInfluxQ(t *testing.T) {
 	defer p.StopLocal()
 
 	addr := "http://" + p.HttpAddr
-	q := NewInfluxQ("metrics", "", "", 2*time.Second)
+	q := NewInfluxQ("metrics", "", "", 3*time.Second)
 	err := q.Start(addr)
 	require.Nil(t, err, "new influx q")
 	defer q.Stop()
@@ -184,7 +184,7 @@ func testAutoProvCounts(t *testing.T, ctx context.Context, q *InfluxQ) {
 
 func testRetentionPolicyAndContinuousQuery(t *testing.T, ctx context.Context, q *InfluxQ, addr string) {
 	// Create Downsampled DB
-	qd := NewInfluxQ(cloudcommon.DownsampledMetricsDbName, "", "", time.Second)
+	qd := NewInfluxQ(cloudcommon.DownsampledMetricsDbName, "", "", 3*time.Second)
 	// Start downsample db
 	err := qd.Start(addr)
 	require.Nil(t, err, "new influx q")

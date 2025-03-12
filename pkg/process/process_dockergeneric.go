@@ -120,13 +120,8 @@ func AddHostDockerInternal(args []string) ([]string, error) {
 		if ip == "" {
 			return args, fmt.Errorf("Unable to determine WSL ip address")
 		}
-		if ip != "" {
-			// remap host.docker.internal to wsl ip instead of windows ip
-			args = append(args, "--add-host", "host.docker.internal:"+ip)
-		} else {
-			// fall back to host-gateway
-			args = append(args, "--add-host", "host.docker.internal:host-gateway")
-		}
+		// remap host.docker.internal to wsl ip instead of windows ip
+		args = append(args, "--add-host", "host.docker.internal:"+ip)
 	} else if strings.Contains(kernelRelease, "generic") {
 		// standard linux
 		args = append(args, "--add-host", "host.docker.internal:host-gateway")

@@ -127,7 +127,7 @@ var nodeMgr node.NodeMgr
 var redisCfg rediscache.RedisConfig
 var redisClient *redis.Client
 
-var InfluxClientTimeout = 10 * time.Second
+var InfluxClientTimeout = 30 * time.Second
 
 type Services struct {
 	etcdLocal                   *process.Etcd
