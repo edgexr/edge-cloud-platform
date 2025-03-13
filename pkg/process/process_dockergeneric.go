@@ -105,12 +105,29 @@ func AddHostDockerInternal(args []string) ([]string, error) {
 	}
 	kernelRelease := strings.TrimSpace(string(out))
 	if strings.Contains(kernelRelease, "microsoft") && strings.Contains(kernelRelease, "WSL") {
-		// get wsl ip
-		out, err = exec.Command("sh", "-c", `ip addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}'`).CombinedOutput()
-		if err != nil {
-			return args, fmt.Errorf("Unable to determine WSL ip address, %s, %v", string(out), err)
+		// WSL2 may be configured for NAT networking mode or mirrored
+		// networking mode.
+		out, err := exec.Command("wslinfo", "--networking-mode").CombinedOutput()
+		if err == nil && strings.TrimSpace(string(out)) == "mirrored" {
+			args = append(args, "--add-host", "host.docker.internal:host-gateway")
+			return args, nil
 		}
-		ip := strings.TrimSpace(string(out))
+		// get wsl ip
+		ip := ""
+		for ii := range 10 {
+			out, err = exec.Command("sh", "-c", `ip addr show eth`+fmt.Sprintf("%d", ii)+` | grep -oP '(?<=inet\s)\d+(\.\d+){3}'`).CombinedOutput()
+			if err != nil && string(out) == "" {
+				continue
+			}
+			if err != nil {
+				return args, fmt.Errorf("Unable to determine WSL ip address, %s, %v", string(out), err)
+			}
+			ip = strings.TrimSpace(string(out))
+			break
+		}
+		if ip == "" {
+			return args, fmt.Errorf("Unable to determine WSL ip address")
+		}
 		// remap host.docker.internal to wsl ip instead of windows ip
 		args = append(args, "--add-host", "host.docker.internal:"+ip)
 	} else if strings.Contains(kernelRelease, "generic") {
