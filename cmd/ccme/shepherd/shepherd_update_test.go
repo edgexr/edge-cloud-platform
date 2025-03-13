@@ -45,6 +45,7 @@ func TestShepherdUpdate(t *testing.T) {
 	require.Nil(t, err)
 	*cloudletKeyStr = string(ckey)
 	*platformName = "PLATFORM_TYPE_FAKEINFRA"
+	PrometheusClientTimeout = time.Millisecond // no prometheus running
 
 	crm := notify.NewDummyHandler()
 	crmServer := &notify.ServerMgr{}

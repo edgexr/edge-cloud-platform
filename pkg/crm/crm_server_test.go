@@ -346,6 +346,7 @@ func TestCRM(t *testing.T) {
 	*cloudletKeyStr = string(bytes)
 	*notifyAddrs = notifyAddr
 	*platformName = "PLATFORM_TYPE_FAKE"
+	*notifySrvAddr = "127.0.0.1:5101"
 	nodeMgr.AccessKeyClient.AccessApiAddr = accessKeyGrpcServer.ApiAddr()
 	nodeMgr.AccessKeyClient.AccessKeyFile = accessKeyFile
 	highAvailabilityManager.HARole = string(process.HARolePrimary)
