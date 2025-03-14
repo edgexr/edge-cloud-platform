@@ -721,12 +721,45 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 				return masterIPs, nil
 			}
 			if time.Since(start) > timeout {
+				// log current cluster status
+				v.logEdgeCloudServeiceStatus(ctx, clusterInst, masterName, masterIPs, rootLBName)
 				return masterIPs, fmt.Errorf("cluster not ready (yet)")
 			}
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "waiting for kubernetes cluster to be ready...")
 		time.Sleep(30 * time.Second)
 	}
+}
+
+// logEdgeCloudServeiceStatus Logs the status of edgecloud service on the master node
+func (v *VMPlatform) logEdgeCloudServeiceStatus(ctx context.Context, clusterInst *edgeproto.ClusterInst, masterName string, masterIPs ServerIPs, rootLBName string) {
+	// dump the status of the edgecloud service on the master node
+	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get rootLB client", "err", err)
+		return
+	}
+	connectMasterIP := masterIPs.IPV4ExternalAddr()
+	if connectMasterIP == "" {
+		connectMasterIP = masterIPs.IPV6ExternalAddr()
+	}
+	masterClient, err := client.AddHop(connectMasterIP, 22)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get master client", "err", err)
+		return
+	}
+	out, err := masterClient.Output("systemctl status edgecloud")
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get edgecloud status", "err", err, "out", out)
+		return
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "edgecloud status", "status", out)
+	out, err = masterClient.Output("sudo cat /var/log/edgecloud.log")
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get output of edgecloud", "err", err, "out", out)
+		return
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "edgecloud service", "log", out)
 }
 
 // IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active.  returns ready,nodecount, error
