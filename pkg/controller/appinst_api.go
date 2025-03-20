@@ -2547,7 +2547,7 @@ func (s *AppInstApi) updateURI(key *edgeproto.AppInstKey, cloudlet *edgeproto.Cl
 		}
 
 		// Store previous URI, so we can update this with CCRM
-		log.SpanLog(ctx, log.DebugLevelApi, "Updating AppInst URI", "old FQDN", appInst.Uri, "new", getAppInstFQDN(&appInst, cloudlet))
+		log.SpanLog(ctx, log.DebugLevelApi, "Updating AppInst URI", "old FQDN", appInst.Uri, "new", newURI)
 		appInst.AddAnnotation(cloudcommon.AnnotationPreviousDNSName, appInst.Uri)
 		appInst.Uri = newURI
 		appInst.UpdatedAt = dme.TimeToTimestamp(time.Now())
