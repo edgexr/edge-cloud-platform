@@ -341,13 +341,13 @@ type DummyServer struct {
 	ZonePoolCache                 edgeproto.ZonePoolCache
 	VMPoolCache                   edgeproto.VMPoolCache
 	VMPoolInfoCache               edgeproto.VMPoolInfoCache
-	ClusterInstCache              edgeproto.ClusterInstCache
-	ClusterInstInfoCache          edgeproto.ClusterInstInfoCache
 	AutoProvPolicyCache           edgeproto.AutoProvPolicyCache
 	AutoProvInfoCache             edgeproto.AutoProvInfoCache
 	TrustPolicyExceptionCache     edgeproto.TrustPolicyExceptionCache
 	TPEInstanceStateCache         edgeproto.TPEInstanceStateCache
 	NetworkCache                  edgeproto.NetworkCache
+	ClusterInstCache              edgeproto.ClusterInstCache
+	ClusterInstInfoCache          edgeproto.ClusterInstInfoCache
 	CloudletRefsCache             edgeproto.CloudletRefsCache
 	ClusterRefsCache              edgeproto.ClusterRefsCache
 	AppInstRefsCache              edgeproto.AppInstRefsCache
@@ -387,13 +387,13 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitZonePoolCache(&d.ZonePoolCache)
 	edgeproto.InitVMPoolCache(&d.VMPoolCache)
 	edgeproto.InitVMPoolInfoCache(&d.VMPoolInfoCache)
-	edgeproto.InitClusterInstCache(&d.ClusterInstCache)
-	edgeproto.InitClusterInstInfoCache(&d.ClusterInstInfoCache)
 	edgeproto.InitAutoProvPolicyCache(&d.AutoProvPolicyCache)
 	edgeproto.InitAutoProvInfoCache(&d.AutoProvInfoCache)
 	edgeproto.InitTrustPolicyExceptionCache(&d.TrustPolicyExceptionCache)
 	edgeproto.InitTPEInstanceStateCache(&d.TPEInstanceStateCache)
 	edgeproto.InitNetworkCache(&d.NetworkCache)
+	edgeproto.InitClusterInstCache(&d.ClusterInstCache)
+	edgeproto.InitClusterInstInfoCache(&d.ClusterInstInfoCache)
 	edgeproto.InitCloudletRefsCache(&d.CloudletRefsCache)
 	edgeproto.InitClusterRefsCache(&d.ClusterRefsCache)
 	edgeproto.InitAppInstRefsCache(&d.AppInstRefsCache)
@@ -422,11 +422,11 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterZoneApiServer(server, d)
 	edgeproto.RegisterZonePoolApiServer(server, d)
 	edgeproto.RegisterVMPoolApiServer(server, d)
-	edgeproto.RegisterClusterInstApiServer(server, d)
-	edgeproto.RegisterClusterInstInfoApiServer(server, d)
 	edgeproto.RegisterAutoProvPolicyApiServer(server, d)
 	edgeproto.RegisterTrustPolicyExceptionApiServer(server, d)
 	edgeproto.RegisterNetworkApiServer(server, d)
+	edgeproto.RegisterClusterInstApiServer(server, d)
+	edgeproto.RegisterClusterInstInfoApiServer(server, d)
 	edgeproto.RegisterCloudletRefsApiServer(server, d)
 	edgeproto.RegisterClusterRefsApiServer(server, d)
 	edgeproto.RegisterAppInstRefsApiServer(server, d)
@@ -479,11 +479,11 @@ type Client interface {
 	ZoneApiClient
 	ZonePoolApiClient
 	VMPoolApiClient
-	ClusterInstApiClient
-	ClusterInstInfoApiClient
 	AutoProvPolicyApiClient
 	TrustPolicyExceptionApiClient
 	NetworkApiClient
+	ClusterInstApiClient
+	ClusterInstInfoApiClient
 	CloudletRefsApiClient
 	ClusterRefsApiClient
 	AppInstRefsApiClient
@@ -513,9 +513,9 @@ type InternalCUDAPIs interface {
 	GetZoneApi() edgeproto.ZoneApiServer
 	GetZonePoolApi() edgeproto.ZonePoolApiServer
 	GetVMPoolApi() edgeproto.VMPoolApiServer
-	GetClusterInstApi() edgeproto.ClusterInstApiServer
 	GetAutoProvPolicyApi() edgeproto.AutoProvPolicyApiServer
 	GetTrustPolicyExceptionApi() edgeproto.TrustPolicyExceptionApiServer
 	GetNetworkApi() edgeproto.NetworkApiServer
+	GetClusterInstApi() edgeproto.ClusterInstApiServer
 	GetCloudletNodeApi() edgeproto.CloudletNodeApiServer
 }

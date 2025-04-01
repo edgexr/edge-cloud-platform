@@ -47,13 +47,13 @@ type KubeResScaleSpec struct {
 // don't fit, but the cluster could be scaled to fit them.
 // It also returns the amount of free resources in the cluster, for
 // sorting purposes.
-func KubernetesResourcesFits(ctx context.Context, clusterInst *edgeproto.ClusterInst, reqs *edgeproto.KubernetesResources, cpuUsed, gpuUsed ResValMap, flavorLookup edgeproto.FlavorLookup) (*KubeResScaleSpec, ResValMap, error) {
+func KubernetesResourcesFits(ctx context.Context, clusterInst *edgeproto.ClusterInst, reqs *edgeproto.KubernetesResources, cpuUsed, gpuUsed ResValMap, flavorLookup edgeproto.FlavorLookup, clusterSpecified bool) (*KubeResScaleSpec, ResValMap, error) {
 	var fitsErr error
 	kubeSS := KubeResScaleSpec{}
 	free := ResValMap{}
 	if reqs.CpuPool != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "check kubernetes cpupool fits", "requests", reqs.CpuPool, "used", cpuUsed, "total", clusterInst.NodePools)
-		ss, cpufree, err := NodePoolFits(ctx, reqs.CpuPool, cpuUsed, clusterInst.NodePools, flavorLookup)
+		ss, cpufree, err := NodePoolFits(ctx, reqs.CpuPool, cpuUsed, clusterInst.NodePools, flavorLookup, clusterSpecified)
 		if err != nil {
 			fitsErr = fmt.Errorf("cpu pool requirements not met, %s", err)
 		}
@@ -62,7 +62,7 @@ func KubernetesResourcesFits(ctx context.Context, clusterInst *edgeproto.Cluster
 	}
 	if reqs.GpuPool != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "check kubernetes gpupool fits", "requests", reqs.GpuPool, "used", gpuUsed, "total", clusterInst.NodePools)
-		ss, gpufree, err := NodePoolFits(ctx, reqs.GpuPool, gpuUsed, clusterInst.NodePools, flavorLookup)
+		ss, gpufree, err := NodePoolFits(ctx, reqs.GpuPool, gpuUsed, clusterInst.NodePools, flavorLookup, clusterSpecified)
 		if err != nil && fitsErr == nil {
 			fitsErr = fmt.Errorf("gpu pool requirements not met, %s", err)
 		}
@@ -90,7 +90,7 @@ func KubernetesResourcesFits(ctx context.Context, clusterInst *edgeproto.Cluster
 // Returns a pool that can be scaled to accomodate the resource
 // requirements if it doesn't fit.
 // Returns calculated free space.
-func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used ResValMap, nodePools []*edgeproto.NodePool, flavorLookup edgeproto.FlavorLookup) (*PoolScaleSpec, ResValMap, error) {
+func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used ResValMap, nodePools []*edgeproto.NodePool, flavorLookup edgeproto.FlavorLookup, clusterSpecified bool) (*PoolScaleSpec, ResValMap, error) {
 	// convert topology to generic set of numeric resources
 	reqMins, err := TopologyToResValMap(&reqs.Topology)
 	if err != nil {
@@ -111,7 +111,10 @@ func NodePoolFits(ctx context.Context, reqs *edgeproto.NodePoolResources, used R
 		// TODO: we may want to generalize this check to all optional
 		// resources, rather than just GPUs.
 		poolGpuCount := cloudcommon.NodeResourcesGPUCount(pool.NodeResources)
-		if reqsGpuCount == 0 && poolGpuCount > 0 {
+		// If a cluster is specified, then the user wants to run this
+		// workload on the cluster regardless of whether it uses
+		// resources on a gpu pool even if it doesn't need it.
+		if reqsGpuCount == 0 && poolGpuCount > 0 && !clusterSpecified {
 			// this avoids using a gpu pool when the requestor
 			// doesn't need it.
 			reasons.add("skipped gpu pool " + pool.Name + " because no request for gpu")
@@ -274,6 +277,7 @@ func TopologyToResValMap(top *edgeproto.NodePoolTopology) (ResValMap, error) {
 	resVals.AddVcpus(top.MinNodeVcpus, 0)
 	resVals.AddRam(top.MinNodeMemory)
 	resVals.AddDisk(top.MinNodeDisk)
+	resVals.AddGPUs(top.MinNodeGpus, 1)
 	// optional resources
 	err := resVals.AddOptResMap(top.MinNodeOptRes, 1)
 	if err != nil {
@@ -299,6 +303,7 @@ func GetInfraNodeResources(nr *edgeproto.NodeResources, flavorLookup edgeproto.F
 			Vcpus: flavorInfo.Vcpus,
 			Ram:   flavorInfo.Ram,
 			Disk:  flavorInfo.Disk,
+			Gpus:  flavorInfo.Gpus,
 			// TODO: Have flavorInfo store OptResMap instead of
 			// PropMap, i.e. infra code should convert infra-specific
 			// PropMap to EdgeCloud based OptResMap.

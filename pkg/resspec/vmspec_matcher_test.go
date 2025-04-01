@@ -155,3 +155,151 @@ func TestFlavorResMapMatch(t *testing.T) {
 	// any type of flavorinfo propmap received from Operator's infra
 	testResMatch(t, ctx, "gpu", "somekey:somespec:2", flavorInfos["random"], resTagTbls["restbl-random"], MATCH)
 }
+
+func TestSatisfiesGpu(t *testing.T) {
+	var tests = []struct {
+		desc       string
+		reqs       []*edgeproto.GPUResource
+		gpus       []*edgeproto.GPUResource
+		exp        bool
+		expMissing map[string]int
+		expExtra   map[string]int
+	}{{
+		desc: "0 gpu exact match",
+		reqs: []*edgeproto.GPUResource{},
+		gpus: []*edgeproto.GPUResource{},
+		exp:  true,
+	}, {
+		desc: "gpu extra",
+		reqs: []*edgeproto.GPUResource{},
+		gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}},
+		exp: false,
+		expExtra: map[string]int{
+			"nvidia-t4": 1,
+		},
+	}, {
+		desc: "gpu missing",
+		reqs: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}},
+		gpus: []*edgeproto.GPUResource{},
+		exp:  false,
+		expMissing: map[string]int{
+			"nvidia-t4": 1,
+		},
+	}, {
+		desc: "1 gpu exact match",
+		reqs: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}},
+		gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}},
+		exp: true,
+	}, {
+		desc: "1 gpu missing count",
+		reqs: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   2,
+		}},
+		gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}},
+		exp: false,
+		expMissing: map[string]int{
+			"nvidia-t4": 1,
+		},
+	}, {
+		desc: "1 gpu extra count",
+		reqs: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}},
+		gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   2,
+		}},
+		exp: false,
+		expExtra: map[string]int{
+			"nvidia-t4": 1,
+		},
+	}, {
+		desc: "2 gpu exact match",
+		reqs: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}, {
+			ModelId: "amd-g100",
+			Count:   1,
+		}},
+		gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}, {
+			ModelId: "amd-g100",
+			Count:   1,
+		}},
+		exp: true,
+	}, {
+		desc: "2 gpu missing count",
+		reqs: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   2,
+		}, {
+			ModelId: "amd-g100",
+			Count:   1,
+		}},
+		gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}, {
+			ModelId: "amd-g100",
+			Count:   1,
+		}},
+		exp: false,
+		expMissing: map[string]int{
+			"nvidia-t4": 1,
+		},
+	}, {
+		desc: "2 gpu extra count",
+		reqs: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}, {
+			ModelId: "amd-g100",
+			Count:   1,
+		}},
+		gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+		}, {
+			ModelId: "amd-g100",
+			Count:   2,
+		}},
+		exp: false,
+		expExtra: map[string]int{
+			"amd-g100": 1,
+		},
+	}}
+	for _, test := range tests {
+		missing := map[string]int{}
+		extra := map[string]int{}
+		res := satisfiesGPUs(test.reqs, test.gpus, missing, extra)
+		require.Equal(t, test.exp, res, test.desc)
+		if test.expMissing == nil {
+			test.expMissing = map[string]int{}
+		}
+		if test.expExtra == nil {
+			test.expExtra = map[string]int{}
+		}
+		require.Equal(t, test.expMissing, missing, test.desc)
+		require.Equal(t, test.expExtra, extra, test.desc)
+	}
+}

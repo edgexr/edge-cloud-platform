@@ -741,7 +741,8 @@ type MethodInfo struct {
 	Prefix            string
 	Stream            bool
 	Mc2Api            bool
-	IsShow            bool
+	IsPrimaryShow     bool // within a service API, this shows the object that is the subject of the API
+	IsShow            bool // method starts with "Show"
 	IsUpdate          bool
 	IsCustomAuthzShow bool
 	Method            *descriptor.MethodDescriptorProto
@@ -787,6 +788,9 @@ func GetMethodInfo(g *generator.Generator, method *descriptor.MethodDescriptorPr
 	if *method.Name == prefix+*in.DescriptorProto.Name {
 		// use prefixes only when prefixed against input object type
 		info.Prefix = prefix
+		if prefix == "Show" {
+			info.IsPrimaryShow = true
+		}
 	} else {
 		info.Prefix = *method.Name
 	}

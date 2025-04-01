@@ -67,21 +67,35 @@ const (
 	FakeExternalIpsMax = uint64(30)
 )
 
+var FakeGPUsMax = []*edgeproto.GPUResource{{
+	ModelId: "nvidia-t4",
+	Count:   4,
+}}
+
 var FakeAppDNSRoot = "fake.net"
 
-var DefaultFlavorList = []*edgeproto.FlavorInfo{
-	&edgeproto.FlavorInfo{
-		Name:  "x1.tiny",
-		Vcpus: uint64(1),
-		Ram:   uint64(1024),
-		Disk:  uint64(20),
-	},
-	&edgeproto.FlavorInfo{
-		Name:  "x1.small",
-		Vcpus: uint64(2),
-		Ram:   uint64(4096),
-		Disk:  uint64(40),
-	},
+var DefaultFlavorList = []*edgeproto.FlavorInfo{{
+	Name:  "x1.tiny",
+	Vcpus: uint64(1),
+	Ram:   uint64(1024),
+	Disk:  uint64(20),
+}, {
+	Name:  "x1.small",
+	Vcpus: uint64(2),
+	Ram:   uint64(4096),
+	Disk:  uint64(40),
+}, {
+	Name:  "x1.small.gpu",
+	Vcpus: uint64(2),
+	Ram:   uint64(4096),
+	Disk:  uint64(40),
+	Gpus: []*edgeproto.GPUResource{{
+		ModelId: "nvidia-t4",
+		Vendor:  cloudcommon.GPUVendorNVIDIA,
+		Count:   1,
+		Memory:  4,
+	}},
+},
 }
 
 var fakeProps = map[string]*edgeproto.PropertyInfo{
@@ -172,7 +186,7 @@ func (s *Platform) UpdateResourcesMax(envVars map[string]string) error {
 			diskMax = uint64(disk)
 		}
 	}
-	s.resources.SetMaxResources(ramMax, vcpusMax, diskMax, FakeExternalIpsMax)
+	s.resources.SetMaxResources(ramMax, vcpusMax, diskMax, FakeExternalIpsMax, FakeGPUsMax)
 	return nil
 }
 
@@ -255,6 +269,7 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsPlatformHighAvailabilityOnDocker: true,
 		SupportsPlatformHighAvailabilityOnK8S:    true,
 		SupportsMultipleNodePools:                true,
+		UsesRootLb:                               true,
 		ManagesK8SControlNodes:                   s.simPublicCloud,
 		Properties:                               fakeProps,
 		ResourceQuotaProperties:                  quotaProps,

@@ -748,7 +748,7 @@ func (t *TestCud) generateRunGroupApi(file *descriptor.FileDescriptorProto, serv
 	t.P("switch r.Mode {")
 	for _, mInfo := range group.MethodInfos {
 		prefix := strings.ToLower(mInfo.Prefix)
-		if mInfo.IsShow {
+		if mInfo.IsPrimaryShow {
 			prefix = "showfiltered"
 		}
 		t.P("case \"", prefix, "\":")

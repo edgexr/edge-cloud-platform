@@ -118,7 +118,14 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 		// For federated cloudlets, flavors come from MC using
 		// InjectCloudletInfo. Don't let FRM overwrite them.
 		if fmap.Has(edgeproto.CloudletInfoFieldKeyFederatedOrganization) && in.Key.FederatedOrganization != "" {
-			in.Flavors = info.Flavors
+			in.Flavors = nil
+			for _, flavor := range info.Flavors {
+				if err := cloudcommon.ValidateInfraGPUs(flavor.Gpus); err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "skipping invalid infra flavor", "cloudlet", in.Key, "flavor", flavor, "err", err)
+					continue
+				}
+				in.Flavors = append(in.Flavors, flavor)
+			}
 		}
 
 		diffFields := info.GetDiffFields(in)

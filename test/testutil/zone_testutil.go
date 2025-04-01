@@ -432,6 +432,17 @@ func (r *Run) ZoneApi(data *[]edgeproto.Zone, dataMap interface{}, dataOut inter
 				}
 				*outp = append(*outp, out...)
 			}
+		case "showzonegpus":
+			out, err := r.client.ShowZoneGPUs(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("ZoneApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.ZoneGPUs)
+				if !ok {
+					panic(fmt.Sprintf("RunZoneApi expected dataOut type *[]edgeproto.ZoneGPUs, but was %T", dataOut))
+				}
+				*outp = append(*outp, out...)
+			}
 		}
 	}
 }
@@ -481,6 +492,25 @@ func (s *DummyServer) ShowZone(in *edgeproto.Zone, server edgeproto.ZoneApi_Show
 		err := server.Send(obj)
 		return err
 	})
+	return err
+}
+
+func (s *DummyServer) ShowZoneGPUs(in *edgeproto.Zone, server edgeproto.ZoneApi_ShowZoneGPUsServer) error {
+	var err error
+	if true {
+		for ii := 0; ii < s.ShowDummyCount; ii++ {
+			server.Send(&edgeproto.ZoneGPUs{})
+		}
+		if ch, ok := s.MidstreamFailChs["ShowZoneGPUs"]; ok {
+			// Wait until client receives the SendMsg, since they
+			// are buffered and dropped once we return err here.
+			select {
+			case <-ch:
+			case <-time.After(5 * time.Second):
+			}
+			return fmt.Errorf("midstream failure!")
+		}
+	}
 	return err
 }
 
@@ -555,9 +585,45 @@ func (s *CliClient) ShowZone(ctx context.Context, in *edgeproto.Zone) ([]edgepro
 	return output, err
 }
 
+type ZoneGPUsStream interface {
+	Recv() (*edgeproto.ZoneGPUs, error)
+}
+
+func ZoneGPUsReadStream(stream ZoneGPUsStream) ([]edgeproto.ZoneGPUs, error) {
+	output := []edgeproto.ZoneGPUs{}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return output, fmt.Errorf("read ZoneGPUs stream failed, %v", err)
+		}
+		output = append(output, *obj)
+	}
+	return output, nil
+}
+
+func (s *ApiClient) ShowZoneGPUs(ctx context.Context, in *edgeproto.Zone) ([]edgeproto.ZoneGPUs, error) {
+	api := edgeproto.NewZoneApiClient(s.Conn)
+	stream, err := api.ShowZoneGPUs(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return ZoneGPUsReadStream(stream)
+}
+
+func (s *CliClient) ShowZoneGPUs(ctx context.Context, in *edgeproto.Zone) ([]edgeproto.ZoneGPUs, error) {
+	output := []edgeproto.ZoneGPUs{}
+	args := append(s.BaseArgs, "controller", "ShowZoneGPUs")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
 type ZoneApiClient interface {
 	CreateZone(ctx context.Context, in *edgeproto.Zone) (*edgeproto.Result, error)
 	DeleteZone(ctx context.Context, in *edgeproto.Zone) (*edgeproto.Result, error)
 	UpdateZone(ctx context.Context, in *edgeproto.Zone) (*edgeproto.Result, error)
 	ShowZone(ctx context.Context, in *edgeproto.Zone) ([]edgeproto.Zone, error)
+	ShowZoneGPUs(ctx context.Context, in *edgeproto.Zone) ([]edgeproto.ZoneGPUs, error)
 }

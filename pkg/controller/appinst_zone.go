@@ -216,8 +216,8 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 	if in.ClusterKey.Name != "" {
 		// cluster specified by user
 		pc := potentialCloudlets[0]
-		userSpecified := true
-		clust, _, _, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, in.ClusterKey, userSpecified)
+		clusterSpecified := true
+		clust, _, _, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, in.ClusterKey, clusterSpecified)
 		log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy validate target cluster", "appInst", in.Key, "cluster", in.ClusterKey, "err", err)
 		if err != nil {
 			// return error if we can't use the cluster specified
@@ -364,7 +364,7 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 		}
 	}
 
-	ss, free, err := s.all.clusterInstApi.fitsAppResources(ctx, clusterInst, &refs, app, in, pc.flavorLookup)
+	ss, free, err := s.all.clusterInstApi.fitsAppResources(ctx, clusterInst, &refs, app, in, pc.flavorLookup, userSpecified)
 	if pc.features.IsSingleKubernetesCluster {
 		// assume kubernetes cluster-as-a-cloudlet cannot scale up
 		ss = nil
@@ -427,14 +427,14 @@ func (s *AppInstApi) usePotentialCluster(ctx context.Context, stm concurrency.ST
 	return &clusterInst, nil
 }
 
-func (s *AppInstApi) potentialClusterResourceCheck(ctx context.Context, stm concurrency.STM, in *edgeproto.AppInst, app *edgeproto.App, clusterInst *edgeproto.ClusterInst, flavorLookup edgeproto.FlavorLookup) error {
+func (s *AppInstApi) potentialClusterResourceCheck(ctx context.Context, stm concurrency.STM, in *edgeproto.AppInst, app *edgeproto.App, clusterInst *edgeproto.ClusterInst, flavorLookup edgeproto.FlavorLookup, clusterSpecified bool) error {
 	// check resources again under STM to ensure no race conditions.
 	refs := edgeproto.ClusterRefs{}
 	if !s.all.clusterRefsApi.store.STMGet(stm, &clusterInst.Key, &refs) {
 		// no error if refs not found
 		refs.Key = clusterInst.Key
 	}
-	_, _, err := s.all.clusterInstApi.fitsAppResources(ctx, clusterInst, &refs, app, in, flavorLookup)
+	_, _, err := s.all.clusterInstApi.fitsAppResources(ctx, clusterInst, &refs, app, in, flavorLookup, clusterSpecified)
 	if err != nil {
 		return fmt.Errorf("not enough resources in cluster %s, %s", clusterInst.Key.GetKeyString(), err)
 	}

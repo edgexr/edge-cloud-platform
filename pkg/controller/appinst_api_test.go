@@ -208,6 +208,9 @@ func TestAppInstApi(t *testing.T) {
 	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsWithAppInstsData())
 	testutil.InternalAppInstRefsTest(t, "show", apis.appInstRefsApi, testutil.GetAppInstRefsData())
 
+	// test show zone gpus when all clusters and appinsts are present
+	testShowGPUs(t, ctx, apis)
+
 	// ensure two appinsts of same app cannot deploy to same cluster
 	dup := testutil.AppInstData()[0]
 	dup.Key.Name = "dup"
@@ -672,18 +675,35 @@ func testAppFlavorRequest(t *testing.T, ctx context.Context, api *testutil.AppIn
 		Key: edgeproto.FlavorKey{
 			Name: "x1.large-mex",
 		},
-		Ram:       1024,
-		Vcpus:     1,
-		Disk:      1,
-		OptResMap: map[string]string{"gpu": "gpu:1"},
+		Ram:   1024,
+		Vcpus: 1,
+		Disk:  1,
 	}
-	_, err := apis.flavorApi.CreateFlavor(ctx, &testflavor)
-	require.Nil(t, err, "CreateFlavor")
-	nonNomApp := testutil.AppInstData()[2]
-	nonNomApp.Flavor = testflavor.Key
-	err = apis.appInstApi.CreateAppInst(&nonNomApp, testutil.NewCudStreamoutAppInst(ctx))
+	runAppInstCreate := func(flav *edgeproto.Flavor) error {
+		_, err := apis.flavorApi.CreateFlavor(ctx, flav)
+		require.Nil(t, err, "CreateFlavor")
+		defer apis.flavorApi.DeleteFlavor(ctx, flav)
+		nonNomApp := testutil.AppInstData()[2]
+		nonNomApp.Flavor = testflavor.Key
+		return apis.appInstApi.CreateAppInst(&nonNomApp, testutil.NewCudStreamoutAppInst(ctx))
+	}
+
+	// test opt res request
+	testflavor.OptResMap = map[string]string{"gpu": "gpu:1"}
+	err := runAppInstCreate(&testflavor)
 	require.NotNil(t, err, "non-nom-app-create")
 	require.Contains(t, err.Error(), "want 1 gpu:gpu but only 0 free")
+
+	// test gpu request
+	testflavor.OptResMap = nil
+	testflavor.Gpus = []*edgeproto.GPUResource{{
+		ModelId: "nvidia-x999",
+		Count:   1,
+		Memory:  4,
+	}}
+	err = runAppInstCreate(&testflavor)
+	require.NotNil(t, err, "non-nom-app-create")
+	require.Contains(t, err.Error(), "want 1 gpu/nvidia-x999 but only 0 free")
 }
 
 // Test that Crm Override for Delete App overrides any failures
@@ -1860,4 +1880,202 @@ func TestNBIUseCase(t *testing.T) {
 	// redeploy ai3 should work
 	_, err = deployApp("scenario5.1", appIDs[2], zoneA.ObjId)
 	require.Nil(t, err)
+}
+
+func testShowGPUs(t *testing.T, ctx context.Context, apis *AllApis) {
+	// ensure expected cloudlet info is in db for test
+	for _, info := range testutil.CloudletInfoData() {
+		info.Fields = []string{
+			edgeproto.CloudletInfoFieldResourcesSnapshot,
+			edgeproto.CloudletInfoFieldFlavors,
+			edgeproto.CloudletInfoFieldNodePools,
+		}
+		apis.cloudletInfoApi.UpdateRPC(ctx, &info)
+	}
+	testShowCloudletGPUUsage(t, ctx, apis)
+	testShowZoneGPUs(t, ctx, apis)
+}
+
+type ShowCloudletGPUUsageData struct {
+	ctx  context.Context
+	data []*edgeproto.CloudletGPUUsage
+	grpc.ServerStream
+}
+
+func (s *ShowCloudletGPUUsageData) Send(z *edgeproto.CloudletGPUUsage) error {
+	s.data = append(s.data, z)
+	return nil
+}
+
+func (s *ShowCloudletGPUUsageData) Context() context.Context {
+	return s.ctx
+}
+
+func testShowCloudletGPUUsage(t *testing.T, ctx context.Context, apis *AllApis) {
+	cloudlets := testutil.CloudletData()
+	cloudlet0GPUs := &edgeproto.CloudletGPUUsage{
+		Key: cloudlets[0].Key,
+		Gpus: []*edgeproto.GPUUsage{{
+			Gpu: &edgeproto.GPUResource{
+				ModelId: "nvidia-t4",
+				Vendor:  "nvidia",
+				Memory:  4,
+			},
+			Usage: &edgeproto.InfraResource{
+				Name:          "nvidia-t4",
+				Value:         2, // used by ClusterInstData[7]
+				InfraMaxValue: 8,
+				Type:          "gpu",
+			},
+		}, {
+			Gpu: &edgeproto.GPUResource{
+				ModelId: "nvidia-t4-q1",
+				Vendor:  "nvidia",
+				Memory:  2,
+			},
+			Usage: &edgeproto.InfraResource{
+				Name:          "nvidia-t4-q1",
+				Value:         0,
+				InfraMaxValue: 12,
+				Type:          "gpu",
+			},
+		}, {
+			Gpu: &edgeproto.GPUResource{
+				ModelId: "nvidia-v1",
+				Vendor:  "nvidia",
+				Memory:  2,
+			},
+			Usage: &edgeproto.InfraResource{
+				Name:          "nvidia-v1",
+				Value:         0,
+				InfraMaxValue: 16,
+				Type:          "gpu",
+			},
+		}},
+	}
+	cloudlet4GPUs := &edgeproto.CloudletGPUUsage{
+		Key: cloudlets[4].Key,
+		Gpus: []*edgeproto.GPUUsage{{
+			Gpu: &edgeproto.GPUResource{
+				ModelId: "nvidia-a100",
+				Vendor:  "nvidia",
+				Memory:  96,
+			},
+			Usage: &edgeproto.InfraResource{
+				Name:          "nvidia-a100",
+				Value:         1, // in use by AppInstData[19]
+				InfraMaxValue: 4,
+				Type:          "gpu",
+			},
+		}},
+	}
+
+	var tests = []struct {
+		desc   string
+		filter edgeproto.CloudletKey
+		exp    []*edgeproto.CloudletGPUUsage
+	}{{
+		desc:   "cloudlet[0] gpus (VM based cloudlet)",
+		filter: cloudlets[0].Key,
+		exp:    []*edgeproto.CloudletGPUUsage{cloudlet0GPUs},
+	}, {
+		desc:   "cloudlet[1] gpus (none)",
+		filter: cloudlets[1].Key,
+		exp:    nil,
+	}, {
+		desc:   "cloudlet[4] gpus (kubernetes based cloudlet)",
+		filter: cloudlets[4].Key,
+		exp:    []*edgeproto.CloudletGPUUsage{cloudlet4GPUs},
+	}, {
+		desc:   "all cloudlets",
+		filter: edgeproto.CloudletKey{},
+		exp:    []*edgeproto.CloudletGPUUsage{cloudlet0GPUs, cloudlet4GPUs},
+	}}
+	for _, test := range tests {
+		show := ShowCloudletGPUUsageData{}
+		show.ctx = ctx
+		filter := edgeproto.Cloudlet{
+			Key: test.filter,
+		}
+		err := apis.cloudletApi.ShowCloudletGPUUsage(&filter, &show)
+		require.Nil(t, err, test.desc)
+		require.Equal(t, test.exp, show.data, test.desc)
+	}
+}
+
+type ShowZoneGPUsData struct {
+	ctx  context.Context
+	data []*edgeproto.ZoneGPUs
+	grpc.ServerStream
+}
+
+func (s *ShowZoneGPUsData) Send(z *edgeproto.ZoneGPUs) error {
+	s.data = append(s.data, z)
+	return nil
+}
+
+func (s *ShowZoneGPUsData) Context() context.Context {
+	return s.ctx
+}
+
+func testShowZoneGPUs(t *testing.T, ctx context.Context, apis *AllApis) {
+	zones := testutil.ZoneData()
+	zone0GPUs := &edgeproto.ZoneGPUs{
+		ZoneKey: zones[0].Key,
+		Gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Vendor:  "nvidia",
+			Memory:  4,
+			Count:   1,
+		}, {
+			ModelId: "nvidia-t4-q1",
+			Vendor:  "nvidia",
+			Memory:  2,
+			Count:   1,
+		}, {
+			ModelId: "nvidia-v1",
+			Vendor:  "nvidia",
+			Memory:  2,
+			Count:   1,
+		}},
+	}
+	zone4GPUs := &edgeproto.ZoneGPUs{
+		ZoneKey: zones[4].Key,
+		Gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-a100",
+			Count:   1,
+			Vendor:  "nvidia",
+			Memory:  96,
+		}},
+	}
+	var tests = []struct {
+		desc   string
+		filter edgeproto.Zone
+		exp    []*edgeproto.ZoneGPUs
+	}{{
+		desc:   "zone[0] gpus (VM based cloudlet)",
+		filter: zones[0],
+		exp:    []*edgeproto.ZoneGPUs{zone0GPUs},
+	}, {
+		desc:   "zone[1] gpus (none)",
+		filter: zones[1],
+		exp:    nil,
+	}, {
+		desc:   "zone[4] gpus (kubernetes based cloudlet)",
+		filter: zones[4],
+		exp:    []*edgeproto.ZoneGPUs{zone4GPUs},
+	}, {
+		desc:   "zones gpus",
+		filter: edgeproto.Zone{},
+		exp: []*edgeproto.ZoneGPUs{
+			zone0GPUs, zone4GPUs,
+		},
+	}}
+	for _, test := range tests {
+		show := ShowZoneGPUsData{}
+		show.ctx = ctx
+		err := apis.zoneApi.ShowZoneGPUs(&test.filter, &show)
+		require.Nil(t, err, test.desc)
+		require.Equal(t, test.exp, show.data, test.desc)
+	}
 }

@@ -60,9 +60,12 @@ func FlavorData() []edgeproto.Flavor {
 		Ram:   1024,
 		Vcpus: 1,
 		Disk:  1,
-		OptResMap: map[string]string{
-			"gpu": "pci:1",
-		},
+		Gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Count:   1,
+			Memory:  4,
+			Vendor:  "nvidia",
+		}},
 	}, {
 		Key: edgeproto.FlavorKey{
 			Name: "x1.small.vgpu",
@@ -70,9 +73,12 @@ func FlavorData() []edgeproto.Flavor {
 		Ram:   2048,
 		Vcpus: 2,
 		Disk:  2,
-		OptResMap: map[string]string{
-			"gpu": "vgpu:1",
-		},
+		Gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4-q1",
+			Count:   1,
+			Memory:  2,
+			Vendor:  "nvidia",
+		}},
 	}}
 }
 
@@ -404,12 +410,14 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 	// Note: cannot import platforms due to import cycle
 	features := []edgeproto.PlatformFeatures{{
 		PlatformType: "fake",
+		UsesRootLb:   true,
 	}, {
 		PlatformType: "fakeedgebox",
 		IsEdgebox:    true,
 	}, {
 		PlatformType: "fakevmpool",
 		IsVmPool:     true,
+		UsesRootLb:   true,
 	}, {
 		PlatformType:               "fakesinglecluster",
 		IsSingleKubernetesCluster:  true,
@@ -692,12 +700,16 @@ func ClusterInstData() []edgeproto.ClusterInst {
 		NumMasters: 1,
 		NumNodes:   2,
 		NodePools: []*edgeproto.NodePool{{
-			Name:     "cpupool",
+			Name:     "gpupool",
 			NumNodes: 2,
 			NodeResources: &edgeproto.NodeResources{
 				Vcpus: 1,
 				Ram:   1024,
 				Disk:  1,
+				Gpus: []*edgeproto.GPUResource{{
+					ModelId: "nvidia-t4-q1",
+					Count:   1,
+				}},
 			},
 		}},
 		DisableDynamicAppinstPlacement: true,
@@ -789,7 +801,7 @@ func ClusterInstData() []edgeproto.ClusterInst {
 			Organization: edgeproto.OrganizationEdgeCloud,
 		},
 		ZoneKey:    zoneData[0].Key,
-		Flavor:     flavorData[0].Key,
+		Flavor:     flavorData[4].Key,
 		IpAccess:   edgeproto.IpAccess_IP_ACCESS_SHARED,
 		NumMasters: 1,
 		NumNodes:   2,
@@ -1132,6 +1144,16 @@ func AppInstData() []edgeproto.AppInst {
 		},
 		AppKey:  appData[6].Key,
 		ZoneKey: zoneData[4].Key,
+		KubernetesResources: &edgeproto.KubernetesResources{
+			GpuPool: &edgeproto.NodePoolResources{
+				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+				TotalMemory: 1024,
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: "nvidia-a100",
+					Count:   1,
+				}},
+			},
+		},
 	}}
 }
 
@@ -1280,17 +1302,28 @@ func CloudletInfoData() []edgeproto.CloudletInfo {
 			Disk:  uint64(60),
 		}, {
 			// restagtbl/clouldlet resource map tests
-			Name:    "flavor.large",
-			Vcpus:   uint64(10),
-			Ram:     uint64(8192),
-			Disk:    uint64(40),
-			PropMap: map[string]string{"pci_passthrough": "alias=t4:1"},
+			Name:  "flavor.large",
+			Vcpus: uint64(10),
+			Ram:   uint64(8192),
+			Disk:  uint64(40),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-t4",
+				Vendor:  "nvidia",
+				Memory:  4,
+				Count:   1,
+			}},
 		}, {
-			Name:    "flavor.large2",
-			Vcpus:   uint64(10),
-			Ram:     uint64(8192),
-			Disk:    uint64(40),
-			PropMap: map[string]string{"pci_passthrough": "alias=t4:1", "nas": "ceph-20:1"},
+			Name:  "flavor.large2",
+			Vcpus: uint64(10),
+			Ram:   uint64(8192),
+			Disk:  uint64(40),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-t4",
+				Vendor:  "nvidia",
+				Memory:  4,
+				Count:   1,
+			}},
+			PropMap: map[string]string{"nas": "ceph-20:1"},
 		}, {
 			Name:    "flavor.large-pci",
 			Vcpus:   uint64(10),
@@ -1298,32 +1331,52 @@ func CloudletInfoData() []edgeproto.CloudletInfo {
 			Disk:    uint64(40),
 			PropMap: map[string]string{"pci": "NP4:1"},
 		}, {
-			Name:    "flavor.large-nvidia",
-			Vcpus:   uint64(10),
-			Ram:     uint64(8192),
-			Disk:    uint64(40),
-			PropMap: map[string]string{"vgpu": "nvidia-63:1"},
+			Name:  "flavor.large-nvidia",
+			Vcpus: uint64(10),
+			Ram:   uint64(8192),
+			Disk:  uint64(40),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-t4-q1",
+				Vendor:  "nvidia",
+				Memory:  2,
+				Count:   1,
+			}},
 		}, {
-			Name:    "flavor.large-generic-gpu",
-			Vcpus:   uint64(10),
-			Ram:     uint64(8192),
-			Disk:    uint64(80),
-			PropMap: map[string]string{"vmware": "vgpu=1"},
+			Name:  "flavor.large-generic-gpu",
+			Vcpus: uint64(10),
+			Ram:   uint64(8192),
+			Disk:  uint64(80),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-v1",
+				Vendor:  "nvidia",
+				Memory:  2,
+				Count:   1,
+			}},
 		}, {
 			// A typical case where two flavors are identical in their
 			// nominal resources, and differ only by gpu vs vgpu
 			// These cases require a fully qualifed request in the mex flavors optresmap
-			Name:    "flavor.m4.large-gpu",
-			Vcpus:   uint64(12),
-			Ram:     uint64(4096),
-			Disk:    uint64(20),
-			PropMap: map[string]string{"pci_passthrough": "alias=t4gpu:1"},
+			Name:  "flavor.m4.large-gpu",
+			Vcpus: uint64(12),
+			Ram:   uint64(4096),
+			Disk:  uint64(20),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-t4",
+				Vendor:  "nvidia",
+				Memory:  4,
+				Count:   1,
+			}},
 		}, {
-			Name:    "flavor.m4.large-vgpu",
-			Vcpus:   uint64(12),
-			Ram:     uint64(4096),
-			Disk:    uint64(20),
-			PropMap: map[string]string{"resources": "VGPU=1"},
+			Name:  "flavor.m4.large-vgpu",
+			Vcpus: uint64(12),
+			Ram:   uint64(4096),
+			Disk:  uint64(20),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-v1",
+				Vendor:  "nvidia",
+				Memory:  2,
+				Count:   1,
+			}},
 		}},
 		ResourcesSnapshot: edgeproto.InfraResourcesSnapshot{
 			Info: []edgeproto.InfraResource{{
@@ -1346,6 +1399,18 @@ func CloudletInfoData() []edgeproto.CloudletInfo {
 				Name:          "External IPs",
 				Value:         uint64(2),
 				InfraMaxValue: uint64(10),
+			}, {
+				Name:          "nvidia-t4",
+				InfraMaxValue: uint64(8),
+				Type:          "gpu",
+			}, {
+				Name:          "nvidia-t4-q1",
+				InfraMaxValue: uint64(12),
+				Type:          "gpu",
+			}, {
+				Name:          "nvidia-v1",
+				InfraMaxValue: uint64(16),
+				Type:          "gpu",
 			}},
 		},
 		CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),
@@ -1474,41 +1539,8 @@ func CloudletInfoData() []edgeproto.CloudletInfo {
 		},
 		CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),
 	}, { // 4
-		Key:         cloudletData[4].Key,
-		State:       dme.CloudletState_CLOUDLET_STATE_READY,
-		OsMaxRam:    65536,
-		OsMaxVcores: 16,
-		OsMaxVolGb:  500,
-		Flavors: []*edgeproto.FlavorInfo{{
-			Name:  "flavor.large",
-			Vcpus: uint64(8),
-			Ram:   uint64(101024),
-			Disk:  uint64(100),
-		}, {
-			Name:  "flavor.medium",
-			Vcpus: uint64(4),
-			Ram:   uint64(1),
-			Disk:  uint64(1),
-		}},
-		ResourcesSnapshot: edgeproto.InfraResourcesSnapshot{
-			Info: []edgeproto.InfraResource{{
-				Name:          "RAM",
-				Value:         uint64(1024),
-				InfraMaxValue: uint64(1024000),
-			}, {
-				Name:          "vCPUs",
-				Value:         uint64(10),
-				InfraMaxValue: uint64(100),
-			}, {
-				Name:          "Disk",
-				Value:         uint64(20),
-				InfraMaxValue: uint64(5000),
-			}, {
-				Name:          "External IPs",
-				Value:         uint64(2),
-				InfraMaxValue: uint64(10),
-			}},
-		},
+		Key:                  cloudletData[4].Key,
+		State:                dme.CloudletState_CLOUDLET_STATE_READY,
 		CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),
 		NodePools: []*edgeproto.NodePool{{
 			Name:     "cpupool",
@@ -1517,6 +1549,20 @@ func CloudletInfoData() []edgeproto.CloudletInfo {
 				Vcpus: 5,
 				Ram:   4096,
 				Disk:  500,
+			},
+		}, {
+			Name:     "gpupool",
+			NumNodes: 4,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 5,
+				Ram:   4096,
+				Disk:  500,
+				Gpus: []*edgeproto.GPUResource{{
+					ModelId: "nvidia-a100",
+					Count:   1,
+					Memory:  96,
+					Vendor:  "nvidia",
+				}},
 			},
 		}},
 	}}
@@ -2689,7 +2735,7 @@ func CreatedClusterInstData() []edgeproto.ClusterInst {
 			ci.NumNodes = ci.NodePools[0].NumNodes
 		case 7:
 			ci.EnsureDefaultNodePool()
-			ci.NodePools[0].SetFromFlavor(&flavorData[0])
+			ci.NodePools[0].SetFromFlavor(&flavorData[4])
 			ci.CloudletKey = cloudletData[0].Key
 		case 8:
 			ci.CloudletKey = cloudletData[0].Key

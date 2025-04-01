@@ -142,11 +142,17 @@ func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.
 			if *v.ResourceType != "virtualMachines" {
 				continue
 			}
+			fmt.Printf("name: %s, family: %s\n", *v.Name, *v.Family)
 			// we only allow standard DSv3 sizes and NC GPUs
 			// newer v4/v5 DS sizes have no local storage by default.
-			if *v.Family != "standardDSv3Family" && *v.Family != "standardAv2Family" && !strings.HasPrefix(*v.Family, "Standard NC") {
+			if *v.Family != "standardDSv3Family" && *v.Family != "standardAv2Family" && !strings.HasPrefix(*v.Name, "Standard_NC") && !strings.HasPrefix(*v.Name, "Standard_NV") {
 				continue
 			}
+			if *v.Family == "standardNVSv2Family" {
+				// seems to be retired, no info about it
+				continue
+			}
+
 			flavor := &edgeproto.FlavorInfo{
 				Name: *v.Name,
 			}
@@ -180,9 +186,63 @@ func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.
 					if err != nil {
 						return fmt.Errorf("failed to parse %s value %s for flavor %s, %s", *cap.Name, *cap.Value, *v.Name, err)
 					}
-					flavor.PropMap = map[string]string{
-						"gpu": fmt.Sprintf("gpu:%d", num),
+					// See https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/overview?tabs=breakdownseries%2Cgeneralsizelist%2Ccomputesizelist%2Cmemorysizelist%2Cstoragesizelist%2Cgpusizelist%2Cfpgasizelist%2Chpcsizelist#gpu-accelerated
+					modelID := "unknown-gpu"
+					memory := uint64(0)
+					vendor := ""
+					if *v.Family == "standardNCSv3Family" {
+						modelID = "NVIDIA-K80"
+						vendor = cloudcommon.GPUVendorNVIDIA
+						memory = 24
+					} else if *v.Family == "Standard NCASv3_T4 Family" {
+						modelID = "NVIDIA-T4"
+						vendor = cloudcommon.GPUVendorNVIDIA
+						memory = 16
+					} else if *v.Family == "StandardNCADSA100v4Family" {
+						modelID = "NVIDIA-A100"
+						vendor = cloudcommon.GPUVendorNVIDIA
+						memory = 94
+					} else if *v.Family == "StandardNCadsH100v5Family" || *v.Family == "standardNDSH100v5Family" {
+						modelID = "NVIDIA-H100"
+						vendor = cloudcommon.GPUVendorNVIDIA
+						memory = 94
+					} else if *v.Family == "standardNVSv3Family" {
+						modelID = "NVIDIA-M60"
+						vendor = cloudcommon.GPUVendorNVIDIA
+						memory = 16
+					} else if *v.Family == "standardNVSv4Family" {
+						modelID = "AMD-MI25"
+						vendor = cloudcommon.GPUVendorAMD
+						memory = 16
+					} else if *v.Family == "StandardNVADSA10v5Family" {
+						modelID = "NVIDIA-A10"
+						vendor = cloudcommon.GPUVendorNVIDIA
+						memory = 24
+					} else if *v.Family == "StandardNVadsV710v5Family" {
+						vendor = cloudcommon.GPUVendorAMD
+						switch *v.Name {
+						case "Standard_NV4ads_V710_v5":
+							modelID = "AMD-V710-6Q" // 1/6
+							memory = 4
+						case "Standard_NV8ads_V710_v5":
+							modelID = "AMD-V710-3Q" // 1/3
+							memory = 8
+						case "Standard_NV12ads_V710_v5":
+							modelID = "AMD-V710-2Q" // 1/2
+							memory = 12
+						case "Standard_NV24ads_V710_v5":
+							fallthrough
+						case "Standard_NV28adms_V710_v5":
+							modelID = "AMD-V710"
+							memory = 24
+						}
 					}
+					flavor.Gpus = []*edgeproto.GPUResource{{
+						ModelId: modelID,
+						Vendor:  vendor,
+						Count:   uint32(num),
+						Memory:  memory,
+					}}
 				}
 				// There is no indication of how much GPU VRAM is available,
 				// nor what type of GPU.
@@ -198,7 +258,11 @@ func (a *AzurePlatform) GatherCloudletInfo(ctx context.Context, info *edgeproto.
 			return fi.Vcpus < fj.Vcpus
 		})
 		for _, flavor := range info.Flavors {
-			log.SpanLog(ctx, log.DebugLevelInfra, "got flavor", "name", flavor.Name, "vcpus", flavor.Vcpus, "ramMB", flavor.Ram, "diskGB", flavor.Disk, "propmap", flavor.PropMap)
+			gpu := ""
+			if len(flavor.Gpus) > 0 {
+				gpu = flavor.Gpus[0].ModelId
+			}
+			log.SpanLog(ctx, log.DebugLevelInfra, "got flavor", "name", flavor.Name, "vcpus", flavor.Vcpus, "ramMB", flavor.Ram, "diskGB", flavor.Disk, "gpu", gpu, "propmap", flavor.PropMap)
 		}
 	}
 	return nil

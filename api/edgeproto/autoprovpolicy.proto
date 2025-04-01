@@ -24,8 +24,6 @@ import "gogoproto/gogo.proto";
 import "autoscalepolicy.proto";
 import "cloudletkey.proto";
 import "app.proto";
-import "clusterinst.proto";
-import "dme/loc.proto";
 import "dme/appcommon.proto";
 import "google/protobuf/timestamp.proto";
 

@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -51,6 +52,11 @@ func (s *FlavorApi) CreateFlavor(ctx context.Context, in *edgeproto.Flavor) (*ed
 
 	if err := in.Validate(edgeproto.FlavorAllFieldsMap); err != nil {
 		return &edgeproto.Result{}, err
+	}
+	for _, gpu := range in.Gpus {
+		if err := cloudcommon.ValidateGPU(gpu); err != nil {
+			return &edgeproto.Result{}, err
+		}
 	}
 
 	if in.OptResMap != nil {

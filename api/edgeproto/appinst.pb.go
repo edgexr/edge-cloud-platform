@@ -4022,6 +4022,18 @@ const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptRes = "55.1.5.4"
 const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey = "55.1.5.4.1"
 const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue = "55.1.5.4.2"
 const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes = "55.1.5.5"
+const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpus = "55.1.5.6"
+const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusModelId = "55.1.5.6.1"
+const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusCount = "55.1.5.6.2"
+const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusVendor = "55.1.5.6.3"
+const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusMemory = "55.1.5.6.4"
+const AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusInUse = "55.1.5.6.5"
+const AppInstFieldKubernetesResourcesCpuPoolTotalGpus = "55.1.6"
+const AppInstFieldKubernetesResourcesCpuPoolTotalGpusModelId = "55.1.6.1"
+const AppInstFieldKubernetesResourcesCpuPoolTotalGpusCount = "55.1.6.2"
+const AppInstFieldKubernetesResourcesCpuPoolTotalGpusVendor = "55.1.6.3"
+const AppInstFieldKubernetesResourcesCpuPoolTotalGpusMemory = "55.1.6.4"
+const AppInstFieldKubernetesResourcesCpuPoolTotalGpusInUse = "55.1.6.5"
 const AppInstFieldKubernetesResourcesGpuPool = "55.2"
 const AppInstFieldKubernetesResourcesGpuPoolTotalVcpus = "55.2.1"
 const AppInstFieldKubernetesResourcesGpuPoolTotalVcpusWhole = "55.2.1.1"
@@ -4039,6 +4051,18 @@ const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptRes = "55.2.5.4"
 const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey = "55.2.5.4.1"
 const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue = "55.2.5.4.2"
 const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes = "55.2.5.5"
+const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpus = "55.2.5.6"
+const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusModelId = "55.2.5.6.1"
+const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusCount = "55.2.5.6.2"
+const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusVendor = "55.2.5.6.3"
+const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusMemory = "55.2.5.6.4"
+const AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusInUse = "55.2.5.6.5"
+const AppInstFieldKubernetesResourcesGpuPoolTotalGpus = "55.2.6"
+const AppInstFieldKubernetesResourcesGpuPoolTotalGpusModelId = "55.2.6.1"
+const AppInstFieldKubernetesResourcesGpuPoolTotalGpusCount = "55.2.6.2"
+const AppInstFieldKubernetesResourcesGpuPoolTotalGpusVendor = "55.2.6.3"
+const AppInstFieldKubernetesResourcesGpuPoolTotalGpusMemory = "55.2.6.4"
+const AppInstFieldKubernetesResourcesGpuPoolTotalGpusInUse = "55.2.6.5"
 const AppInstFieldKubernetesResourcesMinKubernetesVersion = "55.4"
 const AppInstFieldNodeResources = "56"
 const AppInstFieldNodeResourcesVcpus = "56.1"
@@ -4049,6 +4073,12 @@ const AppInstFieldNodeResourcesOptResMapKey = "56.4.1"
 const AppInstFieldNodeResourcesOptResMapValue = "56.4.2"
 const AppInstFieldNodeResourcesInfraNodeFlavor = "56.5"
 const AppInstFieldNodeResourcesExternalVolumeSize = "56.6"
+const AppInstFieldNodeResourcesGpus = "56.7"
+const AppInstFieldNodeResourcesGpusModelId = "56.7.1"
+const AppInstFieldNodeResourcesGpusCount = "56.7.2"
+const AppInstFieldNodeResourcesGpusVendor = "56.7.3"
+const AppInstFieldNodeResourcesGpusMemory = "56.7.4"
+const AppInstFieldNodeResourcesGpusInUse = "56.7.5"
 const AppInstFieldIsStandalone = "57"
 const AppInstFieldTags = "100"
 const AppInstFieldTagsKey = "100.1"
@@ -4142,6 +4172,16 @@ var AppInstAllFields = []string{
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey,
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue,
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes,
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusModelId,
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusCount,
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusVendor,
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusMemory,
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusInUse,
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusModelId,
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusCount,
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusVendor,
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusMemory,
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusInUse,
 	AppInstFieldKubernetesResourcesGpuPoolTotalVcpusWhole,
 	AppInstFieldKubernetesResourcesGpuPoolTotalVcpusNanos,
 	AppInstFieldKubernetesResourcesGpuPoolTotalMemory,
@@ -4154,6 +4194,16 @@ var AppInstAllFields = []string{
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey,
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue,
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes,
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusModelId,
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusCount,
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusVendor,
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusMemory,
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusInUse,
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusModelId,
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusCount,
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusVendor,
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusMemory,
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusInUse,
 	AppInstFieldKubernetesResourcesMinKubernetesVersion,
 	AppInstFieldNodeResourcesVcpus,
 	AppInstFieldNodeResourcesRam,
@@ -4162,6 +4212,11 @@ var AppInstAllFields = []string{
 	AppInstFieldNodeResourcesOptResMapValue,
 	AppInstFieldNodeResourcesInfraNodeFlavor,
 	AppInstFieldNodeResourcesExternalVolumeSize,
+	AppInstFieldNodeResourcesGpusModelId,
+	AppInstFieldNodeResourcesGpusCount,
+	AppInstFieldNodeResourcesGpusVendor,
+	AppInstFieldNodeResourcesGpusMemory,
+	AppInstFieldNodeResourcesGpusInUse,
 	AppInstFieldIsStandalone,
 	AppInstFieldTagsKey,
 	AppInstFieldTagsValue,
@@ -4255,6 +4310,16 @@ var AppInstAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey:   struct{}{},
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue: struct{}{},
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes:   struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusModelId: struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusCount:   struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusVendor:  struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusMemory:  struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusInUse:   struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusModelId:           struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusCount:             struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusVendor:            struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusMemory:            struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusInUse:             struct{}{},
 	AppInstFieldKubernetesResourcesGpuPoolTotalVcpusWhole:            struct{}{},
 	AppInstFieldKubernetesResourcesGpuPoolTotalVcpusNanos:            struct{}{},
 	AppInstFieldKubernetesResourcesGpuPoolTotalMemory:                struct{}{},
@@ -4267,6 +4332,16 @@ var AppInstAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey:   struct{}{},
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue: struct{}{},
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes:   struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusModelId: struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusCount:   struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusVendor:  struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusMemory:  struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusInUse:   struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusModelId:           struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusCount:             struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusVendor:            struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusMemory:            struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusInUse:             struct{}{},
 	AppInstFieldKubernetesResourcesMinKubernetesVersion:              struct{}{},
 	AppInstFieldNodeResourcesVcpus:                                   struct{}{},
 	AppInstFieldNodeResourcesRam:                                     struct{}{},
@@ -4275,6 +4350,11 @@ var AppInstAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AppInstFieldNodeResourcesOptResMapValue:                          struct{}{},
 	AppInstFieldNodeResourcesInfraNodeFlavor:                         struct{}{},
 	AppInstFieldNodeResourcesExternalVolumeSize:                      struct{}{},
+	AppInstFieldNodeResourcesGpusModelId:                             struct{}{},
+	AppInstFieldNodeResourcesGpusCount:                               struct{}{},
+	AppInstFieldNodeResourcesGpusVendor:                              struct{}{},
+	AppInstFieldNodeResourcesGpusMemory:                              struct{}{},
+	AppInstFieldNodeResourcesGpusInUse:                               struct{}{},
 	AppInstFieldIsStandalone:                                         struct{}{},
 	AppInstFieldTagsKey:                                              struct{}{},
 	AppInstFieldTagsValue:                                            struct{}{},
@@ -4368,6 +4448,16 @@ var AppInstAllFieldsStringMap = map[string]string{
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey:   "Kubernetes Resources Cpu Pool Topology Min Node Opt Res Key",
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue: "Kubernetes Resources Cpu Pool Topology Min Node Opt Res Value",
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes:   "Kubernetes Resources Cpu Pool Topology Min Number Of Nodes",
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusModelId: "Kubernetes Resources Cpu Pool Topology Min Node Gpus Model Id",
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusCount:   "Kubernetes Resources Cpu Pool Topology Min Node Gpus Count",
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusVendor:  "Kubernetes Resources Cpu Pool Topology Min Node Gpus Vendor",
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusMemory:  "Kubernetes Resources Cpu Pool Topology Min Node Gpus Memory",
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusInUse:   "Kubernetes Resources Cpu Pool Topology Min Node Gpus In Use",
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusModelId:           "Kubernetes Resources Cpu Pool Total Gpus Model Id",
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusCount:             "Kubernetes Resources Cpu Pool Total Gpus Count",
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusVendor:            "Kubernetes Resources Cpu Pool Total Gpus Vendor",
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusMemory:            "Kubernetes Resources Cpu Pool Total Gpus Memory",
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusInUse:             "Kubernetes Resources Cpu Pool Total Gpus In Use",
 	AppInstFieldKubernetesResourcesGpuPoolTotalVcpusWhole:            "Kubernetes Resources Gpu Pool Total Vcpus Whole",
 	AppInstFieldKubernetesResourcesGpuPoolTotalVcpusNanos:            "Kubernetes Resources Gpu Pool Total Vcpus Nanos",
 	AppInstFieldKubernetesResourcesGpuPoolTotalMemory:                "Kubernetes Resources Gpu Pool Total Memory",
@@ -4380,6 +4470,16 @@ var AppInstAllFieldsStringMap = map[string]string{
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey:   "Kubernetes Resources Gpu Pool Topology Min Node Opt Res Key",
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue: "Kubernetes Resources Gpu Pool Topology Min Node Opt Res Value",
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes:   "Kubernetes Resources Gpu Pool Topology Min Number Of Nodes",
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusModelId: "Kubernetes Resources Gpu Pool Topology Min Node Gpus Model Id",
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusCount:   "Kubernetes Resources Gpu Pool Topology Min Node Gpus Count",
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusVendor:  "Kubernetes Resources Gpu Pool Topology Min Node Gpus Vendor",
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusMemory:  "Kubernetes Resources Gpu Pool Topology Min Node Gpus Memory",
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusInUse:   "Kubernetes Resources Gpu Pool Topology Min Node Gpus In Use",
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusModelId:           "Kubernetes Resources Gpu Pool Total Gpus Model Id",
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusCount:             "Kubernetes Resources Gpu Pool Total Gpus Count",
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusVendor:            "Kubernetes Resources Gpu Pool Total Gpus Vendor",
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusMemory:            "Kubernetes Resources Gpu Pool Total Gpus Memory",
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusInUse:             "Kubernetes Resources Gpu Pool Total Gpus In Use",
 	AppInstFieldKubernetesResourcesMinKubernetesVersion:              "Kubernetes Resources Min Kubernetes Version",
 	AppInstFieldNodeResourcesVcpus:                                   "Node Resources Vcpus",
 	AppInstFieldNodeResourcesRam:                                     "Node Resources Ram",
@@ -4388,6 +4488,11 @@ var AppInstAllFieldsStringMap = map[string]string{
 	AppInstFieldNodeResourcesOptResMapValue:                          "Node Resources Opt Res Map Value",
 	AppInstFieldNodeResourcesInfraNodeFlavor:                         "Node Resources Infra Node Flavor",
 	AppInstFieldNodeResourcesExternalVolumeSize:                      "Node Resources External Volume Size",
+	AppInstFieldNodeResourcesGpusModelId:                             "Node Resources Gpus Model Id",
+	AppInstFieldNodeResourcesGpusCount:                               "Node Resources Gpus Count",
+	AppInstFieldNodeResourcesGpusVendor:                              "Node Resources Gpus Vendor",
+	AppInstFieldNodeResourcesGpusMemory:                              "Node Resources Gpus Memory",
+	AppInstFieldNodeResourcesGpusInUse:                               "Node Resources Gpus In Use",
 	AppInstFieldIsStandalone:                                         "Is Standalone",
 	AppInstFieldTagsKey:                                              "Tags Key",
 	AppInstFieldTagsValue:                                            "Tags Value",
@@ -4839,6 +4944,101 @@ func (m *AppInst) DiffFields(o *AppInst, fields *FieldMap) {
 				fields.Set(AppInstFieldKubernetesResourcesCpuPool)
 				fields.Set(AppInstFieldKubernetesResources)
 			}
+			if m.KubernetesResources.CpuPool.Topology.MinNodeGpus != nil && o.KubernetesResources.CpuPool.Topology.MinNodeGpus != nil {
+				if len(m.KubernetesResources.CpuPool.Topology.MinNodeGpus) != len(o.KubernetesResources.CpuPool.Topology.MinNodeGpus) {
+					fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpus)
+					fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopology)
+					fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+					fields.Set(AppInstFieldKubernetesResources)
+				} else {
+					for i3 := 0; i3 < len(m.KubernetesResources.CpuPool.Topology.MinNodeGpus); i3++ {
+						if m.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].ModelId != o.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].ModelId {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusModelId)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].Count != o.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].Count {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusCount)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].Vendor != o.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].Vendor {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusVendor)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].Memory != o.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].Memory {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusMemory)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].InUse != o.KubernetesResources.CpuPool.Topology.MinNodeGpus[i3].InUse {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusInUse)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+					}
+				}
+			} else if (m.KubernetesResources.CpuPool.Topology.MinNodeGpus != nil && o.KubernetesResources.CpuPool.Topology.MinNodeGpus == nil) || (m.KubernetesResources.CpuPool.Topology.MinNodeGpus == nil && o.KubernetesResources.CpuPool.Topology.MinNodeGpus != nil) {
+				fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpus)
+				fields.Set(AppInstFieldKubernetesResourcesCpuPoolTopology)
+				fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+				fields.Set(AppInstFieldKubernetesResources)
+			}
+			if m.KubernetesResources.CpuPool.TotalGpus != nil && o.KubernetesResources.CpuPool.TotalGpus != nil {
+				if len(m.KubernetesResources.CpuPool.TotalGpus) != len(o.KubernetesResources.CpuPool.TotalGpus) {
+					fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpus)
+					fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+					fields.Set(AppInstFieldKubernetesResources)
+				} else {
+					for i2 := 0; i2 < len(m.KubernetesResources.CpuPool.TotalGpus); i2++ {
+						if m.KubernetesResources.CpuPool.TotalGpus[i2].ModelId != o.KubernetesResources.CpuPool.TotalGpus[i2].ModelId {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpusModelId)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.CpuPool.TotalGpus[i2].Count != o.KubernetesResources.CpuPool.TotalGpus[i2].Count {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpusCount)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.CpuPool.TotalGpus[i2].Vendor != o.KubernetesResources.CpuPool.TotalGpus[i2].Vendor {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpusVendor)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.CpuPool.TotalGpus[i2].Memory != o.KubernetesResources.CpuPool.TotalGpus[i2].Memory {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpusMemory)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.CpuPool.TotalGpus[i2].InUse != o.KubernetesResources.CpuPool.TotalGpus[i2].InUse {
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpusInUse)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+					}
+				}
+			} else if (m.KubernetesResources.CpuPool.TotalGpus != nil && o.KubernetesResources.CpuPool.TotalGpus == nil) || (m.KubernetesResources.CpuPool.TotalGpus == nil && o.KubernetesResources.CpuPool.TotalGpus != nil) {
+				fields.Set(AppInstFieldKubernetesResourcesCpuPoolTotalGpus)
+				fields.Set(AppInstFieldKubernetesResourcesCpuPool)
+				fields.Set(AppInstFieldKubernetesResources)
+			}
 		} else if (m.KubernetesResources.CpuPool != nil && o.KubernetesResources.CpuPool == nil) || (m.KubernetesResources.CpuPool == nil && o.KubernetesResources.CpuPool != nil) {
 			fields.Set(AppInstFieldKubernetesResourcesCpuPool)
 			fields.Set(AppInstFieldKubernetesResources)
@@ -4948,6 +5148,101 @@ func (m *AppInst) DiffFields(o *AppInst, fields *FieldMap) {
 				fields.Set(AppInstFieldKubernetesResourcesGpuPool)
 				fields.Set(AppInstFieldKubernetesResources)
 			}
+			if m.KubernetesResources.GpuPool.Topology.MinNodeGpus != nil && o.KubernetesResources.GpuPool.Topology.MinNodeGpus != nil {
+				if len(m.KubernetesResources.GpuPool.Topology.MinNodeGpus) != len(o.KubernetesResources.GpuPool.Topology.MinNodeGpus) {
+					fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpus)
+					fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopology)
+					fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+					fields.Set(AppInstFieldKubernetesResources)
+				} else {
+					for i3 := 0; i3 < len(m.KubernetesResources.GpuPool.Topology.MinNodeGpus); i3++ {
+						if m.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].ModelId != o.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].ModelId {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusModelId)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].Count != o.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].Count {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusCount)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].Vendor != o.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].Vendor {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusVendor)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].Memory != o.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].Memory {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusMemory)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].InUse != o.KubernetesResources.GpuPool.Topology.MinNodeGpus[i3].InUse {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusInUse)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopology)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+					}
+				}
+			} else if (m.KubernetesResources.GpuPool.Topology.MinNodeGpus != nil && o.KubernetesResources.GpuPool.Topology.MinNodeGpus == nil) || (m.KubernetesResources.GpuPool.Topology.MinNodeGpus == nil && o.KubernetesResources.GpuPool.Topology.MinNodeGpus != nil) {
+				fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpus)
+				fields.Set(AppInstFieldKubernetesResourcesGpuPoolTopology)
+				fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+				fields.Set(AppInstFieldKubernetesResources)
+			}
+			if m.KubernetesResources.GpuPool.TotalGpus != nil && o.KubernetesResources.GpuPool.TotalGpus != nil {
+				if len(m.KubernetesResources.GpuPool.TotalGpus) != len(o.KubernetesResources.GpuPool.TotalGpus) {
+					fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpus)
+					fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+					fields.Set(AppInstFieldKubernetesResources)
+				} else {
+					for i2 := 0; i2 < len(m.KubernetesResources.GpuPool.TotalGpus); i2++ {
+						if m.KubernetesResources.GpuPool.TotalGpus[i2].ModelId != o.KubernetesResources.GpuPool.TotalGpus[i2].ModelId {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpusModelId)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.GpuPool.TotalGpus[i2].Count != o.KubernetesResources.GpuPool.TotalGpus[i2].Count {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpusCount)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.GpuPool.TotalGpus[i2].Vendor != o.KubernetesResources.GpuPool.TotalGpus[i2].Vendor {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpusVendor)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.GpuPool.TotalGpus[i2].Memory != o.KubernetesResources.GpuPool.TotalGpus[i2].Memory {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpusMemory)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+						if m.KubernetesResources.GpuPool.TotalGpus[i2].InUse != o.KubernetesResources.GpuPool.TotalGpus[i2].InUse {
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpusInUse)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpus)
+							fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+							fields.Set(AppInstFieldKubernetesResources)
+						}
+					}
+				}
+			} else if (m.KubernetesResources.GpuPool.TotalGpus != nil && o.KubernetesResources.GpuPool.TotalGpus == nil) || (m.KubernetesResources.GpuPool.TotalGpus == nil && o.KubernetesResources.GpuPool.TotalGpus != nil) {
+				fields.Set(AppInstFieldKubernetesResourcesGpuPoolTotalGpus)
+				fields.Set(AppInstFieldKubernetesResourcesGpuPool)
+				fields.Set(AppInstFieldKubernetesResources)
+			}
 		} else if (m.KubernetesResources.GpuPool != nil && o.KubernetesResources.GpuPool == nil) || (m.KubernetesResources.GpuPool == nil && o.KubernetesResources.GpuPool != nil) {
 			fields.Set(AppInstFieldKubernetesResourcesGpuPool)
 			fields.Set(AppInstFieldKubernetesResources)
@@ -5001,6 +5296,43 @@ func (m *AppInst) DiffFields(o *AppInst, fields *FieldMap) {
 		}
 		if m.NodeResources.ExternalVolumeSize != o.NodeResources.ExternalVolumeSize {
 			fields.Set(AppInstFieldNodeResourcesExternalVolumeSize)
+			fields.Set(AppInstFieldNodeResources)
+		}
+		if m.NodeResources.Gpus != nil && o.NodeResources.Gpus != nil {
+			if len(m.NodeResources.Gpus) != len(o.NodeResources.Gpus) {
+				fields.Set(AppInstFieldNodeResourcesGpus)
+				fields.Set(AppInstFieldNodeResources)
+			} else {
+				for i1 := 0; i1 < len(m.NodeResources.Gpus); i1++ {
+					if m.NodeResources.Gpus[i1].ModelId != o.NodeResources.Gpus[i1].ModelId {
+						fields.Set(AppInstFieldNodeResourcesGpusModelId)
+						fields.Set(AppInstFieldNodeResourcesGpus)
+						fields.Set(AppInstFieldNodeResources)
+					}
+					if m.NodeResources.Gpus[i1].Count != o.NodeResources.Gpus[i1].Count {
+						fields.Set(AppInstFieldNodeResourcesGpusCount)
+						fields.Set(AppInstFieldNodeResourcesGpus)
+						fields.Set(AppInstFieldNodeResources)
+					}
+					if m.NodeResources.Gpus[i1].Vendor != o.NodeResources.Gpus[i1].Vendor {
+						fields.Set(AppInstFieldNodeResourcesGpusVendor)
+						fields.Set(AppInstFieldNodeResourcesGpus)
+						fields.Set(AppInstFieldNodeResources)
+					}
+					if m.NodeResources.Gpus[i1].Memory != o.NodeResources.Gpus[i1].Memory {
+						fields.Set(AppInstFieldNodeResourcesGpusMemory)
+						fields.Set(AppInstFieldNodeResourcesGpus)
+						fields.Set(AppInstFieldNodeResources)
+					}
+					if m.NodeResources.Gpus[i1].InUse != o.NodeResources.Gpus[i1].InUse {
+						fields.Set(AppInstFieldNodeResourcesGpusInUse)
+						fields.Set(AppInstFieldNodeResourcesGpus)
+						fields.Set(AppInstFieldNodeResources)
+					}
+				}
+			}
+		} else if (m.NodeResources.Gpus != nil && o.NodeResources.Gpus == nil) || (m.NodeResources.Gpus == nil && o.NodeResources.Gpus != nil) {
+			fields.Set(AppInstFieldNodeResourcesGpus)
 			fields.Set(AppInstFieldNodeResources)
 		}
 	} else if (m.NodeResources != nil && o.NodeResources == nil) || (m.NodeResources == nil && o.NodeResources != nil) {
@@ -5075,6 +5407,18 @@ var UpdateAppInstFieldsMap = NewFieldMap(map[string]struct{}{
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResKey:   struct{}{},
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeOptResValue: struct{}{},
 	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNumberOfNodes:   struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpus:        struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusModelId: struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusCount:   struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusVendor:  struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusMemory:  struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTopologyMinNodeGpusInUse:   struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpus:                  struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusModelId:           struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusCount:             struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusVendor:            struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusMemory:            struct{}{},
+	AppInstFieldKubernetesResourcesCpuPoolTotalGpusInUse:             struct{}{},
 	AppInstFieldKubernetesResourcesGpuPool:                           struct{}{},
 	AppInstFieldKubernetesResourcesGpuPoolTotalVcpus:                 struct{}{},
 	AppInstFieldKubernetesResourcesGpuPoolTotalVcpusWhole:            struct{}{},
@@ -5092,6 +5436,18 @@ var UpdateAppInstFieldsMap = NewFieldMap(map[string]struct{}{
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResKey:   struct{}{},
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeOptResValue: struct{}{},
 	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNumberOfNodes:   struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpus:        struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusModelId: struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusCount:   struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusVendor:  struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusMemory:  struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTopologyMinNodeGpusInUse:   struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpus:                  struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusModelId:           struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusCount:             struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusVendor:            struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusMemory:            struct{}{},
+	AppInstFieldKubernetesResourcesGpuPoolTotalGpusInUse:             struct{}{},
 	AppInstFieldKubernetesResourcesMinKubernetesVersion:              struct{}{},
 	AppInstFieldNodeResources:                                        struct{}{},
 	AppInstFieldNodeResourcesVcpus:                                   struct{}{},
@@ -5102,6 +5458,12 @@ var UpdateAppInstFieldsMap = NewFieldMap(map[string]struct{}{
 	AppInstFieldNodeResourcesOptResMapValue:                          struct{}{},
 	AppInstFieldNodeResourcesInfraNodeFlavor:                         struct{}{},
 	AppInstFieldNodeResourcesExternalVolumeSize:                      struct{}{},
+	AppInstFieldNodeResourcesGpus:                                    struct{}{},
+	AppInstFieldNodeResourcesGpusModelId:                             struct{}{},
+	AppInstFieldNodeResourcesGpusCount:                               struct{}{},
+	AppInstFieldNodeResourcesGpusVendor:                              struct{}{},
+	AppInstFieldNodeResourcesGpusMemory:                              struct{}{},
+	AppInstFieldNodeResourcesGpusInUse:                               struct{}{},
 	AppInstFieldIsStandalone:                                         struct{}{},
 	AppInstFieldTags:                                                 struct{}{},
 	AppInstFieldTagsKey:                                              struct{}{},
@@ -5259,6 +5621,161 @@ func (m *AppInst) RemoveConfigs(vals ...*ConfigFile) int {
 	for i := len(m.Configs); i >= 0; i-- {
 		if _, found := remove[m.Configs[i].String()]; found {
 			m.Configs = append(m.Configs[:i], m.Configs[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInst) AddKubernetesResourcesCpuPoolTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.KubernetesResources.CpuPool.Topology.MinNodeGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.KubernetesResources.CpuPool.Topology.MinNodeGpus = append(m.KubernetesResources.CpuPool.Topology.MinNodeGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInst) RemoveKubernetesResourcesCpuPoolTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.KubernetesResources.CpuPool.Topology.MinNodeGpus); i >= 0; i-- {
+		if _, found := remove[m.KubernetesResources.CpuPool.Topology.MinNodeGpus[i].GetKey().GetKeyString()]; found {
+			m.KubernetesResources.CpuPool.Topology.MinNodeGpus = append(m.KubernetesResources.CpuPool.Topology.MinNodeGpus[:i], m.KubernetesResources.CpuPool.Topology.MinNodeGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInst) AddKubernetesResourcesCpuPoolTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.KubernetesResources.CpuPool.TotalGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.KubernetesResources.CpuPool.TotalGpus = append(m.KubernetesResources.CpuPool.TotalGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInst) RemoveKubernetesResourcesCpuPoolTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.KubernetesResources.CpuPool.TotalGpus); i >= 0; i-- {
+		if _, found := remove[m.KubernetesResources.CpuPool.TotalGpus[i].GetKey().GetKeyString()]; found {
+			m.KubernetesResources.CpuPool.TotalGpus = append(m.KubernetesResources.CpuPool.TotalGpus[:i], m.KubernetesResources.CpuPool.TotalGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInst) AddKubernetesResourcesGpuPoolTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.KubernetesResources.GpuPool.Topology.MinNodeGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.KubernetesResources.GpuPool.Topology.MinNodeGpus = append(m.KubernetesResources.GpuPool.Topology.MinNodeGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInst) RemoveKubernetesResourcesGpuPoolTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.KubernetesResources.GpuPool.Topology.MinNodeGpus); i >= 0; i-- {
+		if _, found := remove[m.KubernetesResources.GpuPool.Topology.MinNodeGpus[i].GetKey().GetKeyString()]; found {
+			m.KubernetesResources.GpuPool.Topology.MinNodeGpus = append(m.KubernetesResources.GpuPool.Topology.MinNodeGpus[:i], m.KubernetesResources.GpuPool.Topology.MinNodeGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInst) AddKubernetesResourcesGpuPoolTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.KubernetesResources.GpuPool.TotalGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.KubernetesResources.GpuPool.TotalGpus = append(m.KubernetesResources.GpuPool.TotalGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInst) RemoveKubernetesResourcesGpuPoolTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.KubernetesResources.GpuPool.TotalGpus); i >= 0; i-- {
+		if _, found := remove[m.KubernetesResources.GpuPool.TotalGpus[i].GetKey().GetKeyString()]; found {
+			m.KubernetesResources.GpuPool.TotalGpus = append(m.KubernetesResources.GpuPool.TotalGpus[:i], m.KubernetesResources.GpuPool.TotalGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *AppInst) AddNodeResourcesGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.NodeResources.Gpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.NodeResources.Gpus = append(m.NodeResources.Gpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *AppInst) RemoveNodeResourcesGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.NodeResources.Gpus); i >= 0; i-- {
+		if _, found := remove[m.NodeResources.Gpus[i].GetKey().GetKeyString()]; found {
+			m.NodeResources.Gpus = append(m.NodeResources.Gpus[:i], m.NodeResources.Gpus[i+1:]...)
 			changes++
 		}
 	}
@@ -5862,6 +6379,42 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 								changed++
 							}
 						}
+						if fmap.HasOrHasChild("55.1.5.6") {
+							if src.KubernetesResources.CpuPool.Topology.MinNodeGpus != nil {
+								if updateListAction == "add" {
+									changed += m.AddKubernetesResourcesCpuPoolTopologyMinNodeGpus(src.KubernetesResources.CpuPool.Topology.MinNodeGpus...)
+								} else if updateListAction == "remove" {
+									changed += m.RemoveKubernetesResourcesCpuPoolTopologyMinNodeGpus(src.KubernetesResources.CpuPool.Topology.MinNodeGpus...)
+								} else {
+									m.KubernetesResources.CpuPool.Topology.MinNodeGpus = make([]*GPUResource, 0)
+									for k3, _ := range src.KubernetesResources.CpuPool.Topology.MinNodeGpus {
+										m.KubernetesResources.CpuPool.Topology.MinNodeGpus = append(m.KubernetesResources.CpuPool.Topology.MinNodeGpus, src.KubernetesResources.CpuPool.Topology.MinNodeGpus[k3].Clone())
+									}
+									changed++
+								}
+							} else if m.KubernetesResources.CpuPool.Topology.MinNodeGpus != nil {
+								m.KubernetesResources.CpuPool.Topology.MinNodeGpus = nil
+								changed++
+							}
+						}
+					}
+					if fmap.HasOrHasChild("55.1.6") {
+						if src.KubernetesResources.CpuPool.TotalGpus != nil {
+							if updateListAction == "add" {
+								changed += m.AddKubernetesResourcesCpuPoolTotalGpus(src.KubernetesResources.CpuPool.TotalGpus...)
+							} else if updateListAction == "remove" {
+								changed += m.RemoveKubernetesResourcesCpuPoolTotalGpus(src.KubernetesResources.CpuPool.TotalGpus...)
+							} else {
+								m.KubernetesResources.CpuPool.TotalGpus = make([]*GPUResource, 0)
+								for k2, _ := range src.KubernetesResources.CpuPool.TotalGpus {
+									m.KubernetesResources.CpuPool.TotalGpus = append(m.KubernetesResources.CpuPool.TotalGpus, src.KubernetesResources.CpuPool.TotalGpus[k2].Clone())
+								}
+								changed++
+							}
+						} else if m.KubernetesResources.CpuPool.TotalGpus != nil {
+							m.KubernetesResources.CpuPool.TotalGpus = nil
+							changed++
+						}
 					}
 				} else if m.KubernetesResources.CpuPool != nil {
 					m.KubernetesResources.CpuPool = nil
@@ -5972,6 +6525,42 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 								changed++
 							}
 						}
+						if fmap.HasOrHasChild("55.2.5.6") {
+							if src.KubernetesResources.GpuPool.Topology.MinNodeGpus != nil {
+								if updateListAction == "add" {
+									changed += m.AddKubernetesResourcesGpuPoolTopologyMinNodeGpus(src.KubernetesResources.GpuPool.Topology.MinNodeGpus...)
+								} else if updateListAction == "remove" {
+									changed += m.RemoveKubernetesResourcesGpuPoolTopologyMinNodeGpus(src.KubernetesResources.GpuPool.Topology.MinNodeGpus...)
+								} else {
+									m.KubernetesResources.GpuPool.Topology.MinNodeGpus = make([]*GPUResource, 0)
+									for k3, _ := range src.KubernetesResources.GpuPool.Topology.MinNodeGpus {
+										m.KubernetesResources.GpuPool.Topology.MinNodeGpus = append(m.KubernetesResources.GpuPool.Topology.MinNodeGpus, src.KubernetesResources.GpuPool.Topology.MinNodeGpus[k3].Clone())
+									}
+									changed++
+								}
+							} else if m.KubernetesResources.GpuPool.Topology.MinNodeGpus != nil {
+								m.KubernetesResources.GpuPool.Topology.MinNodeGpus = nil
+								changed++
+							}
+						}
+					}
+					if fmap.HasOrHasChild("55.2.6") {
+						if src.KubernetesResources.GpuPool.TotalGpus != nil {
+							if updateListAction == "add" {
+								changed += m.AddKubernetesResourcesGpuPoolTotalGpus(src.KubernetesResources.GpuPool.TotalGpus...)
+							} else if updateListAction == "remove" {
+								changed += m.RemoveKubernetesResourcesGpuPoolTotalGpus(src.KubernetesResources.GpuPool.TotalGpus...)
+							} else {
+								m.KubernetesResources.GpuPool.TotalGpus = make([]*GPUResource, 0)
+								for k2, _ := range src.KubernetesResources.GpuPool.TotalGpus {
+									m.KubernetesResources.GpuPool.TotalGpus = append(m.KubernetesResources.GpuPool.TotalGpus, src.KubernetesResources.GpuPool.TotalGpus[k2].Clone())
+								}
+								changed++
+							}
+						} else if m.KubernetesResources.GpuPool.TotalGpus != nil {
+							m.KubernetesResources.GpuPool.TotalGpus = nil
+							changed++
+						}
 					}
 				} else if m.KubernetesResources.GpuPool != nil {
 					m.KubernetesResources.GpuPool = nil
@@ -6047,6 +6636,24 @@ func (m *AppInst) CopyInFields(src *AppInst) int {
 			if fmap.Has("56.6") {
 				if m.NodeResources.ExternalVolumeSize != src.NodeResources.ExternalVolumeSize {
 					m.NodeResources.ExternalVolumeSize = src.NodeResources.ExternalVolumeSize
+					changed++
+				}
+			}
+			if fmap.HasOrHasChild("56.7") {
+				if src.NodeResources.Gpus != nil {
+					if updateListAction == "add" {
+						changed += m.AddNodeResourcesGpus(src.NodeResources.Gpus...)
+					} else if updateListAction == "remove" {
+						changed += m.RemoveNodeResourcesGpus(src.NodeResources.Gpus...)
+					} else {
+						m.NodeResources.Gpus = make([]*GPUResource, 0)
+						for k1, _ := range src.NodeResources.Gpus {
+							m.NodeResources.Gpus = append(m.NodeResources.Gpus, src.NodeResources.Gpus[k1].Clone())
+						}
+						changed++
+					}
+				} else if m.NodeResources.Gpus != nil {
+					m.NodeResources.Gpus = nil
 					changed++
 				}
 			}

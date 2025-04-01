@@ -27,10 +27,16 @@ import (
 // ResVal provides a generic resource used for doing math
 // on and comparing resource values. Values are internally
 // stored as edgeproto.Udec64.
+// Resource type should be set in the case that resource names
+// may have conflicts with generic resources. The key for
+// the ResValMap then becomes ResourceType/Name. This allows
+// scoping specific resources like "gpus" to a type.
 type ResVal struct {
-	Name          string // unique name
-	Units         string
-	Value         edgeproto.Udec64
+	Name         string // name
+	Units        string
+	Value        edgeproto.Udec64
+	ResourceType string // for specific resource types
+	// OptResMap should be phased out in favor of ResourceType/Name
 	OptResMapKey  string // for opt res, original optresmap key
 	OptResMapSpec string // for opt res, original optresmap val without count
 }
@@ -53,9 +59,44 @@ func NewWholeResVal(name, units string, value uint64) *ResVal {
 	}
 }
 
+func NewWholeResTypeVal(resourceType, name, units string, value uint64) *ResVal {
+	return &ResVal{
+		Name:         name,
+		Units:        units,
+		Value:        edgeproto.Udec64{Whole: value},
+		ResourceType: resourceType,
+	}
+}
+
+func NewGPURes(name string, count uint32) *ResVal {
+	return NewWholeResTypeVal(cloudcommon.ResourceTypeGPU, name, "", uint64(count))
+}
+
+func (s *ResVal) Key() string {
+	return edgeproto.BuildResKey(s.ResourceType, s.Name)
+}
+
 func (s *ResVal) Clone() *ResVal {
 	cp := *s
 	return &cp
+}
+
+func (s ResVal) AsInfraRes() *edgeproto.InfraResource {
+	return &edgeproto.InfraResource{
+		Name:  s.Name,
+		Value: s.Value.Whole,
+		Units: s.Units,
+		Type:  s.ResourceType,
+	}
+}
+
+func FromInfraRes(infraRes *edgeproto.InfraResource) *ResVal {
+	return &ResVal{
+		Name:         infraRes.Name,
+		Units:        infraRes.Units,
+		Value:        edgeproto.Udec64{Whole: infraRes.Value},
+		ResourceType: infraRes.Type,
+	}
 }
 
 type ResValMap map[string]*ResVal
@@ -71,11 +112,12 @@ func (s ResValMap) Add(nres *ResVal) {
 func (s ResValMap) AddMult(nres *ResVal, factor uint32) {
 	cp := *nres
 	cp.Value.Mult(factor)
-	existing, ok := s[nres.Name]
+	key := nres.Key()
+	existing, ok := s[key]
 	if ok {
 		existing.Value.Add(&cp.Value)
 	} else {
-		s[nres.Name] = &cp
+		s[key] = &cp
 	}
 }
 
@@ -94,6 +136,17 @@ func (s ResValMap) AddDisk(val uint64) {
 	s.AddRes(cloudcommon.ResourceDiskGb, cloudcommon.ResourceDiskUnits, val, 0)
 }
 
+func (s ResValMap) AddGPU(name string, count uint32) {
+	s.Add(NewGPURes(name, count))
+}
+
+func (s ResValMap) AddGPUs(gpus []*edgeproto.GPUResource, factor uint32) {
+	for _, gpu := range gpus {
+		s.AddGPU(gpu.ModelId, gpu.Count*factor)
+	}
+}
+
+// Deprecated
 // AddOptResMap adds optional resource values.
 func (s ResValMap) AddOptResMap(optResMap map[string]string, count uint32) error {
 	for resName, val := range optResMap {
@@ -104,6 +157,7 @@ func (s ResValMap) AddOptResMap(optResMap map[string]string, count uint32) error
 	return nil
 }
 
+// Deprecated, use AddResType instead.
 // AddOptRes adds an optional resource value.
 func (s ResValMap) AddOptRes(resName, val string, mult uint32) error {
 	typ, alias, count, err := cloudcommon.ParseOptResVal(val)
@@ -142,7 +196,7 @@ func (s ResValMap) AddAllMult(other ResValMap, factor uint32) {
 // The value floors at zero rather than going negative.
 // If the other value is not in this, it is ignored.
 func (s ResValMap) SubFloor(nres *ResVal, underflow *bool) {
-	existing, ok := s[nres.Name]
+	existing, ok := s[nres.Key()]
 	if ok {
 		existing.Value.SubFloor(&nres.Value, underflow)
 	}
@@ -200,6 +254,7 @@ func (s ResValMap) AddNodeResources(nr *edgeproto.NodeResources, count uint32) e
 	s.AddVcpus(nr.Vcpus*uint64(count), 0)
 	s.AddRam(nr.Ram * uint64(count))
 	s.AddDisk(nr.Disk * uint64(count))
+	s.AddGPUs(nr.Gpus, count)
 	// optional resources
 	return s.AddOptResMap(nr.OptResMap, count)
 }
@@ -211,6 +266,7 @@ func (s ResValMap) AddNodePoolResources(npr *edgeproto.NodePoolResources) error 
 	s.AddVcpus(npr.TotalVcpus.Whole, npr.TotalVcpus.Nanos)
 	s.AddRam(npr.TotalMemory)
 	s.AddDisk(npr.TotalDisk)
+	s.AddGPUs(npr.TotalGpus, 1)
 	// optional resources
 	return s.AddOptResMap(npr.TotalOptRes, 1)
 }
@@ -219,7 +275,7 @@ func (s ResValMap) AddNodePoolResources(npr *edgeproto.NodePoolResources) error 
 // resource by the other resource, rounded up to the nearest
 // whole number. Returns false if no values to compare.
 func (s ResValMap) DivFactor(nres *ResVal) (uint32, bool) {
-	existing, ok := s[nres.Name]
+	existing, ok := s[nres.Key()]
 	if ok {
 		nrVal := nres.Value.Float()
 		if nrVal == 0 {

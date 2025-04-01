@@ -23,6 +23,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 )
 
 const (
@@ -43,6 +44,7 @@ type Resources struct {
 	diskMax         uint64
 	externalIpsUsed uint64
 	externalIpsMax  uint64
+	gpusMax         []*edgeproto.GPUResource
 	instancesUsed   uint64
 
 	cloudletFlavors map[string]*edgeproto.FlavorInfo
@@ -61,6 +63,7 @@ func (s *Resources) Init() {
 	s.vcpusUsed = 0
 	s.diskUsed = 0
 	s.externalIpsUsed = 0
+	s.gpusMax = make([]*edgeproto.GPUResource, 0)
 	s.instancesUsed = 0
 	s.platformVMs = make([]edgeproto.VmInfo, 0)
 	s.cloudletFlavors = map[string]*edgeproto.FlavorInfo{}
@@ -77,11 +80,12 @@ func (s *Resources) SetCloudletFlavors(flavors []*edgeproto.FlavorInfo, lbFlavor
 	s.lbFlavorName = lbFlavorName
 }
 
-func (s *Resources) SetMaxResources(ramMax, vcpusMax, diskMax, externalIpsMax uint64) {
+func (s *Resources) SetMaxResources(ramMax, vcpusMax, diskMax, externalIpsMax uint64, gpus []*edgeproto.GPUResource) {
 	s.ramMax = ramMax
 	s.vcpusMax = vcpusMax
 	s.diskMax = diskMax
 	s.externalIpsMax = externalIpsMax
+	s.gpusMax = gpus
 }
 
 func (s *Resources) GetMaxResources() (uint64, uint64, uint64, uint64) {
@@ -313,6 +317,7 @@ func (s *Resources) GetSnapshot() *edgeproto.InfraResourcesSnapshot {
 		Name:          cloudcommon.ResourceDiskGb,
 		Value:         s.diskUsed,
 		InfraMaxValue: s.diskMax,
+		Units:         cloudcommon.ResourceDiskUnits,
 	}, {
 		Name:          cloudcommon.ResourceExternalIPs,
 		Value:         s.externalIpsUsed,
@@ -321,6 +326,16 @@ func (s *Resources) GetSnapshot() *edgeproto.InfraResourcesSnapshot {
 		Name:  cloudcommon.ResourceInstances,
 		Value: s.instancesUsed,
 	},
+	}
+	if s.gpusMax != nil {
+		for _, gpu := range s.gpusMax {
+			res := resspec.NewGPURes(gpu.ModelId, gpu.Count).AsInfraRes()
+			// this is the max value, we're not tracking the
+			// used value
+			res.InfraMaxValue = res.Value
+			res.Value = 0
+			snapshot.Info = append(snapshot.Info, *res)
+		}
 	}
 	return &snapshot
 }

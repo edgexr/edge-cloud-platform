@@ -70,7 +70,7 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 	log.SpanLog(ctx, log.DebugLevelInfra, "init Mock cloudlet")
 	s.caches = caches
 	s.resources.Init()
-	s.resources.SetMaxResources(MockRamMax, MockVcpusMax, MockDiskMax, MockExternalIpsMax)
+	s.resources.SetMaxResources(MockRamMax, MockVcpusMax, MockDiskMax, MockExternalIpsMax, nil)
 	return nil
 }
 

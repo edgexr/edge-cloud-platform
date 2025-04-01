@@ -2638,6 +2638,12 @@ const ClusterInstFieldNodeResourcesOptResMapKey = "45.4.1"
 const ClusterInstFieldNodeResourcesOptResMapValue = "45.4.2"
 const ClusterInstFieldNodeResourcesInfraNodeFlavor = "45.5"
 const ClusterInstFieldNodeResourcesExternalVolumeSize = "45.6"
+const ClusterInstFieldNodeResourcesGpus = "45.7"
+const ClusterInstFieldNodeResourcesGpusModelId = "45.7.1"
+const ClusterInstFieldNodeResourcesGpusCount = "45.7.2"
+const ClusterInstFieldNodeResourcesGpusVendor = "45.7.3"
+const ClusterInstFieldNodeResourcesGpusMemory = "45.7.4"
+const ClusterInstFieldNodeResourcesGpusInUse = "45.7.5"
 const ClusterInstFieldNodePools = "46"
 const ClusterInstFieldNodePoolsName = "46.1"
 const ClusterInstFieldNodePoolsNumNodes = "46.2"
@@ -2650,6 +2656,12 @@ const ClusterInstFieldNodePoolsNodeResourcesOptResMapKey = "46.3.4.1"
 const ClusterInstFieldNodePoolsNodeResourcesOptResMapValue = "46.3.4.2"
 const ClusterInstFieldNodePoolsNodeResourcesInfraNodeFlavor = "46.3.5"
 const ClusterInstFieldNodePoolsNodeResourcesExternalVolumeSize = "46.3.6"
+const ClusterInstFieldNodePoolsNodeResourcesGpus = "46.3.7"
+const ClusterInstFieldNodePoolsNodeResourcesGpusModelId = "46.3.7.1"
+const ClusterInstFieldNodePoolsNodeResourcesGpusCount = "46.3.7.2"
+const ClusterInstFieldNodePoolsNodeResourcesGpusVendor = "46.3.7.3"
+const ClusterInstFieldNodePoolsNodeResourcesGpusMemory = "46.3.7.4"
+const ClusterInstFieldNodePoolsNodeResourcesGpusInUse = "46.3.7.5"
 const ClusterInstFieldNodePoolsScalable = "46.4"
 const ClusterInstFieldInfraAnnotations = "47"
 const ClusterInstFieldInfraAnnotationsKey = "47.1"
@@ -2727,6 +2739,11 @@ var ClusterInstAllFields = []string{
 	ClusterInstFieldNodeResourcesOptResMapValue,
 	ClusterInstFieldNodeResourcesInfraNodeFlavor,
 	ClusterInstFieldNodeResourcesExternalVolumeSize,
+	ClusterInstFieldNodeResourcesGpusModelId,
+	ClusterInstFieldNodeResourcesGpusCount,
+	ClusterInstFieldNodeResourcesGpusVendor,
+	ClusterInstFieldNodeResourcesGpusMemory,
+	ClusterInstFieldNodeResourcesGpusInUse,
 	ClusterInstFieldNodePoolsName,
 	ClusterInstFieldNodePoolsNumNodes,
 	ClusterInstFieldNodePoolsNodeResourcesVcpus,
@@ -2736,6 +2753,11 @@ var ClusterInstAllFields = []string{
 	ClusterInstFieldNodePoolsNodeResourcesOptResMapValue,
 	ClusterInstFieldNodePoolsNodeResourcesInfraNodeFlavor,
 	ClusterInstFieldNodePoolsNodeResourcesExternalVolumeSize,
+	ClusterInstFieldNodePoolsNodeResourcesGpusModelId,
+	ClusterInstFieldNodePoolsNodeResourcesGpusCount,
+	ClusterInstFieldNodePoolsNodeResourcesGpusVendor,
+	ClusterInstFieldNodePoolsNodeResourcesGpusMemory,
+	ClusterInstFieldNodePoolsNodeResourcesGpusInUse,
 	ClusterInstFieldNodePoolsScalable,
 	ClusterInstFieldInfraAnnotationsKey,
 	ClusterInstFieldInfraAnnotationsValue,
@@ -2812,6 +2834,11 @@ var ClusterInstAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstFieldNodeResourcesOptResMapValue:              struct{}{},
 	ClusterInstFieldNodeResourcesInfraNodeFlavor:             struct{}{},
 	ClusterInstFieldNodeResourcesExternalVolumeSize:          struct{}{},
+	ClusterInstFieldNodeResourcesGpusModelId:                 struct{}{},
+	ClusterInstFieldNodeResourcesGpusCount:                   struct{}{},
+	ClusterInstFieldNodeResourcesGpusVendor:                  struct{}{},
+	ClusterInstFieldNodeResourcesGpusMemory:                  struct{}{},
+	ClusterInstFieldNodeResourcesGpusInUse:                   struct{}{},
 	ClusterInstFieldNodePoolsName:                            struct{}{},
 	ClusterInstFieldNodePoolsNumNodes:                        struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesVcpus:              struct{}{},
@@ -2821,6 +2848,11 @@ var ClusterInstAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstFieldNodePoolsNodeResourcesOptResMapValue:     struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesInfraNodeFlavor:    struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesExternalVolumeSize: struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusModelId:        struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusCount:          struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusVendor:         struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusMemory:         struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusInUse:          struct{}{},
 	ClusterInstFieldNodePoolsScalable:                        struct{}{},
 	ClusterInstFieldInfraAnnotationsKey:                      struct{}{},
 	ClusterInstFieldInfraAnnotationsValue:                    struct{}{},
@@ -2897,6 +2929,11 @@ var ClusterInstAllFieldsStringMap = map[string]string{
 	ClusterInstFieldNodeResourcesOptResMapValue:              "Node Resources Opt Res Map Value",
 	ClusterInstFieldNodeResourcesInfraNodeFlavor:             "Node Resources Infra Node Flavor",
 	ClusterInstFieldNodeResourcesExternalVolumeSize:          "Node Resources External Volume Size",
+	ClusterInstFieldNodeResourcesGpusModelId:                 "Node Resources Gpus Model Id",
+	ClusterInstFieldNodeResourcesGpusCount:                   "Node Resources Gpus Count",
+	ClusterInstFieldNodeResourcesGpusVendor:                  "Node Resources Gpus Vendor",
+	ClusterInstFieldNodeResourcesGpusMemory:                  "Node Resources Gpus Memory",
+	ClusterInstFieldNodeResourcesGpusInUse:                   "Node Resources Gpus In Use",
 	ClusterInstFieldNodePoolsName:                            "Node Pools Name",
 	ClusterInstFieldNodePoolsNumNodes:                        "Node Pools Num Nodes",
 	ClusterInstFieldNodePoolsNodeResourcesVcpus:              "Node Pools Node Resources Vcpus",
@@ -2906,6 +2943,11 @@ var ClusterInstAllFieldsStringMap = map[string]string{
 	ClusterInstFieldNodePoolsNodeResourcesOptResMapValue:     "Node Pools Node Resources Opt Res Map Value",
 	ClusterInstFieldNodePoolsNodeResourcesInfraNodeFlavor:    "Node Pools Node Resources Infra Node Flavor",
 	ClusterInstFieldNodePoolsNodeResourcesExternalVolumeSize: "Node Pools Node Resources External Volume Size",
+	ClusterInstFieldNodePoolsNodeResourcesGpusModelId:        "Node Pools Node Resources Gpus Model Id",
+	ClusterInstFieldNodePoolsNodeResourcesGpusCount:          "Node Pools Node Resources Gpus Count",
+	ClusterInstFieldNodePoolsNodeResourcesGpusVendor:         "Node Pools Node Resources Gpus Vendor",
+	ClusterInstFieldNodePoolsNodeResourcesGpusMemory:         "Node Pools Node Resources Gpus Memory",
+	ClusterInstFieldNodePoolsNodeResourcesGpusInUse:          "Node Pools Node Resources Gpus In Use",
 	ClusterInstFieldNodePoolsScalable:                        "Node Pools Scalable",
 	ClusterInstFieldInfraAnnotationsKey:                      "Infra Annotations Key",
 	ClusterInstFieldInfraAnnotationsValue:                    "Infra Annotations Value",
@@ -3241,6 +3283,43 @@ func (m *ClusterInst) DiffFields(o *ClusterInst, fields *FieldMap) {
 			fields.Set(ClusterInstFieldNodeResourcesExternalVolumeSize)
 			fields.Set(ClusterInstFieldNodeResources)
 		}
+		if m.NodeResources.Gpus != nil && o.NodeResources.Gpus != nil {
+			if len(m.NodeResources.Gpus) != len(o.NodeResources.Gpus) {
+				fields.Set(ClusterInstFieldNodeResourcesGpus)
+				fields.Set(ClusterInstFieldNodeResources)
+			} else {
+				for i1 := 0; i1 < len(m.NodeResources.Gpus); i1++ {
+					if m.NodeResources.Gpus[i1].ModelId != o.NodeResources.Gpus[i1].ModelId {
+						fields.Set(ClusterInstFieldNodeResourcesGpusModelId)
+						fields.Set(ClusterInstFieldNodeResourcesGpus)
+						fields.Set(ClusterInstFieldNodeResources)
+					}
+					if m.NodeResources.Gpus[i1].Count != o.NodeResources.Gpus[i1].Count {
+						fields.Set(ClusterInstFieldNodeResourcesGpusCount)
+						fields.Set(ClusterInstFieldNodeResourcesGpus)
+						fields.Set(ClusterInstFieldNodeResources)
+					}
+					if m.NodeResources.Gpus[i1].Vendor != o.NodeResources.Gpus[i1].Vendor {
+						fields.Set(ClusterInstFieldNodeResourcesGpusVendor)
+						fields.Set(ClusterInstFieldNodeResourcesGpus)
+						fields.Set(ClusterInstFieldNodeResources)
+					}
+					if m.NodeResources.Gpus[i1].Memory != o.NodeResources.Gpus[i1].Memory {
+						fields.Set(ClusterInstFieldNodeResourcesGpusMemory)
+						fields.Set(ClusterInstFieldNodeResourcesGpus)
+						fields.Set(ClusterInstFieldNodeResources)
+					}
+					if m.NodeResources.Gpus[i1].InUse != o.NodeResources.Gpus[i1].InUse {
+						fields.Set(ClusterInstFieldNodeResourcesGpusInUse)
+						fields.Set(ClusterInstFieldNodeResourcesGpus)
+						fields.Set(ClusterInstFieldNodeResources)
+					}
+				}
+			}
+		} else if (m.NodeResources.Gpus != nil && o.NodeResources.Gpus == nil) || (m.NodeResources.Gpus == nil && o.NodeResources.Gpus != nil) {
+			fields.Set(ClusterInstFieldNodeResourcesGpus)
+			fields.Set(ClusterInstFieldNodeResources)
+		}
 	} else if (m.NodeResources != nil && o.NodeResources == nil) || (m.NodeResources == nil && o.NodeResources != nil) {
 		fields.Set(ClusterInstFieldNodeResources)
 	}
@@ -3307,6 +3386,50 @@ func (m *ClusterInst) DiffFields(o *ClusterInst, fields *FieldMap) {
 					}
 					if m.NodePools[i0].NodeResources.ExternalVolumeSize != o.NodePools[i0].NodeResources.ExternalVolumeSize {
 						fields.Set(ClusterInstFieldNodePoolsNodeResourcesExternalVolumeSize)
+						fields.Set(ClusterInstFieldNodePoolsNodeResources)
+						fields.Set(ClusterInstFieldNodePools)
+					}
+					if m.NodePools[i0].NodeResources.Gpus != nil && o.NodePools[i0].NodeResources.Gpus != nil {
+						if len(m.NodePools[i0].NodeResources.Gpus) != len(o.NodePools[i0].NodeResources.Gpus) {
+							fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpus)
+							fields.Set(ClusterInstFieldNodePoolsNodeResources)
+							fields.Set(ClusterInstFieldNodePools)
+						} else {
+							for i2 := 0; i2 < len(m.NodePools[i0].NodeResources.Gpus); i2++ {
+								if m.NodePools[i0].NodeResources.Gpus[i2].ModelId != o.NodePools[i0].NodeResources.Gpus[i2].ModelId {
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpusModelId)
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpus)
+									fields.Set(ClusterInstFieldNodePoolsNodeResources)
+									fields.Set(ClusterInstFieldNodePools)
+								}
+								if m.NodePools[i0].NodeResources.Gpus[i2].Count != o.NodePools[i0].NodeResources.Gpus[i2].Count {
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpusCount)
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpus)
+									fields.Set(ClusterInstFieldNodePoolsNodeResources)
+									fields.Set(ClusterInstFieldNodePools)
+								}
+								if m.NodePools[i0].NodeResources.Gpus[i2].Vendor != o.NodePools[i0].NodeResources.Gpus[i2].Vendor {
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpusVendor)
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpus)
+									fields.Set(ClusterInstFieldNodePoolsNodeResources)
+									fields.Set(ClusterInstFieldNodePools)
+								}
+								if m.NodePools[i0].NodeResources.Gpus[i2].Memory != o.NodePools[i0].NodeResources.Gpus[i2].Memory {
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpusMemory)
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpus)
+									fields.Set(ClusterInstFieldNodePoolsNodeResources)
+									fields.Set(ClusterInstFieldNodePools)
+								}
+								if m.NodePools[i0].NodeResources.Gpus[i2].InUse != o.NodePools[i0].NodeResources.Gpus[i2].InUse {
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpusInUse)
+									fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpus)
+									fields.Set(ClusterInstFieldNodePoolsNodeResources)
+									fields.Set(ClusterInstFieldNodePools)
+								}
+							}
+						}
+					} else if (m.NodePools[i0].NodeResources.Gpus != nil && o.NodePools[i0].NodeResources.Gpus == nil) || (m.NodePools[i0].NodeResources.Gpus == nil && o.NodePools[i0].NodeResources.Gpus != nil) {
+						fields.Set(ClusterInstFieldNodePoolsNodeResourcesGpus)
 						fields.Set(ClusterInstFieldNodePoolsNodeResources)
 						fields.Set(ClusterInstFieldNodePools)
 					}
@@ -3402,6 +3525,12 @@ var UpdateClusterInstFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstFieldNodePoolsNodeResourcesOptResMapValue:     struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesInfraNodeFlavor:    struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesExternalVolumeSize: struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpus:               struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusModelId:        struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusCount:          struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusVendor:         struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusMemory:         struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesGpusInUse:          struct{}{},
 	ClusterInstFieldNodePoolsScalable:                        struct{}{},
 	ClusterInstFieldInfraAnnotations:                         struct{}{},
 	ClusterInstFieldInfraAnnotationsKey:                      struct{}{},
@@ -3532,6 +3661,37 @@ func (m *ClusterInst) RemoveNetworks(vals ...string) int {
 	for i := len(m.Networks); i >= 0; i-- {
 		if _, found := remove[m.Networks[i]]; found {
 			m.Networks = append(m.Networks[:i], m.Networks[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *ClusterInst) AddNodeResourcesGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.NodeResources.Gpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.NodeResources.Gpus = append(m.NodeResources.Gpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *ClusterInst) RemoveNodeResourcesGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.NodeResources.Gpus); i >= 0; i-- {
+		if _, found := remove[m.NodeResources.Gpus[i].GetKey().GetKeyString()]; found {
+			m.NodeResources.Gpus = append(m.NodeResources.Gpus[:i], m.NodeResources.Gpus[i+1:]...)
 			changes++
 		}
 	}
@@ -3987,6 +4147,24 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 			if fmap.Has("45.6") {
 				if m.NodeResources.ExternalVolumeSize != src.NodeResources.ExternalVolumeSize {
 					m.NodeResources.ExternalVolumeSize = src.NodeResources.ExternalVolumeSize
+					changed++
+				}
+			}
+			if fmap.HasOrHasChild("45.7") {
+				if src.NodeResources.Gpus != nil {
+					if updateListAction == "add" {
+						changed += m.AddNodeResourcesGpus(src.NodeResources.Gpus...)
+					} else if updateListAction == "remove" {
+						changed += m.RemoveNodeResourcesGpus(src.NodeResources.Gpus...)
+					} else {
+						m.NodeResources.Gpus = make([]*GPUResource, 0)
+						for k1, _ := range src.NodeResources.Gpus {
+							m.NodeResources.Gpus = append(m.NodeResources.Gpus, src.NodeResources.Gpus[k1].Clone())
+						}
+						changed++
+					}
+				} else if m.NodeResources.Gpus != nil {
+					m.NodeResources.Gpus = nil
 					changed++
 				}
 			}

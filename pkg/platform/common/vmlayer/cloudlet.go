@@ -511,6 +511,10 @@ func (v *VMPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 	for k, v := range infracommon.InfraCommonProps {
 		features.Properties[k] = v
 	}
+	// VMPlatform code requires GPU drivers for deployments that
+	// use GPUs.
+	features.RequiresGpuDriver = true
+	features.UsesRootLb = true
 	return features
 }
 

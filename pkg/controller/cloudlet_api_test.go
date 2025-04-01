@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -34,6 +35,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -222,7 +224,6 @@ func TestCloudletApi(t *testing.T) {
 
 	// Resource Mapping tests
 	testResMapKeysApi(t, ctx, &cl, apis)
-	testGpuResourceMapping(t, ctx, &cl, apis)
 
 	// Cloudlet state tests
 	testCloudletStates(t, ctx, apis)
@@ -414,23 +415,38 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	cloudletInfo := edgeproto.CloudletInfo{}
 	found := ctrlHandler.CloudletInfoCache.Get(&cloudlet.Key, &cloudletInfo)
 	require.True(t, found, "cloudlet info exists")
-	require.Equal(t, len(cloudletInfo.ResourcesSnapshot.Info), 5, "cloudlet resources info exists")
-	for _, resInfo := range cloudletInfo.ResourcesSnapshot.Info {
-		switch resInfo.Name {
-		case cloudcommon.ResourceRamMb:
-			require.Equal(t, resInfo.Value, uint64(8192), "cloudlet resources info exists")
-		case cloudcommon.ResourceVcpus:
-			require.Equal(t, resInfo.Value, uint64(4), "cloudlet resources info exists")
-		case cloudcommon.ResourceDiskGb:
-			require.Equal(t, resInfo.Value, uint64(80), "cloudlet resources info exists")
-		case cloudcommon.ResourceExternalIPs:
-			require.Equal(t, resInfo.Value, uint64(1), "cloudlet resources info exists")
-		case cloudcommon.ResourceInstances:
-			require.Equal(t, resInfo.Value, uint64(2), "cloudlet resources info exists")
-		default:
-			require.True(t, false, fmt.Sprintf("invalid resinfo name: %s", resInfo.Name))
-		}
-	}
+	require.Equal(t, len(cloudletInfo.ResourcesSnapshot.Info), 6, "cloudlet resources info exists")
+	sort.Slice(cloudletInfo.ResourcesSnapshot.Info, func(i, j int) bool {
+		return cloudletInfo.ResourcesSnapshot.Info[i].ResKey() < cloudletInfo.ResourcesSnapshot.Info[j].ResKey()
+	})
+	expRes := []edgeproto.InfraResource{{
+		Name:          cloudcommon.ResourceDiskGb,
+		Value:         80,
+		InfraMaxValue: fake.FakeDiskMax,
+		Units:         cloudcommon.ResourceDiskUnits,
+	}, {
+		Name:          cloudcommon.ResourceExternalIPs,
+		Value:         1,
+		InfraMaxValue: fake.FakeExternalIpsMax,
+	}, {
+		Name:  cloudcommon.ResourceInstances,
+		Value: 2,
+	}, {
+		Name:          cloudcommon.ResourceRamMb,
+		Value:         8192,
+		InfraMaxValue: fake.FakeRamMax,
+		Units:         cloudcommon.ResourceRamUnits,
+	}, {
+		Name:          "nvidia-t4",
+		Value:         0,
+		InfraMaxValue: 4,
+		Type:          "gpu",
+	}, {
+		Name:          cloudcommon.ResourceVcpus,
+		Value:         4,
+		InfraMaxValue: fake.FakeVcpusMax,
+	}}
+	require.Equal(t, expRes, cloudletInfo.ResourcesSnapshot.Info)
 }
 
 func testManualBringup(t *testing.T, ctx context.Context, apis *AllApis) {
@@ -640,226 +656,6 @@ func testResMapKeysApi(t *testing.T, ctx context.Context, cl *edgeproto.Cloudlet
 	require.Equal(t, true, ok, "RemoveCloudletResMapKey")
 }
 
-func testGpuResourceMapping(t *testing.T, ctx context.Context, cl *edgeproto.Cloudlet, apis *AllApis) {
-	// Cloudlet has a map key'ed by resource name/type whose value is a res tag tbl key.
-	// We init this map, and create a resource table, and place its key into this map
-	// and pass this map to the matcher routine, this allows the matcher to have access
-	// to all optional resource tag maps present in the cloudlet. A meta-flavor has a
-	// similar map to request generic resources that need to be mapped to specific
-	// platform resources. We create such a edgeproto.Flavor and set it's request
-	// map to ask for a gpu and a nas storage volume. The game for the matcher/mapper
-	// is to take our meta-flavor resourse request object, and return, for this
-	// operator/cloudlet the closest matching available flavor to use in the eventual
-	// launch of a suitable image.
-	var cli edgeproto.CloudletInfo = testutil.CloudletInfoData()[0]
-
-	if cl.ResTagMap == nil {
-		cl.ResTagMap = make(map[string]*edgeproto.ResTagTableKey)
-	}
-	var gputab = edgeproto.ResTagTable{
-		Key: edgeproto.ResTagTableKey{
-			Name: "gpumap",
-		},
-		Tags: map[string]string{"vgpu": "nvidia-63:1", "pci": "t4:1", "gpu": "T4:1", "vmware": "vgpu=1", "resources": "VGPU=1", "pci_": "alias=t4gpu:1"},
-	}
-
-	var nastab = edgeproto.ResTagTable{
-		Key: edgeproto.ResTagTableKey{
-			Name: "nasmap",
-		},
-		Tags: map[string]string{"nas": "ceph-20:1"},
-	}
-	_, err := apis.resTagTableApi.CreateResTagTable(ctx, &gputab)
-	require.Nil(t, nil, err, "CreateResTagTable")
-
-	// Our clouldets resource map, maps from resource type names, to ResTagTableKeys.
-	// The ResTagTableKey is a resource name, and the owning operator key.
-	cl.ResTagMap["gpu"] = &gputab.Key
-
-	// We also  need a list of edgeproto.FlavorInfo structs
-	// which it so happens we have in the testutils.CloudletInfoData.Flavors array
-	tbl1, err := apis.resTagTableApi.GetResTagTable(ctx, &gputab.Key)
-	require.Nil(t, err, "GetResTagTable")
-	require.Equal(t, 6, len(tbl1.Tags), "tag count mismatch")
-
-	// specify a pci pass_throuh, don't care what kind
-	// should match flavor.large-pci
-	var flavorPciMatch = &edgeproto.NodeResources{
-		Ram:   8192,
-		Vcpus: 10,
-		Disk:  40,
-		// This requests a passthru
-		OptResMap: map[string]string{"gpu": "pci:1"},
-	}
-
-	// map to a generic nvidia vgpu type, should match flavor.large-nvidia
-	var flavorVgpuMatch = &edgeproto.NodeResources{
-		Ram:   8192,
-		Vcpus: 10,
-		Disk:  40,
-		// This requests 1 vgpu instances, (not supported by nvidia yet)
-		OptResMap: map[string]string{"gpu": "vgpu:1"},
-	}
-	// don't care what kind of gpu resource
-
-	// don't care what kind of gpu resource
-	var testflavor = &edgeproto.NodeResources{
-		Ram:   8192,
-		Vcpus: 8,
-		Disk:  40,
-		// This says I want one gpu, don't care if it's vgpu or passthrough
-		OptResMap: map[string]string{"gpu": "gpu:1"},
-	}
-	// request two optional resources
-	var testflavor2 = &edgeproto.NodeResources{
-		Ram:   8192,
-		Vcpus: 8,
-		Disk:  40,
-		// This says I want one gpu, don't care if it's vgpu or passthrough
-		OptResMap: map[string]string{"gpu": "gpu:1", "nas": "nas:ceph-20:1"},
-	}
-	// request nas optional resource only
-	var testflavorNas = &edgeproto.NodeResources{
-		Ram:       8192,
-		Vcpus:     8,
-		Disk:      40,
-		OptResMap: map[string]string{"nas": "nas:ceph-20:1"},
-	}
-
-	// test request for a specific type of pci  ( one T4 )
-	// should match flavor.large from testutils.
-	var testPciT4flavor = &edgeproto.NodeResources{
-		Ram:   8192,
-		Vcpus: 8,
-		Disk:  40,
-		// This says I want one gpu of kind pci:t4
-		OptResMap: map[string]string{"gpu": "pci:t4:1"},
-	}
-
-	var flavorVgpuNvidiaMatch = &edgeproto.NodeResources{
-		Ram:   8192,
-		Vcpus: 10,
-		Disk:  40,
-		// This requests 1 vgpu instance of spec nvidia-63
-		OptResMap: map[string]string{"gpu": "vgpu:nvidia-63:1"},
-	}
-
-	// should match flavor.large-generic-gpu
-	var flavorVIOMatch = &edgeproto.NodeResources{
-		Ram:   8192,
-		Vcpus: 10,
-		Disk:  80,
-		// This requests a 1 vgpu instance of any kind
-		OptResMap: map[string]string{"gpu": "vmware=vgpu=1"},
-	}
-
-	// Two mex flavors differing only in GPU vs VGPU
-	var flavorT4VGPUMatch = &edgeproto.NodeResources{
-		Ram:   4096,
-		Vcpus: 12,
-		Disk:  20,
-		// This requests a vgpu
-		OptResMap: map[string]string{"gpu": "resources:VGPU:1"},
-	}
-
-	var flavorT4GPUMatch = &edgeproto.NodeResources{
-		Ram:   4096,
-		Vcpus: 12,
-		Disk:  20,
-		// This requests a vgpu
-		OptResMap: map[string]string{"gpu": "pci_:alias=t4gpu:1"},
-	}
-
-	taz := edgeproto.OSAZone{Name: "AZ1_GPU", Status: "available"}
-	timg := edgeproto.OSImage{Name: "gpu_image"}
-	cli.AvailabilityZones = append(cli.AvailabilityZones, &taz)
-	cli.OsImages = append(cli.OsImages, &timg)
-
-	// testflavor wants some generic GPU resource, it should match
-	// the first flavor offering some type of gpu reosurce.
-	// We can direct a generic request to a given flavor though,
-	// which is the case here.
-
-	err = apis.cloudletApi.sync.ApplySTMWait(ctx, func(istm concurrency.STM) error {
-		stm := edgeproto.NewOptionalSTM(istm)
-		spec, vmerr := apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", *cl, cli)
-		require.Nil(t, vmerr, "GetVmSpec")
-		require.Equal(t, "flavor.large", spec.FlavorName)
-		require.Equal(t, "AZ1_GPU", spec.AvailabilityZone)
-		require.Equal(t, "gpu_image", spec.ImageName)
-
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorVgpuMatch, "", *cl, cli)
-		require.Nil(t, vmerr, "GetVmSpec vgpu request")
-		require.Equal(t, "flavor.large-nvidia", spec.FlavorName)
-
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorPciMatch, "", *cl, cli)
-		require.Nil(t, vmerr, "GetVMSpec")
-		require.Equal(t, "flavor.large", spec.FlavorName)
-
-		// non-nominal, ask for more resources than the would-be match supports.
-		// change testflavor to request 10 gpus of any kind.
-		testflavor.OptResMap["gpu"] = "gpu:10"
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", *cl, cli)
-		require.Equal(t, "no suitable infra flavor found for requested node resources, 2 with not enough RAM, 5 with not enough gpu, 5 with not enough vCPUs", vmerr.Error(), "not enough resources")
-
-		// specific pci passthrough
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testPciT4flavor, "", *cl, cli)
-		require.Nil(t, vmerr, "GetVmSpec")
-		require.Equal(t, "flavor.large", spec.FlavorName)
-
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorVgpuNvidiaMatch, "", *cl, cli)
-		require.Nil(t, vmerr, "GetVmSpec")
-		require.Equal(t, "flavor.large-nvidia", spec.FlavorName)
-		uses := apis.resTagTableApi.UsesGpu(ctx, stm, *spec.FlavorInfo, *cl)
-		require.Equal(t, true, uses)
-
-		// vmware vio syntax
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorVIOMatch, "", *cl, cli)
-		require.Nil(t, vmerr, "GetVmSpec")
-		require.Equal(t, "flavor.large-generic-gpu", spec.FlavorName)
-
-		// Now try 2 optional resources requested by one flavor, first non-nominal, no res tag table for nas tags
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor2, "", *cl, cli)
-		if vmerr != nil {
-			require.Equal(t, "no suitable platform flavor found for x1.large-2-Resources, please try a smaller flavor", vmerr.Error())
-		}
-
-		// now, add cloudlet mapping for nas to the cloudlet, making the above test nominal...
-		cl.ResTagMap["nas"] = &nastab.Key
-
-		// ...and actually create the new nas res tag table
-		_, err := apis.resTagTableApi.CreateResTagTable(ctx, &nastab)
-		require.Nil(t, err)
-
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor2, "", *cl, cli)
-		require.Nil(t, vmerr, "GetVMSpec")
-		require.Equal(t, "flavor.large2", spec.FlavorName)
-
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorT4VGPUMatch, "", *cl, cli)
-		require.Nil(t, vmerr, "GetVMSpec")
-		require.Equal(t, "flavor.m4.large-vgpu", spec.FlavorName)
-
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, flavorT4GPUMatch, "", *cl, cli)
-		require.Nil(t, vmerr, "GetVMSpec")
-		require.Equal(t, "flavor.m4.large-gpu", spec.FlavorName)
-
-		// Non-nominal: ask for nas only, should reject testflavor2 as there are no
-		// os flavors with only a nas resource
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavorNas, "", *cl, cli)
-		require.Equal(t, "no suitable infra flavor found for requested node resources, 2 with not enough RAM, 4 with not enough nas, 5 with not enough vCPUs, 1 with optional resources not requested", vmerr.Error())
-		// Non-nominal: flavor requests optional resource, while cloudlet's OptResMap is nil (cloudlet supports none)
-		cl.ResTagMap = nil
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", *cl, cli)
-		require.Equal(t, "Cloudlet San Jose Site doesn't support GPU", vmerr.Error())
-
-		nulCL := edgeproto.Cloudlet{}
-		// and finally, Non-nominal, request a resource, and cloudlet has none to give (nil cloudlet/cloudlet.ResTagMap)
-		spec, vmerr = apis.resTagTableApi.GetVMSpec(ctx, stm, testflavor, "", nulCL, cli)
-		require.Equal(t, "Cloudlet San Jose Site doesn't support GPU", vmerr.Error(), "nil table")
-		return nil
-	})
-}
-
 func testShowFlavorsForZone(t *testing.T, ctx context.Context, apis *AllApis) {
 	insertCloudletInfo(ctx, apis, testutil.CloudletInfoData())
 	// Use a clouldet with no ResourceTagMap
@@ -880,7 +676,7 @@ func testShowFlavorsForZone(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	err = cCldApi.ShowFlavorsForZone(ctx, zkey, &show)
 	require.Nil(t, err)
-	require.Equal(t, 5, len(show.Data))
+	require.Equal(t, 6, len(show.Data))
 
 	// Show flavors for a chosen cloudlet name.
 	show.Init()
@@ -1047,14 +843,14 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	app.DefaultFlavor = testutil.FlavorData()[3].Key // 3 = x1.large 4 = x1.tiny.gpu 2 = x1.medium
 	err = cAppApi.ShowZonesForAppDeployment(ctx, &filter, &show)
 	require.Nil(t, err, "ShowZonesForAppDeployment")
-	require.Equal(t, 1, len(show.Data), "ShowZonesForAppDeployment")
+	require.Equal(t, 2, len(show.Data), "ShowZonesForAppDeployment")
 	show.Init()
 
 	filter.DryRunDeploy = true
 
 	err = cAppApi.ShowZonesForAppDeployment(ctx, &filter, &show)
 	require.Nil(t, err, "ShowZonesForAppDeployment")
-	require.Equal(t, 1, len(show.Data), "ShowZonesForAppDeployment DryRun=True")
+	require.Equal(t, 2, len(show.Data), "ShowZonesForAppDeployment DryRun=True")
 	// TODO: Increase cloudlets refs such that San Jose can no longer support the App deployment
 	dummy.Stop()
 }

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -306,6 +307,7 @@ func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*e
 		nodeInfo.Name = item.Name
 		nodeInfo.Allocatable = make(map[string]*edgeproto.Udec64)
 		nodeInfo.Capacity = make(map[string]*edgeproto.Udec64)
+		amdGPUCount := 0
 		for res, quantity := range item.Status.Allocatable {
 			name, dec, err := convertNodeResource(res, quantity)
 			if err == nil && name == unsupportedResource {
@@ -317,6 +319,9 @@ func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*e
 			nodeInfo.Allocatable[name] = dec
 		}
 		for res, quantity := range item.Status.Capacity {
+			if res == cloudcommon.KubernetesAMDGPUResource {
+				amdGPUCount = int(quantity.Value())
+			}
 			name, dec, err := convertNodeResource(res, quantity)
 			if err == nil && name == unsupportedResource {
 				continue
@@ -325,6 +330,17 @@ func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*e
 				return nil, err
 			}
 			nodeInfo.Capacity[name] = dec
+		}
+		gpus, gpuSW, err := getNodeGPUInfo(item.Labels)
+		if err != nil {
+			return nil, err
+		}
+		nodeInfo.Gpus = gpus
+		nodeInfo.GpuSoftware = gpuSW
+		// AMD does not provide gpu count in the labels, so infer from
+		// the resource count
+		if amdGPUCount > 0 && len(nodeInfo.Gpus) > 0 {
+			nodeInfo.Gpus[0].Count = uint32(amdGPUCount)
 		}
 		info = append(info, nodeInfo)
 	}
@@ -341,6 +357,9 @@ func GetNodePools(ctx context.Context, nodeInfos []*edgeproto.NodeInfo) []*edgep
 		for resName, val := range nodeInfo.Capacity {
 			resVals.Add(resspec.NewDecimalResVal(resName, "", *val))
 		}
+		for _, gpu := range nodeInfo.Gpus {
+			resVals.Add(resspec.NewWholeResVal(gpu.ModelId, "", uint64(gpu.Count)))
+		}
 		key := resVals.String()
 		pool, ok := pools[key]
 		if !ok {
@@ -351,8 +370,8 @@ func GetNodePools(ctx context.Context, nodeInfos []*edgeproto.NodeInfo) []*edgep
 			pool.NodeResources.Vcpus = resVals.GetInt(cloudcommon.ResourceVcpus)
 			pool.NodeResources.Ram = resVals.GetInt(cloudcommon.ResourceRamMb)
 			pool.NodeResources.Disk = resVals.GetInt(cloudcommon.ResourceDiskGb)
-			// TODO: handle gpu resources
 			pools[key] = pool
+			pool.NodeResources.Gpus = nodeInfo.Gpus
 		}
 		pool.NumNodes++
 	}
@@ -392,6 +411,72 @@ func convertNodeResource(res v1.ResourceName, quantity resource.Quantity) (strin
 		dec.Whole /= scale
 	}
 	return name, dec, nil
+}
+
+func getNodeGPUInfo(labels map[string]string) ([]*edgeproto.GPUResource, *edgeproto.GPUSoftwareInfo, error) {
+	// Note: we only support one GPU per node, as not sure
+	// what the labels would look like for multiple GPUs
+	// or if the gpu-operator even supports it.
+	gpu := &edgeproto.GPUResource{}
+	gpuFound := false
+	sw := &edgeproto.GPUSoftwareInfo{}
+	for k, v := range labels {
+		switch k {
+		case "nvidia.com/gpu.product":
+			gpu.ModelId = ensureGPUPrefix(v, cloudcommon.GPUVendorNVIDIA)
+			gpu.Vendor = cloudcommon.GPUVendorNVIDIA
+			gpuFound = true
+		case "nvidia.com/gpu.memory":
+			val, err := strconv.ParseUint(v, 10, 64)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to parse gpu memory, %s, %v", v, err)
+			}
+			// nvidia memory is specified in MB
+			gpu.Memory = val / 1024
+		case "nvidia.com/gpu.replicas":
+			val, err := strconv.ParseUint(v, 10, 32)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to parse gpu replicas, %s, %v", v, err)
+			}
+			gpu.Count = uint32(val)
+		case "nvidia.com/cuda.driver-version.full":
+			sw.DriverVersion = v
+		case "nvidia.com/cuda.runtime-version.full":
+			sw.RuntimeVersion = v
+		case "beta.amd.com/gpu.product-name":
+			gpu.ModelId = ensureGPUPrefix(v, cloudcommon.GPUVendorAMD)
+			gpu.Vendor = cloudcommon.GPUVendorAMD
+			gpuFound = true
+		case "amd.com/gpu.vram":
+			if strings.HasSuffix(v, "G") {
+				val, err := strconv.ParseUint(v[:len(v)-1], 10, 64)
+				if err != nil {
+					return nil, nil, fmt.Errorf("failed to parse gpu vram, %s, %v", v, err)
+				}
+				gpu.Memory = val
+			} else {
+				q, err := resource.ParseQuantity(v)
+				if err != nil {
+					return nil, nil, fmt.Errorf("failed to parse gpu vram, %s, 	%v", v, err)
+				}
+				gpu.Memory = uint64(q.Value() / 1024 / 1024 / 1024)
+			}
+		}
+	}
+	gpus := []*edgeproto.GPUResource{}
+	if gpuFound {
+		gpus = append(gpus, gpu)
+	}
+	return gpus, sw, nil
+}
+
+// GPU product names should be prefixed with the maker already.
+// If not, we need to prepend the maker to ensure uniqueness.
+func ensureGPUPrefix(product, maker string) string {
+	if !strings.HasPrefix(strings.ToLower(product), strings.ToLower(maker)) {
+		return fmt.Sprintf("%s-%s", maker, product)
+	}
+	return product
 }
 
 // CheckNodesReady returns the number of ready and not ready nodes.

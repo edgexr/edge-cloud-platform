@@ -16,18 +16,17 @@ package cloudcommon
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
-var (
+const (
 	// Common platform resources
 	ResourceRamMb       = "RAM"
 	ResourceVcpus       = "vCPUs"
@@ -60,6 +59,19 @@ var (
 	ResourceMetricTotalK8sNodes         = "totalK8sNodesUsed"
 	ResourceMetricNetworkLBs            = "networkLBsUsed"
 
+	// Resource types
+	ResourceTypeGeneric = "" // default resource type for vcpu, ram, etc
+	ResourceTypeGPU     = "gpu"
+
+	// GPU vendors
+	GPUVendorAMD    = "amd"
+	GPUVendorNVIDIA = "nvidia"
+	// Kubernetes GPU resource names
+	KubernetesNvidiaGPUResource = "nvidia.com/gpu"
+	KubernetesAMDGPUResource    = "amd.com/gpu"
+)
+
+var (
 	// Common cloudlet resources
 	CommonCloudletResources = map[string]string{
 		ResourceRamMb:       ResourceRamUnits,
@@ -149,46 +161,17 @@ func GetCommonResourceQuotaProps(additionalResources ...string) []edgeproto.Infr
 	return props
 }
 
-func ValidateCloudletResourceQuotas(ctx context.Context, quotaProps []edgeproto.InfraResource, curRes map[string]*edgeproto.InfraResource, resourceQuotas []edgeproto.ResourceQuota) error {
-	log.SpanLog(ctx, log.DebugLevelApi, "validate cloudlet resource quotas", "curResources", curRes, "quotas", resourceQuotas)
-	resPropsMap := make(map[string]struct{})
-	resPropsNames := []string{}
-	for _, prop := range quotaProps {
-		resPropsMap[prop.Name] = struct{}{}
-		resPropsNames = append(resPropsNames, prop.Name)
+func GetGPUCount(gpus []*edgeproto.GPUResource, optResMap map[string]string) uint64 {
+	count := uint64(0)
+	for _, gpu := range gpus {
+		count += uint64(gpu.Count)
 	}
-	for resName, _ := range CommonCloudletResources {
-		resPropsMap[resName] = struct{}{}
-		resPropsNames = append(resPropsNames, resName)
-	}
-	sort.Strings(resPropsNames)
-	for _, resQuota := range resourceQuotas {
-		if _, ok := resPropsMap[resQuota.Name]; !ok {
-			return fmt.Errorf("Invalid quota name: %s, valid names are %s", resQuota.Name, strings.Join(resPropsNames, ", "))
-		}
-		if curRes == nil {
-			continue
-		}
-		infraRes, ok := curRes[resQuota.Name]
-		if !ok {
-			continue
-		}
-		if infraRes.InfraMaxValue > 0 && resQuota.Value > infraRes.InfraMaxValue {
-			return fmt.Errorf("Resource quota %s exceeded max supported value: %d", resQuota.Name, infraRes.InfraMaxValue)
-		}
-		// Note: not a failure if the currently used value exceeds the quota.
-		// It just means no more resources can be consumed until the
-		// current value drops below the quota.
-		// Also, curRes has the current value as reported by the
-		// infrastructure. But not all infras may report the current
-		// usage.
-	}
-	return nil
+	// deprecated GPU spec from optResMap
+	count += GetOptResGPUCount(optResMap)
+	return count
 }
 
-var GPUResourceLimitName = "nvidia.com/gpu"
-
-func GetGPUCount(optResMap map[string]string) uint64 {
+func GetOptResGPUCount(optResMap map[string]string) uint64 {
 	if optResMap == nil {
 		return 0
 	}
@@ -208,21 +191,21 @@ func KuberentesResourcesGPUCount(kr *edgeproto.KubernetesResources) uint64 {
 	if kr == nil || kr.GpuPool == nil {
 		return 0
 	}
-	return GetGPUCount(kr.GpuPool.TotalOptRes)
+	return GetGPUCount(kr.GpuPool.TotalGpus, kr.GpuPool.TotalOptRes)
 }
 
 func NodeResourcesGPUCount(nr *edgeproto.NodeResources) uint64 {
 	if nr == nil {
 		return 0
 	}
-	return GetGPUCount(nr.OptResMap)
+	return GetGPUCount(nr.Gpus, nr.OptResMap)
 }
 
 func NodePoolResourcesGPUCount(npr *edgeproto.NodePoolResources) uint64 {
 	if npr == nil {
 		return 0
 	}
-	return GetGPUCount(npr.TotalOptRes)
+	return GetGPUCount(npr.TotalGpus, npr.TotalOptRes)
 }
 
 func AppInstGpuCount(appInst *edgeproto.AppInst) uint64 {
@@ -262,4 +245,42 @@ func ParseOptResVal(resStr string) (string, string, int, error) {
 		return typ, spec, count, fmt.Errorf("non-numeric resource count %s in optres value %s", values[1], resStr)
 	}
 	return typ, spec, count, nil
+}
+
+func ValidateInfraGPUs(gpus []*edgeproto.GPUResource) error {
+	for _, gpu := range gpus {
+		if gpu.Count == 0 {
+			return errors.New("gpu count cannot be 0")
+		}
+		if gpu.ModelId == "" {
+			return errors.New("gpu model id cannot be empty")
+		}
+		if err := ValidateGPU(gpu); err != nil {
+			return err
+		}
+		if gpu.Memory == 0 {
+			return errors.New("gpu memory cannot be 0")
+		}
+	}
+	return nil
+}
+
+func ValidateGPU(gpu *edgeproto.GPUResource) error {
+	if gpu.ModelId == "" {
+		return errors.New("gpu model id cannot be empty")
+	}
+	if gpu.Count == 0 {
+		return errors.New("gpu count cannot be 0")
+	}
+	if gpu.Vendor == "" {
+		modelid := strings.ToLower(gpu.ModelId)
+		if strings.HasPrefix(modelid, GPUVendorAMD) {
+			gpu.Vendor = GPUVendorAMD
+		} else if strings.HasPrefix(modelid, GPUVendorNVIDIA) {
+			gpu.Vendor = GPUVendorNVIDIA
+		} else {
+			return fmt.Errorf("gpu vendor for model %q is empty and cannot be inferred from model ID", gpu.ModelId)
+		}
+	}
+	return nil
 }

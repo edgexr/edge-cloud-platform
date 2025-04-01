@@ -36,6 +36,8 @@ func ZoneHideTags(in *edgeproto.Zone) {
 		tags[tag] = struct{}{}
 	}
 	for i0 := 0; i0 < len(in.InfraFlavors); i0++ {
+		for i1 := 0; i1 < len(in.InfraFlavors[i0].Gpus); i1++ {
+		}
 	}
 	if _, found := tags["nocmp"]; found {
 		in.ObjId = ""
@@ -299,11 +301,88 @@ func ShowZones(c *cli.Command, data []edgeproto.Zone, err *error) {
 	}
 }
 
+var ShowZoneGPUsCmd = &cli.Command{
+	Use:          "ShowZoneGPUs",
+	OptionalArgs: strings.Join(append(ZoneRequiredArgs, ZoneOptionalArgs...), " "),
+	AliasArgs:    strings.Join(ZoneAliasArgs, " "),
+	SpecialArgs:  &ZoneSpecialArgs,
+	Comments:     ZoneComments,
+	ReqData:      &edgeproto.Zone{},
+	ReplyData:    &edgeproto.ZoneGPUs{},
+	Run:          runShowZoneGPUs,
+}
+
+func runShowZoneGPUs(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.Zone)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowZoneGPUs(c, obj)
+}
+
+func ShowZoneGPUs(c *cli.Command, in *edgeproto.Zone) error {
+	if ZoneApiCmd == nil {
+		return fmt.Errorf("ZoneApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := ZoneApiCmd.ShowZoneGPUs(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowZoneGPUs failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.ZoneGPUs, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowZoneGPUs recv failed: %s", errstr)
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowZoneGPUss(c *cli.Command, data []edgeproto.Zone, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowZoneGPUs %v\n", data[ii])
+		myerr := ShowZoneGPUs(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var ZoneApiCmds = []*cobra.Command{
 	CreateZoneCmd.GenCmd(),
 	DeleteZoneCmd.GenCmd(),
 	UpdateZoneCmd.GenCmd(),
 	ShowZoneCmd.GenCmd(),
+	ShowZoneGPUsCmd.GenCmd(),
 }
 
 var ZoneRequiredArgs = []string{
@@ -317,6 +396,12 @@ var ZoneOptionalArgs = []string{
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
+	"infraflavors:#.gpus:empty",
+	"infraflavors:#.gpus:#.modelid",
+	"infraflavors:#.gpus:#.count",
+	"infraflavors:#.gpus:#.vendor",
+	"infraflavors:#.gpus:#.memory",
+	"infraflavors:#.gpus:#.inuse",
 	"infraflavors:#.propmap",
 	"objid",
 }
@@ -325,31 +410,60 @@ var ZoneAliasArgs = []string{
 	"name=key.name",
 }
 var ZoneComments = map[string]string{
-	"fields":                      "Fields are used for the Update API to specify which fields to apply",
-	"org":                         "Organization owner of the Zone",
-	"name":                        "Name of the Zone",
-	"key.federatedorganization":   "Federated operator organization who shared this Zone",
-	"description":                 "Description of Zone",
-	"infraflavors:empty":          "Zone-specific flavors, specify infraflavors:empty=true to clear",
-	"infraflavors:#.name":         "Name of the flavor on the Cloudlet",
-	"infraflavors:#.vcpus":        "Number of VCPU cores on the Cloudlet",
-	"infraflavors:#.ram":          "Ram in MB on the Cloudlet",
-	"infraflavors:#.disk":         "Amount of disk in GB on the Cloudlet",
-	"infraflavors:#.propmap":      "OS Flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
-	"location.latitude":           "Latitude in WGS 84 coordinates",
-	"location.longitude":          "Longitude in WGS 84 coordinates",
-	"location.horizontalaccuracy": "Horizontal accuracy (radius in meters)",
-	"location.verticalaccuracy":   "Vertical accuracy (meters)",
-	"location.altitude":           "On android only lat and long are guaranteed to be supplied Altitude in meters",
-	"location.course":             "Course (IOS) / bearing (Android) (degrees east relative to true north)",
-	"location.speed":              "Speed (IOS) / velocity (Android) (meters/sec)",
-	"location.timestamp":          "Timestamp",
-	"objid":                       "Universally unique object ID",
-	"deleteprepare":               "Preparing to be deleted",
-	"createdat":                   "Created at time",
-	"updatedat":                   "Updated at time",
+	"fields":                        "Fields are used for the Update API to specify which fields to apply",
+	"org":                           "Organization owner of the Zone",
+	"name":                          "Name of the Zone",
+	"key.federatedorganization":     "Federated operator organization who shared this Zone",
+	"description":                   "Description of Zone",
+	"infraflavors:empty":            "Zone-specific flavors, specify infraflavors:empty=true to clear",
+	"infraflavors:#.name":           "Name of the infra flavor",
+	"infraflavors:#.vcpus":          "Number of VCPU cores on the infra flavor",
+	"infraflavors:#.ram":            "Ram in MB on the infra flavor",
+	"infraflavors:#.disk":           "Amount of disk in GB on the infra flavor",
+	"infraflavors:#.gpus:empty":     "GPUs for the infra flavor, specify infraflavors:#.gpus:empty=true to clear",
+	"infraflavors:#.gpus:#.modelid": "GPU model unique identifier",
+	"infraflavors:#.gpus:#.count":   "Count of how many of this GPU are required/present",
+	"infraflavors:#.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
+	"infraflavors:#.gpus:#.memory":  "Memory in GB",
+	"infraflavors:#.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"infraflavors:#.propmap":        "Infra flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
+	"location.latitude":             "Latitude in WGS 84 coordinates",
+	"location.longitude":            "Longitude in WGS 84 coordinates",
+	"location.horizontalaccuracy":   "Horizontal accuracy (radius in meters)",
+	"location.verticalaccuracy":     "Vertical accuracy (meters)",
+	"location.altitude":             "On android only lat and long are guaranteed to be supplied Altitude in meters",
+	"location.course":               "Course (IOS) / bearing (Android) (degrees east relative to true north)",
+	"location.speed":                "Speed (IOS) / velocity (Android) (meters/sec)",
+	"location.timestamp":            "Timestamp",
+	"objid":                         "Universally unique object ID",
+	"deleteprepare":                 "Preparing to be deleted",
+	"createdat":                     "Created at time",
+	"updatedat":                     "Updated at time",
 }
 var ZoneSpecialArgs = map[string]string{
 	"fields":                 "StringArray",
 	"infraflavors:#.propmap": "StringToString",
 }
+var ZoneGPUsRequiredArgs = []string{}
+var ZoneGPUsOptionalArgs = []string{
+	"zonekey.organization",
+	"zonekey.name",
+	"zonekey.federatedorganization",
+	"gpus:#.modelid",
+	"gpus:#.count",
+	"gpus:#.vendor",
+	"gpus:#.memory",
+	"gpus:#.inuse",
+}
+var ZoneGPUsAliasArgs = []string{}
+var ZoneGPUsComments = map[string]string{
+	"zonekey.organization":          "Organization owner of the Zone",
+	"zonekey.name":                  "Name of the Zone",
+	"zonekey.federatedorganization": "Federated operator organization who shared this Zone",
+	"gpus:#.modelid":                "GPU model unique identifier",
+	"gpus:#.count":                  "Count of how many of this GPU are required/present",
+	"gpus:#.vendor":                 "GPU vendor (nvidia, amd, etc)",
+	"gpus:#.memory":                 "Memory in GB",
+	"gpus:#.inuse":                  "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+}
+var ZoneGPUsSpecialArgs = map[string]string{}

@@ -150,7 +150,7 @@ func isValidKubernetesManifestForResources(objs []runtime.Object, kr *edgeproto.
 		}
 		for j, _ := range template.Spec.Containers {
 			resources := &template.Spec.Containers[j].Resources
-			gpuResName := v1.ResourceName(GPUResourceLimitName)
+			gpuResName := v1.ResourceName(KubernetesNvidiaGPUResource)
 			if qty, ok := resources.Limits[gpuResName]; ok {
 				if val, valOk := qty.AsInt64(); valOk {
 					requestedGPUCount += val

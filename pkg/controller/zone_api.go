@@ -17,11 +17,14 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
+	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"github.com/oklog/ulid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
@@ -177,4 +180,93 @@ func (s *ZoneApi) getZoneByID(ctx context.Context, id string) (*edgeproto.Zone, 
 		return nil, err
 	}
 	return zone, nil
+}
+
+func (s *ZoneApi) ShowZoneGPUs(filter *edgeproto.Zone, cb edgeproto.ZoneApi_ShowZoneGPUsServer) error {
+	ctx := cb.Context()
+	// get all matching zones
+	zones := []edgeproto.ZoneKey{}
+	err := s.cache.Show(filter, func(zone *edgeproto.Zone) error {
+		zones = append(zones, zone.Key)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	sort.Slice(zones, func(i, j int) bool {
+		return zones[i].GetKeyString() < zones[j].GetKeyString()
+	})
+	for _, zkey := range zones {
+		zoneGPUs, err := s.getZoneGPUs(ctx, &zkey)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to get GPUs for zone", "zone", zkey, "err", err)
+			continue
+		}
+		if len(zoneGPUs.Gpus) == 0 {
+			continue
+		}
+		err = cb.Send(zoneGPUs)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *ZoneApi) getZoneGPUs(ctx context.Context, zkey *edgeproto.ZoneKey) (*edgeproto.ZoneGPUs, error) {
+	// get all cloudlets for zone
+	ckeys := []edgeproto.CloudletKey{}
+	err := s.all.cloudletApi.cache.Show(&edgeproto.Cloudlet{}, func(cloudlet *edgeproto.Cloudlet) error {
+		if cloudlet.Key.Organization != zkey.Organization {
+			return nil
+		}
+		if cloudlet.Zone != zkey.Name {
+			return nil
+		}
+		ckeys = append(ckeys, cloudlet.Key)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	usedVals := resspec.ResValMap{}
+	limits := ResLimitMap{}
+	gpuInfos := map[string]*edgeproto.GPUResource{}
+
+	for _, ckey := range ckeys {
+		if err := s.all.cloudletApi.addGPUsUsage(ctx, &ckey, usedVals, limits, gpuInfos); err != nil {
+			return nil, err
+		}
+	}
+	gpus := []*edgeproto.GPUResource{}
+	for _, gpu := range gpuInfos {
+		resKey := edgeproto.BuildResKey(cloudcommon.ResourceTypeGPU, gpu.ModelId)
+		max := 0
+		if limit, ok := limits[resKey]; ok {
+			if limit.QuotaMaxValue > 0 {
+				max = int(limit.QuotaMaxValue)
+			} else {
+				max = int(limit.InfraMaxValue)
+			}
+		}
+		used := 0
+		if res, ok := usedVals[resKey]; ok {
+			used = int(res.Value.Whole)
+		}
+		// set gpu count to 1 if there are gpus available
+		if max == 0 || max > used {
+			gpu.Count = 1
+		} else {
+			gpu.Count = 0
+		}
+		gpus = append(gpus, gpu)
+	}
+	sort.Slice(gpus, func(i, j int) bool {
+		return gpus[i].ModelId < gpus[j].ModelId
+	})
+	zoneGPUs := &edgeproto.ZoneGPUs{
+		ZoneKey: *zkey,
+		Gpus:    gpus,
+	}
+	return zoneGPUs, nil
 }

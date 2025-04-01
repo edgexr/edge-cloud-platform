@@ -636,6 +636,7 @@ func getClusterInstMetricCounts(t *testing.T, ctx context.Context, clusterInst *
 		require.Nil(t, err, "found rootlb flavor")
 		return nil
 	})
+	log.SpanLog(ctx, log.DebugLevelApi, "cloudlet is", "cloudlet", clusterInst.CloudletKey)
 	require.Nil(t, err)
 	require.NotNil(t, nodeFlavor, "found node flavor")
 	require.NotNil(t, masterNodeFlavor, "found master node flavor")
@@ -709,7 +710,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 	platformResources, ok := ccrm.GetFakePlatformResources(&ci.Key)
 	require.True(t, ok)
 	platformResources.Init()
-	platformResources.SetMaxResources(102400, 109, 5000, 10)
+	platformResources.SetMaxResources(102400, 109, 5000, 10, nil)
 	for _, vm := range fake.GetPlatformVMs() {
 		platformResources.AddPlatformVM(vm)
 	}
@@ -784,9 +785,10 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		GpuPool: &edgeproto.NodePoolResources{
 			TotalVcpus:  *edgeproto.NewUdec64(0, 500*edgeproto.DecMillis),
 			TotalMemory: 20,
-			TotalOptRes: map[string]string{
-				"gpu": "pci:1", // matches cluster flavorData[4]
-			},
+			TotalGpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-t4", // matches cluster flavorData[4]
+				Count:   1,
+			}},
 		},
 	}
 	testutil.InternalAppInstCreate(t, apis.appInstApi, []edgeproto.AppInst{
@@ -834,7 +836,8 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		for _, resInfo := range cloudletInfo.ResourcesSnapshot.Info {
 			infraResInfo[resInfo.Name] = resInfo
 		}
-		allResInfo, err := apis.cloudletApi.totalCloudletResources(ctx, resCalc.stm, cloudlet, cloudletInfo, usedRes)
+		skipAddtl := false
+		allResInfo, err := apis.cloudletApi.totalCloudletResources(ctx, resCalc.stm, cloudlet, cloudletInfo, usedRes, skipAddtl)
 		require.Nil(t, err)
 		// set quotas to what is currently being used
 		// so creating anything should trigger both quota warnings and
@@ -845,6 +848,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 				Name:           infraRes.Name,
 				Value:          infraRes.Value.Whole,
 				AlertThreshold: 30,
+				ResourceType:   infraRes.ResourceType,
 			})
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "set fake quotas", "quotas", quotas)
@@ -852,7 +856,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		// test cluster inst vm requirements
 		quotaMap := make(map[string]edgeproto.ResourceQuota)
 		for _, quota := range cloudlet.ResourceQuotas {
-			quotaMap[quota.Name] = quota
+			quotaMap[quota.ResKey()] = quota
 		}
 		lbFlavor := resCalc.deps.lbFlavor
 		clusterInst := testutil.ClusterInstData()[0]
@@ -901,7 +905,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 			cloudcommon.ResourceRamMb,
 			cloudcommon.ResourceVcpus,
 			cloudcommon.ResourceDiskGb,
-			cloudcommon.ResourceGpus,
+			"gpu/nvidia-t4",
 			cloudcommon.ResourceInstances,
 		} {
 			rx := "required " + resName + " is .*? but only .*? is available"
@@ -915,7 +919,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 			cloudcommon.ResourceRamMb,
 			cloudcommon.ResourceVcpus,
 			cloudcommon.ResourceDiskGb,
-			cloudcommon.ResourceGpus,
+			"gpu/nvidia-t4",
 			cloudcommon.ResourceInstances,
 		} {
 			rx := "more than 30% of " + resName + " (.*?) is used by the cloudlet"
@@ -951,7 +955,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 			cloudcommon.ResourceRamMb,
 			cloudcommon.ResourceVcpus,
 			cloudcommon.ResourceDiskGb,
-			cloudcommon.ResourceGpus,
+			"gpu/nvidia-t4",
 			cloudcommon.ResourceInstances,
 		} {
 			rx := "required " + resName + " is .*? but only .*? is available"
@@ -962,7 +966,7 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 			cloudcommon.ResourceRamMb,
 			cloudcommon.ResourceVcpus,
 			cloudcommon.ResourceDiskGb,
-			cloudcommon.ResourceGpus,
+			"gpu/nvidia-t4",
 			cloudcommon.ResourceInstances,
 			cloudcommon.ResourceExternalIPs,
 		} {
@@ -1083,8 +1087,6 @@ func testClusterInstGPUFlavor(t *testing.T, ctx context.Context, apis *AllApis) 
 	cloudletData := testutil.CloudletData()
 	vgpuCloudlet := cloudletData[0]
 	vgpuCloudlet.Key.Name = "VGPUCloudlet"
-	vgpuCloudlet.GpuConfig.Driver = testutil.GPUDriverData()[3].Key
-	vgpuCloudlet.ResTagMap["gpu"] = &testutil.Restblkeys()[0]
 	err := apis.cloudletApi.CreateCloudlet(&vgpuCloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err)
 	cloudletInfo := testutil.CloudletInfoData()[0]
@@ -1093,31 +1095,65 @@ func testClusterInstGPUFlavor(t *testing.T, ctx context.Context, apis *AllApis) 
 	apis.cloudletInfoApi.Update(ctx, &cloudletInfo, 0)
 
 	obj := testutil.ClusterInstData()[0]
+	obj.Flavor = edgeproto.FlavorKey{}
 	obj.Key.Name = "GPUTestClusterFlavor"
-	obj.Flavor = testutil.FlavorData()[4].Key // GPU Passthrough flavor
+	obj.NodePools[0].NodeResources.Gpus = []*edgeproto.GPUResource{{
+		ModelId: "nvidia-t4",
+		Count:   1,
+	}}
 
 	// Deploy GPU cluster on non-GPU cloudlet, should fail
 	obj.CloudletKey = cloudletData[1].Key
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err, "create cluster inst with gpu flavor on vgpu cloudlet fails")
-	require.Contains(t, err.Error(), "doesn't support GPU")
+	require.Contains(t, err.Error(), "no suitable infra flavor found for requested node resources, 3 with not enough nvidia-t4")
 
 	// Deploy GPU passthrough cluster on vGPU cloudlet, should fail
+	cloudletInfo.Flavors = []*edgeproto.FlavorInfo{{
+		Name:  "flavor.tiny2",
+		Vcpus: uint64(1),
+		Ram:   uint64(1024),
+		Disk:  uint64(10),
+	}, {
+		Name:  "flavor.small",
+		Vcpus: uint64(2),
+		Ram:   uint64(1024),
+		Disk:  uint64(20),
+	}, {
+		Name:  "flavor.large-nvidia",
+		Vcpus: uint64(10),
+		Ram:   uint64(8192),
+		Disk:  uint64(40),
+		Gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4-q10",
+			Vendor:  "nvidia",
+			Memory:  2,
+			Count:   1,
+		}},
+	}}
+	apis.cloudletInfoApi.Update(ctx, &cloudletInfo, 0)
 	obj.CloudletKey = vgpuCloudlet.Key
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err, "create cluster inst with gpu flavor on vgpu cloudlet fails")
-	require.Contains(t, err.Error(), "doesn't support GPU resource \"pci\"")
+	require.Contains(t, err.Error(), "failed to select infra flavor for pool gpupool, no suitable infra flavor found for requested node resources, 3 with not enough nvidia-t4")
 
-	vgpuFlavor := testutil.FlavorData()[4]
-	vgpuFlavor.Key.Name = "mex-vgpu-flavor"
-	vgpuFlavor.OptResMap["gpu"] = "vmware:vgpu:1"
-	_, err = apis.flavorApi.CreateFlavor(ctx, &vgpuFlavor)
-	require.Nil(t, err, "create flavor as vgpu flavor")
+	cloudletInfo.Flavors = append(cloudletInfo.Flavors, &edgeproto.FlavorInfo{
+		Name:  "flavor.large-nvidia",
+		Vcpus: uint64(10),
+		Ram:   uint64(8192),
+		Disk:  uint64(40),
+		Gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Vendor:  "nvidia",
+			Memory:  2,
+			Count:   1,
+		}},
+	})
+	apis.cloudletInfoApi.Update(ctx, &cloudletInfo, 0)
 
-	obj.Flavor = vgpuFlavor.Key
 	verbose = true
 	err = apis.clusterInstApi.CreateClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
-	require.Nil(t, err, "create cluster inst with vgpu flavor on vgpu cloudlet")
+	require.Nil(t, err, "create cluster inst with gpu flavor on gpu cloudlet")
 }
 
 func setTestMasterNodeFlavorSetting(t *testing.T, ctx context.Context, apis *AllApis) {
@@ -1289,6 +1325,15 @@ func (s InfraRess) AddDisk(val, max uint64) InfraRess {
 	})
 }
 
+func (s InfraRess) AddGPU(product string, val, max uint64) InfraRess {
+	return append(s, &edgeproto.InfraResource{
+		Name:          product,
+		Value:         val,
+		InfraMaxValue: max,
+		Type:          cloudcommon.ResourceTypeGPU,
+	})
+}
+
 func (s InfraRess) AddOptRes(name string, val, max uint64) InfraRess {
 	return append(s, &edgeproto.InfraResource{
 		Name:          name,
@@ -1361,9 +1406,10 @@ func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(2, 0),
 				TotalMemory: 4096,
-				TotalOptRes: map[string]string{
-					"gpu": "gpu:1",
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: "nvidia-t4",
+					Count:   1,
+				}},
 			},
 		},
 	}
@@ -1464,9 +1510,10 @@ func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 					Vcpus: 2,
 					Ram:   8192,
 					Disk:  40,
-					OptResMap: map[string]string{
-						"gpu": "gpu:1",
-					},
+					Gpus: []*edgeproto.GPUResource{{
+						ModelId: "nvidia-t4",
+						Count:   1,
+					}},
 				},
 			}, {
 				Name:     "cpu2",
@@ -1479,9 +1526,9 @@ func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 			}},
 		},
 		usage: edgeproto.ClusterResourceUsage{
-			TotalResources:        InfraRess{}.AddDisk(0, 200).AddRam(0, 34816).AddOptRes("gpu:gpu", 0, 3).AddVcpus(0, 14),
+			TotalResources:        InfraRess{}.AddDisk(0, 200).AddRam(0, 34816).AddGPU("nvidia-t4", 0, 3).AddVcpus(0, 14),
 			CpuPoolsResources:     InfraRess{}.AddDisk(0, 80).AddRam(0, 10240).AddVcpus(0, 8),
-			GpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(0, 24576).AddOptRes("gpu:gpu", 0, 3).AddVcpus(0, 6),
+			GpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(0, 24576).AddGPU("nvidia-t4", 0, 3).AddVcpus(0, 6),
 			ResourceScore:         24408,
 			CpuPoolsResourceScore: 9120,
 			GpuPoolsResourceScore: 15288,
@@ -1506,9 +1553,10 @@ func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 					Vcpus: 2,
 					Ram:   8192,
 					Disk:  40,
-					OptResMap: map[string]string{
-						"gpu": "gpu:1",
-					},
+					Gpus: []*edgeproto.GPUResource{{
+						ModelId: "nvidia-t4",
+						Count:   1,
+					}},
 				}, // total: 6, 24576, 120, 3
 			}},
 		},
@@ -1518,9 +1566,9 @@ func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 			// gpu used: 2, 4096, 0, 1
 		},
 		usage: edgeproto.ClusterResourceUsage{
-			TotalResources:        InfraRess{}.AddDisk(0, 240).AddRam(8292, 49152).AddOptRes("gpu:gpu", 1, 3).AddVcpus(4, 12),
+			TotalResources:        InfraRess{}.AddDisk(0, 240).AddRam(8292, 49152).AddGPU("nvidia-t4", 1, 3).AddVcpus(4, 12),
 			CpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(4196, 24576).AddVcpus(2, 6),
-			GpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(4096, 24576).AddOptRes("gpu:gpu", 1, 3).AddVcpus(2, 6),
+			GpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(4096, 24576).AddGPU("nvidia-t4", 1, 3).AddVcpus(2, 6),
 			ResourceScore:         24180,
 			CpuPoolsResourceScore: 11940,
 			GpuPoolsResourceScore: 12240,
@@ -1545,9 +1593,10 @@ func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 					Vcpus: 2,
 					Ram:   8192,
 					Disk:  40,
-					OptResMap: map[string]string{
-						"gpu": "gpu:1",
-					},
+					Gpus: []*edgeproto.GPUResource{{
+						ModelId: "nvidia-t4",
+						Count:   1,
+					}},
 				}, // total: 6, 24576, 120, 3
 			}},
 		},
@@ -1558,9 +1607,9 @@ func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 			// gpu used: 6, 12288, 0, 3
 		},
 		usage: edgeproto.ClusterResourceUsage{
-			TotalResources:        InfraRess{}.AddDisk(0, 240).AddRam(24576, 49152).AddOptRes("gpu:gpu", 3, 3).AddVcpus(12, 12),
+			TotalResources:        InfraRess{}.AddDisk(0, 240).AddRam(24576, 49152).AddGPU("nvidia-t4", 3, 3).AddVcpus(12, 12),
 			CpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(12288, 24576).AddVcpus(6, 6),
-			GpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(12288, 24576).AddOptRes("gpu:gpu", 3, 3).AddVcpus(6, 6),
+			GpuPoolsResources:     InfraRess{}.AddDisk(0, 120).AddRam(12288, 24576).AddGPU("nvidia-t4", 3, 3).AddVcpus(6, 6),
 			ResourceScore:         12288,
 			CpuPoolsResourceScore: 6144,
 			GpuPoolsResourceScore: 6144,
@@ -1578,7 +1627,7 @@ func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 			aiDocSmall.Key, aiDocMed.Key,
 		},
 		usage: edgeproto.ClusterResourceUsage{
-			TotalResources: InfraRess{}.AddDisk(25, 40).AddRam(5120, 8192).AddVcpus(4, 10),
+			TotalResources: InfraRess{}.AddDisk(25, 40).AddRam(5120, 8192).AddGPU("nvidia-t4", 0, 1).AddVcpus(4, 10),
 			ResourceScore:  4536,
 		},
 	}}
