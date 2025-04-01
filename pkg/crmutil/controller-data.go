@@ -384,6 +384,11 @@ func (cd *CRMHandler) appInstDNSChanged(ctx context.Context, pf platform.Platfor
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "AppInstDNSChanged done", "key", new.Key, "old dns", oldURI, "new dns", new.Uri)
+	sender.SendUpdate(func(info *edgeproto.AppInstInfo) error {
+		info.Fields = []string{edgeproto.AppInstInfoFieldUri}
+		info.Uri = new.Uri
+		return nil
+	})
 	sender.SendState(edgeproto.TrackedState_READY)
 	return nil
 }
@@ -419,7 +424,7 @@ func (cd *CRMHandler) AppInstChanged(ctx context.Context, target *edgeproto.Clou
 	// Special case for dns update
 	if dnsUpdate {
 		_ = cd.appInstDNSChanged(ctx, pf, &app, oldURI, new, sender)
-		return
+		return nu, nil
 	}
 
 	trackChange := app.Deployment == cloudcommon.DeploymentTypeVM || platform.TrackK8sAppInst(ctx, &app, pf.GetFeatures())
