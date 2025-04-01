@@ -577,6 +577,11 @@ func (s *ClusterInstApi) resolveResourcesSpec(ctx context.Context, stm *edgeprot
 			if err := pool.Validate(); err != nil {
 				return fmt.Errorf("pool %s %s", pool.Name, err)
 			}
+			if pool.NodeResources != nil {
+				if err := cloudcommon.ValidateGPUs(pool.NodeResources.Gpus); err != nil {
+					return fmt.Errorf("pool %s %s", pool.Name, err)
+				}
+			}
 		}
 		if in.NodeResources != nil {
 			return errors.New("cannot specify node resources for Kubernetes deployment")
@@ -584,6 +589,9 @@ func (s *ClusterInstApi) resolveResourcesSpec(ctx context.Context, stm *edgeprot
 	} else {
 		if err := in.NodeResources.Validate(); err != nil {
 			return fmt.Errorf("invalid node resources, %s", err)
+		}
+		if err := cloudcommon.ValidateGPUs(in.NodeResources.Gpus); err != nil {
+			return fmt.Errorf("node resources %s", err)
 		}
 		if len(in.NodePools) > 0 {
 			return errors.New("cannot specify node pools for " + in.Deployment + " deployment")

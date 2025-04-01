@@ -341,10 +341,8 @@ func (s *AppApi) resolveAppResourcesSpec(stm concurrency.STM, deployment string,
 			return fmt.Errorf("invalid KubernetesResources, %s", err)
 		}
 		if res.KubernetesResources.GpuPool != nil {
-			for _, gpu := range res.KubernetesResources.GpuPool.TotalGpus {
-				if err := cloudcommon.ValidateGPU(gpu); err != nil {
-					return fmt.Errorf("invalid KubernetesResources gpu, %s", err)
-				}
+			if err := cloudcommon.ValidateGPUs(res.KubernetesResources.GpuPool.TotalGpus); err != nil {
+				return fmt.Errorf("invalid KubernetesResources gpu, %s", err)
 			}
 		}
 	} else {
@@ -357,10 +355,8 @@ func (s *AppApi) resolveAppResourcesSpec(stm concurrency.STM, deployment string,
 		if err := res.NodeResources.Validate(); err != nil {
 			return fmt.Errorf("invalid NodeResources, %s", err)
 		}
-		for _, gpu := range res.NodeResources.Gpus {
-			if err := cloudcommon.ValidateGPU(gpu); err != nil {
-				return fmt.Errorf("invalid NodeResources gpu, %s", err)
-			}
+		if err := cloudcommon.ValidateGPUs(res.NodeResources.Gpus); err != nil {
+			return fmt.Errorf("invalid NodeResources gpu, %s", err)
 		}
 	}
 	return nil

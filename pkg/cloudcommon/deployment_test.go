@@ -299,7 +299,6 @@ func TestDeploymentManifest(t *testing.T) {
 	require.NotNil(t, err, "invalid gpu deployment manifest")
 	require.Contains(t, err.Error(), "GPU resource limit (value:2) exceeds flavor specified count 1")
 
-	//flavor.GpuPool.TotalOptRes["gpu"] = "pci:4"
 	flavor.GpuPool.TotalGpus = []*edgeproto.GPUResource{{
 		ModelId: "xvidia-x999",
 		Count:   4,

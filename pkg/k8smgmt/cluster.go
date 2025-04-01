@@ -470,11 +470,11 @@ func getNodeGPUInfo(labels map[string]string) ([]*edgeproto.GPUResource, *edgepr
 	return gpus, sw, nil
 }
 
-// GPU product names should be prefixed with the maker already.
-// If not, we need to prepend the maker to ensure uniqueness.
-func ensureGPUPrefix(product, maker string) string {
-	if !strings.HasPrefix(strings.ToLower(product), strings.ToLower(maker)) {
-		return fmt.Sprintf("%s-%s", maker, product)
+// GPU product names should be prefixed with the vendor already.
+// If not, we need to prepend the vendor to ensure uniqueness.
+func ensureGPUPrefix(product, vendor string) string {
+	if !strings.HasPrefix(strings.ToLower(product), strings.ToLower(vendor)) {
+		return fmt.Sprintf("%s-%s", vendor, product)
 	}
 	return product
 }

@@ -247,40 +247,51 @@ func ParseOptResVal(resStr string) (string, string, int, error) {
 	return typ, spec, count, nil
 }
 
-func ValidateInfraGPUs(gpus []*edgeproto.GPUResource) error {
+type ValidateGPUOptions struct {
+	requiresMemory bool
+}
+
+type ValidateGPUOp func(*ValidateGPUOptions)
+
+func WithRequiresGPUMemory() ValidateGPUOp {
+	return func(opts *ValidateGPUOptions) {
+		opts.requiresMemory = true
+	}
+}
+
+// ValidateGPUs validates GPU resources
+func ValidateGPUs(gpus []*edgeproto.GPUResource, ops ...ValidateGPUOp) error {
+	opts := &ValidateGPUOptions{}
+	for _, opt := range ops {
+		opt(opts)
+	}
 	for _, gpu := range gpus {
-		if gpu.Count == 0 {
-			return errors.New("gpu count cannot be 0")
-		}
 		if gpu.ModelId == "" {
 			return errors.New("gpu model id cannot be empty")
 		}
-		if err := ValidateGPU(gpu); err != nil {
-			return err
+		if gpu.Count == 0 {
+			return errors.New("gpu count cannot be 0")
 		}
-		if gpu.Memory == 0 {
+		if gpu.Vendor == "" {
+			modelid := strings.ToLower(gpu.ModelId)
+			if strings.HasPrefix(modelid, GPUVendorAMD) {
+				gpu.Vendor = GPUVendorAMD
+			} else if strings.HasPrefix(modelid, GPUVendorNVIDIA) {
+				gpu.Vendor = GPUVendorNVIDIA
+			} else {
+				return fmt.Errorf("gpu vendor for model %q is empty and cannot be inferred from model ID", gpu.ModelId)
+			}
+		}
+		if opts.requiresMemory && gpu.Memory == 0 {
 			return errors.New("gpu memory cannot be 0")
 		}
 	}
 	return nil
 }
 
-func ValidateGPU(gpu *edgeproto.GPUResource) error {
-	if gpu.ModelId == "" {
-		return errors.New("gpu model id cannot be empty")
-	}
-	if gpu.Count == 0 {
-		return errors.New("gpu count cannot be 0")
-	}
-	if gpu.Vendor == "" {
-		modelid := strings.ToLower(gpu.ModelId)
-		if strings.HasPrefix(modelid, GPUVendorAMD) {
-			gpu.Vendor = GPUVendorAMD
-		} else if strings.HasPrefix(modelid, GPUVendorNVIDIA) {
-			gpu.Vendor = GPUVendorNVIDIA
-		} else {
-			return fmt.Errorf("gpu vendor for model %q is empty and cannot be inferred from model ID", gpu.ModelId)
-		}
-	}
-	return nil
+// ValidateInfraGPUs validates the GPU resources validates
+// gpu information provided by the edge-site specific
+// platform.
+func ValidateInfraGPUs(gpus []*edgeproto.GPUResource) error {
+	return ValidateGPUs(gpus, WithRequiresGPUMemory())
 }

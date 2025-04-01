@@ -66,7 +66,7 @@ message Zone {
 message ZoneGPUs {
     // Zone key
     ZoneKey zone_key = 1 [(gogoproto.nullable) = false];
-    // List of GPUs. Note the count will either be 1 or 0, to indicate if such a GPU is available or not. The actual count present is not displayed.
+    // List of GPUs. Note the count will either be 1 or 0, to indicate if such a GPU is available or not.
     repeated GPUResource gpus = 2;
 }
 

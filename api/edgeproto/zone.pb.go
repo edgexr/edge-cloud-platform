@@ -99,7 +99,7 @@ var xxx_messageInfo_Zone proto.InternalMessageInfo
 type ZoneGPUs struct {
 	// Zone key
 	ZoneKey ZoneKey `protobuf:"bytes,1,opt,name=zone_key,json=zoneKey,proto3" json:"zone_key"`
-	// List of GPUs. Note the count will either be 1 or 0, to indicate if such a GPU is available or not. The actual count present is not displayed.
+	// List of GPUs. Note the count will either be 1 or 0, to indicate if such a GPU is available or not.
 	Gpus []*GPUResource `protobuf:"bytes,2,rep,name=gpus,proto3" json:"gpus,omitempty"`
 }
 
