@@ -279,6 +279,7 @@ func (s *ResTagTableApi) UsesGpu(ctx context.Context, stm *edgeproto.OptionalSTM
 
 // GetVMSpec returns the VMCreationAttributes including flavor name and the size of the external volume which is required, if any
 func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm *edgeproto.OptionalSTM, nodeResources *edgeproto.NodeResources, cloudletFlavorName string, cl edgeproto.Cloudlet, cli edgeproto.CloudletInfo) (*resspec.VMCreationSpec, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "GetVMSpec", "nodeResources", *nodeResources, "cloudletFlavorName", cloudletFlavorName, "cloudlet", cl.Key.Name)
 	// for those platforms with no concept of a quantized set of resources (flavors)
 	// return a VMCreationSpec  based on the our meta-flavor resource request.
 	if len(cli.Flavors) == 0 {
@@ -289,6 +290,7 @@ func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm *edgeproto.OptionalS
 				Name:  "noderesources",
 				Disk:  nodeResources.Disk,
 				Vcpus: nodeResources.Vcpus,
+				Gpus:  nodeResources.Gpus,
 			},
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "GetVMSpec platform has no native flavors returning spec for", "platform", cl.PlatformType, "as", spec)
@@ -364,11 +366,6 @@ func (s *ResTagTableApi) AddGpuResourceHintIfNeeded(ctx context.Context, stm *ed
 	if s.UsesGpu(ctx, stm, *spec.FlavorInfo, cloudlet) {
 		log.SpanLog(ctx, log.DebugLevelApi, "add hint using gpu on", "platform", cloudlet.PlatformType, "flavor", spec.FlavorName)
 		return "gpu"
-	} else {
-		if strings.Contains(spec.FlavorInfo.Name, "gpu") {
-			log.SpanLog(ctx, log.DebugLevelApi, "add hint using gpu on", "platform", cloudlet.PlatformType, "flavor", spec.FlavorName)
-			return "gpu"
-		}
 	}
 	return ""
 }

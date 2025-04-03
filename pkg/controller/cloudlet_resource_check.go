@@ -35,6 +35,7 @@ type CloudletResCalc struct {
 	cloudletKey *edgeproto.CloudletKey
 	deps        CloudletResCalcDeps
 	usedVals    resspec.ResValMap // cached calculation of used resources in cloudlet
+	options     CloudletResCalcOptions
 }
 
 type CloudletResCalcDeps struct {
@@ -43,6 +44,11 @@ type CloudletResCalcDeps struct {
 	cloudletRefs *edgeproto.CloudletRefs
 	features     *edgeproto.PlatformFeatures
 	lbFlavor     *edgeproto.FlavorInfo
+}
+
+type CloudletResCalcOptions struct {
+	skipLB         bool // don't try to count LB resources
+	skipAdditional bool // don't try to count additional resources
 }
 
 var resourceWeights = map[string]uint64{
@@ -90,7 +96,7 @@ func (s *CloudletResCalc) InitDeps(ctx context.Context) error {
 		}
 		s.deps.features = features
 	}
-	if s.deps.lbFlavor == nil {
+	if s.deps.lbFlavor == nil && !s.options.skipLB {
 		lbFlavor, err := s.all.clusterInstApi.GetRootLBFlavorInfo(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo)
 		if err != nil {
 			return err
@@ -110,7 +116,7 @@ func (s *CloudletResCalc) CloudletFitsVMApp(ctx context.Context, app *edgeproto.
 	if err != nil {
 		return nil, err
 	}
-	reqdVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd)
+	reqdVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd, s.options)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +136,7 @@ func (s *CloudletResCalc) CloudletFitsCluster(ctx context.Context, clusterInst, 
 	if err != nil {
 		return nil, err
 	}
-	reqdVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd)
+	reqdVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd, s.options)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +147,7 @@ func (s *CloudletResCalc) CloudletFitsCluster(ctx context.Context, clusterInst, 
 		if err != nil {
 			return nil, err
 		}
-		oldVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd)
+		oldVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd, s.options)
 		if err != nil {
 			return nil, err
 		}
@@ -174,7 +180,7 @@ func (s *CloudletResCalc) getUsedResVals(ctx context.Context) (resspec.ResValMap
 		return nil, err
 	}
 	// convert used resources to ResValMap
-	usedVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, usedResources)
+	usedVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, usedResources, s.options)
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +196,7 @@ func (s *CloudletResCalc) cloudletFitsReqdVals(ctx context.Context, reqdVals res
 	if err != nil {
 		return nil, err
 	}
-	resLimits := s.getResourceLimits()
+	resLimits := s.getResourceLimits(ctx)
 
 	log.SpanLog(ctx, log.DebugLevelApi, "cloudletFitsReqdVals", "cloudlet", s.cloudletKey.GetKeyString(), "reqdVals", reqdVals.String(), "usedVals", usedVals.String(), "resLimits", resLimits.String())
 
@@ -296,12 +302,13 @@ func (s *CloudletResCalc) cloudletFitsReqdVals(ctx context.Context, reqdVals res
 func getMaxResourceVals(infraSnapshot []edgeproto.InfraResource, quotas []edgeproto.ResourceQuota) map[string]uint64 {
 	maxVals := map[string]uint64{}
 	for _, infraRes := range infraSnapshot {
-		maxVals[infraRes.Name] = infraRes.InfraMaxValue
+		maxVals[infraRes.ResKey()] = infraRes.InfraMaxValue
 	}
 	for _, quota := range quotas {
-		v, ok := maxVals[quota.Name]
+		resKey := quota.ResKey()
+		v, ok := maxVals[resKey]
 		if !ok || v > quota.Value {
-			maxVals[quota.Name] = quota.Value
+			maxVals[resKey] = quota.Value
 		}
 	}
 	return maxVals
@@ -313,6 +320,7 @@ type ResLimit struct {
 	InfraMaxValue  uint64
 	QuotaMaxValue  uint64
 	AlertThreshold int32
+	ResourceType   string
 }
 
 type ResLimitMap map[string]*ResLimit
@@ -346,46 +354,81 @@ func (s ResLimitMap) String() string {
 
 }
 
+func (s ResLimitMap) AddMax(name, resourceType, units string, max uint64) {
+	resKey := edgeproto.BuildResKey(resourceType, name)
+	res, ok := s[resKey]
+	if !ok {
+		res = &ResLimit{
+			Name:         name,
+			Units:        units,
+			ResourceType: resourceType,
+		}
+		s[resKey] = res
+	}
+	res.InfraMaxValue += max
+}
+
+func (s ResLimitMap) AddQuota(name, resourceType, units string, quota uint64, alertThreshold int32) {
+	resKey := edgeproto.BuildResKey(resourceType, name)
+	res, ok := s[resKey]
+	if !ok {
+		res = &ResLimit{
+			Name:         name,
+			Units:        units,
+			ResourceType: resourceType,
+		}
+		s[resKey] = res
+	}
+	res.QuotaMaxValue += quota
+	res.AlertThreshold = alertThreshold
+}
+
 // getResourceLimits creates a resource map of resources that are
 // limited by the cloudlet's max values or quota values.
 // Resources without limits are not presented.
-func (s *CloudletResCalc) getResourceLimits() ResLimitMap {
+func (s *CloudletResCalc) getResourceLimits(ctx context.Context) ResLimitMap {
 	limits := ResLimitMap{}
+	s.addResourceLimits(ctx, limits)
+	return limits
+}
 
+func (s *CloudletResCalc) addResourceLimits(ctx context.Context, limits ResLimitMap) {
 	// add limits from infra-reported max value
 	for _, infraRes := range s.deps.cloudletInfo.ResourcesSnapshot.Info {
 		if infraRes.InfraMaxValue == 0 {
 			continue
 		}
-		res := &ResLimit{
-			InfraMaxValue: infraRes.InfraMaxValue,
-			Units:         infraRes.Units,
-		}
-		if res.Units == "" {
-			res.Units = cloudcommon.CommonCloudletResources[infraRes.Name]
-		}
-		limits[infraRes.Name] = res
+		limits.AddMax(infraRes.Name, infraRes.Type, infraRes.Units, infraRes.InfraMaxValue)
 	}
+	// resource limits from kubernetes-cluster-as-a-cloudlet come
+	// from node pools
+	kresCounts := resspec.ResValMap{}
+	for _, pool := range s.deps.cloudletInfo.NodePools {
+		if pool.NodeResources == nil {
+			continue
+		}
+		err := kresCounts.AddNodeResources(pool.NodeResources, pool.NumNodes)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to add node pool resources", "pool", pool.Name, "err", err)
+		}
+	}
+	for _, kres := range kresCounts {
+		limits.AddMax(kres.Name, kres.ResourceType, kres.Units, kres.Value.Whole)
+	}
+
 	// add limits from quotas
 	for _, quota := range s.deps.cloudlet.ResourceQuotas {
 		if quota.Value == 0 && quota.AlertThreshold == 0 {
 			continue
 		}
-		res, ok := limits[quota.Name]
-		if !ok {
-			res = &ResLimit{}
-			res.Units = cloudcommon.CommonCloudletResources[quota.Name]
-			limits[quota.Name] = res
-		}
-		res.QuotaMaxValue = quota.Value
+		units := cloudcommon.CommonCloudletResources[quota.ResKey()]
 		thresh := s.deps.cloudlet.DefaultResourceAlertThreshold
 		if quota.AlertThreshold > 0 {
 			// Set threshold values from Resource quotas
 			thresh = quota.AlertThreshold
 		}
-		res.AlertThreshold = thresh
+		limits.AddQuota(quota.Name, quota.ResourceType, units, quota.Value, thresh)
 	}
-	return limits
 }
 
 // calcResourceScoreFromUsed gets a score which represents the available resources

@@ -361,6 +361,7 @@ func GetVMSpec(ctx context.Context, nodeResources *edgeproto.NodeResources, cli 
 	})
 
 	skipped := map[string]int{}
+	skippedExtra := map[string]int{}
 	skippedExtraRes := 0
 	for _, flavor := range flavorList {
 
@@ -379,6 +380,9 @@ func GetVMSpec(ctx context.Context, nodeResources *edgeproto.NodeResources, cli 
 			skipped[cloudcommon.ResourceDiskGb]++
 			continue
 		}
+		if !satisfiesGPUs(nodeResources.Gpus, flavor.Gpus, skipped, skippedExtra) {
+			continue
+		}
 		// Good matches for flavor so far, does nodeflavor request an
 		// optional resource? If so, the flavor will have a non-nil OptResMap.
 		// If any specific resource fails, the flavor is rejected.
@@ -388,14 +392,6 @@ func GetVMSpec(ctx context.Context, nodeResources *edgeproto.NodeResources, cli 
 				continue
 			}
 		} else {
-			// Our mex flavor is not requesting any optional resources. (OptResMap in mex flavor = nil)
-			// so to prevent _any_ race condition or absence of cloudlet config, skip any o.s. flavor with
-			// "gpu" in its name.
-			if strings.Contains(flavor.Name, "gpu") {
-				log.SpanLog(ctx, log.DebugLevelApi, "No opt resource requested, skipping gpu ", "flavor", flavor.Name)
-				skippedExtraRes++
-				continue
-			}
 			// Finally, if the os flavor we're about to return happens to be offering an optional resource
 			// that was not requested, we need to skip it.
 			if _, cnt := InfraFlavorResources(ctx, *flavor, tbls); cnt != 0 {
@@ -420,7 +416,35 @@ func GetVMSpec(ctx context.Context, nodeResources *edgeproto.NodeResources, cli 
 	if skippedExtraRes > 0 {
 		reasons = append(reasons, fmt.Sprintf("%d with optional resources not requested", skippedExtraRes))
 	}
+	for resName, count := range skippedExtra {
+		reasons = append(reasons, fmt.Sprintf("%d with %s not requested", count, resName))
+	}
 	return &vmspec, errors.New("no suitable infra flavor found for requested node resources, " + strings.Join(reasons, ", "))
+}
+
+// GPU requirements must match exactly to avoid wasting gpu resources
+func satisfiesGPUs(reqs, gpus []*edgeproto.GPUResource, missing, extra map[string]int) bool {
+	provides := map[string]uint32{}
+	for _, gpu := range gpus {
+		provides[gpu.ModelId] += gpu.Count
+	}
+	for _, req := range reqs {
+		if req.Count > provides[req.ModelId] {
+			missing[req.ModelId] += int(req.Count - provides[req.ModelId])
+			return false
+		} else if req.Count < provides[req.ModelId] {
+			extra[req.ModelId] += int(provides[req.ModelId] - req.Count)
+			return false
+		}
+		delete(provides, req.ModelId)
+	}
+	if len(provides) == 0 {
+		return true // exact match
+	}
+	for prod, count := range provides {
+		extra[prod] += int(count)
+	}
+	return false
 }
 
 func GetVMSpecCloudletFlavor(ctx context.Context, cloudletFlavorName string, cli edgeproto.CloudletInfo) (*VMCreationSpec, error) {

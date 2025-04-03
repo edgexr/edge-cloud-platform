@@ -19,6 +19,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/test/testutil"
 )
 
 type PlatformSingleCluster struct {
@@ -40,15 +41,6 @@ func (s *PlatformSingleCluster) GetFeatures() *edgeproto.PlatformFeatures {
 
 func (s *PlatformSingleCluster) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	s.Platform.GatherCloudletInfo(ctx, info)
-	numNodes := uint64(10)
-	info.NodePools = []*edgeproto.NodePool{{
-		Name:     "cpupool",
-		NumNodes: uint32(numNodes),
-		NodeResources: &edgeproto.NodeResources{
-			Vcpus: info.OsMaxVcores / numNodes,
-			Ram:   info.OsMaxRam / numNodes,
-			Disk:  info.OsMaxVolGb / numNodes,
-		},
-	}}
+	info.NodePools = testutil.CloudletInfoData()[4].NodePools
 	return nil
 }

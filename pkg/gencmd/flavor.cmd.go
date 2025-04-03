@@ -414,19 +414,31 @@ var FlavorOptionalArgs = []string{
 	"ram",
 	"vcpus",
 	"disk",
+	"gpus:empty",
+	"gpus:#.modelid",
+	"gpus:#.count",
+	"gpus:#.vendor",
+	"gpus:#.memory",
+	"gpus:#.inuse",
 	"optresmap",
 }
 var FlavorAliasArgs = []string{
 	"name=key.name",
 }
 var FlavorComments = map[string]string{
-	"fields":        "Fields are used for the Update API to specify which fields to apply",
-	"name":          "Flavor name",
-	"ram":           "RAM in megabytes",
-	"vcpus":         "Number of virtual CPUs",
-	"disk":          "Amount of disk space in gigabytes",
-	"optresmap":     "Optional Resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1, specify optresmap:empty=true to clear",
-	"deleteprepare": "Preparing to be deleted",
+	"fields":         "Fields are used for the Update API to specify which fields to apply",
+	"name":           "Flavor name",
+	"ram":            "RAM in megabytes",
+	"vcpus":          "Number of virtual CPUs",
+	"disk":           "Amount of disk space in gigabytes",
+	"gpus:empty":     "GPUs, specify gpus:empty=true to clear",
+	"gpus:#.modelid": "GPU model unique identifier",
+	"gpus:#.count":   "Count of how many of this GPU are required/present",
+	"gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
+	"gpus:#.memory":  "Memory in GB",
+	"gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"optresmap":      "Optional Resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1, specify optresmap:empty=true to clear",
+	"deleteprepare":  "Preparing to be deleted",
 }
 var FlavorSpecialArgs = map[string]string{
 	"fields":    "StringArray",
@@ -439,5 +451,10 @@ var CreateFlavorRequiredArgs = []string{
 	"disk",
 }
 var CreateFlavorOptionalArgs = []string{
+	"gpus:#.modelid",
+	"gpus:#.count",
+	"gpus:#.vendor",
+	"gpus:#.memory",
+	"gpus:#.inuse",
 	"optresmap",
 }

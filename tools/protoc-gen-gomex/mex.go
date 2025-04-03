@@ -3049,6 +3049,9 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		}
 		args.StringKeyFieldLC = strings.ToLower(args.StringKeyField)
 		m.keysTemplate.Execute(m.gen.Buffer, args)
+		if args.StringKeyField != "" {
+			m.importObjstore = true
+		}
 	}
 	if GetNotifyMessage(message) {
 		m.P("func (m *", message.Name, ") MessageTypeKey() string {")

@@ -289,6 +289,9 @@ func (s *ClusterInstApi) GetRootLBFlavorInfo(ctx context.Context, stm *edgeproto
 	if err != nil {
 		return nil, err
 	}
+	if !features.UsesRootLb {
+		return nil, nil
+	}
 
 	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmApiTimeout.TimeDuration())
 	defer cancel()
@@ -306,7 +309,7 @@ func (s *ClusterInstApi) GetRootLBFlavorInfo(ctx context.Context, stm *edgeproto
 	if rootlbFlavor != nil {
 		vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, nodeResources, "", *cloudlet, *cloudletInfo)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get infra flavor for root LB flavor %s: %v", rootlbFlavor.Key.Name, err)
 		}
 		lbFlavor = vmspec.FlavorInfo
 	}
@@ -463,6 +466,11 @@ func (s *ClusterInstApi) getCloudletResourceMetric(ctx context.Context, stm conc
 	ramUsed := resInfo.GetInt(cloudcommon.ResourceRamMb)
 	vcpusUsed := resInfo.GetInt(cloudcommon.ResourceVcpus)
 	gpusUsed := resInfo.GetInt(cloudcommon.ResourceGpus)
+	for _, res := range resInfo {
+		if res.ResourceType == cloudcommon.ResourceTypeGPU {
+			gpusUsed += uint64(res.Value.Uint64())
+		}
+	}
 	externalIPsUsed := resInfo.GetInt(cloudcommon.ResourceExternalIPs)
 
 	resMetric := edgeproto.Metric{}
@@ -569,6 +577,11 @@ func (s *ClusterInstApi) resolveResourcesSpec(ctx context.Context, stm *edgeprot
 			if err := pool.Validate(); err != nil {
 				return fmt.Errorf("pool %s %s", pool.Name, err)
 			}
+			if pool.NodeResources != nil {
+				if err := cloudcommon.ValidateGPUs(pool.NodeResources.Gpus); err != nil {
+					return fmt.Errorf("pool %s %s", pool.Name, err)
+				}
+			}
 		}
 		if in.NodeResources != nil {
 			return errors.New("cannot specify node resources for Kubernetes deployment")
@@ -576,6 +589,9 @@ func (s *ClusterInstApi) resolveResourcesSpec(ctx context.Context, stm *edgeprot
 	} else {
 		if err := in.NodeResources.Validate(); err != nil {
 			return fmt.Errorf("invalid node resources, %s", err)
+		}
+		if err := cloudcommon.ValidateGPUs(in.NodeResources.Gpus); err != nil {
+			return fmt.Errorf("node resources %s", err)
 		}
 		if len(in.NodePools) > 0 {
 			return errors.New("cannot specify node pools for " + in.Deployment + " deployment")
@@ -776,7 +792,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
 			// select infra-specific flavor for node pools
 			for _, pool := range in.NodePools {
-				az, optRes, err := s.setInfraFlavor(ctx, ostm, &cloudlet, &info, pool.NodeResources)
+				az, optRes, err := s.setInfraFlavor(ctx, ostm, &cloudlet, features, &info, pool.NodeResources)
 				if err != nil {
 					return fmt.Errorf("failed to select infra flavor for pool %s, %s", pool.Name, err)
 				}
@@ -796,7 +812,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 				log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Node Flavor", "pool", pool)
 			}
 		} else {
-			az, optRes, err := s.setInfraFlavor(ctx, ostm, &cloudlet, &info, in.NodeResources)
+			az, optRes, err := s.setInfraFlavor(ctx, ostm, &cloudlet, features, &info, in.NodeResources)
 			if err != nil {
 				return fmt.Errorf("failed to select infra flavor, %s", err)
 			}
@@ -2138,14 +2154,14 @@ func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *e
 	)
 }
 
-func (s *ClusterInstApi) setInfraFlavor(ctx context.Context, stm *edgeproto.OptionalSTM, cloudlet *edgeproto.Cloudlet, info *edgeproto.CloudletInfo, res *edgeproto.NodeResources) (string, string, error) {
+func (s *ClusterInstApi) setInfraFlavor(ctx context.Context, stm *edgeproto.OptionalSTM, cloudlet *edgeproto.Cloudlet, features *edgeproto.PlatformFeatures, info *edgeproto.CloudletInfo, res *edgeproto.NodeResources) (string, string, error) {
 	var az, optRes string
 	vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, res, res.InfraNodeFlavor, *cloudlet, *info)
 	if err != nil {
 		return az, optRes, err
 	}
 	optRes = s.all.resTagTableApi.AddGpuResourceHintIfNeeded(ctx, stm, vmspec, *cloudlet)
-	if optRes == "gpu" {
+	if optRes == "gpu" && features.RequiresGpuDriver {
 		if cloudlet.GpuConfig.Driver.Name == "" {
 			return az, optRes, fmt.Errorf("no GPU driver associated with cloudlet %s", cloudlet.Key)
 		}
@@ -2203,7 +2219,7 @@ func (s *ClusterInstApi) checkMinKubernetesVersion(ci *edgeproto.ClusterInst, ap
 
 // FitsAppResources check if the clusterInst's configuration
 // satisfies the App's resource requirements.
-func (s *ClusterInstApi) fitsAppResources(ctx context.Context, ci *edgeproto.ClusterInst, refs *edgeproto.ClusterRefs, app *edgeproto.App, appInst *edgeproto.AppInst, flavorLookup edgeproto.FlavorLookup) (*resspec.KubeResScaleSpec, resspec.ResValMap, error) {
+func (s *ClusterInstApi) fitsAppResources(ctx context.Context, ci *edgeproto.ClusterInst, refs *edgeproto.ClusterRefs, app *edgeproto.App, appInst *edgeproto.AppInst, flavorLookup edgeproto.FlavorLookup, clusterSpecified bool) (*resspec.KubeResScaleSpec, resspec.ResValMap, error) {
 	noFreeRes := resspec.ResValMap{}
 	if cloudcommon.IsSideCarApp(app) {
 		// we don't count sidecar apps for resource calculations.
@@ -2214,7 +2230,7 @@ func (s *ClusterInstApi) fitsAppResources(ctx context.Context, ci *edgeproto.Clu
 		if err != nil {
 			return nil, noFreeRes, err
 		}
-		return resspec.KubernetesResourcesFits(ctx, ci, appInst.KubernetesResources, cpuUsed, gpuUsed, flavorLookup)
+		return resspec.KubernetesResourcesFits(ctx, ci, appInst.KubernetesResources, cpuUsed, gpuUsed, flavorLookup, clusterSpecified)
 	} else {
 		used, err := s.calcVMClusterUsedResources(refs, appInst)
 		if err != nil {
@@ -2252,6 +2268,7 @@ func (s *ClusterInstApi) ShowClusterResourceUsage(in *edgeproto.ClusterInst, cb 
 		return err
 	}
 	flavorLookups := map[edgeproto.CloudletKey]edgeproto.FlavorLookup{}
+	usages := []*edgeproto.ClusterResourceUsage{}
 	for _, ci := range cis {
 		// cache flavorLookups per cloudlet so we don't have
 		// to rebuild them if multiple clusters are on the same
@@ -2271,6 +2288,12 @@ func (s *ClusterInstApi) ShowClusterResourceUsage(in *edgeproto.ClusterInst, cb 
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to get cluster resource usage, skipping", "cluster", ci.Key, "err", err)
 			continue
 		}
+		usages = append(usages, usage)
+	}
+	sort.Slice(usages, func(i, j int) bool {
+		return usages[i].Key.GetKeyString() < usages[j].Key.GetKeyString()
+	})
+	for _, usage := range usages {
 		if err := cb.Send(usage); err != nil {
 			return err
 		}

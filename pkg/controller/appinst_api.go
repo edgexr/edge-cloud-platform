@@ -654,7 +654,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 			for _, pc := range potentialClusters {
 				clusterInst, err := s.usePotentialCluster(ctx, stm, in, &app, sidecarApp, pc)
-				if err != nil && pc.userSpecified {
+				if err != nil && pc.clusterSpecified {
 					// user specified this cluster, so this is a hard failure
 					return err
 				}
@@ -669,8 +669,8 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 					log.SpanLog(ctx, log.DebugLevelApi, "target cluster requires scaling", "pc-cluster", pc.existingCluster, "scaleSpec", pc.scaleSpec)
 					scaleSpec = pc.scaleSpec
 				} else {
-					err := s.potentialClusterResourceCheck(ctx, stm, in, &app, clusterInst, pc.parentPC.flavorLookup)
-					if err != nil && pc.userSpecified {
+					err := s.potentialClusterResourceCheck(ctx, stm, in, &app, clusterInst, pc.parentPC.flavorLookup, clusterSpecified)
+					if err != nil && pc.clusterSpecified {
 						// user specified this cluster, so this is a hard failure
 						return err
 					}
@@ -820,7 +820,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		if !cloudcommon.IsClusterInstReqd(&app) {
 			// select infra flavor for VM AppInst
 			ostm := edgeproto.NewOptionalSTM(stm)
-			az, optRes, err := s.all.clusterInstApi.setInfraFlavor(ctx, ostm, &cloudlet, &info, in.NodeResources)
+			az, optRes, err := s.all.clusterInstApi.setInfraFlavor(ctx, ostm, &cloudlet, cloudletFeatures, &info, in.NodeResources)
 			if err != nil {
 				return err
 			}
@@ -1110,7 +1110,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			if scaleSpec != nil {
 				// we deferred the STM resource check until after
 				// the cluster was scaled, so do it now.
-				err := s.potentialClusterResourceCheck(ctx, stm, in, &app, &clusterInst, info.GetFlavorLookup())
+				err := s.potentialClusterResourceCheck(ctx, stm, in, &app, &clusterInst, info.GetFlavorLookup(), clusterSpecified)
 				if err != nil {
 					return err
 				}
@@ -1778,7 +1778,8 @@ func (s *AppInstApi) UpdateAppInst(in *edgeproto.AppInst, cb edgeproto.AppInstAp
 				refs.Key = cur.ClusterKey
 			}
 			// ensure that cluster can fit new specified resources
-			_, _, err = s.all.clusterInstApi.fitsAppResources(ctx, &clusterInst, &refs, &app, &cur, cloudletInfo.GetFlavorLookup())
+			clusterSpecified := true
+			_, _, err = s.all.clusterInstApi.fitsAppResources(ctx, &clusterInst, &refs, &app, &cur, cloudletInfo.GetFlavorLookup(), clusterSpecified)
 			if err != nil {
 				return err
 			}

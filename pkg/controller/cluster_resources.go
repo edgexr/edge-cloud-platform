@@ -134,9 +134,21 @@ func NodePoolFromResources(name string, pr *edgeproto.NodePoolResources) *edgepr
 		Vcpus: pr.Topology.MinNodeVcpus,
 		Ram:   pr.Topology.MinNodeMemory,
 		Disk:  pr.Topology.MinNodeDisk,
+		Gpus:  pr.Topology.MinNodeGpus,
 	}
+	nrGpusLookup := map[string]*edgeproto.GPUResource{}
+	for _, gpu := range pr.Topology.MinNodeGpus {
+		nrGpusLookup[gpu.GetKey().GetKeyString()] = gpu
+	}
+
 	// per node requirements are derived from total resource
 	// requirement divided by the number of nodes.
+	// TODO: if numNodes is not specified, we need to be able
+	// to scale up the number of nodes to meet the total requirements
+	// based on available flavors. For example, if we default to
+	// a single node, there may not be a flavor that can support
+	// the total requirements. So this function needs to take into
+	// account the target flavors of the underlying platform.
 	numNodes := uint64(pr.Topology.MinNumberOfNodes)
 	if numNodes == 0 {
 		numNodes = 1
@@ -152,6 +164,21 @@ func NodePoolFromResources(name string, pr *edgeproto.NodePoolResources) *edgepr
 	if nr.Disk == 0 {
 		perNode := float64(pr.TotalDisk) / float64(numNodes)
 		nr.Disk = uint64(math.Ceil(perNode))
+	}
+	for _, gpu := range pr.TotalGpus {
+		perNode := uint64(math.Ceil(float64(gpu.Count) / float64(numNodes)))
+		// set the per node gpu count if not already set or if
+		// insufficient.
+		nrGpu, ok := nrGpusLookup[gpu.GetKey().GetKeyString()]
+		if ok && nrGpu.Count < uint32(perNode) {
+			nrGpu.Count = uint32(perNode)
+		} else {
+			nrGpu = &edgeproto.GPUResource{
+				ModelId: gpu.ModelId,
+				Count:   uint32(perNode),
+			}
+			nr.Gpus = append(nr.Gpus, nrGpu)
+		}
 	}
 	if len(pr.TotalOptRes) > 0 {
 		nr.OptResMap = map[string]string{}
@@ -247,25 +274,22 @@ func clusterResValToInfra(usedVals, totalVals resspec.ResValMap) []*edgeproto.In
 	out := []*edgeproto.InfraResource{}
 	// add in used values with total
 	for resName, resVal := range usedVals {
-		infraRes := edgeproto.InfraResource{}
-		infraRes.Name = resName
-		infraRes.Value = resVal.Value.Whole
-		infraRes.Units = resVal.Units
+		infraRes := resVal.AsInfraRes()
 		if total, ok := totalVals[resName]; ok {
 			infraRes.InfraMaxValue = total.Value.Whole
 		}
-		out = append(out, &infraRes)
+		out = append(out, infraRes)
 	}
 	// add in total values if not found in used.
 	for resName, resVal := range totalVals {
 		if _, found := usedVals[resName]; found {
 			continue
 		}
-		infraRes := edgeproto.InfraResource{}
-		infraRes.Name = resName
-		infraRes.Units = resVal.Units
-		infraRes.InfraMaxValue = resVal.Value.Whole
-		out = append(out, &infraRes)
+		infraRes := resVal.AsInfraRes()
+		// value is max value
+		infraRes.InfraMaxValue = infraRes.Value
+		infraRes.Value = 0
+		out = append(out, infraRes)
 	}
 	sort.Slice(out[:], func(i, j int) bool {
 		return out[i].Name < out[j].Name

@@ -16,7 +16,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -98,7 +97,7 @@ func (s *CloudletResources) AddPlatformVMs(ctx context.Context, cloudletInfo *ed
 // calculating resources for an update.
 func (s *CloudletResources) AddClusterInstResources(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBFlavor *edgeproto.FlavorInfo, isManagedK8s bool) error {
 	if s.debug {
-		log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources", "clusterinst key", clusterInst.Key, "root lb flavor", rootLBFlavor.Name, "managed k8s", isManagedK8s, "nodeRes", clusterInst.NodeResources, "nodepools", clusterInst.NodePools)
+		log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources", "clusterinst key", clusterInst.Key, "root lb flavor", rootLBFlavor, "managed k8s", isManagedK8s, "nodeRes", clusterInst.NodeResources, "nodepools", clusterInst.NodePools)
 	}
 
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
@@ -113,9 +112,10 @@ func (s *CloudletResources) AddClusterInstResources(ctx context.Context, cluster
 	// For managed-k8s platforms, ignore rootLB for resource calculation
 	if !isManagedK8s && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		if rootLBFlavor == nil {
-			return fmt.Errorf("missing rootlb flavor")
+			log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources no/skip root lb flavor", "clusterinst key", clusterInst.Key)
+		} else {
+			s.AddFlavor(&clusterInst.Key, rootLBFlavor.Name, cloudcommon.NodeTypeDedicatedRootLB.String(), 1)
 		}
-		s.AddFlavor(&clusterInst.Key, rootLBFlavor.Name, cloudcommon.NodeTypeDedicatedRootLB.String(), 1)
 	}
 	return nil
 }
@@ -128,7 +128,7 @@ func (s *CloudletResources) AddVMAppInstResources(ctx context.Context, app *edge
 
 	s.AddRes(appInst.GetClusterKey(), appInst.NodeResources, cloudcommon.NodeTypeAppVM.String(), 1)
 
-	if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER {
+	if app.AccessType == edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER && rootLBFlavor != nil {
 		s.AddFlavor(appInst.GetClusterKey(), rootLBFlavor.Name, cloudcommon.NodeTypeDedicatedRootLB.String(), 1)
 	}
 	return nil

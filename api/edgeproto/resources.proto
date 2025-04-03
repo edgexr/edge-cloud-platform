@@ -26,6 +26,34 @@ option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
 
+// A note on GPU handling.
+// Previously, GPUs were specified using OptResMap strings which rely on
+// the cloudlet operator defining a ResTagTable. That was to allow
+// the operator to map arbitrary flavor tags to somewhat arbitrary
+// optresmap values, like "gpu:t4:1". That process is confusing and
+// convoluted, but necessary for arbitrary resources.
+// However, for GPUs, we now treat them as first-class resources
+// instead of generic optional resources. We do not use the optresmap
+// or restagtable anymore, although support is left in for legacy
+// VM-based platforms that may still be using it.
+
+// GPU Resource
+message GPUResource {
+  // GPU model unique identifier
+  string model_id = 1;
+  // Count of how many of this GPU are required/present
+  uint32 count = 2;
+  // GPU vendor (nvidia, amd, etc)
+  string vendor = 3;
+  // Memory in GB
+  uint64 memory = 4;
+  // Read-only indication of how many GPUs are in use by tenants for usage APIs
+  uint32 in_use = 5;
+  option (protogen.generate_matches) = true;
+  option (protogen.uses_org) = "none";
+  option (protogen.string_key_field) = "ModelId";
+}
+
 // NodeResources defines the node resources for machines or VMs
 message NodeResources {
   // Vcpus to be allocated to the VM, must be either 1 or an even number
@@ -34,8 +62,9 @@ message NodeResources {
   uint64 ram = 2;
   // Total disk space in gigabytes to be allocated to the VM's root partition
   uint64 disk = 3;
-  // Optional resources request, key = gpu
-  // form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1
+  // GPUs 
+  repeated GPUResource gpus = 7;
+  // Optional resources request, i.e. optresmap=restype=resname:1
   map<string, string> opt_res_map = 4;
   // Infrastructure specific node flavor
   string infra_node_flavor = 5 [(protogen.backend) = true];
@@ -61,6 +90,8 @@ message NodePoolResources {
   uint64 total_memory = 2;
   // Total Disk in gigabytes to be allocated in the pool
   uint64 total_disk = 3;
+  // Total GPU resources
+  repeated GPUResource total_gpus = 6;
   // Total optional resources to be allocated in the pool,
   // follows the NodeResources.OptResMap format.
   map<string, string> total_opt_res = 4;
@@ -76,6 +107,8 @@ message NodePoolTopology {
   uint64 min_node_memory = 2;
   // Minimum amount of root partition disk space in gigabytes per node
   uint64 min_node_disk = 3;
+  // Minimum GPU resources per node
+  repeated GPUResource min_node_gpus = 6;
   // Minimum number of optional resources per node
   map<string, string> min_node_opt_res = 4;
   // Minimum number of nodes in pool, to satisfy HA/replication requirements

@@ -543,7 +543,7 @@ func (r *Run) AppApi_DeploymentZoneRequest(data *[]edgeproto.DeploymentZoneReque
 	for ii, objD := range *data {
 		obj := &objD
 		switch r.Mode {
-		case "showfiltered":
+		case "showzonesforappdeployment":
 			out, err := r.client.ShowZonesForAppDeployment(r.ctx, obj)
 			if err != nil {
 				r.logErr(fmt.Sprintf("AppApi_DeploymentZoneRequest[%d]", ii), err)

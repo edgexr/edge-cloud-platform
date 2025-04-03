@@ -200,6 +200,10 @@ message PlatformFeatures {
   bool manages_k8s_control_nodes = 32;
   // Platform uses ingress for inbound Kubernetes HTTP traffic
   bool uses_ingress = 33;
+  // Platform requires GPU Driver to be managed by Edge Cloud for installation onto new VMs or nodes with the license provided by the operator.
+  bool requires_gpu_driver = 34;
+  // Platform users a shared root load balancer
+  bool uses_root_lb = 35;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties
@@ -287,6 +291,8 @@ message ResourceQuota {
   uint64 value = 2;
   // Generate alert when more than threshold percentage of resource is used
   int32 alert_threshold = 3;
+  // Resource type if non-generic resource, i.e. "gpu"
+  string resource_type = 4;
 }
 
 // Operating System Type
@@ -704,6 +710,13 @@ message CloudletResourceUsage {
   option (protogen.not_required) = "Key.FederatedOrganization";
 }
 
+message CloudletGPUUsage {
+  // Cloudlet Key
+  CloudletKey key = 1 [(gogoproto.nullable) = false];
+  // List of GPUs
+  repeated GPUUsage gpus = 2;
+}
+
 message CloudletAllianceOrg {
   // Cloudlet Key
   CloudletKey key = 1 [(gogoproto.nullable) = false];
@@ -805,6 +818,15 @@ service CloudletApi {
       body: "*"
     };
     option (protogen.non_standard_show) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
+    option (protogen.method_not_required) = "Key.Organization,Key.Name,Key.FederatedOrganization";
+  }
+  // Show Cloudlet GPU usage
+  rpc ShowCloudletGPUUsage(Cloudlet) returns (stream CloudletGPUUsage) {
+    option (google.api.http) = {
+      post: "/show/cloudletgpuusage"
+      body: "*"
+    };
     option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
     option (protogen.method_not_required) = "Key.Organization,Key.Name,Key.FederatedOrganization";
   }
@@ -924,15 +946,17 @@ service CloudletApi {
 
 // Flavor details from the Cloudlet
 message FlavorInfo {
-  // Name of the flavor on the Cloudlet
+  // Name of the infra flavor
   string name = 1;
-  // Number of VCPU cores on the Cloudlet
+  // Number of VCPU cores on the infra flavor
   uint64 vcpus = 2;
-  // Ram in MB on the Cloudlet
+  // Ram in MB on the infra flavor
   uint64 ram = 3;
-  // Amount of disk in GB on the Cloudlet
+  // Amount of disk in GB on the infra flavor
   uint64 disk = 4;
-  // OS Flavor Properties, if any
+  // GPUs for the infra flavor
+  repeated GPUResource gpus = 6;
+  // Infra flavor Properties, if any
   map<string,string> prop_map = 5 [(protogen.backend) = true];
 }
 

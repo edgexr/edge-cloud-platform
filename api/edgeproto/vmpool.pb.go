@@ -1374,6 +1374,37 @@ func (m *VM) Clone() *VM {
 	return cp
 }
 
+func (m *VM) AddFlavorGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Flavor.Gpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Flavor.Gpus = append(m.Flavor.Gpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VM) RemoveFlavorGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Flavor.Gpus); i >= 0; i-- {
+		if _, found := remove[m.Flavor.Gpus[i].GetKey().GetKeyString()]; found {
+			m.Flavor.Gpus = append(m.Flavor.Gpus[:i], m.Flavor.Gpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *VM) CopyInFields(src *VM) int {
 	updateListAction := "replace"
 	changed := 0
@@ -1451,6 +1482,22 @@ func (m *VM) CopyInFields(src *VM) int {
 			}
 		} else if m.Flavor.PropMap != nil {
 			m.Flavor.PropMap = nil
+			changed++
+		}
+		if src.Flavor.Gpus != nil {
+			if updateListAction == "add" {
+				changed += m.AddFlavorGpus(src.Flavor.Gpus...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveFlavorGpus(src.Flavor.Gpus...)
+			} else {
+				m.Flavor.Gpus = make([]*GPUResource, 0)
+				for k1, _ := range src.Flavor.Gpus {
+					m.Flavor.Gpus = append(m.Flavor.Gpus, src.Flavor.Gpus[k1].Clone())
+				}
+				changed++
+			}
+		} else if m.Flavor.Gpus != nil {
+			m.Flavor.Gpus = nil
 			changed++
 		}
 	} else if m.Flavor != nil {
@@ -1702,6 +1749,12 @@ const VMPoolFieldVmsFlavorDisk = "3.7.4"
 const VMPoolFieldVmsFlavorPropMap = "3.7.5"
 const VMPoolFieldVmsFlavorPropMapKey = "3.7.5.1"
 const VMPoolFieldVmsFlavorPropMapValue = "3.7.5.2"
+const VMPoolFieldVmsFlavorGpus = "3.7.6"
+const VMPoolFieldVmsFlavorGpusModelId = "3.7.6.1"
+const VMPoolFieldVmsFlavorGpusCount = "3.7.6.2"
+const VMPoolFieldVmsFlavorGpusVendor = "3.7.6.3"
+const VMPoolFieldVmsFlavorGpusMemory = "3.7.6.4"
+const VMPoolFieldVmsFlavorGpusInUse = "3.7.6.5"
 const VMPoolFieldState = "4"
 const VMPoolFieldErrors = "5"
 const VMPoolFieldCrmOverride = "7"
@@ -1724,6 +1777,11 @@ var VMPoolAllFields = []string{
 	VMPoolFieldVmsFlavorDisk,
 	VMPoolFieldVmsFlavorPropMapKey,
 	VMPoolFieldVmsFlavorPropMapValue,
+	VMPoolFieldVmsFlavorGpusModelId,
+	VMPoolFieldVmsFlavorGpusCount,
+	VMPoolFieldVmsFlavorGpusVendor,
+	VMPoolFieldVmsFlavorGpusMemory,
+	VMPoolFieldVmsFlavorGpusInUse,
 	VMPoolFieldState,
 	VMPoolFieldErrors,
 	VMPoolFieldCrmOverride,
@@ -1747,6 +1805,11 @@ var VMPoolAllFieldsMap = NewFieldMap(map[string]struct{}{
 	VMPoolFieldVmsFlavorDisk:         struct{}{},
 	VMPoolFieldVmsFlavorPropMapKey:   struct{}{},
 	VMPoolFieldVmsFlavorPropMapValue: struct{}{},
+	VMPoolFieldVmsFlavorGpusModelId:  struct{}{},
+	VMPoolFieldVmsFlavorGpusCount:    struct{}{},
+	VMPoolFieldVmsFlavorGpusVendor:   struct{}{},
+	VMPoolFieldVmsFlavorGpusMemory:   struct{}{},
+	VMPoolFieldVmsFlavorGpusInUse:    struct{}{},
 	VMPoolFieldState:                 struct{}{},
 	VMPoolFieldErrors:                struct{}{},
 	VMPoolFieldCrmOverride:           struct{}{},
@@ -1770,6 +1833,11 @@ var VMPoolAllFieldsStringMap = map[string]string{
 	VMPoolFieldVmsFlavorDisk:         "Vms Flavor Disk",
 	VMPoolFieldVmsFlavorPropMapKey:   "Vms Flavor Prop Map Key",
 	VMPoolFieldVmsFlavorPropMapValue: "Vms Flavor Prop Map Value",
+	VMPoolFieldVmsFlavorGpusModelId:  "Vms Flavor Gpus Model Id",
+	VMPoolFieldVmsFlavorGpusCount:    "Vms Flavor Gpus Count",
+	VMPoolFieldVmsFlavorGpusVendor:   "Vms Flavor Gpus Vendor",
+	VMPoolFieldVmsFlavorGpusMemory:   "Vms Flavor Gpus Memory",
+	VMPoolFieldVmsFlavorGpusInUse:    "Vms Flavor Gpus In Use",
 	VMPoolFieldState:                 "State",
 	VMPoolFieldErrors:                "Errors",
 	VMPoolFieldCrmOverride:           "Crm Override",
@@ -1877,6 +1945,50 @@ func (m *VMPool) DiffFields(o *VMPool, fields *FieldMap) {
 					fields.Set(VMPoolFieldVmsFlavor)
 					fields.Set(VMPoolFieldVms)
 				}
+				if m.Vms[i0].Flavor.Gpus != nil && o.Vms[i0].Flavor.Gpus != nil {
+					if len(m.Vms[i0].Flavor.Gpus) != len(o.Vms[i0].Flavor.Gpus) {
+						fields.Set(VMPoolFieldVmsFlavorGpus)
+						fields.Set(VMPoolFieldVmsFlavor)
+						fields.Set(VMPoolFieldVms)
+					} else {
+						for i2 := 0; i2 < len(m.Vms[i0].Flavor.Gpus); i2++ {
+							if m.Vms[i0].Flavor.Gpus[i2].ModelId != o.Vms[i0].Flavor.Gpus[i2].ModelId {
+								fields.Set(VMPoolFieldVmsFlavorGpusModelId)
+								fields.Set(VMPoolFieldVmsFlavorGpus)
+								fields.Set(VMPoolFieldVmsFlavor)
+								fields.Set(VMPoolFieldVms)
+							}
+							if m.Vms[i0].Flavor.Gpus[i2].Count != o.Vms[i0].Flavor.Gpus[i2].Count {
+								fields.Set(VMPoolFieldVmsFlavorGpusCount)
+								fields.Set(VMPoolFieldVmsFlavorGpus)
+								fields.Set(VMPoolFieldVmsFlavor)
+								fields.Set(VMPoolFieldVms)
+							}
+							if m.Vms[i0].Flavor.Gpus[i2].Vendor != o.Vms[i0].Flavor.Gpus[i2].Vendor {
+								fields.Set(VMPoolFieldVmsFlavorGpusVendor)
+								fields.Set(VMPoolFieldVmsFlavorGpus)
+								fields.Set(VMPoolFieldVmsFlavor)
+								fields.Set(VMPoolFieldVms)
+							}
+							if m.Vms[i0].Flavor.Gpus[i2].Memory != o.Vms[i0].Flavor.Gpus[i2].Memory {
+								fields.Set(VMPoolFieldVmsFlavorGpusMemory)
+								fields.Set(VMPoolFieldVmsFlavorGpus)
+								fields.Set(VMPoolFieldVmsFlavor)
+								fields.Set(VMPoolFieldVms)
+							}
+							if m.Vms[i0].Flavor.Gpus[i2].InUse != o.Vms[i0].Flavor.Gpus[i2].InUse {
+								fields.Set(VMPoolFieldVmsFlavorGpusInUse)
+								fields.Set(VMPoolFieldVmsFlavorGpus)
+								fields.Set(VMPoolFieldVmsFlavor)
+								fields.Set(VMPoolFieldVms)
+							}
+						}
+					}
+				} else if (m.Vms[i0].Flavor.Gpus != nil && o.Vms[i0].Flavor.Gpus == nil) || (m.Vms[i0].Flavor.Gpus == nil && o.Vms[i0].Flavor.Gpus != nil) {
+					fields.Set(VMPoolFieldVmsFlavorGpus)
+					fields.Set(VMPoolFieldVmsFlavor)
+					fields.Set(VMPoolFieldVms)
+				}
 			} else if (m.Vms[i0].Flavor != nil && o.Vms[i0].Flavor == nil) || (m.Vms[i0].Flavor == nil && o.Vms[i0].Flavor != nil) {
 				fields.Set(VMPoolFieldVmsFlavor)
 				fields.Set(VMPoolFieldVms)
@@ -1930,6 +2042,12 @@ var UpdateVMPoolFieldsMap = NewFieldMap(map[string]struct{}{
 	VMPoolFieldVmsFlavorPropMap:      struct{}{},
 	VMPoolFieldVmsFlavorPropMapKey:   struct{}{},
 	VMPoolFieldVmsFlavorPropMapValue: struct{}{},
+	VMPoolFieldVmsFlavorGpus:         struct{}{},
+	VMPoolFieldVmsFlavorGpusModelId:  struct{}{},
+	VMPoolFieldVmsFlavorGpusCount:    struct{}{},
+	VMPoolFieldVmsFlavorGpusVendor:   struct{}{},
+	VMPoolFieldVmsFlavorGpusMemory:   struct{}{},
+	VMPoolFieldVmsFlavorGpusInUse:    struct{}{},
 	VMPoolFieldCrmOverride:           struct{}{},
 	VMPoolFieldDeletePrepare:         struct{}{},
 })
@@ -2840,6 +2958,37 @@ func (m *VMPoolMember) Clone() *VMPoolMember {
 	return cp
 }
 
+func (m *VMPoolMember) AddVmFlavorGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Vm.Flavor.Gpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Vm.Flavor.Gpus = append(m.Vm.Flavor.Gpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VMPoolMember) RemoveVmFlavorGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Vm.Flavor.Gpus); i >= 0; i-- {
+		if _, found := remove[m.Vm.Flavor.Gpus[i].GetKey().GetKeyString()]; found {
+			m.Vm.Flavor.Gpus = append(m.Vm.Flavor.Gpus[:i], m.Vm.Flavor.Gpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *VMPoolMember) CopyInFields(src *VMPoolMember) int {
 	updateListAction := "replace"
 	changed := 0
@@ -2927,6 +3076,22 @@ func (m *VMPoolMember) CopyInFields(src *VMPoolMember) int {
 			m.Vm.Flavor.PropMap = nil
 			changed++
 		}
+		if src.Vm.Flavor.Gpus != nil {
+			if updateListAction == "add" {
+				changed += m.AddVmFlavorGpus(src.Vm.Flavor.Gpus...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveVmFlavorGpus(src.Vm.Flavor.Gpus...)
+			} else {
+				m.Vm.Flavor.Gpus = make([]*GPUResource, 0)
+				for k2, _ := range src.Vm.Flavor.Gpus {
+					m.Vm.Flavor.Gpus = append(m.Vm.Flavor.Gpus, src.Vm.Flavor.Gpus[k2].Clone())
+				}
+				changed++
+			}
+		} else if m.Vm.Flavor.Gpus != nil {
+			m.Vm.Flavor.Gpus = nil
+			changed++
+		}
 	} else if m.Vm.Flavor != nil {
 		m.Vm.Flavor = nil
 		changed++
@@ -3001,6 +3166,37 @@ func (m *VMSpec) Clone() *VMSpec {
 	return cp
 }
 
+func (m *VMSpec) AddFlavorGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Flavor.Gpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Flavor.Gpus = append(m.Flavor.Gpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *VMSpec) RemoveFlavorGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Flavor.Gpus); i >= 0; i-- {
+		if _, found := remove[m.Flavor.Gpus[i].GetKey().GetKeyString()]; found {
+			m.Flavor.Gpus = append(m.Flavor.Gpus[:i], m.Flavor.Gpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
 func (m *VMSpec) CopyInFields(src *VMSpec) int {
 	updateListAction := "replace"
 	changed := 0
@@ -3058,6 +3254,22 @@ func (m *VMSpec) CopyInFields(src *VMSpec) int {
 	}
 	if m.Flavor.DeletePrepare != src.Flavor.DeletePrepare {
 		m.Flavor.DeletePrepare = src.Flavor.DeletePrepare
+		changed++
+	}
+	if src.Flavor.Gpus != nil {
+		if updateListAction == "add" {
+			changed += m.AddFlavorGpus(src.Flavor.Gpus...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveFlavorGpus(src.Flavor.Gpus...)
+		} else {
+			m.Flavor.Gpus = make([]*GPUResource, 0)
+			for k1, _ := range src.Flavor.Gpus {
+				m.Flavor.Gpus = append(m.Flavor.Gpus, src.Flavor.Gpus[k1].Clone())
+			}
+			changed++
+		}
+	} else if m.Flavor.Gpus != nil {
+		m.Flavor.Gpus = nil
 		changed++
 	}
 	return changed
@@ -3166,6 +3378,12 @@ const VMPoolInfoFieldVmsFlavorDisk = "4.7.4"
 const VMPoolInfoFieldVmsFlavorPropMap = "4.7.5"
 const VMPoolInfoFieldVmsFlavorPropMapKey = "4.7.5.1"
 const VMPoolInfoFieldVmsFlavorPropMapValue = "4.7.5.2"
+const VMPoolInfoFieldVmsFlavorGpus = "4.7.6"
+const VMPoolInfoFieldVmsFlavorGpusModelId = "4.7.6.1"
+const VMPoolInfoFieldVmsFlavorGpusCount = "4.7.6.2"
+const VMPoolInfoFieldVmsFlavorGpusVendor = "4.7.6.3"
+const VMPoolInfoFieldVmsFlavorGpusMemory = "4.7.6.4"
+const VMPoolInfoFieldVmsFlavorGpusInUse = "4.7.6.5"
 const VMPoolInfoFieldState = "5"
 const VMPoolInfoFieldErrors = "6"
 const VMPoolInfoFieldStatus = "7"
@@ -3194,6 +3412,11 @@ var VMPoolInfoAllFields = []string{
 	VMPoolInfoFieldVmsFlavorDisk,
 	VMPoolInfoFieldVmsFlavorPropMapKey,
 	VMPoolInfoFieldVmsFlavorPropMapValue,
+	VMPoolInfoFieldVmsFlavorGpusModelId,
+	VMPoolInfoFieldVmsFlavorGpusCount,
+	VMPoolInfoFieldVmsFlavorGpusVendor,
+	VMPoolInfoFieldVmsFlavorGpusMemory,
+	VMPoolInfoFieldVmsFlavorGpusInUse,
 	VMPoolInfoFieldState,
 	VMPoolInfoFieldErrors,
 	VMPoolInfoFieldStatusTaskNumber,
@@ -3222,6 +3445,11 @@ var VMPoolInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
 	VMPoolInfoFieldVmsFlavorDisk:         struct{}{},
 	VMPoolInfoFieldVmsFlavorPropMapKey:   struct{}{},
 	VMPoolInfoFieldVmsFlavorPropMapValue: struct{}{},
+	VMPoolInfoFieldVmsFlavorGpusModelId:  struct{}{},
+	VMPoolInfoFieldVmsFlavorGpusCount:    struct{}{},
+	VMPoolInfoFieldVmsFlavorGpusVendor:   struct{}{},
+	VMPoolInfoFieldVmsFlavorGpusMemory:   struct{}{},
+	VMPoolInfoFieldVmsFlavorGpusInUse:    struct{}{},
 	VMPoolInfoFieldState:                 struct{}{},
 	VMPoolInfoFieldErrors:                struct{}{},
 	VMPoolInfoFieldStatusTaskNumber:      struct{}{},
@@ -3250,6 +3478,11 @@ var VMPoolInfoAllFieldsStringMap = map[string]string{
 	VMPoolInfoFieldVmsFlavorDisk:         "Vms Flavor Disk",
 	VMPoolInfoFieldVmsFlavorPropMapKey:   "Vms Flavor Prop Map Key",
 	VMPoolInfoFieldVmsFlavorPropMapValue: "Vms Flavor Prop Map Value",
+	VMPoolInfoFieldVmsFlavorGpusModelId:  "Vms Flavor Gpus Model Id",
+	VMPoolInfoFieldVmsFlavorGpusCount:    "Vms Flavor Gpus Count",
+	VMPoolInfoFieldVmsFlavorGpusVendor:   "Vms Flavor Gpus Vendor",
+	VMPoolInfoFieldVmsFlavorGpusMemory:   "Vms Flavor Gpus Memory",
+	VMPoolInfoFieldVmsFlavorGpusInUse:    "Vms Flavor Gpus In Use",
 	VMPoolInfoFieldState:                 "State",
 	VMPoolInfoFieldErrors:                "Errors",
 	VMPoolInfoFieldStatusTaskNumber:      "Status Task Number",
@@ -3361,6 +3594,50 @@ func (m *VMPoolInfo) DiffFields(o *VMPoolInfo, fields *FieldMap) {
 					}
 				} else if (m.Vms[i0].Flavor.PropMap != nil && o.Vms[i0].Flavor.PropMap == nil) || (m.Vms[i0].Flavor.PropMap == nil && o.Vms[i0].Flavor.PropMap != nil) {
 					fields.Set(VMPoolInfoFieldVmsFlavorPropMap)
+					fields.Set(VMPoolInfoFieldVmsFlavor)
+					fields.Set(VMPoolInfoFieldVms)
+				}
+				if m.Vms[i0].Flavor.Gpus != nil && o.Vms[i0].Flavor.Gpus != nil {
+					if len(m.Vms[i0].Flavor.Gpus) != len(o.Vms[i0].Flavor.Gpus) {
+						fields.Set(VMPoolInfoFieldVmsFlavorGpus)
+						fields.Set(VMPoolInfoFieldVmsFlavor)
+						fields.Set(VMPoolInfoFieldVms)
+					} else {
+						for i2 := 0; i2 < len(m.Vms[i0].Flavor.Gpus); i2++ {
+							if m.Vms[i0].Flavor.Gpus[i2].ModelId != o.Vms[i0].Flavor.Gpus[i2].ModelId {
+								fields.Set(VMPoolInfoFieldVmsFlavorGpusModelId)
+								fields.Set(VMPoolInfoFieldVmsFlavorGpus)
+								fields.Set(VMPoolInfoFieldVmsFlavor)
+								fields.Set(VMPoolInfoFieldVms)
+							}
+							if m.Vms[i0].Flavor.Gpus[i2].Count != o.Vms[i0].Flavor.Gpus[i2].Count {
+								fields.Set(VMPoolInfoFieldVmsFlavorGpusCount)
+								fields.Set(VMPoolInfoFieldVmsFlavorGpus)
+								fields.Set(VMPoolInfoFieldVmsFlavor)
+								fields.Set(VMPoolInfoFieldVms)
+							}
+							if m.Vms[i0].Flavor.Gpus[i2].Vendor != o.Vms[i0].Flavor.Gpus[i2].Vendor {
+								fields.Set(VMPoolInfoFieldVmsFlavorGpusVendor)
+								fields.Set(VMPoolInfoFieldVmsFlavorGpus)
+								fields.Set(VMPoolInfoFieldVmsFlavor)
+								fields.Set(VMPoolInfoFieldVms)
+							}
+							if m.Vms[i0].Flavor.Gpus[i2].Memory != o.Vms[i0].Flavor.Gpus[i2].Memory {
+								fields.Set(VMPoolInfoFieldVmsFlavorGpusMemory)
+								fields.Set(VMPoolInfoFieldVmsFlavorGpus)
+								fields.Set(VMPoolInfoFieldVmsFlavor)
+								fields.Set(VMPoolInfoFieldVms)
+							}
+							if m.Vms[i0].Flavor.Gpus[i2].InUse != o.Vms[i0].Flavor.Gpus[i2].InUse {
+								fields.Set(VMPoolInfoFieldVmsFlavorGpusInUse)
+								fields.Set(VMPoolInfoFieldVmsFlavorGpus)
+								fields.Set(VMPoolInfoFieldVmsFlavor)
+								fields.Set(VMPoolInfoFieldVms)
+							}
+						}
+					}
+				} else if (m.Vms[i0].Flavor.Gpus != nil && o.Vms[i0].Flavor.Gpus == nil) || (m.Vms[i0].Flavor.Gpus == nil && o.Vms[i0].Flavor.Gpus != nil) {
+					fields.Set(VMPoolInfoFieldVmsFlavorGpus)
 					fields.Set(VMPoolInfoFieldVmsFlavor)
 					fields.Set(VMPoolInfoFieldVms)
 				}

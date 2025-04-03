@@ -5,6 +5,7 @@ package edgeproto
 
 import (
 	fmt "fmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
@@ -24,6 +25,53 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// GPU Resource
+type GPUResource struct {
+	// GPU model unique identifier
+	ModelId string `protobuf:"bytes,1,opt,name=model_id,json=modelId,proto3" json:"model_id,omitempty"`
+	// Count of how many of this GPU are required/present
+	Count uint32 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	// GPU vendor (nvidia, amd, etc)
+	Vendor string `protobuf:"bytes,3,opt,name=vendor,proto3" json:"vendor,omitempty"`
+	// Memory in GB
+	Memory uint64 `protobuf:"varint,4,opt,name=memory,proto3" json:"memory,omitempty"`
+	// Read-only indication of how many GPUs are in use by tenants for usage APIs
+	InUse uint32 `protobuf:"varint,5,opt,name=in_use,json=inUse,proto3" json:"in_use,omitempty"`
+}
+
+func (m *GPUResource) Reset()         { *m = GPUResource{} }
+func (m *GPUResource) String() string { return proto.CompactTextString(m) }
+func (*GPUResource) ProtoMessage()    {}
+func (*GPUResource) Descriptor() ([]byte, []int) {
+	return fileDescriptor_cf1b13971fe4c19d, []int{0}
+}
+func (m *GPUResource) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GPUResource) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GPUResource.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GPUResource) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GPUResource.Merge(m, src)
+}
+func (m *GPUResource) XXX_Size() int {
+	return m.Size()
+}
+func (m *GPUResource) XXX_DiscardUnknown() {
+	xxx_messageInfo_GPUResource.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GPUResource proto.InternalMessageInfo
+
 // NodeResources defines the node resources for machines or VMs
 type NodeResources struct {
 	// Vcpus to be allocated to the VM, must be either 1 or an even number
@@ -32,8 +80,9 @@ type NodeResources struct {
 	Ram uint64 `protobuf:"varint,2,opt,name=ram,proto3" json:"ram,omitempty"`
 	// Total disk space in gigabytes to be allocated to the VM's root partition
 	Disk uint64 `protobuf:"varint,3,opt,name=disk,proto3" json:"disk,omitempty"`
-	// Optional resources request, key = gpu
-	// form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1
+	// GPUs
+	Gpus []*GPUResource `protobuf:"bytes,7,rep,name=gpus,proto3" json:"gpus,omitempty"`
+	// Optional resources request, i.e. optresmap=restype=resname:1
 	OptResMap map[string]string `protobuf:"bytes,4,rep,name=opt_res_map,json=optResMap,proto3" json:"opt_res_map,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Infrastructure specific node flavor
 	InfraNodeFlavor string `protobuf:"bytes,5,opt,name=infra_node_flavor,json=infraNodeFlavor,proto3" json:"infra_node_flavor,omitempty"`
@@ -45,7 +94,7 @@ func (m *NodeResources) Reset()         { *m = NodeResources{} }
 func (m *NodeResources) String() string { return proto.CompactTextString(m) }
 func (*NodeResources) ProtoMessage()    {}
 func (*NodeResources) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cf1b13971fe4c19d, []int{0}
+	return fileDescriptor_cf1b13971fe4c19d, []int{1}
 }
 func (m *NodeResources) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -88,7 +137,7 @@ func (m *KubernetesResources) Reset()         { *m = KubernetesResources{} }
 func (m *KubernetesResources) String() string { return proto.CompactTextString(m) }
 func (*KubernetesResources) ProtoMessage()    {}
 func (*KubernetesResources) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cf1b13971fe4c19d, []int{1}
+	return fileDescriptor_cf1b13971fe4c19d, []int{2}
 }
 func (m *KubernetesResources) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -125,6 +174,8 @@ type NodePoolResources struct {
 	TotalMemory uint64 `protobuf:"varint,2,opt,name=total_memory,json=totalMemory,proto3" json:"total_memory,omitempty"`
 	// Total Disk in gigabytes to be allocated in the pool
 	TotalDisk uint64 `protobuf:"varint,3,opt,name=total_disk,json=totalDisk,proto3" json:"total_disk,omitempty"`
+	// Total GPU resources
+	TotalGpus []*GPUResource `protobuf:"bytes,6,rep,name=total_gpus,json=totalGpus,proto3" json:"total_gpus,omitempty"`
 	// Total optional resources to be allocated in the pool,
 	// follows the NodeResources.OptResMap format.
 	TotalOptRes map[string]string `protobuf:"bytes,4,rep,name=total_opt_res,json=totalOptRes,proto3" json:"total_opt_res,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
@@ -136,7 +187,7 @@ func (m *NodePoolResources) Reset()         { *m = NodePoolResources{} }
 func (m *NodePoolResources) String() string { return proto.CompactTextString(m) }
 func (*NodePoolResources) ProtoMessage()    {}
 func (*NodePoolResources) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cf1b13971fe4c19d, []int{2}
+	return fileDescriptor_cf1b13971fe4c19d, []int{3}
 }
 func (m *NodePoolResources) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -173,6 +224,8 @@ type NodePoolTopology struct {
 	MinNodeMemory uint64 `protobuf:"varint,2,opt,name=min_node_memory,json=minNodeMemory,proto3" json:"min_node_memory,omitempty"`
 	// Minimum amount of root partition disk space in gigabytes per node
 	MinNodeDisk uint64 `protobuf:"varint,3,opt,name=min_node_disk,json=minNodeDisk,proto3" json:"min_node_disk,omitempty"`
+	// Minimum GPU resources per node
+	MinNodeGpus []*GPUResource `protobuf:"bytes,6,rep,name=min_node_gpus,json=minNodeGpus,proto3" json:"min_node_gpus,omitempty"`
 	// Minimum number of optional resources per node
 	MinNodeOptRes map[string]string `protobuf:"bytes,4,rep,name=min_node_opt_res,json=minNodeOptRes,proto3" json:"min_node_opt_res,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Minimum number of nodes in pool, to satisfy HA/replication requirements
@@ -183,7 +236,7 @@ func (m *NodePoolTopology) Reset()         { *m = NodePoolTopology{} }
 func (m *NodePoolTopology) String() string { return proto.CompactTextString(m) }
 func (*NodePoolTopology) ProtoMessage()    {}
 func (*NodePoolTopology) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cf1b13971fe4c19d, []int{3}
+	return fileDescriptor_cf1b13971fe4c19d, []int{4}
 }
 func (m *NodePoolTopology) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -228,7 +281,7 @@ func (m *NodePool) Reset()         { *m = NodePool{} }
 func (m *NodePool) String() string { return proto.CompactTextString(m) }
 func (*NodePool) ProtoMessage()    {}
 func (*NodePool) Descriptor() ([]byte, []int) {
-	return fileDescriptor_cf1b13971fe4c19d, []int{4}
+	return fileDescriptor_cf1b13971fe4c19d, []int{5}
 }
 func (m *NodePool) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -258,6 +311,7 @@ func (m *NodePool) XXX_DiscardUnknown() {
 var xxx_messageInfo_NodePool proto.InternalMessageInfo
 
 func init() {
+	proto.RegisterType((*GPUResource)(nil), "edgeproto.GPUResource")
 	proto.RegisterType((*NodeResources)(nil), "edgeproto.NodeResources")
 	proto.RegisterMapType((map[string]string)(nil), "edgeproto.NodeResources.OptResMapEntry")
 	proto.RegisterType((*KubernetesResources)(nil), "edgeproto.KubernetesResources")
@@ -271,52 +325,113 @@ func init() {
 func init() { proto.RegisterFile("resources.proto", fileDescriptor_cf1b13971fe4c19d) }
 
 var fileDescriptor_cf1b13971fe4c19d = []byte{
-	// 713 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x54, 0xcd, 0x4e, 0xdb, 0x4c,
-	0x14, 0x8d, 0x43, 0xe0, 0x4b, 0xae, 0x31, 0x84, 0x21, 0xfa, 0x64, 0x05, 0x70, 0x69, 0x54, 0xb5,
-	0x6c, 0x30, 0x55, 0x8a, 0x28, 0xaa, 0xfa, 0x27, 0xd4, 0x9f, 0x45, 0x05, 0xb4, 0x2e, 0xa5, 0x4b,
-	0xcb, 0x71, 0x26, 0x96, 0x85, 0xed, 0xb1, 0xfc, 0x13, 0x35, 0x3c, 0x45, 0x97, 0x7d, 0x84, 0x3e,
-	0x44, 0xbb, 0x67, 0x55, 0xb1, 0xec, 0xaa, 0x2a, 0xf0, 0x0a, 0x7d, 0x80, 0x6a, 0xee, 0x4c, 0x4c,
-	0x02, 0x2d, 0x2a, 0xbb, 0x3b, 0xf7, 0x9e, 0x73, 0xef, 0x9d, 0xe3, 0xe3, 0x81, 0xd9, 0x84, 0xa6,
-	0x2c, 0x4f, 0x5c, 0x9a, 0x9a, 0x71, 0xc2, 0x32, 0x46, 0x6a, 0xb4, 0xeb, 0x51, 0x0c, 0x9b, 0x0d,
-	0x8f, 0x79, 0x0c, 0xc3, 0x35, 0x1e, 0x09, 0x40, 0x53, 0xeb, 0x52, 0xd7, 0x0f, 0x9d, 0x40, 0x1e,
-	0x97, 0x32, 0xc6, 0x82, 0x74, 0x0d, 0x0f, 0x1e, 0x8d, 0x8a, 0x40, 0x94, 0x5b, 0x5f, 0xca, 0xa0,
-	0xed, 0xb0, 0x2e, 0xb5, 0x86, 0x63, 0x48, 0x03, 0x26, 0xfb, 0x6e, 0x9c, 0xa7, 0xba, 0xb2, 0xac,
-	0xac, 0x54, 0x2c, 0x71, 0x20, 0x75, 0x98, 0x48, 0x9c, 0x50, 0x2f, 0x63, 0x8e, 0x87, 0x84, 0x40,
-	0xa5, 0xeb, 0xa7, 0x07, 0xfa, 0x04, 0xa6, 0x30, 0x26, 0x2f, 0x41, 0x65, 0x71, 0x66, 0x27, 0x34,
-	0xb5, 0x43, 0x27, 0xd6, 0x2b, 0xcb, 0x13, 0x2b, 0x6a, 0xfb, 0x8e, 0x59, 0xac, 0x6c, 0x8e, 0x8d,
-	0x32, 0x77, 0xe3, 0xcc, 0xa2, 0xe9, 0xb6, 0x13, 0x3f, 0x8f, 0xb2, 0x64, 0x60, 0xd5, 0xd8, 0xf0,
-	0x4c, 0xee, 0xc2, 0x9c, 0x1f, 0xf5, 0x12, 0xc7, 0x8e, 0x58, 0x97, 0xda, 0xbd, 0xc0, 0xe9, 0xb3,
-	0x44, 0x9f, 0x5c, 0x56, 0x56, 0x6a, 0x5b, 0x95, 0xcf, 0xbf, 0x74, 0xc5, 0x9a, 0xc5, 0x32, 0x6f,
-	0xf7, 0x02, 0x8b, 0x64, 0x03, 0x1a, 0xf4, 0x43, 0x46, 0x93, 0xc8, 0x09, 0xec, 0x3e, 0x0b, 0xf2,
-	0x90, 0xda, 0xa9, 0x7f, 0x48, 0xf5, 0x29, 0xbe, 0x9e, 0x24, 0x91, 0x21, 0x62, 0x1f, 0x01, 0x6f,
-	0xfd, 0x43, 0xda, 0x7c, 0x08, 0x33, 0xe3, 0x6b, 0xf0, 0xab, 0x1e, 0xd0, 0x01, 0x5e, 0xbf, 0x66,
-	0xf1, 0x10, 0x25, 0x71, 0x82, 0x9c, 0xe2, 0xf5, 0x6b, 0x96, 0x38, 0x3c, 0x28, 0x6f, 0x2a, 0xad,
-	0xaf, 0x0a, 0xcc, 0xbf, 0xca, 0x3b, 0x34, 0x89, 0x68, 0x46, 0xd3, 0x73, 0x11, 0xef, 0x43, 0xd5,
-	0x8d, 0x73, 0x3b, 0x66, 0x2c, 0xc0, 0x46, 0x6a, 0x7b, 0xf1, 0x82, 0x0a, 0xaf, 0x19, 0x0b, 0x0a,
-	0xbc, 0xf5, 0x9f, 0x1b, 0xe7, 0x3c, 0xc3, 0x89, 0xde, 0x90, 0x58, 0xfe, 0x17, 0xa2, 0x27, 0x89,
-	0xeb, 0xf0, 0x7f, 0xe8, 0x47, 0xf6, 0x41, 0xb1, 0x8c, 0xdd, 0xa7, 0x49, 0xea, 0xb3, 0x48, 0xaf,
-	0xe0, 0xd2, 0x8d, 0xd0, 0x8f, 0xce, 0x37, 0xdd, 0x17, 0xb5, 0xd6, 0x49, 0x19, 0xe6, 0x2e, 0x35,
-	0x25, 0x9b, 0xa0, 0x66, 0x2c, 0xe3, 0x42, 0x16, 0x46, 0x50, 0xdb, 0x73, 0x23, 0x7b, 0xbc, 0xeb,
-	0x52, 0x77, 0x63, 0x7d, 0xab, 0x72, 0xf4, 0xe3, 0x46, 0xc9, 0x02, 0xc4, 0xee, 0xa3, 0x4d, 0x6e,
-	0xc2, 0xb4, 0x60, 0x86, 0x34, 0x64, 0xc9, 0x40, 0xfa, 0x45, 0x74, 0xdb, 0xc6, 0x14, 0x59, 0x02,
-	0x41, 0xb0, 0x47, 0xdc, 0x53, 0xc3, 0xcc, 0x33, 0x6e, 0xa1, 0x37, 0xa0, 0x89, 0xb2, 0x34, 0x92,
-	0x34, 0xd1, 0xea, 0x55, 0x2a, 0x98, 0x7b, 0x9c, 0x21, 0x3e, 0xa3, 0xb0, 0x92, 0x98, 0x28, 0x32,
-	0xe4, 0x11, 0x54, 0x33, 0x16, 0xb3, 0x80, 0x79, 0x03, 0xf4, 0x90, 0xda, 0x5e, 0xf8, 0x43, 0xb7,
-	0x3d, 0x09, 0x91, 0xb7, 0x2a, 0x28, 0xcd, 0xc7, 0x50, 0xbf, 0xd8, 0xff, 0x5a, 0x1e, 0xf9, 0x56,
-	0x86, 0xfa, 0xc5, 0x21, 0xe4, 0x16, 0xcc, 0xf0, 0xcf, 0x85, 0xf6, 0x1e, 0xfd, 0xdd, 0xa6, 0x43,
-	0x3f, 0xe2, 0x60, 0x21, 0xe7, 0x6d, 0x98, 0x2d, 0x50, 0x63, 0x8a, 0x6a, 0x12, 0x26, 0x35, 0x6d,
-	0x81, 0x56, 0xe0, 0x46, 0x64, 0x55, 0x25, 0x0a, 0x85, 0x7d, 0x0f, 0xf5, 0x02, 0x33, 0xae, 0xad,
-	0x79, 0x85, 0x1a, 0xe6, 0xb6, 0x68, 0x31, 0x2a, 0xee, 0x70, 0xb8, 0x94, 0x77, 0x15, 0xe6, 0xb1,
-	0x71, 0x1e, 0x76, 0x68, 0x62, 0xb3, 0x1e, 0x8e, 0x48, 0x51, 0xe9, 0x49, 0x8b, 0xcf, 0xdc, 0xc1,
-	0xca, 0x6e, 0x8f, 0x73, 0xd2, 0xe6, 0x53, 0x20, 0x97, 0x7b, 0x5e, 0x4b, 0xd0, 0x4f, 0x0a, 0x54,
-	0x87, 0x7b, 0xf2, 0x67, 0x68, 0xc7, 0x09, 0xa9, 0x64, 0x62, 0x4c, 0x16, 0xa0, 0x16, 0xe5, 0xa1,
-	0xdc, 0x83, 0xd3, 0x35, 0xab, 0x1a, 0xe5, 0x21, 0xce, 0x27, 0x4f, 0x60, 0x06, 0x35, 0x28, 0x1e,
-	0x56, 0x14, 0x4b, 0x6d, 0xeb, 0x7f, 0x7b, 0xa6, 0x2c, 0x2d, 0x1a, 0x7b, 0x20, 0x9b, 0x50, 0x4d,
-	0x5d, 0x27, 0x70, 0x3a, 0x01, 0xc5, 0x7f, 0xab, 0x6a, 0x15, 0xe7, 0xad, 0xc5, 0xa3, 0x13, 0xa3,
-	0x74, 0x74, 0x6a, 0x28, 0xc7, 0xa7, 0x86, 0xf2, 0xf3, 0xd4, 0x50, 0x3e, 0x9e, 0x19, 0xa5, 0xe3,
-	0x33, 0xa3, 0xf4, 0xfd, 0xcc, 0x28, 0x75, 0xa6, 0xb0, 0xfb, 0xbd, 0xdf, 0x01, 0x00, 0x00, 0xff,
-	0xff, 0xe3, 0xd5, 0x94, 0x3b, 0xd5, 0x05, 0x00, 0x00,
+	// 854 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x55, 0xcf, 0x6f, 0xdc, 0x44,
+	0x14, 0x5e, 0x67, 0x9d, 0xcd, 0xee, 0x73, 0x37, 0x3f, 0xa6, 0x21, 0x98, 0x6d, 0xbb, 0x84, 0x15,
+	0x82, 0x08, 0xa9, 0x5b, 0xb4, 0x94, 0x52, 0x45, 0xfc, 0x52, 0x04, 0x44, 0x08, 0x25, 0x2d, 0x43,
+	0x13, 0x8e, 0x96, 0x63, 0x4f, 0x2c, 0x2b, 0xf6, 0x8c, 0xe5, 0xb1, 0x57, 0x6c, 0xff, 0x04, 0x4e,
+	0x1c, 0x7b, 0xe2, 0xcc, 0x99, 0x3b, 0x17, 0x4e, 0x39, 0xf6, 0xc8, 0x09, 0x41, 0x72, 0xe9, 0x1d,
+	0x04, 0x57, 0x34, 0x6f, 0xc6, 0xae, 0x37, 0xa5, 0x51, 0x7b, 0x7b, 0x6f, 0xe6, 0x7d, 0xef, 0x7d,
+	0xfb, 0xbe, 0xcf, 0xb3, 0xb0, 0x92, 0x33, 0x29, 0xca, 0x3c, 0x60, 0x72, 0x9c, 0xe5, 0xa2, 0x10,
+	0xa4, 0xc7, 0xc2, 0x88, 0x61, 0x38, 0x58, 0x8f, 0x44, 0x24, 0x30, 0xbc, 0xa5, 0x22, 0x5d, 0x30,
+	0xe8, 0x87, 0x2c, 0x88, 0x53, 0x3f, 0x31, 0xe9, 0x8d, 0x42, 0x88, 0x44, 0xde, 0xc2, 0x24, 0x62,
+	0xbc, 0x0e, 0xf4, 0xf5, 0xe8, 0x47, 0x0b, 0x9c, 0xdd, 0xfb, 0x07, 0xd4, 0x4c, 0x21, 0xaf, 0x41,
+	0x37, 0x15, 0x21, 0x4b, 0xbc, 0x38, 0x74, 0xad, 0x4d, 0x6b, 0xab, 0x47, 0x97, 0x30, 0xff, 0x32,
+	0x24, 0xeb, 0xb0, 0x18, 0x88, 0x92, 0x17, 0xee, 0xc2, 0xa6, 0xb5, 0xd5, 0xa7, 0x3a, 0x21, 0x1b,
+	0xd0, 0x99, 0x32, 0x1e, 0x8a, 0xdc, 0x6d, 0x63, 0xb9, 0xc9, 0xd4, 0x79, 0xca, 0x52, 0x91, 0xcf,
+	0x5c, 0x7b, 0xd3, 0xda, 0xb2, 0xa9, 0xc9, 0xc8, 0x2b, 0xd0, 0x89, 0xb9, 0x57, 0x4a, 0xe6, 0x2e,
+	0xea, 0x36, 0x31, 0x3f, 0x90, 0x6c, 0xfb, 0xd5, 0x27, 0x7f, 0xb9, 0xd6, 0xcf, 0xff, 0xb8, 0x36,
+	0x17, 0x9c, 0xfd, 0xfa, 0xaf, 0xbb, 0xb4, 0xa7, 0xa7, 0x8e, 0x9e, 0x2c, 0x40, 0x7f, 0x5f, 0x84,
+	0xac, 0x62, 0x28, 0x15, 0x8f, 0x69, 0x90, 0x95, 0x12, 0xf9, 0xd9, 0x54, 0x27, 0x64, 0x15, 0xda,
+	0xb9, 0x9f, 0x22, 0x37, 0x9b, 0xaa, 0x90, 0x10, 0xb0, 0xc3, 0x58, 0x9e, 0x20, 0x2f, 0x9b, 0x62,
+	0x4c, 0xde, 0x01, 0x3b, 0x52, 0xd0, 0xa5, 0xcd, 0xf6, 0x96, 0x33, 0xd9, 0x18, 0xd7, 0xcb, 0x1c,
+	0x37, 0x96, 0x40, 0xb1, 0x86, 0xec, 0x82, 0x23, 0xb2, 0xc2, 0xcb, 0x99, 0xf4, 0x52, 0x3f, 0x73,
+	0x6d, 0x84, 0xbc, 0xdd, 0x80, 0xcc, 0xd1, 0x1a, 0xdf, 0xcb, 0x0a, 0xca, 0xe4, 0x9e, 0x9f, 0x7d,
+	0xce, 0x8b, 0x7c, 0x46, 0x7b, 0xa2, 0xca, 0xc9, 0xbb, 0xb0, 0x16, 0xf3, 0xe3, 0xdc, 0xf7, 0xb8,
+	0x08, 0x99, 0x77, 0x9c, 0xf8, 0x53, 0x91, 0xe3, 0xaf, 0xef, 0xed, 0xd8, 0x3f, 0xfd, 0xed, 0x5a,
+	0x74, 0x05, 0xaf, 0x55, 0xbb, 0x2f, 0xf0, 0x92, 0xdc, 0x81, 0x75, 0xf6, 0x5d, 0xc1, 0x72, 0xee,
+	0x27, 0xde, 0x54, 0x24, 0x65, 0xca, 0x3c, 0x19, 0x3f, 0x64, 0x6e, 0x47, 0xfd, 0x14, 0x03, 0x22,
+	0x55, 0xc5, 0x21, 0x16, 0x7c, 0x13, 0x3f, 0x64, 0x83, 0x0f, 0x61, 0x79, 0x9e, 0x86, 0x5a, 0xcb,
+	0x09, 0x9b, 0x19, 0x29, 0x55, 0x88, 0xeb, 0xf3, 0x93, 0x92, 0xe1, 0xaa, 0x7a, 0x54, 0x27, 0xdb,
+	0x0b, 0x77, 0xad, 0xd1, 0x2f, 0x16, 0x5c, 0xfd, 0xaa, 0x3c, 0x62, 0x39, 0x67, 0x05, 0x93, 0x4f,
+	0x17, 0xfe, 0x01, 0x74, 0x83, 0xac, 0xf4, 0x32, 0x21, 0x12, 0x6c, 0xe4, 0x4c, 0xae, 0x5f, 0xd8,
+	0xc2, 0x7d, 0x21, 0x92, 0xba, 0x9e, 0x2e, 0x05, 0x59, 0xa9, 0x4e, 0x14, 0x30, 0xaa, 0x80, 0x0b,
+	0x2f, 0x02, 0x8c, 0x0c, 0xf0, 0x36, 0x6c, 0xa4, 0x31, 0xf7, 0x4e, 0x6a, 0x32, 0xde, 0x94, 0xe5,
+	0x32, 0x16, 0x1c, 0xcd, 0xd4, 0xa3, 0xeb, 0x69, 0xcc, 0x9f, 0x32, 0x3d, 0xd4, 0x77, 0xa3, 0x47,
+	0x6d, 0x58, 0x7b, 0xa6, 0x29, 0xb9, 0x0b, 0x4e, 0x21, 0x0a, 0xb5, 0xc8, 0xda, 0x34, 0xce, 0x64,
+	0xad, 0xc1, 0xe3, 0x20, 0x64, 0xc1, 0x9d, 0xdb, 0x3b, 0xf6, 0xe9, 0xef, 0xaf, 0xb7, 0x28, 0x60,
+	0xed, 0x21, 0x5a, 0xea, 0x0d, 0xb8, 0xa2, 0x91, 0xc6, 0xc8, 0xda, 0x5b, 0xba, 0xdb, 0x9e, 0x76,
+	0xf3, 0x0d, 0xd0, 0x00, 0xaf, 0xe1, 0xb4, 0x1e, 0x9e, 0x7c, 0xa6, 0xec, 0xf6, 0x7e, 0x75, 0x8d,
+	0xa6, 0xeb, 0x5c, 0x6a, 0x3a, 0x0d, 0xdb, 0x55, 0x83, 0xbf, 0x86, 0xbe, 0x86, 0x19, 0xff, 0x19,
+	0xef, 0xdd, 0xbc, 0x6c, 0x79, 0xe3, 0x07, 0x0a, 0xa1, 0xd5, 0xd7, 0x0e, 0xd4, 0x44, 0xf5, 0x09,
+	0xf9, 0x08, 0xba, 0x85, 0xc8, 0x44, 0x22, 0xa2, 0x19, 0x5a, 0xcf, 0x99, 0x5c, 0xfb, 0x9f, 0x6e,
+	0x0f, 0x4c, 0x89, 0x59, 0x46, 0x0d, 0x19, 0x7c, 0x0c, 0xab, 0x17, 0xfb, 0xbf, 0x94, 0xb5, 0xbe,
+	0x6f, 0xc3, 0xea, 0xc5, 0x21, 0xe4, 0x4d, 0x58, 0x56, 0x2a, 0xe3, 0x57, 0xd1, 0xfc, 0xa2, 0xaf,
+	0xa4, 0x31, 0x57, 0xc5, 0x5a, 0x85, 0xb7, 0x60, 0xa5, 0xae, 0x9a, 0x13, 0xa2, 0x6f, 0xca, 0x8c,
+	0x14, 0x23, 0xe8, 0xd7, 0x75, 0x0d, 0x35, 0x1c, 0x53, 0x85, 0x7a, 0x6c, 0x37, 0x6a, 0x5e, 0x40,
+	0x92, 0x0a, 0x8b, 0xa2, 0x7c, 0x0b, 0xab, 0x35, 0x76, 0x5e, 0x97, 0xf1, 0x25, 0x9b, 0x1c, 0xef,
+	0xe9, 0x16, 0x4d, 0x61, 0x2a, 0xe2, 0x46, 0x9a, 0x9b, 0x70, 0x15, 0x1b, 0x97, 0xe9, 0x11, 0xcb,
+	0x3d, 0x71, 0x8c, 0x23, 0x24, 0xaa, 0xb4, 0x48, 0xd5, 0xcc, 0x7d, 0xbc, 0xb9, 0x77, 0xac, 0x30,
+	0x72, 0xf0, 0x29, 0x90, 0x67, 0x7b, 0xbe, 0x94, 0x18, 0x8f, 0x2c, 0xe8, 0x56, 0x3c, 0xd5, 0x2b,
+	0xb9, 0xef, 0xa7, 0xcc, 0x20, 0x31, 0x26, 0xd7, 0xa0, 0xc7, 0xcb, 0xd4, 0xf0, 0xd0, 0xaf, 0x7d,
+	0x97, 0x97, 0x29, 0xce, 0x27, 0x9f, 0xc0, 0x32, 0xee, 0xa0, 0xfe, 0x63, 0xc2, 0x45, 0x3b, 0x13,
+	0xf7, 0x79, 0x2f, 0x23, 0xed, 0xf3, 0xb9, 0xf7, 0x7b, 0x00, 0x5d, 0x19, 0xf8, 0x89, 0x7f, 0x94,
+	0x30, 0xfc, 0x9c, 0xbb, 0xb4, 0xce, 0x77, 0xae, 0x9f, 0xfe, 0x39, 0x6c, 0x9d, 0x9e, 0x0d, 0xad,
+	0xc7, 0x67, 0x43, 0xeb, 0x8f, 0xb3, 0xa1, 0xf5, 0xc3, 0xf9, 0xb0, 0xf5, 0xf8, 0x7c, 0xd8, 0xfa,
+	0xed, 0x7c, 0xd8, 0x3a, 0xea, 0x60, 0xf7, 0xf7, 0xfe, 0x0b, 0x00, 0x00, 0xff, 0xff, 0xa6, 0x7a,
+	0xe6, 0x75, 0x15, 0x07, 0x00, 0x00,
+}
+
+func (m *GPUResource) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GPUResource) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GPUResource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.InUse != 0 {
+		i = encodeVarintResources(dAtA, i, uint64(m.InUse))
+		i--
+		dAtA[i] = 0x28
+	}
+	if m.Memory != 0 {
+		i = encodeVarintResources(dAtA, i, uint64(m.Memory))
+		i--
+		dAtA[i] = 0x20
+	}
+	if len(m.Vendor) > 0 {
+		i -= len(m.Vendor)
+		copy(dAtA[i:], m.Vendor)
+		i = encodeVarintResources(dAtA, i, uint64(len(m.Vendor)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if m.Count != 0 {
+		i = encodeVarintResources(dAtA, i, uint64(m.Count))
+		i--
+		dAtA[i] = 0x10
+	}
+	if len(m.ModelId) > 0 {
+		i -= len(m.ModelId)
+		copy(dAtA[i:], m.ModelId)
+		i = encodeVarintResources(dAtA, i, uint64(len(m.ModelId)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *NodeResources) Marshal() (dAtA []byte, err error) {
@@ -339,6 +454,20 @@ func (m *NodeResources) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Gpus) > 0 {
+		for iNdEx := len(m.Gpus) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Gpus[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintResources(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x3a
+		}
+	}
 	if m.ExternalVolumeSize != 0 {
 		i = encodeVarintResources(dAtA, i, uint64(m.ExternalVolumeSize))
 		i--
@@ -462,6 +591,20 @@ func (m *NodePoolResources) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.TotalGpus) > 0 {
+		for iNdEx := len(m.TotalGpus) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.TotalGpus[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintResources(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x32
+		}
+	}
 	{
 		size, err := m.Topology.MarshalToSizedBuffer(dAtA[:i])
 		if err != nil {
@@ -534,6 +677,20 @@ func (m *NodePoolTopology) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.MinNodeGpus) > 0 {
+		for iNdEx := len(m.MinNodeGpus) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.MinNodeGpus[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintResources(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x32
+		}
+	}
 	if m.MinNumberOfNodes != 0 {
 		i = encodeVarintResources(dAtA, i, uint64(m.MinNumberOfNodes))
 		i--
@@ -644,10 +801,183 @@ func encodeVarintResources(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
+func (m *GPUResource) Matches(o *GPUResource, fopts ...MatchOpt) bool {
+	opts := MatchOptions{}
+	applyMatchOptions(&opts, fopts...)
+	if o == nil {
+		if opts.Filter {
+			return true
+		}
+		return false
+	}
+	if !opts.Filter || o.ModelId != "" {
+		if o.ModelId != m.ModelId {
+			return false
+		}
+	}
+	if !opts.Filter || o.Count != 0 {
+		if o.Count != m.Count {
+			return false
+		}
+	}
+	if !opts.Filter || o.Vendor != "" {
+		if o.Vendor != m.Vendor {
+			return false
+		}
+	}
+	if !opts.Filter || o.Memory != 0 {
+		if o.Memory != m.Memory {
+			return false
+		}
+	}
+	if !opts.Filter || o.InUse != 0 {
+		if o.InUse != m.InUse {
+			return false
+		}
+	}
+	return true
+}
+
+func (m *GPUResource) Clone() *GPUResource {
+	cp := &GPUResource{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *GPUResource) CopyInFields(src *GPUResource) int {
+	changed := 0
+	if m.ModelId != src.ModelId {
+		m.ModelId = src.ModelId
+		changed++
+	}
+	if m.Count != src.Count {
+		m.Count = src.Count
+		changed++
+	}
+	if m.Vendor != src.Vendor {
+		m.Vendor = src.Vendor
+		changed++
+	}
+	if m.Memory != src.Memory {
+		m.Memory = src.Memory
+		changed++
+	}
+	if m.InUse != src.InUse {
+		m.InUse = src.InUse
+		changed++
+	}
+	return changed
+}
+
+func (m *GPUResource) DeepCopyIn(src *GPUResource) {
+	m.ModelId = src.ModelId
+	m.Count = src.Count
+	m.Vendor = src.Vendor
+	m.Memory = src.Memory
+	m.InUse = src.InUse
+}
+
+type GPUResourceKey string
+
+func (k GPUResourceKey) GetKeyString() string {
+	return string(k)
+}
+
+func GPUResourceKeyStringParse(str string, key *GPUResourceKey) {
+	*key = GPUResourceKey(str)
+}
+
+func (k GPUResourceKey) NotFoundError() error {
+	return fmt.Errorf("GPUResource key %s not found", k.GetKeyString())
+}
+
+func (k GPUResourceKey) ExistsError() error {
+	return fmt.Errorf("GPUResource key %s already exists", k.GetKeyString())
+}
+
+func (k GPUResourceKey) BeingDeletedError() error {
+	return fmt.Errorf("GPUResource key %s is being deleted", k.GetKeyString())
+}
+
+func (k GPUResourceKey) GetTags() map[string]string {
+	return map[string]string{
+		"modelid": string(k),
+	}
+}
+
+func (k GPUResourceKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("modelid", string(k))
+}
+
+func (k GPUResourceKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	k.AddTagsByFunc(tagMap.AddTag)
+}
+
+func (m *GPUResource) GetObjKey() objstore.ObjKey {
+	return m.GetKey()
+}
+
+func (m *GPUResource) GetKey() *GPUResourceKey {
+	key := GPUResourceKey(m.ModelId)
+	return &key
+}
+
+func (m *GPUResource) GetKeyVal() GPUResourceKey {
+	return GPUResourceKey(m.ModelId)
+}
+
+func (m *GPUResource) SetKey(key *GPUResourceKey) {
+	m.ModelId = string(*key)
+}
+
+func CmpSortGPUResource(a GPUResource, b GPUResource) bool {
+	return a.ModelId < b.ModelId
+}
+
+// Helper method to check that enums have valid values
+func (m *GPUResource) ValidateEnums() error {
+	return nil
+}
+
+func (s *GPUResource) ClearTagged(tags map[string]struct{}) {
+}
+
 func (m *NodeResources) Clone() *NodeResources {
 	cp := &NodeResources{}
 	cp.DeepCopyIn(m)
 	return cp
+}
+
+func (m *NodeResources) AddGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Gpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Gpus = append(m.Gpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *NodeResources) RemoveGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Gpus); i >= 0; i-- {
+		if _, found := remove[m.Gpus[i].GetKey().GetKeyString()]; found {
+			m.Gpus = append(m.Gpus[:i], m.Gpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *NodeResources) CopyInFields(src *NodeResources) int {
@@ -697,6 +1027,22 @@ func (m *NodeResources) CopyInFields(src *NodeResources) int {
 		m.ExternalVolumeSize = src.ExternalVolumeSize
 		changed++
 	}
+	if src.Gpus != nil {
+		if updateListAction == "add" {
+			changed += m.AddGpus(src.Gpus...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveGpus(src.Gpus...)
+		} else {
+			m.Gpus = make([]*GPUResource, 0)
+			for k0, _ := range src.Gpus {
+				m.Gpus = append(m.Gpus, src.Gpus[k0].Clone())
+			}
+			changed++
+		}
+	} else if m.Gpus != nil {
+		m.Gpus = nil
+		changed++
+	}
 	return changed
 }
 
@@ -714,20 +1060,164 @@ func (m *NodeResources) DeepCopyIn(src *NodeResources) {
 	}
 	m.InfraNodeFlavor = src.InfraNodeFlavor
 	m.ExternalVolumeSize = src.ExternalVolumeSize
+	if src.Gpus != nil {
+		m.Gpus = make([]*GPUResource, len(src.Gpus), len(src.Gpus))
+		for ii, s := range src.Gpus {
+			var tmp_s GPUResource
+			tmp_s.DeepCopyIn(s)
+			m.Gpus[ii] = &tmp_s
+		}
+	} else {
+		m.Gpus = nil
+	}
 }
 
 // Helper method to check that enums have valid values
 func (m *NodeResources) ValidateEnums() error {
+	for _, e := range m.Gpus {
+		if err := e.ValidateEnums(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *NodeResources) ClearTagged(tags map[string]struct{}) {
+	if s.Gpus != nil {
+		for ii := 0; ii < len(s.Gpus); ii++ {
+			s.Gpus[ii].ClearTagged(tags)
+		}
+	}
 }
 
 func (m *KubernetesResources) Clone() *KubernetesResources {
 	cp := &KubernetesResources{}
 	cp.DeepCopyIn(m)
 	return cp
+}
+
+func (m *KubernetesResources) AddCpuPoolTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.CpuPool.Topology.MinNodeGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.CpuPool.Topology.MinNodeGpus = append(m.CpuPool.Topology.MinNodeGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *KubernetesResources) RemoveCpuPoolTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.CpuPool.Topology.MinNodeGpus); i >= 0; i-- {
+		if _, found := remove[m.CpuPool.Topology.MinNodeGpus[i].GetKey().GetKeyString()]; found {
+			m.CpuPool.Topology.MinNodeGpus = append(m.CpuPool.Topology.MinNodeGpus[:i], m.CpuPool.Topology.MinNodeGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *KubernetesResources) AddCpuPoolTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.CpuPool.TotalGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.CpuPool.TotalGpus = append(m.CpuPool.TotalGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *KubernetesResources) RemoveCpuPoolTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.CpuPool.TotalGpus); i >= 0; i-- {
+		if _, found := remove[m.CpuPool.TotalGpus[i].GetKey().GetKeyString()]; found {
+			m.CpuPool.TotalGpus = append(m.CpuPool.TotalGpus[:i], m.CpuPool.TotalGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *KubernetesResources) AddGpuPoolTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.GpuPool.Topology.MinNodeGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.GpuPool.Topology.MinNodeGpus = append(m.GpuPool.Topology.MinNodeGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *KubernetesResources) RemoveGpuPoolTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.GpuPool.Topology.MinNodeGpus); i >= 0; i-- {
+		if _, found := remove[m.GpuPool.Topology.MinNodeGpus[i].GetKey().GetKeyString()]; found {
+			m.GpuPool.Topology.MinNodeGpus = append(m.GpuPool.Topology.MinNodeGpus[:i], m.GpuPool.Topology.MinNodeGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *KubernetesResources) AddGpuPoolTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.GpuPool.TotalGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.GpuPool.TotalGpus = append(m.GpuPool.TotalGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *KubernetesResources) RemoveGpuPoolTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.GpuPool.TotalGpus); i >= 0; i-- {
+		if _, found := remove[m.GpuPool.TotalGpus[i].GetKey().GetKeyString()]; found {
+			m.GpuPool.TotalGpus = append(m.GpuPool.TotalGpus[:i], m.GpuPool.TotalGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *KubernetesResources) CopyInFields(src *KubernetesResources) int {
@@ -815,6 +1305,38 @@ func (m *KubernetesResources) CopyInFields(src *KubernetesResources) int {
 		}
 		if m.CpuPool.Topology.MinNumberOfNodes != src.CpuPool.Topology.MinNumberOfNodes {
 			m.CpuPool.Topology.MinNumberOfNodes = src.CpuPool.Topology.MinNumberOfNodes
+			changed++
+		}
+		if src.CpuPool.Topology.MinNodeGpus != nil {
+			if updateListAction == "add" {
+				changed += m.AddCpuPoolTopologyMinNodeGpus(src.CpuPool.Topology.MinNodeGpus...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveCpuPoolTopologyMinNodeGpus(src.CpuPool.Topology.MinNodeGpus...)
+			} else {
+				m.CpuPool.Topology.MinNodeGpus = make([]*GPUResource, 0)
+				for k2, _ := range src.CpuPool.Topology.MinNodeGpus {
+					m.CpuPool.Topology.MinNodeGpus = append(m.CpuPool.Topology.MinNodeGpus, src.CpuPool.Topology.MinNodeGpus[k2].Clone())
+				}
+				changed++
+			}
+		} else if m.CpuPool.Topology.MinNodeGpus != nil {
+			m.CpuPool.Topology.MinNodeGpus = nil
+			changed++
+		}
+		if src.CpuPool.TotalGpus != nil {
+			if updateListAction == "add" {
+				changed += m.AddCpuPoolTotalGpus(src.CpuPool.TotalGpus...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveCpuPoolTotalGpus(src.CpuPool.TotalGpus...)
+			} else {
+				m.CpuPool.TotalGpus = make([]*GPUResource, 0)
+				for k1, _ := range src.CpuPool.TotalGpus {
+					m.CpuPool.TotalGpus = append(m.CpuPool.TotalGpus, src.CpuPool.TotalGpus[k1].Clone())
+				}
+				changed++
+			}
+		} else if m.CpuPool.TotalGpus != nil {
+			m.CpuPool.TotalGpus = nil
 			changed++
 		}
 	} else if m.CpuPool != nil {
@@ -905,6 +1427,38 @@ func (m *KubernetesResources) CopyInFields(src *KubernetesResources) int {
 			m.GpuPool.Topology.MinNumberOfNodes = src.GpuPool.Topology.MinNumberOfNodes
 			changed++
 		}
+		if src.GpuPool.Topology.MinNodeGpus != nil {
+			if updateListAction == "add" {
+				changed += m.AddGpuPoolTopologyMinNodeGpus(src.GpuPool.Topology.MinNodeGpus...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveGpuPoolTopologyMinNodeGpus(src.GpuPool.Topology.MinNodeGpus...)
+			} else {
+				m.GpuPool.Topology.MinNodeGpus = make([]*GPUResource, 0)
+				for k2, _ := range src.GpuPool.Topology.MinNodeGpus {
+					m.GpuPool.Topology.MinNodeGpus = append(m.GpuPool.Topology.MinNodeGpus, src.GpuPool.Topology.MinNodeGpus[k2].Clone())
+				}
+				changed++
+			}
+		} else if m.GpuPool.Topology.MinNodeGpus != nil {
+			m.GpuPool.Topology.MinNodeGpus = nil
+			changed++
+		}
+		if src.GpuPool.TotalGpus != nil {
+			if updateListAction == "add" {
+				changed += m.AddGpuPoolTotalGpus(src.GpuPool.TotalGpus...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveGpuPoolTotalGpus(src.GpuPool.TotalGpus...)
+			} else {
+				m.GpuPool.TotalGpus = make([]*GPUResource, 0)
+				for k1, _ := range src.GpuPool.TotalGpus {
+					m.GpuPool.TotalGpus = append(m.GpuPool.TotalGpus, src.GpuPool.TotalGpus[k1].Clone())
+				}
+				changed++
+			}
+		} else if m.GpuPool.TotalGpus != nil {
+			m.GpuPool.TotalGpus = nil
+			changed++
+		}
 	} else if m.GpuPool != nil {
 		m.GpuPool = nil
 		changed++
@@ -962,6 +1516,68 @@ func (m *NodePoolResources) Clone() *NodePoolResources {
 	cp := &NodePoolResources{}
 	cp.DeepCopyIn(m)
 	return cp
+}
+
+func (m *NodePoolResources) AddTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Topology.MinNodeGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Topology.MinNodeGpus = append(m.Topology.MinNodeGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *NodePoolResources) RemoveTopologyMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Topology.MinNodeGpus); i >= 0; i-- {
+		if _, found := remove[m.Topology.MinNodeGpus[i].GetKey().GetKeyString()]; found {
+			m.Topology.MinNodeGpus = append(m.Topology.MinNodeGpus[:i], m.Topology.MinNodeGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *NodePoolResources) AddTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.TotalGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.TotalGpus = append(m.TotalGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *NodePoolResources) RemoveTotalGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.TotalGpus); i >= 0; i-- {
+		if _, found := remove[m.TotalGpus[i].GetKey().GetKeyString()]; found {
+			m.TotalGpus = append(m.TotalGpus[:i], m.TotalGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *NodePoolResources) CopyInFields(src *NodePoolResources) int {
@@ -1047,6 +1663,38 @@ func (m *NodePoolResources) CopyInFields(src *NodePoolResources) int {
 		m.Topology.MinNumberOfNodes = src.Topology.MinNumberOfNodes
 		changed++
 	}
+	if src.Topology.MinNodeGpus != nil {
+		if updateListAction == "add" {
+			changed += m.AddTopologyMinNodeGpus(src.Topology.MinNodeGpus...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveTopologyMinNodeGpus(src.Topology.MinNodeGpus...)
+		} else {
+			m.Topology.MinNodeGpus = make([]*GPUResource, 0)
+			for k1, _ := range src.Topology.MinNodeGpus {
+				m.Topology.MinNodeGpus = append(m.Topology.MinNodeGpus, src.Topology.MinNodeGpus[k1].Clone())
+			}
+			changed++
+		}
+	} else if m.Topology.MinNodeGpus != nil {
+		m.Topology.MinNodeGpus = nil
+		changed++
+	}
+	if src.TotalGpus != nil {
+		if updateListAction == "add" {
+			changed += m.AddTotalGpus(src.TotalGpus...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveTotalGpus(src.TotalGpus...)
+		} else {
+			m.TotalGpus = make([]*GPUResource, 0)
+			for k0, _ := range src.TotalGpus {
+				m.TotalGpus = append(m.TotalGpus, src.TotalGpus[k0].Clone())
+			}
+			changed++
+		}
+	} else if m.TotalGpus != nil {
+		m.TotalGpus = nil
+		changed++
+	}
 	return changed
 }
 
@@ -1063,6 +1711,16 @@ func (m *NodePoolResources) DeepCopyIn(src *NodePoolResources) {
 		m.TotalOptRes = nil
 	}
 	m.Topology.DeepCopyIn(&src.Topology)
+	if src.TotalGpus != nil {
+		m.TotalGpus = make([]*GPUResource, len(src.TotalGpus), len(src.TotalGpus))
+		for ii, s := range src.TotalGpus {
+			var tmp_s GPUResource
+			tmp_s.DeepCopyIn(s)
+			m.TotalGpus[ii] = &tmp_s
+		}
+	} else {
+		m.TotalGpus = nil
+	}
 }
 
 // Helper method to check that enums have valid values
@@ -1073,18 +1731,59 @@ func (m *NodePoolResources) ValidateEnums() error {
 	if err := m.Topology.ValidateEnums(); err != nil {
 		return err
 	}
+	for _, e := range m.TotalGpus {
+		if err := e.ValidateEnums(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *NodePoolResources) ClearTagged(tags map[string]struct{}) {
 	s.TotalVcpus.ClearTagged(tags)
 	s.Topology.ClearTagged(tags)
+	if s.TotalGpus != nil {
+		for ii := 0; ii < len(s.TotalGpus); ii++ {
+			s.TotalGpus[ii].ClearTagged(tags)
+		}
+	}
 }
 
 func (m *NodePoolTopology) Clone() *NodePoolTopology {
 	cp := &NodePoolTopology{}
 	cp.DeepCopyIn(m)
 	return cp
+}
+
+func (m *NodePoolTopology) AddMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.MinNodeGpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.MinNodeGpus = append(m.MinNodeGpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *NodePoolTopology) RemoveMinNodeGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.MinNodeGpus); i >= 0; i-- {
+		if _, found := remove[m.MinNodeGpus[i].GetKey().GetKeyString()]; found {
+			m.MinNodeGpus = append(m.MinNodeGpus[:i], m.MinNodeGpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *NodePoolTopology) CopyInFields(src *NodePoolTopology) int {
@@ -1130,6 +1829,22 @@ func (m *NodePoolTopology) CopyInFields(src *NodePoolTopology) int {
 		m.MinNumberOfNodes = src.MinNumberOfNodes
 		changed++
 	}
+	if src.MinNodeGpus != nil {
+		if updateListAction == "add" {
+			changed += m.AddMinNodeGpus(src.MinNodeGpus...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveMinNodeGpus(src.MinNodeGpus...)
+		} else {
+			m.MinNodeGpus = make([]*GPUResource, 0)
+			for k0, _ := range src.MinNodeGpus {
+				m.MinNodeGpus = append(m.MinNodeGpus, src.MinNodeGpus[k0].Clone())
+			}
+			changed++
+		}
+	} else if m.MinNodeGpus != nil {
+		m.MinNodeGpus = nil
+		changed++
+	}
 	return changed
 }
 
@@ -1146,20 +1861,71 @@ func (m *NodePoolTopology) DeepCopyIn(src *NodePoolTopology) {
 		m.MinNodeOptRes = nil
 	}
 	m.MinNumberOfNodes = src.MinNumberOfNodes
+	if src.MinNodeGpus != nil {
+		m.MinNodeGpus = make([]*GPUResource, len(src.MinNodeGpus), len(src.MinNodeGpus))
+		for ii, s := range src.MinNodeGpus {
+			var tmp_s GPUResource
+			tmp_s.DeepCopyIn(s)
+			m.MinNodeGpus[ii] = &tmp_s
+		}
+	} else {
+		m.MinNodeGpus = nil
+	}
 }
 
 // Helper method to check that enums have valid values
 func (m *NodePoolTopology) ValidateEnums() error {
+	for _, e := range m.MinNodeGpus {
+		if err := e.ValidateEnums(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *NodePoolTopology) ClearTagged(tags map[string]struct{}) {
+	if s.MinNodeGpus != nil {
+		for ii := 0; ii < len(s.MinNodeGpus); ii++ {
+			s.MinNodeGpus[ii].ClearTagged(tags)
+		}
+	}
 }
 
 func (m *NodePool) Clone() *NodePool {
 	cp := &NodePool{}
 	cp.DeepCopyIn(m)
 	return cp
+}
+
+func (m *NodePool) AddNodeResourcesGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.NodeResources.Gpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.NodeResources.Gpus = append(m.NodeResources.Gpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *NodePool) RemoveNodeResourcesGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.NodeResources.Gpus); i >= 0; i-- {
+		if _, found := remove[m.NodeResources.Gpus[i].GetKey().GetKeyString()]; found {
+			m.NodeResources.Gpus = append(m.NodeResources.Gpus[:i], m.NodeResources.Gpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *NodePool) CopyInFields(src *NodePool) int {
@@ -1221,6 +1987,22 @@ func (m *NodePool) CopyInFields(src *NodePool) int {
 			m.NodeResources.ExternalVolumeSize = src.NodeResources.ExternalVolumeSize
 			changed++
 		}
+		if src.NodeResources.Gpus != nil {
+			if updateListAction == "add" {
+				changed += m.AddNodeResourcesGpus(src.NodeResources.Gpus...)
+			} else if updateListAction == "remove" {
+				changed += m.RemoveNodeResourcesGpus(src.NodeResources.Gpus...)
+			} else {
+				m.NodeResources.Gpus = make([]*GPUResource, 0)
+				for k1, _ := range src.NodeResources.Gpus {
+					m.NodeResources.Gpus = append(m.NodeResources.Gpus, src.NodeResources.Gpus[k1].Clone())
+				}
+				changed++
+			}
+		} else if m.NodeResources.Gpus != nil {
+			m.NodeResources.Gpus = nil
+			changed++
+		}
 	} else if m.NodeResources != nil {
 		m.NodeResources = nil
 		changed++
@@ -1261,6 +2043,32 @@ func (s *NodePool) ClearTagged(tags map[string]struct{}) {
 	}
 }
 
+func (m *GPUResource) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.ModelId)
+	if l > 0 {
+		n += 1 + l + sovResources(uint64(l))
+	}
+	if m.Count != 0 {
+		n += 1 + sovResources(uint64(m.Count))
+	}
+	l = len(m.Vendor)
+	if l > 0 {
+		n += 1 + l + sovResources(uint64(l))
+	}
+	if m.Memory != 0 {
+		n += 1 + sovResources(uint64(m.Memory))
+	}
+	if m.InUse != 0 {
+		n += 1 + sovResources(uint64(m.InUse))
+	}
+	return n
+}
+
 func (m *NodeResources) Size() (n int) {
 	if m == nil {
 		return 0
@@ -1290,6 +2098,12 @@ func (m *NodeResources) Size() (n int) {
 	}
 	if m.ExternalVolumeSize != 0 {
 		n += 1 + sovResources(uint64(m.ExternalVolumeSize))
+	}
+	if len(m.Gpus) > 0 {
+		for _, e := range m.Gpus {
+			l = e.Size()
+			n += 1 + l + sovResources(uint64(l))
+		}
 	}
 	return n
 }
@@ -1339,6 +2153,12 @@ func (m *NodePoolResources) Size() (n int) {
 	}
 	l = m.Topology.Size()
 	n += 1 + l + sovResources(uint64(l))
+	if len(m.TotalGpus) > 0 {
+		for _, e := range m.TotalGpus {
+			l = e.Size()
+			n += 1 + l + sovResources(uint64(l))
+		}
+	}
 	return n
 }
 
@@ -1367,6 +2187,12 @@ func (m *NodePoolTopology) Size() (n int) {
 	}
 	if m.MinNumberOfNodes != 0 {
 		n += 1 + sovResources(uint64(m.MinNumberOfNodes))
+	}
+	if len(m.MinNodeGpus) > 0 {
+		for _, e := range m.MinNodeGpus {
+			l = e.Size()
+			n += 1 + l + sovResources(uint64(l))
+		}
 	}
 	return n
 }
@@ -1399,6 +2225,177 @@ func sovResources(x uint64) (n int) {
 }
 func sozResources(x uint64) (n int) {
 	return sovResources(uint64((x << 1) ^ uint64((int64(x) >> 63))))
+}
+func (m *GPUResource) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowResources
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GPUResource: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GPUResource: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ModelId", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResources
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ModelId = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Count", wireType)
+			}
+			m.Count = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Count |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Vendor", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthResources
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthResources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Vendor = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Memory", wireType)
+			}
+			m.Memory = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Memory |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field InUse", wireType)
+			}
+			m.InUse = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.InUse |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipResources(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthResources
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
 }
 func (m *NodeResources) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
@@ -1664,6 +2661,40 @@ func (m *NodeResources) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gpus", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResources
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Gpus = append(m.Gpus, &GPUResource{})
+			if err := m.Gpus[len(m.Gpus)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipResources(dAtA[iNdEx:])
@@ -2099,6 +3130,40 @@ func (m *NodePoolResources) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TotalGpus", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResources
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TotalGpus = append(m.TotalGpus, &GPUResource{})
+			if err := m.TotalGpus[len(m.TotalGpus)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipResources(dAtA[iNdEx:])
@@ -2352,6 +3417,40 @@ func (m *NodePoolTopology) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field MinNodeGpus", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowResources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthResources
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthResources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.MinNodeGpus = append(m.MinNodeGpus, &GPUResource{})
+			if err := m.MinNodeGpus[len(m.MinNodeGpus)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipResources(dAtA[iNdEx:])

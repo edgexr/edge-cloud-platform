@@ -22,6 +22,7 @@ import "result.proto";
 import "cloudlet.proto";
 import "gogoproto/gogo.proto";
 import "dme/loc.proto";
+import "resources.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -62,6 +63,13 @@ message Zone {
     option (protogen.mc2_target_zone) = "Key";
 }
 
+message ZoneGPUs {
+    // Zone key
+    ZoneKey zone_key = 1 [(gogoproto.nullable) = false];
+    // List of GPUs. Note the count will either be 1 or 0, to indicate if such a GPU is available or not.
+    repeated GPUResource gpus = 2;
+}
+
 service ZoneApi {
     // Create a Zone
     rpc CreateZone(Zone) returns (Result) {
@@ -92,6 +100,15 @@ service ZoneApi {
     rpc ShowZone(Zone) returns (stream Zone) {
         option (google.api.http) = {
             post: "/show/zone"
+            body: "*"
+        };
+        option (protogen.mc2_api) = "ResourceZones,ActionView,";
+        option (protogen.mc2_custom_authz) = true;
+    }
+    // Show zone GPU information
+    rpc ShowZoneGPUs(Zone) returns (stream ZoneGPUs) {
+        option (google.api.http) = {
+            post: "/show/zonegpus"
             body: "*"
         };
         option (protogen.mc2_api) = "ResourceZones,ActionView,";

@@ -74,9 +74,10 @@ func TestCalcKubernetesClusterUsedResources(t *testing.T) {
 				TotalVcpus:  *edgeproto.NewUdec64(uint64(ii), 0),
 				TotalMemory: 1024 * uint64(ii),
 				TotalDisk:   10 * uint64(ii),
-				TotalOptRes: map[string]string{
-					"gpu": fmt.Sprintf("gpu:%d", ii),
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: "NVIDIA-A16-4Q",
+					Count:   uint32(ii),
+				}},
 			},
 		}
 		apis.appInstApi.cache.Update(ctx, &ai2, 0)
@@ -126,7 +127,7 @@ func TestCalcKubernetesClusterUsedResources(t *testing.T) {
 			resMap.AddVcpus(4, 0)
 			resMap.AddRam(4096)
 			resMap.AddDisk(40)
-			resMap.AddOptRes("gpu", "gpu:4", 1)
+			resMap.AddGPU("NVIDIA-A16-4Q", 4)
 			return resMap
 		},
 	}, {
@@ -137,7 +138,7 @@ func TestCalcKubernetesClusterUsedResources(t *testing.T) {
 			resMap.AddVcpus(8, 0)
 			resMap.AddRam(8192)
 			resMap.AddDisk(80)
-			resMap.AddOptRes("gpu", "gpu:8", 1)
+			resMap.AddGPU("NVIDIA-A16-4Q", 8)
 			return resMap
 		},
 	}, {
@@ -155,7 +156,7 @@ func TestCalcKubernetesClusterUsedResources(t *testing.T) {
 			resMap.AddVcpus(7, 0)
 			resMap.AddRam(7168)
 			resMap.AddDisk(70)
-			resMap.AddOptRes("gpu", "gpu:7", 1)
+			resMap.AddGPU("NVIDIA-A16-4Q", 7)
 			return resMap
 		},
 	}}
@@ -218,9 +219,10 @@ func TestNodePoolFromResources(t *testing.T) {
 		npr: &edgeproto.NodePoolResources{
 			TotalVcpus:  *edgeproto.NewUdec64(10, 0),
 			TotalMemory: 20480,
-			TotalOptRes: map[string]string{
-				"gpu": "pci:5",
-			},
+			TotalGpus: []*edgeproto.GPUResource{{
+				ModelId: "NVIDIA-A16-4Q",
+				Count:   5,
+			}},
 			Topology: edgeproto.NodePoolTopology{
 				MinNumberOfNodes: 3,
 			},
@@ -231,9 +233,10 @@ func TestNodePoolFromResources(t *testing.T) {
 			NodeResources: &edgeproto.NodeResources{
 				Vcpus: 4,
 				Ram:   6827,
-				OptResMap: map[string]string{
-					"gpu": "pci:2",
-				},
+				Gpus: []*edgeproto.GPUResource{{
+					ModelId: "NVIDIA-A16-4Q",
+					Count:   2,
+				}},
 			},
 		},
 	}, {
@@ -242,8 +245,11 @@ func TestNodePoolFromResources(t *testing.T) {
 			TotalVcpus:  *edgeproto.NewUdec64(10, 0),
 			TotalMemory: 20480,
 			TotalDisk:   50,
+			TotalGpus: []*edgeproto.GPUResource{{
+				ModelId: "NVIDIA-A16-4Q",
+				Count:   5,
+			}},
 			TotalOptRes: map[string]string{
-				"gpu": "pci:5",
 				"nas": "scsi:jbod:500",
 			},
 			Topology: edgeproto.NodePoolTopology{
@@ -257,8 +263,11 @@ func TestNodePoolFromResources(t *testing.T) {
 				Vcpus: 2,
 				Ram:   4096,
 				Disk:  10,
+				Gpus: []*edgeproto.GPUResource{{
+					ModelId: "NVIDIA-A16-4Q",
+					Count:   1,
+				}},
 				OptResMap: map[string]string{
-					"gpu": "pci:1",
 					"nas": "scsi:jbod:100",
 				},
 			},

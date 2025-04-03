@@ -80,7 +80,7 @@ func (s *KubernetesResources) Validate() error {
 		if err := s.GpuPool.Validate(); err != nil {
 			return fmt.Errorf("gpu pool %s", err)
 		}
-		if s.GpuPool.TotalOptRes == nil || s.GpuPool.TotalOptRes["gpu"] == "" {
+		if len(s.GpuPool.TotalGpus) == 0 && (s.GpuPool.TotalOptRes == nil || s.GpuPool.TotalOptRes["gpu"] == "") {
 			return errors.New("gpu pool has no gpus specified")
 		}
 	}
@@ -92,6 +92,7 @@ func (s *Flavor) ToNodeResources() *NodeResources {
 		Vcpus:     s.Vcpus,
 		Ram:       s.Ram,
 		Disk:      s.Disk,
+		Gpus:      s.Gpus,
 		OptResMap: s.OptResMap,
 	}
 }
@@ -100,9 +101,11 @@ func (s *Flavor) ToKubernetesResources() *KubernetesResources {
 	pool := &NodePoolResources{
 		TotalVcpus:  *NewUdec64(s.Vcpus, 0),
 		TotalMemory: s.Ram,
+		TotalGpus:   s.Gpus,
 		Topology: NodePoolTopology{
 			MinNodeVcpus:  s.Vcpus,
 			MinNodeMemory: s.Ram,
+			MinNodeGpus:   s.Gpus,
 		},
 	}
 	gpuCount := 0
@@ -122,6 +125,7 @@ func (s *NodeResources) SetFromFlavor(flavor *Flavor) {
 	s.Vcpus = flavor.Vcpus
 	s.Ram = flavor.Ram
 	s.Disk = flavor.Disk
+	s.Gpus = flavor.Gpus
 	s.OptResMap = flavor.OptResMap
 }
 
@@ -133,17 +137,28 @@ func (s *NodePool) SetFromFlavor(flavor *Flavor) {
 }
 
 func (s *KubernetesResources) SetFromFlavor(flavor *Flavor) {
-	if s.CpuPool == nil {
-		s.CpuPool = &NodePoolResources{}
+	var pool *NodePoolResources
+	if flavor.Gpus != nil {
+		if s.GpuPool == nil {
+			s.GpuPool = &NodePoolResources{}
+		}
+		pool = s.GpuPool
+	} else {
+		if s.CpuPool == nil {
+			s.CpuPool = &NodePoolResources{}
+		}
+		pool = s.CpuPool
 	}
-	s.CpuPool.TotalVcpus = *NewUdec64(flavor.Vcpus, 0)
-	s.CpuPool.TotalMemory = flavor.Ram
-	s.CpuPool.TotalDisk = flavor.Disk
-	s.CpuPool.TotalOptRes = flavor.OptResMap
-	s.CpuPool.Topology.MinNodeVcpus = flavor.Vcpus
-	s.CpuPool.Topology.MinNodeMemory = flavor.Ram
-	s.CpuPool.Topology.MinNodeDisk = flavor.Disk
-	s.CpuPool.Topology.MinNodeOptRes = flavor.OptResMap
+	pool.TotalVcpus = *NewUdec64(flavor.Vcpus, 0)
+	pool.TotalMemory = flavor.Ram
+	pool.TotalDisk = flavor.Disk
+	pool.TotalGpus = flavor.Gpus
+	pool.TotalOptRes = flavor.OptResMap
+	pool.Topology.MinNodeVcpus = flavor.Vcpus
+	pool.Topology.MinNodeMemory = flavor.Ram
+	pool.Topology.MinNodeDisk = flavor.Disk
+	pool.Topology.MinNodeGpus = flavor.Gpus
+	pool.Topology.MinNodeOptRes = flavor.OptResMap
 }
 
 func (s *ClusterInst) EnsureDefaultNodePool() {
@@ -171,4 +186,46 @@ func (s *CloudletInfo) GetFlavorLookup() FlavorLookup {
 		lookup[flavorInfo.Name] = flavorInfo
 	}
 	return lookup
+}
+
+// BuildReskey builds a unique key for a resource.
+// Nominal resources like "vcpus" and "ram" are are
+// returned as-is, while typed resources like GPUs
+// returned scoped to the resource type, i.e.
+// "gpu/nvidia-t4".
+func BuildResKey(resourceType, name string) string {
+	if resourceType == "" {
+		return name
+	}
+	return fmt.Sprintf("%s/%s", resourceType, name)
+}
+
+func BuildResKeyDesc(resourceType, name string) string {
+	if resourceType == "" {
+		return name
+	} else {
+		return fmt.Sprintf("%s %s", resourceType, name)
+	}
+}
+
+func (s *ResourceQuota) ResKey() string {
+	return BuildResKey(s.ResourceType, s.Name)
+}
+
+func (s *InfraResource) ResKey() string {
+	return BuildResKey(s.Type, s.Name)
+}
+
+func (s *ResourceQuota) ResKeyDesc() string {
+	return BuildResKeyDesc(s.ResourceType, s.Name)
+}
+
+func (s *InfraResource) ResKeyDesc() string {
+	return BuildResKeyDesc(s.Type, s.Name)
+}
+
+func (s *GPUResource) WithCount(count uint32) *GPUResource {
+	gr := s.Clone()
+	gr.Count = count
+	return gr
 }

@@ -1400,6 +1400,17 @@ func (r *Run) CloudletApi(data *[]edgeproto.Cloudlet, dataMap interface{}, dataO
 				}
 				*outp = append(*outp, out)
 			}
+		case "showcloudletgpuusage":
+			out, err := r.client.ShowCloudletGPUUsage(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("CloudletApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.CloudletGPUUsage)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletApi expected dataOut type *[]edgeproto.CloudletGPUUsage, but was %T", dataOut))
+				}
+				*outp = append(*outp, out...)
+			}
 		}
 	}
 }
@@ -1749,6 +1760,25 @@ func (s *DummyServer) ShowCloudletResourceUsage(in *edgeproto.Cloudlet, server e
 			server.Send(&edgeproto.CloudletResourceUsage{})
 		}
 		if ch, ok := s.MidstreamFailChs["ShowCloudletResourceUsage"]; ok {
+			// Wait until client receives the SendMsg, since they
+			// are buffered and dropped once we return err here.
+			select {
+			case <-ch:
+			case <-time.After(5 * time.Second):
+			}
+			return fmt.Errorf("midstream failure!")
+		}
+	}
+	return err
+}
+
+func (s *DummyServer) ShowCloudletGPUUsage(in *edgeproto.Cloudlet, server edgeproto.CloudletApi_ShowCloudletGPUUsageServer) error {
+	var err error
+	if true {
+		for ii := 0; ii < s.ShowDummyCount; ii++ {
+			server.Send(&edgeproto.CloudletGPUUsage{})
+		}
+		if ch, ok := s.MidstreamFailChs["ShowCloudletGPUUsage"]; ok {
 			// Wait until client receives the SendMsg, since they
 			// are buffered and dropped once we return err here.
 			select {
@@ -2278,6 +2308,41 @@ func (s *CliClient) ShowCloudletResourceUsage(ctx context.Context, in *edgeproto
 	return output, err
 }
 
+type CloudletGPUUsageStream interface {
+	Recv() (*edgeproto.CloudletGPUUsage, error)
+}
+
+func CloudletGPUUsageReadStream(stream CloudletGPUUsageStream) ([]edgeproto.CloudletGPUUsage, error) {
+	output := []edgeproto.CloudletGPUUsage{}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return output, fmt.Errorf("read CloudletGPUUsage stream failed, %v", err)
+		}
+		output = append(output, *obj)
+	}
+	return output, nil
+}
+
+func (s *ApiClient) ShowCloudletGPUUsage(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.CloudletGPUUsage, error) {
+	api := edgeproto.NewCloudletApiClient(s.Conn)
+	stream, err := api.ShowCloudletGPUUsage(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return CloudletGPUUsageReadStream(stream)
+}
+
+func (s *CliClient) ShowCloudletGPUUsage(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.CloudletGPUUsage, error) {
+	output := []edgeproto.CloudletGPUUsage{}
+	args := append(s.BaseArgs, "controller", "ShowCloudletGPUUsage")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
 func (s *ApiClient) AddCloudletResMapping(ctx context.Context, in *edgeproto.CloudletResMap) (*edgeproto.Result, error) {
 	api := edgeproto.NewCloudletApiClient(s.Conn)
 	return api.AddCloudletResMapping(ctx, in)
@@ -2486,6 +2551,7 @@ type CloudletApiClient interface {
 	GetCloudletResourceQuotaProps(ctx context.Context, in *edgeproto.CloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, error)
 	GetCloudletResourceUsage(ctx context.Context, in *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error)
 	ShowCloudletResourceUsage(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.CloudletResourceUsage, error)
+	ShowCloudletGPUUsage(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.CloudletGPUUsage, error)
 	AddCloudletResMapping(ctx context.Context, in *edgeproto.CloudletResMap) (*edgeproto.Result, error)
 	RemoveCloudletResMapping(ctx context.Context, in *edgeproto.CloudletResMap) (*edgeproto.Result, error)
 	AddCloudletAllianceOrg(ctx context.Context, in *edgeproto.CloudletAllianceOrg) (*edgeproto.Result, error)

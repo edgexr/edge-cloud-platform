@@ -241,6 +241,18 @@ func (s *Flavor) Validate(fmap objstore.FieldMap) error {
 	if fmap.Has(FlavorFieldDisk) && s.Disk == 0 {
 		return errors.New("Disk cannot be 0")
 	}
+	for _, gpu := range s.Gpus {
+		if gpu.Count == 0 {
+			return errors.New("flavor gpu count cannot be 0")
+		}
+		if gpu.ModelId == "" {
+			return errors.New("flavor gpu model id cannot be empty")
+		}
+		if gpu.Memory == 0 {
+			return errors.New("flavor gpu memory cannot be 0")
+		}
+	}
+
 	return nil
 }
 
@@ -389,6 +401,13 @@ func (g *GPUDriver) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
+func (key GPUResourceKey) ValidateKey() error {
+	if string(key) == "" {
+		return errors.New("Empty product name")
+	}
+	return nil
+}
+
 func (key *CloudletKey) ValidateKey() error {
 	if !util.ValidName(key.Organization) {
 		return fmt.Errorf("Invalid cloudlet organization name %s", key.Organization)
@@ -436,7 +455,7 @@ func (s *Cloudlet) Validate(fmap objstore.FieldMap) error {
 
 	for _, resQuota := range s.ResourceQuotas {
 		if resQuota.AlertThreshold < 0 || resQuota.AlertThreshold > 100 {
-			return fmt.Errorf("Invalid resource quota alert threshold %d specified for %s, valid threshold is in the range of 0 to 100", resQuota.AlertThreshold, resQuota.Name)
+			return fmt.Errorf("Invalid resource quota alert threshold %d specified for %s, valid threshold is in the range of 0 to 100", resQuota.AlertThreshold, resQuota.ResKeyDesc())
 
 		}
 	}

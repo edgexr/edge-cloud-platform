@@ -60,6 +60,7 @@ func (s *ClusterInstApi) getPotentialCloudlets(ctx context.Context, cctx *CallCo
 		if err != nil {
 			if cloudletSpecified {
 				// specific cloudlet set by internal tool, return actual error
+				log.SpanLog(ctx, log.DebugLevelApi, "failed potential cloudlet from ClusterInst create", "cloudlet", ckey, "err", err, "skipReason", skipReason)
 				return nil, err
 			}
 			log.SpanLog(ctx, log.DebugLevelApi, "skipping potential cloudlet from ClusterInst create", "cloudlet", ckey, "err", err)

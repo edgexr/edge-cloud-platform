@@ -20,12 +20,9 @@ package edgeproto;
 import "tools/protogen/protogen.proto";
 import "gogoproto/gogo.proto";
 import "cloudletkey.proto";
-import "cloudlet.proto";
-import "clusterinst.proto";
 import "cluster.proto";
 import "app.proto";
 import "appinst.proto";
-import "infraresources.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;

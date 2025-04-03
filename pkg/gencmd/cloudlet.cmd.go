@@ -108,6 +108,8 @@ func CloudletHideTags(in *edgeproto.Cloudlet) {
 		in.SecondaryNotifySrvAddr = ""
 	}
 	for i0 := 0; i0 < len(in.InfraFlavors); i0++ {
+		for i1 := 0; i1 < len(in.InfraFlavors[i0].Gpus); i1++ {
+		}
 	}
 	if _, found := tags["nocmp"]; found {
 		in.ObjId = ""
@@ -132,6 +134,8 @@ func CloudletInfoHideTags(in *edgeproto.CloudletInfo) {
 		in.Controller = ""
 	}
 	for i0 := 0; i0 < len(in.Flavors); i0++ {
+		for i1 := 0; i1 < len(in.Flavors[i0].Gpus); i1++ {
+		}
 	}
 	if _, found := tags["nocmp"]; found {
 		in.Status = edgeproto.StatusInfo{}
@@ -158,8 +162,12 @@ func CloudletInfoHideTags(in *edgeproto.CloudletInfo) {
 		in.CompatibilityVersion = 0
 	}
 	for i0 := 0; i0 < len(in.NodeInfos); i0++ {
+		for i1 := 0; i1 < len(in.NodeInfos[i0].Gpus); i1++ {
+		}
 	}
 	for i0 := 0; i0 < len(in.NodePools); i0++ {
+		for i2 := 0; i2 < len(in.NodePools[i0].NodeResources.Gpus); i2++ {
+		}
 	}
 }
 
@@ -1626,6 +1634,82 @@ func ShowCloudletResourceUsages(c *cli.Command, data []edgeproto.Cloudlet, err *
 	}
 }
 
+var ShowCloudletGPUUsageCmd = &cli.Command{
+	Use:          "ShowCloudletGPUUsage",
+	OptionalArgs: strings.Join(append(CloudletRequiredArgs, CloudletOptionalArgs...), " "),
+	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:  &CloudletSpecialArgs,
+	Comments:     CloudletComments,
+	ReqData:      &edgeproto.Cloudlet{},
+	ReplyData:    &edgeproto.CloudletGPUUsage{},
+	Run:          runShowCloudletGPUUsage,
+}
+
+func runShowCloudletGPUUsage(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.Cloudlet)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowCloudletGPUUsage(c, obj)
+}
+
+func ShowCloudletGPUUsage(c *cli.Command, in *edgeproto.Cloudlet) error {
+	if CloudletApiCmd == nil {
+		return fmt.Errorf("CloudletApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := CloudletApiCmd.ShowCloudletGPUUsage(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowCloudletGPUUsage failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.CloudletGPUUsage, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowCloudletGPUUsage recv failed: %s", errstr)
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowCloudletGPUUsages(c *cli.Command, data []edgeproto.Cloudlet, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowCloudletGPUUsage %v\n", data[ii])
+		myerr := ShowCloudletGPUUsage(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var AddCloudletResMappingCmd = &cli.Command{
 	Use:          "AddCloudletResMapping",
 	RequiredArgs: strings.Join(CloudletResMapRequiredArgs, " "),
@@ -2416,6 +2500,7 @@ var CloudletApiCmds = []*cobra.Command{
 	GetCloudletResourceQuotaPropsCmd.GenCmd(),
 	GetCloudletResourceUsageCmd.GenCmd(),
 	ShowCloudletResourceUsageCmd.GenCmd(),
+	ShowCloudletGPUUsageCmd.GenCmd(),
 	AddCloudletResMappingCmd.GenCmd(),
 	RemoveCloudletResMappingCmd.GenCmd(),
 	AddCloudletAllianceOrgCmd.GenCmd(),
@@ -2854,12 +2939,15 @@ var PlatformFeaturesOptionalArgs = []string{
 	"supportsmultiplenodepools",
 	"managesk8scontrolnodes",
 	"usesingress",
+	"requiresgpudriver",
+	"usesrootlb",
 	"resourcequotaproperties:#.name",
 	"resourcequotaproperties:#.value",
 	"resourcequotaproperties:#.inframaxvalue",
 	"resourcequotaproperties:#.quotamaxvalue",
 	"resourcequotaproperties:#.description",
 	"resourcequotaproperties:#.units",
+	"resourcequotaproperties:#.type",
 	"resourcequotaproperties:#.alertthreshold",
 	"deleteprepare",
 }
@@ -2895,12 +2983,15 @@ var PlatformFeaturesComments = map[string]string{
 	"supportsmultiplenodepools":                "Kubernetes clusters support more than one node pool",
 	"managesk8scontrolnodes":                   "Platform manages Kubernetes control nodes",
 	"usesingress":                              "Platform uses ingress for inbound Kubernetes HTTP traffic",
+	"requiresgpudriver":                        "Platform requires GPU Driver to be managed by Edge Cloud for installation onto new VMs or nodes with the license provided by the operator.",
+	"usesrootlb":                               "Platform users a shared root load balancer",
 	"resourcequotaproperties:#.name":           "Resource name",
 	"resourcequotaproperties:#.value":          "Resource value",
 	"resourcequotaproperties:#.inframaxvalue":  "Resource infra max value",
 	"resourcequotaproperties:#.quotamaxvalue":  "Resource quota max value",
 	"resourcequotaproperties:#.description":    "Resource description",
 	"resourcequotaproperties:#.units":          "Resource units",
+	"resourcequotaproperties:#.type":           "Resource type category, i.e. gpu",
 	"resourcequotaproperties:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
 	"deleteprepare":                            "Preparing to be deleted",
 }
@@ -2943,12 +3034,14 @@ var ResourceQuotaOptionalArgs = []string{
 	"name",
 	"value",
 	"alertthreshold",
+	"resourcetype",
 }
 var ResourceQuotaAliasArgs = []string{}
 var ResourceQuotaComments = map[string]string{
 	"name":           "Resource name on which to set quota",
 	"value":          "Quota value of the resource",
 	"alertthreshold": "Generate alert when more than threshold percentage of resource is used",
+	"resourcetype":   "Resource type if non-generic resource, i.e. gpu",
 }
 var ResourceQuotaSpecialArgs = map[string]string{}
 var GPUDriverKeyRequiredArgs = []string{}
@@ -3135,6 +3228,7 @@ var CloudletOptionalArgs = []string{
 	"resourcequotas:#.name",
 	"resourcequotas:#.value",
 	"resourcequotas:#.alertthreshold",
+	"resourcequotas:#.resourcetype",
 	"defaultresourcealertthreshold",
 	"kafkacluster",
 	"kafkauser",
@@ -3157,6 +3251,12 @@ var CloudletOptionalArgs = []string{
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
+	"infraflavors:#.gpus:empty",
+	"infraflavors:#.gpus:#.modelid",
+	"infraflavors:#.gpus:#.count",
+	"infraflavors:#.gpus:#.vendor",
+	"infraflavors:#.gpus:#.memory",
+	"infraflavors:#.gpus:#.inuse",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",
@@ -3245,6 +3345,7 @@ var CloudletComments = map[string]string{
 	"resourcequotas:#.name":                  "Resource name on which to set quota",
 	"resourcequotas:#.value":                 "Quota value of the resource",
 	"resourcequotas:#.alertthreshold":        "Generate alert when more than threshold percentage of resource is used",
+	"resourcequotas:#.resourcetype":          "Resource type if non-generic resource, i.e. gpu",
 	"defaultresourcealertthreshold":          "Default resource alert threshold percentage",
 	"hostcontroller":                         "Address of the controller hosting the cloudlet services if it is running locally",
 	"kafkacluster":                           "Operator provided kafka cluster endpoint to push events to",
@@ -3272,11 +3373,17 @@ var CloudletComments = map[string]string{
 	"federationconfig.federationname":        "Federation Name",
 	"licenseconfigstoragepath":               "GPU driver license config storage path",
 	"infraflavors:empty":                     "Cloudlet-specific flavors, specify infraflavors:empty=true to clear",
-	"infraflavors:#.name":                    "Name of the flavor on the Cloudlet",
-	"infraflavors:#.vcpus":                   "Number of VCPU cores on the Cloudlet",
-	"infraflavors:#.ram":                     "Ram in MB on the Cloudlet",
-	"infraflavors:#.disk":                    "Amount of disk in GB on the Cloudlet",
-	"infraflavors:#.propmap":                 "OS Flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
+	"infraflavors:#.name":                    "Name of the infra flavor",
+	"infraflavors:#.vcpus":                   "Number of VCPU cores on the infra flavor",
+	"infraflavors:#.ram":                     "Ram in MB on the infra flavor",
+	"infraflavors:#.disk":                    "Amount of disk in GB on the infra flavor",
+	"infraflavors:#.gpus:empty":              "GPUs for the infra flavor, specify infraflavors:#.gpus:empty=true to clear",
+	"infraflavors:#.gpus:#.modelid":          "GPU model unique identifier",
+	"infraflavors:#.gpus:#.count":            "Count of how many of this GPU are required/present",
+	"infraflavors:#.gpus:#.vendor":           "GPU vendor (nvidia, amd, etc)",
+	"infraflavors:#.gpus:#.memory":           "Memory in GB",
+	"infraflavors:#.gpus:#.inuse":            "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"infraflavors:#.propmap":                 "Infra flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
 	"edgeboxonly":                            "Edgebox only cloudlets allow for developers to set up cloudlets anywhere (laptop, etc) but can only use public images and do not support DNS mapping.",
 	"crmonedge":                              "CRM shall run on the edge site if true (required for restricted cloudlets), otherwise runs centrally (default)",
 	"objid":                                  "Universally unique object ID",
@@ -3367,6 +3474,7 @@ var CloudletResourceQuotaPropsOptionalArgs = []string{
 	"properties:#.quotamaxvalue",
 	"properties:#.description",
 	"properties:#.units",
+	"properties:#.type",
 	"properties:#.alertthreshold",
 	"organization",
 }
@@ -3379,6 +3487,7 @@ var CloudletResourceQuotaPropsComments = map[string]string{
 	"properties:#.quotamaxvalue":  "Resource quota max value",
 	"properties:#.description":    "Resource description",
 	"properties:#.units":          "Resource units",
+	"properties:#.type":           "Resource type category, i.e. gpu",
 	"properties:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
 	"organization":                "Organization",
 }
@@ -3396,6 +3505,7 @@ var CloudletResourceUsageOptionalArgs = []string{
 	"info:#.quotamaxvalue",
 	"info:#.description",
 	"info:#.units",
+	"info:#.type",
 	"info:#.alertthreshold",
 	"resourcescore",
 }
@@ -3415,10 +3525,51 @@ var CloudletResourceUsageComments = map[string]string{
 	"info:#.quotamaxvalue":  "Resource quota max value",
 	"info:#.description":    "Resource description",
 	"info:#.units":          "Resource units",
+	"info:#.type":           "Resource type category, i.e. gpu",
 	"info:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
 	"resourcescore":         "Resouce score, higher score means more available resources",
 }
 var CloudletResourceUsageSpecialArgs = map[string]string{}
+var CloudletGPUUsageRequiredArgs = []string{
+	"key.organization",
+	"key.name",
+	"key.federatedorganization",
+}
+var CloudletGPUUsageOptionalArgs = []string{
+	"gpus:#.gpu.modelid",
+	"gpus:#.gpu.count",
+	"gpus:#.gpu.vendor",
+	"gpus:#.gpu.memory",
+	"gpus:#.gpu.inuse",
+	"gpus:#.usage.name",
+	"gpus:#.usage.value",
+	"gpus:#.usage.inframaxvalue",
+	"gpus:#.usage.quotamaxvalue",
+	"gpus:#.usage.description",
+	"gpus:#.usage.units",
+	"gpus:#.usage.type",
+	"gpus:#.usage.alertthreshold",
+}
+var CloudletGPUUsageAliasArgs = []string{}
+var CloudletGPUUsageComments = map[string]string{
+	"key.organization":            "Organization of the cloudlet site",
+	"key.name":                    "Name of the cloudlet",
+	"key.federatedorganization":   "Federated operator organization who shared this cloudlet",
+	"gpus:#.gpu.modelid":          "GPU model unique identifier",
+	"gpus:#.gpu.count":            "Count of how many of this GPU are required/present",
+	"gpus:#.gpu.vendor":           "GPU vendor (nvidia, amd, etc)",
+	"gpus:#.gpu.memory":           "Memory in GB",
+	"gpus:#.gpu.inuse":            "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"gpus:#.usage.name":           "Resource name",
+	"gpus:#.usage.value":          "Resource value",
+	"gpus:#.usage.inframaxvalue":  "Resource infra max value",
+	"gpus:#.usage.quotamaxvalue":  "Resource quota max value",
+	"gpus:#.usage.description":    "Resource description",
+	"gpus:#.usage.units":          "Resource units",
+	"gpus:#.usage.type":           "Resource type category, i.e. gpu",
+	"gpus:#.usage.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
+}
+var CloudletGPUUsageSpecialArgs = map[string]string{}
 var CloudletAllianceOrgRequiredArgs = []string{
 	"cloudletorg",
 	"cloudlet",
@@ -3445,15 +3596,25 @@ var FlavorInfoOptionalArgs = []string{
 	"vcpus",
 	"ram",
 	"disk",
+	"gpus:#.modelid",
+	"gpus:#.count",
+	"gpus:#.vendor",
+	"gpus:#.memory",
+	"gpus:#.inuse",
 	"propmap",
 }
 var FlavorInfoAliasArgs = []string{}
 var FlavorInfoComments = map[string]string{
-	"name":    "Name of the flavor on the Cloudlet",
-	"vcpus":   "Number of VCPU cores on the Cloudlet",
-	"ram":     "Ram in MB on the Cloudlet",
-	"disk":    "Amount of disk in GB on the Cloudlet",
-	"propmap": "OS Flavor Properties, if any",
+	"name":           "Name of the infra flavor",
+	"vcpus":          "Number of VCPU cores on the infra flavor",
+	"ram":            "Ram in MB on the infra flavor",
+	"disk":           "Amount of disk in GB on the infra flavor",
+	"gpus:#.modelid": "GPU model unique identifier",
+	"gpus:#.count":   "Count of how many of this GPU are required/present",
+	"gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
+	"gpus:#.memory":  "Memory in GB",
+	"gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"propmap":        "Infra flavor Properties, if any",
 }
 var FlavorInfoSpecialArgs = map[string]string{
 	"propmap": "StringToString",
@@ -3501,6 +3662,11 @@ var CloudletInfoOptionalArgs = []string{
 	"flavors:#.vcpus",
 	"flavors:#.ram",
 	"flavors:#.disk",
+	"flavors:#.gpus:#.modelid",
+	"flavors:#.gpus:#.count",
+	"flavors:#.gpus:#.vendor",
+	"flavors:#.gpus:#.memory",
+	"flavors:#.gpus:#.inuse",
 	"flavors:#.propmap",
 	"containerversion",
 	"availabilityzones:#.name",
@@ -3528,6 +3694,7 @@ var CloudletInfoOptionalArgs = []string{
 	"resourcessnapshot.info:#.quotamaxvalue",
 	"resourcessnapshot.info:#.description",
 	"resourcessnapshot.info:#.units",
+	"resourcessnapshot.info:#.type",
 	"resourcessnapshot.info:#.alertthreshold",
 	"resourcessnapshot.clusterinsts:#.name",
 	"resourcessnapshot.clusterinsts:#.organization",
@@ -3539,6 +3706,13 @@ var CloudletInfoOptionalArgs = []string{
 	"compatibilityversion",
 	"properties",
 	"nodeinfos:#.name",
+	"nodeinfos:#.gpus:#.modelid",
+	"nodeinfos:#.gpus:#.count",
+	"nodeinfos:#.gpus:#.vendor",
+	"nodeinfos:#.gpus:#.memory",
+	"nodeinfos:#.gpus:#.inuse",
+	"nodeinfos:#.gpusoftware.driverversion",
+	"nodeinfos:#.gpusoftware.runtimeversion",
 	"activecrminstance",
 	"standbycrm",
 	"releaseversion",
@@ -3547,6 +3721,11 @@ var CloudletInfoOptionalArgs = []string{
 	"nodepools:#.noderesources.vcpus",
 	"nodepools:#.noderesources.ram",
 	"nodepools:#.noderesources.disk",
+	"nodepools:#.noderesources.gpus:#.modelid",
+	"nodepools:#.noderesources.gpus:#.count",
+	"nodepools:#.noderesources.gpus:#.vendor",
+	"nodepools:#.noderesources.gpus:#.memory",
+	"nodepools:#.noderesources.gpus:#.inuse",
 	"nodepools:#.noderesources.optresmap",
 	"nodepools:#.noderesources.infranodeflavor",
 	"nodepools:#.noderesources.externalvolumesize",
@@ -3569,11 +3748,16 @@ var CloudletInfoComments = map[string]string{
 	"osmaxvcores":                            "Maximum number of VCPU cores on the Cloudlet",
 	"osmaxvolgb":                             "Maximum amount of disk in GB on the Cloudlet",
 	"errors":                                 "Any errors encountered while making changes to the Cloudlet",
-	"flavors:#.name":                         "Name of the flavor on the Cloudlet",
-	"flavors:#.vcpus":                        "Number of VCPU cores on the Cloudlet",
-	"flavors:#.ram":                          "Ram in MB on the Cloudlet",
-	"flavors:#.disk":                         "Amount of disk in GB on the Cloudlet",
-	"flavors:#.propmap":                      "OS Flavor Properties, if any",
+	"flavors:#.name":                         "Name of the infra flavor",
+	"flavors:#.vcpus":                        "Number of VCPU cores on the infra flavor",
+	"flavors:#.ram":                          "Ram in MB on the infra flavor",
+	"flavors:#.disk":                         "Amount of disk in GB on the infra flavor",
+	"flavors:#.gpus:#.modelid":               "GPU model unique identifier",
+	"flavors:#.gpus:#.count":                 "Count of how many of this GPU are required/present",
+	"flavors:#.gpus:#.vendor":                "GPU vendor (nvidia, amd, etc)",
+	"flavors:#.gpus:#.memory":                "Memory in GB",
+	"flavors:#.gpus:#.inuse":                 "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"flavors:#.propmap":                      "Infra flavor Properties, if any",
 	"status.tasknumber":                      "Task number",
 	"status.maxtasks":                        "Max tasks",
 	"status.taskname":                        "Task name",
@@ -3606,6 +3790,7 @@ var CloudletInfoComments = map[string]string{
 	"resourcessnapshot.info:#.quotamaxvalue":                   "Resource quota max value",
 	"resourcessnapshot.info:#.description":                     "Resource description",
 	"resourcessnapshot.info:#.units":                           "Resource units",
+	"resourcessnapshot.info:#.type":                            "Resource type category, i.e. gpu",
 	"resourcessnapshot.info:#.alertthreshold":                  "Generate alert when more than threshold percentage of resource is used",
 	"resourcessnapshot.clusterinsts:#.name":                    "Cluster name",
 	"resourcessnapshot.clusterinsts:#.organization":            "Name of the organization that this cluster belongs to",
@@ -3617,6 +3802,13 @@ var CloudletInfoComments = map[string]string{
 	"compatibilityversion":                                     "Version for compatibility tracking",
 	"properties":                                               "Cloudlet properties",
 	"nodeinfos:#.name":                                         "Node name",
+	"nodeinfos:#.gpus:#.modelid":                               "GPU model unique identifier",
+	"nodeinfos:#.gpus:#.count":                                 "Count of how many of this GPU are required/present",
+	"nodeinfos:#.gpus:#.vendor":                                "GPU vendor (nvidia, amd, etc)",
+	"nodeinfos:#.gpus:#.memory":                                "Memory in GB",
+	"nodeinfos:#.gpus:#.inuse":                                 "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"nodeinfos:#.gpusoftware.driverversion":                    "driver version",
+	"nodeinfos:#.gpusoftware.runtimeversion":                   "Runtime version",
 	"activecrminstance":                                        "Active HA instance",
 	"standbycrm":                                               "Denotes if info was reported by inactive",
 	"releaseversion":                                           "Cloudlet release version",
@@ -3625,7 +3817,12 @@ var CloudletInfoComments = map[string]string{
 	"nodepools:#.noderesources.vcpus":                          "Vcpus to be allocated to the VM, must be either 1 or an even number",
 	"nodepools:#.noderesources.ram":                            "Total RAM in megabytes to be allocated to the VM",
 	"nodepools:#.noderesources.disk":                           "Total disk space in gigabytes to be allocated to the VMs root partition",
-	"nodepools:#.noderesources.optresmap":                      "Optional resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1",
+	"nodepools:#.noderesources.gpus:#.modelid":                 "GPU model unique identifier",
+	"nodepools:#.noderesources.gpus:#.count":                   "Count of how many of this GPU are required/present",
+	"nodepools:#.noderesources.gpus:#.vendor":                  "GPU vendor (nvidia, amd, etc)",
+	"nodepools:#.noderesources.gpus:#.memory":                  "Memory in GB",
+	"nodepools:#.noderesources.gpus:#.inuse":                   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"nodepools:#.noderesources.optresmap":                      "Optional resources request, i.e. optresmap=restype=resname:1",
 	"nodepools:#.noderesources.infranodeflavor":                "Infrastructure specific node flavor",
 	"nodepools:#.noderesources.externalvolumesize":             "Size of external volume to be attached to nodes. This is for the root partition",
 	"nodepools:#.scalable":                                     "Scalable indicates the system may scale the number of nodes",
@@ -3736,6 +3933,7 @@ var CreateCloudletOptionalArgs = []string{
 	"resourcequotas:#.name",
 	"resourcequotas:#.value",
 	"resourcequotas:#.alertthreshold",
+	"resourcequotas:#.resourcetype",
 	"defaultresourcealertthreshold",
 	"kafkacluster",
 	"kafkauser",
@@ -3757,6 +3955,11 @@ var CreateCloudletOptionalArgs = []string{
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
+	"infraflavors:#.gpus:#.modelid",
+	"infraflavors:#.gpus:#.count",
+	"infraflavors:#.gpus:#.vendor",
+	"infraflavors:#.gpus:#.memory",
+	"infraflavors:#.gpus:#.inuse",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",
@@ -3804,6 +4007,7 @@ var DeleteCloudletOptionalArgs = []string{
 	"resourcequotas:#.name",
 	"resourcequotas:#.value",
 	"resourcequotas:#.alertthreshold",
+	"resourcequotas:#.resourcetype",
 	"defaultresourcealertthreshold",
 	"kafkacluster",
 	"kafkauser",
@@ -3825,6 +4029,11 @@ var DeleteCloudletOptionalArgs = []string{
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
+	"infraflavors:#.gpus:#.modelid",
+	"infraflavors:#.gpus:#.count",
+	"infraflavors:#.gpus:#.vendor",
+	"infraflavors:#.gpus:#.memory",
+	"infraflavors:#.gpus:#.inuse",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",
@@ -3861,6 +4070,7 @@ var UpdateCloudletOptionalArgs = []string{
 	"resourcequotas:#.name",
 	"resourcequotas:#.value",
 	"resourcequotas:#.alertthreshold",
+	"resourcequotas:#.resourcetype",
 	"defaultresourcealertthreshold",
 	"kafkacluster",
 	"kafkauser",
@@ -3883,6 +4093,12 @@ var UpdateCloudletOptionalArgs = []string{
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
+	"infraflavors:#.gpus:empty",
+	"infraflavors:#.gpus:#.modelid",
+	"infraflavors:#.gpus:#.count",
+	"infraflavors:#.gpus:#.vendor",
+	"infraflavors:#.gpus:#.memory",
+	"infraflavors:#.gpus:#.inuse",
 	"infraflavors:#.propmap",
 	"crmonedge",
 	"objid",
@@ -3929,6 +4145,7 @@ var ShowCloudletOptionalArgs = []string{
 	"resourcequotas:#.name",
 	"resourcequotas:#.value",
 	"resourcequotas:#.alertthreshold",
+	"resourcequotas:#.resourcetype",
 	"defaultresourcealertthreshold",
 	"kafkacluster",
 	"kafkauser",
@@ -3950,6 +4167,11 @@ var ShowCloudletOptionalArgs = []string{
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
+	"infraflavors:#.gpus:#.modelid",
+	"infraflavors:#.gpus:#.count",
+	"infraflavors:#.gpus:#.vendor",
+	"infraflavors:#.gpus:#.memory",
+	"infraflavors:#.gpus:#.inuse",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",
@@ -4016,6 +4238,7 @@ var ShowCloudletResourceUsageOptionalArgs = []string{
 	"resourcequotas:#.name",
 	"resourcequotas:#.value",
 	"resourcequotas:#.alertthreshold",
+	"resourcequotas:#.resourcetype",
 	"defaultresourcealertthreshold",
 	"kafkacluster",
 	"kafkauser",
@@ -4037,6 +4260,84 @@ var ShowCloudletResourceUsageOptionalArgs = []string{
 	"infraflavors:#.vcpus",
 	"infraflavors:#.ram",
 	"infraflavors:#.disk",
+	"infraflavors:#.gpus:#.modelid",
+	"infraflavors:#.gpus:#.count",
+	"infraflavors:#.gpus:#.vendor",
+	"infraflavors:#.gpus:#.memory",
+	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.propmap",
+	"edgeboxonly",
+	"crmonedge",
+	"objid",
+	"annotations",
+	"dbmodelid",
+}
+var ShowCloudletGPUUsageRequiredArgs = []string{}
+var ShowCloudletGPUUsageOptionalArgs = []string{
+	"cloudletorg",
+	"cloudlet",
+	"federatedorg",
+	"location.latitude",
+	"location.longitude",
+	"location.altitude",
+	"zone",
+	"ipsupport",
+	"staticips",
+	"numdynamicips",
+	"timelimits.createclusterinsttimeout",
+	"timelimits.updateclusterinsttimeout",
+	"timelimits.deleteclusterinsttimeout",
+	"timelimits.createappinsttimeout",
+	"timelimits.updateappinsttimeout",
+	"timelimits.deleteappinsttimeout",
+	"crmoverride",
+	"deploymentlocal",
+	"platformtype",
+	"notifysrvaddr",
+	"flavor.name",
+	"physicalname",
+	"envvar",
+	"containerversion",
+	"accessvars",
+	"vmimageversion",
+	"deployment",
+	"infraapiaccess",
+	"infraconfig.externalnetworkname",
+	"infraconfig.flavorname",
+	"maintenancestate",
+	"overridepolicycontainerversion",
+	"vmpool",
+	"trustpolicy",
+	"resourcequotas:#.name",
+	"resourcequotas:#.value",
+	"resourcequotas:#.alertthreshold",
+	"resourcequotas:#.resourcetype",
+	"defaultresourcealertthreshold",
+	"kafkacluster",
+	"kafkauser",
+	"kafkapassword",
+	"gpuconfig.driver.name",
+	"gpuconfig.driver.organization",
+	"gpuconfig.properties",
+	"gpuconfig.licenseconfig",
+	"enabledefaultserverlesscluster",
+	"allianceorgs",
+	"singlekubernetesclusterowner",
+	"platformhighavailability",
+	"secondarynotifysrvaddr",
+	"federationconfig.federationcontextid",
+	"federationconfig.partnerfederationaddr",
+	"federationconfig.federationdbid",
+	"federationconfig.federationname",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.gpus:#.modelid",
+	"infraflavors:#.gpus:#.count",
+	"infraflavors:#.gpus:#.vendor",
+	"infraflavors:#.gpus:#.memory",
+	"infraflavors:#.gpus:#.inuse",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",

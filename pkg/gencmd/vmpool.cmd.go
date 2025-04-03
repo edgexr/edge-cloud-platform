@@ -38,6 +38,8 @@ func VMHideTags(in *edgeproto.VM) {
 	if _, found := tags["timestamp"]; found {
 		in.UpdatedAt = types.Timestamp{}
 	}
+	for i1 := 0; i1 < len(in.Flavor.Gpus); i1++ {
+	}
 }
 
 func VMPoolHideTags(in *edgeproto.VMPool) {
@@ -51,6 +53,8 @@ func VMPoolHideTags(in *edgeproto.VMPool) {
 	for i0 := 0; i0 < len(in.Vms); i0++ {
 		if _, found := tags["timestamp"]; found {
 			in.Vms[i0].UpdatedAt = types.Timestamp{}
+		}
+		for i2 := 0; i2 < len(in.Vms[i0].Flavor.Gpus); i2++ {
 		}
 	}
 	if _, found := tags["nocmp"]; found {
@@ -69,6 +73,8 @@ func VMPoolMemberHideTags(in *edgeproto.VMPoolMember) {
 	if _, found := tags["timestamp"]; found {
 		in.Vm.UpdatedAt = types.Timestamp{}
 	}
+	for i2 := 0; i2 < len(in.Vm.Flavor.Gpus); i2++ {
+	}
 }
 
 func VMPoolInfoHideTags(in *edgeproto.VMPoolInfo) {
@@ -85,6 +91,8 @@ func VMPoolInfoHideTags(in *edgeproto.VMPoolInfo) {
 	for i0 := 0; i0 < len(in.Vms); i0++ {
 		if _, found := tags["timestamp"]; found {
 			in.Vms[i0].UpdatedAt = types.Timestamp{}
+		}
+		for i2 := 0; i2 < len(in.Vms[i0].Flavor.Gpus); i2++ {
 		}
 	}
 	if _, found := tags["nocmp"]; found {
@@ -491,23 +499,33 @@ var VMOptionalArgs = []string{
 	"flavor.vcpus",
 	"flavor.ram",
 	"flavor.disk",
+	"flavor.gpus:#.modelid",
+	"flavor.gpus:#.count",
+	"flavor.gpus:#.vendor",
+	"flavor.gpus:#.memory",
+	"flavor.gpus:#.inuse",
 	"flavor.propmap",
 }
 var VMAliasArgs = []string{}
 var VMComments = map[string]string{
-	"name":               "VM Name",
-	"netinfo.externalip": "External IP",
-	"netinfo.internalip": "Internal IP",
-	"groupname":          "VM Group Name",
-	"state":              "VM State, one of ForceFree",
-	"updatedat.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
-	"updatedat.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
-	"internalname":       "VM Internal Name",
-	"flavor.name":        "Name of the flavor on the Cloudlet",
-	"flavor.vcpus":       "Number of VCPU cores on the Cloudlet",
-	"flavor.ram":         "Ram in MB on the Cloudlet",
-	"flavor.disk":        "Amount of disk in GB on the Cloudlet",
-	"flavor.propmap":     "OS Flavor Properties, if any",
+	"name":                  "VM Name",
+	"netinfo.externalip":    "External IP",
+	"netinfo.internalip":    "Internal IP",
+	"groupname":             "VM Group Name",
+	"state":                 "VM State, one of ForceFree",
+	"updatedat.seconds":     "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
+	"updatedat.nanos":       "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
+	"internalname":          "VM Internal Name",
+	"flavor.name":           "Name of the infra flavor",
+	"flavor.vcpus":          "Number of VCPU cores on the infra flavor",
+	"flavor.ram":            "Ram in MB on the infra flavor",
+	"flavor.disk":           "Amount of disk in GB on the infra flavor",
+	"flavor.gpus:#.modelid": "GPU model unique identifier",
+	"flavor.gpus:#.count":   "Count of how many of this GPU are required/present",
+	"flavor.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
+	"flavor.gpus:#.memory":  "Memory in GB",
+	"flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"flavor.propmap":        "Infra flavor Properties, if any",
 }
 var VMSpecialArgs = map[string]string{
 	"flavor.propmap": "StringToString",
@@ -541,27 +559,33 @@ var VMPoolAliasArgs = []string{
 	"vmpool=key.name",
 }
 var VMPoolComments = map[string]string{
-	"fields":                   "Fields are used for the Update API to specify which fields to apply",
-	"vmpoolorg":                "Organization of the vmpool",
-	"vmpool":                   "Name of the vmpool",
-	"vms:empty":                "list of VMs to be part of VM pool, specify vms:empty=true to clear",
-	"vms:#.name":               "VM Name",
-	"vms:#.netinfo.externalip": "External IP",
-	"vms:#.netinfo.internalip": "Internal IP",
-	"vms:#.groupname":          "VM Group Name",
-	"vms:#.state":              "VM State, one of ForceFree",
-	"vms:#.updatedat.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
-	"vms:#.updatedat.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
-	"vms:#.internalname":       "VM Internal Name",
-	"vms:#.flavor.name":        "Name of the flavor on the Cloudlet",
-	"vms:#.flavor.vcpus":       "Number of VCPU cores on the Cloudlet",
-	"vms:#.flavor.ram":         "Ram in MB on the Cloudlet",
-	"vms:#.flavor.disk":        "Amount of disk in GB on the Cloudlet",
-	"vms:#.flavor.propmap":     "OS Flavor Properties, if any, specify vms:#.flavor.propmap:empty=true to clear",
-	"state":                    "Current state of the VM pool, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
-	"errors":                   "Any errors trying to add/remove VM to/from VM Pool, specify errors:empty=true to clear",
-	"crmoverride":              "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
-	"deleteprepare":            "Preparing to be deleted",
+	"fields":                      "Fields are used for the Update API to specify which fields to apply",
+	"vmpoolorg":                   "Organization of the vmpool",
+	"vmpool":                      "Name of the vmpool",
+	"vms:empty":                   "list of VMs to be part of VM pool, specify vms:empty=true to clear",
+	"vms:#.name":                  "VM Name",
+	"vms:#.netinfo.externalip":    "External IP",
+	"vms:#.netinfo.internalip":    "Internal IP",
+	"vms:#.groupname":             "VM Group Name",
+	"vms:#.state":                 "VM State, one of ForceFree",
+	"vms:#.updatedat.seconds":     "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
+	"vms:#.updatedat.nanos":       "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
+	"vms:#.internalname":          "VM Internal Name",
+	"vms:#.flavor.name":           "Name of the infra flavor",
+	"vms:#.flavor.vcpus":          "Number of VCPU cores on the infra flavor",
+	"vms:#.flavor.ram":            "Ram in MB on the infra flavor",
+	"vms:#.flavor.disk":           "Amount of disk in GB on the infra flavor",
+	"vms:#.flavor.gpus:empty":     "GPUs for the infra flavor, specify vms:#.flavor.gpus:empty=true to clear",
+	"vms:#.flavor.gpus:#.modelid": "GPU model unique identifier",
+	"vms:#.flavor.gpus:#.count":   "Count of how many of this GPU are required/present",
+	"vms:#.flavor.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
+	"vms:#.flavor.gpus:#.memory":  "Memory in GB",
+	"vms:#.flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"vms:#.flavor.propmap":        "Infra flavor Properties, if any, specify vms:#.flavor.propmap:empty=true to clear",
+	"state":                       "Current state of the VM pool, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
+	"errors":                      "Any errors trying to add/remove VM to/from VM Pool, specify errors:empty=true to clear",
+	"crmoverride":                 "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
+	"deleteprepare":               "Preparing to be deleted",
 }
 var VMPoolSpecialArgs = map[string]string{
 	"errors":               "StringArray",
@@ -583,22 +607,27 @@ var VMPoolMemberAliasArgs = []string{
 	"vmpool=key.name",
 }
 var VMPoolMemberComments = map[string]string{
-	"vmpoolorg":             "Organization of the vmpool",
-	"vmpool":                "Name of the vmpool",
-	"vm.name":               "VM Name",
-	"vm.netinfo.externalip": "External IP",
-	"vm.netinfo.internalip": "Internal IP",
-	"vm.groupname":          "VM Group Name",
-	"vm.state":              "VM State, one of ForceFree",
-	"vm.updatedat.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
-	"vm.updatedat.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
-	"vm.internalname":       "VM Internal Name",
-	"vm.flavor.name":        "Name of the flavor on the Cloudlet",
-	"vm.flavor.vcpus":       "Number of VCPU cores on the Cloudlet",
-	"vm.flavor.ram":         "Ram in MB on the Cloudlet",
-	"vm.flavor.disk":        "Amount of disk in GB on the Cloudlet",
-	"vm.flavor.propmap":     "OS Flavor Properties, if any",
-	"crmoverride":           "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
+	"vmpoolorg":                "Organization of the vmpool",
+	"vmpool":                   "Name of the vmpool",
+	"vm.name":                  "VM Name",
+	"vm.netinfo.externalip":    "External IP",
+	"vm.netinfo.internalip":    "Internal IP",
+	"vm.groupname":             "VM Group Name",
+	"vm.state":                 "VM State, one of ForceFree",
+	"vm.updatedat.seconds":     "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
+	"vm.updatedat.nanos":       "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
+	"vm.internalname":          "VM Internal Name",
+	"vm.flavor.name":           "Name of the infra flavor",
+	"vm.flavor.vcpus":          "Number of VCPU cores on the infra flavor",
+	"vm.flavor.ram":            "Ram in MB on the infra flavor",
+	"vm.flavor.disk":           "Amount of disk in GB on the infra flavor",
+	"vm.flavor.gpus:#.modelid": "GPU model unique identifier",
+	"vm.flavor.gpus:#.count":   "Count of how many of this GPU are required/present",
+	"vm.flavor.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
+	"vm.flavor.gpus:#.memory":  "Memory in GB",
+	"vm.flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"vm.flavor.propmap":        "Infra flavor Properties, if any",
+	"crmoverride":              "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 }
 var VMPoolMemberSpecialArgs = map[string]string{
 	"vm.flavor.propmap": "StringToString",
@@ -613,21 +642,31 @@ var VMSpecOptionalArgs = []string{
 	"flavor.ram",
 	"flavor.vcpus",
 	"flavor.disk",
+	"flavor.gpus:#.modelid",
+	"flavor.gpus:#.count",
+	"flavor.gpus:#.vendor",
+	"flavor.gpus:#.memory",
+	"flavor.gpus:#.inuse",
 	"flavor.optresmap",
 	"flavor.deleteprepare",
 }
 var VMSpecAliasArgs = []string{}
 var VMSpecComments = map[string]string{
-	"internalname":         "VM internal name",
-	"externalnetwork":      "VM has external network defined or not",
-	"internalnetwork":      "VM has internal network defined or not",
-	"flavor.fields":        "Fields are used for the Update API to specify which fields to apply",
-	"flavor.key.name":      "Flavor name",
-	"flavor.ram":           "RAM in megabytes",
-	"flavor.vcpus":         "Number of virtual CPUs",
-	"flavor.disk":          "Amount of disk space in gigabytes",
-	"flavor.optresmap":     "Optional Resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1",
-	"flavor.deleteprepare": "Preparing to be deleted",
+	"internalname":          "VM internal name",
+	"externalnetwork":       "VM has external network defined or not",
+	"internalnetwork":       "VM has internal network defined or not",
+	"flavor.fields":         "Fields are used for the Update API to specify which fields to apply",
+	"flavor.key.name":       "Flavor name",
+	"flavor.ram":            "RAM in megabytes",
+	"flavor.vcpus":          "Number of virtual CPUs",
+	"flavor.disk":           "Amount of disk space in gigabytes",
+	"flavor.gpus:#.modelid": "GPU model unique identifier",
+	"flavor.gpus:#.count":   "Count of how many of this GPU are required/present",
+	"flavor.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
+	"flavor.gpus:#.memory":  "Memory in GB",
+	"flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"flavor.optresmap":      "Optional Resources request, key = gpu form: $resource=$kind:[$alias]$count ex: optresmap=gpu=vgpu:nvidia-63:1",
+	"flavor.deleteprepare":  "Preparing to be deleted",
 }
 var VMSpecSpecialArgs = map[string]string{
 	"flavor.fields":    "StringArray",
@@ -651,6 +690,11 @@ var VMPoolInfoOptionalArgs = []string{
 	"vms:#.flavor.vcpus",
 	"vms:#.flavor.ram",
 	"vms:#.flavor.disk",
+	"vms:#.flavor.gpus:#.modelid",
+	"vms:#.flavor.gpus:#.count",
+	"vms:#.flavor.gpus:#.vendor",
+	"vms:#.flavor.gpus:#.memory",
+	"vms:#.flavor.gpus:#.inuse",
 	"vms:#.flavor.propmap",
 	"state",
 	"errors",
@@ -666,31 +710,36 @@ var VMPoolInfoAliasArgs = []string{
 	"vmpool=key.name",
 }
 var VMPoolInfoComments = map[string]string{
-	"fields":                   "Fields are used for the Update API to specify which fields to apply",
-	"vmpoolorg":                "Organization of the vmpool",
-	"vmpool":                   "Name of the vmpool",
-	"notifyid":                 "Id of client assigned by server (internal use only)",
-	"vms:#.name":               "VM Name",
-	"vms:#.netinfo.externalip": "External IP",
-	"vms:#.netinfo.internalip": "Internal IP",
-	"vms:#.groupname":          "VM Group Name",
-	"vms:#.state":              "VM State, one of ForceFree",
-	"vms:#.updatedat.seconds":  "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
-	"vms:#.updatedat.nanos":    "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
-	"vms:#.internalname":       "VM Internal Name",
-	"vms:#.flavor.name":        "Name of the flavor on the Cloudlet",
-	"vms:#.flavor.vcpus":       "Number of VCPU cores on the Cloudlet",
-	"vms:#.flavor.ram":         "Ram in MB on the Cloudlet",
-	"vms:#.flavor.disk":        "Amount of disk in GB on the Cloudlet",
-	"vms:#.flavor.propmap":     "OS Flavor Properties, if any",
-	"state":                    "Current state of the VM pool on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
-	"errors":                   "Any errors trying to add/remove VM to/from VM Pool",
-	"status.tasknumber":        "Task number",
-	"status.maxtasks":          "Max tasks",
-	"status.taskname":          "Task name",
-	"status.stepname":          "Step name",
-	"status.msgcount":          "Message count",
-	"status.msgs":              "Messages",
+	"fields":                      "Fields are used for the Update API to specify which fields to apply",
+	"vmpoolorg":                   "Organization of the vmpool",
+	"vmpool":                      "Name of the vmpool",
+	"notifyid":                    "Id of client assigned by server (internal use only)",
+	"vms:#.name":                  "VM Name",
+	"vms:#.netinfo.externalip":    "External IP",
+	"vms:#.netinfo.internalip":    "Internal IP",
+	"vms:#.groupname":             "VM Group Name",
+	"vms:#.state":                 "VM State, one of ForceFree",
+	"vms:#.updatedat.seconds":     "Represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.",
+	"vms:#.updatedat.nanos":       "Non-negative fractions of a second at nanosecond resolution. Negative second values with fractions must still have non-negative nanos values that count forward in time. Must be from 0 to 999,999,999 inclusive.",
+	"vms:#.internalname":          "VM Internal Name",
+	"vms:#.flavor.name":           "Name of the infra flavor",
+	"vms:#.flavor.vcpus":          "Number of VCPU cores on the infra flavor",
+	"vms:#.flavor.ram":            "Ram in MB on the infra flavor",
+	"vms:#.flavor.disk":           "Amount of disk in GB on the infra flavor",
+	"vms:#.flavor.gpus:#.modelid": "GPU model unique identifier",
+	"vms:#.flavor.gpus:#.count":   "Count of how many of this GPU are required/present",
+	"vms:#.flavor.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
+	"vms:#.flavor.gpus:#.memory":  "Memory in GB",
+	"vms:#.flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"vms:#.flavor.propmap":        "Infra flavor Properties, if any",
+	"state":                       "Current state of the VM pool on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
+	"errors":                      "Any errors trying to add/remove VM to/from VM Pool",
+	"status.tasknumber":           "Task number",
+	"status.maxtasks":             "Max tasks",
+	"status.taskname":             "Task name",
+	"status.stepname":             "Step name",
+	"status.msgcount":             "Message count",
+	"status.msgs":                 "Messages",
 }
 var VMPoolInfoSpecialArgs = map[string]string{
 	"errors":               "StringArray",

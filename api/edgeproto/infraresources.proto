@@ -17,12 +17,11 @@
 syntax = "proto3";
 package edgeproto;
 
-import "tools/protogen/protogen.proto";
 import "gogoproto/gogo.proto";
 import "cluster.proto";
 import "decimal.proto";
-import "app.proto";
 import "appinst.proto";
+import "resources.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -89,8 +88,17 @@ message InfraResource {
   string description = 5;
   // Resource units
   string units = 6;
+  // Resource type category, i.e. "gpu"
+  string type = 8;
   // Generate alert when more than threshold percentage of resource is used
   int32 alert_threshold = 7;
+}
+
+message GPUUsage {
+  // GPU information
+  GPUResource gpu = 1;
+  // GPU Usage
+  InfraResource usage = 2;
 }
 
 // NodeInfo
@@ -103,6 +111,17 @@ message NodeInfo {
   map<string, Udec64> allocatable = 2;
   // Capacity of underlying resources on the node
   map<string, Udec64> capacity = 3;
+  // list of gpus
+  repeated GPUResource gpus = 4;
+  // GPU software information
+  GPUSoftwareInfo gpu_software = 5;
+}
+
+message GPUSoftwareInfo {
+  // driver version
+  string driver_version = 1;
+  // Runtime version
+  string runtime_version = 2;
 }
 
 // InfraResources

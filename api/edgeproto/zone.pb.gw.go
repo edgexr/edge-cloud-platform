@@ -160,6 +160,31 @@ func request_ZoneApi_ShowZone_0(ctx context.Context, marshaler runtime.Marshaler
 
 }
 
+func request_ZoneApi_ShowZoneGPUs_0(ctx context.Context, marshaler runtime.Marshaler, client ZoneApiClient, req *http.Request, pathParams map[string]string) (ZoneApi_ShowZoneGPUsClient, runtime.ServerMetadata, error) {
+	var protoReq Zone
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	stream, err := client.ShowZoneGPUs(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+
+}
+
 // RegisterZoneApiHandlerServer registers the http handlers for service ZoneApi to "mux".
 // UnaryRPC     :call ZoneApiServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -236,6 +261,13 @@ func RegisterZoneApiHandlerServer(ctx context.Context, mux *runtime.ServeMux, se
 	})
 
 	mux.Handle("POST", pattern_ZoneApi_ShowZone_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
+	})
+
+	mux.Handle("POST", pattern_ZoneApi_ShowZoneGPUs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -363,6 +395,26 @@ func RegisterZoneApiHandlerClient(ctx context.Context, mux *runtime.ServeMux, cl
 
 	})
 
+	mux.Handle("POST", pattern_ZoneApi_ShowZoneGPUs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ZoneApi_ShowZoneGPUs_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ZoneApi_ShowZoneGPUs_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -374,6 +426,8 @@ var (
 	pattern_ZoneApi_UpdateZone_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"update", "zone"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_ZoneApi_ShowZone_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "zone"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_ZoneApi_ShowZoneGPUs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"show", "zonegpus"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -384,4 +438,6 @@ var (
 	forward_ZoneApi_UpdateZone_0 = runtime.ForwardResponseMessage
 
 	forward_ZoneApi_ShowZone_0 = runtime.ForwardResponseStream
+
+	forward_ZoneApi_ShowZoneGPUs_0 = runtime.ForwardResponseStream
 )

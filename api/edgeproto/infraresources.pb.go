@@ -5,7 +5,6 @@ package edgeproto
 
 import (
 	fmt "fmt"
-	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	io "io"
@@ -184,6 +183,8 @@ type InfraResource struct {
 	Description string `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
 	// Resource units
 	Units string `protobuf:"bytes,6,opt,name=units,proto3" json:"units,omitempty"`
+	// Resource type category, i.e. "gpu"
+	Type string `protobuf:"bytes,8,opt,name=type,proto3" json:"type,omitempty"`
 	// Generate alert when more than threshold percentage of resource is used
 	AlertThreshold int32 `protobuf:"varint,7,opt,name=alert_threshold,json=alertThreshold,proto3" json:"alert_threshold,omitempty"`
 }
@@ -221,6 +222,46 @@ func (m *InfraResource) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_InfraResource proto.InternalMessageInfo
 
+type GPUUsage struct {
+	// GPU information
+	Gpu *GPUResource `protobuf:"bytes,1,opt,name=gpu,proto3" json:"gpu,omitempty"`
+	// GPU Usage
+	Usage *InfraResource `protobuf:"bytes,2,opt,name=usage,proto3" json:"usage,omitempty"`
+}
+
+func (m *GPUUsage) Reset()         { *m = GPUUsage{} }
+func (m *GPUUsage) String() string { return proto.CompactTextString(m) }
+func (*GPUUsage) ProtoMessage()    {}
+func (*GPUUsage) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1d4658e0b2956cb2, []int{4}
+}
+func (m *GPUUsage) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GPUUsage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GPUUsage.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GPUUsage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GPUUsage.Merge(m, src)
+}
+func (m *GPUUsage) XXX_Size() int {
+	return m.Size()
+}
+func (m *GPUUsage) XXX_DiscardUnknown() {
+	xxx_messageInfo_GPUUsage.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GPUUsage proto.InternalMessageInfo
+
 // NodeInfo
 //
 // NodeInfo is information about a Kubernetes node
@@ -231,13 +272,17 @@ type NodeInfo struct {
 	Allocatable map[string]*Udec64 `protobuf:"bytes,2,rep,name=allocatable,proto3" json:"allocatable,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Capacity of underlying resources on the node
 	Capacity map[string]*Udec64 `protobuf:"bytes,3,rep,name=capacity,proto3" json:"capacity,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	// list of gpus
+	Gpus []*GPUResource `protobuf:"bytes,4,rep,name=gpus,proto3" json:"gpus,omitempty"`
+	// GPU software information
+	GpuSoftware *GPUSoftwareInfo `protobuf:"bytes,5,opt,name=gpu_software,json=gpuSoftware,proto3" json:"gpu_software,omitempty"`
 }
 
 func (m *NodeInfo) Reset()         { *m = NodeInfo{} }
 func (m *NodeInfo) String() string { return proto.CompactTextString(m) }
 func (*NodeInfo) ProtoMessage()    {}
 func (*NodeInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1d4658e0b2956cb2, []int{4}
+	return fileDescriptor_1d4658e0b2956cb2, []int{5}
 }
 func (m *NodeInfo) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -266,6 +311,46 @@ func (m *NodeInfo) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_NodeInfo proto.InternalMessageInfo
 
+type GPUSoftwareInfo struct {
+	// driver version
+	DriverVersion string `protobuf:"bytes,1,opt,name=driver_version,json=driverVersion,proto3" json:"driver_version,omitempty"`
+	// Runtime version
+	RuntimeVersion string `protobuf:"bytes,2,opt,name=runtime_version,json=runtimeVersion,proto3" json:"runtime_version,omitempty"`
+}
+
+func (m *GPUSoftwareInfo) Reset()         { *m = GPUSoftwareInfo{} }
+func (m *GPUSoftwareInfo) String() string { return proto.CompactTextString(m) }
+func (*GPUSoftwareInfo) ProtoMessage()    {}
+func (*GPUSoftwareInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_1d4658e0b2956cb2, []int{6}
+}
+func (m *GPUSoftwareInfo) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *GPUSoftwareInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_GPUSoftwareInfo.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *GPUSoftwareInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GPUSoftwareInfo.Merge(m, src)
+}
+func (m *GPUSoftwareInfo) XXX_Size() int {
+	return m.Size()
+}
+func (m *GPUSoftwareInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_GPUSoftwareInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GPUSoftwareInfo proto.InternalMessageInfo
+
 // InfraResources
 //
 // InfraResources is infomation about infrastructure resources.
@@ -278,7 +363,7 @@ func (m *InfraResources) Reset()         { *m = InfraResources{} }
 func (m *InfraResources) String() string { return proto.CompactTextString(m) }
 func (*InfraResources) ProtoMessage()    {}
 func (*InfraResources) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1d4658e0b2956cb2, []int{5}
+	return fileDescriptor_1d4658e0b2956cb2, []int{7}
 }
 func (m *InfraResources) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -327,7 +412,7 @@ func (m *InfraResourcesSnapshot) Reset()         { *m = InfraResourcesSnapshot{}
 func (m *InfraResourcesSnapshot) String() string { return proto.CompactTextString(m) }
 func (*InfraResourcesSnapshot) ProtoMessage()    {}
 func (*InfraResourcesSnapshot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_1d4658e0b2956cb2, []int{6}
+	return fileDescriptor_1d4658e0b2956cb2, []int{8}
 }
 func (m *InfraResourcesSnapshot) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -361,9 +446,11 @@ func init() {
 	proto.RegisterType((*IpAddr)(nil), "edgeproto.IpAddr")
 	proto.RegisterType((*VmInfo)(nil), "edgeproto.VmInfo")
 	proto.RegisterType((*InfraResource)(nil), "edgeproto.InfraResource")
+	proto.RegisterType((*GPUUsage)(nil), "edgeproto.GPUUsage")
 	proto.RegisterType((*NodeInfo)(nil), "edgeproto.NodeInfo")
 	proto.RegisterMapType((map[string]*Udec64)(nil), "edgeproto.NodeInfo.AllocatableEntry")
 	proto.RegisterMapType((map[string]*Udec64)(nil), "edgeproto.NodeInfo.CapacityEntry")
+	proto.RegisterType((*GPUSoftwareInfo)(nil), "edgeproto.GPUSoftwareInfo")
 	proto.RegisterType((*InfraResources)(nil), "edgeproto.InfraResources")
 	proto.RegisterType((*InfraResourcesSnapshot)(nil), "edgeproto.InfraResourcesSnapshot")
 }
@@ -371,52 +458,59 @@ func init() {
 func init() { proto.RegisterFile("infraresources.proto", fileDescriptor_1d4658e0b2956cb2) }
 
 var fileDescriptor_1d4658e0b2956cb2 = []byte{
-	// 709 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x54, 0x4d, 0x6f, 0xd3, 0x4a,
-	0x14, 0x8d, 0xf3, 0xf5, 0x9a, 0x9b, 0xa6, 0xed, 0x1b, 0xf5, 0x55, 0x56, 0xd4, 0xe7, 0x97, 0x67,
-	0x21, 0x1a, 0x36, 0xa9, 0x54, 0x10, 0x0a, 0x45, 0x15, 0xb4, 0x15, 0x15, 0x11, 0xa2, 0x12, 0x06,
-	0xba, 0x8d, 0xa6, 0xf6, 0x24, 0xb5, 0x6a, 0x7b, 0x86, 0x99, 0x49, 0xd4, 0xfc, 0x04, 0x76, 0xfc,
-	0xac, 0x88, 0x55, 0x97, 0xac, 0xf8, 0x68, 0x77, 0xfc, 0x0a, 0x34, 0xe3, 0x71, 0xea, 0xd0, 0x22,
-	0x90, 0x60, 0x77, 0xef, 0xb9, 0xe7, 0x1c, 0xdf, 0xeb, 0x7b, 0x6d, 0x58, 0x0d, 0x93, 0x01, 0xc7,
-	0x9c, 0x08, 0x3a, 0xe2, 0x3e, 0x11, 0x1d, 0xc6, 0xa9, 0xa4, 0xa8, 0x46, 0x82, 0x21, 0xd1, 0x61,
-	0xf3, 0x5f, 0x49, 0x69, 0x24, 0x36, 0x75, 0x32, 0x24, 0xc9, 0x2c, 0x48, 0x99, 0xcd, 0xd5, 0x21,
-	0x1d, 0x52, 0x1d, 0x6e, 0xaa, 0xc8, 0xa0, 0x0d, 0x3f, 0x1a, 0x09, 0x49, 0x78, 0x96, 0x06, 0xc4,
-	0x0f, 0x63, 0x1c, 0x99, 0xb4, 0x86, 0x19, 0xcb, 0x2a, 0x98, 0xb1, 0x30, 0x11, 0x32, 0x4d, 0xdd,
-	0xb7, 0x16, 0x34, 0xf6, 0x69, 0x22, 0x71, 0x98, 0x10, 0xde, 0x4b, 0x06, 0x14, 0x21, 0x28, 0x27,
-	0x38, 0x26, 0xb6, 0xd5, 0xb2, 0xda, 0x35, 0x4f, 0xc7, 0x0a, 0x93, 0x13, 0x46, 0xec, 0x62, 0x8a,
-	0xa9, 0x18, 0xad, 0x41, 0x55, 0x48, 0x2c, 0x47, 0xc2, 0x2e, 0x69, 0xd4, 0x64, 0x68, 0x1d, 0x6a,
-	0xa6, 0x97, 0x90, 0xd9, 0x65, 0x5d, 0xba, 0x02, 0x50, 0x13, 0x16, 0x38, 0x11, 0x12, 0x73, 0x29,
-	0xec, 0x4a, 0xcb, 0x6a, 0x97, 0xbc, 0x59, 0xee, 0x3e, 0x85, 0x6a, 0x8f, 0xed, 0x06, 0x01, 0x47,
-	0x0e, 0x00, 0x39, 0x93, 0x84, 0x27, 0x38, 0xea, 0x31, 0xd3, 0x49, 0x0e, 0x51, 0xf5, 0x30, 0x99,
-	0xd5, 0xd3, 0xae, 0x72, 0x88, 0xfb, 0xc9, 0x82, 0xea, 0x51, 0xfc, 0x47, 0xc6, 0x69, 0x41, 0x5d,
-	0x2f, 0xec, 0x20, 0xc2, 0x63, 0xca, 0xcd, 0x40, 0x79, 0x08, 0x3d, 0x80, 0x7a, 0xc8, 0x70, 0x10,
-	0x70, 0x22, 0x04, 0x51, 0x53, 0x95, 0xda, 0xf5, 0xad, 0xbf, 0x3b, 0xb3, 0x85, 0x76, 0xd2, 0xa1,
-	0xf6, 0xca, 0xd3, 0x8f, 0xff, 0x15, 0xbc, 0x3c, 0x17, 0x75, 0x01, 0xfc, 0xec, 0xe5, 0x0b, 0xbb,
-	0xaa, 0x95, 0x76, 0x4e, 0x39, 0xb7, 0x19, 0x2f, 0xc7, 0x75, 0xbf, 0x5a, 0xd0, 0xe8, 0xa9, 0x26,
-	0x3c, 0x73, 0x48, 0x37, 0x0e, 0xba, 0x0a, 0x95, 0x31, 0x8e, 0x46, 0xe9, 0xa4, 0x65, 0x2f, 0x4d,
-	0xd0, 0x6d, 0x58, 0xd6, 0xfd, 0xf7, 0x63, 0x7c, 0xd6, 0x4f, 0xeb, 0x25, 0x5d, 0x6f, 0x68, 0xf8,
-	0x39, 0x3e, 0x3b, 0xca, 0x78, 0x6f, 0x46, 0x54, 0xe6, 0x79, 0xe5, 0x94, 0xa7, 0xe1, 0x19, 0xaf,
-	0x05, 0xf5, 0x80, 0x08, 0x9f, 0x87, 0x4c, 0x86, 0x34, 0xd1, 0x6b, 0xad, 0x79, 0x79, 0x48, 0xf5,
-	0x31, 0x4a, 0x42, 0xa9, 0x46, 0x54, 0xb5, 0x34, 0x41, 0x1b, 0xb0, 0x8c, 0x23, 0xc2, 0x65, 0x5f,
-	0x9e, 0x70, 0x22, 0x4e, 0x68, 0x14, 0xd8, 0x7f, 0xb5, 0xac, 0x76, 0xc5, 0x5b, 0xd2, 0xf0, 0xab,
-	0x0c, 0x75, 0xa7, 0x45, 0x58, 0x38, 0xa4, 0x01, 0xf9, 0xe1, 0x42, 0x0f, 0xa0, 0x8e, 0xa3, 0x88,
-	0xfa, 0x58, 0xe2, 0xe3, 0x48, 0x4d, 0xab, 0x5e, 0xe4, 0xad, 0xdc, 0x8b, 0xcc, 0xd4, 0x9d, 0xdd,
-	0x2b, 0xda, 0x93, 0x44, 0xf2, 0x89, 0x97, 0x17, 0xa2, 0x1d, 0x58, 0xf0, 0x31, 0xc3, 0x7e, 0x28,
-	0x27, 0x76, 0x49, 0x9b, 0xfc, 0x7f, 0x93, 0xc9, 0xbe, 0xe1, 0xa4, 0x0e, 0x33, 0x49, 0xf3, 0x05,
-	0xac, 0x7c, 0xef, 0x8f, 0x56, 0xa0, 0x74, 0x4a, 0x26, 0xa6, 0x5b, 0x15, 0xa2, 0x8d, 0xfc, 0x52,
-	0xe6, 0x2f, 0xe5, 0x75, 0x40, 0xfc, 0xfb, 0xf7, 0xcc, 0x9e, 0xb6, 0x8b, 0x5d, 0xab, 0x79, 0x08,
-	0x8d, 0xb9, 0xa7, 0xfd, 0xa6, 0x9f, 0xfb, 0x10, 0x96, 0xe6, 0xce, 0x46, 0xa0, 0x3b, 0x50, 0x1a,
-	0xc7, 0xc2, 0xb6, 0xae, 0x9d, 0x6d, 0xfa, 0x01, 0x99, 0xb3, 0x55, 0x1c, 0xf7, 0x7d, 0x11, 0xd6,
-	0xe6, 0xd5, 0x2f, 0x13, 0xcc, 0xc4, 0x09, 0x95, 0x68, 0x1b, 0x16, 0x59, 0x84, 0xe5, 0x80, 0xf2,
-	0xb8, 0xff, 0x0b, 0x76, 0xf5, 0x8c, 0x7c, 0x14, 0x0b, 0xb4, 0x05, 0xe5, 0x30, 0x19, 0x50, 0xb3,
-	0xb6, 0xfc, 0xfd, 0xcf, 0x3d, 0xcc, 0x48, 0x35, 0x17, 0x3d, 0x86, 0xec, 0x8f, 0xd7, 0x57, 0x7f,
-	0x33, 0x61, 0xd6, 0xf5, 0x4f, 0xfe, 0xe3, 0x49, 0xeb, 0xcf, 0xc8, 0xc4, 0x28, 0x17, 0x8d, 0xa2,
-	0xa7, 0x04, 0x68, 0x07, 0x16, 0xc7, 0x71, 0x1f, 0x33, 0x66, 0x0c, 0xca, 0xd7, 0x0c, 0x76, 0x19,
-	0x53, 0xd4, 0x2b, 0x03, 0x18, 0xc7, 0x06, 0x13, 0xe8, 0x11, 0x34, 0x4e, 0xbb, 0x22, 0xa7, 0xaf,
-	0xfc, 0x5c, 0x5f, 0x3f, 0xed, 0x8a, 0xcc, 0x60, 0x6f, 0x7d, 0xfa, 0xc5, 0x29, 0x4c, 0x2f, 0x1c,
-	0xeb, 0xfc, 0xc2, 0xb1, 0x3e, 0x5f, 0x38, 0xd6, 0xbb, 0x4b, 0xa7, 0x70, 0x7e, 0xe9, 0x14, 0x3e,
-	0x5c, 0x3a, 0x85, 0xe3, 0xaa, 0xb6, 0xb8, 0xfb, 0x2d, 0x00, 0x00, 0xff, 0xff, 0x4a, 0x16, 0x05,
-	0x51, 0x2e, 0x06, 0x00, 0x00,
+	// 829 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x55, 0xdd, 0x6e, 0xdc, 0x44,
+	0x14, 0x5e, 0xc7, 0xde, 0x65, 0x73, 0x9c, 0x4d, 0xca, 0x28, 0x44, 0xd6, 0xaa, 0x5a, 0x16, 0x0b,
+	0xe8, 0xc2, 0xc5, 0x22, 0x05, 0x84, 0x42, 0x51, 0x05, 0x69, 0x45, 0xcb, 0x0a, 0x51, 0x15, 0x97,
+	0xe4, 0x76, 0x35, 0xb5, 0x67, 0x1d, 0x2b, 0xb6, 0x67, 0x98, 0x19, 0x2f, 0xd9, 0x47, 0xe0, 0x8e,
+	0x77, 0xe1, 0x25, 0x22, 0xae, 0x7a, 0xc9, 0x15, 0x3f, 0xc9, 0x7b, 0x20, 0x34, 0x3f, 0xde, 0xd8,
+	0x69, 0x22, 0x90, 0xe8, 0xdd, 0x9c, 0xef, 0x7c, 0xdf, 0xa7, 0x39, 0x3f, 0x1e, 0xc3, 0x6e, 0x56,
+	0x2e, 0x38, 0xe6, 0x44, 0xd0, 0x8a, 0xc7, 0x44, 0x4c, 0x19, 0xa7, 0x92, 0xa2, 0x4d, 0x92, 0xa4,
+	0x44, 0x1f, 0x87, 0xbb, 0x29, 0x4d, 0xa9, 0x3e, 0x7e, 0xa4, 0x4e, 0x86, 0x30, 0x1c, 0xc4, 0x79,
+	0x25, 0x24, 0xe1, 0x75, 0x98, 0x90, 0x38, 0x2b, 0x70, 0x5e, 0x87, 0x98, 0xb1, 0xac, 0x14, 0xd2,
+	0x86, 0x3b, 0xd7, 0xec, 0xc3, 0x9f, 0x1c, 0x18, 0x3c, 0xa2, 0xa5, 0xc4, 0x59, 0x49, 0xf8, 0xac,
+	0x5c, 0x50, 0x84, 0xc0, 0x2b, 0x71, 0x41, 0x02, 0x67, 0xec, 0x4c, 0x36, 0x23, 0x7d, 0x56, 0x98,
+	0x5c, 0x31, 0x12, 0x6c, 0x18, 0x4c, 0x9d, 0xd1, 0x1e, 0xf4, 0x84, 0xc4, 0xb2, 0x12, 0x81, 0xab,
+	0x51, 0x1b, 0xa1, 0xbb, 0xb0, 0x69, 0x6f, 0x94, 0xb1, 0xc0, 0xd3, 0xa9, 0x2b, 0x00, 0x0d, 0xa1,
+	0xcf, 0x89, 0x90, 0x98, 0x4b, 0x11, 0x74, 0xc7, 0xce, 0xc4, 0x8d, 0xd6, 0x71, 0xf8, 0x35, 0xf4,
+	0x66, 0xec, 0x30, 0x49, 0x38, 0x1a, 0x01, 0x90, 0x33, 0x49, 0x78, 0x89, 0xf3, 0x19, 0xb3, 0x37,
+	0x69, 0x20, 0x2a, 0x9f, 0x95, 0xeb, 0xbc, 0xb9, 0x55, 0x03, 0x09, 0xff, 0x70, 0xa0, 0x77, 0x5c,
+	0xbc, 0x96, 0x72, 0xc6, 0xe0, 0xeb, 0xb9, 0x3c, 0xce, 0xf1, 0x92, 0x72, 0x5b, 0x50, 0x13, 0x42,
+	0x9f, 0x81, 0x9f, 0x31, 0x9c, 0x24, 0x9c, 0x08, 0x41, 0x54, 0x55, 0xee, 0xc4, 0xdf, 0x7f, 0x73,
+	0xba, 0x9e, 0xdb, 0xd4, 0x14, 0xf5, 0xd0, 0x3b, 0xff, 0xfd, 0xed, 0x4e, 0xd4, 0xe4, 0xa2, 0x03,
+	0x80, 0xb8, 0x6e, 0xbe, 0x08, 0x7a, 0x5a, 0x19, 0x34, 0x94, 0xad, 0xc9, 0x44, 0x0d, 0x6e, 0xf8,
+	0xb7, 0x03, 0x83, 0x99, 0xba, 0x44, 0x64, 0x07, 0x7a, 0x63, 0xa1, 0xbb, 0xd0, 0x5d, 0xe2, 0xbc,
+	0x32, 0x95, 0x7a, 0x91, 0x09, 0xd0, 0xfb, 0xb0, 0xa3, 0xef, 0x3f, 0x2f, 0xf0, 0xd9, 0xdc, 0xe4,
+	0x5d, 0x9d, 0x1f, 0x68, 0xf8, 0x5b, 0x7c, 0x76, 0x5c, 0xf3, 0x7e, 0xa8, 0xa8, 0x6c, 0xf2, 0x3c,
+	0xc3, 0xd3, 0xf0, 0x9a, 0x37, 0x06, 0x3f, 0x21, 0x22, 0xe6, 0x19, 0x93, 0x19, 0x2d, 0xf5, 0x58,
+	0x37, 0xa3, 0x26, 0xa4, 0xee, 0x51, 0x95, 0x99, 0x54, 0x25, 0xaa, 0x9c, 0x09, 0xd6, 0x63, 0xe8,
+	0x37, 0xc6, 0x70, 0x0f, 0x76, 0x70, 0x4e, 0xb8, 0x9c, 0xcb, 0x13, 0x4e, 0xc4, 0x09, 0xcd, 0x93,
+	0xe0, 0x8d, 0xb1, 0x33, 0xe9, 0x46, 0xdb, 0x1a, 0xfe, 0xbe, 0x46, 0xc3, 0x04, 0xfa, 0x4f, 0x9e,
+	0x1d, 0x1d, 0x09, 0x9c, 0x12, 0x34, 0x01, 0x37, 0x65, 0x95, 0xae, 0xdc, 0xdf, 0xdf, 0x6b, 0xf4,
+	0xef, 0xc9, 0xb3, 0xa3, 0xba, 0x3f, 0x91, 0xa2, 0xa0, 0x29, 0x74, 0x2b, 0x25, 0xd1, 0x0d, 0x69,
+	0xf7, 0xba, 0xd5, 0xcd, 0xc8, 0xd0, 0xc2, 0x5f, 0x5c, 0xe8, 0x3f, 0xa5, 0x09, 0xb9, 0x75, 0x95,
+	0x1e, 0x83, 0x8f, 0xf3, 0x9c, 0xc6, 0x58, 0xe2, 0x17, 0xb9, 0xb2, 0x55, 0x23, 0x7c, 0xb7, 0x61,
+	0x5b, 0xab, 0xa7, 0x87, 0x57, 0xb4, 0xaf, 0x4a, 0xc9, 0x57, 0x51, 0x53, 0x88, 0x1e, 0x40, 0x3f,
+	0xc6, 0x0c, 0xc7, 0x99, 0x5c, 0x05, 0xae, 0x36, 0x79, 0xe7, 0x26, 0x93, 0x47, 0x96, 0x63, 0x1c,
+	0xd6, 0x12, 0xf4, 0x21, 0x78, 0x29, 0xab, 0x44, 0xe0, 0x69, 0xe9, 0x6d, 0x2d, 0xd0, 0x1c, 0xf4,
+	0x00, 0xb6, 0x52, 0x56, 0xcd, 0x05, 0x5d, 0xc8, 0x1f, 0x31, 0x27, 0x7a, 0x5e, 0xfe, 0xfe, 0xb0,
+	0xad, 0x79, 0x6e, 0xb3, 0x7a, 0xf1, 0xfc, 0x94, 0x55, 0x35, 0x30, 0xfc, 0x0e, 0xee, 0x5c, 0x2f,
+	0x05, 0xdd, 0x01, 0xf7, 0x94, 0xac, 0x6c, 0x63, 0xd4, 0x11, 0xdd, 0x6b, 0x6e, 0x5e, 0xfb, 0x73,
+	0x38, 0x4a, 0x48, 0xfc, 0xe9, 0x27, 0x76, 0x19, 0xef, 0x6f, 0x1c, 0x38, 0xc3, 0xa7, 0x30, 0x68,
+	0x15, 0xf6, 0x3f, 0xfd, 0x42, 0x0c, 0x3b, 0xd7, 0x4a, 0x40, 0xef, 0xc1, 0x76, 0xc2, 0xb3, 0x25,
+	0xe1, 0xf3, 0x25, 0xe1, 0x42, 0xad, 0xa9, 0x31, 0x1f, 0x18, 0xf4, 0xd8, 0x80, 0x6a, 0xfd, 0x78,
+	0x55, 0xca, 0xac, 0x20, 0x6b, 0x9e, 0x79, 0x24, 0xb6, 0x2d, 0x6c, 0x89, 0xe1, 0xe7, 0xb0, 0xdd,
+	0x5a, 0x18, 0x81, 0x3e, 0x00, 0x77, 0x59, 0x88, 0xc0, 0x79, 0xe5, 0xf3, 0x37, 0x0f, 0x91, 0xfd,
+	0xfc, 0x15, 0x27, 0xfc, 0x75, 0x03, 0xf6, 0xda, 0xea, 0xe7, 0x25, 0x66, 0xe2, 0x84, 0x4a, 0x74,
+	0x1f, 0xb6, 0x58, 0x8e, 0xe5, 0x82, 0xf2, 0x62, 0xfe, 0x1f, 0xec, 0xfc, 0x9a, 0x7c, 0x5c, 0x08,
+	0xb4, 0x0f, 0x5e, 0x56, 0x2e, 0xa8, 0x5d, 0xc2, 0x5b, 0x77, 0xdb, 0x4a, 0x35, 0x17, 0x7d, 0x09,
+	0xf5, 0xff, 0x63, 0xae, 0x7e, 0x13, 0xc2, 0x2e, 0xdf, 0x5b, 0xcd, 0x47, 0xc8, 0xe4, 0xbf, 0x21,
+	0x2b, 0xab, 0xdc, 0xb2, 0x8a, 0x99, 0x12, 0xa8, 0x75, 0x5a, 0x16, 0x73, 0xcc, 0x98, 0x35, 0xf0,
+	0x5e, 0x31, 0x38, 0x64, 0x4c, 0x51, 0xaf, 0x0c, 0x60, 0x59, 0x58, 0x4c, 0xa0, 0x2f, 0x60, 0x70,
+	0x7a, 0x20, 0x1a, 0xfa, 0xee, 0xbf, 0xeb, 0xfd, 0xd3, 0x03, 0x51, 0x1b, 0x3c, 0xbc, 0x7b, 0xfe,
+	0xd7, 0xa8, 0x73, 0x7e, 0x31, 0x72, 0x5e, 0x5e, 0x8c, 0x9c, 0x3f, 0x2f, 0x46, 0xce, 0xcf, 0x97,
+	0xa3, 0xce, 0xcb, 0xcb, 0x51, 0xe7, 0xb7, 0xcb, 0x51, 0xe7, 0x45, 0x4f, 0x5b, 0x7c, 0xfc, 0x4f,
+	0x00, 0x00, 0x00, 0xff, 0xff, 0x53, 0x40, 0xd4, 0x60, 0x5d, 0x07, 0x00, 0x00,
 }
 
 func (m *ContainerInfo) Marshal() (dAtA []byte, err error) {
@@ -611,6 +705,13 @@ func (m *InfraResource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if len(m.Type) > 0 {
+		i -= len(m.Type)
+		copy(dAtA[i:], m.Type)
+		i = encodeVarintInfraresources(dAtA, i, uint64(len(m.Type)))
+		i--
+		dAtA[i] = 0x42
+	}
 	if m.AlertThreshold != 0 {
 		i = encodeVarintInfraresources(dAtA, i, uint64(m.AlertThreshold))
 		i--
@@ -655,6 +756,53 @@ func (m *InfraResource) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *GPUUsage) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GPUUsage) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GPUUsage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Usage != nil {
+		{
+			size, err := m.Usage.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintInfraresources(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Gpu != nil {
+		{
+			size, err := m.Gpu.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintInfraresources(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func (m *NodeInfo) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -675,6 +823,32 @@ func (m *NodeInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
+	if m.GpuSoftware != nil {
+		{
+			size, err := m.GpuSoftware.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintInfraresources(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.Gpus) > 0 {
+		for iNdEx := len(m.Gpus) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Gpus[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintInfraresources(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
 	if len(m.Capacity) > 0 {
 		for k := range m.Capacity {
 			v := m.Capacity[k]
@@ -731,6 +905,43 @@ func (m *NodeInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.Name)
 		copy(dAtA[i:], m.Name)
 		i = encodeVarintInfraresources(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *GPUSoftwareInfo) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *GPUSoftwareInfo) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *GPUSoftwareInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.RuntimeVersion) > 0 {
+		i -= len(m.RuntimeVersion)
+		copy(dAtA[i:], m.RuntimeVersion)
+		i = encodeVarintInfraresources(dAtA, i, uint64(len(m.RuntimeVersion)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.DriverVersion) > 0 {
+		i -= len(m.DriverVersion)
+		copy(dAtA[i:], m.DriverVersion)
+		i = encodeVarintInfraresources(dAtA, i, uint64(len(m.DriverVersion)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -1168,6 +1379,10 @@ func (m *InfraResource) CopyInFields(src *InfraResource) int {
 		m.AlertThreshold = src.AlertThreshold
 		changed++
 	}
+	if m.Type != src.Type {
+		m.Type = src.Type
+		changed++
+	}
 	return changed
 }
 
@@ -1179,6 +1394,7 @@ func (m *InfraResource) DeepCopyIn(src *InfraResource) {
 	m.Description = src.Description
 	m.Units = src.Units
 	m.AlertThreshold = src.AlertThreshold
+	m.Type = src.Type
 }
 
 // Helper method to check that enums have valid values
@@ -1189,10 +1405,161 @@ func (m *InfraResource) ValidateEnums() error {
 func (s *InfraResource) ClearTagged(tags map[string]struct{}) {
 }
 
+func (m *GPUUsage) Clone() *GPUUsage {
+	cp := &GPUUsage{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *GPUUsage) CopyInFields(src *GPUUsage) int {
+	changed := 0
+	if src.Gpu != nil {
+		if m.Gpu == nil {
+			m.Gpu = &GPUResource{}
+		}
+		if m.Gpu.ModelId != src.Gpu.ModelId {
+			m.Gpu.ModelId = src.Gpu.ModelId
+			changed++
+		}
+		if m.Gpu.Count != src.Gpu.Count {
+			m.Gpu.Count = src.Gpu.Count
+			changed++
+		}
+		if m.Gpu.Vendor != src.Gpu.Vendor {
+			m.Gpu.Vendor = src.Gpu.Vendor
+			changed++
+		}
+		if m.Gpu.Memory != src.Gpu.Memory {
+			m.Gpu.Memory = src.Gpu.Memory
+			changed++
+		}
+		if m.Gpu.InUse != src.Gpu.InUse {
+			m.Gpu.InUse = src.Gpu.InUse
+			changed++
+		}
+	} else if m.Gpu != nil {
+		m.Gpu = nil
+		changed++
+	}
+	if src.Usage != nil {
+		if m.Usage == nil {
+			m.Usage = &InfraResource{}
+		}
+		if m.Usage.Name != src.Usage.Name {
+			m.Usage.Name = src.Usage.Name
+			changed++
+		}
+		if m.Usage.Value != src.Usage.Value {
+			m.Usage.Value = src.Usage.Value
+			changed++
+		}
+		if m.Usage.InfraMaxValue != src.Usage.InfraMaxValue {
+			m.Usage.InfraMaxValue = src.Usage.InfraMaxValue
+			changed++
+		}
+		if m.Usage.QuotaMaxValue != src.Usage.QuotaMaxValue {
+			m.Usage.QuotaMaxValue = src.Usage.QuotaMaxValue
+			changed++
+		}
+		if m.Usage.Description != src.Usage.Description {
+			m.Usage.Description = src.Usage.Description
+			changed++
+		}
+		if m.Usage.Units != src.Usage.Units {
+			m.Usage.Units = src.Usage.Units
+			changed++
+		}
+		if m.Usage.AlertThreshold != src.Usage.AlertThreshold {
+			m.Usage.AlertThreshold = src.Usage.AlertThreshold
+			changed++
+		}
+		if m.Usage.Type != src.Usage.Type {
+			m.Usage.Type = src.Usage.Type
+			changed++
+		}
+	} else if m.Usage != nil {
+		m.Usage = nil
+		changed++
+	}
+	return changed
+}
+
+func (m *GPUUsage) DeepCopyIn(src *GPUUsage) {
+	if src.Gpu != nil {
+		var tmp_Gpu GPUResource
+		tmp_Gpu.DeepCopyIn(src.Gpu)
+		m.Gpu = &tmp_Gpu
+	} else {
+		m.Gpu = nil
+	}
+	if src.Usage != nil {
+		var tmp_Usage InfraResource
+		tmp_Usage.DeepCopyIn(src.Usage)
+		m.Usage = &tmp_Usage
+	} else {
+		m.Usage = nil
+	}
+}
+
+// Helper method to check that enums have valid values
+func (m *GPUUsage) ValidateEnums() error {
+	if m.Gpu != nil {
+		if err := m.Gpu.ValidateEnums(); err != nil {
+			return err
+		}
+	}
+	if m.Usage != nil {
+		if err := m.Usage.ValidateEnums(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *GPUUsage) ClearTagged(tags map[string]struct{}) {
+	if s.Gpu != nil {
+		s.Gpu.ClearTagged(tags)
+	}
+	if s.Usage != nil {
+		s.Usage.ClearTagged(tags)
+	}
+}
+
 func (m *NodeInfo) Clone() *NodeInfo {
 	cp := &NodeInfo{}
 	cp.DeepCopyIn(m)
 	return cp
+}
+
+func (m *NodeInfo) AddGpus(vals ...*GPUResource) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Gpus {
+		cur[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKey().GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Gpus = append(m.Gpus, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *NodeInfo) RemoveGpus(vals ...*GPUResource) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKey().GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Gpus); i >= 0; i-- {
+		if _, found := remove[m.Gpus[i].GetKey().GetKeyString()]; found {
+			m.Gpus = append(m.Gpus[:i], m.Gpus[i+1:]...)
+			changes++
+		}
+	}
+	return changes
 }
 
 func (m *NodeInfo) CopyInFields(src *NodeInfo) int {
@@ -1252,6 +1619,38 @@ func (m *NodeInfo) CopyInFields(src *NodeInfo) int {
 		m.Capacity = nil
 		changed++
 	}
+	if src.Gpus != nil {
+		if updateListAction == "add" {
+			changed += m.AddGpus(src.Gpus...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveGpus(src.Gpus...)
+		} else {
+			m.Gpus = make([]*GPUResource, 0)
+			for k0, _ := range src.Gpus {
+				m.Gpus = append(m.Gpus, src.Gpus[k0].Clone())
+			}
+			changed++
+		}
+	} else if m.Gpus != nil {
+		m.Gpus = nil
+		changed++
+	}
+	if src.GpuSoftware != nil {
+		if m.GpuSoftware == nil {
+			m.GpuSoftware = &GPUSoftwareInfo{}
+		}
+		if m.GpuSoftware.DriverVersion != src.GpuSoftware.DriverVersion {
+			m.GpuSoftware.DriverVersion = src.GpuSoftware.DriverVersion
+			changed++
+		}
+		if m.GpuSoftware.RuntimeVersion != src.GpuSoftware.RuntimeVersion {
+			m.GpuSoftware.RuntimeVersion = src.GpuSoftware.RuntimeVersion
+			changed++
+		}
+	} else if m.GpuSoftware != nil {
+		m.GpuSoftware = nil
+		changed++
+	}
 	return changed
 }
 
@@ -1277,14 +1676,81 @@ func (m *NodeInfo) DeepCopyIn(src *NodeInfo) {
 	} else {
 		m.Capacity = nil
 	}
+	if src.Gpus != nil {
+		m.Gpus = make([]*GPUResource, len(src.Gpus), len(src.Gpus))
+		for ii, s := range src.Gpus {
+			var tmp_s GPUResource
+			tmp_s.DeepCopyIn(s)
+			m.Gpus[ii] = &tmp_s
+		}
+	} else {
+		m.Gpus = nil
+	}
+	if src.GpuSoftware != nil {
+		var tmp_GpuSoftware GPUSoftwareInfo
+		tmp_GpuSoftware.DeepCopyIn(src.GpuSoftware)
+		m.GpuSoftware = &tmp_GpuSoftware
+	} else {
+		m.GpuSoftware = nil
+	}
 }
 
 // Helper method to check that enums have valid values
 func (m *NodeInfo) ValidateEnums() error {
+	for _, e := range m.Gpus {
+		if err := e.ValidateEnums(); err != nil {
+			return err
+		}
+	}
+	if m.GpuSoftware != nil {
+		if err := m.GpuSoftware.ValidateEnums(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *NodeInfo) ClearTagged(tags map[string]struct{}) {
+	if s.Gpus != nil {
+		for ii := 0; ii < len(s.Gpus); ii++ {
+			s.Gpus[ii].ClearTagged(tags)
+		}
+	}
+	if s.GpuSoftware != nil {
+		s.GpuSoftware.ClearTagged(tags)
+	}
+}
+
+func (m *GPUSoftwareInfo) Clone() *GPUSoftwareInfo {
+	cp := &GPUSoftwareInfo{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *GPUSoftwareInfo) CopyInFields(src *GPUSoftwareInfo) int {
+	changed := 0
+	if m.DriverVersion != src.DriverVersion {
+		m.DriverVersion = src.DriverVersion
+		changed++
+	}
+	if m.RuntimeVersion != src.RuntimeVersion {
+		m.RuntimeVersion = src.RuntimeVersion
+		changed++
+	}
+	return changed
+}
+
+func (m *GPUSoftwareInfo) DeepCopyIn(src *GPUSoftwareInfo) {
+	m.DriverVersion = src.DriverVersion
+	m.RuntimeVersion = src.RuntimeVersion
+}
+
+// Helper method to check that enums have valid values
+func (m *GPUSoftwareInfo) ValidateEnums() error {
+	return nil
+}
+
+func (s *GPUSoftwareInfo) ClearTagged(tags map[string]struct{}) {
 }
 
 func (m *InfraResources) Clone() *InfraResources {
@@ -1835,6 +2301,27 @@ func (m *InfraResource) Size() (n int) {
 	if m.AlertThreshold != 0 {
 		n += 1 + sovInfraresources(uint64(m.AlertThreshold))
 	}
+	l = len(m.Type)
+	if l > 0 {
+		n += 1 + l + sovInfraresources(uint64(l))
+	}
+	return n
+}
+
+func (m *GPUUsage) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Gpu != nil {
+		l = m.Gpu.Size()
+		n += 1 + l + sovInfraresources(uint64(l))
+	}
+	if m.Usage != nil {
+		l = m.Usage.Size()
+		n += 1 + l + sovInfraresources(uint64(l))
+	}
 	return n
 }
 
@@ -1873,6 +2360,33 @@ func (m *NodeInfo) Size() (n int) {
 			mapEntrySize := 1 + len(k) + sovInfraresources(uint64(len(k))) + l
 			n += mapEntrySize + 1 + sovInfraresources(uint64(mapEntrySize))
 		}
+	}
+	if len(m.Gpus) > 0 {
+		for _, e := range m.Gpus {
+			l = e.Size()
+			n += 1 + l + sovInfraresources(uint64(l))
+		}
+	}
+	if m.GpuSoftware != nil {
+		l = m.GpuSoftware.Size()
+		n += 1 + l + sovInfraresources(uint64(l))
+	}
+	return n
+}
+
+func (m *GPUSoftwareInfo) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.DriverVersion)
+	if l > 0 {
+		n += 1 + l + sovInfraresources(uint64(l))
+	}
+	l = len(m.RuntimeVersion)
+	if l > 0 {
+		n += 1 + l + sovInfraresources(uint64(l))
 	}
 	return n
 }
@@ -2695,6 +3209,160 @@ func (m *InfraResource) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Type", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowInfraresources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Type = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipInfraresources(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GPUUsage) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowInfraresources
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GPUUsage: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GPUUsage: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gpu", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowInfraresources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Gpu == nil {
+				m.Gpu = &GPUResource{}
+			}
+			if err := m.Gpu.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Usage", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowInfraresources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Usage == nil {
+				m.Usage = &InfraResource{}
+			}
+			if err := m.Usage.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipInfraresources(dAtA[iNdEx:])
@@ -3034,6 +3702,190 @@ func (m *NodeInfo) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.Capacity[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Gpus", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowInfraresources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Gpus = append(m.Gpus, &GPUResource{})
+			if err := m.Gpus[len(m.Gpus)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GpuSoftware", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowInfraresources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.GpuSoftware == nil {
+				m.GpuSoftware = &GPUSoftwareInfo{}
+			}
+			if err := m.GpuSoftware.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipInfraresources(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *GPUSoftwareInfo) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowInfraresources
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: GPUSoftwareInfo: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: GPUSoftwareInfo: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DriverVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowInfraresources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DriverVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RuntimeVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowInfraresources
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthInfraresources
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RuntimeVersion = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

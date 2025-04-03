@@ -5,7 +5,6 @@ package gencmd
 
 import (
 	fmt "fmt"
-	_ "github.com/edgexr/edge-cloud-platform/tools/protogen"
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	math "math"
@@ -82,6 +81,7 @@ var InfraResourceOptionalArgs = []string{
 	"quotamaxvalue",
 	"description",
 	"units",
+	"type",
 	"alertthreshold",
 }
 var InfraResourceAliasArgs = []string{}
@@ -92,18 +92,77 @@ var InfraResourceComments = map[string]string{
 	"quotamaxvalue":  "Resource quota max value",
 	"description":    "Resource description",
 	"units":          "Resource units",
+	"type":           "Resource type category, i.e. gpu",
 	"alertthreshold": "Generate alert when more than threshold percentage of resource is used",
 }
 var InfraResourceSpecialArgs = map[string]string{}
+var GPUUsageRequiredArgs = []string{}
+var GPUUsageOptionalArgs = []string{
+	"gpu.modelid",
+	"gpu.count",
+	"gpu.vendor",
+	"gpu.memory",
+	"gpu.inuse",
+	"usage.name",
+	"usage.value",
+	"usage.inframaxvalue",
+	"usage.quotamaxvalue",
+	"usage.description",
+	"usage.units",
+	"usage.type",
+	"usage.alertthreshold",
+}
+var GPUUsageAliasArgs = []string{}
+var GPUUsageComments = map[string]string{
+	"gpu.modelid":          "GPU model unique identifier",
+	"gpu.count":            "Count of how many of this GPU are required/present",
+	"gpu.vendor":           "GPU vendor (nvidia, amd, etc)",
+	"gpu.memory":           "Memory in GB",
+	"gpu.inuse":            "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"usage.name":           "Resource name",
+	"usage.value":          "Resource value",
+	"usage.inframaxvalue":  "Resource infra max value",
+	"usage.quotamaxvalue":  "Resource quota max value",
+	"usage.description":    "Resource description",
+	"usage.units":          "Resource units",
+	"usage.type":           "Resource type category, i.e. gpu",
+	"usage.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
+}
+var GPUUsageSpecialArgs = map[string]string{}
 var NodeInfoRequiredArgs = []string{}
 var NodeInfoOptionalArgs = []string{
 	"name",
+	"gpus:#.modelid",
+	"gpus:#.count",
+	"gpus:#.vendor",
+	"gpus:#.memory",
+	"gpus:#.inuse",
+	"gpusoftware.driverversion",
+	"gpusoftware.runtimeversion",
 }
 var NodeInfoAliasArgs = []string{}
 var NodeInfoComments = map[string]string{
-	"name": "Node name",
+	"name":                       "Node name",
+	"gpus:#.modelid":             "GPU model unique identifier",
+	"gpus:#.count":               "Count of how many of this GPU are required/present",
+	"gpus:#.vendor":              "GPU vendor (nvidia, amd, etc)",
+	"gpus:#.memory":              "Memory in GB",
+	"gpus:#.inuse":               "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"gpusoftware.driverversion":  "driver version",
+	"gpusoftware.runtimeversion": "Runtime version",
 }
 var NodeInfoSpecialArgs = map[string]string{}
+var GPUSoftwareInfoRequiredArgs = []string{}
+var GPUSoftwareInfoOptionalArgs = []string{
+	"driverversion",
+	"runtimeversion",
+}
+var GPUSoftwareInfoAliasArgs = []string{}
+var GPUSoftwareInfoComments = map[string]string{
+	"driverversion":  "driver version",
+	"runtimeversion": "Runtime version",
+}
+var GPUSoftwareInfoSpecialArgs = map[string]string{}
 var InfraResourcesRequiredArgs = []string{}
 var InfraResourcesOptionalArgs = []string{
 	"vms:#.name",
@@ -152,6 +211,7 @@ var InfraResourcesSnapshotOptionalArgs = []string{
 	"info:#.quotamaxvalue",
 	"info:#.description",
 	"info:#.units",
+	"info:#.type",
 	"info:#.alertthreshold",
 	"clusterinsts:#.name",
 	"clusterinsts:#.organization",
@@ -179,6 +239,7 @@ var InfraResourcesSnapshotComments = map[string]string{
 	"info:#.quotamaxvalue":                   "Resource quota max value",
 	"info:#.description":                     "Resource description",
 	"info:#.units":                           "Resource units",
+	"info:#.type":                            "Resource type category, i.e. gpu",
 	"info:#.alertthreshold":                  "Generate alert when more than threshold percentage of resource is used",
 	"clusterinsts:#.name":                    "Cluster name",
 	"clusterinsts:#.organization":            "Name of the organization that this cluster belongs to",

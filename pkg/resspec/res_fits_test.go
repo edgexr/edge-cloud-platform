@@ -58,17 +58,20 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			InfraNodeFlavor: "infra.medium",
 		},
 	}
+	gpuX1000 := "nvidia-x1000"
 	// pre-defined gpu cluster pools
 	gpuPoolSmall := cpuPoolSmall.Clone()
 	gpuPoolSmall.Name = "gpu-pool-small"
-	gpuPoolSmall.NodeResources.OptResMap = map[string]string{
-		"gpu": "gpu:1",
-	}
+	gpuPoolSmall.NodeResources.Gpus = []*edgeproto.GPUResource{{
+		ModelId: gpuX1000,
+		Count:   1,
+	}}
 	gpuPoolMedium := cpuPoolMedium.Clone()
 	gpuPoolMedium.Name = "gpu-pool-medium"
-	gpuPoolMedium.NodeResources.OptResMap = map[string]string{
-		"gpu": "gpu:2",
-	}
+	gpuPoolMedium.NodeResources.Gpus = []*edgeproto.GPUResource{{
+		ModelId: gpuX1000,
+		Count:   2,
+	}}
 
 	makeScalable := func(np *edgeproto.NodePool) *edgeproto.NodePool {
 		cp := np.Clone()
@@ -124,9 +127,10 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
 				TotalMemory: 1024,
-				TotalOptRes: map[string]string{
-					"gpu": "gpu:1",
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: gpuX1000,
+					Count:   1,
+				}},
 			},
 		},
 		expFree: func() ResValMap {
@@ -134,7 +138,7 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			free.AddVcpus(2, 0)
 			free.AddRam(2048)
 			free.AddDisk(10)
-			free.AddOptRes("gpu", "gpu:1", 1)
+			free.AddGPU(gpuX1000, 1)
 			return free
 		},
 	}, {
@@ -148,9 +152,10 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
 				TotalMemory: 1024,
-				TotalOptRes: map[string]string{
-					"gpu": "gpu:1",
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: gpuX1000,
+					Count:   1,
+				}},
 			},
 		},
 		expFree: func() ResValMap {
@@ -158,7 +163,7 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			free.AddVcpus(4, 0)
 			free.AddRam(4096)
 			free.AddDisk(20)
-			free.AddOptRes("gpu", "gpu:1", 1)
+			free.AddGPU(gpuX1000, 1)
 			return free
 		},
 	}, {
@@ -258,9 +263,10 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(12, 0),
 				TotalMemory: 1024 * 12,
-				TotalOptRes: map[string]string{
-					"gpu": "gpu:6",
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: gpuX1000,
+					Count:   6,
+				}},
 			},
 		},
 		expFree: func() ResValMap {
@@ -268,7 +274,7 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			free.AddVcpus(14, 0)
 			free.AddRam(14336)
 			free.AddDisk(130)
-			free.AddOptRes("gpu", "gpu:2", 3)
+			free.AddGPU(gpuX1000, 6)
 			return free
 		},
 	}, {
@@ -282,9 +288,10 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(4, 0),
 				TotalMemory: 1024 * 4,
-				TotalOptRes: map[string]string{
-					"gpu": "gpu:2",
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: gpuX1000,
+					Count:   2,
+				}},
 			},
 		},
 		cpuUsed: func() ResValMap {
@@ -297,7 +304,7 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			resMap := ResValMap{}
 			resMap.AddVcpus(5, 600*edgeproto.DecMillis)
 			resMap.AddRam(5500)
-			resMap.AddOptRes("gpu", "gpu:2", 1)
+			resMap.AddGPU(gpuX1000, 2)
 			return resMap
 		},
 		// free is sum of cpu and gpu pools free space
@@ -306,7 +313,7 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			free.AddVcpus(6, 900*edgeproto.DecMillis)
 			free.AddRam(8636)
 			free.AddDisk(130)
-			free.AddOptRes("gpu", "gpu:2", 2)
+			free.AddGPU(gpuX1000, 4)
 			return free
 		},
 	}, {
@@ -328,7 +335,7 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			resMap := ResValMap{}
 			resMap.AddVcpus(5, 600*edgeproto.DecMillis)
 			resMap.AddRam(5500)
-			resMap.AddOptRes("gpu", "gpu:2", 1)
+			resMap.AddGPU(gpuX1000, 2)
 			return resMap
 		},
 		// note, no GPU Pool requirements, so "free" resources
@@ -351,9 +358,10 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(12, 0),
 				TotalMemory: 1024 * 12,
-				TotalOptRes: map[string]string{
-					"gpu": "gpu:6",
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: gpuX1000,
+					Count:   6,
+				}},
 			},
 		},
 		cpuUsed: func() ResValMap {
@@ -363,7 +371,7 @@ func TestKubernetesResourcesFits(t *testing.T) {
 		},
 		gpuUsed: func() ResValMap {
 			resMap := ResValMap{}
-			resMap.AddRes("gpu:gpu", "", 1, 0)
+			resMap.AddGPU(gpuX1000, 6)
 			return resMap
 		},
 		expErr: "cpu pool requirements not met, want 2 vCPUs but only 1 free, skipped gpu pool gpu-pool-medium because no request for gpu",
@@ -378,9 +386,10 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(12, 0),
 				TotalMemory: 1024 * 12,
-				TotalOptRes: map[string]string{
-					"gpu": "gpu:6",
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: gpuX1000,
+					Count:   6,
+				}},
 			},
 		},
 		cpuUsed: func() ResValMap {
@@ -390,10 +399,10 @@ func TestKubernetesResourcesFits(t *testing.T) {
 		},
 		gpuUsed: func() ResValMap {
 			resMap := ResValMap{}
-			resMap.AddRes("gpu:gpu", "", 1, 0)
+			resMap.AddGPU(gpuX1000, 1)
 			return resMap
 		},
-		expErr: "gpu pool requirements not met, want 6 gpu:gpu but only 5 free",
+		expErr: "gpu pool requirements not met, want 6 gpu/nvidia-x1000 but only 5 free",
 	}, {
 		desc:      "cpu pool scale exact 1",
 		nodePools: []*edgeproto.NodePool{cpuPoolSmallScalable, gpuPoolSmallScalable},
@@ -467,9 +476,10 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(6, 0),
 				TotalMemory: 1024 * 6,
-				TotalOptRes: map[string]string{
-					"gpu": "gpu:6",
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: gpuX1000,
+					Count:   6,
+				}},
 			},
 		},
 		expErrIgnore: true,
@@ -488,9 +498,10 @@ func TestKubernetesResourcesFits(t *testing.T) {
 			GpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(6, 0),
 				TotalMemory: 1024 * 6,
-				TotalOptRes: map[string]string{
-					"gpu": "gpu:6",
-				},
+				TotalGpus: []*edgeproto.GPUResource{{
+					ModelId: gpuX1000,
+					Count:   6,
+				}},
 			},
 		},
 		expErrIgnore: true,
@@ -533,7 +544,8 @@ func TestKubernetesResourcesFits(t *testing.T) {
 		if test.gpuUsed != nil {
 			gpuUsed = test.gpuUsed()
 		}
-		ss, free, err := KubernetesResourcesFits(ctx, &cluster, test.reqs, cpuUsed, gpuUsed, flavorLookup)
+		clusterSpecified := false
+		ss, free, err := KubernetesResourcesFits(ctx, &cluster, test.reqs, cpuUsed, gpuUsed, flavorLookup, clusterSpecified)
 		if test.expErr != "" {
 			require.NotNil(t, err, test.desc)
 			require.Contains(t, err.Error(), test.expErr, test.desc)

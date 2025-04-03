@@ -40,18 +40,6 @@ var testFlavor = edgeproto.Flavor{
 	Disk:  1,
 }
 
-var testFlavor2 = edgeproto.Flavor{
-	Key: edgeproto.FlavorKey{
-		Name: "x1.tiny.gpu",
-	},
-	Ram:   1024,
-	Vcpus: 1,
-	Disk:  1,
-	OptResMap: map[string]string{
-		"gpu": "pci:1",
-	},
-}
-
 var testKubernetesResources = edgeproto.KubernetesResources{
 	CpuPool: &edgeproto.NodePoolResources{
 		TotalVcpus:  *edgeproto.NewUdec64(1, 0),
@@ -63,9 +51,11 @@ var testKubernetesResources2 = edgeproto.KubernetesResources{
 	GpuPool: &edgeproto.NodePoolResources{
 		TotalVcpus:  *edgeproto.NewUdec64(1, 0),
 		TotalMemory: 1024,
-		TotalOptRes: map[string]string{
-			"gpu": "somegpuspec:1",
-		},
+		TotalGpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-x999",
+			Count:   1,
+			Vendor:  GPUVendorNVIDIA,
+		}},
 	},
 }
 
@@ -309,7 +299,10 @@ func TestDeploymentManifest(t *testing.T) {
 	require.NotNil(t, err, "invalid gpu deployment manifest")
 	require.Contains(t, err.Error(), "GPU resource limit (value:2) exceeds flavor specified count 1")
 
-	flavor.GpuPool.TotalOptRes["gpu"] = "pci:4"
+	flavor.GpuPool.TotalGpus = []*edgeproto.GPUResource{{
+		ModelId: "xvidia-x999",
+		Count:   4,
+	}}
 	err = IsValidDeploymentManifestForResources(DeploymentTypeKubernetes, manifestResCnt2, flavor)
 	require.Nil(t, err, "valid gpu deployment manifest")
 }
