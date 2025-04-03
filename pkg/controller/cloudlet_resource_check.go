@@ -35,8 +35,7 @@ type CloudletResCalc struct {
 	cloudletKey *edgeproto.CloudletKey
 	deps        CloudletResCalcDeps
 	usedVals    resspec.ResValMap // cached calculation of used resources in cloudlet
-	skipLB      bool
-	skipAddtl   bool
+	options     CloudletResCalcOptions
 }
 
 type CloudletResCalcDeps struct {
@@ -45,6 +44,11 @@ type CloudletResCalcDeps struct {
 	cloudletRefs *edgeproto.CloudletRefs
 	features     *edgeproto.PlatformFeatures
 	lbFlavor     *edgeproto.FlavorInfo
+}
+
+type CloudletResCalcOptions struct {
+	skipLB         bool // don't try to count LB resources
+	skipAdditional bool // don't try to count additional resources
 }
 
 var resourceWeights = map[string]uint64{
@@ -92,7 +96,7 @@ func (s *CloudletResCalc) InitDeps(ctx context.Context) error {
 		}
 		s.deps.features = features
 	}
-	if s.deps.lbFlavor == nil && !s.skipLB {
+	if s.deps.lbFlavor == nil && !s.options.skipLB {
 		lbFlavor, err := s.all.clusterInstApi.GetRootLBFlavorInfo(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo)
 		if err != nil {
 			return err
@@ -112,7 +116,7 @@ func (s *CloudletResCalc) CloudletFitsVMApp(ctx context.Context, app *edgeproto.
 	if err != nil {
 		return nil, err
 	}
-	reqdVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd, s.skipAddtl)
+	reqdVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd, s.options)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +136,7 @@ func (s *CloudletResCalc) CloudletFitsCluster(ctx context.Context, clusterInst, 
 	if err != nil {
 		return nil, err
 	}
-	reqdVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd, s.skipAddtl)
+	reqdVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd, s.options)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +147,7 @@ func (s *CloudletResCalc) CloudletFitsCluster(ctx context.Context, clusterInst, 
 		if err != nil {
 			return nil, err
 		}
-		oldVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd, s.skipAddtl)
+		oldVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, reqd, s.options)
 		if err != nil {
 			return nil, err
 		}
@@ -176,7 +180,7 @@ func (s *CloudletResCalc) getUsedResVals(ctx context.Context) (resspec.ResValMap
 		return nil, err
 	}
 	// convert used resources to ResValMap
-	usedVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, usedResources, s.skipAddtl)
+	usedVals, err := s.all.cloudletApi.totalCloudletResources(ctx, s.stm, s.deps.cloudlet, s.deps.cloudletInfo, usedResources, s.options)
 	if err != nil {
 		return nil, err
 	}

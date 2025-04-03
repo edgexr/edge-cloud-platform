@@ -654,7 +654,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 
 			for _, pc := range potentialClusters {
 				clusterInst, err := s.usePotentialCluster(ctx, stm, in, &app, sidecarApp, pc)
-				if err != nil && pc.userSpecified {
+				if err != nil && pc.clusterSpecified {
 					// user specified this cluster, so this is a hard failure
 					return err
 				}
@@ -670,7 +670,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 					scaleSpec = pc.scaleSpec
 				} else {
 					err := s.potentialClusterResourceCheck(ctx, stm, in, &app, clusterInst, pc.parentPC.flavorLookup, clusterSpecified)
-					if err != nil && pc.userSpecified {
+					if err != nil && pc.clusterSpecified {
 						// user specified this cluster, so this is a hard failure
 						return err
 					}

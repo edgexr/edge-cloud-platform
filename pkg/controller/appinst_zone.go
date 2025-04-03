@@ -28,13 +28,13 @@ import (
 )
 
 type potentialAppInstCluster struct {
-	existingCluster edgeproto.ClusterKey
-	cloudletKey     edgeproto.CloudletKey
-	parentPC        *potentialInstCloudlet
-	scaleSpec       *resspec.KubeResScaleSpec
-	clusterType     ClusterType
-	userSpecified   bool
-	resourceScore   uint64
+	existingCluster  edgeproto.ClusterKey
+	cloudletKey      edgeproto.CloudletKey
+	parentPC         *potentialInstCloudlet
+	scaleSpec        *resspec.KubeResScaleSpec
+	clusterType      ClusterType
+	clusterSpecified bool
+	resourceScore    uint64
 }
 
 type ClusterType string
@@ -250,11 +250,11 @@ func (s *AppInstApi) getPotentialClusters(ctx context.Context, cctx *CallContext
 
 func (s *AppInstApi) getPotentialCloudletClusters(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, pc *potentialInstCloudlet, candidates []edgeproto.ClusterKey) ([]*potentialAppInstCluster, SkipReasons) {
 	potentialClusters := []*potentialAppInstCluster{}
-	userSpecified := false
+	clusterSpecified := false
 	skipReasons := SkipReasons{}
 	log.SpanLog(ctx, log.DebugLevelApi, "get potential cloudlet clusters", "appinst", in.Key, "cloudlet", pc.cloudlet.Key)
 	for _, key := range candidates {
-		clust, skipReason, logReason, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, key, userSpecified)
+		clust, skipReason, logReason, err := s.validatePotentialCluster(ctx, cctx, in, app, pc, key, clusterSpecified)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy skip potential cluster", "appinst", in.Key, "cluster", key, "reason", skipReason, "err", err)
 			if logReason {
@@ -271,7 +271,7 @@ func (s *AppInstApi) getPotentialCloudletClusters(ctx context.Context, cctx *Cal
 	return potentialClusters, skipReasons
 }
 
-func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, pc *potentialInstCloudlet, key edgeproto.ClusterKey, userSpecified bool) (*potentialAppInstCluster, SkipReason, bool, error) {
+func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallContext, in *edgeproto.AppInst, app *edgeproto.App, pc *potentialInstCloudlet, key edgeproto.ClusterKey, clusterSpecified bool) (*potentialAppInstCluster, SkipReason, bool, error) {
 	clusterInst := &edgeproto.ClusterInst{}
 	if !s.all.clusterInstApi.cache.Get(&key, clusterInst) {
 		return nil, ClusterMissing, false, key.NotFoundError()
@@ -304,11 +304,11 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 		if cloudcommon.IsSideCarApp(app) {
 			// always allow sidecar apps, but they must directly
 			// target the cluster.
-			if !userSpecified {
+			if !clusterSpecified {
 				return nil, SidecarAppMustTargetCluster, true, fmt.Errorf("sidecar app must specify target cluster")
 			}
 		} else if appInstOwner.Matches(edgeproto.OrgName(clusterInst.Key.Organization)) {
-			if clusterInst.DisableDynamicAppinstPlacement && !userSpecified {
+			if clusterInst.DisableDynamicAppinstPlacement && !clusterSpecified {
 				return nil, NoDynamicPlacement, true, fmt.Errorf("found cluster but dynamic appinst placement is disabled")
 			}
 		} else {
@@ -355,16 +355,16 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 				// ignore standalone requirements for sidecar apps
 				continue
 			}
-			if in.IsStandalone && !userSpecified {
+			if in.IsStandalone && !clusterSpecified {
 				return nil, StandaloneConflict, true, fmt.Errorf("standalone app cannot be deployed to a cluster that already has an app instance")
 			}
-			if refAi.IsStandalone && !userSpecified {
+			if refAi.IsStandalone && !clusterSpecified {
 				return nil, StandaloneConflict, true, fmt.Errorf("cluster already in use by standalone app %s", refApp.Key.GetKeyString())
 			}
 		}
 	}
 
-	ss, free, err := s.all.clusterInstApi.fitsAppResources(ctx, clusterInst, &refs, app, in, pc.flavorLookup, userSpecified)
+	ss, free, err := s.all.clusterInstApi.fitsAppResources(ctx, clusterInst, &refs, app, in, pc.flavorLookup, clusterSpecified)
 	if pc.features.IsSingleKubernetesCluster {
 		// assume kubernetes cluster-as-a-cloudlet cannot scale up
 		ss = nil
@@ -393,7 +393,7 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 	clust.scaleSpec = ss
 	clust.clusterType = clusterType
 	clust.resourceScore = s.all.clusterInstApi.calcResourceScore(free)
-	clust.userSpecified = userSpecified
+	clust.clusterSpecified = clusterSpecified
 	log.SpanLog(ctx, log.DebugLevelApi, "AppInst deploy add potential cluster", "appinst", in.Key, "cloudlet", pc.cloudlet.Key, "cluster", key, "clusterType", clusterType, "scaleSpec", ss, "free", free.String(), "score", clust.resourceScore)
 	return &clust, NoSkipReason, false, nil
 }

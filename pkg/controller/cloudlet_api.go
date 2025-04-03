@@ -2383,7 +2383,7 @@ func (s *CloudletApi) sumCloudletResources(ctx context.Context, stm *edgeproto.O
 
 // totalCloudletResources sums up the resources and adds in any
 // additional cluster resources. This requires a network call.
-func (s *CloudletApi) totalCloudletResources(ctx context.Context, stm *edgeproto.OptionalSTM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletResources *CloudletResources, skipAddtl bool) (resspec.ResValMap, error) {
+func (s *CloudletApi) totalCloudletResources(ctx context.Context, stm *edgeproto.OptionalSTM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletResources *CloudletResources, options CloudletResCalcOptions) (resspec.ResValMap, error) {
 	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
 	if err != nil {
 		return nil, err
@@ -2404,7 +2404,7 @@ func (s *CloudletApi) totalCloudletResources(ctx context.Context, stm *edgeproto
 		CloudletKey: &cloudlet.Key,
 		VmResources: cloudletResources.vms,
 	}
-	if !skipAddtl {
+	if !options.skipAdditional {
 		res, err := api.GetClusterAdditionalResources(reqCtx, req)
 		if err != nil {
 			return nil, cloudcommon.GRPCErrorUnwrap(err)
@@ -3032,8 +3032,8 @@ func (s *CloudletApi) ShowCloudletGPUUsage(filter *edgeproto.Cloudlet, cb edgepr
 func (s *CloudletApi) addGPUsUsage(ctx context.Context, ckey *edgeproto.CloudletKey, used resspec.ResValMap, limits ResLimitMap, gpuInfos map[string]*edgeproto.GPUResource) error {
 	stm := edgeproto.NewOptionalSTM(nil)
 	resCalc := NewCloudletResCalc(s.all, stm, ckey)
-	resCalc.skipLB = true
-	resCalc.skipAddtl = true
+	resCalc.options.skipLB = true
+	resCalc.options.skipAdditional = true
 	if err := resCalc.InitDeps(ctx); err != nil {
 		return err
 	}

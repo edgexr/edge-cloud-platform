@@ -414,9 +414,15 @@ func convertNodeResource(res v1.ResourceName, quantity resource.Quantity) (strin
 }
 
 func getNodeGPUInfo(labels map[string]string) ([]*edgeproto.GPUResource, *edgeproto.GPUSoftwareInfo, error) {
-	// Note: we only support one GPU per node, as not sure
-	// what the labels would look like for multiple GPUs
-	// or if the gpu-operator even supports it.
+	// Note: we only support one GPU type per node, although
+	// the data structures are designed to support multiple
+	// gpu types (i.e. an A100 and a T4) per node in the future.
+	// I believe the nvidia gpu-operator also does not support
+	// multiple gpu types currently.
+	// Nvidia GPU operator labels:
+	// https://github.com/NVIDIA/k8s-device-plugin/tree/main/docs/gpu-feature-discovery
+	// https://github.com/NVIDIA/k8s-device-plugin/blob/main/README.md#catalog-of-labels
+
 	gpu := &edgeproto.GPUResource{}
 	gpuFound := false
 	sw := &edgeproto.GPUSoftwareInfo{}
@@ -429,14 +435,14 @@ func getNodeGPUInfo(labels map[string]string) ([]*edgeproto.GPUResource, *edgepr
 		case "nvidia.com/gpu.memory":
 			val, err := strconv.ParseUint(v, 10, 64)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to parse gpu memory, %s, %v", v, err)
+				return nil, nil, fmt.Errorf("failed to parse gpu memory %s: %s, %v", k, v, err)
 			}
 			// nvidia memory is specified in MB
 			gpu.Memory = val / 1024
-		case "nvidia.com/gpu.replicas":
+		case "nvidia.com/gpu.count":
 			val, err := strconv.ParseUint(v, 10, 32)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to parse gpu replicas, %s, %v", v, err)
+				return nil, nil, fmt.Errorf("failed to parse gpu count %s: %s, %v", k, v, err)
 			}
 			gpu.Count = uint32(val)
 		case "nvidia.com/cuda.driver-version.full":
@@ -451,13 +457,13 @@ func getNodeGPUInfo(labels map[string]string) ([]*edgeproto.GPUResource, *edgepr
 			if strings.HasSuffix(v, "G") {
 				val, err := strconv.ParseUint(v[:len(v)-1], 10, 64)
 				if err != nil {
-					return nil, nil, fmt.Errorf("failed to parse gpu vram, %s, %v", v, err)
+					return nil, nil, fmt.Errorf("failed to parse gpu vram %s: %s, %v", k, v, err)
 				}
 				gpu.Memory = val
 			} else {
 				q, err := resource.ParseQuantity(v)
 				if err != nil {
-					return nil, nil, fmt.Errorf("failed to parse gpu vram, %s, 	%v", v, err)
+					return nil, nil, fmt.Errorf("failed to parse gpu vram %s: %s, %v", k, v, err)
 				}
 				gpu.Memory = uint64(q.Value() / 1024 / 1024 / 1024)
 			}

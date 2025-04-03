@@ -836,8 +836,8 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		for _, resInfo := range cloudletInfo.ResourcesSnapshot.Info {
 			infraResInfo[resInfo.Name] = resInfo
 		}
-		skipAddtl := false
-		allResInfo, err := apis.cloudletApi.totalCloudletResources(ctx, resCalc.stm, cloudlet, cloudletInfo, usedRes, skipAddtl)
+
+		allResInfo, err := apis.cloudletApi.totalCloudletResources(ctx, resCalc.stm, cloudlet, cloudletInfo, usedRes, CloudletResCalcOptions{})
 		require.Nil(t, err)
 		// set quotas to what is currently being used
 		// so creating anything should trigger both quota warnings and
