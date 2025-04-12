@@ -750,8 +750,7 @@ func (v *VMPlatform) logEdgeCloudServeiceStatus(ctx context.Context, clusterInst
 	}
 	out, err := masterClient.Output("systemctl status edgecloud")
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get edgecloud status", "err", err, "out", out)
-		return
+		log.SpanLog(ctx, log.DebugLevelInfra, "edgecloud exit status", "err", err, "out", out)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "edgecloud status", "status", out)
 	out, err = masterClient.Output("sudo cat /var/log/edgecloud.log")
