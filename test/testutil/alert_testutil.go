@@ -476,6 +476,7 @@ type Client interface {
 	CloudletApiClient
 	CloudletInfoApiClient
 	CloudletMetricsApiClient
+	CloudletManagedClusterApiClient
 	ZoneApiClient
 	ZonePoolApiClient
 	VMPoolApiClient

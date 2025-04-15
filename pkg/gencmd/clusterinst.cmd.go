@@ -90,6 +90,10 @@ func ClusterInstInfoHideTags(in *edgeproto.ClusterInstInfo) {
 		for i2 := 0; i2 < len(in.Resources.Vms[i1].Containers); i2++ {
 		}
 	}
+	for i1 := 0; i1 < len(in.CloudletManagedClusterInfo.NodePools); i1++ {
+		for i3 := 0; i3 < len(in.CloudletManagedClusterInfo.NodePools[i1].NodeResources.Gpus); i3++ {
+		}
+	}
 }
 
 var ClusterInstApiCmd edgeproto.ClusterInstApiClient
@@ -728,6 +732,8 @@ var ClusterInstOptionalArgs = []string{
 	"infraannotations",
 	"kubernetesversion",
 	"disabledynamicappinstplacement",
+	"cloudletmanagedclusterid",
+	"cloudletmanagedclustername",
 	"tags",
 }
 var ClusterInstAliasArgs = []string{
@@ -831,6 +837,8 @@ var ClusterInstComments = map[string]string{
 	"infraannotations":                             "Annotations added by the implementing infrastructure, specify infraannotations:empty=true to clear",
 	"kubernetesversion":                            "Kubernetes version of cluster if applicable",
 	"disabledynamicappinstplacement":               "Disables dynamic placement of AppInsts on this cluster",
+	"cloudletmanagedclusterid":                     "Cloudlet managed cluster ID, if cluster based on cloudlet managed cluster",
+	"cloudletmanagedclustername":                   "Cloudlet managed cluster name, if cluster based on cloudlet managed cluster",
 	"tags":                                         "Vendor-specific data, specify tags:empty=true to clear",
 }
 var ClusterInstSpecialArgs = map[string]string{
@@ -935,6 +943,45 @@ var ClusterResourceUsageComments = map[string]string{
 	"reservedby":                         "For reservable clusters in use, the organization that has reserved the cluster",
 }
 var ClusterResourceUsageSpecialArgs = map[string]string{}
+var CloudletManagedClusterInfoRequiredArgs = []string{}
+var CloudletManagedClusterInfoOptionalArgs = []string{
+	"kubernetesversion",
+	"nodepools:#.name",
+	"nodepools:#.numnodes",
+	"nodepools:#.noderesources.vcpus",
+	"nodepools:#.noderesources.ram",
+	"nodepools:#.noderesources.disk",
+	"nodepools:#.noderesources.gpus:#.modelid",
+	"nodepools:#.noderesources.gpus:#.count",
+	"nodepools:#.noderesources.gpus:#.vendor",
+	"nodepools:#.noderesources.gpus:#.memory",
+	"nodepools:#.noderesources.gpus:#.inuse",
+	"nodepools:#.noderesources.optresmap",
+	"nodepools:#.noderesources.infranodeflavor",
+	"nodepools:#.noderesources.externalvolumesize",
+	"nodepools:#.scalable",
+}
+var CloudletManagedClusterInfoAliasArgs = []string{}
+var CloudletManagedClusterInfoComments = map[string]string{
+	"kubernetesversion":                            "Kubernetes cluster version",
+	"nodepools:#.name":                             "Node pool name",
+	"nodepools:#.numnodes":                         "Number of nodes in the pool",
+	"nodepools:#.noderesources.vcpus":              "Vcpus to be allocated to the VM, must be either 1 or an even number",
+	"nodepools:#.noderesources.ram":                "Total RAM in megabytes to be allocated to the VM",
+	"nodepools:#.noderesources.disk":               "Total disk space in gigabytes to be allocated to the VMs root partition",
+	"nodepools:#.noderesources.gpus:#.modelid":     "GPU model unique identifier",
+	"nodepools:#.noderesources.gpus:#.count":       "Count of how many of this GPU are required/present",
+	"nodepools:#.noderesources.gpus:#.vendor":      "GPU vendor (nvidia, amd, etc)",
+	"nodepools:#.noderesources.gpus:#.memory":      "Memory in GB",
+	"nodepools:#.noderesources.gpus:#.inuse":       "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"nodepools:#.noderesources.optresmap":          "Optional resources request, i.e. optresmap=restype=resname:1",
+	"nodepools:#.noderesources.infranodeflavor":    "Infrastructure specific node flavor",
+	"nodepools:#.noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
+	"nodepools:#.scalable":                         "Scalable indicates the system may scale the number of nodes",
+}
+var CloudletManagedClusterInfoSpecialArgs = map[string]string{
+	"nodepools:#.noderesources.optresmap": "StringToString",
+}
 var ClusterInstInfoRequiredArgs = []string{
 	"key.name",
 	"key.organization",
@@ -960,6 +1007,21 @@ var ClusterInstInfoOptionalArgs = []string{
 	"resources.vms:#.containers:#.status",
 	"resources.vms:#.containers:#.clusterip",
 	"resources.vms:#.containers:#.restarts",
+	"cloudletmanagedclusterinfo.kubernetesversion",
+	"cloudletmanagedclusterinfo.nodepools:#.name",
+	"cloudletmanagedclusterinfo.nodepools:#.numnodes",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.vcpus",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.ram",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.disk",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.modelid",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.count",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.vendor",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.memory",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.inuse",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.optresmap",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.infranodeflavor",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.externalvolumesize",
+	"cloudletmanagedclusterinfo.nodepools:#.scalable",
 	"infraannotations",
 }
 var ClusterInstInfoAliasArgs = []string{}
@@ -980,16 +1042,32 @@ var ClusterInstInfoComments = map[string]string{
 	"resources.vms:#.type":        "Type can be platformvm, platform-cluster-master, platform-cluster-primary-node, platform-cluster-secondary-node, sharedrootlb, dedicatedrootlb, cluster-master, cluster-k8s-node, cluster-docker-node, appvm",
 	"resources.vms:#.status":      "Runtime status of the VM",
 	"resources.vms:#.infraflavor": "Flavor allocated within the cloudlet infrastructure, distinct from the control plane flavor",
-	"resources.vms:#.ipaddresses:#.externalip": "External IP address",
-	"resources.vms:#.ipaddresses:#.internalip": "Internal IP address",
-	"resources.vms:#.containers:#.name":        "Name of the container",
-	"resources.vms:#.containers:#.type":        "Type can be docker or kubernetes",
-	"resources.vms:#.containers:#.status":      "Runtime status of the container",
-	"resources.vms:#.containers:#.clusterip":   "IP within the CNI and is applicable to kubernetes only",
-	"resources.vms:#.containers:#.restarts":    "Restart count, applicable to kubernetes only",
-	"infraannotations":                         "Annotations added by the implementing infrastructure",
+	"resources.vms:#.ipaddresses:#.externalip":                                "External IP address",
+	"resources.vms:#.ipaddresses:#.internalip":                                "Internal IP address",
+	"resources.vms:#.containers:#.name":                                       "Name of the container",
+	"resources.vms:#.containers:#.type":                                       "Type can be docker or kubernetes",
+	"resources.vms:#.containers:#.status":                                     "Runtime status of the container",
+	"resources.vms:#.containers:#.clusterip":                                  "IP within the CNI and is applicable to kubernetes only",
+	"resources.vms:#.containers:#.restarts":                                   "Restart count, applicable to kubernetes only",
+	"cloudletmanagedclusterinfo.kubernetesversion":                            "Kubernetes cluster version",
+	"cloudletmanagedclusterinfo.nodepools:#.name":                             "Node pool name",
+	"cloudletmanagedclusterinfo.nodepools:#.numnodes":                         "Number of nodes in the pool",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.vcpus":              "Vcpus to be allocated to the VM, must be either 1 or an even number",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.ram":                "Total RAM in megabytes to be allocated to the VM",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.disk":               "Total disk space in gigabytes to be allocated to the VMs root partition",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.modelid":     "GPU model unique identifier",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.count":       "Count of how many of this GPU are required/present",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.vendor":      "GPU vendor (nvidia, amd, etc)",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.memory":      "Memory in GB",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.gpus:#.inuse":       "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.optresmap":          "Optional resources request, i.e. optresmap=restype=resname:1",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.infranodeflavor":    "Infrastructure specific node flavor",
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
+	"cloudletmanagedclusterinfo.nodepools:#.scalable":                         "Scalable indicates the system may scale the number of nodes",
+	"infraannotations": "Annotations added by the implementing infrastructure",
 }
 var ClusterInstInfoSpecialArgs = map[string]string{
+	"cloudletmanagedclusterinfo.nodepools:#.noderesources.optresmap": "StringToString",
 	"errors":           "StringArray",
 	"fields":           "StringArray",
 	"infraannotations": "StringToString",
@@ -1016,6 +1094,8 @@ var UpdateClusterInstOptionalArgs = []string{
 	"nodepools:#.scalable",
 	"infraannotations",
 	"disabledynamicappinstplacement",
+	"cloudletmanagedclusterid",
+	"cloudletmanagedclustername",
 	"tags",
 }
 var ShowClusterResourceUsageRequiredArgs = []string{}
@@ -1070,5 +1150,7 @@ var ShowClusterResourceUsageOptionalArgs = []string{
 	"infraannotations",
 	"kubernetesversion",
 	"disabledynamicappinstplacement",
+	"cloudletmanagedclusterid",
+	"cloudletmanagedclustername",
 	"tags",
 }

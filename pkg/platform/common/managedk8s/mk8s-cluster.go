@@ -24,6 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -42,14 +43,15 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 	if err != nil {
 		return nil, err
 	}
-	if len(clusterInst.NodePools) == 0 {
-		return nil, errors.New("no node pools specified for cluster")
+	if !clusterInst.IsCloudletManaged() {
+		if len(clusterInst.NodePools) == 0 {
+			return nil, errors.New("no node pools specified for cluster")
+		}
+		// for now, only support a single node pool
+		if len(clusterInst.NodePools) > 1 {
+			return nil, errors.New("currently only one node pool is supported")
+		}
 	}
-	// for now, only support a single node pool
-	if len(clusterInst.NodePools) > 1 {
-		return nil, errors.New("currently only one node pool is supported")
-	}
-
 	defer func() {
 		if reterr == nil || clusterInst.SkipCrmCleanupOnFailure {
 			return
@@ -61,7 +63,13 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 		}
 	}()
 
-	infraAnnotations, err := m.createClusterInstInternal(ctx, client, clusterName, clusterInst, updateCallback)
+	var infraAnnotations map[string]string
+	if clusterInst.IsCloudletManaged() {
+		log.SpanLog(ctx, log.DebugLevelInfra, "registerClusterInst", "clusterName", clusterInst.CloudletManagedClusterName, "clusterID", clusterInst.CloudletManagedClusterId)
+		infraAnnotations, err = m.Provider.RegisterCluster(ctx, clusterName, clusterInst)
+	} else {
+		infraAnnotations, err = m.createClusterInstInternal(ctx, client, clusterName, clusterInst, updateCallback)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +140,9 @@ func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clus
 	if err := m.Provider.Login(ctx); err != nil {
 		return err
 	}
+	if clusterInst.IsCloudletManaged() {
+		return nil
+	}
 	return m.Provider.RunClusterDeleteCommand(ctx, clusterName, clusterInst)
 }
 
@@ -199,4 +210,40 @@ func (m *ManagedK8sPlatform) ensureKubeconfig(ctx context.Context, clusterInst *
 		return nil, err
 	}
 	return names, nil
+}
+
+func (m *ManagedK8sPlatform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	cmcClusters, err := m.Provider.GetAllClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
+	getInfraClusterName := func(ci *edgeproto.ClusterInst) string {
+		return m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(ci))
+	}
+	return infracommon.FilterCloudletManagedClusters(m.CommonPf.PlatformConfig.CloudletKey, cmcClusters, m.caches.ClusterInstCache, getInfraClusterName)
+}
+
+func (m *ManagedK8sPlatform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetCloudletManagedClusterInfo", "cluster", in.Key)
+	if !in.IsCloudletManaged() {
+		return nil, errors.New("cluster is not cloudlet managed")
+	}
+	cmcInfo := &edgeproto.CloudletManagedClusterInfo{}
+	names, err := m.ensureKubeconfig(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	// get the resources for the cluster
+	nodeInfos, err := k8smgmt.GetNodeInfos(ctx, m.getClient(), names.KconfArg)
+	if err != nil {
+		return nil, err
+	}
+	cmcInfo.NodePools = k8smgmt.GetNodePools(ctx, nodeInfos)
+	// get the cluster version
+	clusterVersion, err := k8smgmt.GetClusterVersion(ctx, m.getClient(), names.KconfArg)
+	if err != nil {
+		return nil, err
+	}
+	cmcInfo.KubernetesVersion = clusterVersion
+	return cmcInfo, nil
 }

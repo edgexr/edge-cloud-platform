@@ -48,3 +48,11 @@ func (s *K8sSite) GetClusterName(cluster *edgeproto.ClusterInst) string {
 	// but k8ssite does not support OSM
 	return "not-supported"
 }
+
+func (s *K8sSite) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (s *K8sSite) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	return nil, errors.New("not supported")
+}

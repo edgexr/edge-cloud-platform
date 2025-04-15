@@ -702,11 +702,12 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	if len(in.Key.Name) > cloudcommon.MaxClusterNameLength {
 		return fmt.Errorf("Cluster name limited to %d characters", cloudcommon.MaxClusterNameLength)
 	}
-	err = s.resolveResourcesSpec(ctx, edgeproto.NewOptionalSTM(nil), in, nil)
-	if err != nil {
-		return err
+	if !in.IsCloudletManaged() {
+		err = s.resolveResourcesSpec(ctx, edgeproto.NewOptionalSTM(nil), in, nil)
+		if err != nil {
+			return err
+		}
 	}
-
 	// STM ends up modifying input data, but we need to reset those
 	// changes if STM reruns, because it may end up choosing a different
 	// cloudlet.
@@ -788,121 +789,124 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if !s.all.cloudletRefsApi.store.STMGet(stm, &in.CloudletKey, &refs) {
 			initCloudletRefs(&refs, &in.CloudletKey)
 		}
-		ostm := edgeproto.NewOptionalSTM(stm)
-		if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
-			// select infra-specific flavor for node pools
-			for _, pool := range in.NodePools {
-				az, optRes, err := s.setInfraFlavor(ctx, ostm, &cloudlet, features, &info, pool.NodeResources)
-				if err != nil {
-					return fmt.Errorf("failed to select infra flavor for pool %s, %s", pool.Name, err)
-				}
-				// TODO:
-				// ClusterInst.OptRes should really be an array
-				// or map instead of a single string, to be able
-				// to support multiple optional resources from
-				// multiple node pools.
-				if in.OptRes != "" && optRes != in.OptRes {
-					return fmt.Errorf("cluster currently only supports a single cluster-wide optional resource, but have both %q and %q", in.OptRes, optRes)
-				}
-				if in.AvailabilityZone != "" && az != in.AvailabilityZone {
-					return fmt.Errorf("availability zone mismatch, flavors selected from both %s and %s zones", in.AvailabilityZone, az)
-				}
-				in.OptRes = optRes
-				in.AvailabilityZone = az
-				log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Node Flavor", "pool", pool)
-			}
-		} else {
-			az, optRes, err := s.setInfraFlavor(ctx, ostm, &cloudlet, features, &info, in.NodeResources)
-			if err != nil {
-				return fmt.Errorf("failed to select infra flavor, %s", err)
-			}
-			in.OptRes = optRes
-			in.AvailabilityZone = az
-			log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Node Flavor", "res", in.NodeResources)
-		}
-		// Handle control (master) node specification
-		// Note for platforms that manage the control nodes themselves
-		// like Azure AKS, etc, we don't need to configure any master
-		// node resources.
-		if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.ManagesK8SControlNodes && !features.NoClusterSupport {
-			// For platforms that do not manage the master nodes,
-			// we need to set the master node flavor so we can create
-			// the master nodes.
-			// Note: temporarily drop support for running workloads on
-			// master nodes. To do so we should allow one of the user
-			// specified node pools to become the master pool.
-			// That requires more work in the platform code to support
-			// such a change and allow for more than 1 master node.
-			var masterNodeResources *edgeproto.NodeResources
-			settings := s.all.settingsApi.Get()
-			if settings.MasterNodeFlavor != "" {
-				masterFlavor := edgeproto.Flavor{}
-				masterFlavorKey := edgeproto.FlavorKey{}
-				masterFlavorKey.Name = settings.MasterNodeFlavor
-				if s.all.flavorApi.store.STMGet(stm, &masterFlavorKey, &masterFlavor) {
-					masterNodeResources = masterFlavor.ToNodeResources()
-				} else {
-					return fmt.Errorf("default master node flavor %q in settings is not found, please contact your administrator", settings.MasterNodeFlavor)
-				}
-			} else {
-				log.SpanLog(ctx, log.DebugLevelApi, "using default master node resources")
-				// no master node flavor specified by admin, just
-				// use minimum resources.
-				masterNodeResources = &edgeproto.NodeResources{
-					Vcpus: 1,
-					Ram:   2048,
-					Disk:  10,
-				}
-			}
-			log.SpanLog(ctx, log.DebugLevelApi, "lookup infra flavor for master nodes", "in.MasterNodeFlavor", in.MasterNodeFlavor, "settings.MasterNodeFlavor", settings.MasterNodeFlavor, "nodeResources", masterNodeResources)
-			vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, ostm, masterNodeResources, in.MasterNodeFlavor, cloudlet, info)
-			if err != nil {
-				return fmt.Errorf("failed to get infra flavor for default master node resources %v, %s, please contact your administrator", masterNodeResources, err)
-			} else {
-				in.MasterNodeFlavor = vmspec.FlavorName
-				log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Master Node Flavor", "vmspec", vmspec, "master flavor", in.MasterNodeFlavor)
-			}
-		}
-
 		err = validateAndDefaultIPAccess(ctx, in, cloudlet.PlatformType, features)
 		if err != nil {
 			return err
 		}
-		// TODO: Network key cannot depend on CloudletKey, because cloudlets
-		// are hidden from developers by zones. Developers are not allowed
-		// to know what cloudlets are present. So either Networks need
-		// to be dependent on zones (which seems hard, as each cloudlet
-		// in a zone could be different infrastructure platforms), or
-		// networks need to be independent of both cloudlets and zones,
-		// meaning they specify requirements (like public/private/etc),
-		// rather than point to a specific existing network.
-		for _, n := range in.Networks {
-			network := edgeproto.Network{}
-			networkKey := edgeproto.NetworkKey{
-				Name:        n,
-				CloudletKey: in.CloudletKey,
+		resourceWarnings := []string{}
+		// Skip resource checks if the cluster is managed by the cloudlet
+		if !in.IsCloudletManaged() {
+			ostm := edgeproto.NewOptionalSTM(stm)
+			if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
+				// select infra-specific flavor for node pools
+				for _, pool := range in.NodePools {
+					az, optRes, err := s.setInfraFlavor(ctx, ostm, &cloudlet, features, &info, pool.NodeResources)
+					if err != nil {
+						return fmt.Errorf("failed to select infra flavor for pool %s, %s", pool.Name, err)
+					}
+					// TODO:
+					// ClusterInst.OptRes should really be an array
+					// or map instead of a single string, to be able
+					// to support multiple optional resources from
+					// multiple node pools.
+					if in.OptRes != "" && optRes != in.OptRes {
+						return fmt.Errorf("cluster currently only supports a single cluster-wide optional resource, but have both %q and %q", in.OptRes, optRes)
+					}
+					if in.AvailabilityZone != "" && az != in.AvailabilityZone {
+						return fmt.Errorf("availability zone mismatch, flavors selected from both %s and %s zones", in.AvailabilityZone, az)
+					}
+					in.OptRes = optRes
+					in.AvailabilityZone = az
+					log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Node Flavor", "pool", pool)
+				}
+			} else {
+				az, optRes, err := s.setInfraFlavor(ctx, ostm, &cloudlet, features, &info, in.NodeResources)
+				if err != nil {
+					return fmt.Errorf("failed to select infra flavor, %s", err)
+				}
+				in.OptRes = optRes
+				in.AvailabilityZone = az
+				log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Node Flavor", "res", in.NodeResources)
 			}
-			if !s.all.networkApi.store.STMGet(stm, &networkKey, &network) {
-				return networkKey.NotFoundError()
-			}
-			if network.DeletePrepare {
-				return networkKey.BeingDeletedError()
-			}
-			if in.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
-				if network.ConnectionType == edgeproto.NetworkConnectionType_CONNECT_TO_LOAD_BALANCER || network.ConnectionType == edgeproto.NetworkConnectionType_CONNECT_TO_ALL {
-					return fmt.Errorf("Cannot specify an additional cluster network of ConnectionType ConnectToLoadBalancer or ConnectToAll with IpAccessShared")
+			// Handle control (master) node specification
+			// Note for platforms that manage the control nodes themselves
+			// like Azure AKS, etc, we don't need to configure any master
+			// node resources.
+			if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.ManagesK8SControlNodes && !features.NoClusterSupport {
+				// For platforms that do not manage the master nodes,
+				// we need to set the master node flavor so we can create
+				// the master nodes.
+				// Note: temporarily drop support for running workloads on
+				// master nodes. To do so we should allow one of the user
+				// specified node pools to become the master pool.
+				// That requires more work in the platform code to support
+				// such a change and allow for more than 1 master node.
+				var masterNodeResources *edgeproto.NodeResources
+				settings := s.all.settingsApi.Get()
+				if settings.MasterNodeFlavor != "" {
+					masterFlavor := edgeproto.Flavor{}
+					masterFlavorKey := edgeproto.FlavorKey{}
+					masterFlavorKey.Name = settings.MasterNodeFlavor
+					if s.all.flavorApi.store.STMGet(stm, &masterFlavorKey, &masterFlavor) {
+						masterNodeResources = masterFlavor.ToNodeResources()
+					} else {
+						return fmt.Errorf("default master node flavor %q in settings is not found, please contact your administrator", settings.MasterNodeFlavor)
+					}
+				} else {
+					log.SpanLog(ctx, log.DebugLevelApi, "using default master node resources")
+					// no master node flavor specified by admin, just
+					// use minimum resources.
+					masterNodeResources = &edgeproto.NodeResources{
+						Vcpus: 1,
+						Ram:   2048,
+						Disk:  10,
+					}
+				}
+				log.SpanLog(ctx, log.DebugLevelApi, "lookup infra flavor for master nodes", "in.MasterNodeFlavor", in.MasterNodeFlavor, "settings.MasterNodeFlavor", settings.MasterNodeFlavor, "nodeResources", masterNodeResources)
+				vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, ostm, masterNodeResources, in.MasterNodeFlavor, cloudlet, info)
+				if err != nil {
+					return fmt.Errorf("failed to get infra flavor for default master node resources %v, %s, please contact your administrator", masterNodeResources, err)
+				} else {
+					in.MasterNodeFlavor = vmspec.FlavorName
+					log.SpanLog(ctx, log.DebugLevelApi, "Selected Cloudlet Master Node Flavor", "vmspec", vmspec, "master flavor", in.MasterNodeFlavor)
 				}
 			}
-		}
-		// make sure to do resource calculation under transactional STM
-		resCalc := NewCloudletResCalc(s.all, edgeproto.NewOptionalSTM(stm), &cloudlet.Key)
-		resCalc.deps.cloudlet = &cloudlet
-		resCalc.deps.cloudletInfo = &info
-		resCalc.deps.cloudletRefs = &refs
-		warnings, err := resCalc.CloudletFitsCluster(ctx, in, nil)
-		if err != nil {
-			resourceFailure = true
-			return err
+			// TODO: Network key cannot depend on CloudletKey, because cloudlets
+			// are hidden from developers by zones. Developers are not allowed
+			// to know what cloudlets are present. So either Networks need
+			// to be dependent on zones (which seems hard, as each cloudlet
+			// in a zone could be different infrastructure platforms), or
+			// networks need to be independent of both cloudlets and zones,
+			// meaning they specify requirements (like public/private/etc),
+			// rather than point to a specific existing network.
+			for _, n := range in.Networks {
+				network := edgeproto.Network{}
+				networkKey := edgeproto.NetworkKey{
+					Name:        n,
+					CloudletKey: in.CloudletKey,
+				}
+				if !s.all.networkApi.store.STMGet(stm, &networkKey, &network) {
+					return networkKey.NotFoundError()
+				}
+				if network.DeletePrepare {
+					return networkKey.BeingDeletedError()
+				}
+				if in.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
+					if network.ConnectionType == edgeproto.NetworkConnectionType_CONNECT_TO_LOAD_BALANCER || network.ConnectionType == edgeproto.NetworkConnectionType_CONNECT_TO_ALL {
+						return fmt.Errorf("Cannot specify an additional cluster network of ConnectionType ConnectToLoadBalancer or ConnectToAll with IpAccessShared")
+					}
+				}
+			}
+			// make sure to do resource calculation under transactional STM
+			resCalc := NewCloudletResCalc(s.all, edgeproto.NewOptionalSTM(stm), &cloudlet.Key)
+			resCalc.deps.cloudlet = &cloudlet
+			resCalc.deps.cloudletInfo = &info
+			resCalc.deps.cloudletRefs = &refs
+			resourceWarnings, err = resCalc.CloudletFitsCluster(ctx, in, nil)
+			if err != nil {
+				resourceFailure = true
+				return err
+			}
 		}
 		err = allocateIP(ctx, in, &cloudlet, cloudlet.PlatformType, features, &refs)
 		if err != nil {
@@ -927,7 +931,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 		s.store.STMPut(stm, in)
 		s.dnsLabelStore.STMPut(stm, &in.CloudletKey, in.DnsLabel)
-		s.handleResourceUsageAlerts(ctx, stm, &cloudlet.Key, warnings)
+		s.handleResourceUsageAlerts(ctx, stm, &cloudlet.Key, resourceWarnings)
 		return nil
 	}
 
@@ -1297,6 +1301,9 @@ func (s *ClusterInstApi) checkDisableDisableIPV6(ctx context.Context, key *edgep
 
 func (s *ClusterInstApi) validateClusterInstUpdates(ctx context.Context, stm concurrency.STM, in *edgeproto.ClusterInst) error {
 	if in.AutoScalePolicy != "" {
+		if in.IsCloudletManaged() {
+			return errors.New("auto scale policy not supported for cloudlet managed clusters")
+		}
 		policy := edgeproto.AutoScalePolicy{}
 		policy.Key.Name = in.AutoScalePolicy
 		policy.Key.Organization = in.Key.Organization
@@ -1677,6 +1684,11 @@ func (s *ClusterInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.Clust
 			} else {
 				inst.Errors = nil
 			}
+		}
+		if fmap.HasOrHasChild(edgeproto.ClusterInstInfoFieldCloudletManagedClusterInfo) && in.CloudletManagedClusterInfo != nil {
+			inst.KubernetesVersion = in.CloudletManagedClusterInfo.KubernetesVersion
+			inst.NodePools = in.CloudletManagedClusterInfo.NodePools
+			saveInst = true
 		}
 		if saveInst {
 			s.store.STMPut(stm, &inst)

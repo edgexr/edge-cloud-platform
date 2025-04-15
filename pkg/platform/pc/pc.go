@@ -52,6 +52,16 @@ type SSHOptions struct {
 	CachedIP bool
 }
 
+type WriteFileOptions struct {
+	Perms *os.FileMode
+}
+
+type WriteFileOp func(opts *WriteFileOptions)
+
+func WithFilePerms(perms os.FileMode) WriteFileOp {
+	return func(opts *WriteFileOptions) { opts.Perms = &perms }
+}
+
 // Most of the systems have a limit of 128KB for arg size
 // But since we encode our data to base64, leave some room for
 // command name and other arguments, everything except data.
@@ -61,8 +71,13 @@ var minDataArgLimitBytes = (120 * 1024)
 // Some utility functions
 
 // WriteFile writes the file contents optionally in sudo mode
-func WriteFile(client ssh.Client, file string, contents string, kind string, sudo Sudo) error {
-	log.DebugLog(log.DebugLevelInfra, "write file", "kind", kind, "sudo", sudo)
+func WriteFile(client ssh.Client, file string, contents string, kind string, sudo Sudo, ops ...WriteFileOp) error {
+	opts := &WriteFileOptions{}
+	for _, op := range ops {
+		op(opts)
+	}
+
+	log.DebugLog(log.DebugLevelInfra, "write file", "kind", kind, "sudo", sudo, "opts", opts)
 
 	// encode to avoid issues with quotes, special characters, and shell
 	// evaluation of $vars.
@@ -122,6 +137,16 @@ func WriteFile(client ssh.Client, file string, contents string, kind string, sud
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error writing %s, %s, %s, %v", kind, cmd, out, err)
+	}
+	if opts.Perms != nil {
+		cmd = fmt.Sprintf("chmod %#o %s", *opts.Perms, file)
+		if sudo {
+			cmd = fmt.Sprintf("sudo bash -c '%s'", cmd)
+		}
+		out, err := client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("error setting permissions on file %s, %s, %s, %v", file, cmd, out, err)
+		}
 	}
 	log.DebugLog(log.DebugLevelInfra, "wrote file", "kind", kind)
 	return nil

@@ -488,6 +488,14 @@ func (s *CloudletInternal) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
+func (s *CloudletManagedClusterKey) ValidateKey() error {
+	return nil
+}
+
+func (s *CloudletManagedCluster) Validate(fmap objstore.FieldMap) error {
+	return nil
+}
+
 func (s CloudletNodeKey) ValidateKey() error {
 	// Cloudlet nodes are only created internally
 	if s.Name == "" {
@@ -1637,4 +1645,8 @@ type OrgName string
 func (s OrgName) Matches(o OrgName) bool {
 	// organization names are case insensitive
 	return strings.EqualFold(string(s), string(o))
+}
+
+func (s *ClusterInst) IsCloudletManaged() bool {
+	return s.CloudletManagedClusterId != "" || s.CloudletManagedClusterName != ""
 }

@@ -187,3 +187,22 @@ func (s *CCRMHandler) GetCloudletResources(ctx context.Context, in *edgeproto.Cl
 	}
 	return res, nil
 }
+
+func (s *CCRMHandler) GetCloudletManagedClusters(in *edgeproto.CloudletManagedCluster, cb edgeproto.CloudletPlatformAPI_GetCloudletManagedClustersServer) error {
+	ctx := cb.Context()
+	pf, err := s.getCRMCloudletPlatform(ctx, &in.CloudletKey)
+	if err != nil {
+		return err
+	}
+	clusters, err := pf.GetCloudletManagedClusters(ctx)
+	if err != nil {
+		return err
+	}
+	for _, cluster := range clusters {
+		err := cb.Send(cluster)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

@@ -108,7 +108,7 @@ func (s *ClusterInstApi) validatePotentialCloudlet(ctx context.Context, cctx *Ca
 		return nil, NoSupportIPV6, errors.New(NoSupportIPV6)
 	}
 	if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
-		if features.KubernetesRequiresWorkerNodes && len(in.NodePools) == 0 {
+		if features.KubernetesRequiresWorkerNodes && len(in.NodePools) == 0 && !in.IsCloudletManaged() {
 			return nil, RequiresNodePools, errors.New(RequiresNodePools)
 		}
 		if !features.SupportsMultipleNodePools && len(in.NodePools) > 1 {

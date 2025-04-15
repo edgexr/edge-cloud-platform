@@ -16,6 +16,7 @@ package mock
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
@@ -266,4 +267,12 @@ func (s *Platform) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedApp
 
 func (s *Platform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
 	return nil
+}
+
+func (s *Platform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	return nil, errors.New("not supported")
 }

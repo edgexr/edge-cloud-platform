@@ -16,6 +16,7 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -187,4 +188,12 @@ func (a *AzurePlatform) GetClusterAdditionalResources(ctx context.Context, cloud
 
 func (a *AzurePlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return nil
+}
+
+func (v *AzurePlatform) GetAllClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (v *AzurePlatform) RegisterCluster(ctx context.Context, clusterName string, in *edgeproto.ClusterInst) (map[string]string, error) {
+	return nil, errors.New("not supported")
 }

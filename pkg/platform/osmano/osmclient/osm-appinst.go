@@ -263,9 +263,13 @@ func (s *OSMClient) waitAppInstStatus(ctx context.Context, name string, action c
 			// found
 			log.SpanLog(ctx, log.DebugLevelInfra, "check appinst status", "name", name, "resourceState", ksu.ResourceState, "operatingState", ksu.OperatingState)
 			resState = ksu.ResourceState
-			if action == cloudcommon.Create && resState == RESOURCE_STATE_READY {
-				// desired final state for create
-				return ksu, nil
+			if action == cloudcommon.Create {
+				if resState == RESOURCE_STATE_READY {
+					// desired final state for create
+					return ksu, nil
+				} else if resState == RESOURCE_STATE_ERROR {
+					return nil, fmt.Errorf("ksu in error state")
+				}
 			}
 		}
 		time.Sleep(retryDelay)

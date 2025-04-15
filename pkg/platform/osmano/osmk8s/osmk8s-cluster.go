@@ -16,6 +16,8 @@ package osmk8s
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
@@ -77,4 +79,50 @@ func (s *Platform) GetClusterAdditionalResources(ctx context.Context, cloudlet *
 
 func (s *Platform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return nil
+}
+
+func (s *Platform) GetAllClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	clusters, err := s.osmClient.ListClusters(ctx)
+	if err != nil {
+		return nil, err
+	}
+	cloudletManagedClusters := []*edgeproto.CloudletManagedCluster{}
+	for _, cluster := range clusters {
+		cmc := &edgeproto.CloudletManagedCluster{}
+		cmc.Key.Id = cluster.ID
+		cmc.Key.Name = cluster.Name
+		cmc.KubernetesVersion = cluster.K8SVersion
+		cmc.RegionOrLocation = cluster.RegionName
+		cmc.ResourceGroup = cluster.ResourceGroup
+		cmc.State = cluster.State + "," + cluster.ResourceState
+		cmc.OperationalState = cluster.OperatingState
+		cloudletManagedClusters = append(cloudletManagedClusters, cmc)
+	}
+	return cloudletManagedClusters, nil
+}
+
+func (s *Platform) RegisterCluster(ctx context.Context, clusterName string, in *edgeproto.ClusterInst) (map[string]string, error) {
+	if in.CloudletManagedClusterId == "" && in.CloudletManagedClusterName == "" {
+		return nil, errors.New("either cloudlet cluster id or cloudlet cluster name must be specified")
+	}
+	var clusterInfo *osmclient.GetClusterInfo
+	var err error
+	var lookupKey string
+	if in.CloudletManagedClusterId != "" {
+		lookupKey = in.CloudletManagedClusterId
+		clusterInfo, _, err = s.osmClient.GetClusterInfo(ctx, in.CloudletManagedClusterId)
+	} else {
+		lookupKey = in.CloudletManagedClusterName
+		clusterInfo, err = s.osmClient.FindClusterInfo(ctx, in.CloudletManagedClusterName)
+	}
+	if err == nil && clusterInfo == nil {
+		err = fmt.Errorf("infra cluster %s not found", lookupKey)
+	}
+	if err != nil {
+		return nil, err
+	}
+	infraAnnotations := map[string]string{
+		osmclient.ClusterIDAnnotation: clusterInfo.ID,
+	}
+	return infraAnnotations, nil
 }
