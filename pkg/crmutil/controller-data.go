@@ -295,6 +295,18 @@ func (cd *CRMHandler) ClusterInstChanged(ctx context.Context, target *edgeproto.
 				log.SpanLog(ctx, log.DebugLevelInfra, "failed to set cluster inst resources", "err", err)
 			}
 		}
+		if new.IsCloudletManaged() {
+			cmcInfo, err := pf.GetCloudletManagedClusterInfo(ctx, new)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "error getting managed cluster info", "err", err)
+			} else {
+				err = cd.clusterInstCloudletManagedClusterInfo(ctx, sender, cmcInfo)
+				if err != nil {
+					// this can happen if the cluster is deleted
+					log.SpanLog(ctx, log.DebugLevelInfra, "failed to set cluster inst cloudlet managed cluster info", "err", err)
+				}
+			}
+		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "cluster state ready", "ClusterInst", *new)
 		sender.SendState(edgeproto.TrackedState_READY)
 	} else if new.State == edgeproto.TrackedState_UPDATE_REQUESTED {
@@ -593,6 +605,14 @@ func (cd *CRMHandler) clusterInstInfoResources(ctx context.Context, sender edgep
 	return sender.SendUpdate(func(info *edgeproto.ClusterInstInfo) error {
 		info.Fields = []string{edgeproto.ClusterInstInfoFieldResources}
 		info.Resources = *resources
+		return nil
+	})
+}
+
+func (cd *CRMHandler) clusterInstCloudletManagedClusterInfo(ctx context.Context, sender edgeproto.ClusterInstInfoSender, cmcInfo *edgeproto.CloudletManagedClusterInfo) error {
+	return sender.SendUpdate(func(info *edgeproto.ClusterInstInfo) error {
+		info.Fields = []string{edgeproto.ClusterInstInfoFieldCloudletManagedClusterInfo}
+		info.CloudletManagedClusterInfo = cmcInfo
 		return nil
 	})
 }

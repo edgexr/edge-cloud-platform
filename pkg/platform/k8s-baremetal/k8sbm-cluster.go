@@ -16,6 +16,7 @@ package k8sbm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -45,4 +46,12 @@ func (k *K8sBareMetalPlatform) DeleteClusterInst(ctx context.Context, clusterIns
 
 func (s *K8sBareMetalPlatform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("ChangeClusterInstDNS not supported on " + platformName())
+}
+
+func (s *K8sBareMetalPlatform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (s *K8sBareMetalPlatform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	return nil, errors.New("not supported")
 }

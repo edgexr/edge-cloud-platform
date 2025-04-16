@@ -3067,3 +3067,127 @@ func addCloudletGPUInfo(info *edgeproto.CloudletInfo, gpus map[string]*edgeproto
 		}
 	}
 }
+
+func (s *CloudletApi) ShowCloudletManagedCluster(filter *edgeproto.CloudletManagedCluster, cb edgeproto.CloudletManagedClusterApi_ShowCloudletManagedClusterServer) error {
+	ctx := cb.Context()
+
+	if filter.CloudletKey.Organization == "" {
+		return errors.New("cloudlet organization is required")
+	}
+	if filter.CloudletKey.Name == "" {
+		return errors.New("cloudlet name is required")
+	}
+	cloudlet := edgeproto.Cloudlet{}
+	if !s.all.cloudletApi.cache.Get(&filter.CloudletKey, &cloudlet) {
+		return filter.CloudletKey.NotFoundError()
+	}
+	if cloudlet.CrmOnEdge {
+		return errors.New("show cloudlet managed clusters is not supported for CRM on edge")
+	}
+	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+	if err != nil {
+		return fmt.Errorf("failed to find platform features for cloudlet %s: %s", filter.CloudletKey.GetKeyString(), err)
+	}
+	if !features.SupportsCloudletManagedClusters {
+		return fmt.Errorf("platform %s does not support cloudlet managed clusters", features.PlatformType)
+	}
+	conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
+	if err != nil {
+		return err
+	}
+	api := edgeproto.NewCloudletPlatformAPIClient(conn)
+	// Note that this returns all clusters that the cloudlet is aware of,
+	// as it typically won't track which clusters were created by the
+	// Edge Cloud platform vs created directly.
+	outStream, err := api.GetCloudletManagedClusters(ctx, filter)
+	if err == nil {
+		err = cloudcommon.StreamRecv(ctx, outStream, func(obj *edgeproto.CloudletManagedCluster) error {
+			return cb.Send(obj)
+		})
+	}
+	if err != nil {
+		return cloudcommon.GRPCErrorUnwrap(err)
+	}
+	return nil
+}
+
+func (s *CloudletApi) RegisterCloudletManagedCluster(in *edgeproto.CloudletManagedCluster, cb edgeproto.CloudletManagedClusterApi_RegisterCloudletManagedClusterServer) error {
+	ctx := cb.Context()
+	log.SpanLog(ctx, log.DebugLevelApi, "RegisterCloudletManagedCluster", "cluster", in)
+	if in.Key.Id == "" && in.Key.Name == "" {
+		return errors.New("cloudlet cluster id or name not specified")
+	}
+	if in.CloudletKey.Name == "" {
+		return errors.New("cloudlet name must be specified")
+	}
+	if in.CloudletKey.Organization == "" {
+		return errors.New("cloudlet organization must be specified")
+	}
+	// check if cluster already registered
+	err := s.all.clusterInstApi.cache.Show(&edgeproto.ClusterInst{}, func(obj *edgeproto.ClusterInst) error {
+		if obj.CloudletKey.Matches(&in.CloudletKey) {
+			if obj.CloudletManagedClusterId == in.Key.Id {
+				return fmt.Errorf("cluster with infra id %q already registered", in.Key.Id)
+			}
+			if obj.CloudletManagedClusterName == in.Key.Name {
+				return errors.New("cluster with infra name %q already registered")
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	ci := &edgeproto.ClusterInst{}
+	ci.Key = in.ClusterKey
+	ci.CloudletKey = in.CloudletKey
+	ci.CloudletManagedClusterId = in.Key.Id
+	ci.CloudletManagedClusterName = in.Key.Name
+	ci.Reservable = in.Reservable
+	ci.MultiTenant = in.MultiTenant
+	// for now only kubernetes supported
+	ci.Deployment = cloudcommon.DeploymentTypeKubernetes
+	// default cluster name to infra cluster name if not specified
+	if ci.Key.Name == "" {
+		ci.Key.Name = in.Key.Name
+	}
+	return s.all.clusterInstApi.CreateClusterInst(ci, cb)
+}
+
+func (s *CloudletApi) DeregisterCloudletManagedCluster(in *edgeproto.CloudletManagedCluster, cb edgeproto.CloudletManagedClusterApi_DeregisterCloudletManagedClusterServer) error {
+	ctx := cb.Context()
+	log.SpanLog(ctx, log.DebugLevelApi, "DeregisterCloudletManagedCluster", "cluster", in)
+	ci := edgeproto.ClusterInst{}
+	if in.ClusterKey.Name != "" && in.ClusterKey.Organization != "" {
+		if !s.all.clusterInstApi.cache.Get(&in.ClusterKey, &ci) {
+			return in.ClusterKey.NotFoundError()
+		}
+	} else if in.Key.Id != "" || in.Key.Name != "" {
+		if in.CloudletKey.Name == "" {
+			return errors.New("cloudlet name must be specified")
+		}
+		if in.CloudletKey.Organization == "" {
+			return errors.New("cloudlet organization must be specified")
+		}
+		found := false
+		err := s.all.clusterInstApi.cache.Show(&edgeproto.ClusterInst{}, func(obj *edgeproto.ClusterInst) error {
+			if !obj.CloudletKey.Matches(&in.CloudletKey) {
+				return nil
+			}
+			if obj.CloudletManagedClusterId == in.Key.Id || obj.CloudletManagedClusterName == in.Key.Name {
+				ci.DeepCopyIn(obj)
+				found = true
+				return nil
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		if !found {
+			return fmt.Errorf("cloudlet managed cluster not found for infra name %q, infra id %q", in.Key.Name, in.Key.Id)
+		}
+	}
+	return s.all.clusterInstApi.DeleteClusterInst(&ci, cb)
+}

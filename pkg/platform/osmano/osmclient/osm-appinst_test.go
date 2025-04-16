@@ -16,6 +16,8 @@ package osmclient
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -72,4 +74,21 @@ func TestDeleteAppInst(t *testing.T) {
 	appInst := getTestAppInst(t, app, clusterName)
 	err := s.DeleteAppInst(ctx, appInst)
 	require.Nil(t, err)
+}
+
+func TestListAppInst(t *testing.T) {
+	s := createTestClient(t)
+
+	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	ksus, err := s.ListKSU(ctx)
+	require.Nil(t, err)
+	for _, ksu := range ksus {
+		out, err := json.MarshalIndent(ksu, "", "  ")
+		require.Nil(t, err)
+		fmt.Println(string(out))
+	}
 }

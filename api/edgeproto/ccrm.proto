@@ -90,6 +90,7 @@ service CloudletPlatformAPI {
     rpc ApplyCloudlet(Cloudlet) returns (stream CloudletInfo) {}
     rpc RefreshCerts(Cloudlet) returns (Result) {}
     rpc GetCloudletResources(Cloudlet) returns (InfraResourceMap) {}
+    rpc GetCloudletManagedClusters(CloudletManagedCluster) returns (stream CloudletManagedCluster) {}
     option (protogen.internal_api) = true;
 }
 

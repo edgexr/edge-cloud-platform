@@ -32,6 +32,7 @@ var VersionHash_UpgradeFuncs = []VersionUpgrade{
 	{56, "75883d14000640b2ecf694fe8ef9192b", ZoneFeature, "ZoneFeature"},
 	{57, "e65c39ec2a489834dd06e87f7239f9a8", NodePoolsFeature, "NodePoolsFeature"},
 	{58, "b25b4e18e9a1dadfd3006e23fabfbf95", AppObjID, "AppObjID"},
+	{59, "abec45b13db5cd29e3bcf63d3b80be29", nil, ""},
 }
 
 // Auto-generated code: DO NOT EDIT

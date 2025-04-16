@@ -54,6 +54,12 @@ type ManagedK8sProvider interface {
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
+	// get all clusters, including ones not created by us
+	GetAllClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error)
+	// RegisterClusterInst registers an existing cloudlet managed cluster.
+	// It should check that the cluster exists, and return the same types of
+	// annotations as RunClusterCreateCommand.
+	RegisterCluster(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
 }
 
 const KconfPerms fs.FileMode = 0644

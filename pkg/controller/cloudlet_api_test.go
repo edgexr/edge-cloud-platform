@@ -234,6 +234,7 @@ func TestCloudletApi(t *testing.T) {
 	testAllianceOrgs(t, ctx, apis)
 	testCloudletEdgeboxOnly(t, ctx, cloudletData[2], apis)
 	testCloudletUpdateInfo(t, ctx, apis)
+	testCloudletManagedClusters(t, ctx, apis)
 }
 
 func testBadLat(t *testing.T, ctx context.Context, clbad *edgeproto.Cloudlet, lats []float64, action string, apis *AllApis) {
@@ -1228,4 +1229,123 @@ func testCloudletUpdateInfo(t *testing.T, ctx context.Context, apis *AllApis) {
 	found = apis.cloudletInfoApi.cache.Get(&cloudlet.Key, cloudletInfo)
 	require.True(t, found)
 	require.Equal(t, updatedFlavors, cloudletInfo.Flavors)
+}
+
+type cmcOutStream struct {
+	data []*edgeproto.CloudletManagedCluster
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (s *cmcOutStream) Send(obj *edgeproto.CloudletManagedCluster) error {
+	s.data = append(s.data, obj)
+	return nil
+}
+
+func (s *cmcOutStream) Context() context.Context {
+	return s.ctx
+}
+
+func testCloudletManagedClusters(t *testing.T, ctx context.Context, apis *AllApis) {
+	testCloudlet := edgeproto.Cloudlet{
+		Key: edgeproto.CloudletKey{
+			Name:         "managed-cluster-test",
+			Organization: "managed-operator",
+		},
+		PlatformType:  platform.PlatformTypeFake,
+		NumDynamicIps: 100,
+		Location: dme.Loc{
+			Latitude:  1,
+			Longitude: 1,
+		},
+		AccessVars: map[string]string{
+			"APIKey": "xyz",
+		},
+		EnvVar: map[string]string{
+			"LOAD_MANAGED_CLUSTERS": "true",
+		},
+	}
+	cloudletManagedClusters := []*edgeproto.CloudletManagedCluster{}
+	for ii := range 3 {
+		cmc := &edgeproto.CloudletManagedCluster{}
+		cmc.Key.Name = fmt.Sprintf("managed-cluster-name-%d", ii)
+		cmc.Key.Id = fmt.Sprintf("managed-cluster-id-%d", ii)
+		cloudletManagedClusters = append(cloudletManagedClusters, cmc)
+	}
+	fake.CloudletManagedClusters = cloudletManagedClusters
+	defer func() {
+		fake.CloudletManagedClusters = nil
+	}()
+
+	// create cloudlet
+	log.SpanLog(ctx, log.DebugLevelApi, "creating cloudlet", "key", testCloudlet.Key)
+	err := apis.cloudletApi.CreateCloudlet(&testCloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	defer func() {
+		err = apis.cloudletApi.DeleteCloudlet(&testCloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+		require.Nil(t, err)
+	}()
+
+	// verify show cloudlet managed clusters
+	cmcOutData := cmcOutStream{
+		ctx: ctx,
+	}
+	filter := &edgeproto.CloudletManagedCluster{
+		CloudletKey: testCloudlet.Key,
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "show cloudlet managed clusters", "key", testCloudlet.Key, "filter", filter)
+	err = apis.cloudletApi.ShowCloudletManagedCluster(filter, &cmcOutData)
+	require.Nil(t, err)
+	require.Equal(t, len(cloudletManagedClusters), len(cmcOutData.data))
+	for ii := range len(cloudletManagedClusters) {
+		require.Equal(t, cloudletManagedClusters[ii].Key, cmcOutData.data[ii].Key)
+	}
+
+	// registering a non-existing cloudlet managed cluster must fail
+	cmcBad := &edgeproto.CloudletManagedCluster{
+		CloudletKey: testCloudlet.Key,
+		ClusterKey: edgeproto.ClusterKey{
+			Name:         "test-cluster",
+			Organization: "test-organization",
+		},
+		Key: edgeproto.CloudletManagedClusterKey{
+			Name: "non-existing",
+		},
+	}
+	err = apis.cloudletApi.RegisterCloudletManagedCluster(cmcBad, testutil.NewCudStreamoutClusterInst(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), `Cloudlet managed cluster name "non-existing" or id "" not found`)
+
+	// run twice to verify we can re-register after deregistering
+	for _ = range 2 {
+		// register an existing cluster
+		cmc := *cloudletManagedClusters[0]
+		cmc.CloudletKey = testCloudlet.Key
+		cmc.ClusterKey.Name = "managed-cluster-reservable"
+		cmc.ClusterKey.Organization = edgeproto.OrganizationEdgeCloud
+		cmc.Reservable = true
+		err = apis.cloudletApi.RegisterCloudletManagedCluster(&cmc, testutil.NewCudStreamoutClusterInst(ctx))
+		require.Nil(t, err)
+		// check that clusterinst was created
+		ci := edgeproto.ClusterInst{}
+		found := apis.clusterInstApi.cache.Get(&cmc.ClusterKey, &ci)
+		require.True(t, found)
+		require.Equal(t, cmc.ClusterKey, ci.Key)
+		require.Equal(t, cmc.CloudletKey, ci.CloudletKey)
+		require.Equal(t, cmc.Key.Name, ci.CloudletManagedClusterName)
+		require.Equal(t, cmc.Key.Id, ci.CloudletManagedClusterId)
+		require.Equal(t, cmc.Reservable, ci.Reservable)
+
+		// registering the same cloudlet managed cluster twice must fail
+		err = apis.cloudletApi.RegisterCloudletManagedCluster(&cmc, testutil.NewCudStreamoutClusterInst(ctx))
+		require.NotNil(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("cluster with infra id %q already registered", cmc.Key.Id))
+
+		// deregister the cloudlet managed cluster
+		err = apis.cloudletApi.DeregisterCloudletManagedCluster(&cmc, testutil.NewCudStreamoutClusterInst(ctx))
+		require.Nil(t, err)
+		// check that clusterinst was deleted
+		found = apis.clusterInstApi.cache.Get(&cmc.ClusterKey, &ci)
+		require.False(t, found)
+	}
 }

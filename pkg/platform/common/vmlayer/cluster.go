@@ -1052,3 +1052,11 @@ func setupDockerIPV6(ctx context.Context, client ssh.Client) error {
 	}
 	return nil
 }
+
+func (v *VMPlatform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (v *VMPlatform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	return nil, errors.New("not supported")
+}

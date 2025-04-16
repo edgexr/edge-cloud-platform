@@ -2796,6 +2796,252 @@ var CloudletMetricsApiCmds = []*cobra.Command{
 	ShowCloudletMetricsCmd.GenCmd(),
 }
 
+var CloudletManagedClusterApiCmd edgeproto.CloudletManagedClusterApiClient
+
+var ShowCloudletManagedClusterCmd = &cli.Command{
+	Use:          "ShowCloudletManagedCluster",
+	OptionalArgs: strings.Join(append(CloudletManagedClusterRequiredArgs, CloudletManagedClusterOptionalArgs...), " "),
+	AliasArgs:    strings.Join(CloudletManagedClusterAliasArgs, " "),
+	SpecialArgs:  &CloudletManagedClusterSpecialArgs,
+	Comments:     CloudletManagedClusterComments,
+	ReqData:      &edgeproto.CloudletManagedCluster{},
+	ReplyData:    &edgeproto.CloudletManagedCluster{},
+	Run:          runShowCloudletManagedCluster,
+}
+
+func runShowCloudletManagedCluster(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.CloudletManagedCluster)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowCloudletManagedCluster(c, obj)
+}
+
+func ShowCloudletManagedCluster(c *cli.Command, in *edgeproto.CloudletManagedCluster) error {
+	if CloudletManagedClusterApiCmd == nil {
+		return fmt.Errorf("CloudletManagedClusterApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := CloudletManagedClusterApiCmd.ShowCloudletManagedCluster(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowCloudletManagedCluster failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.CloudletManagedCluster, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowCloudletManagedCluster recv failed: %s", errstr)
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowCloudletManagedClusters(c *cli.Command, data []edgeproto.CloudletManagedCluster, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowCloudletManagedCluster %v\n", data[ii])
+		myerr := ShowCloudletManagedCluster(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
+var RegisterCloudletManagedClusterCmd = &cli.Command{
+	Use:          "RegisterCloudletManagedCluster",
+	RequiredArgs: strings.Join(CloudletManagedClusterRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletManagedClusterOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletManagedClusterAliasArgs, " "),
+	SpecialArgs:  &CloudletManagedClusterSpecialArgs,
+	Comments:     CloudletManagedClusterComments,
+	ReqData:      &edgeproto.CloudletManagedCluster{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRegisterCloudletManagedCluster,
+}
+
+func runRegisterCloudletManagedCluster(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.CloudletManagedCluster)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return RegisterCloudletManagedCluster(c, obj)
+}
+
+func RegisterCloudletManagedCluster(c *cli.Command, in *edgeproto.CloudletManagedCluster) error {
+	if CloudletManagedClusterApiCmd == nil {
+		return fmt.Errorf("CloudletManagedClusterApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := CloudletManagedClusterApiCmd.RegisterCloudletManagedCluster(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("RegisterCloudletManagedCluster failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.Result, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("RegisterCloudletManagedCluster recv failed: %s", errstr)
+		}
+		if cli.OutputStream {
+			c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+			continue
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func RegisterCloudletManagedClusters(c *cli.Command, data []edgeproto.CloudletManagedCluster, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("RegisterCloudletManagedCluster %v\n", data[ii])
+		myerr := RegisterCloudletManagedCluster(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
+var DeregisterCloudletManagedClusterCmd = &cli.Command{
+	Use:          "DeregisterCloudletManagedCluster",
+	RequiredArgs: strings.Join(CloudletManagedClusterRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletManagedClusterOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletManagedClusterAliasArgs, " "),
+	SpecialArgs:  &CloudletManagedClusterSpecialArgs,
+	Comments:     CloudletManagedClusterComments,
+	ReqData:      &edgeproto.CloudletManagedCluster{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runDeregisterCloudletManagedCluster,
+}
+
+func runDeregisterCloudletManagedCluster(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.CloudletManagedCluster)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return DeregisterCloudletManagedCluster(c, obj)
+}
+
+func DeregisterCloudletManagedCluster(c *cli.Command, in *edgeproto.CloudletManagedCluster) error {
+	if CloudletManagedClusterApiCmd == nil {
+		return fmt.Errorf("CloudletManagedClusterApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := CloudletManagedClusterApiCmd.DeregisterCloudletManagedCluster(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("DeregisterCloudletManagedCluster failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.Result, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("DeregisterCloudletManagedCluster recv failed: %s", errstr)
+		}
+		if cli.OutputStream {
+			c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+			continue
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func DeregisterCloudletManagedClusters(c *cli.Command, data []edgeproto.CloudletManagedCluster, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("DeregisterCloudletManagedCluster %v\n", data[ii])
+		myerr := DeregisterCloudletManagedCluster(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
+var CloudletManagedClusterApiCmds = []*cobra.Command{
+	ShowCloudletManagedClusterCmd.GenCmd(),
+	RegisterCloudletManagedClusterCmd.GenCmd(),
+	DeregisterCloudletManagedClusterCmd.GenCmd(),
+}
+
 var OperationTimeLimitsRequiredArgs = []string{}
 var OperationTimeLimitsOptionalArgs = []string{
 	"createclusterinsttimeout",
@@ -2941,6 +3187,7 @@ var PlatformFeaturesOptionalArgs = []string{
 	"usesingress",
 	"requiresgpudriver",
 	"usesrootlb",
+	"supportscloudletmanagedclusters",
 	"resourcequotaproperties:#.name",
 	"resourcequotaproperties:#.value",
 	"resourcequotaproperties:#.inframaxvalue",
@@ -2985,6 +3232,7 @@ var PlatformFeaturesComments = map[string]string{
 	"usesingress":                              "Platform uses ingress for inbound Kubernetes HTTP traffic",
 	"requiresgpudriver":                        "Platform requires GPU Driver to be managed by Edge Cloud for installation onto new VMs or nodes with the license provided by the operator.",
 	"usesrootlb":                               "Platform users a shared root load balancer",
+	"supportscloudletmanagedclusters":          "Platform supports cloudlet managed clusters",
 	"resourcequotaproperties:#.name":           "Resource name",
 	"resourcequotaproperties:#.value":          "Resource value",
 	"resourcequotaproperties:#.inframaxvalue":  "Resource infra max value",
@@ -3844,6 +4092,63 @@ var CloudletMetricsComments = map[string]string{
 	"foo": "what goes here?",
 }
 var CloudletMetricsSpecialArgs = map[string]string{}
+var CloudletManagedClusterKeyRequiredArgs = []string{}
+var CloudletManagedClusterKeyOptionalArgs = []string{
+	"name",
+	"id",
+}
+var CloudletManagedClusterKeyAliasArgs = []string{}
+var CloudletManagedClusterKeyComments = map[string]string{
+	"name": "Infra specific cluster name",
+	"id":   "Infra specific cluster ID",
+}
+var CloudletManagedClusterKeySpecialArgs = map[string]string{}
+var CloudletManagedClusterRequiredArgs = []string{}
+var CloudletManagedClusterOptionalArgs = []string{
+	"name",
+	"id",
+	"cloudletorg",
+	"cloudlet",
+	"federatedorg",
+	"cluster",
+	"clusterorg",
+	"reservable",
+	"multitenant",
+	"kubernetesversion",
+	"regionorlocation",
+	"resourcegroup",
+	"state",
+	"operationalstate",
+}
+var CloudletManagedClusterAliasArgs = []string{
+	"name=key.name",
+	"id=key.id",
+	"cloudletorg=cloudletkey.organization",
+	"cloudlet=cloudletkey.name",
+	"federatedorg=cloudletkey.federatedorganization",
+	"cluster=clusterkey.name",
+	"clusterorg=clusterkey.organization",
+}
+var CloudletManagedClusterComments = map[string]string{
+	"fields":            "Fields are used for the Update API to specify which fields to apply",
+	"name":              "Infra specific cluster name",
+	"id":                "Infra specific cluster ID",
+	"cloudletorg":       "Organization of the cloudlet site",
+	"cloudlet":          "Name of the cloudlet",
+	"federatedorg":      "Federated operator organization who shared this cloudlet",
+	"cluster":           "Cluster name",
+	"clusterorg":        "Name of the organization that this cluster belongs to",
+	"reservable":        "Set to true if cluster shall be reservable by users",
+	"multitenant":       "Set to true if cluster shall be multi-tenant",
+	"kubernetesversion": "Kubernetes version reported by infra",
+	"regionorlocation":  "Region or location information",
+	"resourcegroup":     "Resource group reported by infra",
+	"state":             "State of the cluster",
+	"operationalstate":  "Power or operating state of the cluster",
+}
+var CloudletManagedClusterSpecialArgs = map[string]string{
+	"fields": "StringArray",
+}
 var ShowPlatformFeaturesForZoneRequiredArgs = []string{}
 var ShowPlatformFeaturesForZoneOptionalArgs = []string{
 	"zoneorg",

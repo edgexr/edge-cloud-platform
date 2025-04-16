@@ -58,6 +58,7 @@ type Platform struct {
 	pause                        sync.WaitGroup
 	CustomFlavorList             []*edgeproto.FlavorInfo
 	simPublicCloud               bool
+	cloudletManagedClusters      []*edgeproto.CloudletManagedCluster
 }
 
 const (
@@ -132,6 +133,9 @@ var fakeProps = map[string]*edgeproto.PropertyInfo{
 		Name:        "fake platform appinst create fail",
 		Description: "for e2e tests, make appinst create fail",
 	},
+	"LOAD_MANAGED_CLUSTERS": {
+		Name: "Load fake managed clusters",
+	},
 }
 
 var AccessVarProps = map[string]*edgeproto.PropertyInfo{
@@ -145,6 +149,8 @@ var AccessVarProps = map[string]*edgeproto.PropertyInfo{
 var quotaProps = cloudcommon.GetCommonResourceQuotaProps(
 	cloudcommon.ResourceInstances,
 )
+
+var CloudletManagedClusters = []*edgeproto.CloudletManagedCluster{}
 
 func NewPlatform() platform.Platform {
 	return &Platform{}
@@ -239,6 +245,9 @@ func (s *Platform) InitCommon(ctx context.Context, platformConfig *platform.Plat
 		}
 		s.resources.UpdateExternalIP(fakecommon.ResourceAdd)
 	}
+	if _, ok := s.commonPf.Properties.GetValue("LOAD_MANAGED_CLUSTERS"); ok {
+		s.cloudletManagedClusters = CloudletManagedClusters
+	}
 
 	err = s.UpdateResourcesMax(platformConfig.EnvVars)
 	if err != nil {
@@ -270,6 +279,7 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsPlatformHighAvailabilityOnK8S:    true,
 		SupportsMultipleNodePools:                true,
 		UsesRootLb:                               true,
+		SupportsCloudletManagedClusters:          true,
 		ManagesK8SControlNodes:                   s.simPublicCloud,
 		Properties:                               fakeProps,
 		ResourceQuotaProperties:                  quotaProps,
@@ -332,8 +342,21 @@ func (s *Platform) CreateClusterInst(ctx context.Context, clusterInst *edgeproto
 	if s.simulateClusterCreateFailure {
 		return nil, errors.New("fake platform create ClusterInst failed")
 	}
-	s.resources.AddClusterResources(clusterInst)
-
+	if clusterInst.IsCloudletManaged() {
+		// ensure cluster exists
+		found := false
+		for _, cluster := range s.cloudletManagedClusters {
+			if cluster.Key.Id == clusterInst.CloudletManagedClusterId || cluster.Key.Name == clusterInst.CloudletManagedClusterName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("cloudlet managed cluster name %q or id %q not found", clusterInst.CloudletManagedClusterName, clusterInst.CloudletManagedClusterId)
+		}
+	} else {
+		s.resources.AddClusterResources(clusterInst)
+	}
 	// verify we can find any provisioned networks
 	if len(clusterInst.Networks) > 0 {
 		networks, err := edgeproto.GetNetworksForClusterInst(ctx, clusterInst, s.caches.NetworkCache)
@@ -353,8 +376,9 @@ func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto
 	if s.simulateClusterDeleteFailure {
 		return errors.New("fake platform delete ClusterInst failed")
 	}
-	s.resources.RemoveClusterResources(&clusterInst.Key)
-
+	if !clusterInst.IsCloudletManaged() {
+		s.resources.RemoveClusterResources(&clusterInst.Key)
+	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "fake ClusterInst deleted")
 	return nil
 }
@@ -714,4 +738,28 @@ func (s *Platform) SetPause(enable bool) {
 	} else {
 		s.pause.Done()
 	}
+}
+
+func (s *Platform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return s.cloudletManagedClusters, nil
+}
+
+func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	for _, cmc := range s.cloudletManagedClusters {
+		if cmc.Key.Id == in.CloudletManagedClusterId || cmc.Key.Name == in.CloudletManagedClusterName {
+			return &edgeproto.CloudletManagedClusterInfo{
+				KubernetesVersion: "1.31",
+				NodePools: []*edgeproto.NodePool{{
+					Name:     "cpupool",
+					NumNodes: 2,
+					NodeResources: &edgeproto.NodeResources{
+						Vcpus: 2,
+						Ram:   4096,
+						Disk:  20,
+					},
+				}},
+			}, nil
+		}
+	}
+	return nil, errors.New("cloudlet managed cluster not found")
 }
