@@ -18,8 +18,13 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
-// FilterCloudletManagedClusters removes clusters from the list that were
-// created by Edge Cloud (us)
+// FilterCloudletManagedClusters takes as input a list of
+// clusters taken from the underlying infra platform. It then
+// checks which clusters were created by Edge Cloud, which
+// clusters were created externally and are registered, and
+// which clusters were created externally but not registered.
+// It returns all the externally created clusters by removing
+// clusters that were created by Edge Cloud.
 func FilterCloudletManagedClusters(cloudletKey *edgeproto.CloudletKey, cmcClusters []*edgeproto.CloudletManagedCluster, cache *edgeproto.ClusterInstCache, getInfraClusterName func(ci *edgeproto.ClusterInst) string) ([]*edgeproto.CloudletManagedCluster, error) {
 	type clusterInfo struct {
 		clusterKey       edgeproto.ClusterKey
@@ -54,6 +59,8 @@ func FilterCloudletManagedClusters(cloudletKey *edgeproto.CloudletKey, cmcCluste
 				// skip cluster that was created by Edge Cloud
 				continue
 			}
+			// cluster is registered, fill in info for
+			// associated ClusterInst.
 			cmcCluster.CloudletKey = *cloudletKey
 			cmcCluster.ClusterKey = cinfo.clusterKey
 			cmcCluster.Reservable = cinfo.reservable
