@@ -16,6 +16,7 @@ package osmclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -154,4 +155,48 @@ func TestRegisterCluster(t *testing.T) {
 	id, err := s.RegisterCluster(ctx, clusterName, string(kc))
 	require.Nil(t, err)
 	fmt.Printf("registered cluster %s\n", id)
+}
+
+func TestGetClusterInfo(t *testing.T) {
+	s := createTestClient(t)
+
+	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	info, err := s.FindClusterInfo(ctx, "cl-madrid-norte1")
+	require.Nil(t, err)
+	info.Credentials = nil
+	out, err := json.MarshalIndent(info, "", "  ")
+	require.Nil(t, err)
+	fmt.Println(string(out))
+
+	info, status, err := s.GetClusterInfo(ctx, info.ID)
+	require.Nil(t, err)
+	require.Equal(t, 200, status)
+	info.Credentials = nil
+	out, err = json.MarshalIndent(info, "", "  ")
+	require.Nil(t, err)
+	fmt.Println(string(out))
+}
+
+func TestListCluster(t *testing.T) {
+	s := createTestClient(t)
+
+	log.SetDebugLevel(log.DebugLevelInfra | log.DebugLevelApi)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+	clusters, err := s.ListClusters(ctx)
+	require.Nil(t, err)
+	for _, cluster := range clusters {
+		creds := cluster.Credentials
+		cluster.Credentials = nil
+		out, err := json.MarshalIndent(cluster, "", "  ")
+		require.Nil(t, err)
+		fmt.Println(string(out))
+		err = os.WriteFile(cluster.Name+".json", creds, 0644)
+		require.Nil(t, err)
+	}
 }

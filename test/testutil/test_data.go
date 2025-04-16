@@ -409,8 +409,9 @@ func OperatorCodeData() []edgeproto.OperatorCode {
 func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 	// Note: cannot import platforms due to import cycle
 	features := []edgeproto.PlatformFeatures{{
-		PlatformType: "fake",
-		UsesRootLb:   true,
+		PlatformType:                    "fake",
+		UsesRootLb:                      true,
+		SupportsCloudletManagedClusters: true,
 	}, {
 		PlatformType: "fakeedgebox",
 		IsEdgebox:    true,
@@ -452,6 +453,9 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 			},
 			"FLAVORS": {
 				Name: "Flavors",
+			},
+			"LOAD_MANAGED_CLUSTERS": {
+				Name: "Load fake managed clusters",
 			},
 		}
 	}

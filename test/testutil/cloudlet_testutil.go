@@ -1923,6 +1923,64 @@ func (r *Run) CloudletMetricsApi(data *[]edgeproto.CloudletMetrics, dataMap inte
 	}
 }
 
+func (r *Run) CloudletManagedClusterApi(data *[]edgeproto.CloudletManagedCluster, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for CloudletManagedCluster", "mode", r.Mode)
+	if r.Mode == "show" {
+		obj := &edgeproto.CloudletManagedCluster{}
+		out, err := r.client.ShowCloudletManagedCluster(r.ctx, obj)
+		if err != nil {
+			r.logErr("CloudletManagedClusterApi", err)
+		} else {
+			outp, ok := dataOut.(*[]edgeproto.CloudletManagedCluster)
+			if !ok {
+				panic(fmt.Sprintf("RunCloudletManagedClusterApi expected dataOut type *[]edgeproto.CloudletManagedCluster, but was %T", dataOut))
+			}
+			*outp = append(*outp, out...)
+		}
+		return
+	}
+	for ii, objD := range *data {
+		obj := &objD
+		switch r.Mode {
+		case "showfiltered":
+			out, err := r.client.ShowCloudletManagedCluster(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("CloudletManagedClusterApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.CloudletManagedCluster)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletManagedClusterApi expected dataOut type *[]edgeproto.CloudletManagedCluster, but was %T", dataOut))
+				}
+				*outp = append(*outp, out...)
+			}
+		case "register":
+			out, err := r.client.RegisterCloudletManagedCluster(r.ctx, obj)
+			if err != nil {
+				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
+				r.logErr(fmt.Sprintf("CloudletManagedClusterApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[][]edgeproto.Result)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletManagedClusterApi expected dataOut type *[][]edgeproto.Result, but was %T", dataOut))
+				}
+				*outp = append(*outp, out)
+			}
+		case "deregister":
+			out, err := r.client.DeregisterCloudletManagedCluster(r.ctx, obj)
+			if err != nil {
+				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
+				r.logErr(fmt.Sprintf("CloudletManagedClusterApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[][]edgeproto.Result)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletManagedClusterApi expected dataOut type *[][]edgeproto.Result, but was %T", dataOut))
+				}
+				*outp = append(*outp, out)
+			}
+		}
+	}
+}
+
 type PlatformFeaturesStream interface {
 	Recv() (*edgeproto.PlatformFeatures, error)
 }
@@ -2668,4 +2726,77 @@ func (s *CliClient) ShowCloudletMetrics(ctx context.Context, in *edgeproto.Cloud
 
 type CloudletMetricsApiClient interface {
 	ShowCloudletMetrics(ctx context.Context, in *edgeproto.CloudletMetrics) ([]edgeproto.CloudletMetrics, error)
+}
+
+type CloudletManagedClusterStream interface {
+	Recv() (*edgeproto.CloudletManagedCluster, error)
+}
+
+func CloudletManagedClusterReadStream(stream CloudletManagedClusterStream) ([]edgeproto.CloudletManagedCluster, error) {
+	output := []edgeproto.CloudletManagedCluster{}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return output, fmt.Errorf("read CloudletManagedCluster stream failed, %v", err)
+		}
+		output = append(output, *obj)
+	}
+	return output, nil
+}
+
+func (s *ApiClient) ShowCloudletManagedCluster(ctx context.Context, in *edgeproto.CloudletManagedCluster) ([]edgeproto.CloudletManagedCluster, error) {
+	api := edgeproto.NewCloudletManagedClusterApiClient(s.Conn)
+	stream, err := api.ShowCloudletManagedCluster(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return CloudletManagedClusterReadStream(stream)
+}
+
+func (s *CliClient) ShowCloudletManagedCluster(ctx context.Context, in *edgeproto.CloudletManagedCluster) ([]edgeproto.CloudletManagedCluster, error) {
+	output := []edgeproto.CloudletManagedCluster{}
+	args := append(s.BaseArgs, "controller", "ShowCloudletManagedCluster")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
+func (s *ApiClient) RegisterCloudletManagedCluster(ctx context.Context, in *edgeproto.CloudletManagedCluster) ([]edgeproto.Result, error) {
+	api := edgeproto.NewCloudletManagedClusterApiClient(s.Conn)
+	stream, err := api.RegisterCloudletManagedCluster(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return ResultReadStream(stream)
+}
+
+func (s *CliClient) RegisterCloudletManagedCluster(ctx context.Context, in *edgeproto.CloudletManagedCluster) ([]edgeproto.Result, error) {
+	output := []edgeproto.Result{}
+	args := append(s.BaseArgs, "controller", "RegisterCloudletManagedCluster")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
+func (s *ApiClient) DeregisterCloudletManagedCluster(ctx context.Context, in *edgeproto.CloudletManagedCluster) ([]edgeproto.Result, error) {
+	api := edgeproto.NewCloudletManagedClusterApiClient(s.Conn)
+	stream, err := api.DeregisterCloudletManagedCluster(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return ResultReadStream(stream)
+}
+
+func (s *CliClient) DeregisterCloudletManagedCluster(ctx context.Context, in *edgeproto.CloudletManagedCluster) ([]edgeproto.Result, error) {
+	output := []edgeproto.Result{}
+	args := append(s.BaseArgs, "controller", "DeregisterCloudletManagedCluster")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
+type CloudletManagedClusterApiClient interface {
+	ShowCloudletManagedCluster(ctx context.Context, in *edgeproto.CloudletManagedCluster) ([]edgeproto.CloudletManagedCluster, error)
+	RegisterCloudletManagedCluster(ctx context.Context, in *edgeproto.CloudletManagedCluster) ([]edgeproto.Result, error)
+	DeregisterCloudletManagedCluster(ctx context.Context, in *edgeproto.CloudletManagedCluster) ([]edgeproto.Result, error)
 }

@@ -122,3 +122,11 @@ func (g *GCPPlatform) GetClusterAdditionalResources(ctx context.Context, cloudle
 func (g *GCPPlatform) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return nil
 }
+
+func (v *GCPPlatform) GetAllClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (v *GCPPlatform) RegisterCluster(ctx context.Context, clusterName string, in *edgeproto.ClusterInst) (map[string]string, error) {
+	return nil, errors.New("not supported")
+}

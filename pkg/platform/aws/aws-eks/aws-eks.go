@@ -352,3 +352,11 @@ func (a *AwsEksPlatform) GetClusterAdditionalResourceMetric(ctx context.Context,
 	resMetric.AddIntVal(cloudcommon.ResourceMetricNetworkLBs, eksRes.NetworkLBsUsed)
 	return nil
 }
+
+func (v *AwsEksPlatform) GetAllClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (v *AwsEksPlatform) RegisterCluster(ctx context.Context, clusterName string, in *edgeproto.ClusterInst) (map[string]string, error) {
+	return nil, errors.New("not supported")
+}

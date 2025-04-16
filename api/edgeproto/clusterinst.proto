@@ -161,6 +161,10 @@ message ClusterInst {
   string kubernetes_version = 48;
   // Disables dynamic placement of AppInsts on this cluster
   bool disable_dynamic_appinst_placement = 49;
+  // Cloudlet managed cluster ID, if cluster based on cloudlet managed cluster
+  string cloudlet_managed_cluster_id = 50 [(protogen.backend) = true];
+  // Cloudlet managed cluster name, if cluster based on cloudlet managed cluster
+  string cloudlet_managed_cluster_name = 51 [(protogen.backend) = true];
   // Vendor-specific data
   map<string, string> tags = 100;
 
@@ -273,6 +277,14 @@ service ClusterInstApi {
   }
 }
 
+// CloudletManagedClusterInfo provides information from the Cloudlet Resource Manager about the state of the managed cluster on the Cloudlet
+message CloudletManagedClusterInfo {
+  // Kubernetes cluster version
+  string kubernetes_version = 1;
+  // Kubernetes node pool resources
+  repeated NodePool node_pools = 2;
+}
+
 // ClusterInstInfo provides information from the Cloudlet Resource Manager about the state of the ClusterInst on the Cloudlet. Whereas the ClusterInst defines the intent of instantiating a Cluster on a Cloudlet, the ClusterInstInfo defines the current state of trying to apply that intent on the physical resources of the Cloudlet.
 message ClusterInstInfo {
   // Fields are used for the Update API to specify which fields to apply
@@ -289,6 +301,8 @@ message ClusterInstInfo {
   StatusInfo status = 6 [(protogen.backend) = true, (gogoproto.nullable) = false];
   // Resources allocated to this cluster
   InfraResources resources = 7 [(protogen.backend) = true, (gogoproto.nullable) = false];
+  // cloudlet managed cluster info
+  CloudletManagedClusterInfo cloudlet_managed_cluster_info = 8 [(protogen.backend) = true];
   // Annotations added by the implementing infrastructure
   map<string, string> infra_annotations = 45 [(protogen.backend) = true];
   option (protogen.generate_matches) = true;

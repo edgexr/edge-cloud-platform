@@ -278,3 +278,11 @@ func (s *Platform) GetContainerCommand(ctx context.Context, clusterInst *edgepro
 		return "", fmt.Errorf("unsupported deployment type %s", deployment)
 	}
 }
+
+func (s *Platform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	return nil, errors.New("not supported")
+}

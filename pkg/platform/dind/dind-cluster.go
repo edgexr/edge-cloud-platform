@@ -16,6 +16,7 @@ package dind
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -228,4 +229,12 @@ func (s *Platform) GetDockerNetworkName(ctx context.Context, names *k8smgmt.Kube
 		return "", err
 	}
 	return GetDockerNetworkName(cluster), nil
+}
+
+func (s *Platform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	return nil, errors.New("not supported")
 }

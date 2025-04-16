@@ -17,6 +17,7 @@ package kind
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -298,4 +299,12 @@ func (s *Platform) ActiveChanged(ctx context.Context, platformActive bool) error
 
 func (s *Platform) NameSanitize(name string) string {
 	return name
+}
+
+func (s *Platform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	return nil, errors.New("not supported")
 }

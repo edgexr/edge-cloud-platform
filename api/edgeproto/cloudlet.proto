@@ -24,6 +24,7 @@ import "flavor.proto";
 import "result.proto";
 import "restagtable.proto";
 import "common.proto";
+import "cluster.proto";
 import "infraresources.proto";
 import "org.proto";
 import "dme/loc.proto";
@@ -204,6 +205,8 @@ message PlatformFeatures {
   bool requires_gpu_driver = 34;
   // Platform users a shared root load balancer
   bool uses_root_lb = 35;
+  // Platform supports cloudlet managed clusters
+  bool supports_cloudlet_managed_clusters = 36;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties
@@ -1099,4 +1102,80 @@ enum ReportSchedule {
   EveryMonth = 3;
   // avoid dropping "Every"
   option (protogen.common_prefix) = "";
+}
+
+message CloudletManagedClusterKey {
+  // Infra specific cluster name
+  string name = 1 [(protogen.keytag) = "cmcname"];
+  // Infra specific cluster ID
+  string id = 2 [(protogen.keytag) = "cmcid"];
+  option (protogen.generate_matches) = true;
+  option (protogen.obj_key) = true;
+  option (gogoproto.gostring) = true;
+  option (protogen.uses_org) = "none";
+}
+
+// Cloudlet Managed Cluster
+//
+// A Cloudlet managed cluster is a Kubernetes cluster on a cloudlet that is
+// managed by the cloudlet infrastructure and not by the Edge Cloud platform.
+// The Edge Cloud platform can only manage application deployments to the cluster.
+// The cloudlet operator decides when and how this cluster is exposed on the
+// Edge Cloud platform. It may be exposed as a multi-tenant cluster, reservable
+// cluster, or assigned to a specific developer organization.
+message CloudletManagedCluster {
+  // Fields are used for the Update API to specify which fields to apply
+  repeated string fields = 1;
+  // Key identifying cluster on cloudlet infra
+  CloudletManagedClusterKey key = 2 [(gogoproto.nullable) = false];
+  // Cloudlet on which the cluster is deployed
+  CloudletKey cloudlet_key = 3 [(gogoproto.nullable) = false];
+  // Edge Cloud cluster key, will be blank if not exposed
+  ClusterKey cluster_key = 4 [(gogoproto.nullable) = false];
+  // Set to true if cluster shall be reservable by users
+  bool reservable = 5;
+  // Set to true if cluster shall be multi-tenant
+  bool multi_tenant = 6;
+  // Kubernetes version reported by infra
+  string kubernetes_version = 7 [(protogen.backend) = true];
+  // Region or location information
+  string region_or_location = 8 [(protogen.backend) = true];
+  // Resource group reported by infra
+  string resource_group = 9 [(protogen.backend) = true];
+  // State of the cluster
+  string state = 10 [(protogen.backend) = true];
+  // Power or operating state of the cluster
+  string operational_state = 11 [(protogen.backend) = true];
+  option (protogen.generate_matches) = true;
+  option (protogen.alias) = "name=Key.Name,id=Key.Id,cluster=ClusterKey.Name,clusterorg=ClusterKey.Organization,cloudlet=CloudletKey.Name,cloudletorg=CloudletKey.Organization,federatedorg=CloudletKey.FederatedOrganization";
+  option (protogen.not_required) = "Key.Name,Key.Id";
+}
+
+service CloudletManagedClusterApi {
+  // Show cloudlet managed clusters.
+  rpc ShowCloudletManagedCluster(CloudletManagedCluster) returns (stream CloudletManagedCluster) {
+    option (google.api.http) = {
+      post: "/cloudletmanagedcluster/retract"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,CloudletKey.Organization";
+  }
+  // Register a cloudlet managed cluster and expose to developers for App instance deployments.
+  rpc RegisterCloudletManagedCluster(CloudletManagedCluster) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/cloudletmanagedcluster/register"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,CloudletKey.Organization";
+  }
+  // Deregister a cloudlet managed cluster from developers.
+  rpc DeregisterCloudletManagedCluster(CloudletManagedCluster) returns (stream Result) {
+    option (google.api.http) = {
+      post: "/cloudletmanagedcluster/deregister"
+      body: "*"
+    };
+    option (protogen.stream_out_incremental) = true;
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,CloudletKey.Organization";
+  }
 }

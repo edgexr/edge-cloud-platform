@@ -28,7 +28,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-const KconfPerms fs.FileMode = 0644
+const KconfPerms fs.FileMode = 0600
 
 // EnsureKubeconfig ensures the kubeconfig is preset
 func EnsureKubeconfig(ctx context.Context, client ssh.Client, filename string, kconfData []byte) error {
@@ -39,7 +39,7 @@ func EnsureKubeconfig(ctx context.Context, client ssh.Client, filename string, k
 	if bytes.Equal(kconfData, []byte(data)) {
 		return nil
 	}
-	err = pc.WriteFile(client, filename, string(kconfData), "kubeconfig", pc.NoSudo)
+	err = pc.WriteFile(client, filename, string(kconfData), "kubeconfig", pc.NoSudo, pc.WithFilePerms(KconfPerms))
 	if err != nil {
 		return fmt.Errorf("failed to write kubeconfig %s, %s", filename, err)
 	}

@@ -750,8 +750,7 @@ func (v *VMPlatform) logEdgeCloudServeiceStatus(ctx context.Context, clusterInst
 	}
 	out, err := masterClient.Output("systemctl status edgecloud")
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get edgecloud status", "err", err, "out", out)
-		return
+		log.SpanLog(ctx, log.DebugLevelInfra, "edgecloud exit status", "err", err, "out", out)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "edgecloud status", "status", out)
 	out, err = masterClient.Output("sudo cat /var/log/edgecloud.log")
@@ -1052,4 +1051,12 @@ func setupDockerIPV6(ctx context.Context, client ssh.Client) error {
 		return fmt.Errorf("failed to restart docker service for ipv6, %s, %s", out, err)
 	}
 	return nil
+}
+
+func (v *VMPlatform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+	return nil, errors.New("not supported")
+}
+
+func (v *VMPlatform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+	return nil, errors.New("not supported")
 }

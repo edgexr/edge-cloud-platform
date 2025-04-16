@@ -34,6 +34,7 @@ import (
 
 const (
 	RESOURCE_STATE_READY = "READY"
+	RESOURCE_STATE_ERROR = "ERROR"
 )
 
 func getOSMAppName(app *edgeproto.App) string {

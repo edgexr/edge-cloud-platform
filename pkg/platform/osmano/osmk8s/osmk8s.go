@@ -63,15 +63,16 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		props[k] = v
 	}
 	return &edgeproto.PlatformFeatures{
-		PlatformType:                  platform.PlatformTypeOSMK8S,
-		SupportsMultiTenantCluster:    true,
-		SupportsKubernetesOnly:        true,
-		KubernetesRequiresWorkerNodes: true,
-		IpAllocatedPerService:         true,
-		AccessVars:                    osmclient.AccessVarProps,
-		Properties:                    props,
-		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,
-		RequiresCrmOffEdge:            true,
+		PlatformType:                    platform.PlatformTypeOSMK8S,
+		SupportsMultiTenantCluster:      true,
+		SupportsKubernetesOnly:          true,
+		KubernetesRequiresWorkerNodes:   true,
+		IpAllocatedPerService:           true,
+		AccessVars:                      osmclient.AccessVarProps,
+		Properties:                      props,
+		ResourceQuotaProperties:         cloudcommon.CommonResourceQuotaProps,
+		RequiresCrmOffEdge:              true,
+		SupportsCloudletManagedClusters: true,
 	}
 }
 

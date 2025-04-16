@@ -201,6 +201,11 @@ type Platform interface {
 	HandleFedAppInstCb(ctx context.Context, msg *edgeproto.FedAppInstEvent)
 	// RefreshCerts indicates the platform should refresh its certificates
 	RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error
+	// Get cloudlet managed clusters that are not created or deleted
+	// by the Edge Cloud platform
+	GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error)
+	// GetCloudletManagedClusterInfo gets info about a managed cluster
+	GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error)
 }
 
 type ClusterSvc interface {
