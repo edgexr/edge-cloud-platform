@@ -18,7 +18,7 @@ package edgeproto;
 import "google/api/annotations.proto";
 import "tools/protogen/protogen.proto";
 import "gogoproto/gogo.proto";
-import "node.proto";
+import "svcnode.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
