@@ -27,10 +27,10 @@ option (gogoproto.goproto_unkeyed_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
 
 // NodeKey uniquely identifies a DME or CRM node
-message NodeKey {
-  // Name or hostname of node
+message SvcNodeKey {
+  // Name or hostname of service node
   string name = 1 [(protogen.hidetag) = "nocmp", (protogen.keytag) = "node"];
-  // Node type
+  // Service node type
   string type = 4 [(protogen.keytag) = "nodetype"];
   // Cloudlet on which node is running, or is associated with
   CloudletKey cloudlet_key = 3 [(gogoproto.nullable) = false];
@@ -41,12 +41,12 @@ message NodeKey {
   option (gogoproto.gostring) = true;
 }
 
-// Node identifies an Edge Cloud service.
-message Node {
+// SvcNode identifies an Edge Cloud service.
+message SvcNode {
   // Fields are used for the Update API to specify which fields to apply
   repeated string fields = 1;
   // Unique identifier key
-  NodeKey key = 2 [(gogoproto.nullable) = false];
+  SvcNodeKey key = 2 [(gogoproto.nullable) = false];
   // Id of client assigned by server (internal use only)
   int64 notify_id = 3 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
   // Build Master Version
@@ -75,11 +75,11 @@ message Node {
   option (protogen.uses_org) = "none";
 }
 
-service NodeApi {
-  // Show all Nodes connected to all Controllers
-  rpc ShowNode(Node) returns (stream Node) {
+service SvcNodeApi {
+  // Show all service nodes connected to all Controllers
+  rpc ShowSvcNode(SvcNode) returns (stream SvcNode) {
     option (google.api.http) = {
-      post: "/show/node"
+      post: "/show/svcnode"
       body: "*"
     };
     option (protogen.mc2_api) = "ResourceConfig,ActionView,";
@@ -87,8 +87,8 @@ service NodeApi {
   }
 }
 
-message NodeData {
-  repeated Node nodes = 1 [(gogoproto.nullable) = false];
+message SvcNodeData {
+  repeated SvcNode nodes = 1 [(gogoproto.nullable) = false];
   option (protogen.e2edata) = true;
   option (protogen.generate_copy_in_fields) = false;
 }

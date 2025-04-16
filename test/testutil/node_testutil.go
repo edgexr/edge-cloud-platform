@@ -28,29 +28,29 @@ var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
 
-type ShowNode struct {
-	Data map[string]edgeproto.Node
+type ShowSvcNode struct {
+	Data map[string]edgeproto.SvcNode
 	grpc.ServerStream
 	Ctx context.Context
 }
 
-func (x *ShowNode) Init() {
-	x.Data = make(map[string]edgeproto.Node)
+func (x *ShowSvcNode) Init() {
+	x.Data = make(map[string]edgeproto.SvcNode)
 }
 
-func (x *ShowNode) Send(m *edgeproto.Node) error {
+func (x *ShowSvcNode) Send(m *edgeproto.SvcNode) error {
 	x.Data[m.GetKey().GetKeyString()] = *m
 	return nil
 }
 
-func (x *ShowNode) Context() context.Context {
+func (x *ShowSvcNode) Context() context.Context {
 	return x.Ctx
 }
 
-var NodeShowExtraCount = 0
+var SvcNodeShowExtraCount = 0
 
-func (x *ShowNode) ReadStream(stream edgeproto.NodeApi_ShowNodeClient, err error) {
-	x.Data = make(map[string]edgeproto.Node)
+func (x *ShowSvcNode) ReadStream(stream edgeproto.SvcNodeApi_ShowSvcNodeClient, err error) {
+	x.Data = make(map[string]edgeproto.SvcNode)
 	if err != nil {
 		return
 	}
@@ -66,16 +66,16 @@ func (x *ShowNode) ReadStream(stream edgeproto.NodeApi_ShowNodeClient, err error
 	}
 }
 
-func (x *ShowNode) CheckFound(obj *edgeproto.Node) bool {
+func (x *ShowSvcNode) CheckFound(obj *edgeproto.SvcNode) bool {
 	_, found := x.Data[obj.GetKey().GetKeyString()]
 	return found
 }
 
-func (x *ShowNode) AssertFound(t *testing.T, obj *edgeproto.Node) {
+func (x *ShowSvcNode) AssertFound(t *testing.T, obj *edgeproto.SvcNode) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
-	require.True(t, found, "find Node %s", obj.GetKey().GetKeyString())
+	require.True(t, found, "find SvcNode %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "Node are equal")
+		require.Equal(t, *obj, check, "SvcNode are equal")
 	}
 	if found {
 		// remove in case there are dups in the list, so the
@@ -84,16 +84,16 @@ func (x *ShowNode) AssertFound(t *testing.T, obj *edgeproto.Node) {
 	}
 }
 
-func (x *ShowNode) AssertNotFound(t *testing.T, obj *edgeproto.Node) {
+func (x *ShowSvcNode) AssertNotFound(t *testing.T, obj *edgeproto.SvcNode) {
 	_, found := x.Data[obj.GetKey().GetKeyString()]
-	require.False(t, found, "do not find Node %s", obj.GetKey().GetKeyString())
+	require.False(t, found, "do not find SvcNode %s", obj.GetKey().GetKeyString())
 }
 
-func WaitAssertFoundNode(t *testing.T, api edgeproto.NodeApiClient, obj *edgeproto.Node, count int, retry time.Duration) {
-	show := ShowNode{}
+func WaitAssertFoundSvcNode(t *testing.T, api edgeproto.SvcNodeApiClient, obj *edgeproto.SvcNode, count int, retry time.Duration) {
+	show := ShowSvcNode{}
 	for ii := 0; ii < count; ii++ {
 		ctx, cancel := context.WithTimeout(context.Background(), retry)
-		stream, err := api.ShowNode(ctx, obj)
+		stream, err := api.ShowSvcNode(ctx, obj)
 		show.ReadStream(stream, err)
 		cancel()
 		if show.CheckFound(obj) {
@@ -104,12 +104,12 @@ func WaitAssertFoundNode(t *testing.T, api edgeproto.NodeApiClient, obj *edgepro
 	show.AssertFound(t, obj)
 }
 
-func WaitAssertNotFoundNode(t *testing.T, api edgeproto.NodeApiClient, obj *edgeproto.Node, count int, retry time.Duration) {
-	show := ShowNode{}
-	filterNone := edgeproto.Node{}
+func WaitAssertNotFoundSvcNode(t *testing.T, api edgeproto.SvcNodeApiClient, obj *edgeproto.SvcNode, count int, retry time.Duration) {
+	show := ShowSvcNode{}
+	filterNone := edgeproto.SvcNode{}
 	for ii := 0; ii < count; ii++ {
 		ctx, cancel := context.WithTimeout(context.Background(), retry)
-		stream, err := api.ShowNode(ctx, &filterNone)
+		stream, err := api.ShowSvcNode(ctx, &filterNone)
 		show.ReadStream(stream, err)
 		cancel()
 		if !show.CheckFound(obj) {
@@ -121,88 +121,88 @@ func WaitAssertNotFoundNode(t *testing.T, api edgeproto.NodeApiClient, obj *edge
 }
 
 // Wrap the api with a common interface
-type NodeCommonApi struct {
-	internal_api edgeproto.NodeApiServer
-	client_api   edgeproto.NodeApiClient
+type SvcNodeCommonApi struct {
+	internal_api edgeproto.SvcNodeApiServer
+	client_api   edgeproto.SvcNodeApiClient
 }
 
-func (x *NodeCommonApi) ShowNode(ctx context.Context, filter *edgeproto.Node, showData *ShowNode) error {
+func (x *SvcNodeCommonApi) ShowSvcNode(ctx context.Context, filter *edgeproto.SvcNode, showData *ShowSvcNode) error {
 	if x.internal_api != nil {
 		showData.Ctx = ctx
-		return x.internal_api.ShowNode(filter, showData)
+		return x.internal_api.ShowSvcNode(filter, showData)
 	} else {
-		stream, err := x.client_api.ShowNode(ctx, filter)
+		stream, err := x.client_api.ShowSvcNode(ctx, filter)
 		showData.ReadStream(stream, err)
 		return unwrapGrpcError(err)
 	}
 }
 
-func NewInternalNodeApi(api edgeproto.NodeApiServer) *NodeCommonApi {
-	apiWrap := NodeCommonApi{}
+func NewInternalSvcNodeApi(api edgeproto.SvcNodeApiServer) *SvcNodeCommonApi {
+	apiWrap := SvcNodeCommonApi{}
 	apiWrap.internal_api = api
 	return &apiWrap
 }
 
-func NewClientNodeApi(api edgeproto.NodeApiClient) *NodeCommonApi {
-	apiWrap := NodeCommonApi{}
+func NewClientSvcNodeApi(api edgeproto.SvcNodeApiClient) *SvcNodeCommonApi {
+	apiWrap := SvcNodeCommonApi{}
 	apiWrap.client_api = api
 	return &apiWrap
 }
 
-type NodeTestOptions struct {
-	createdData []edgeproto.Node
+type SvcNodeTestOptions struct {
+	createdData []edgeproto.SvcNode
 }
 
-type NodeTestOp func(opts *NodeTestOptions)
+type SvcNodeTestOp func(opts *SvcNodeTestOptions)
 
-func WithCreatedNodeTestData(createdData []edgeproto.Node) NodeTestOp {
-	return func(opts *NodeTestOptions) { opts.createdData = createdData }
+func WithCreatedSvcNodeTestData(createdData []edgeproto.SvcNode) SvcNodeTestOp {
+	return func(opts *SvcNodeTestOptions) { opts.createdData = createdData }
 }
 
-func InternalNodeTest(t *testing.T, test string, api edgeproto.NodeApiServer, testData []edgeproto.Node, ops ...NodeTestOp) {
-	span := log.StartSpan(log.DebugLevelApi, "InternalNodeTest")
+func InternalSvcNodeTest(t *testing.T, test string, api edgeproto.SvcNodeApiServer, testData []edgeproto.SvcNode, ops ...SvcNodeTestOp) {
+	span := log.StartSpan(log.DebugLevelApi, "InternalSvcNodeTest")
 	defer span.Finish()
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	switch test {
 	case "show":
-		basicNodeShowTest(t, ctx, NewInternalNodeApi(api), testData)
+		basicSvcNodeShowTest(t, ctx, NewInternalSvcNodeApi(api), testData)
 	}
 }
 
-func ClientNodeTest(t *testing.T, test string, api edgeproto.NodeApiClient, testData []edgeproto.Node, ops ...NodeTestOp) {
-	span := log.StartSpan(log.DebugLevelApi, "ClientNodeTest")
+func ClientSvcNodeTest(t *testing.T, test string, api edgeproto.SvcNodeApiClient, testData []edgeproto.SvcNode, ops ...SvcNodeTestOp) {
+	span := log.StartSpan(log.DebugLevelApi, "ClientSvcNodeTest")
 	defer span.Finish()
 	ctx := log.ContextWithSpan(context.Background(), span)
 
 	switch test {
 	case "show":
-		basicNodeShowTest(t, ctx, NewClientNodeApi(api), testData)
+		basicSvcNodeShowTest(t, ctx, NewClientSvcNodeApi(api), testData)
 	}
 }
 
-func basicNodeShowTest(t *testing.T, ctx context.Context, api *NodeCommonApi, testData []edgeproto.Node) {
+func basicSvcNodeShowTest(t *testing.T, ctx context.Context, api *SvcNodeCommonApi, testData []edgeproto.SvcNode) {
 	var err error
 
-	show := ShowNode{}
+	show := ShowSvcNode{}
 	show.Init()
-	filterNone := edgeproto.Node{}
-	err = api.ShowNode(ctx, &filterNone, &show)
+	filterNone := edgeproto.SvcNode{}
+	err = api.ShowSvcNode(ctx, &filterNone, &show)
 	require.Nil(t, err, "show data")
-	require.Equal(t, len(testData)+NodeShowExtraCount, len(show.Data), "Show count")
+	require.Equal(t, len(testData)+SvcNodeShowExtraCount, len(show.Data), "Show count")
 	for _, obj := range testData {
 		show.AssertFound(t, &obj)
 	}
 }
 
-func GetNode(t *testing.T, ctx context.Context, api *NodeCommonApi, key *edgeproto.NodeKey, out *edgeproto.Node) bool {
+func GetSvcNode(t *testing.T, ctx context.Context, api *SvcNodeCommonApi, key *edgeproto.SvcNodeKey, out *edgeproto.SvcNode) bool {
 	var err error
 
-	show := ShowNode{}
+	show := ShowSvcNode{}
 	show.Init()
-	filter := edgeproto.Node{}
+	filter := edgeproto.SvcNode{}
 	filter.SetKey(key)
-	err = api.ShowNode(ctx, &filter, &show)
+	err = api.ShowSvcNode(ctx, &filter, &show)
 	require.Nil(t, err, "show data")
 	obj, found := show.Data[key.GetKeyString()]
 	if found {
@@ -211,7 +211,7 @@ func GetNode(t *testing.T, ctx context.Context, api *NodeCommonApi, key *edgepro
 	return found
 }
 
-func FindNodeData(key *edgeproto.NodeKey, testData []edgeproto.Node) (*edgeproto.Node, bool) {
+func FindSvcNodeData(key *edgeproto.SvcNodeKey, testData []edgeproto.SvcNode) (*edgeproto.SvcNode, bool) {
 	for ii, _ := range testData {
 		if testData[ii].GetKey().Matches(key) {
 			return &testData[ii], true
@@ -220,45 +220,45 @@ func FindNodeData(key *edgeproto.NodeKey, testData []edgeproto.Node) (*edgeproto
 	return nil, false
 }
 
-type NodeDataOut struct {
+type SvcNodeDataOut struct {
 	Errors []Err
 }
 
 // used to intersperse other creates/deletes/checks
 // note the objs value is the previous one for create,
 // but the next one for delete
-type RunNodeDataApiCallback func(objs string)
+type RunSvcNodeDataApiCallback func(objs string)
 
-func RunNodeDataApis(run *Run, in *edgeproto.NodeData, inMap map[string]interface{}, out *NodeDataOut, apicb RunNodeDataApiCallback) {
+func RunSvcNodeDataApis(run *Run, in *edgeproto.SvcNodeData, inMap map[string]interface{}, out *SvcNodeDataOut, apicb RunSvcNodeDataApiCallback) {
 	apicb("")
 	out.Errors = run.Errs
 }
 
-func RunNodeDataReverseApis(run *Run, in *edgeproto.NodeData, inMap map[string]interface{}, out *NodeDataOut, apicb RunNodeDataApiCallback) {
+func RunSvcNodeDataReverseApis(run *Run, in *edgeproto.SvcNodeData, inMap map[string]interface{}, out *SvcNodeDataOut, apicb RunSvcNodeDataApiCallback) {
 	apicb("")
 	out.Errors = run.Errs
 }
 
-func RunNodeDataShowApis(run *Run, in *edgeproto.NodeData, selector edgeproto.AllSelector, out *edgeproto.NodeData) {
+func RunSvcNodeDataShowApis(run *Run, in *edgeproto.SvcNodeData, selector edgeproto.AllSelector, out *edgeproto.SvcNodeData) {
 	if selector.Has("nodes") {
-		run.NodeApi(&in.Nodes, nil, &out.Nodes)
+		run.SvcNodeApi(&in.Nodes, nil, &out.Nodes)
 	}
 }
 
-func DeleteAllNodeDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.NodeData) {
+func DeleteAllSvcNodeDataInternal(t *testing.T, ctx context.Context, apis InternalCUDAPIs, in *edgeproto.SvcNodeData) {
 }
 
-func (r *Run) NodeApi(data *[]edgeproto.Node, dataMap interface{}, dataOut interface{}) {
-	log.DebugLog(log.DebugLevelApi, "API for Node", "mode", r.Mode)
+func (r *Run) SvcNodeApi(data *[]edgeproto.SvcNode, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for SvcNode", "mode", r.Mode)
 	if r.Mode == "show" {
-		obj := &edgeproto.Node{}
-		out, err := r.client.ShowNode(r.ctx, obj)
+		obj := &edgeproto.SvcNode{}
+		out, err := r.client.ShowSvcNode(r.ctx, obj)
 		if err != nil {
-			r.logErr("NodeApi", err)
+			r.logErr("SvcNodeApi", err)
 		} else {
-			outp, ok := dataOut.(*[]edgeproto.Node)
+			outp, ok := dataOut.(*[]edgeproto.SvcNode)
 			if !ok {
-				panic(fmt.Sprintf("RunNodeApi expected dataOut type *[]edgeproto.Node, but was %T", dataOut))
+				panic(fmt.Sprintf("RunSvcNodeApi expected dataOut type *[]edgeproto.SvcNode, but was %T", dataOut))
 			}
 			*outp = append(*outp, out...)
 		}
@@ -268,13 +268,13 @@ func (r *Run) NodeApi(data *[]edgeproto.Node, dataMap interface{}, dataOut inter
 		obj := &objD
 		switch r.Mode {
 		case "showfiltered":
-			out, err := r.client.ShowNode(r.ctx, obj)
+			out, err := r.client.ShowSvcNode(r.ctx, obj)
 			if err != nil {
-				r.logErr(fmt.Sprintf("NodeApi[%d]", ii), err)
+				r.logErr(fmt.Sprintf("SvcNodeApi[%d]", ii), err)
 			} else {
-				outp, ok := dataOut.(*[]edgeproto.Node)
+				outp, ok := dataOut.(*[]edgeproto.SvcNode)
 				if !ok {
-					panic(fmt.Sprintf("RunNodeApi expected dataOut type *[]edgeproto.Node, but was %T", dataOut))
+					panic(fmt.Sprintf("RunSvcNodeApi expected dataOut type *[]edgeproto.SvcNode, but was %T", dataOut))
 				}
 				*outp = append(*outp, out...)
 			}
@@ -282,14 +282,14 @@ func (r *Run) NodeApi(data *[]edgeproto.Node, dataMap interface{}, dataOut inter
 	}
 }
 
-func (s *DummyServer) ShowNode(in *edgeproto.Node, server edgeproto.NodeApi_ShowNodeServer) error {
+func (s *DummyServer) ShowSvcNode(in *edgeproto.SvcNode, server edgeproto.SvcNodeApi_ShowSvcNodeServer) error {
 	var err error
-	obj := &edgeproto.Node{}
+	obj := &edgeproto.SvcNode{}
 	if obj.Matches(in, edgeproto.MatchFilter()) {
 		for ii := 0; ii < s.ShowDummyCount; ii++ {
-			server.Send(&edgeproto.Node{})
+			server.Send(&edgeproto.SvcNode{})
 		}
-		if ch, ok := s.MidstreamFailChs["ShowNode"]; ok {
+		if ch, ok := s.MidstreamFailChs["ShowSvcNode"]; ok {
 			// Wait until client receives the SendMsg, since they
 			// are buffered and dropped once we return err here.
 			select {
@@ -299,48 +299,48 @@ func (s *DummyServer) ShowNode(in *edgeproto.Node, server edgeproto.NodeApi_Show
 			return fmt.Errorf("midstream failure!")
 		}
 	}
-	err = s.NodeCache.Show(in, func(obj *edgeproto.Node) error {
+	err = s.SvcNodeCache.Show(in, func(obj *edgeproto.SvcNode) error {
 		err := server.Send(obj)
 		return err
 	})
 	return err
 }
 
-type NodeStream interface {
-	Recv() (*edgeproto.Node, error)
+type SvcNodeStream interface {
+	Recv() (*edgeproto.SvcNode, error)
 }
 
-func NodeReadStream(stream NodeStream) ([]edgeproto.Node, error) {
-	output := []edgeproto.Node{}
+func SvcNodeReadStream(stream SvcNodeStream) ([]edgeproto.SvcNode, error) {
+	output := []edgeproto.SvcNode{}
 	for {
 		obj, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return output, fmt.Errorf("read Node stream failed, %v", err)
+			return output, fmt.Errorf("read SvcNode stream failed, %v", err)
 		}
 		output = append(output, *obj)
 	}
 	return output, nil
 }
 
-func (s *ApiClient) ShowNode(ctx context.Context, in *edgeproto.Node) ([]edgeproto.Node, error) {
-	api := edgeproto.NewNodeApiClient(s.Conn)
-	stream, err := api.ShowNode(ctx, in)
+func (s *ApiClient) ShowSvcNode(ctx context.Context, in *edgeproto.SvcNode) ([]edgeproto.SvcNode, error) {
+	api := edgeproto.NewSvcNodeApiClient(s.Conn)
+	stream, err := api.ShowSvcNode(ctx, in)
 	if err != nil {
 		return nil, err
 	}
-	return NodeReadStream(stream)
+	return SvcNodeReadStream(stream)
 }
 
-func (s *CliClient) ShowNode(ctx context.Context, in *edgeproto.Node) ([]edgeproto.Node, error) {
-	output := []edgeproto.Node{}
-	args := append(s.BaseArgs, "controller", "ShowNode")
+func (s *CliClient) ShowSvcNode(ctx context.Context, in *edgeproto.SvcNode) ([]edgeproto.SvcNode, error) {
+	output := []edgeproto.SvcNode{}
+	args := append(s.BaseArgs, "controller", "ShowSvcNode")
 	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
 	return output, err
 }
 
-type NodeApiClient interface {
-	ShowNode(ctx context.Context, in *edgeproto.Node) ([]edgeproto.Node, error)
+type SvcNodeApiClient interface {
+	ShowSvcNode(ctx context.Context, in *edgeproto.SvcNode) ([]edgeproto.SvcNode, error)
 }

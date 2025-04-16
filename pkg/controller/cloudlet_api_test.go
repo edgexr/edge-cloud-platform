@@ -308,7 +308,7 @@ func deleteCloudletInfo(ctx context.Context, key *edgeproto.CloudletKey, apis *A
 }
 
 func testNotifyId(t *testing.T, ctrlHandler *notify.DummyHandler, key *edgeproto.CloudletKey, nodeCount, notifyId int, crmVersion string) {
-	require.Equal(t, nodeCount, len(ctrlHandler.NodeCache.Objs), "node count matches")
+	require.Equal(t, nodeCount, len(ctrlHandler.SvcNodeCache.Objs), "node count matches")
 	nodeVersion, nodeNotifyId, err := ctrlHandler.GetCloudletDetails(key)
 	require.Nil(t, err, "get cloudlet version & notifyId from node cache")
 	require.Equal(t, crmVersion, nodeVersion, "node version matches")

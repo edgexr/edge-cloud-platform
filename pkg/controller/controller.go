@@ -480,7 +480,7 @@ func startServices() error {
 	edgeproto.RegisterAppInstRefsApiServer(server, allApis.appInstRefsApi)
 	edgeproto.RegisterStreamObjApiServer(server, allApis.streamObjApi)
 	edgeproto.RegisterControllerApiServer(server, allApis.controllerApi)
-	edgeproto.RegisterNodeApiServer(server, &nodeApi)
+	edgeproto.RegisterSvcNodeApiServer(server, &svcNodeApi)
 	edgeproto.RegisterExecApiServer(server, allApis.execApi)
 	edgeproto.RegisterZonePoolApiServer(server, allApis.zonePoolApi)
 	edgeproto.RegisterAlertApiServer(server, allApis.alertApi)
@@ -529,7 +529,7 @@ func startServices() error {
 			edgeproto.RegisterFlavorApiHandler,
 			edgeproto.RegisterClusterInstApiHandler,
 			edgeproto.RegisterControllerApiHandler,
-			edgeproto.RegisterNodeApiHandler,
+			edgeproto.RegisterSvcNodeApiHandler,
 			edgeproto.RegisterZonePoolApiHandler,
 			edgeproto.RegisterAlertApiHandler,
 			edgeproto.RegisterAutoScalePolicyApiHandler,

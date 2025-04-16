@@ -36,7 +36,7 @@ func (s *AppInstLatencyApi) RequestAppInstLatency(ctx context.Context, in *edgep
 	args := string(b)
 	// Create Debug Request
 	req := &edgeproto.DebugRequest{
-		Node: edgeproto.NodeKey{
+		Node: edgeproto.SvcNodeKey{
 			Type: node.NodeTypeDME,
 		},
 		Cmd:  uaemcommon.RequestAppInstLatency,

@@ -54,8 +54,8 @@ type NodeMgr struct {
 	iTlsCAFile   string
 	VaultAddr    string
 
-	MyNode            edgeproto.Node
-	NodeCache         RegionNodeCache
+	MyNode            edgeproto.SvcNode
+	SvcNodeCache      RegionSvcNodeCache
 	Debug             DebugNode
 	VaultConfig       *vault.Config
 	Region            string
@@ -220,8 +220,8 @@ func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context
 		return initCtx, nil, err
 	}
 
-	edgeproto.InitNodeCache(&s.NodeCache.NodeCache)
-	s.NodeCache.setRegion = opts.region
+	edgeproto.InitSvcNodeCache(&s.SvcNodeCache.SvcNodeCache)
+	s.SvcNodeCache.setRegion = opts.region
 	s.Debug.Init(s)
 	if opts.updateMyNode {
 		s.UpdateMyNode(ctx)
@@ -358,11 +358,11 @@ func WithCachesLinkToKVStore() NodeOp {
 }
 
 func (s *NodeMgr) UpdateMyNode(ctx context.Context) {
-	s.NodeCache.Update(ctx, &s.MyNode, 0)
+	s.SvcNodeCache.Update(ctx, &s.MyNode, 0)
 }
 
 func (s *NodeMgr) RegisterClient(client *notify.Client) {
-	client.RegisterSendNodeCache(&s.NodeCache)
+	client.RegisterSendSvcNodeCache(&s.SvcNodeCache)
 	s.Debug.RegisterClient(client)
 	// MC notify handling of ZonePoolCache is done outside of nodemgr.
 	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && !s.cachesLinkToStore {
@@ -372,7 +372,7 @@ func (s *NodeMgr) RegisterClient(client *notify.Client) {
 }
 
 func (s *NodeMgr) RegisterServer(server *notify.ServerMgr) {
-	server.RegisterRecvNodeCache(&s.NodeCache)
+	server.RegisterRecvSvcNodeCache(&s.SvcNodeCache)
 	s.Debug.RegisterServer(server)
 	// MC notify handling of ZonePoolCache is done outside of nodemgr.
 	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && s.MyNode.Key.Type != NodeTypeController && s.MyNode.Key.Type != NodeTypeCCRM {

@@ -1472,7 +1472,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, Eac56710C013D954Db31Eeb306B514A4, 75883D14000640B2Ecf694Fe8Ef9192B, E65C39Ec2A489834Dd06E87F7239F9A8, B25B4E18E9A1Dadfd3006E23Fabfbf95, or 0, 52, 53, 54, 55, 56, 57, 58", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, Eac56710C013D954Db31Eeb306B514A4, 75883D14000640B2Ecf694Fe8Ef9192B, E65C39Ec2A489834Dd06E87F7239F9A8, B25B4E18E9A1Dadfd3006E23Fabfbf95, E935Bf4A02A405A206B6A082A773205F, or 0, 52, 53, 54, 55, 56, 57, 58, 59", true
 	}
 	return "", "", false
 }
@@ -1514,7 +1514,7 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowMaxReqsRateLimitSettings": struct{}{},
 	"ShowCloudletNode":             struct{}{},
 	"ShowController":               struct{}{},
-	"ShowNode":                     struct{}{},
+	"ShowSvcNode":                  struct{}{},
 	"ShowDevice":                   struct{}{},
 	"ShowDeviceReport":             struct{}{},
 }

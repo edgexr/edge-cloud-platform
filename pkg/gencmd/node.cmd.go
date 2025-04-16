@@ -25,7 +25,7 @@ var _ = fmt.Errorf
 var _ = math.Inf
 
 // Auto-generated code: DO NOT EDIT
-func NodeKeyHideTags(in *edgeproto.NodeKey) {
+func SvcNodeKeyHideTags(in *edgeproto.SvcNodeKey) {
 	if cli.HideTags == "" {
 		return
 	}
@@ -38,7 +38,7 @@ func NodeKeyHideTags(in *edgeproto.NodeKey) {
 	}
 }
 
-func NodeHideTags(in *edgeproto.Node) {
+func SvcNodeHideTags(in *edgeproto.SvcNode) {
 	if cli.HideTags == "" {
 		return
 	}
@@ -69,7 +69,7 @@ func NodeHideTags(in *edgeproto.Node) {
 	}
 }
 
-func NodeDataHideTags(in *edgeproto.NodeData) {
+func SvcNodeDataHideTags(in *edgeproto.SvcNodeData) {
 	if cli.HideTags == "" {
 		return
 	}
@@ -102,47 +102,47 @@ func NodeDataHideTags(in *edgeproto.NodeData) {
 	}
 }
 
-var NodeApiCmd edgeproto.NodeApiClient
+var SvcNodeApiCmd edgeproto.SvcNodeApiClient
 
-var ShowNodeCmd = &cli.Command{
-	Use:          "ShowNode",
-	OptionalArgs: strings.Join(append(NodeRequiredArgs, NodeOptionalArgs...), " "),
-	AliasArgs:    strings.Join(NodeAliasArgs, " "),
-	SpecialArgs:  &NodeSpecialArgs,
-	Comments:     NodeComments,
-	ReqData:      &edgeproto.Node{},
-	ReplyData:    &edgeproto.Node{},
-	Run:          runShowNode,
+var ShowSvcNodeCmd = &cli.Command{
+	Use:          "ShowSvcNode",
+	OptionalArgs: strings.Join(append(SvcNodeRequiredArgs, SvcNodeOptionalArgs...), " "),
+	AliasArgs:    strings.Join(SvcNodeAliasArgs, " "),
+	SpecialArgs:  &SvcNodeSpecialArgs,
+	Comments:     SvcNodeComments,
+	ReqData:      &edgeproto.SvcNode{},
+	ReplyData:    &edgeproto.SvcNode{},
+	Run:          runShowSvcNode,
 }
 
-func runShowNode(c *cli.Command, args []string) error {
+func runShowSvcNode(c *cli.Command, args []string) error {
 	if cli.SilenceUsage {
 		c.CobraCmd.SilenceUsage = true
 	}
-	obj := c.ReqData.(*edgeproto.Node)
+	obj := c.ReqData.(*edgeproto.SvcNode)
 	_, err := c.ParseInput(args)
 	if err != nil {
 		return err
 	}
-	return ShowNode(c, obj)
+	return ShowSvcNode(c, obj)
 }
 
-func ShowNode(c *cli.Command, in *edgeproto.Node) error {
-	if NodeApiCmd == nil {
-		return fmt.Errorf("NodeApi client not initialized")
+func ShowSvcNode(c *cli.Command, in *edgeproto.SvcNode) error {
+	if SvcNodeApiCmd == nil {
+		return fmt.Errorf("SvcNodeApi client not initialized")
 	}
 	ctx := context.Background()
-	stream, err := NodeApiCmd.ShowNode(ctx, in)
+	stream, err := SvcNodeApiCmd.ShowSvcNode(ctx, in)
 	if err != nil {
 		errstr := err.Error()
 		st, ok := status.FromError(err)
 		if ok {
 			errstr = st.Message()
 		}
-		return fmt.Errorf("ShowNode failed: %s", errstr)
+		return fmt.Errorf("ShowSvcNode failed: %s", errstr)
 	}
 
-	objs := make([]*edgeproto.Node, 0)
+	objs := make([]*edgeproto.SvcNode, 0)
 	for {
 		obj, err := stream.Recv()
 		if err == io.EOF {
@@ -154,9 +154,9 @@ func ShowNode(c *cli.Command, in *edgeproto.Node) error {
 			if ok {
 				errstr = st.Message()
 			}
-			return fmt.Errorf("ShowNode recv failed: %s", errstr)
+			return fmt.Errorf("ShowSvcNode recv failed: %s", errstr)
 		}
-		NodeHideTags(obj)
+		SvcNodeHideTags(obj)
 		objs = append(objs, obj)
 	}
 	if len(objs) == 0 {
@@ -167,13 +167,13 @@ func ShowNode(c *cli.Command, in *edgeproto.Node) error {
 }
 
 // this supports "Create" and "Delete" commands on ApplicationData
-func ShowNodes(c *cli.Command, data []edgeproto.Node, err *error) {
+func ShowSvcNodes(c *cli.Command, data []edgeproto.SvcNode, err *error) {
 	if *err != nil {
 		return
 	}
 	for ii, _ := range data {
-		fmt.Printf("ShowNode %v\n", data[ii])
-		myerr := ShowNode(c, &data[ii])
+		fmt.Printf("ShowSvcNode %v\n", data[ii])
+		myerr := ShowSvcNode(c, &data[ii])
 		if myerr != nil {
 			*err = myerr
 			break
@@ -181,12 +181,12 @@ func ShowNodes(c *cli.Command, data []edgeproto.Node, err *error) {
 	}
 }
 
-var NodeApiCmds = []*cobra.Command{
-	ShowNodeCmd.GenCmd(),
+var SvcNodeApiCmds = []*cobra.Command{
+	ShowSvcNodeCmd.GenCmd(),
 }
 
-var NodeKeyRequiredArgs = []string{}
-var NodeKeyOptionalArgs = []string{
+var SvcNodeKeyRequiredArgs = []string{}
+var SvcNodeKeyOptionalArgs = []string{
 	"name",
 	"type",
 	"cloudletkey.organization",
@@ -194,17 +194,17 @@ var NodeKeyOptionalArgs = []string{
 	"cloudletkey.federatedorganization",
 	"region",
 }
-var NodeKeyAliasArgs = []string{}
-var NodeKeyComments = map[string]string{
-	"name":                              "Name or hostname of node",
-	"type":                              "Node type",
+var SvcNodeKeyAliasArgs = []string{}
+var SvcNodeKeyComments = map[string]string{
+	"name":                              "Name or hostname of service node",
+	"type":                              "Service node type",
 	"cloudletkey.organization":          "Organization of the cloudlet site",
 	"cloudletkey.name":                  "Name of the cloudlet",
 	"cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
 	"region":                            "Region the node is in",
 }
-var NodeKeySpecialArgs = map[string]string{}
-var NodeRequiredArgs = []string{
+var SvcNodeKeySpecialArgs = map[string]string{}
+var SvcNodeRequiredArgs = []string{
 	"name",
 	"type",
 	"cloudletorg",
@@ -212,7 +212,7 @@ var NodeRequiredArgs = []string{
 	"federatedorg",
 	"region",
 }
-var NodeOptionalArgs = []string{
+var SvcNodeOptionalArgs = []string{
 	"notifyid",
 	"buildmaster",
 	"buildhead",
@@ -223,7 +223,7 @@ var NodeOptionalArgs = []string{
 	"internalpki",
 	"properties",
 }
-var NodeAliasArgs = []string{
+var SvcNodeAliasArgs = []string{
 	"name=key.name",
 	"type=key.type",
 	"cloudletorg=key.cloudletkey.organization",
@@ -231,10 +231,10 @@ var NodeAliasArgs = []string{
 	"federatedorg=key.cloudletkey.federatedorganization",
 	"region=key.region",
 }
-var NodeComments = map[string]string{
+var SvcNodeComments = map[string]string{
 	"fields":           "Fields are used for the Update API to specify which fields to apply",
-	"name":             "Name or hostname of node",
-	"type":             "Node type",
+	"name":             "Name or hostname of service node",
+	"type":             "Service node type",
 	"cloudletorg":      "Organization of the cloudlet site",
 	"cloudlet":         "Name of the cloudlet",
 	"federatedorg":     "Federated operator organization who shared this cloudlet",
@@ -249,12 +249,12 @@ var NodeComments = map[string]string{
 	"internalpki":      "Internal PKI Config",
 	"properties":       "Additional properties",
 }
-var NodeSpecialArgs = map[string]string{
+var SvcNodeSpecialArgs = map[string]string{
 	"fields":     "StringArray",
 	"properties": "StringToString",
 }
-var NodeDataRequiredArgs = []string{}
-var NodeDataOptionalArgs = []string{
+var SvcNodeDataRequiredArgs = []string{}
+var SvcNodeDataOptionalArgs = []string{
 	"nodes:#.fields",
 	"nodes:#.key.name",
 	"nodes:#.key.type",
@@ -272,11 +272,11 @@ var NodeDataOptionalArgs = []string{
 	"nodes:#.internalpki",
 	"nodes:#.properties",
 }
-var NodeDataAliasArgs = []string{}
-var NodeDataComments = map[string]string{
+var SvcNodeDataAliasArgs = []string{}
+var SvcNodeDataComments = map[string]string{
 	"nodes:#.fields":                                "Fields are used for the Update API to specify which fields to apply",
-	"nodes:#.key.name":                              "Name or hostname of node",
-	"nodes:#.key.type":                              "Node type",
+	"nodes:#.key.name":                              "Name or hostname of service node",
+	"nodes:#.key.type":                              "Service node type",
 	"nodes:#.key.cloudletkey.organization":          "Organization of the cloudlet site",
 	"nodes:#.key.cloudletkey.name":                  "Name of the cloudlet",
 	"nodes:#.key.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
@@ -291,7 +291,7 @@ var NodeDataComments = map[string]string{
 	"nodes:#.internalpki":                           "Internal PKI Config",
 	"nodes:#.properties":                            "Additional properties",
 }
-var NodeDataSpecialArgs = map[string]string{
+var SvcNodeDataSpecialArgs = map[string]string{
 	"nodes:#.fields":     "StringArray",
 	"nodes:#.properties": "StringToString",
 }

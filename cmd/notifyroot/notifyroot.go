@@ -47,7 +47,7 @@ func main() {
 	notifyServer := &notify.ServerMgr{}
 	nodeMgr.RegisterServer(notifyServer)
 	notifyServer.RegisterServerCb(func(s *grpc.Server) {
-		edgeproto.RegisterNodeApiServer(s, &nodeApi)
+		edgeproto.RegisterSvcNodeApiServer(s, &svcNodeApi)
 		edgeproto.RegisterDebugApiServer(s, &debugApi)
 		edgeproto.RegisterAppInstLatencyApiServer(s, &appInstLatencyApi)
 	})
