@@ -21,7 +21,7 @@ import (
 	"os/signal"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"google.golang.org/grpc"
@@ -30,7 +30,7 @@ import (
 var notifyAddr = flag.String("notifyAddr", "127.0.0.1:53001", "Notify listener address")
 var debugLevels = flag.String("d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
 
-var nodeMgr node.NodeMgr
+var nodeMgr svcnode.SvcNodeMgr
 var sigChan chan os.Signal
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
 
-	ctx, span, err := nodeMgr.Init(node.NodeTypeNotifyRoot, node.CertIssuerGlobal)
+	ctx, span, err := nodeMgr.Init(svcnode.SvcNodeTypeNotifyRoot, svcnode.CertIssuerGlobal)
 	if err != nil {
 		log.FatalLog("Failed to init node", "err", err)
 	}
@@ -54,10 +54,10 @@ func main() {
 
 	tlsConfig, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerGlobal,
-		[]node.MatchCA{
-			node.AnyRegionalMatchCA(),
-			node.GlobalMatchCA(),
+		svcnode.CertIssuerGlobal,
+		[]svcnode.MatchCA{
+			svcnode.AnyRegionalMatchCA(),
+			svcnode.GlobalMatchCA(),
 		})
 	if err != nil {
 		log.FatalLog("Failed to get tls config", "err", err)

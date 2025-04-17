@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 import (
 	"bytes"
@@ -225,7 +225,7 @@ func (s *EventData) TagsToMtags() {
 	}
 }
 
-func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
+func (s *SvcNodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
 	var err error
 	s.esEvents = make([][]byte, 0)
 	s.esWriteSignal = make(chan bool, 1)
@@ -301,7 +301,7 @@ func (s *NodeMgr) initEvents(ctx context.Context, opts *NodeOptions) error {
 	return nil
 }
 
-func (s *NodeMgr) writeEvents() {
+func (s *SvcNodeMgr) writeEvents() {
 	// initialize index
 	startTime := time.Now()
 	done := false
@@ -375,7 +375,7 @@ func (s *NodeMgr) writeEvents() {
 	}
 }
 
-func (s *NodeMgr) writeIndex(ctx context.Context) error {
+func (s *SvcNodeMgr) writeIndex(ctx context.Context) error {
 	mapping := fmt.Sprintf(eventMapping, esEventLog)
 	req := opensearchapi.IndicesPutTemplateRequest{
 		Name: esEventLog,
@@ -393,17 +393,17 @@ func (s *NodeMgr) writeIndex(ctx context.Context) error {
 	return nil
 }
 
-func (s *NodeMgr) esQueuedEvent() {
+func (s *SvcNodeMgr) esQueuedEvent() {
 	select {
 	case s.esWriteSignal <- true:
 	default:
 	}
 }
 
-func (s *NodeMgr) Event(ctx context.Context, name, org string, keyTags map[string]string, err error, keysAndValues ...string) {
+func (s *SvcNodeMgr) Event(ctx context.Context, name, org string, keyTags map[string]string, err error, keysAndValues ...string) {
 	s.EventAtTime(ctx, name, org, "event", keyTags, err, time.Now(), keysAndValues...)
 }
-func (s *NodeMgr) TimedEvent(ctx context.Context, name, org, typ string, keyTags map[string]string, err error, startTime, endTime time.Time, keysAndValues ...string) {
+func (s *SvcNodeMgr) TimedEvent(ctx context.Context, name, org, typ string, keyTags map[string]string, err error, startTime, endTime time.Time, keysAndValues ...string) {
 	keysAndValues = append(keysAndValues,
 		"duration", endTime.Sub(startTime).String(),
 	)
@@ -412,11 +412,11 @@ func (s *NodeMgr) TimedEvent(ctx context.Context, name, org, typ string, keyTags
 
 // EventAtTime is the same as event(), but we need the extra level of call
 // stack to get the runtime.Caller() lineno correctly in all cases.
-func (s *NodeMgr) EventAtTime(ctx context.Context, name, org, typ string, keyTags map[string]string, err error, ts time.Time, keysAndValues ...string) {
+func (s *SvcNodeMgr) EventAtTime(ctx context.Context, name, org, typ string, keyTags map[string]string, err error, ts time.Time, keysAndValues ...string) {
 	s.event(ctx, name, org, typ, keyTags, err, ts, keysAndValues...)
 }
 
-func (s *NodeMgr) event(ctx context.Context, name, org, typ string, keyTags map[string]string, err error, ts time.Time, keysAndValues ...string) {
+func (s *SvcNodeMgr) event(ctx context.Context, name, org, typ string, keyTags map[string]string, err error, ts time.Time, keysAndValues ...string) {
 	event := EventData{
 		Name:      name,
 		Org:       []string{org},
@@ -501,11 +501,11 @@ func (s *NodeMgr) event(ctx context.Context, name, org, typ string, keyTags map[
 	s.esEventsMux.Unlock()
 }
 
-func (s *NodeMgr) ShowEvents(ctx context.Context, search *EventSearch) ([]EventData, error) {
+func (s *SvcNodeMgr) ShowEvents(ctx context.Context, search *EventSearch) ([]EventData, error) {
 	return s.searchEvents(ctx, searchTypeFilter, search)
 }
 
-func (s *NodeMgr) FindEvents(ctx context.Context, search *EventSearch) ([]EventData, error) {
+func (s *SvcNodeMgr) FindEvents(ctx context.Context, search *EventSearch) ([]EventData, error) {
 	return s.searchEvents(ctx, searchTypeRelevance, search)
 }
 
@@ -514,7 +514,7 @@ var (
 	searchTypeRelevance = "relevance"
 )
 
-func (s *NodeMgr) searchEvents(ctx context.Context, searchType string, search *EventSearch) ([]EventData, error) {
+func (s *SvcNodeMgr) searchEvents(ctx context.Context, searchType string, search *EventSearch) ([]EventData, error) {
 	query, err := s.getQuery(ctx, searchType, search)
 	if err != nil {
 		return nil, err
@@ -572,7 +572,7 @@ func (s *NodeMgr) searchEvents(ctx context.Context, searchType string, search *E
 	return out, nil
 }
 
-func (s *NodeMgr) getQuery(ctx context.Context, searchType string, search *EventSearch) (map[string]interface{}, error) {
+func (s *SvcNodeMgr) getQuery(ctx context.Context, searchType string, search *EventSearch) (map[string]interface{}, error) {
 	// ElasticSearch is super flexible in terms of how it can search.
 	// To simplify things, we offer only the two opposite extremes.
 
@@ -631,7 +631,7 @@ func (s *NodeMgr) getQuery(ctx context.Context, searchType string, search *Event
 	return s.getQueryCommon(ctx, searchType, search.TimeRange, search.From, search.Limit, "timestamp", smaps, mustnot, filter)
 }
 
-func (s *NodeMgr) getQueryCommon(ctx context.Context, searchType string, tr edgeproto.TimeRange, from, limit int, timeField string, smaps, mustnot, filter []map[string]interface{}) (map[string]interface{}, error) {
+func (s *SvcNodeMgr) getQueryCommon(ctx context.Context, searchType string, tr edgeproto.TimeRange, from, limit int, timeField string, smaps, mustnot, filter []map[string]interface{}) (map[string]interface{}, error) {
 	query := map[string]interface{}{}
 	if searchType == searchTypeFilter {
 		query["query"] = map[string]interface{}{
@@ -667,7 +667,7 @@ func (s *NodeMgr) getQueryCommon(ctx context.Context, searchType string, tr edge
 	return query, nil
 }
 
-func (s *NodeMgr) getMatchQueries(ctx context.Context, searchType string, match *EventMatch) ([]map[string]interface{}, error) {
+func (s *SvcNodeMgr) getMatchQueries(ctx context.Context, searchType string, match *EventMatch) ([]map[string]interface{}, error) {
 	nestedQuery := "filter"
 	if searchType == searchTypeRelevance {
 		nestedQuery = "should"
@@ -780,7 +780,7 @@ func indexTime(t time.Time) string {
 	return t.UTC().Format(esIndexDateFormat)
 }
 
-func (s *NodeMgr) EventTerms(ctx context.Context, search *EventSearch) (*EventTerms, error) {
+func (s *SvcNodeMgr) EventTerms(ctx context.Context, search *EventSearch) (*EventTerms, error) {
 	query, err := s.getQuery(ctx, searchTypeFilter, search)
 	if err != nil {
 		return nil, err

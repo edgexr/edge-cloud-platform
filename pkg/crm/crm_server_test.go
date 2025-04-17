@@ -24,7 +24,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/platforms"
@@ -305,13 +305,13 @@ func TestCRM(t *testing.T) {
 	ctrlMgr := notify.ServerMgr{}
 	ctrlHandler.RegisterServer(&ctrlMgr)
 	// handle access API
-	keyServer := node.NewAccessKeyServer(&ctrlHandler.CloudletCache, "")
-	accessKeyGrpcServer := node.AccessKeyGrpcServer{}
-	basicUpgradeHandler := node.BasicUpgradeHandler{
+	keyServer := svcnode.NewAccessKeyServer(&ctrlHandler.CloudletCache, "")
+	accessKeyGrpcServer := svcnode.AccessKeyGrpcServer{}
+	basicUpgradeHandler := svcnode.BasicUpgradeHandler{
 		KeyServer: keyServer,
 	}
 	getPublicCertApi := &cloudcommon.TestPublicCertApi{}
-	publicCertManager, err := node.NewPublicCertManager("localhost", "", getPublicCertApi, "", "")
+	publicCertManager, err := svcnode.NewPublicCertManager("localhost", "", getPublicCertApi, "", "")
 	require.Nil(t, err)
 	tlsConfig, err := publicCertManager.GetServerTlsConfig(ctx)
 	require.Nil(t, err)
@@ -320,7 +320,7 @@ func TestCRM(t *testing.T) {
 	})
 	defer accessKeyGrpcServer.Stop()
 	// setup access key
-	accessKey, err := node.GenerateAccessKey()
+	accessKey, err := svcnode.GenerateAccessKey()
 	require.Nil(t, err)
 	accessKeyFile := "/tmp/accesskey_crm_unittest"
 	err = ioutil.WriteFile(accessKeyFile, []byte(accessKey.PrivatePEM), 0600)
@@ -464,7 +464,7 @@ func TestCRM(t *testing.T) {
 }
 
 func TestNotifyOrder(t *testing.T) {
-	_, _, err := nodeMgr.Init(node.NodeTypeCRM, node.NoTlsClientIssuer)
+	_, _, err := nodeMgr.Init(svcnode.SvcNodeTypeCRM, svcnode.NoTlsClientIssuer)
 	require.Nil(t, err)
 	defer nodeMgr.Finish()
 	crmdata = NewCRMData(nil, &edgeproto.CloudletKey{}, &nodeMgr, &highAvailabilityManager)

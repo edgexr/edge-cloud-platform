@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -44,7 +44,7 @@ import (
 type CCRM struct {
 	nodeType         string
 	flags            Flags
-	nodeMgr          node.NodeMgr
+	nodeMgr          svcnode.SvcNodeMgr
 	notifyClient     *notify.Client
 	platformBuilders map[string]platform.PlatformBuilder
 	caches           CCRMCaches
@@ -159,7 +159,7 @@ func (s *CCRM) Start() error {
 	if len(s.flags.AppDNSRoot) > cloudcommon.DnsDomainLabelMaxLen {
 		return fmt.Errorf("appDNSRoot %q must be less than %d characters", s.flags.AppDNSRoot, cloudcommon.DnsDomainLabelMaxLen)
 	}
-	ctx, span, err := s.nodeMgr.Init(s.nodeType, node.CertIssuerRegional, node.WithContainerVersion(s.flags.VersionTag), node.WithRegion(s.flags.Region), node.WithCachesLinkToKVStore())
+	ctx, span, err := s.nodeMgr.Init(s.nodeType, svcnode.CertIssuerRegional, svcnode.WithContainerVersion(s.flags.VersionTag), svcnode.WithRegion(s.flags.Region), svcnode.WithCachesLinkToKVStore())
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func (s *CCRM) Start() error {
 	sync := regiondata.InitSync(objStore)
 
 	// set up notify TLS
-	clientTlsConfig, err := s.nodeMgr.InternalPki.GetClientTlsConfig(ctx, s.nodeMgr.CommonNamePrefix(), node.CertIssuerRegional, []node.MatchCA{node.SameRegionalMatchCA()})
+	clientTlsConfig, err := s.nodeMgr.InternalPki.GetClientTlsConfig(ctx, s.nodeMgr.CommonNamePrefix(), svcnode.CertIssuerRegional, []svcnode.MatchCA{svcnode.SameRegionalMatchCA()})
 	if err != nil {
 		return err
 	}

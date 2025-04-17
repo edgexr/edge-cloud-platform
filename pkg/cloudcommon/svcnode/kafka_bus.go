@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 import (
 	"context"
@@ -49,7 +49,7 @@ var topic_prefix_developer = "developer"
 var producerLock sync.Mutex
 var producers = make(map[edgeproto.CloudletKey]producer)
 
-func (s *NodeMgr) kafkaSend(ctx context.Context, event EventData, keyTags map[string]string, keysAndValues ...string) {
+func (s *SvcNodeMgr) kafkaSend(ctx context.Context, event EventData, keyTags map[string]string, keysAndValues ...string) {
 	var err error
 	orgName, ok := keyTags["cloudletorg"]
 	if !ok {
@@ -138,7 +138,7 @@ func (s *NodeMgr) kafkaSend(ctx context.Context, event EventData, keyTags map[st
 	go s.sendMessage(ctx, producer.producer, message, &cloudletKey, region)
 }
 
-func (s *NodeMgr) sendMessage(ctx context.Context, producer sarama.AsyncProducer, message *sarama.ProducerMessage, cloudletKey *edgeproto.CloudletKey, region string) {
+func (s *SvcNodeMgr) sendMessage(ctx context.Context, producer sarama.AsyncProducer, message *sarama.ProducerMessage, cloudletKey *edgeproto.CloudletKey, region string) {
 	producer.Input() <- message
 	for {
 		select {
@@ -164,10 +164,10 @@ func (s *NodeMgr) sendMessage(ctx context.Context, producer sarama.AsyncProducer
 	}
 }
 
-func (s *NodeMgr) newProducer(ctx context.Context, region string, key *edgeproto.CloudletKey) (producer, error) {
+func (s *SvcNodeMgr) newProducer(ctx context.Context, region string, key *edgeproto.CloudletKey) (producer, error) {
 	kafkaCreds := KafkaCreds{}
 	// if youre connected to controller, go through controller
-	if s.MyNode.Key.Type == NodeTypeCRM || s.AccessKeyClient.enabled {
+	if s.MyNode.Key.Type == SvcNodeTypeCRM || s.AccessKeyClient.enabled {
 		req := &edgeproto.AccessDataRequest{
 			Type: kafka_access_api_type,
 		}

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 import (
 	"context"
@@ -52,7 +52,7 @@ const (
 )
 
 type DebugNode struct {
-	mgr              *NodeMgr
+	mgr              *SvcNodeMgr
 	sendReply        *notify.DebugReplySend
 	sendRequest      *notify.DebugRequestSendMany
 	funcs            map[string]DebugFunc
@@ -69,7 +69,7 @@ type debugCall struct {
 	callReply func(ctx context.Context, reply *edgeproto.DebugReply)
 }
 
-func (s *DebugNode) Init(mgr *NodeMgr) {
+func (s *DebugNode) Init(mgr *SvcNodeMgr) {
 	s.mgr = mgr
 	s.requests = make(map[uint64]*debugCall)
 	s.funcs = make(map[string]DebugFunc)

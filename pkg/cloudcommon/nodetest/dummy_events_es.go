@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/jarcoal/httpmock"
 )
@@ -33,7 +33,7 @@ import (
 // without needing to run elastic search.
 // This does not capture jaeger logs.
 type DummyEventsES struct {
-	Events []*node.EventData
+	Events []*svcnode.EventData
 	Mux    sync.Mutex
 }
 
@@ -41,7 +41,7 @@ type DummyEventsES struct {
 // httpmock.Activate()
 // defer httpmock.DeactiveAndReset()
 func (s *DummyEventsES) InitHttpMock(addr string, mockTransport *httpmock.MockTransport) {
-	s.Events = make([]*node.EventData, 0)
+	s.Events = make([]*svcnode.EventData, 0)
 
 	matchAll := "=~" + addr + `/.*\z`
 	//"mock.es/events-log-*/_search"
@@ -70,7 +70,7 @@ func (s *DummyEventsES) Handle(req *http.Request) (*http.Response, error) {
 		if ii >= len(data) {
 			continue
 		}
-		event := node.EventData{}
+		event := svcnode.EventData{}
 		err = json.Unmarshal([]byte(data[ii]), &event)
 		if err != nil {
 			fmt.Printf("failed to unmarshal data %s: %v\n", data[ii], err)
@@ -95,7 +95,7 @@ func (s *DummyEventsES) GetNumEvents() int {
 	return len(s.Events)
 }
 
-func (s *DummyEventsES) WaitLastEventMatches(startEvent int, matchFunc func(e *node.EventData) bool) bool {
+func (s *DummyEventsES) WaitLastEventMatches(startEvent int, matchFunc func(e *svcnode.EventData) bool) bool {
 	matches := false
 	for ii := 0; ii < 60; ii++ {
 		s.Mux.Lock()

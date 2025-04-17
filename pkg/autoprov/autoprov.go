@@ -24,7 +24,7 @@ import (
 	"syscall"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/tls"
@@ -49,7 +49,7 @@ var autoProvAggr *AutoProvAggr
 var minMaxChecker *MinMaxChecker
 var retryTracker *RetryTracker
 var settings edgeproto.Settings
-var nodeMgr node.NodeMgr
+var nodeMgr svcnode.SvcNodeMgr
 
 func Run() {
 	nodeMgr.InitFlags()
@@ -73,7 +73,7 @@ func start() error {
 	log.SetDebugLevelStrs(*debugLevels)
 	settings = *edgeproto.GetDefaultSettings()
 
-	ctx, span, err := nodeMgr.Init(node.NodeTypeAutoProv, node.CertIssuerRegional, node.WithName(*hostname), node.WithRegion(*region), node.WithVaultConfig(vaultConfig))
+	ctx, span, err := nodeMgr.Init(svcnode.SvcNodeTypeAutoProv, svcnode.CertIssuerRegional, svcnode.WithName(*hostname), svcnode.WithRegion(*region), svcnode.WithVaultConfig(vaultConfig))
 	if err != nil {
 		return err
 	}
@@ -83,8 +83,8 @@ func start() error {
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegional,
-		[]node.MatchCA{node.SameRegionalMatchCA()})
+		svcnode.CertIssuerRegional,
+		[]svcnode.MatchCA{svcnode.SameRegionalMatchCA()})
 	if err != nil {
 		return err
 	}

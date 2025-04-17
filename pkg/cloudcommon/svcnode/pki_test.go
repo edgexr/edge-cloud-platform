@@ -14,7 +14,7 @@
 
 // Note file package is not node, so avoids node package having
 // dependencies on process package.
-package node_test
+package svcnode_test
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
@@ -74,9 +74,9 @@ func TestInternalPki(t *testing.T) {
 	require.Nil(t, err, "start local vault")
 	defer vp.StopLocal()
 
-	node.BadAuthDelay = time.Millisecond
-	node.VerifyDelay = time.Millisecond
-	node.VerifyRetry = 3
+	svcnode.BadAuthDelay = time.Millisecond
+	svcnode.VerifyDelay = time.Millisecond
+	svcnode.VerifyRetry = 3
 
 	vaultAddr := vp.ListenAddr
 	// Set up fake Controller to serve access key API
@@ -110,40 +110,40 @@ func TestInternalPki(t *testing.T) {
 	var cfgTests cfgTestList
 	// regional Controller cannot issue global cert
 	cfgTests.add(ConfigTest{
-		NodeType:    node.NodeTypeController,
+		NodeType:    svcnode.SvcNodeTypeController,
 		Region:      "us",
-		LocalIssuer: node.CertIssuerRegional,
-		TestIssuer:  node.CertIssuerGlobal,
+		LocalIssuer: svcnode.CertIssuerRegional,
+		TestIssuer:  svcnode.CertIssuerGlobal,
 		ExpectErr:   "write failure pki-global/issue/us",
 	})
 	// regional Controller can issue RegionalCloudlet, for access-key services.
 	cfgTests.add(ConfigTest{
-		NodeType:    node.NodeTypeController,
+		NodeType:    svcnode.SvcNodeTypeController,
 		Region:      "us",
-		LocalIssuer: node.CertIssuerRegional,
-		TestIssuer:  node.CertIssuerRegionalCloudlet,
+		LocalIssuer: svcnode.CertIssuerRegional,
+		TestIssuer:  svcnode.CertIssuerRegionalCloudlet,
 		ExpectErr:   "",
 	})
 	// global node cannot issue regional cert
 	cfgTests.add(ConfigTest{
-		NodeType:    node.NodeTypeNotifyRoot,
-		LocalIssuer: node.CertIssuerGlobal,
-		TestIssuer:  node.CertIssuerRegional,
+		NodeType:    svcnode.SvcNodeTypeNotifyRoot,
+		LocalIssuer: svcnode.CertIssuerGlobal,
+		TestIssuer:  svcnode.CertIssuerRegional,
 		ExpectErr:   "write failure pki-regional/issue/default",
 	})
 	// global node cannot issue regional-cloudlet cert
 	cfgTests.add(ConfigTest{
-		NodeType:    node.NodeTypeNotifyRoot,
-		LocalIssuer: node.CertIssuerGlobal,
-		TestIssuer:  node.CertIssuerRegionalCloudlet,
+		NodeType:    svcnode.SvcNodeTypeNotifyRoot,
+		LocalIssuer: svcnode.CertIssuerGlobal,
+		TestIssuer:  svcnode.CertIssuerRegionalCloudlet,
 		ExpectErr:   "write failure pki-regional-cloudlet/issue/default",
 	})
 	// cloudlet node cannot issue global cert
 	cfgTests.add(ConfigTest{
-		NodeType:      node.NodeTypeCRM,
+		NodeType:      svcnode.SvcNodeTypeCRM,
 		Region:        "us",
-		LocalIssuer:   node.CertIssuerRegionalCloudlet,
-		TestIssuer:    node.CertIssuerGlobal,
+		LocalIssuer:   svcnode.CertIssuerRegionalCloudlet,
+		TestIssuer:    svcnode.CertIssuerGlobal,
 		AccessKeyFile: tc1.KeyClient.AccessKeyFile,
 		AccessApiAddr: tc1.KeyClient.AccessApiAddr,
 		CloudletKey:   &tc1.Cloudlet.Key,
@@ -151,10 +151,10 @@ func TestInternalPki(t *testing.T) {
 	})
 	// cloudlet node cannot issue regional cert
 	cfgTests.add(ConfigTest{
-		NodeType:      node.NodeTypeCRM,
+		NodeType:      svcnode.SvcNodeTypeCRM,
 		Region:        "us",
-		LocalIssuer:   node.CertIssuerRegionalCloudlet,
-		TestIssuer:    node.CertIssuerRegional,
+		LocalIssuer:   svcnode.CertIssuerRegionalCloudlet,
+		TestIssuer:    svcnode.CertIssuerRegional,
 		AccessKeyFile: tc1.KeyClient.AccessKeyFile,
 		AccessApiAddr: tc1.KeyClient.AccessApiAddr,
 		CloudletKey:   &tc1.Cloudlet.Key,
@@ -162,10 +162,10 @@ func TestInternalPki(t *testing.T) {
 	})
 	// cloudlet node can issue RegionalCloudlet cert
 	cfgTests.add(ConfigTest{
-		NodeType:      node.NodeTypeCRM,
+		NodeType:      svcnode.SvcNodeTypeCRM,
 		Region:        "us",
-		LocalIssuer:   node.CertIssuerRegionalCloudlet,
-		TestIssuer:    node.CertIssuerRegionalCloudlet,
+		LocalIssuer:   svcnode.CertIssuerRegionalCloudlet,
+		TestIssuer:    svcnode.CertIssuerRegionalCloudlet,
 		AccessKeyFile: tc1.KeyClient.AccessKeyFile,
 		AccessApiAddr: tc1.KeyClient.AccessApiAddr,
 		CloudletKey:   &tc1.Cloudlet.Key,
@@ -178,127 +178,127 @@ func TestInternalPki(t *testing.T) {
 
 	// define nodes for certificate exchange tests
 	notifyRootServer := &PkiConfig{
-		Type:        node.NodeTypeNotifyRoot,
-		LocalIssuer: node.CertIssuerGlobal,
+		Type:        svcnode.SvcNodeTypeNotifyRoot,
+		LocalIssuer: svcnode.CertIssuerGlobal,
 		UseVaultPki: true,
-		RemoteCAs: []node.MatchCA{
-			node.AnyRegionalMatchCA(),
-			node.GlobalMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.AnyRegionalMatchCA(),
+			svcnode.GlobalMatchCA(),
 		},
 	}
 	controllerClientUS := &PkiConfig{
 		Region:      "us",
-		Type:        node.NodeTypeController,
-		LocalIssuer: node.CertIssuerRegional,
+		Type:        svcnode.SvcNodeTypeController,
+		LocalIssuer: svcnode.CertIssuerRegional,
 		UseVaultPki: true,
-		RemoteCAs: []node.MatchCA{
-			node.GlobalMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.GlobalMatchCA(),
 		},
 	}
 	controllerServerUS := &PkiConfig{
 		Region:      "us",
-		Type:        node.NodeTypeController,
-		LocalIssuer: node.CertIssuerRegional,
+		Type:        svcnode.SvcNodeTypeController,
+		LocalIssuer: svcnode.CertIssuerRegional,
 		UseVaultPki: true,
-		RemoteCAs: []node.MatchCA{
-			node.SameRegionalMatchCA(),
-			node.SameRegionalCloudletMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.SameRegionalMatchCA(),
+			svcnode.SameRegionalCloudletMatchCA(),
 		},
 	}
 	controllerApiServerUS := &PkiConfig{
 		Region:      "us",
-		Type:        node.NodeTypeController,
-		LocalIssuer: node.CertIssuerRegional,
+		Type:        svcnode.SvcNodeTypeController,
+		LocalIssuer: svcnode.CertIssuerRegional,
 		UseVaultPki: true,
-		RemoteCAs: []node.MatchCA{
-			node.GlobalMatchCA(),
-			node.SameRegionalMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.GlobalMatchCA(),
+			svcnode.SameRegionalMatchCA(),
 		},
 	}
 	controllerApiServerEU := &PkiConfig{
 		Region:      "eu",
-		Type:        node.NodeTypeController,
-		LocalIssuer: node.CertIssuerRegional,
+		Type:        svcnode.SvcNodeTypeController,
+		LocalIssuer: svcnode.CertIssuerRegional,
 		UseVaultPki: true,
-		RemoteCAs: []node.MatchCA{
-			node.GlobalMatchCA(),
-			node.SameRegionalMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.GlobalMatchCA(),
+			svcnode.SameRegionalMatchCA(),
 		},
 	}
 	crmClientUS := &PkiConfig{
 		Region:        "us",
-		Type:          node.NodeTypeCRM,
-		LocalIssuer:   node.CertIssuerRegionalCloudlet,
+		Type:          svcnode.SvcNodeTypeCRM,
+		LocalIssuer:   svcnode.CertIssuerRegionalCloudlet,
 		UseVaultPki:   true,
 		AccessKeyFile: tc1.KeyClient.AccessKeyFile,
 		AccessApiAddr: tc1.KeyClient.AccessApiAddr,
 		CloudletKey:   &tc1.Cloudlet.Key,
-		RemoteCAs: []node.MatchCA{
-			node.SameRegionalMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.SameRegionalMatchCA(),
 		},
 	}
 	crmClientEU := &PkiConfig{
 		Region:        "eu",
-		Type:          node.NodeTypeCRM,
-		LocalIssuer:   node.CertIssuerRegionalCloudlet,
+		Type:          svcnode.SvcNodeTypeCRM,
+		LocalIssuer:   svcnode.CertIssuerRegionalCloudlet,
 		UseVaultPki:   true,
 		AccessKeyFile: tc2.KeyClient.AccessKeyFile,
 		AccessApiAddr: tc2.KeyClient.AccessApiAddr,
 		CloudletKey:   &tc2.Cloudlet.Key,
-		RemoteCAs: []node.MatchCA{
-			node.SameRegionalMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.SameRegionalMatchCA(),
 		},
 	}
 	dmeClientRegionalUS := &PkiConfig{
 		Region:      "us",
-		Type:        node.NodeTypeDME,
-		LocalIssuer: node.CertIssuerRegional,
+		Type:        svcnode.SvcNodeTypeDME,
+		LocalIssuer: svcnode.CertIssuerRegional,
 		UseVaultPki: true,
-		RemoteCAs: []node.MatchCA{
-			node.SameRegionalMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.SameRegionalMatchCA(),
 		},
 	}
 	mc := &PkiConfig{
-		Type:        node.NodeTypeNotifyRoot,
-		LocalIssuer: node.CertIssuerGlobal,
+		Type:        svcnode.SvcNodeTypeNotifyRoot,
+		LocalIssuer: svcnode.CertIssuerGlobal,
 		UseVaultPki: true,
-		RemoteCAs: []node.MatchCA{
-			node.AnyRegionalMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.AnyRegionalMatchCA(),
 		},
 	}
 	// assume attacker stole crm EU certs, and vault login
 	// so has regional-cloudlet cert and can pull all CAs.
 	crmRogueEU := &PkiConfig{
 		Region:        "eu",
-		Type:          node.NodeTypeCRM,
-		LocalIssuer:   node.CertIssuerRegionalCloudlet,
+		Type:          svcnode.SvcNodeTypeCRM,
+		LocalIssuer:   svcnode.CertIssuerRegionalCloudlet,
 		UseVaultPki:   true,
 		AccessKeyFile: tc2.KeyClient.AccessKeyFile,
 		AccessApiAddr: tc2.KeyClient.AccessApiAddr,
 		CloudletKey:   &tc2.Cloudlet.Key,
-		RemoteCAs: []node.MatchCA{
-			node.GlobalMatchCA(),
-			node.AnyRegionalMatchCA(),
-			node.SameRegionalMatchCA(),
-			node.SameRegionalCloudletMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.GlobalMatchCA(),
+			svcnode.AnyRegionalMatchCA(),
+			svcnode.SameRegionalMatchCA(),
+			svcnode.SameRegionalCloudletMatchCA(),
 		},
 	}
 	edgeTurnEU := &PkiConfig{
 		Region:      "eu",
-		Type:        node.NodeTypeEdgeTurn,
-		LocalIssuer: node.CertIssuerRegional,
+		Type:        svcnode.SvcNodeTypeEdgeTurn,
+		LocalIssuer: svcnode.CertIssuerRegional,
 		UseVaultPki: true,
-		RemoteCAs: []node.MatchCA{
-			node.SameRegionalCloudletMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.SameRegionalCloudletMatchCA(),
 		},
 	}
 	edgeTurnUS := &PkiConfig{
 		Region:      "us",
-		Type:        node.NodeTypeEdgeTurn,
-		LocalIssuer: node.CertIssuerRegional,
+		Type:        svcnode.SvcNodeTypeEdgeTurn,
+		LocalIssuer: svcnode.CertIssuerRegional,
 		UseVaultPki: true,
-		RemoteCAs: []node.MatchCA{
-			node.SameRegionalCloudletMatchCA(),
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.SameRegionalCloudletMatchCA(),
 		},
 	}
 
@@ -388,34 +388,34 @@ func TestInternalPki(t *testing.T) {
 	// These test config options and rollout phases
 	nodeNoTls := &PkiConfig{
 		Region: "us",
-		Type:   node.NodeTypeController,
+		Type:   svcnode.SvcNodeTypeController,
 	}
 	nodeFileOnly := &PkiConfig{
 		Region:   "us",
-		Type:     node.NodeTypeController,
+		Type:     svcnode.SvcNodeTypeController,
 		CertFile: certsDir + "/out/us.ctrl.edgecloud.net.crt",
 		CertKey:  certsDir + "/out/us.ctrl.edgecloud.net.key",
 		CAFile:   certsDir + "/out/foo-us-ca.crt",
 	}
 	nodePhase2 := &PkiConfig{
 		Region:      "us",
-		Type:        node.NodeTypeController,
+		Type:        svcnode.SvcNodeTypeController,
 		CertFile:    certsDir + "/out/us.ctrl.edgecloud.net.crt",
 		CertKey:     certsDir + "/out/us.ctrl.edgecloud.net.key",
 		CAFile:      certsDir + "/out/foo-us-ca.crt",
 		UseVaultPki: true,
-		LocalIssuer: node.CertIssuerRegional,
-		RemoteCAs: []node.MatchCA{
-			node.SameRegionalMatchCA(),
+		LocalIssuer: svcnode.CertIssuerRegional,
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.SameRegionalMatchCA(),
 		},
 	}
 	nodePhase3 := &PkiConfig{
 		Region:      "us",
-		Type:        node.NodeTypeController,
+		Type:        svcnode.SvcNodeTypeController,
 		UseVaultPki: true,
-		LocalIssuer: node.CertIssuerRegional,
-		RemoteCAs: []node.MatchCA{
-			node.SameRegionalMatchCA(),
+		LocalIssuer: svcnode.CertIssuerRegional,
+		RemoteCAs: []svcnode.MatchCA{
+			svcnode.SameRegionalMatchCA(),
 		},
 	}
 	// local testing
@@ -524,7 +524,7 @@ type ConfigTest struct {
 	Region        string
 	LocalIssuer   string
 	TestIssuer    string
-	RemoteCAs     []node.MatchCA
+	RemoteCAs     []svcnode.MatchCA
 	ExpectErr     string
 	Line          string
 	AccessKeyFile string
@@ -535,7 +535,7 @@ type ConfigTest struct {
 func testGetTlsConfig(t *testing.T, ctx context.Context, vaultAddr string, vroles *process.VaultRoles, cfg *ConfigTest) {
 	log.SpanLog(ctx, log.DebugLevelInfo, "run testGetTlsConfig", "cfg", cfg)
 	vc := getVaultConfig(cfg.NodeType, cfg.Region, vaultAddr, vroles)
-	mgr := node.NodeMgr{}
+	mgr := svcnode.SvcNodeMgr{}
 	mgr.InternalPki.UseVaultPki = true
 	mgr.ValidDomains = "edgecloud.net"
 	if cfg.AccessKeyFile != "" && cfg.AccessApiAddr != "" {
@@ -545,12 +545,12 @@ func testGetTlsConfig(t *testing.T, ctx context.Context, vaultAddr string, vrole
 	}
 	// nodeMgr init will attempt to issue a cert to be able to talk
 	// to Jaeger/ElasticSearch
-	opts := []node.NodeOp{
-		node.WithRegion(cfg.Region),
-		node.WithVaultConfig(vc),
+	opts := []svcnode.NodeOp{
+		svcnode.WithRegion(cfg.Region),
+		svcnode.WithVaultConfig(vc),
 	}
 	if cfg.CloudletKey != nil {
-		opts = append(opts, node.WithCloudletKey(cfg.CloudletKey))
+		opts = append(opts, svcnode.WithCloudletKey(cfg.CloudletKey))
 	}
 	_, _, err := mgr.Init(cfg.NodeType, cfg.LocalIssuer, opts...)
 	errStr := ""
@@ -578,7 +578,7 @@ type PkiConfig struct {
 	CertKey       string
 	CAFile        string
 	UseVaultPki   bool
-	RemoteCAs     []node.MatchCA
+	RemoteCAs     []svcnode.MatchCA
 	AccessKeyFile string
 	AccessApiAddr string
 	CloudletKey   *edgeproto.CloudletKey
@@ -592,9 +592,9 @@ type ClientServer struct {
 	Line            string
 }
 
-func (s *PkiConfig) setupNodeMgr(vaultAddr string, vroles *process.VaultRoles) (*node.NodeMgr, error) {
+func (s *PkiConfig) setupNodeMgr(vaultAddr string, vroles *process.VaultRoles) (*svcnode.SvcNodeMgr, error) {
 	vaultCfg := getVaultConfig(s.Type, s.Region, vaultAddr, vroles)
-	nodeMgr := node.NodeMgr{}
+	nodeMgr := svcnode.SvcNodeMgr{}
 	nodeMgr.SetInternalTlsCertFile(s.CertFile)
 	nodeMgr.SetInternalTlsKeyFile(s.CertKey)
 	nodeMgr.SetInternalTlsCAFile(s.CAFile)
@@ -605,12 +605,12 @@ func (s *PkiConfig) setupNodeMgr(vaultAddr string, vroles *process.VaultRoles) (
 		nodeMgr.AccessKeyClient.AccessApiAddr = s.AccessApiAddr
 		nodeMgr.AccessKeyClient.TestSkipTlsVerify = true
 	}
-	opts := []node.NodeOp{
-		node.WithRegion(s.Region),
-		node.WithVaultConfig(vaultCfg),
+	opts := []svcnode.NodeOp{
+		svcnode.WithRegion(s.Region),
+		svcnode.WithVaultConfig(vaultCfg),
 	}
 	if s.CloudletKey != nil {
-		opts = append(opts, node.WithCloudletKey(s.CloudletKey))
+		opts = append(opts, svcnode.WithCloudletKey(s.CloudletKey))
 	}
 	_, _, err := nodeMgr.Init(s.Type, s.LocalIssuer, opts...)
 	return &nodeMgr, err
@@ -761,14 +761,14 @@ func testTlsConnect(t *testing.T, ctx context.Context, cc *ClientController, vau
 		grpc.WithDefaultCallOptions(grpc.ForceCodec(&cloudcommon.ProtoCodec{})),
 	)
 	require.Nil(t, err, "create client conn %s", cc.Line)
-	node.EchoApisTest(t, ctx, clientConn, cc.ExpectErr)
+	svcnode.EchoApisTest(t, ctx, clientConn, cc.ExpectErr)
 }
 
 func getVaultConfig(nodetype, region, addr string, vroles *process.VaultRoles) *vault.Config {
 	var roleid string
 	var secretid string
 
-	if nodetype == node.NodeTypeNotifyRoot {
+	if nodetype == svcnode.SvcNodeTypeNotifyRoot {
 		roleid = vroles.NotifyRootRoleID
 		secretid = vroles.NotifyRootSecretID
 	} else {
@@ -781,21 +781,21 @@ func getVaultConfig(nodetype, region, addr string, vroles *process.VaultRoles) *
 			panic("no roles for region")
 		}
 		switch nodetype {
-		case node.NodeTypeDME:
+		case svcnode.SvcNodeTypeDME:
 			roleid = rr.DmeRoleID
 			secretid = rr.DmeSecretID
-		case node.NodeTypeCRM:
+		case svcnode.SvcNodeTypeCRM:
 			// no vault access for crm
 			return nil
-		case node.NodeTypeController:
+		case svcnode.SvcNodeTypeController:
 			roleid = rr.CtrlRoleID
 			secretid = rr.CtrlSecretID
-		case node.NodeTypeAddonMgr:
+		case svcnode.SvcNodeTypeAddonMgr:
 			fallthrough
-		case node.NodeTypeClusterSvc:
+		case svcnode.SvcNodeTypeClusterSvc:
 			roleid = rr.ClusterSvcRoleID
 			secretid = rr.ClusterSvcSecretID
-		case node.NodeTypeEdgeTurn:
+		case svcnode.SvcNodeTypeEdgeTurn:
 			roleid = rr.EdgeTurnRoleID
 			secretid = rr.EdgeTurnSecretID
 		default:
@@ -835,8 +835,8 @@ func (list *clientControllerList) add(cc ClientController) {
 
 // Dummy controller serves Vault certs to access key clients
 type DummyController struct {
-	node.DummyController
-	nodeMgr       node.NodeMgr
+	svcnode.DummyController
+	nodeMgr       svcnode.SvcNodeMgr
 	vroles        *process.VaultRoles
 	TlsLis        net.Listener
 	TlsServ       *grpc.Server
@@ -850,7 +850,7 @@ func (s *DummyController) Init(ctx context.Context, region string, vroles *proce
 		// add APIs to issue certs to CRM/etc
 		edgeproto.RegisterCloudletAccessApiServer(serv, s)
 	}
-	es := &node.EchoServer{}
+	es := &svcnode.EchoServer{}
 	s.TlsRegisterCb = func(serv *grpc.Server) {
 		// echo server for testing
 		echo.RegisterEchoServer(serv, es)
@@ -858,10 +858,10 @@ func (s *DummyController) Init(ctx context.Context, region string, vroles *proce
 	// no crm vault role/secret env vars for controller (no backwards compatability)
 	s.vroles = vroles
 
-	vc := getVaultConfig(node.NodeTypeController, region, vaultAddr, vroles)
+	vc := getVaultConfig(svcnode.SvcNodeTypeController, region, vaultAddr, vroles)
 	s.nodeMgr.InternalPki.UseVaultPki = true
 	s.nodeMgr.ValidDomains = "edgecloud.net"
-	_, _, err := s.nodeMgr.Init(node.NodeTypeController, node.NoTlsClientIssuer, node.WithRegion(region), node.WithVaultConfig(vc))
+	_, _, err := s.nodeMgr.Init(svcnode.SvcNodeTypeController, svcnode.NoTlsClientIssuer, svcnode.WithRegion(region), svcnode.WithVaultConfig(vc))
 	return err
 }
 
@@ -875,10 +875,10 @@ func (s *DummyController) Start(ctx context.Context) {
 	// same config as Controller's notify server
 	tlsConfig, err := s.nodeMgr.InternalPki.GetServerTlsConfig(ctx,
 		s.nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegional,
-		[]node.MatchCA{
-			node.SameRegionalMatchCA(),
-			node.SameRegionalCloudletMatchCA(),
+		svcnode.CertIssuerRegional,
+		[]svcnode.MatchCA{
+			svcnode.SameRegionalMatchCA(),
+			svcnode.SameRegionalCloudletMatchCA(),
 		})
 	if err != nil {
 		panic(err.Error())
@@ -921,9 +921,9 @@ func (s *DummyController) TlsAddr() string {
 func (s *DummyController) IssueCert(ctx context.Context, req *edgeproto.IssueCertRequest) (*edgeproto.IssueCertReply, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "dummy controller issue cert", "req", req)
 	reply := &edgeproto.IssueCertReply{}
-	certId := node.CertId{
+	certId := svcnode.CertId{
 		CommonNamePrefix: req.CommonNamePrefix,
-		Issuer:           node.CertIssuerRegionalCloudlet,
+		Issuer:           svcnode.CertIssuerRegionalCloudlet,
 	}
 	vc, err := s.nodeMgr.InternalPki.IssueVaultCertDirect(ctx, certId)
 	if err != nil {

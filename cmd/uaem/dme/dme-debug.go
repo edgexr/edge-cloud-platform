@@ -21,11 +21,11 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	uaemcommon "github.com/edgexr/edge-cloud-platform/pkg/uaem-common"
 )
 
-func InitDebug(nodeMgr *node.NodeMgr) {
+func InitDebug(nodeMgr *svcnode.SvcNodeMgr) {
 	nodeMgr.Debug.AddDebugFunc(uaemcommon.RequestAppInstLatency, requestAppInstLatency)
 	nodeMgr.Debug.AddDebugFunc("spew-rate-limit-mgr", spewRateLimitMgr)
 }

@@ -19,7 +19,7 @@ import (
 	"sync"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -61,7 +61,7 @@ const InitCompatibilityVersionKey = "initCompatVersion"
 const CloudletInfoUpdateExpireMultiple = 20 // relative to PlatformHaInstanceActiveExpireTime how long cloudletInfo cache is valid
 const CloudletInfoUpdateRefreshMultiple = 9 // relative to PlatformHaInstanceActiveExpireTime how often to refresh cloudlet info
 
-func NewCRMData(platform pf.Platform, key *edgeproto.CloudletKey, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager) *CRMData {
+func NewCRMData(platform pf.Platform, key *edgeproto.CloudletKey, nodeMgr *svcnode.SvcNodeMgr, haMgr *redundancy.HighAvailabilityManager) *CRMData {
 	s := &CRMData{}
 	s.cloudletKey = key
 	s.platform = platform

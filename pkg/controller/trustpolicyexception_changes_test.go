@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
@@ -40,10 +40,10 @@ func TestRunTPEChange(t *testing.T) {
 	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	cplookup := &node.ZonePoolCache{}
+	cplookup := &svcnode.ZonePoolCache{}
 	cplookup.Init()
 	nodeMgr.ZonePoolLookup = cplookup
-	cloudletLookup := &node.CloudletCache{}
+	cloudletLookup := &svcnode.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
 
