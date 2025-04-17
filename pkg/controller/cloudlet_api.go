@@ -28,7 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
@@ -47,7 +47,7 @@ type CloudletApi struct {
 	sync                  *regiondata.Sync
 	store                 edgeproto.CloudletStore
 	cache                 *edgeproto.CloudletCache
-	accessKeyServer       *node.AccessKeyServer
+	accessKeyServer       *svcnode.AccessKeyServer
 	dnsLabelStore         edgeproto.CloudletDnsLabelStore
 	objectDnsLabelStore   edgeproto.CloudletObjectDnsLabelStore
 	vaultClient           *accessapi.VaultClient
@@ -108,10 +108,10 @@ func NewCloudletApi(sync *regiondata.Sync, all *AllApis) *CloudletApi {
 	cloudletApi.all = all
 	cloudletApi.sync = sync
 	cloudletApi.store = edgeproto.NewCloudletStore(sync.GetKVStore())
-	cloudletApi.cache = nodeMgr.CloudletLookup.GetCloudletCache(node.NoRegion)
+	cloudletApi.cache = nodeMgr.CloudletLookup.GetCloudletCache(svcnode.NoRegion)
 	cloudletApi.cache.Store = cloudletApi.store
 	sync.RegisterCache(cloudletApi.cache)
-	cloudletApi.accessKeyServer = node.NewAccessKeyServer(cloudletApi.cache, nodeMgr.VaultAddr)
+	cloudletApi.accessKeyServer = svcnode.NewAccessKeyServer(cloudletApi.cache, nodeMgr.VaultAddr)
 	cloudletApi.defaultMTClustWorkers.Init("UpdateMultiTenantCluster", cloudletApi.updateDefaultMultiTenantClusterWorker)
 	return &cloudletApi
 }
@@ -467,7 +467,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		in.AccessVars = redactAccessVars(accessVars)
 	}
 
-	kafkaDetails := node.KafkaCreds{}
+	kafkaDetails := svcnode.KafkaCreds{}
 	if (in.KafkaUser != "") != (in.KafkaPassword != "") {
 		return errors.New("Must specify both kafka username and password, or neither")
 	} else if in.KafkaCluster == "" && in.KafkaUser != "" {
@@ -482,7 +482,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	}
 	// store kafka details in Vault
 	if kafkaDetails.Endpoint != "" {
-		path := node.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization)
+		path := svcnode.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization)
 		err = vault.PutData(vaultConfig, path, kafkaDetails)
 		if err != nil {
 			return fmt.Errorf("Unable to store kafka details: %s", err)
@@ -494,13 +494,13 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		}
 		client, err := vaultConfig.Login()
 		if err == nil {
-			vault.DeleteKV(client, node.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization))
+			vault.DeleteKV(client, svcnode.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization))
 		} else {
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to login in to vault to delete kafka credentials", "err", err)
 		}
 	}()
 
-	accessKey, err := node.GenerateAccessKey()
+	accessKey, err := svcnode.GenerateAccessKey()
 	if err != nil {
 		return err
 	}
@@ -511,7 +511,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	in.CrmAccessKeyUpgradeRequired = in.CrmOnEdge
 
 	if in.PlatformHighAvailability {
-		secondaryAccessKey, err := node.GenerateAccessKey()
+		secondaryAccessKey, err := svcnode.GenerateAccessKey()
 		if err != nil {
 			return err
 		}
@@ -1071,14 +1071,14 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 		in.KafkaPassword = ""
 		client, err := vaultConfig.Login()
 		if err == nil {
-			vault.DeleteKV(client, node.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization))
+			vault.DeleteKV(client, svcnode.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization))
 		} else {
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to login in to vault to delete kafka credentials", "err", err)
 		}
 	} else if kafkaClusterChanged || kafkaUserChanged || kafkaPasswordChanged {
 		// get existing data
-		kafkaCreds := node.KafkaCreds{}
-		path := node.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization)
+		kafkaCreds := svcnode.KafkaCreds{}
+		path := svcnode.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization)
 		err := vault.GetData(vaultConfig, path, 0, &kafkaCreds)
 		if kafkaClusterChanged {
 			kafkaCreds.Endpoint = in.KafkaCluster
@@ -1799,7 +1799,7 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	if in.KafkaCluster != "" {
 		client, err := vaultConfig.Login()
 		if err == nil {
-			vault.DeleteKV(client, node.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization))
+			vault.DeleteKV(client, svcnode.GetKafkaVaultPath(*region, in.Key.Name, in.Key.Organization))
 		} else {
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to login in to vault to delete kafka credentials", "key", in.Key, "err", err)
 		}
@@ -2184,14 +2184,14 @@ func (s *CloudletApi) RevokeAccessKey(ctx context.Context, key *edgeproto.Cloudl
 func (s *CloudletApi) GenerateAccessKey(ctx context.Context, key *edgeproto.CloudletKey) (*edgeproto.Result, error) {
 	res := edgeproto.Result{}
 	cloudlet := edgeproto.Cloudlet{}
-	var keyPair *node.KeyPair
+	var keyPair *svcnode.KeyPair
 	var err, vaultErr error
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		res.Message = ""
 		if !s.store.STMGet(stm, key, &cloudlet) {
 			return key.NotFoundError()
 		}
-		keyPair, err = node.GenerateAccessKey()
+		keyPair, err = svcnode.GenerateAccessKey()
 		if err != nil {
 			return err
 		}

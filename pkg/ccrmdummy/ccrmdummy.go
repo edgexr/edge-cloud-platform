@@ -24,7 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrm"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -74,14 +74,14 @@ func StartDummyCCRM(ctx context.Context, vaultConfig *vault.Config, kvstore objs
 		platform.PlatformTypeFakeVMPool:        dummy.NewPlatform(fake.NewPlatformVMPool),
 		"ccrm":                                 dummy.NewPlatform(fake.NewPlatform), // matches platformType from testutil/test_data.go
 	}
-	nodeMgr := node.NodeMgr{}
+	nodeMgr := svcnode.SvcNodeMgr{}
 	nodeMgr.VaultConfig = vaultConfig
-	nodeMgr.MyNode.Key.Type = node.NodeTypeCCRM
+	nodeMgr.MyNode.Key.Type = svcnode.SvcNodeTypeCCRM
 	nodeMgr.Debug.Init(&nodeMgr)
-	cplookup := &node.ZonePoolCache{}
+	cplookup := &svcnode.ZonePoolCache{}
 	cplookup.Init()
 	nodeMgr.ZonePoolLookup = cplookup
-	cloudletLookup := &node.CloudletCache{}
+	cloudletLookup := &svcnode.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
 

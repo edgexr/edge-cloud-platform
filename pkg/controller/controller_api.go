@@ -23,7 +23,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
@@ -120,9 +120,9 @@ func ControllerConnect(ctx context.Context, addr string) (*grpc.ClientConn, erro
 	}
 	tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegional,
-		[]node.MatchCA{node.SameRegionalMatchCA()},
-		node.WithTlsServerName(host))
+		svcnode.CertIssuerRegional,
+		[]svcnode.MatchCA{svcnode.SameRegionalMatchCA()},
+		svcnode.WithTlsServerName(host))
 	if err != nil {
 		return nil, err
 	}
@@ -145,9 +145,9 @@ func notifyRootConnect(ctx context.Context, notifyAddrs string) (*grpc.ClientCon
 	addrs := strings.Split(notifyAddrs, ",")
 	tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegional,
-		[]node.MatchCA{node.GlobalMatchCA()},
-		node.WithTlsServerName(addrs[0]))
+		svcnode.CertIssuerRegional,
+		[]svcnode.MatchCA{svcnode.GlobalMatchCA()},
+		svcnode.WithTlsServerName(addrs[0]))
 	if err != nil {
 		return nil, err
 	}

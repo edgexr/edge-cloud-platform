@@ -27,7 +27,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/cloudletssh"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
@@ -48,7 +48,7 @@ type PlatformConfig struct {
 	EnvoyWithCurlImage    string
 	NginxWithCurlImage    string
 	EnvVars               map[string]string
-	NodeMgr               *node.NodeMgr
+	NodeMgr               *svcnode.SvcNodeMgr
 	AppDNSRoot            string
 	RootLBFQDN            string
 	RootLBAccessKey       string // set if Shepherd runs on rootLB
@@ -231,7 +231,7 @@ type AccessApi interface {
 	GetDNSRecords(ctx context.Context, fqdn string) ([]dnsapi.Record, error)
 	DeleteDNSRecord(ctx context.Context, fqdn string) error
 	GetSessionTokens(ctx context.Context, secretName string) (string, error)
-	GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error)
+	GetKafkaCreds(ctx context.Context) (*svcnode.KafkaCreds, error)
 	GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error)
 	CreateCloudletNode(ctx context.Context, node *edgeproto.CloudletNode) (string, error)
 	DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error

@@ -16,7 +16,7 @@ package autoprov
 
 import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 )
 
@@ -33,14 +33,14 @@ type CacheData struct {
 	autoProvInfoCache   edgeproto.AutoProvInfoCache
 }
 
-func (s *CacheData) init(nodeMgr *node.NodeMgr) {
+func (s *CacheData) init(nodeMgr *svcnode.SvcNodeMgr) {
 	edgeproto.InitAppCache(&s.appCache)
 	edgeproto.InitAppInstCache(&s.appInstCache)
 	edgeproto.InitAppInstRefsCache(&s.appInstRefsCache)
 	edgeproto.InitAutoProvPolicyCache(&s.autoProvPolicyCache)
 	edgeproto.InitZoneCache(&s.zoneCache)
 	if nodeMgr != nil {
-		s.cloudletCache = nodeMgr.CloudletLookup.GetCloudletCache(node.NoRegion)
+		s.cloudletCache = nodeMgr.CloudletLookup.GetCloudletCache(svcnode.NoRegion)
 	} else {
 		s.cloudletCache = &edgeproto.CloudletCache{}
 		edgeproto.InitCloudletCache(s.cloudletCache)

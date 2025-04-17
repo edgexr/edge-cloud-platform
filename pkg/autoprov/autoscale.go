@@ -23,7 +23,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"google.golang.org/grpc"
@@ -115,7 +115,7 @@ func scaleClusterInst(ctx context.Context, name string, alert *edgeproto.Alert, 
 	}
 	if err == nil {
 		// only log event if scaling succeeded
-		nodeMgr.TimedEvent(ctx, name+" ClusterInst", inst.Key.Organization, node.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "new nodecount", strconv.Itoa(int(inst.GetNumNodes())), "reason", alert.Annotations["reason"])
+		nodeMgr.TimedEvent(ctx, name+" ClusterInst", inst.Key.Organization, svcnode.EventType, inst.Key.GetTags(), err, eventStart, time.Now(), "new nodecount", strconv.Itoa(int(inst.GetNumNodes())), "reason", alert.Annotations["reason"])
 	}
 	return err
 }

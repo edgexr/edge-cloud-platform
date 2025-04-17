@@ -41,7 +41,7 @@ type DummyHandler struct {
 	CloudletInfoCache         edgeproto.CloudletInfoCache
 	VMPoolInfoCache           edgeproto.VMPoolInfoCache
 	AlertCache                edgeproto.AlertCache
-	NodeCache                 edgeproto.NodeCache
+	SvcNodeCache              edgeproto.SvcNodeCache
 	AutoScalePolicyCache      edgeproto.AutoScalePolicyCache
 	AutoProvPolicyCache       edgeproto.AutoProvPolicyCache
 	TrustPolicyCache          edgeproto.TrustPolicyCache
@@ -69,7 +69,7 @@ func NewDummyHandler() *DummyHandler {
 	edgeproto.InitFlavorCache(&h.FlavorCache)
 	edgeproto.InitClusterInstCache(&h.ClusterInstCache)
 	edgeproto.InitAlertCache(&h.AlertCache)
-	edgeproto.InitNodeCache(&h.NodeCache)
+	edgeproto.InitSvcNodeCache(&h.SvcNodeCache)
 	edgeproto.InitAutoScalePolicyCache(&h.AutoScalePolicyCache)
 	edgeproto.InitAutoProvPolicyCache(&h.AutoProvPolicyCache)
 	edgeproto.InitTrustPolicyCache(&h.TrustPolicyCache)
@@ -106,7 +106,7 @@ func (s *DummyHandler) RegisterServer(mgr *ServerMgr) {
 	mgr.RegisterRecvCloudletInfoCache(&s.CloudletInfoCache)
 	mgr.RegisterRecvVMPoolInfoCache(&s.VMPoolInfoCache)
 	mgr.RegisterRecvAlertCache(&s.AlertCache)
-	mgr.RegisterRecvNodeCache(&s.NodeCache)
+	mgr.RegisterRecvSvcNodeCache(&s.SvcNodeCache)
 	mgr.RegisterRecvDeviceCache(&s.DeviceCache)
 	mgr.RegisterRecvTrustPolicyExceptionCache(&s.TrustPolicyExceptionCache)
 }
@@ -118,7 +118,7 @@ func (s *DummyHandler) RegisterCRMClient(cl *Client) {
 	cl.RegisterSendCloudletInfoCache(&s.CloudletInfoCache)
 	cl.RegisterSendVMPoolInfoCache(&s.VMPoolInfoCache)
 	cl.RegisterSendAlertCache(&s.AlertCache)
-	cl.RegisterSendNodeCache(&s.NodeCache)
+	cl.RegisterSendSvcNodeCache(&s.SvcNodeCache)
 	cl.RegisterSendTrustPolicyExceptionCache(&s.TrustPolicyExceptionCache)
 
 	cl.RegisterRecvSettingsCache(&s.SettingsCache)
@@ -201,7 +201,7 @@ func (s *DummyHandler) GetCache(typ CacheType) WaitForCache {
 	case AlertType:
 		cache = &s.AlertCache
 	case NodeType:
-		cache = &s.NodeCache
+		cache = &s.SvcNodeCache
 	case FreeReservableClusterInstType:
 		cache = &s.frClusterInsts
 	case NetworkType:
@@ -339,7 +339,7 @@ func (s *DummyHandler) WaitForCloudletState(key *edgeproto.CloudletKey, state dm
 }
 
 func (s *DummyHandler) GetCloudletDetails(key *edgeproto.CloudletKey) (string, int64, error) {
-	for _, data := range s.NodeCache.Objs {
+	for _, data := range s.SvcNodeCache.Objs {
 		obj := data.Obj
 		if obj.Key.Type != "crm" {
 			continue

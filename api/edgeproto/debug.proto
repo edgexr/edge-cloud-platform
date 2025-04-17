@@ -18,7 +18,7 @@ package edgeproto;
 import "google/api/annotations.proto";
 import "tools/protogen/protogen.proto";
 import "gogoproto/gogo.proto";
-import "node.proto";
+import "svcnode.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -27,7 +27,7 @@ option (gogoproto.goproto_sizecache_all) = false;
 // DebugRequest. Keep everything in one struct to make it easy to send commands without having to change the code.
 message DebugRequest {
   // Service node identifier (see NodeShow)
-  NodeKey node = 1 [(gogoproto.nullable) = false];
+  SvcNodeKey node = 1 [(gogoproto.nullable) = false];
   // Comma separated list of debug level names: etcd,api,notify,dmereq,locapi,infra,metrics,upgrade,info,sampled,fedapi
   string levels = 2;
   // Debug command (use "help" to see available commands)
@@ -46,7 +46,7 @@ message DebugRequest {
 
 message DebugReply {
   // Service node identifier (see NodeShow)
-  NodeKey node = 1 [(gogoproto.nullable) = false];
+  SvcNodeKey node = 1 [(gogoproto.nullable) = false];
   // Debug output, if any
   string output = 2;
   // Id used internally

@@ -25,7 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/redundancy"
@@ -70,9 +70,9 @@ func TestOpenstackLive(t *testing.T) {
 		Deployment: cloudcommon.DeploymentTypeDocker,
 	}
 
-	nodeMgr := &node.NodeMgr{}
+	nodeMgr := &svcnode.SvcNodeMgr{}
 	nodeMgr.Debug.Init(nodeMgr)
-	zonePoolLookup := &node.ZonePoolCache{}
+	zonePoolLookup := &svcnode.ZonePoolCache{}
 	zonePoolLookup.Init()
 	nodeMgr.ZonePoolLookup = zonePoolLookup
 	nodeMgr.MyNode.Key.CloudletKey = cloudlet.Key

@@ -21,7 +21,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
@@ -37,10 +37,10 @@ func TestCalcKubernetesClusterUsedResources(t *testing.T) {
 	dummy := regiondata.InMemoryStore{}
 	dummy.Start()
 
-	zplookup := &node.ZonePoolCache{}
+	zplookup := &svcnode.ZonePoolCache{}
 	zplookup.Init()
 	nodeMgr.ZonePoolLookup = zplookup
-	cloudletLookup := &node.CloudletCache{}
+	cloudletLookup := &svcnode.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
 

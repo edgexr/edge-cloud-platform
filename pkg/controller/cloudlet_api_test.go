@@ -30,7 +30,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
@@ -61,7 +61,7 @@ const (
 var eMock *EventMock
 
 type EventMock struct {
-	names map[string][]node.EventTag
+	names map[string][]svcnode.EventTag
 	addr  string
 	mux   sync.Mutex
 }
@@ -69,7 +69,7 @@ type EventMock struct {
 func NewEventMock(addr string) *EventMock {
 	event := EventMock{}
 	event.addr = addr
-	event.names = make(map[string][]node.EventTag)
+	event.names = make(map[string][]svcnode.EventTag)
 	return &event
 }
 
@@ -82,7 +82,7 @@ func (e *EventMock) registerResponders(t *testing.T, mockTransport *httpmock.Moc
 		},
 	)
 	recordEvent := func(data []byte) {
-		eData := node.EventData{}
+		eData := svcnode.EventData{}
 		err := json.Unmarshal(data, &eData)
 		require.Nil(t, err, "json unmarshal event data")
 		require.NotEmpty(t, eData.Name, "event name exists")
@@ -114,10 +114,10 @@ func (e *EventMock) registerResponders(t *testing.T, mockTransport *httpmock.Moc
 	)
 }
 
-func (e *EventMock) verifyEvent(t *testing.T, name string, tags []node.EventTag) {
+func (e *EventMock) verifyEvent(t *testing.T, name string, tags []svcnode.EventTag) {
 	// Events are written in a separate thread so we need to poll
 	// to check when they're registered.
-	var eTags []node.EventTag
+	var eTags []svcnode.EventTag
 	var ok bool
 	for ii := 0; ii < 20; ii++ {
 		e.mux.Lock()
@@ -174,11 +174,11 @@ func TestCloudletApi(t *testing.T) {
 	eMock.registerResponders(t, mockTransport)
 
 	// setup nodeMgr for events
-	nodeMgr = node.NodeMgr{
+	nodeMgr = svcnode.SvcNodeMgr{
 		VaultAddr: vault.UnitTestIgnoreVaultAddr,
 	}
-	ctx, _, err := nodeMgr.Init(node.NodeTypeController, "", node.WithRegion("unit-test"),
-		node.WithESUrls(esURL), node.WithTestTransport(mockTransport))
+	ctx, _, err := nodeMgr.Init(svcnode.SvcNodeTypeController, "", svcnode.WithRegion("unit-test"),
+		svcnode.WithESUrls(esURL), svcnode.WithTestTransport(mockTransport))
 	require.Nil(t, err)
 	require.NotNil(t, nodeMgr.OSClient)
 	defer nodeMgr.Finish()
@@ -309,7 +309,7 @@ func deleteCloudletInfo(ctx context.Context, key *edgeproto.CloudletKey, apis *A
 }
 
 func testNotifyId(t *testing.T, ctrlHandler *notify.DummyHandler, key *edgeproto.CloudletKey, nodeCount, notifyId int, crmVersion string) {
-	require.Equal(t, nodeCount, len(ctrlHandler.NodeCache.Objs), "node count matches")
+	require.Equal(t, nodeCount, len(ctrlHandler.SvcNodeCache.Objs), "node count matches")
 	nodeVersion, nodeNotifyId, err := ctrlHandler.GetCloudletDetails(key)
 	require.Nil(t, err, "get cloudlet version & notifyId from node cache")
 	require.Equal(t, crmVersion, nodeVersion, "node version matches")
@@ -325,7 +325,7 @@ func testCloudletStates(t *testing.T, ctx context.Context, apis *AllApis) {
 	defer ctrlMgr.Stop()
 
 	getPublicCertApi := &cloudcommon.TestPublicCertApi{}
-	publicCertManager, err := node.NewPublicCertManager("localhost", "", getPublicCertApi, "", "")
+	publicCertManager, err := svcnode.NewPublicCertManager("localhost", "", getPublicCertApi, "", "")
 	require.Nil(t, err)
 	tlsConfig, err := publicCertManager.GetServerTlsConfig(ctx)
 	require.Nil(t, err)
@@ -464,12 +464,12 @@ func testManualBringup(t *testing.T, ctx context.Context, apis *AllApis) {
 	forceCloudletInfoState(ctx, &cloudlet.Key, dme.CloudletState_CLOUDLET_STATE_INIT, "sending init", crm_v2, apis)
 	err = waitForState(&cloudlet.Key, edgeproto.TrackedState_CRM_INITOK, apis)
 	require.Nil(t, err, fmt.Sprintf("cloudlet state transtions"))
-	eMock.verifyEvent(t, "upgrading cloudlet", []node.EventTag{
-		node.EventTag{
+	eMock.verifyEvent(t, "upgrading cloudlet", []svcnode.EventTag{
+		svcnode.EventTag{
 			Key:   "from-version",
 			Value: crm_v1,
 		},
-		node.EventTag{
+		svcnode.EventTag{
 			Key:   "to-version",
 			Value: crm_v2,
 		},
@@ -478,12 +478,12 @@ func testManualBringup(t *testing.T, ctx context.Context, apis *AllApis) {
 	forceCloudletInfoState(ctx, &cloudlet.Key, dme.CloudletState_CLOUDLET_STATE_READY, "sending ready", crm_v2, apis)
 	err = waitForState(&cloudlet.Key, edgeproto.TrackedState_READY, apis)
 	require.Nil(t, err, fmt.Sprintf("cloudlet state transtions"))
-	eMock.verifyEvent(t, "cloudlet online", []node.EventTag{
-		node.EventTag{
+	eMock.verifyEvent(t, "cloudlet online", []svcnode.EventTag{
+		svcnode.EventTag{
 			Key:   "state",
 			Value: "CLOUDLET_STATE_READY",
 		},
-		node.EventTag{
+		svcnode.EventTag{
 			Key:   "version",
 			Value: crm_v2,
 		},
@@ -527,8 +527,8 @@ func testManualBringup(t *testing.T, ctx context.Context, apis *AllApis) {
 	err = apis.cloudletApi.UpdateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err, fmt.Sprintf("update cloudlet maintenance state"))
 
-	eMock.verifyEvent(t, "cloudlet maintenance start", []node.EventTag{
-		node.EventTag{
+	eMock.verifyEvent(t, "cloudlet maintenance start", []svcnode.EventTag{
+		svcnode.EventTag{
 			Key:   "maintenance-state",
 			Value: "UNDER_MAINTENANCE",
 		},
@@ -537,16 +537,16 @@ func testManualBringup(t *testing.T, ctx context.Context, apis *AllApis) {
 	cloudlet.MaintenanceState = dme.MaintenanceState_NORMAL_OPERATION
 	err = apis.cloudletApi.UpdateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
 	require.Nil(t, err, fmt.Sprintf("update cloudlet maintenance state"))
-	eMock.verifyEvent(t, "cloudlet maintenance done", []node.EventTag{
-		node.EventTag{
+	eMock.verifyEvent(t, "cloudlet maintenance done", []svcnode.EventTag{
+		svcnode.EventTag{
 			Key:   "maintenance-state",
 			Value: "NORMAL_OPERATION",
 		},
 	})
 
 	deleteCloudletInfo(ctx, &cloudlet.Key, apis)
-	eMock.verifyEvent(t, "cloudlet offline", []node.EventTag{
-		node.EventTag{
+	eMock.verifyEvent(t, "cloudlet offline", []svcnode.EventTag{
+		svcnode.EventTag{
 			Key:   "reason",
 			Value: "notify disconnect",
 		},
@@ -1084,8 +1084,8 @@ func testChangeCloudletDNS(t *testing.T, ctx context.Context, apis *AllApis) {
 	err = apis.cloudletApi.setMaintenanceState(ctx, &cloudlet.Key, dme.MaintenanceState_UNDER_MAINTENANCE, ctx, "none")
 	require.Nil(t, err, "update cloudlet maintenance state")
 
-	eMock.verifyEvent(t, "cloudlet maintenance start", []node.EventTag{
-		node.EventTag{
+	eMock.verifyEvent(t, "cloudlet maintenance start", []svcnode.EventTag{
+		svcnode.EventTag{
 			Key:   "maintenance-state",
 			Value: "UNDER_MAINTENANCE",
 		},

@@ -22,7 +22,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -40,7 +40,7 @@ func NewZonePoolApi(sync *regiondata.Sync, all *AllApis) *ZonePoolApi {
 	zonePoolApi.all = all
 	zonePoolApi.sync = sync
 	zonePoolApi.store = edgeproto.NewZonePoolStore(sync.GetKVStore())
-	zonePoolApi.cache = nodeMgr.ZonePoolLookup.GetZonePoolCache(node.NoRegion)
+	zonePoolApi.cache = nodeMgr.ZonePoolLookup.GetZonePoolCache(svcnode.NoRegion)
 	sync.RegisterCache(zonePoolApi.cache)
 	return &zonePoolApi
 }

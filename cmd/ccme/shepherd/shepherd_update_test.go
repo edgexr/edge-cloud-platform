@@ -24,7 +24,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -53,13 +53,13 @@ func TestShepherdUpdate(t *testing.T) {
 	crmServer.Start("crm", *notifyAddrs, nil)
 	defer crmServer.Stop()
 	// handle access api
-	keyServer := node.NewAccessKeyServer(&crm.CloudletCache, "")
-	accessKeyGrpcServer := node.AccessKeyGrpcServer{}
-	basicUpgradeHandler := node.BasicUpgradeHandler{
+	keyServer := svcnode.NewAccessKeyServer(&crm.CloudletCache, "")
+	accessKeyGrpcServer := svcnode.AccessKeyGrpcServer{}
+	basicUpgradeHandler := svcnode.BasicUpgradeHandler{
 		KeyServer: keyServer,
 	}
 	getPublicCertApi := &cloudcommon.TestPublicCertApi{}
-	publicCertManager, err := node.NewPublicCertManager("localhost", "", getPublicCertApi, "", "")
+	publicCertManager, err := svcnode.NewPublicCertManager("localhost", "", getPublicCertApi, "", "")
 	require.Nil(t, err)
 	tlsConfig, err := publicCertManager.GetServerTlsConfig(ctx)
 	require.Nil(t, err)
@@ -68,7 +68,7 @@ func TestShepherdUpdate(t *testing.T) {
 	})
 	defer accessKeyGrpcServer.Stop()
 	// setup access key
-	accessKey, err := node.GenerateAccessKey()
+	accessKey, err := svcnode.GenerateAccessKey()
 	require.Nil(t, err)
 	nodeMgr.AccessKeyClient.AccessApiAddr = accessKeyGrpcServer.ApiAddr()
 	nodeMgr.AccessKeyClient.AccessKeyFile = "/tmp/acceskey_shepherd_unittest"

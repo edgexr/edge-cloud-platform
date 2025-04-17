@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 import (
 	"context"
@@ -114,7 +114,7 @@ func (s *AccessKeyClient) init(ctx context.Context, nodeType, tlsClientIssuer st
 	}
 	s.cloudletKey = key
 	s.cloudletKeyStr = string(keystr)
-	if nodeType == NodeTypeCRM {
+	if nodeType == SvcNodeTypeCRM {
 		// Attempt to upgrade access key. May not exist if upgrading
 		// old crm, so ignore and log error. Shepherd/DME will not
 		// go through upgrade process. If correct key is backup key,

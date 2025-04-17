@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 // Three intermediate certificates are used to issue certificates to services.
 // The global intermediate certificate is used for global services.

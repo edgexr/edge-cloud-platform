@@ -28,7 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	accessapicloudlet "github.com/edgexr/edge-cloud-platform/pkg/accessapi-cloudlet"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
@@ -107,7 +107,7 @@ var cloudletFeatures edgeproto.PlatformFeatures
 var cloudletKey edgeproto.CloudletKey
 var zoneKey edgeproto.ZoneKey
 var myPlatform platform.Platform
-var nodeMgr node.NodeMgr
+var nodeMgr svcnode.SvcNodeMgr
 var infraProps infracommon.InfraProperties
 
 var sigChan chan os.Signal
@@ -472,19 +472,19 @@ func start() {
 	settings = *edgeproto.GetDefaultSettings()
 
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &cloudletKey)
-	nodeOps := []node.NodeOp{
-		node.WithCloudletKey(&cloudletKey),
-		node.WithRegion(*region),
-		node.WithParentSpan(*parentSpan),
+	nodeOps := []svcnode.NodeOp{
+		svcnode.WithCloudletKey(&cloudletKey),
+		svcnode.WithRegion(*region),
+		svcnode.WithParentSpan(*parentSpan),
 	}
 	if *haRole == string(process.HARoleSecondary) {
-		nodeOps = append(nodeOps, node.WithHARole(process.HARoleSecondary))
+		nodeOps = append(nodeOps, svcnode.WithHARole(process.HARoleSecondary))
 	} else if *haRole == string(process.HARolePrimary) {
-		nodeOps = append(nodeOps, node.WithHARole(process.HARolePrimary))
+		nodeOps = append(nodeOps, svcnode.WithHARole(process.HARolePrimary))
 	} else {
 		log.FatalLog("invalid HA Role")
 	}
-	ctx, span, err := nodeMgr.Init("shepherd", node.CertIssuerRegionalCloudlet, nodeOps...)
+	ctx, span, err := nodeMgr.Init("shepherd", svcnode.CertIssuerRegionalCloudlet, nodeOps...)
 	if err != nil {
 		log.FatalLog(err.Error())
 	}
@@ -499,8 +499,8 @@ func start() {
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegionalCloudlet,
-		[]node.MatchCA{node.SameRegionalCloudletMatchCA()})
+		svcnode.CertIssuerRegionalCloudlet,
+		[]svcnode.MatchCA{svcnode.SameRegionalCloudletMatchCA()})
 	if err != nil {
 		log.FatalLog("Failed to get internal pki tls config", "err", err)
 	}

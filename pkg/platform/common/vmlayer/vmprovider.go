@@ -22,7 +22,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -368,7 +368,7 @@ func (v *VMPlatform) InitProps(ctx context.Context, platformConfig *platform.Pla
 	return nil
 }
 
-func (v *VMPlatform) initDebug(nodeMgr *node.NodeMgr) {
+func (v *VMPlatform) initDebug(nodeMgr *svcnode.SvcNodeMgr) {
 	nodeMgr.Debug.AddDebugFunc("refresh-rootlb-certs", func(ctx context.Context, req *edgeproto.DebugRequest) string {
 		v.proxyCerts.TriggerRootLBCertsRefresh()
 		return "triggered refresh of rootlb certs"

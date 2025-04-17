@@ -21,7 +21,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
@@ -55,18 +55,18 @@ type CRMHandler struct {
 	AlertPolicyCache          edgeproto.AlertPolicyCache
 	NetworkCache              edgeproto.NetworkCache
 	Settings                  edgeproto.Settings
-	NodeMgr                   *node.NodeMgr
+	NodeMgr                   *svcnode.SvcNodeMgr
 }
 
 // NewCRMHandler creates a new CRMHandler. If cache data comes from storage, set sync.
 // If cache data comes from the notify framework, leave sync nil.
-func NewCRMHandler(getPlatform GetPlatformFunc, nodeMgr *node.NodeMgr) *CRMHandler {
+func NewCRMHandler(getPlatform GetPlatformFunc, nodeMgr *svcnode.SvcNodeMgr) *CRMHandler {
 	cd := &CRMHandler{}
 	cd.getPlatform = getPlatform
 	edgeproto.InitAppCache(&cd.AppCache)
 	edgeproto.InitAppInstCache(&cd.AppInstCache)
 	edgeproto.InitCloudletInternalCache(&cd.CloudletInternalCache)
-	cd.CloudletCache = nodeMgr.CloudletLookup.GetCloudletCache(node.NoRegion)
+	cd.CloudletCache = nodeMgr.CloudletLookup.GetCloudletCache(svcnode.NoRegion)
 	edgeproto.InitVMPoolCache(&cd.VMPoolCache)
 	edgeproto.InitVMPoolInfoCache(&cd.VMPoolInfoCache)
 	edgeproto.InitFlavorCache(&cd.FlavorCache)

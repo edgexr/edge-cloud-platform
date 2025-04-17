@@ -33,7 +33,7 @@ type AutoProvStats struct {
 	mux         sync.Mutex
 	intervalSec float64
 	offsetSec   float64
-	nodeKey     edgeproto.NodeKey
+	nodeKey     edgeproto.SvcNodeKey
 	send        func(ctx context.Context, counts *edgeproto.AutoProvCounts) bool
 	waitGroup   sync.WaitGroup
 	stop        chan struct{}
@@ -49,7 +49,7 @@ type AutoProvCounts struct {
 	lastCount uint64
 }
 
-func InitAutoProvStats(intervalSec, offsetSec float64, numShards uint, nodeKey *edgeproto.NodeKey, send func(ctx context.Context, counts *edgeproto.AutoProvCounts) bool) *AutoProvStats {
+func InitAutoProvStats(intervalSec, offsetSec float64, numShards uint, nodeKey *edgeproto.SvcNodeKey, send func(ctx context.Context, counts *edgeproto.AutoProvCounts) bool) *AutoProvStats {
 	s := AutoProvStats{}
 	s.numShards = numShards
 	s.intervalSec = intervalSec

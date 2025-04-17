@@ -22,7 +22,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
@@ -55,7 +55,7 @@ func goAppInstApi(ctx context.Context, inst *edgeproto.AppInst, action cloudcomm
 		// Many calls fail because of checks done on the controller side.
 		// These are not real failures. Only log an event if api call
 		// was successful.
-		nodeMgr.TimedEvent(ctx, eventName, inst.Key.Organization, node.EventType, inst.GetTags(), err, eventStart, time.Now(), "reason", reason, "autoprovpolicy", policyName)
+		nodeMgr.TimedEvent(ctx, eventName, inst.Key.Organization, svcnode.EventType, inst.GetTags(), err, eventStart, time.Now(), "reason", reason, "autoprovpolicy", policyName)
 	}
 	if reason == cloudcommon.AutoProvReasonMinMax {
 		retryTracker.registerDeployResult(ctx, inst, err)

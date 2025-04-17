@@ -33,8 +33,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	accessapicloudlet "github.com/edgexr/edge-cloud-platform/pkg/accessapi-cloudlet"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/ratelimit"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	log "github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	op "github.com/edgexr/edge-cloud-platform/pkg/nrem-platform"
@@ -88,7 +88,7 @@ var operatorApiGw op.OperatorApiGw
 // server is used to implement helloworld.GreeterServer.
 type server struct{}
 
-var nodeMgr node.NodeMgr
+var nodeMgr svcnode.SvcNodeMgr
 
 var sigChan chan os.Signal
 
@@ -626,13 +626,13 @@ func main() {
 	var myCertIssuer string
 	if *cloudletDme {
 		// DME running on Cloudlet infra, requires access key
-		myCertIssuer = node.CertIssuerRegionalCloudlet
+		myCertIssuer = svcnode.CertIssuerRegionalCloudlet
 	} else {
 		// Regional DME not associated with any Cloudlet
-		myCertIssuer = node.CertIssuerRegional
+		myCertIssuer = svcnode.CertIssuerRegional
 	}
 	cloudcommon.ParseMyCloudletKey(false, cloudletKeyStr, &uaemcommon.MyCloudletKey)
-	ctx, span, err := nodeMgr.Init(node.NodeTypeDME, myCertIssuer, node.WithName(*uaemcommon.ScaleID), node.WithCloudletKey(&uaemcommon.MyCloudletKey), node.WithRegion(*region))
+	ctx, span, err := nodeMgr.Init(svcnode.SvcNodeTypeDME, myCertIssuer, svcnode.WithName(*uaemcommon.ScaleID), svcnode.WithCloudletKey(&uaemcommon.MyCloudletKey), svcnode.WithRegion(*region))
 	if err != nil {
 		log.FatalLog("Failed init node", "err", err)
 	}
@@ -675,7 +675,7 @@ func main() {
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
 		myCertIssuer,
-		[]node.MatchCA{node.SameRegionalMatchCA()})
+		[]svcnode.MatchCA{svcnode.SameRegionalMatchCA()})
 	if err != nil {
 		log.FatalLog("Failed to get notify client tls config", "err", err)
 	}
@@ -767,11 +767,11 @@ func main() {
 	certCommonNamePrefix = strings.Join(commonNameParts, ".")
 
 	// Setup PublicCertManager for dme
-	var publicCertManager *node.PublicCertManager
+	var publicCertManager *svcnode.PublicCertManager
 	if publicTls := os.Getenv("PUBLIC_ENDPOINT_TLS"); publicTls == "false" {
-		publicCertManager, err = node.NewPublicCertManager(certCommonNamePrefix, nodeMgr.ValidDomains, nil, "", "")
+		publicCertManager, err = svcnode.NewPublicCertManager(certCommonNamePrefix, nodeMgr.ValidDomains, nil, "", "")
 	} else {
-		publicCertManager, err = node.NewPublicCertManager(certCommonNamePrefix, nodeMgr.ValidDomains, getPublicCertApi, *tlsApiCertFile, *tlsApiKeyFile)
+		publicCertManager, err = svcnode.NewPublicCertManager(certCommonNamePrefix, nodeMgr.ValidDomains, getPublicCertApi, *tlsApiCertFile, *tlsApiKeyFile)
 	}
 	if err != nil {
 		span.Finish()

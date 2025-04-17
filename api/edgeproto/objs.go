@@ -157,7 +157,7 @@ func (a *AllData) Sort() {
 	})
 }
 
-func (a *NodeData) Sort() {
+func (a *SvcNodeData) Sort() {
 	sort.Slice(a.Nodes[:], func(i, j int) bool {
 		// ignore name for sorting because it is ignored for comparison
 		ikey := a.Nodes[i].Key
@@ -677,14 +677,14 @@ func (s *Controller) Validate(fmap objstore.FieldMap) error {
 	return s.GetKey().ValidateKey()
 }
 
-func (key *NodeKey) ValidateKey() error {
+func (key *SvcNodeKey) ValidateKey() error {
 	if key.Name == "" {
 		return errors.New("Invalid node name")
 	}
 	return key.CloudletKey.ValidateKey()
 }
 
-func (s *Node) Validate(fmap objstore.FieldMap) error {
+func (s *SvcNode) Validate(fmap objstore.FieldMap) error {
 	return s.GetKey().ValidateKey()
 }
 
@@ -1185,7 +1185,7 @@ func IgnoreTaggedFields(taglist string) []cmp.Option {
 	opts = append(opts, IgnoreClusterInstInfoFields(taglist))
 	opts = append(opts, IgnoreCloudletFields(taglist))
 	opts = append(opts, IgnoreCloudletInfoFields(taglist))
-	opts = append(opts, IgnoreNodeFields(taglist))
+	opts = append(opts, IgnoreSvcNodeFields(taglist))
 	return opts
 }
 
@@ -1202,7 +1202,7 @@ func CmpSortSlices() []cmp.Option {
 	opts = append(opts, cmpopts.SortSlices(CmpSortFlavorInfo))
 	opts = append(opts, cmpopts.SortSlices(CmpSortAppInstInfo))
 	opts = append(opts, cmpopts.SortSlices(CmpSortClusterInstInfo))
-	opts = append(opts, cmpopts.SortSlices(CmpSortNode))
+	opts = append(opts, cmpopts.SortSlices(CmpSortSvcNode))
 	opts = append(opts, cmpopts.SortSlices(CmpSortZonePool))
 	opts = append(opts, cmpopts.SortSlices(CmpSortZonePoolMember))
 	opts = append(opts, cmpopts.SortSlices(CmpSortAutoScalePolicy))

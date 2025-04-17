@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
@@ -32,7 +32,7 @@ const (
 	CRMCmd             = "crmcmd"
 )
 
-func InitDebug(nodeMgr *node.NodeMgr) {
+func InitDebug(nodeMgr *svcnode.SvcNodeMgr) {
 	nodeMgr.Debug.AddDebugFunc(CRMCmd, runCrmCmd)
 }
 

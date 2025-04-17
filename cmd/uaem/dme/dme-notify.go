@@ -156,12 +156,12 @@ func (r *MaxReqsRateLimitSettingsHandler) Prune(ctx context.Context, keys map[ed
 
 func (r *MaxReqsRateLimitSettingsHandler) Flush(ctx context.Context, notifyId int64) {}
 
-var nodeCache edgeproto.NodeCache
+var svcNodeCache edgeproto.SvcNodeCache
 var flowRateLimitSettingsCache edgeproto.FlowRateLimitSettingsCache
 var maxReqsRateLimitSettingsCache edgeproto.MaxReqsRateLimitSettingsCache
 
 func initNotifyClient(ctx context.Context, addrs string, tlsDialOption grpc.DialOption, notifyOps ...notify.ClientOp) *notify.Client {
-	edgeproto.InitNodeCache(&nodeCache)
+	edgeproto.InitSvcNodeCache(&svcNodeCache)
 	edgeproto.InitAppInstClientKeyCache(&uaemcommon.AppInstClientKeyCache)
 	edgeproto.InitDeviceCache(&uaemcommon.PlatformClientsCache)
 	uaemcommon.AppInstClientKeyCache.SetUpdatedCb(uaemcommon.SendCachedClients)
@@ -179,7 +179,7 @@ func initNotifyClient(ctx context.Context, addrs string, tlsDialOption grpc.Dial
 	notifyClient.RegisterRecv(notify.NewMaxReqsRateLimitSettingsRecv(&MaxReqsRateLimitSettingsHandler{}))
 	notifyClient.RegisterRecvAppInstClientKeyCache(&uaemcommon.AppInstClientKeyCache)
 
-	notifyClient.RegisterSendNodeCache(&nodeCache)
+	notifyClient.RegisterSendSvcNodeCache(&svcNodeCache)
 	notifyClient.RegisterSendDeviceCache(&uaemcommon.PlatformClientsCache)
 	uaemcommon.PlatformClientsCache.SetFlushAll()
 	notifyClient.RegisterRecv(notify.NewCloudletInfoRecv(&CloudletInfoHandler{}))

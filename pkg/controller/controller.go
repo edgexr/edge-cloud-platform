@@ -35,7 +35,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/api/nbi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
@@ -123,7 +123,7 @@ const NotifyChangeMaxLen = int64(200)
 var sigChan chan os.Signal
 var services Services
 var vaultConfig *vault.Config
-var nodeMgr node.NodeMgr
+var nodeMgr svcnode.SvcNodeMgr
 var redisCfg rediscache.RedisConfig
 var redisClient *redis.Client
 
@@ -142,9 +142,9 @@ type Services struct {
 	grpcServer                  *grpc.Server
 	httpServer                  *http.Server
 	notifyClient                *notify.Client
-	accessKeyGrpcServer         node.AccessKeyGrpcServer
+	accessKeyGrpcServer         svcnode.AccessKeyGrpcServer
 	listeners                   []net.Listener
-	publicCertManager           *node.PublicCertManager
+	publicCertManager           *svcnode.PublicCertManager
 	stopInitCC                  chan bool
 	waitGroup                   sync.WaitGroup
 	allApis                     *AllApis
@@ -206,7 +206,7 @@ func startServices() error {
 		return fmt.Errorf("appDNSRoot %q must be less than %d characters", *appDNSRoot, cloudcommon.DnsDomainLabelMaxLen)
 	}
 
-	ctx, span, err := nodeMgr.Init(node.NodeTypeController, node.CertIssuerRegional, node.WithName(ControllerId), node.WithRegion(*region), node.WithCachesLinkToKVStore())
+	ctx, span, err := nodeMgr.Init(svcnode.SvcNodeTypeController, svcnode.CertIssuerRegional, svcnode.WithName(ControllerId), svcnode.WithRegion(*region), svcnode.WithCachesLinkToKVStore())
 	if err != nil {
 		return err
 	}
@@ -378,8 +378,8 @@ func startServices() error {
 		addrs := strings.Split(*notifyParentAddrs, ",")
 		tlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 			nodeMgr.CommonNamePrefix(),
-			node.CertIssuerRegional,
-			[]node.MatchCA{node.GlobalMatchCA()})
+			svcnode.CertIssuerRegional,
+			[]svcnode.MatchCA{svcnode.GlobalMatchCA()})
 		if err != nil {
 			return err
 		}
@@ -392,11 +392,11 @@ func startServices() error {
 	}
 	notifyServerTls, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegional,
-		[]node.MatchCA{
-			node.SameRegionalMatchCA(),
-			node.SameRegionalCloudletMatchCA(),
-			node.GlobalMatchCA(),
+		svcnode.CertIssuerRegional,
+		[]svcnode.MatchCA{
+			svcnode.SameRegionalMatchCA(),
+			svcnode.SameRegionalCloudletMatchCA(),
+			svcnode.GlobalMatchCA(),
 		})
 	if err != nil {
 		return err
@@ -427,7 +427,7 @@ func startServices() error {
 			VaultConfig: vaultConfig,
 		}
 	}
-	publicCertManager, err := node.NewPublicCertManager(nodeMgr.CommonNamePrefix(), nodeMgr.ValidDomains, getPublicCertApi, "", "")
+	publicCertManager, err := svcnode.NewPublicCertManager(nodeMgr.CommonNamePrefix(), nodeMgr.ValidDomains, getPublicCertApi, "", "")
 	if err != nil {
 		span.Finish()
 		log.FatalLog("unable to get public cert manager", "err", err)
@@ -451,10 +451,10 @@ func startServices() error {
 	// External API (for clients or MC).
 	apiTlsConfig, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegional,
-		[]node.MatchCA{
-			node.GlobalMatchCA(),
-			node.SameRegionalMatchCA(),
+		svcnode.CertIssuerRegional,
+		[]svcnode.MatchCA{
+			svcnode.GlobalMatchCA(),
+			svcnode.SameRegionalMatchCA(),
 		})
 	if err != nil {
 		return err
@@ -481,7 +481,7 @@ func startServices() error {
 	edgeproto.RegisterAppInstRefsApiServer(server, allApis.appInstRefsApi)
 	edgeproto.RegisterStreamObjApiServer(server, allApis.streamObjApi)
 	edgeproto.RegisterControllerApiServer(server, allApis.controllerApi)
-	edgeproto.RegisterNodeApiServer(server, &nodeApi)
+	edgeproto.RegisterSvcNodeApiServer(server, &svcNodeApi)
 	edgeproto.RegisterExecApiServer(server, allApis.execApi)
 	edgeproto.RegisterZonePoolApiServer(server, allApis.zonePoolApi)
 	edgeproto.RegisterAlertApiServer(server, allApis.alertApi)
@@ -531,7 +531,7 @@ func startServices() error {
 			edgeproto.RegisterFlavorApiHandler,
 			edgeproto.RegisterClusterInstApiHandler,
 			edgeproto.RegisterControllerApiHandler,
-			edgeproto.RegisterNodeApiHandler,
+			edgeproto.RegisterSvcNodeApiHandler,
 			edgeproto.RegisterZonePoolApiHandler,
 			edgeproto.RegisterAlertApiHandler,
 			edgeproto.RegisterAutoScalePolicyApiHandler,
@@ -886,7 +886,7 @@ const (
 	ShowControllers          = "show-controllers"
 )
 
-func initDebug(ctx context.Context, nodeMgr *node.NodeMgr, allApis *AllApis) {
+func initDebug(ctx context.Context, nodeMgr *svcnode.SvcNodeMgr, allApis *AllApis) {
 	nodeMgr.Debug.AddDebugFunc(ToggleFlavorMatchVerbose,
 		func(ctx context.Context, req *edgeproto.DebugRequest) string {
 			return resspec.ToggleFlavorMatchVerbose()

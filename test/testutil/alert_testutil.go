@@ -356,7 +356,7 @@ type DummyServer struct {
 	AppInstClientKeyCache         edgeproto.AppInstClientKeyCache
 	CloudletNodeCache             edgeproto.CloudletNodeCache
 	ControllerCache               edgeproto.ControllerCache
-	NodeCache                     edgeproto.NodeCache
+	SvcNodeCache                  edgeproto.SvcNodeCache
 	DeviceCache                   edgeproto.DeviceCache
 	ShowDummyCount                int
 	CudNoop                       bool
@@ -402,7 +402,7 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitAppInstClientKeyCache(&d.AppInstClientKeyCache)
 	edgeproto.InitCloudletNodeCache(&d.CloudletNodeCache)
 	edgeproto.InitControllerCache(&d.ControllerCache)
-	edgeproto.InitNodeCache(&d.NodeCache)
+	edgeproto.InitSvcNodeCache(&d.SvcNodeCache)
 	edgeproto.InitDeviceCache(&d.DeviceCache)
 	edgeproto.RegisterAlertApiServer(server, d)
 	edgeproto.RegisterAlertPolicyApiServer(server, d)
@@ -434,7 +434,7 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterAppInstClientApiServer(server, d)
 	edgeproto.RegisterCloudletNodeApiServer(server, d)
 	edgeproto.RegisterControllerApiServer(server, d)
-	edgeproto.RegisterNodeApiServer(server, d)
+	edgeproto.RegisterSvcNodeApiServer(server, d)
 	edgeproto.RegisterDeviceApiServer(server, d)
 	return d
 }
@@ -494,7 +494,7 @@ type Client interface {
 	CloudletAccessApiClient
 	CloudletNodeApiClient
 	ControllerApiClient
-	NodeApiClient
+	SvcNodeApiClient
 	DebugApiClient
 	DeviceApiClient
 	StreamObjApiClient

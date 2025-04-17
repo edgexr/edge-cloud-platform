@@ -24,7 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -225,10 +225,10 @@ func testinit(ctx context.Context, t *testing.T, opts ...TestOp) *testServices {
 	services.cloudletResourcesInfluxQ = influxq.NewInfluxQ(cloudcommon.CloudletResourceUsageDbName, "user", "pass", InfluxClientTimeout)
 	cleanupCloudletInfoTimeout = 100 * time.Millisecond
 	RequireAppInstPortConsistency = true
-	zplookup := &node.ZonePoolCache{}
+	zplookup := &svcnode.ZonePoolCache{}
 	zplookup.Init()
 	nodeMgr.ZonePoolLookup = zplookup
-	cloudletLookup := &node.CloudletCache{}
+	cloudletLookup := &svcnode.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
 	os.Setenv("E2ETEST_SKIPREGISTRY", "true")

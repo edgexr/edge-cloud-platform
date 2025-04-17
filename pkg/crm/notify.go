@@ -18,7 +18,7 @@ import (
 	"context"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 )
@@ -27,7 +27,7 @@ var sendMetric *notify.MetricSend
 var sendAlert *notify.AlertSend
 
 // InitClientNotify initiates the notify send/recv
-func InitClientNotify(client *notify.Client, nodeMgr *node.NodeMgr, crmd *CRMData, cd *crmutil.CRMHandler) {
+func InitClientNotify(client *notify.Client, nodeMgr *svcnode.SvcNodeMgr, crmd *CRMData, cd *crmutil.CRMHandler) {
 	client.RegisterRecvSettingsCache(&cd.SettingsCache)
 	client.RegisterRecvFlavorCache(&cd.FlavorCache)
 	client.RegisterRecvAppCache(&cd.AppCache)
@@ -57,7 +57,7 @@ func InitClientNotify(client *notify.Client, nodeMgr *node.NodeMgr, crmd *CRMDat
 	nodeMgr.RegisterClient(client)
 }
 
-func InitSrvNotify(notifyServer *notify.ServerMgr, nodeMgr *node.NodeMgr, controllerData *crmutil.CRMHandler) {
+func InitSrvNotify(notifyServer *notify.ServerMgr, nodeMgr *svcnode.SvcNodeMgr, controllerData *crmutil.CRMHandler) {
 	notifyServer.RegisterSendSettingsCache(&controllerData.SettingsCache)
 	notifyServer.RegisterSendFlavorCache(&controllerData.FlavorCache)
 	notifyServer.RegisterSendVMPoolCache(&controllerData.VMPoolCache)

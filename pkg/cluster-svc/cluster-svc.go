@@ -30,7 +30,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -137,7 +137,7 @@ var AppInstCache edgeproto.AppInstCache
 var AppCache edgeproto.AppCache
 var AlertPolicyCache edgeproto.AlertPolicyCache
 var settings *edgeproto.Settings = edgeproto.GetDefaultSettings()
-var nodeMgr node.NodeMgr
+var nodeMgr svcnode.SvcNodeMgr
 var alertCache edgeproto.AlertCache
 var CloudletCache edgeproto.CloudletCache
 
@@ -617,7 +617,7 @@ func createAppInstCommon(ctx context.Context, dialOpts grpc.DialOption, clusterI
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "create appinst", "appinst", platformAppInst.String(), "result", res.String(), "err", err)
 	if err == nil {
-		nodeMgr.TimedEvent(ctx, "cluster-svc create AppInst", platformApp.Key.Organization, node.EventType, platformAppInst.GetTags(), err, eventStart, time.Now())
+		nodeMgr.TimedEvent(ctx, "cluster-svc create AppInst", platformApp.Key.Organization, svcnode.EventType, platformAppInst.GetTags(), err, eventStart, time.Now())
 		clearAlertAppInst(ctx, &platformAppInst)
 	} else {
 		// Generate an alert
@@ -749,7 +749,7 @@ func createAppCommon(ctx context.Context, dialOpts grpc.DialOption, app *edgepro
 	}
 	log.SpanLog(ctx, log.DebugLevelApi, "create app", "app", app.String(), "result", res.String(), "err", err)
 	if err == nil {
-		nodeMgr.TimedEvent(ctx, "cluster-svc create App", app.Key.Organization, node.EventType, app.Key.GetTags(), err, eventStart, time.Now())
+		nodeMgr.TimedEvent(ctx, "cluster-svc create App", app.Key.Organization, svcnode.EventType, app.Key.GetTags(), err, eventStart, time.Now())
 	}
 	return err
 }
@@ -825,7 +825,7 @@ func updateAppInsts(ctx context.Context, appkey *edgeproto.AppKey) {
 			log.SpanLog(ctx, log.DebugLevelApi, "Unable to update appinst",
 				"appinst", appInst, "error", err.Error())
 		} else {
-			nodeMgr.TimedEvent(ctx, "cluster-svc refresh AppInsts", appkey.Organization, node.EventType, appInst.GetTags(), nil, eventStart, time.Now())
+			nodeMgr.TimedEvent(ctx, "cluster-svc refresh AppInsts", appkey.Organization, svcnode.EventType, appInst.GetTags(), nil, eventStart, time.Now())
 		}
 		log.SpanLog(ctx, log.DebugLevelApi, "update appinst", "appinst", appInst.String(), "result", res.String())
 	}
@@ -1002,7 +1002,7 @@ func Run() {
 	flag.Parse()
 	log.SetDebugLevelStrs(*debugLevels)
 
-	ctx, span, err := nodeMgr.Init(node.NodeTypeClusterSvc, node.CertIssuerRegional, node.WithName(*hostname), node.WithRegion(*region))
+	ctx, span, err := nodeMgr.Init(svcnode.SvcNodeTypeClusterSvc, svcnode.CertIssuerRegional, svcnode.WithName(*hostname), svcnode.WithRegion(*region))
 	if err != nil {
 		log.FatalLog("init node mgr failed", "err", err)
 	}
@@ -1018,8 +1018,8 @@ func Run() {
 
 	clientTlsConfig, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegional,
-		[]node.MatchCA{node.SameRegionalMatchCA()})
+		svcnode.CertIssuerRegional,
+		[]svcnode.MatchCA{svcnode.SameRegionalMatchCA()})
 	if err != nil {
 		log.FatalLog(err.Error())
 	}
@@ -1044,7 +1044,7 @@ func Run() {
 	notifyClient := initNotifyClient(ctx, *notifyAddrs, dialOpts)
 	notifyClient.RegisterRecvClusterInstCache(&ClusterInstCache)
 	notifyClient.RegisterRecvAutoScalePolicyCache(&AutoScalePolicyCache)
-	notifyClient.RegisterRecvCloudletCache(nodeMgr.CloudletLookup.GetCloudletCache(node.NoRegion))
+	notifyClient.RegisterRecvCloudletCache(nodeMgr.CloudletLookup.GetCloudletCache(svcnode.NoRegion))
 	notifyClient.RegisterRecvAppCache(&AppCache)
 	notifyClient.RegisterRecvAppInstCache(&AppInstCache)
 	notifyClient.RegisterRecvAlertPolicyCache(&AlertPolicyCache)

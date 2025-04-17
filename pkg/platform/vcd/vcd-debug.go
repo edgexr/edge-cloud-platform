@@ -21,14 +21,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
-func (v *VcdPlatform) initDebug(nodeMgr *node.NodeMgr, stage vmlayer.ProviderInitStage) {
+func (v *VcdPlatform) initDebug(nodeMgr *svcnode.SvcNodeMgr, stage vmlayer.ProviderInitStage) {
 	if stage == vmlayer.ProviderInitPlatformStartCrmConditional || stage == vmlayer.ProviderInitPlatformStartCrmCommon {
 		nodeMgr.Debug.AddDebugFunc("dumpVmHrefCache", v.showVmHrefCache)
 		nodeMgr.Debug.AddDebugFunc("clearVmHrefCache", v.clearVmHrefCache)
@@ -82,7 +82,8 @@ func (v *VcdPlatform) runVcdCliCommand(ctx context.Context, req *edgeproto.Debug
 
 // example usage, login, and show vapp info:
 // mcctl --addr https://console-qa.mobiledgex.net:443 debug rundebug  cmd=govcdcmd region=US cloudlet=qa2-cld1 args="/usr/bin/env LC_ALL=C.UTF-8 LANG=C.UTF-8 /home/ubuntu/venv/bin/vcd login $HOST  $ORG $USER -w -i -p $PASSWD"
-//  mcctl --addr https://console-qa.mobiledgex.net:443 --output-format=json debug rundebug  cmd=govcdcmd region=US cloudlet=qa2-cld1 args="/usr/bin/env LC_ALL=C.UTF-8 LANG=C.UTF-8 /home/ubuntu/venv/bin/vcd vapp info qa2-cld1-packet-pf-vapp" | jq -r '.[0].output'
+//
+//	mcctl --addr https://console-qa.mobiledgex.net:443 --output-format=json debug rundebug  cmd=govcdcmd region=US cloudlet=qa2-cld1 args="/usr/bin/env LC_ALL=C.UTF-8 LANG=C.UTF-8 /home/ubuntu/venv/bin/vcd vapp info qa2-cld1-packet-pf-vapp" | jq -r '.[0].output'
 func (v *VcdPlatform) TimedVcdCliCommand(ctx context.Context, name string, a ...string) ([]byte, error) {
 	parmstr := strings.Join(a, " ")
 	start := time.Now()

@@ -26,7 +26,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
@@ -155,8 +155,8 @@ func (cd *CRMHandler) ProcessExecReq(ctx context.Context, pf platform.Platform, 
 
 	tlsConfig, err := cd.NodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		cd.NodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegionalCloudlet,
-		[]node.MatchCA{node.SameRegionalMatchCA()})
+		svcnode.CertIssuerRegionalCloudlet,
+		[]svcnode.MatchCA{svcnode.SameRegionalMatchCA()})
 	if err != nil {
 		return err
 	}

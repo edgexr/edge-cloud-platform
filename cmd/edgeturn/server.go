@@ -36,7 +36,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	edgetls "github.com/edgexr/edge-cloud-platform/pkg/tls"
 	"github.com/gorilla/websocket"
@@ -99,7 +99,7 @@ func (cp *TurnProxyObj) Get(token string) *ProxyValue {
 var (
 	sigChan   chan os.Signal
 	TurnProxy = &TurnProxyObj{}
-	nodeMgr   node.NodeMgr
+	nodeMgr   svcnode.SvcNodeMgr
 )
 
 func main() {
@@ -110,7 +110,7 @@ func main() {
 	sigChan = make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 
-	ctx, span, err := nodeMgr.Init(node.NodeTypeEdgeTurn, node.CertIssuerRegional, node.WithRegion(*region))
+	ctx, span, err := nodeMgr.Init(svcnode.SvcNodeTypeEdgeTurn, svcnode.CertIssuerRegional, svcnode.WithRegion(*region))
 	if err != nil {
 		span.Finish()
 		log.FatalLog("Failed to init node", "err", err)
@@ -147,9 +147,9 @@ func main() {
 func setupTurnServer(ctx context.Context) (net.Listener, error) {
 	tlsConfig, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegional,
-		[]node.MatchCA{
-			node.SameRegionalCloudletMatchCA(),
+		svcnode.CertIssuerRegional,
+		[]svcnode.MatchCA{
+			svcnode.SameRegionalCloudletMatchCA(),
 		})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tls config: %v", err)

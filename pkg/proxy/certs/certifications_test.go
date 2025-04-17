@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
@@ -67,7 +67,7 @@ func TestProxyCerts(t *testing.T) {
 		clients: make(map[string]platform.RootLBClient),
 	}
 	publicCertAPI := testGetPublicCert{}
-	nodeMgr := node.NodeMgr{}
+	nodeMgr := svcnode.SvcNodeMgr{}
 	haMgr := &redundancy.HighAvailabilityManager{
 		PlatformInstanceActive: true,
 	}

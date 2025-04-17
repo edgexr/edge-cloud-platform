@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 import (
 	"context"
@@ -79,11 +79,11 @@ type SpanTerms struct {
 	Tags       []AggrVal `json:"tags"`
 }
 
-func (s *NodeMgr) ShowSpans(ctx context.Context, search *SpanSearch) ([]dbmodel.Span, error) {
+func (s *SvcNodeMgr) ShowSpans(ctx context.Context, search *SpanSearch) ([]dbmodel.Span, error) {
 	return s.searchSpans(ctx, search)
 }
 
-func (s *NodeMgr) ShowSpansCondensed(ctx context.Context, search *SpanSearch) ([]SpanOutCondensed, error) {
+func (s *SvcNodeMgr) ShowSpansCondensed(ctx context.Context, search *SpanSearch) ([]SpanOutCondensed, error) {
 	spans, err := s.searchSpans(ctx, search)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (s *NodeMgr) ShowSpansCondensed(ctx context.Context, search *SpanSearch) ([
 	return out, nil
 }
 
-func (s *NodeMgr) searchSpans(ctx context.Context, search *SpanSearch) ([]dbmodel.Span, error) {
+func (s *SvcNodeMgr) searchSpans(ctx context.Context, search *SpanSearch) ([]dbmodel.Span, error) {
 	searchType := searchTypeFilter
 	if search.SearchByRelevance {
 		searchType = searchTypeRelevance
@@ -203,7 +203,7 @@ func (s *NodeMgr) searchSpans(ctx context.Context, search *SpanSearch) ([]dbmode
 	return out, nil
 }
 
-func (s *NodeMgr) getSpanQuery(ctx context.Context, searchType string, search *SpanSearch) (map[string]interface{}, error) {
+func (s *SvcNodeMgr) getSpanQuery(ctx context.Context, searchType string, search *SpanSearch) (map[string]interface{}, error) {
 	if searchType != searchTypeFilter && searchType != searchTypeRelevance {
 		return nil, fmt.Errorf("invalid event search type %s", searchType)
 	}
@@ -240,7 +240,7 @@ func (s *NodeMgr) getSpanQuery(ctx context.Context, searchType string, search *S
 	return s.getQueryCommon(ctx, searchType, search.TimeRange, search.From, search.Limit, "startTimeMillis", smaps, mustnot, filter)
 }
 
-func (s *NodeMgr) getSpanMatchQueries(ctx context.Context, searchType string, match *SpanMatch) ([]map[string]interface{}, error) {
+func (s *SvcNodeMgr) getSpanMatchQueries(ctx context.Context, searchType string, match *SpanMatch) ([]map[string]interface{}, error) {
 	nestedQuery := "filter"
 	if searchType == searchTypeRelevance {
 		nestedQuery = "should"
@@ -358,7 +358,7 @@ func getNestedSpanLogQuery(key, val, nestedQuery string) map[string]interface{} 
 	return nested
 }
 
-func (s *NodeMgr) SpanTerms(ctx context.Context, search *SpanSearch) (*SpanTerms, error) {
+func (s *SvcNodeMgr) SpanTerms(ctx context.Context, search *SpanSearch) (*SpanTerms, error) {
 	query, err := s.getSpanQuery(ctx, searchTypeFilter, search)
 	if err != nil {
 		return nil, err

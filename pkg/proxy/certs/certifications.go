@@ -26,7 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/access"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
@@ -46,7 +46,7 @@ type RootLBAPI interface {
 type ProxyCerts struct {
 	cloudletKey           *edgeproto.CloudletKey
 	rootLBAPI             RootLBAPI
-	nodeMgr               *node.NodeMgr
+	nodeMgr               *svcnode.SvcNodeMgr
 	haMgr                 *redundancy.HighAvailabilityManager
 	getRootLBCertsTrigger chan bool
 	cache                 *certscache.ProxyCertsCache
@@ -57,7 +57,7 @@ type ProxyCerts struct {
 	envoyImage            string
 }
 
-func NewProxyCerts(ctx context.Context, key *edgeproto.CloudletKey, rootLBAPI RootLBAPI, nodeMgr *node.NodeMgr, haMgr *redundancy.HighAvailabilityManager, platformFeatures *edgeproto.PlatformFeatures, commercialCerts bool, envoyImage string, cache *certscache.ProxyCertsCache) *ProxyCerts {
+func NewProxyCerts(ctx context.Context, key *edgeproto.CloudletKey, rootLBAPI RootLBAPI, nodeMgr *svcnode.SvcNodeMgr, haMgr *redundancy.HighAvailabilityManager, platformFeatures *edgeproto.PlatformFeatures, commercialCerts bool, envoyImage string, cache *certscache.ProxyCertsCache) *ProxyCerts {
 	sudoType := pc.SudoOn
 	log.SpanLog(ctx, log.DebugLevelInfo, "ProxyCerts start")
 	if platformFeatures.IsFake || platformFeatures.IsEdgebox || platformFeatures.CloudletServicesLocal {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 import (
 	"context"
@@ -63,9 +63,9 @@ func TestEvents(t *testing.T) {
 	log.JaegerUnitTest = true
 
 	// events rely on nodeMgr
-	nodeMgr := NodeMgr{}
+	nodeMgr := SvcNodeMgr{}
 	region := "unit-test"
-	ctx, _, err := nodeMgr.Init(NodeTypeController, "", WithRegion(region),
+	ctx, _, err := nodeMgr.Init(SvcNodeTypeController, "", WithRegion(region),
 		WithESUrls("http://localhost:9200"))
 	require.Nil(t, err)
 	defer nodeMgr.Finish()
@@ -378,7 +378,7 @@ func TestEvents(t *testing.T) {
 			aggr("span4", 1),
 		},
 		Services: []AggrVal{
-			aggr("node.test", 5),
+			aggr("svcnode.test", 5),
 		},
 		Msgs: []AggrVal{
 			aggr("msg3", 3),
@@ -844,7 +844,7 @@ func TestEvents(t *testing.T) {
 	}
 }
 
-func waitEvents(t *testing.T, nm *NodeMgr, num uint64) {
+func waitEvents(t *testing.T, nm *SvcNodeMgr, num uint64) {
 	for ii := 0; ii < 20; ii++ {
 		fmt.Printf("waitEvents %d: %d\n", ii, nm.ESWroteEvents)
 		if nm.ESWroteEvents == num {

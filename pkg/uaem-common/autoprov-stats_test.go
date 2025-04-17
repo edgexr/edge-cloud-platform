@@ -290,7 +290,7 @@ func (s *apStatsTestData) run(t *testing.T, ctx context.Context) {
 
 	eehandler := &EmptyEdgeEventsHandler{}
 	SetupMatchEngine(eehandler)
-	InitAutoProvStats(500, 0, 1, &edgeproto.NodeKey{}, func(ctx context.Context, counts *edgeproto.AutoProvCounts) bool {
+	InitAutoProvStats(500, 0, 1, &edgeproto.SvcNodeKey{}, func(ctx context.Context, counts *edgeproto.AutoProvCounts) bool {
 		require.Equal(t, 1, len(counts.Counts))
 		apCount := counts.Counts[0]
 		actualSendCounts[apCount.ZoneKey] = apCount.Count

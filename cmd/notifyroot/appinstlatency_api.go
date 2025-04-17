@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	uaemcommon "github.com/edgexr/edge-cloud-platform/pkg/uaem-common"
 )
 
@@ -36,8 +36,8 @@ func (s *AppInstLatencyApi) RequestAppInstLatency(ctx context.Context, in *edgep
 	args := string(b)
 	// Create Debug Request
 	req := &edgeproto.DebugRequest{
-		Node: edgeproto.NodeKey{
-			Type: node.NodeTypeDME,
+		Node: edgeproto.SvcNodeKey{
+			Type: svcnode.SvcNodeTypeDME,
 		},
 		Cmd:  uaemcommon.RequestAppInstLatency,
 		Args: args,
@@ -50,7 +50,7 @@ func (s *AppInstLatencyApi) RequestAppInstLatency(ctx context.Context, in *edgep
 		return nil
 	}
 	// Initialize ControllerRunDebugServer will DebugReply handler to be called in Send
-	newcb := &node.RunDebugServer{
+	newcb := &svcnode.RunDebugServer{
 		ReplyHandler: replyHandler,
 		Ctx:          ctx,
 	}
