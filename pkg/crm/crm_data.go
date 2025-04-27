@@ -95,6 +95,7 @@ func NewCRMData(platform pf.Platform, key *edgeproto.CloudletKey, nodeMgr *node.
 	// debug functions
 	nodeMgr.Debug.AddDebugFunc("show-ha-status", haMgr.DumpHAManager)
 	nodeMgr.Debug.AddDebugFunc(GetEnvoyVersionCmd, s.GetClusterEnvoyVersion)
+	nodeMgr.Debug.AddDebugFunc(CRMLogsCmd, s.runCrmLogsCmd)
 	return s
 }
 

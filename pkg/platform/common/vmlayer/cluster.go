@@ -722,7 +722,7 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 			}
 			if time.Since(start) > timeout {
 				// log current cluster status
-				v.logEdgeCloudServeiceStatus(ctx, clusterInst, masterName, masterIPs, rootLBName)
+				v.logEdgeCloudServeiceStatus(ctx, clusterInst, masterIPs)
 				return masterIPs, fmt.Errorf("cluster not ready (yet)")
 			}
 		}
@@ -732,7 +732,7 @@ func (v *VMPlatform) waitClusterReady(ctx context.Context, clusterInst *edgeprot
 }
 
 // logEdgeCloudServeiceStatus Logs the status of edgecloud service on the master node
-func (v *VMPlatform) logEdgeCloudServeiceStatus(ctx context.Context, clusterInst *edgeproto.ClusterInst, masterName string, masterIPs ServerIPs, rootLBName string) {
+func (v *VMPlatform) logEdgeCloudServeiceStatus(ctx context.Context, clusterInst *edgeproto.ClusterInst, masterIPs ServerIPs) {
 	// dump the status of the edgecloud service on the master node
 	client, err := v.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeRootLB)
 	if err != nil {
@@ -756,9 +756,18 @@ func (v *VMPlatform) logEdgeCloudServeiceStatus(ctx context.Context, clusterInst
 	out, err = masterClient.Output("sudo cat /var/log/edgecloud.log")
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get output of edgecloud", "err", err, "out", out)
-		return
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "edgecloud service", "log", out)
+	out, err = masterClient.Output("sudo systemctl status kubelet")
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get output of kubelet status", "err", err, "out", out)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "kubelet status", "status", out)
+	out, err = masterClient.Output("sudo crictl --runtime-endpoint unix:///var/run/containerd/containerd.sock ps -a | grep kube | grep -v pause")
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get output of container status", "err", err, "out", out)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "system container status", "status", out)
 }
 
 // IsClusterReady checks to see if cluster is read, i.e. rootLB is running and active.  returns ready,nodecount, error
