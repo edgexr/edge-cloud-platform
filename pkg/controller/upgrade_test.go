@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/objstore"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -383,10 +383,10 @@ func TestAllUpgradeFuncs(t *testing.T) {
 	// Hence, fix a timezone for consistent comparison
 	time.Local = time.UTC
 
-	cplookup := &node.ZonePoolCache{}
+	cplookup := &svcnode.ZonePoolCache{}
 	cplookup.Init()
 	nodeMgr.ZonePoolLookup = cplookup
-	cloudletLookup := &node.CloudletCache{}
+	cloudletLookup := &svcnode.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
 	nodeMgr.DeploymentName = "edgecloud"

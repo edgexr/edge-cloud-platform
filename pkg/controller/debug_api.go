@@ -20,7 +20,7 @@ import (
 	"io"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 )
 
 type DebugApi struct{}
@@ -28,17 +28,17 @@ type DebugApi struct{}
 var debugApi = DebugApi{}
 
 func (s *DebugApi) EnableDebugLevels(req *edgeproto.DebugRequest, cb edgeproto.DebugApi_EnableDebugLevelsServer) error {
-	req.Cmd = node.EnableDebugLevels
+	req.Cmd = svcnode.EnableDebugLevels
 	return s.RunDebug(req, cb)
 }
 
 func (s *DebugApi) DisableDebugLevels(req *edgeproto.DebugRequest, cb edgeproto.DebugApi_DisableDebugLevelsServer) error {
-	req.Cmd = node.DisableDebugLevels
+	req.Cmd = svcnode.DisableDebugLevels
 	return s.RunDebug(req, cb)
 }
 
 func (s *DebugApi) ShowDebugLevels(req *edgeproto.DebugRequest, cb edgeproto.DebugApi_ShowDebugLevelsServer) error {
-	req.Cmd = node.ShowDebugLevels
+	req.Cmd = svcnode.ShowDebugLevels
 	return s.RunDebug(req, cb)
 }
 
@@ -54,7 +54,7 @@ func (s *DebugApi) RunDebug(req *edgeproto.DebugRequest, cb edgeproto.DebugApi_R
 	}
 	client := edgeproto.NewDebugApiClient(conn)
 	if req.Timeout == 0 {
-		req.Timeout = edgeproto.Duration(node.DefaultDebugTimeout)
+		req.Timeout = edgeproto.Duration(svcnode.DefaultDebugTimeout)
 	}
 	ctx, cancel := context.WithTimeout(cb.Context(), req.Timeout.TimeDuration())
 	defer cancel()

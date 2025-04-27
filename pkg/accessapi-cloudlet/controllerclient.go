@@ -21,7 +21,7 @@ import (
 	dnsapi "github.com/edgexr/dnsproviders/api"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -193,7 +193,7 @@ func (s *ControllerClient) GetSessionTokens(ctx context.Context, secretName stri
 	return code, nil
 }
 
-func (s *ControllerClient) GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error) {
+func (s *ControllerClient) GetKafkaCreds(ctx context.Context) (*svcnode.KafkaCreds, error) {
 	req := &edgeproto.AccessDataRequest{
 		Type: platform.GetKafkaCreds,
 	}
@@ -201,7 +201,7 @@ func (s *ControllerClient) GetKafkaCreds(ctx context.Context) (*node.KafkaCreds,
 	if err != nil {
 		return nil, err
 	}
-	creds := node.KafkaCreds{}
+	creds := svcnode.KafkaCreds{}
 	err = json.Unmarshal(reply.Data, &creds)
 	return &creds, err
 }

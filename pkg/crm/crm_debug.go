@@ -24,7 +24,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 )
@@ -35,7 +35,7 @@ const (
 	CRMLogsCmd         = "crmlogs"
 )
 
-func InitDebug(nodeMgr *node.NodeMgr) {
+func InitDebug(nodeMgr *svcnode.SvcNodeMgr) {
 	nodeMgr.Debug.AddDebugFunc(CRMCmd, runCrmCmd)
 }
 

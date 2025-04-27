@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 import (
 	"context"
@@ -74,7 +74,7 @@ type CertId struct {
 	Issuer           string
 }
 
-func (s *NodeMgr) initInternalPki(ctx context.Context) error {
+func (s *SvcNodeMgr) initInternalPki(ctx context.Context) error {
 	pkiDesc := []string{}
 
 	if s.iTlsCertFile != "" || s.iTlsKeyFile != "" || s.iTlsCAFile != "" {

@@ -16,12 +16,12 @@ package main
 
 import "github.com/edgexr/edge-cloud-platform/api/edgeproto"
 
-type NodeApi struct{}
+type SvcNodeApi struct{}
 
-var nodeApi = NodeApi{}
+var svcNodeApi = SvcNodeApi{}
 
-func (s *NodeApi) ShowNode(in *edgeproto.Node, cb edgeproto.NodeApi_ShowNodeServer) error {
-	err := nodeMgr.NodeCache.Show(in, func(obj *edgeproto.Node) error {
+func (s *SvcNodeApi) ShowSvcNode(in *edgeproto.SvcNode, cb edgeproto.SvcNodeApi_ShowSvcNodeServer) error {
+	err := nodeMgr.SvcNodeCache.Show(in, func(obj *edgeproto.SvcNode) error {
 		err := cb.Send(obj)
 		return err
 	})

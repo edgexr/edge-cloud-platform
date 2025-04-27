@@ -26,7 +26,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
@@ -1841,7 +1841,7 @@ func (s *ClusterInstApi) cleanupClusterInst(ctx context.Context, k interface{}) 
 		// don't log event if it was already deleted
 		return
 	}
-	nodeMgr.TimedEvent(ctx, "ClusterInst cleanup", key.Organization, node.EventType, key.GetTags(), err, startTime, time.Now())
+	nodeMgr.TimedEvent(ctx, "ClusterInst cleanup", key.Organization, svcnode.EventType, key.GetTags(), err, startTime, time.Now())
 }
 
 type DummyStreamout struct {
@@ -1976,7 +1976,7 @@ func (s *ClusterInstApi) createDefaultMultiTenantCluster(ctx context.Context, cl
 	if err != nil && err.Error() == clusterInst.Key.ExistsError().Error() {
 		return
 	}
-	nodeMgr.TimedEvent(ctx, "default multi-tenant cluster created", clusterInst.Key.Organization, node.EventType, clusterInst.Key.GetTags(), err, start, time.Now())
+	nodeMgr.TimedEvent(ctx, "default multi-tenant cluster created", clusterInst.Key.Organization, svcnode.EventType, clusterInst.Key.GetTags(), err, start, time.Now())
 }
 
 func (s *ClusterInstApi) deleteDefaultMultiTenantCluster(ctx context.Context, cloudletKey edgeproto.CloudletKey) {
@@ -1993,7 +1993,7 @@ func (s *ClusterInstApi) deleteDefaultMultiTenantCluster(ctx context.Context, cl
 	if err != nil && err.Error() == clusterInst.Key.NotFoundError().Error() {
 		return
 	}
-	nodeMgr.TimedEvent(ctx, "default multi-tenant cluster deleted", clusterInst.Key.Organization, node.EventType, clusterInst.Key.GetTags(), err, start, time.Now())
+	nodeMgr.TimedEvent(ctx, "default multi-tenant cluster deleted", clusterInst.Key.Organization, svcnode.EventType, clusterInst.Key.GetTags(), err, start, time.Now())
 }
 
 // The cloudlet singular cluster is a software-only cluster that represents

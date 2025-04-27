@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 )
 
-func (o *OpenstackPlatform) initDebug(nodeMgr *node.NodeMgr) {
+func (o *OpenstackPlatform) initDebug(nodeMgr *svcnode.SvcNodeMgr) {
 	nodeMgr.Debug.AddDebugFunc("oscmd", o.runOsCmd)
 }
 
