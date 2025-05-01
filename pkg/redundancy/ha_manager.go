@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/rediscache"
@@ -54,7 +54,7 @@ type HighAvailabilityManager struct {
 	ActiveTransitionInProgress bool // active from a redis standpoint but still doing switchover actions
 	RedisConnectionFailed      bool // used when primary becomes active due to redis unavailability
 	haWatcher                  HAWatcher
-	nodeMgr                    *node.NodeMgr
+	nodeMgr                    *svcnode.SvcNodeMgr
 }
 
 func (s *HighAvailabilityManager) InitFlags() {
@@ -62,7 +62,7 @@ func (s *HighAvailabilityManager) InitFlags() {
 	flag.StringVar(&s.HARole, "HARole", string(process.HARolePrimary), string(process.HARolePrimary+" or "+process.HARoleSecondary))
 }
 
-func (s *HighAvailabilityManager) Init(ctx context.Context, nodeGroupKey string, nodeMgr *node.NodeMgr, activeDuration, activePollInterval edgeproto.Duration, haWatcher HAWatcher) error {
+func (s *HighAvailabilityManager) Init(ctx context.Context, nodeGroupKey string, nodeMgr *svcnode.SvcNodeMgr, activeDuration, activePollInterval edgeproto.Duration, haWatcher HAWatcher) error {
 	log.SpanLog(ctx, log.DebugLevelInfo, "HighAvailabilityManager init", "nodeGroupKey", nodeGroupKey, "redisCfg", s.redisCfg, "role", s.HARole, "activeDuration", activeDuration, "activePollInterval", activePollInterval)
 	s.activeDuration = activeDuration.TimeDuration()
 	s.activePollInterval = activePollInterval.TimeDuration()

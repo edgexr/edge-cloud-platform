@@ -25,7 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
@@ -45,7 +45,7 @@ import (
 
 type CCRMHandler struct {
 	caches              *CCRMCaches
-	nodeMgr             *node.NodeMgr
+	nodeMgr             *svcnode.SvcNodeMgr
 	nodeType            string
 	flags               *Flags
 	ctrlConn            *grpc.ClientConn // TODO: remove, we can write CloudletNodes direct to etcd instead
@@ -83,7 +83,7 @@ const RedisKeepAliveInterval = 3 * time.Second
 
 type MessageHandler func(ctx context.Context, redisMsg *redis.Message) error
 
-func (s *CCRMHandler) Init(ctx context.Context, nodeMgr *node.NodeMgr, caches *CCRMCaches, platformBuilders map[string]platform.PlatformBuilder, flags *Flags, registryAuthAPI cloudcommon.RegistryAuthApi) {
+func (s *CCRMHandler) Init(ctx context.Context, nodeMgr *svcnode.SvcNodeMgr, caches *CCRMCaches, platformBuilders map[string]platform.PlatformBuilder, flags *Flags, registryAuthAPI cloudcommon.RegistryAuthApi) {
 	s.caches = caches
 	s.nodeMgr = nodeMgr
 	s.nodeType = nodeMgr.MyNode.Key.Type
@@ -101,7 +101,7 @@ func (s *CCRMHandler) Init(ctx context.Context, nodeMgr *node.NodeMgr, caches *C
 	s.crmHandler.SettingsCache.AddUpdatedCb(s.crmHandler.SettingsChanged)
 }
 
-func (s *CCRMHandler) InitConnectivity(client *notify.Client, kvstore objstore.KVStore, nodeMgr *node.NodeMgr, grpcServer *grpc.Server, sync edgeproto.DataSync) {
+func (s *CCRMHandler) InitConnectivity(client *notify.Client, kvstore objstore.KVStore, nodeMgr *svcnode.SvcNodeMgr, grpcServer *grpc.Server, sync edgeproto.DataSync) {
 	// Caches are updated via etcd watches.
 	// In general most data sent from here to the Controller is
 	// via return values from GRPC API calls the Controller makes to here.

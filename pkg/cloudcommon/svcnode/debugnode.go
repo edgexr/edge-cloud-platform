@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 import (
 	"context"
@@ -52,7 +52,7 @@ const (
 )
 
 type DebugNode struct {
-	mgr              *NodeMgr
+	mgr              *SvcNodeMgr
 	sendReply        *notify.DebugReplySend
 	sendRequest      *notify.DebugRequestSendMany
 	funcs            map[string]DebugFunc
@@ -64,12 +64,12 @@ type DebugNode struct {
 
 type debugCall struct {
 	id        uint64
-	sendNodes map[edgeproto.NodeKey]struct{}
+	sendNodes map[edgeproto.SvcNodeKey]struct{}
 	done      chan bool
 	callReply func(ctx context.Context, reply *edgeproto.DebugReply)
 }
 
-func (s *DebugNode) Init(mgr *NodeMgr) {
+func (s *DebugNode) Init(mgr *SvcNodeMgr) {
 	s.mgr = mgr
 	s.requests = make(map[uint64]*debugCall)
 	s.funcs = make(map[string]DebugFunc)
@@ -176,7 +176,7 @@ func (s *DebugNode) handleRequest(ctx context.Context, req *edgeproto.DebugReque
 	call := debugCall{}
 	call.id = req.Id
 	call.done = make(chan bool)
-	call.sendNodes = make(map[edgeproto.NodeKey]struct{})
+	call.sendNodes = make(map[edgeproto.SvcNodeKey]struct{})
 	call.callReply = callReply
 	// Only send to children with matching node keys
 	// The local NodeCache has every node below this node in it.
@@ -186,7 +186,7 @@ func (s *DebugNode) handleRequest(ctx context.Context, req *edgeproto.DebugReque
 	// on the notifyId, and we can track every response we expect based
 	// on the Node Key match from the NodeCache entries.
 	sendNotifyIds := make(map[int64]struct{})
-	cache := &s.mgr.NodeCache
+	cache := &s.mgr.SvcNodeCache
 	cache.Mux.Lock()
 	for key, data := range cache.Objs {
 		node := data.Obj
@@ -256,8 +256,8 @@ func (s *DebugNode) RecvDebugReply(ctx context.Context, reply *edgeproto.DebugRe
 	log.SpanLog(ctx, log.DebugLevelApi, "recv reply", "id", reply.Id, "numNodes", len(call.sendNodes), "node", reply.Node)
 	s.mux.Unlock()
 
-	if s.mgr.NodeCache.setRegion != "" {
-		reply.Node.Region = s.mgr.NodeCache.setRegion
+	if s.mgr.SvcNodeCache.setRegion != "" {
+		reply.Node.Region = s.mgr.SvcNodeCache.setRegion
 	}
 
 	call.callReply(ctx, reply)

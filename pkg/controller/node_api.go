@@ -29,14 +29,14 @@ import (
 // To get a list of all DMEs, we query each controller and get each
 // one's list of connected DMEs/CRMs.
 
-type NodeApi struct{}
+type SvcNodeApi struct{}
 
-var nodeApi = NodeApi{}
+var svcNodeApi = SvcNodeApi{}
 
-func (s *NodeApi) ShowNode(in *edgeproto.Node, cb edgeproto.NodeApi_ShowNodeServer) error {
+func (s *SvcNodeApi) ShowSvcNode(in *edgeproto.SvcNode, cb edgeproto.SvcNodeApi_ShowSvcNodeServer) error {
 	if *notifyRootAddrs == "" && *notifyParentAddrs == "" {
 		// assume this is the root
-		return nodeMgr.NodeCache.Show(in, func(obj *edgeproto.Node) error {
+		return nodeMgr.SvcNodeCache.Show(in, func(obj *edgeproto.SvcNode) error {
 			err := cb.Send(obj)
 			return err
 		})
@@ -54,11 +54,11 @@ func (s *NodeApi) ShowNode(in *edgeproto.Node, cb edgeproto.NodeApi_ShowNodeServ
 	if err != nil {
 		return err
 	}
-	client := edgeproto.NewNodeApiClient(conn)
+	client := edgeproto.NewSvcNodeApiClient(conn)
 	ctx, cancel := context.WithTimeout(cb.Context(), 3*time.Second)
 	defer cancel()
 
-	stream, err := client.ShowNode(ctx, in)
+	stream, err := client.ShowSvcNode(ctx, in)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,7 @@ func (s *NodeApi) ShowNode(in *edgeproto.Node, cb edgeproto.NodeApi_ShowNodeServ
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("ShowNode failed, %v", err)
+			return fmt.Errorf("ShowSvcNode failed, %v", err)
 		}
 		err = cb.Send(obj)
 		if err != nil {

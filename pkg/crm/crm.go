@@ -29,7 +29,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	accessapicloudlet "github.com/edgexr/edge-cloud-platform/pkg/accessapi-cloudlet"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	pf "github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -71,7 +71,7 @@ var cacheDir = flag.String("cacheDir", "/tmp/", "Cache used by CRM to store freq
 // The key for myCloudletInfo is provided as a configuration - either command line or
 // from a file. The rest of the data is extraced from Openstack.
 var myCloudletInfo edgeproto.CloudletInfo //XXX this effectively makes one CRM per cloudlet
-var nodeMgr node.NodeMgr
+var nodeMgr svcnode.SvcNodeMgr
 var highAvailabilityManager redundancy.HighAvailabilityManager
 
 var crmdata *CRMData
@@ -122,21 +122,21 @@ func Start(builders map[string]pf.PlatformBuilder) error {
 	standalone := false
 	cloudcommon.ParseMyCloudletKey(standalone, cloudletKeyStr, &myCloudletInfo.Key)
 	myCloudletInfo.CompatibilityVersion = cloudcommon.GetCRMCompatibilityVersion()
-	nodeType := node.NodeTypeCRM
-	nodeOps := []node.NodeOp{
-		node.WithName(*hostname),
-		node.WithCloudletKey(&myCloudletInfo.Key),
-		node.WithNoUpdateMyNode(),
-		node.WithRegion(*region),
-		node.WithParentSpan(*parentSpan),
+	nodeType := svcnode.SvcNodeTypeCRM
+	nodeOps := []svcnode.NodeOp{
+		svcnode.WithName(*hostname),
+		svcnode.WithCloudletKey(&myCloudletInfo.Key),
+		svcnode.WithNoUpdateMyNode(),
+		svcnode.WithRegion(*region),
+		svcnode.WithParentSpan(*parentSpan),
 	}
 
 	if highAvailabilityManager.HARole == string(process.HARoleSecondary) {
-		nodeOps = append(nodeOps, node.WithHARole(process.HARoleSecondary))
+		nodeOps = append(nodeOps, svcnode.WithHARole(process.HARoleSecondary))
 	} else {
-		nodeOps = append(nodeOps, node.WithHARole(process.HARolePrimary))
+		nodeOps = append(nodeOps, svcnode.WithHARole(process.HARolePrimary))
 	}
-	ctx, span, err := nodeMgr.Init(nodeType, node.CertIssuerRegionalCloudlet, nodeOps...)
+	ctx, span, err := nodeMgr.Init(nodeType, svcnode.CertIssuerRegionalCloudlet, nodeOps...)
 	if err != nil {
 		return err
 	}
@@ -188,15 +188,15 @@ func Start(builders map[string]pf.PlatformBuilder) error {
 	addrs := strings.Split(*notifyAddrs, ",")
 	notifyClientTls, err := nodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegionalCloudlet,
-		[]node.MatchCA{node.SameRegionalMatchCA()})
+		svcnode.CertIssuerRegionalCloudlet,
+		[]svcnode.MatchCA{svcnode.SameRegionalMatchCA()})
 	if err != nil {
 		return err
 	}
 	notifyServerTls, err := nodeMgr.InternalPki.GetServerTlsConfig(ctx,
 		nodeMgr.CommonNamePrefix(),
-		node.CertIssuerRegionalCloudlet,
-		[]node.MatchCA{node.SameRegionalCloudletMatchCA()})
+		svcnode.CertIssuerRegionalCloudlet,
+		[]svcnode.MatchCA{svcnode.SameRegionalCloudletMatchCA()})
 	if err != nil {
 		return err
 	}

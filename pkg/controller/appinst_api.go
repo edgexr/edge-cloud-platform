@@ -26,7 +26,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -1020,7 +1020,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		createStart := time.Now()
 		cctxauto := cctx.WithAutoCluster()
 		err = s.all.clusterInstApi.createClusterInstInternal(cctxauto, &clusterInst, cb)
-		nodeMgr.TimedEvent(ctx, "AutoCluster create", in.Key.Organization, node.EventType, in.GetTags(), err, createStart, time.Now())
+		nodeMgr.TimedEvent(ctx, "AutoCluster create", in.Key.Organization, svcnode.EventType, in.GetTags(), err, createStart, time.Now())
 		clusterInstReservationEvent(ctx, cloudcommon.ReserveClusterEvent, in)
 		if err != nil {
 			return err
@@ -1053,7 +1053,7 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 		updateStart := time.Now()
 		err := s.all.clusterInstApi.updateClusterInstInternal(cctx, &clusterInst, scaleSpec, cb)
-		nodeMgr.TimedEvent(ctx, "AppInst Cluster Scale", in.Key.Organization, node.EventType, in.GetTags(), err, updateStart, time.Now())
+		nodeMgr.TimedEvent(ctx, "AppInst Cluster Scale", in.Key.Organization, svcnode.EventType, in.GetTags(), err, updateStart, time.Now())
 		if err != nil {
 			return err
 		}

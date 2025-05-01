@@ -411,8 +411,8 @@ var DebugRequestAliasArgs = []string{
 	"cmd=cmd",
 }
 var DebugRequestComments = map[string]string{
-	"name":                                   "Name or hostname of node",
-	"type":                                   "Node type",
+	"name":                                   "Name or hostname of service node",
+	"type":                                   "Service node type",
 	"organization":                           "Organization of the cloudlet site",
 	"cloudlet":                               "Name of the cloudlet",
 	"node.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
@@ -438,8 +438,8 @@ var DebugReplyOptionalArgs = []string{
 }
 var DebugReplyAliasArgs = []string{}
 var DebugReplyComments = map[string]string{
-	"node.name":                              "Name or hostname of node",
-	"node.type":                              "Node type",
+	"node.name":                              "Name or hostname of service node",
+	"node.type":                              "Service node type",
 	"node.cloudletkey.organization":          "Organization of the cloudlet site",
 	"node.cloudletkey.name":                  "Name of the cloudlet",
 	"node.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",
@@ -465,8 +465,8 @@ var DebugDataOptionalArgs = []string{
 }
 var DebugDataAliasArgs = []string{}
 var DebugDataComments = map[string]string{
-	"requests:#.node.name":                              "Name or hostname of node",
-	"requests:#.node.type":                              "Node type",
+	"requests:#.node.name":                              "Name or hostname of service node",
+	"requests:#.node.type":                              "Service node type",
 	"requests:#.node.cloudletkey.organization":          "Organization of the cloudlet site",
 	"requests:#.node.cloudletkey.name":                  "Name of the cloudlet",
 	"requests:#.node.cloudletkey.federatedorganization": "Federated operator organization who shared this cloudlet",

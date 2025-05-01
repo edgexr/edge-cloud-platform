@@ -26,7 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -159,12 +159,12 @@ func (s *VaultClient) GetPublicCert(ctx context.Context, commonName string) (*va
 	return publicCert, nil
 }
 
-func (s *VaultClient) GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error) {
+func (s *VaultClient) GetKafkaCreds(ctx context.Context) (*svcnode.KafkaCreds, error) {
 	if s.cloudlet == nil {
 		return nil, fmt.Errorf("Missing cloudlet details")
 	}
-	path := node.GetKafkaVaultPath(s.region, s.cloudlet.Key.Name, s.cloudlet.Key.Organization)
-	creds := node.KafkaCreds{}
+	path := svcnode.GetKafkaVaultPath(s.region, s.cloudlet.Key.Name, s.cloudlet.Key.Organization)
+	creds := svcnode.KafkaCreds{}
 	err := vault.GetData(s.vaultConfig, path, 0, &creds)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get kafka credentials at %s, %v", path, err)

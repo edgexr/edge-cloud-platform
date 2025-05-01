@@ -32,7 +32,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/passhash"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
@@ -122,11 +122,11 @@ func TestNodeAttributesYaml(t *testing.T) {
 	//addr := "127.0.0.1:12129"
 	ctx := log.StartTestSpan(context.Background())
 
-	nodeMgr := node.NodeMgr{}
+	nodeMgr := svcnode.SvcNodeMgr{}
 	nodeMgr.DeploymentTag = "main"
 	nodeMgr.InternalPki.UseVaultPki = true
 	nodeMgr.MyNode.Key.Type = "ccrm"
-	cloudletLookup := &node.CloudletCache{}
+	cloudletLookup := &svcnode.CloudletCache{}
 	cloudletLookup.Init()
 	nodeMgr.CloudletLookup = cloudletLookup
 	caches := CCRMCaches{}
@@ -182,10 +182,10 @@ func TestAnsibleServer(t *testing.T) {
 	ccrm.nodeMgr.InternalPki.UseVaultPki = true
 	ccrm.nodeMgr.DeploymentTag = "main"
 	ccrm.nodeMgr.MyNode.Key.Type = ccrmType
-	cloudletLookup := &node.CloudletCache{}
+	cloudletLookup := &svcnode.CloudletCache{}
 	cloudletLookup.Init()
 	ccrm.nodeMgr.CloudletLookup = cloudletLookup
-	zonePoolLookup := &node.ZonePoolCache{}
+	zonePoolLookup := &svcnode.ZonePoolCache{}
 	zonePoolLookup.Init()
 	ccrm.nodeMgr.ZonePoolLookup = zonePoolLookup
 

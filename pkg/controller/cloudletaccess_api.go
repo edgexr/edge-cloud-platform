@@ -20,7 +20,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -33,15 +33,15 @@ func (s *CloudletApi) InitVaultClient(ctx context.Context) error {
 
 // Issue certificate to RegionalCloudlet service.
 func (s *CloudletApi) IssueCert(ctx context.Context, req *edgeproto.IssueCertRequest) (*edgeproto.IssueCertReply, error) {
-	verified := node.ContextGetAccessKeyVerified(ctx)
+	verified := svcnode.ContextGetAccessKeyVerified(ctx)
 	if verified == nil {
 		// should never reach here if it wasn't verified
 		return nil, fmt.Errorf("Client authentication not verified")
 	}
-	certId := node.CertId{
+	certId := svcnode.CertId{
 		CommonNamePrefix: req.CommonNamePrefix,
 		CommonName:       req.CommonName,
-		Issuer:           node.CertIssuerRegionalCloudlet,
+		Issuer:           svcnode.CertIssuerRegionalCloudlet,
 	}
 	vaultCert, err := nodeMgr.InternalPki.IssueVaultCertDirect(ctx, certId)
 	if err != nil {
@@ -95,7 +95,7 @@ func (s *CloudletApi) commitAccessPublicKey(ctx context.Context, key *edgeproto.
 }
 
 func (s *CloudletApi) GetAccessData(ctx context.Context, req *edgeproto.AccessDataRequest) (*edgeproto.AccessDataReply, error) {
-	verified := node.ContextGetAccessKeyVerified(ctx)
+	verified := svcnode.ContextGetAccessKeyVerified(ctx)
 	if verified == nil {
 		// should never reach here if it wasn't verified
 		return nil, fmt.Errorf("Client authentication not verified")

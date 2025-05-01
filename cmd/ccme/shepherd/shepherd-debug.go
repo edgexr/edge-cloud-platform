@@ -19,14 +19,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 )
 
 const defaultScrapeInterval = 15 * time.Second
 
-func InitDebug(nodeMgr *node.NodeMgr) {
+func InitDebug(nodeMgr *svcnode.SvcNodeMgr) {
 	nodeMgr.Debug.AddDebugFunc("set-scrape-interval", setScrapeInterval)
 	nodeMgr.Debug.AddDebugFunc("reset-scrape-interval", resetScrapeInterval)
 	nodeMgr.Debug.AddDebugFunc("show-scrape-interval", showScrapeInterval)

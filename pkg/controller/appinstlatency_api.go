@@ -17,7 +17,7 @@ package controller
 import (
 	"context"
 
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -51,7 +51,7 @@ func (s *AppInstLatencyApi) RequestAppInstLatency(ctx context.Context, in *edgep
 		return nil, err
 	}
 	client := edgeproto.NewAppInstLatencyApiClient(conn)
-	ctx, cancel := context.WithTimeout(ctx, node.DefaultDebugTimeout)
+	ctx, cancel := context.WithTimeout(ctx, svcnode.DefaultDebugTimeout)
 	defer cancel()
 	return client.RequestAppInstLatency(ctx, in)
 }

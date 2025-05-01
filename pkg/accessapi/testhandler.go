@@ -25,7 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/node"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
@@ -95,8 +95,8 @@ func (s *TestHandler) GetPublicCert(ctx context.Context, commonName string) (*va
 	return &vault.PublicCert{}, nil
 }
 
-func (s *TestHandler) GetKafkaCreds(ctx context.Context) (*node.KafkaCreds, error) {
-	return &node.KafkaCreds{}, nil
+func (s *TestHandler) GetKafkaCreds(ctx context.Context) (*svcnode.KafkaCreds, error) {
+	return &svcnode.KafkaCreds{}, nil
 }
 
 func (s *TestHandler) GetFederationAPIKey(ctx context.Context, fedKey *federationmgmt.FedKey) (*federationmgmt.ApiKey, error) {

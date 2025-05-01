@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package node
+package svcnode
 
 import (
 	"context"
@@ -34,28 +34,28 @@ import (
 	"google.golang.org/grpc"
 )
 
-var NodeTypeCRM = "crm"
-var NodeTypeDME = "dme"
-var NodeTypeController = "controller"
-var NodeTypeCCRM = "ccrm"
-var NodeTypeClusterSvc = "cluster-svc"
-var NodeTypeNotifyRoot = "notifyroot"
-var NodeTypeEdgeTurn = "edgeturn"
-var NodeTypeMC = "mc"
-var NodeTypeAutoProv = "autoprov"
-var NodeTypeFRM = "frm"
-var NodeTypeAddonMgr = "addonmgr"
+var SvcNodeTypeCRM = "crm"
+var SvcNodeTypeDME = "dme"
+var SvcNodeTypeController = "controller"
+var SvcNodeTypeCCRM = "ccrm"
+var SvcNodeTypeClusterSvc = "cluster-svc"
+var SvcNodeTypeNotifyRoot = "notifyroot"
+var SvcNodeTypeEdgeTurn = "edgeturn"
+var SvcNodeTypeMC = "mc"
+var SvcNodeTypeAutoProv = "autoprov"
+var SvcNodeTypeFRM = "frm"
+var SvcNodeTypeAddonMgr = "addonmgr"
 
-// Node tracks all the nodes connected via notify, and handles common
+// SvcNodeMgr tracks all the nodes connected via notify, and handles common
 // requests over all nodes.
-type NodeMgr struct {
+type SvcNodeMgr struct {
 	iTlsCertFile string
 	iTlsKeyFile  string
 	iTlsCAFile   string
 	VaultAddr    string
 
-	MyNode            edgeproto.Node
-	NodeCache         RegionNodeCache
+	MyNode            edgeproto.SvcNode
+	SvcNodeCache      RegionSvcNodeCache
 	Debug             DebugNode
 	VaultConfig       *vault.Config
 	Region            string
@@ -86,7 +86,7 @@ type NodeMgr struct {
 
 // Most of the time there will only be one NodeMgr per process, and these
 // settings will come from command line input.
-func (s *NodeMgr) InitFlags() {
+func (s *SvcNodeMgr) InitFlags() {
 	// itls uses a set of file-based certs for internal mTLS auth
 	// between services. It is not production-safe and should only be
 	// used if Vault-PKI cannot be used.
@@ -113,7 +113,7 @@ func (s *NodeMgr) InitFlags() {
 	flag.StringVar(&s.ValidDomains, "validDomains", "internaldomain.net", "comma separated list of valid domains for certificates")
 }
 
-func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context.Context, opentracing.Span, error) {
+func (s *SvcNodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context.Context, opentracing.Span, error) {
 	initCtx := log.ContextWithSpan(context.Background(), log.NoTracingSpan())
 	log.SpanLog(initCtx, log.DebugLevelInfo, "start main nodeMgr init")
 
@@ -220,8 +220,8 @@ func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context
 		return initCtx, nil, err
 	}
 
-	edgeproto.InitNodeCache(&s.NodeCache.NodeCache)
-	s.NodeCache.setRegion = opts.region
+	edgeproto.InitSvcNodeCache(&s.SvcNodeCache.SvcNodeCache)
+	s.SvcNodeCache.setRegion = opts.region
 	s.Debug.Init(s)
 	if opts.updateMyNode {
 		s.UpdateMyNode(ctx)
@@ -229,11 +229,11 @@ func (s *NodeMgr) Init(nodeType, tlsClientIssuer string, ops ...NodeOp) (context
 	return ctx, span, nil
 }
 
-func (s *NodeMgr) Name() string {
+func (s *SvcNodeMgr) Name() string {
 	return s.MyNode.Key.Name
 }
 
-func (s *NodeMgr) Finish() {
+func (s *SvcNodeMgr) Finish() {
 	if s.accessApiConn != nil {
 		s.accessApiConn.Close()
 	}
@@ -244,11 +244,11 @@ func (s *NodeMgr) Finish() {
 	log.FinishTracer()
 }
 
-func (s *NodeMgr) CommonNamePrefix() string {
+func (s *SvcNodeMgr) CommonNamePrefix() string {
 	cn := s.commonNamePrefix
 	if cn == "" {
 		cn = s.MyNode.Key.Type
-		if cn == NodeTypeController {
+		if cn == SvcNodeTypeController {
 			cn = "ctrl"
 		}
 		if s.Region != "" {
@@ -258,7 +258,7 @@ func (s *NodeMgr) CommonNamePrefix() string {
 	return cn
 }
 
-func (s *NodeMgr) CommonNames() []string {
+func (s *SvcNodeMgr) CommonNames() []string {
 	cnp := s.CommonNamePrefix()
 	cns := []string{}
 	for _, domain := range strings.Split(s.ValidDomains, ",") {
@@ -275,7 +275,7 @@ func (s *NodeMgr) CommonNames() []string {
 	return cns
 }
 
-func (s *NodeMgr) UpdateNodeProps(ctx context.Context, props map[string]string) {
+func (s *SvcNodeMgr) UpdateNodeProps(ctx context.Context, props map[string]string) {
 	for k, v := range props {
 		if s.MyNode.Properties == nil {
 			s.MyNode.Properties = make(map[string]string)
@@ -357,51 +357,51 @@ func WithCachesLinkToKVStore() NodeOp {
 	return func(opts *NodeOptions) { opts.cachesLinkToStore = true }
 }
 
-func (s *NodeMgr) UpdateMyNode(ctx context.Context) {
-	s.NodeCache.Update(ctx, &s.MyNode, 0)
+func (s *SvcNodeMgr) UpdateMyNode(ctx context.Context) {
+	s.SvcNodeCache.Update(ctx, &s.MyNode, 0)
 }
 
-func (s *NodeMgr) RegisterClient(client *notify.Client) {
-	client.RegisterSendNodeCache(&s.NodeCache)
+func (s *SvcNodeMgr) RegisterClient(client *notify.Client) {
+	client.RegisterSendSvcNodeCache(&s.SvcNodeCache)
 	s.Debug.RegisterClient(client)
 	// MC notify handling of ZonePoolCache is done outside of nodemgr.
-	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && !s.cachesLinkToStore {
+	if s.MyNode.Key.Type != SvcNodeTypeMC && s.MyNode.Key.Type != SvcNodeTypeNotifyRoot && !s.cachesLinkToStore {
 		cache := s.ZonePoolLookup.GetZonePoolCache(s.Region)
 		client.RegisterRecvZonePoolCache(cache)
 	}
 }
 
-func (s *NodeMgr) RegisterServer(server *notify.ServerMgr) {
-	server.RegisterRecvNodeCache(&s.NodeCache)
+func (s *SvcNodeMgr) RegisterServer(server *notify.ServerMgr) {
+	server.RegisterRecvSvcNodeCache(&s.SvcNodeCache)
 	s.Debug.RegisterServer(server)
 	// MC notify handling of ZonePoolCache is done outside of nodemgr.
-	if s.MyNode.Key.Type != NodeTypeMC && s.MyNode.Key.Type != NodeTypeNotifyRoot && s.MyNode.Key.Type != NodeTypeController && s.MyNode.Key.Type != NodeTypeCCRM {
+	if s.MyNode.Key.Type != SvcNodeTypeMC && s.MyNode.Key.Type != SvcNodeTypeNotifyRoot && s.MyNode.Key.Type != SvcNodeTypeController && s.MyNode.Key.Type != SvcNodeTypeCCRM {
 		cache := s.ZonePoolLookup.GetZonePoolCache(s.Region)
 		server.RegisterSendZonePoolCache(cache)
 	}
 }
 
-func (s *NodeMgr) GetInternalTlsCertFile() string {
+func (s *SvcNodeMgr) GetInternalTlsCertFile() string {
 	return s.iTlsCertFile
 }
 
-func (s *NodeMgr) GetInternalTlsKeyFile() string {
+func (s *SvcNodeMgr) GetInternalTlsKeyFile() string {
 	return s.iTlsKeyFile
 }
 
-func (s *NodeMgr) GetInternalTlsCAFile() string {
+func (s *SvcNodeMgr) GetInternalTlsCAFile() string {
 	return s.iTlsCAFile
 }
 
 // setters are only used for unit testing
-func (s *NodeMgr) SetInternalTlsCertFile(file string) {
+func (s *SvcNodeMgr) SetInternalTlsCertFile(file string) {
 	s.iTlsCertFile = file
 }
 
-func (s *NodeMgr) SetInternalTlsKeyFile(file string) {
+func (s *SvcNodeMgr) SetInternalTlsKeyFile(file string) {
 	s.iTlsKeyFile = file
 }
 
-func (s *NodeMgr) SetInternalTlsCAFile(file string) {
+func (s *SvcNodeMgr) SetInternalTlsCAFile(file string) {
 	s.iTlsCAFile = file
 }
