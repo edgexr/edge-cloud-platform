@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -313,4 +314,35 @@ func GetInfraNodeResources(nr *edgeproto.NodeResources, flavorLookup edgeproto.F
 		return infraNR, nil
 	}
 	return nr.Clone(), nil
+}
+
+type NodeFlavors map[string]*edgeproto.FlavorInfo
+
+func (s NodeFlavors) AddNode(node *edgeproto.Node) error {
+	flavorInfo, found := s[node.FlavorName]
+	if !found {
+		flavorInfo = node.NodeResources.ToInfraFlavor()
+		flavorInfo.Name = node.FlavorName
+		s[node.FlavorName] = flavorInfo
+	}
+	flavorInfo.Limit++
+	// note this assumes all nodes on the same cloudlet
+	//flavorInfo.Nodes = append(flavorInfo.Nodes, node.Key.Name)
+	return nil
+}
+
+func (s NodeFlavors) AsList() []*edgeproto.FlavorInfo {
+	flavors := []*edgeproto.FlavorInfo{}
+	for _, flavorInfo := range s {
+		/*
+			slices.SortFunc(flavorInfo.Nodes, func(a, b string) int {
+				return strings.Compare(a, b)
+			})
+		*/
+		flavors = append(flavors, flavorInfo)
+	}
+	slices.SortFunc(flavors, func(a, b *edgeproto.FlavorInfo) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+	return flavors
 }

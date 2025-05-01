@@ -169,6 +169,27 @@ func (s *DeleteDataGen) GetCloudletAppInstVmAppInstsRef(key *edgeproto.CloudletK
 	ref.VmAppInsts = append(ref.VmAppInsts, appInstRefKey)
 	return &ref, supportData
 }
+func (s *DeleteDataGen) GetCloudletNodeNodesRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletNodeRefs, *testSupportData) {
+	ref := edgeproto.CloudletNodeRefs{}
+	ref.Key = *key
+	//supportData.PlatformFeatures[0].NodeUsage = edgeproto.NodeUsageUserDefined
+	node := &edgeproto.Node{
+		Key: edgeproto.NodeKey{
+			Name:         "testNode",
+			Organization: "testOrg",
+		},
+		CloudletKey:   *key,
+		PublicAddr:    "10.10.10.10",
+		MgmtAddr:      "10.10.10.10",
+		SshPort:       22,
+		Username:      "testUser",
+		SkipNodeCheck: true,
+	}
+	supportData := &testSupportData{}
+	supportData.Nodes = []edgeproto.Node{*node}
+	ref.Nodes = append(ref.Nodes, node.Key)
+	return &ref, supportData
+}
 
 // Zone
 func (s *DeleteDataGen) GetZoneTestObj() (*edgeproto.Zone, *testSupportData) {
@@ -200,8 +221,10 @@ func (s *DeleteDataGen) GetClusterInstTestObj() (*edgeproto.ClusterInst, *testSu
 	obj := testutil.ClusterInstData()[0]
 	obj.CrmOverride = edgeproto.CRMOverride_IGNORE_CRM
 	obj.CloudletKey = cloudletKey // specify cloudletKey, bypassing Zone
+	features := testutil.PlatformFeaturesData()[0]
 	cloudlet := edgeproto.Cloudlet{}
 	cloudlet.Key = cloudletKey
+	cloudlet.PlatformType = features.PlatformType
 	cloudletInfo := edgeproto.CloudletInfo{}
 	cloudletInfo.Key = cloudletKey
 	cloudletInfo.State = dme.CloudletState_CLOUDLET_STATE_READY
@@ -209,6 +232,7 @@ func (s *DeleteDataGen) GetClusterInstTestObj() (*edgeproto.ClusterInst, *testSu
 	supportData.Cloudlets = []edgeproto.Cloudlet{cloudlet}
 	supportData.CloudletInfos = []edgeproto.CloudletInfo{cloudletInfo}
 	supportData.Flavors = []edgeproto.Flavor{testutil.FlavorData()[0]}
+	supportData.PlatformFeatures = []edgeproto.PlatformFeatures{features}
 	return &obj, supportData
 }
 func (s *DeleteDataGen) GetClusterInstAppInstAppsRef(key *edgeproto.ClusterKey) (*edgeproto.ClusterRefs, *testSupportData) {

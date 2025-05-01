@@ -29,6 +29,7 @@ type CCRMCaches struct {
 	AppInstInfoCache      edgeproto.AppInstInfoCache
 	CloudletInfoCache     edgeproto.CloudletInfoCache
 	ClusterInstInfoCache  edgeproto.ClusterInstInfoCache
+	CloudletNodeRefsCache edgeproto.CloudletNodeRefsCache
 }
 
 func (s *CCRMCaches) Init(ctx context.Context) {
@@ -37,4 +38,5 @@ func (s *CCRMCaches) Init(ctx context.Context) {
 	edgeproto.InitAppInstInfoCache(&s.AppInstInfoCache)
 	edgeproto.InitClusterInstInfoCache(&s.ClusterInstInfoCache)
 	edgeproto.InitCloudletInfoCache(&s.CloudletInfoCache)
+	edgeproto.InitCloudletNodeRefsCache(&s.CloudletNodeRefsCache)
 }

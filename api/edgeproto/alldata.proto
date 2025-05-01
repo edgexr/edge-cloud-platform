@@ -36,6 +36,7 @@ import "refs.proto";
 import "alertpolicy.proto";
 import "ratelimit.proto";
 import "gogoproto/gogo.proto";
+import "node.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -58,6 +59,8 @@ message AllData {
   repeated Cloudlet cloudlets = 7 [(gogoproto.nullable) = false];
   repeated CloudletInfo cloudlet_infos = 8 [(gogoproto.nullable) = false];
   repeated ZonePool zone_pools = 9 [(gogoproto.nullable) = false];
+  repeated Node nodes = 30 [(gogoproto.nullable) = false];
+  repeated CloudletNodeRefs cloudlet_node_refs = 31 [(gogoproto.nullable) = false];
   repeated Network networks = 25 [(gogoproto.nullable) = false];
   repeated AutoProvPolicy auto_prov_policies = 11 [(gogoproto.nullable) = false];
   repeated AutoProvPolicyZone auto_prov_policy_zones = 12 [(gogoproto.nullable) = false];

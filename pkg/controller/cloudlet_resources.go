@@ -81,6 +81,16 @@ func (s *CloudletResources) AddFlavor(clusterKey *edgeproto.ClusterKey, flavorNa
 	}
 }
 
+func (s *CloudletResources) AddSiteNodeFlavor(flavorName string, count uint32) {
+	// Platforms that use user-defined site nodes measure resources
+	// in node sizes, not individual resources. Treat flavors like
+	// a basic resource, because the flavor represents a number of
+	// nodes. We do not add the flavor to the flavors map because
+	// those are reduced into and accounted as separate resources.
+	res := resspec.NewWholeResTypeVal(cloudcommon.ResourceTypeFlavor, flavorName, "", uint64(count))
+	s.nonFlavorVals.Add(res)
+}
+
 // AddPlatformVMs adds in resources in use by the platform VM which
 // runs CRM and Shepherd.
 func (s *CloudletResources) AddPlatformVMs(ctx context.Context, cloudletInfo *edgeproto.CloudletInfo) {
@@ -95,22 +105,34 @@ func (s *CloudletResources) AddPlatformVMs(ctx context.Context, cloudletInfo *ed
 // AddClusterInstResources adds in resources in use by the cluster.
 // Optionally the oldClusterInst can be specified if we are
 // calculating resources for an update.
-func (s *CloudletResources) AddClusterInstResources(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBFlavor *edgeproto.FlavorInfo, isManagedK8s bool) error {
+func (s *CloudletResources) AddClusterInstResources(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBFlavor *edgeproto.FlavorInfo, features *edgeproto.PlatformFeatures) error {
+	userDefinedSiteNodes := features.NodeUsage == edgeproto.NodeUsageUserDefined
+	isManagedK8s := features.KubernetesRequiresWorkerNodes
 	if s.debug {
 		log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources", "clusterinst key", clusterInst.Key, "root lb flavor", rootLBFlavor, "managed k8s", isManagedK8s, "nodeRes", clusterInst.NodeResources, "nodepools", clusterInst.NodePools)
 	}
 
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
-		s.AddRes(&clusterInst.Key, clusterInst.NodeResources, cloudcommon.NodeTypeDockerClusterNode.String(), 1)
+		if userDefinedSiteNodes {
+			s.AddSiteNodeFlavor(clusterInst.NodeResources.InfraNodeFlavor, 1)
+		} else {
+			s.AddRes(&clusterInst.Key, clusterInst.NodeResources, cloudcommon.NodeTypeDockerClusterNode.String(), 1)
+		}
 	} else {
-		s.AddFlavor(&clusterInst.Key, clusterInst.MasterNodeFlavor, cloudcommon.NodeTypeK8sClusterMaster.String(), clusterInst.NumMasters)
+		if !userDefinedSiteNodes {
+			s.AddFlavor(&clusterInst.Key, clusterInst.MasterNodeFlavor, cloudcommon.NodeTypeK8sClusterMaster.String(), clusterInst.NumMasters)
+		}
 		for _, pool := range clusterInst.NodePools {
-			s.AddRes(&clusterInst.Key, pool.NodeResources, cloudcommon.NodeTypeK8sClusterNode.String(), pool.NumNodes)
+			if userDefinedSiteNodes {
+				s.AddSiteNodeFlavor(pool.NodeResources.InfraNodeFlavor, pool.NumNodes)
+			} else {
+				s.AddRes(&clusterInst.Key, pool.NodeResources, cloudcommon.NodeTypeK8sClusterNode.String(), pool.NumNodes)
+			}
 		}
 	}
 
 	// For managed-k8s platforms, ignore rootLB for resource calculation
-	if !isManagedK8s && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+	if !isManagedK8s && !userDefinedSiteNodes && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		if rootLBFlavor == nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources no/skip root lb flavor", "clusterinst key", clusterInst.Key)
 		} else {

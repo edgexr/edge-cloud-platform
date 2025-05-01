@@ -38,6 +38,7 @@ type Sync struct {
 	batch      []syncBatchData
 	notifyOrd  *edgeproto.NotifyOrder
 	caches     map[string]edgeproto.ObjCache
+	name       string
 }
 
 func InitSync(store objstore.KVStore) *Sync {
@@ -59,6 +60,10 @@ func (s *Sync) GetKVStore() objstore.KVStore {
 	return s.store
 }
 
+func (s *Sync) SetName(name string) {
+	s.name = name
+}
+
 // Watch on all key changes in a single thread.
 // Compared to watching on different objects in separate threads,
 // this prevents race conditions when objects have dependencies on
@@ -72,7 +77,7 @@ func (s *Sync) Start() {
 		defer span.Finish()
 		ctx := log.ContextWithSpan(ctx, span)
 		prefix := fmt.Sprintf("%d/", objstore.GetRegion())
-		err := s.store.Sync(ctx, prefix, s.syncCb)
+		err := s.store.Sync(ctx, s.name, prefix, s.syncCb)
 		if err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfo, "sync failed", "err", err)
 			span.SetTag("level", "warn")
@@ -122,7 +127,7 @@ func (s *Sync) GetCache(ctx context.Context, key []byte) (edgeproto.ObjCache, bo
 // data, otherwise there could be race conditions against the sync data
 // coming from etcd.
 func (s *Sync) syncCb(ctx context.Context, data *objstore.SyncCbData) {
-	log.SpanLog(ctx, log.DebugLevelApi, "Sync cb", "action", objstore.SyncActionStrs[data.Action], "key", string(data.Key), "value", string(data.Value), "rev", data.Rev, "modRev", data.ModRev)
+	log.SpanLog(ctx, log.DebugLevelApi, "Sync cb", "action", objstore.SyncActionStrs[data.Action], "key", string(data.Key), "value", string(data.Value), "rev", data.Rev, "modRev", data.ModRev, "name", s.name)
 
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -171,10 +176,11 @@ func (s *Sync) syncCb(ctx context.Context, data *objstore.SyncCbData) {
 func (s *Sync) SyncWait(rev int64) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	log.DebugLog(log.DebugLevelApi, "syncWait", "cur-rev", s.rev, "wait-rev", rev)
+	log.DebugLog(log.DebugLevelApi, "syncWait", "cur-rev", s.rev, "wait-rev", rev, "name", s.name)
 	for s.rev < rev && !s.syncDone {
 		s.cond.Wait()
 	}
+	log.DebugLog(log.DebugLevelApi, "syncWait done", "rev", s.rev, "name", s.name)
 }
 
 func (s *Sync) ApplySTMWait(ctx context.Context, apply func(concurrency.STM) error) error {

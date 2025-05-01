@@ -129,6 +129,18 @@ func (s *NodeResources) SetFromFlavor(flavor *Flavor) {
 	s.OptResMap = flavor.OptResMap
 }
 
+func (s *NodeResources) ToInfraFlavor() *FlavorInfo {
+	info := &FlavorInfo{}
+	if s == nil {
+		return info
+	}
+	info.Vcpus = s.Vcpus
+	info.Ram = s.Ram
+	info.Disk = s.Disk
+	info.Gpus = s.Gpus
+	return info
+}
+
 func (s *NodePool) SetFromFlavor(flavor *Flavor) {
 	if s.NodeResources == nil {
 		s.NodeResources = &NodeResources{}

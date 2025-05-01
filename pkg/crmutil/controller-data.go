@@ -56,6 +56,7 @@ type CRMHandler struct {
 	NetworkCache              edgeproto.NetworkCache
 	Settings                  edgeproto.Settings
 	NodeMgr                   *svcnode.SvcNodeMgr
+	NodeCache                 edgeproto.NodeCache
 }
 
 // NewCRMHandler creates a new CRMHandler. If cache data comes from storage, set sync.
@@ -82,6 +83,7 @@ func NewCRMHandler(getPlatform GetPlatformFunc, nodeMgr *svcnode.SvcNodeMgr) *CR
 	edgeproto.InitGPUDriverCache(&cd.GPUDriverCache)
 	edgeproto.InitAlertPolicyCache(&cd.AlertPolicyCache)
 	edgeproto.InitNetworkCache(&cd.NetworkCache)
+	edgeproto.InitNodeCache(&cd.NodeCache)
 	cd.NodeMgr = nodeMgr
 	cd.Settings = *edgeproto.GetDefaultSettings()
 
@@ -104,6 +106,7 @@ func (cd *CRMHandler) GetCaches() *platform.Caches {
 		GPUDriverCache:            &cd.GPUDriverCache,
 		NetworkCache:              &cd.NetworkCache,
 		SettingsCache:             &cd.SettingsCache,
+		NodeCache:                 &cd.NodeCache,
 	}
 }
 

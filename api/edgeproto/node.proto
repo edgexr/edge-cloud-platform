@@ -1,0 +1,127 @@
+// Copyright 2025 EdgeXR, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "tools/protogen/protogen.proto";
+import "cloudletkey.proto";
+import "result.proto";
+import "resources.proto";
+import "gogoproto/gogo.proto";
+import "cluster.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+// NodeKey
+//
+// NodeKey uniquely identifies a node (VM or machine)
+message NodeKey {
+    // Organization the node belongs to.
+    string organization = 1 [(protogen.keytag) = "nodeorg"];
+    // Name of the node
+    string name = 2 [(protogen.keytag) = "nodename"];
+    option (protogen.generate_matches) = true;
+    option (protogen.obj_key) = true;
+    option (gogoproto.gostring) = true;
+    option (protogen.also_required) = "Name,Organization";
+}
+
+// Node
+//
+// A Node is a VM or bare metal machine that can be grouped to
+// form a cluster.
+message Node {
+    // Fields are used for the Update API to specify which fields to apply
+    repeated string fields = 1;
+    // Unique identifier key
+    NodeKey key = 2 [(gogoproto.nullable) = false];
+    // Cloudlet key that the node is associated with
+    CloudletKey cloudlet_key = 3 [(gogoproto.nullable) = false];
+    // Username for accessing the node
+    string username = 4;
+    // Hostname or IP address of the public interface
+    string public_addr = 5;
+    // Hostname or IP address of the management interface (defaults to public address)
+    string mgmt_addr = 6 [(protogen.backend) = true];
+    // SSH port on the management interface (defaults to 22)
+    uint32 ssh_port = 7 [(protogen.backend) = true];
+    // Assignment status of node
+    string assignment = 8 [(protogen.backend) = true];
+    // Health status of node
+    string health = 9 [(protogen.backend) = true];
+    // Dynamically created is set to true if the node was created on-demand.
+    bool dynamically_created = 10 [(protogen.backend) = true];
+    // Owner is set to a cluster key if the node is in use
+    ClusterKey owner = 11 [(protogen.backend) = true];
+    // Resources on the node
+    NodeResources node_resources = 12 [(protogen.backend) = true];
+    // Node role in the context of the owning cluster
+    string role = 13;
+    // Node pool assignment if applicable
+    string node_pool = 14;
+    // Name to use when represented as a flavor
+    string flavor_name = 15 [(protogen.backend) = true];
+    // Use on create/update to skip node checks, avoids ssh test
+    bool skip_node_check = 98;
+    // Object ID
+    string obj_id = 99 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
+    option (protogen.generate_matches) = true;
+    option (protogen.generate_cud) = true;
+    option (protogen.generate_cud_test) = true;
+    option (protogen.generate_cache) = true;
+    option (protogen.noconfig) = "Assignment,Health,DynamicallyCreated,Owner,NodeResources,Role,NodePool,FlavorName,ObjId";
+    option (protogen.alias) = "name=Key.Name,org=Key.Organization";
+    option (protogen.uses_org) = "key=Organization";
+    option (protogen.notify_cache) = true;
+}
+
+service NodeApi {
+    // Create a Node corresponding to an existing machine/VM
+    rpc CreateNode(Node) returns (Result) {
+        option (google.api.http) = {
+            post: "/create/node"
+            body: "*"
+        };
+        option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+        option (protogen.mc2_api_requires_org) = "Key.Organization";
+    }
+    // Delete a Node
+    rpc DeleteNode(Node) returns (Result) {
+        option (google.api.http) = {
+            post: "/delete/node"
+            body: "*"
+        };
+        option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    }
+    // Update a Node
+    rpc UpdateNode(Node) returns (Result) {
+        option (google.api.http) = {
+            post: "/update/node"
+            body: "*"
+        };
+        option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    }
+    // Show Nodes
+    rpc ShowNode(Node) returns (stream Node) {
+        option (google.api.http) = {
+            post: "/show/node"
+            body: "*"
+        };
+        option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
+    }
+}

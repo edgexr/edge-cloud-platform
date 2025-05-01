@@ -35,6 +35,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	ssh "github.com/edgexr/golang-ssh"
 	"github.com/gogo/protobuf/types"
 	"github.com/oklog/ulid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -499,6 +500,31 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			log.SpanLog(ctx, log.DebugLevelApi, "Failed to login in to vault to delete kafka credentials", "err", err)
 		}
 	}()
+
+	if features.NodeUsage != edgeproto.NodeUsageNone {
+		cb.Send(&edgeproto.Result{Message: "Generating node SSH key"})
+		pubKey, privKey, err := ssh.GenKeyPair()
+		if err != nil {
+			return fmt.Errorf("failed to generate node SSH key pair: %v", err)
+		}
+		sshKey := ssh.KeyPair{
+			PublicRawKey:  []byte(pubKey),
+			PrivateRawKey: []byte(privKey),
+		}
+		err = accessvars.SaveCloudletNodeSSHKey(ctx, *region, &in.Key, nodeMgr.VaultConfig, &sshKey)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if reterr == nil {
+				return
+			}
+			undoErr := accessvars.DeleteCloudletNodeSSHKey(ctx, *region, &in.Key, nodeMgr.VaultConfig)
+			if undoErr != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "failed to undo save of cloudlet node ssh key", "cloudlet", in.Key, "err", err)
+			}
+		}()
+	}
 
 	accessKey, err := svcnode.GenerateAccessKey()
 	if err != nil {
@@ -1600,9 +1626,14 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 	var features *edgeproto.PlatformFeatures
 	var prevState edgeproto.TrackedState
 	var gpuDriver edgeproto.GPUDriver
+	var nodesInUse error
+	defer func() {
+		log.SpanLog(ctx, log.DebugLevelApi, "delete cloudlet internal", "reterr", reterr)
+	}()
 	modRev, err := s.sync.ApplySTMWaitRev(ctx, func(stm concurrency.STM) error {
 		dynInsts = make(map[edgeproto.AppInstKey]struct{})
 		clDynInsts = make(map[edgeproto.ClusterKey]struct{})
+		nodesInUse = nil
 		if !s.store.STMGet(stm, &in.Key, in) {
 			return in.Key.NotFoundError()
 		}
@@ -1623,6 +1654,12 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			err = s.all.clusterInstApi.deleteCloudletOk(stm, in, &refs, clDynInsts)
 			if err != nil {
 				return err
+			}
+		}
+		siteNodeRefs := edgeproto.CloudletNodeRefs{}
+		if s.all.cloudletNodeRefsApi.store.STMGet(stm, &in.Key, &siteNodeRefs) {
+			if len(siteNodeRefs.Nodes) > 0 {
+				nodesInUse = fmt.Errorf("cloudlet in use by nodes %v", siteNodeRefs.Nodes)
 			}
 		}
 		if in.GpuConfig.Driver.Name != "" {
@@ -1722,7 +1759,9 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			}
 		}
 	}
-
+	if nodesInUse != nil {
+		return nodesInUse
+	}
 	ccrmDelete := func() error {
 		// send delete to CCRM
 		reqCtx, reqCancel := context.WithTimeout(ctx, s.all.settingsApi.Get().UpdateCloudletTimeout.TimeDuration())
@@ -2011,6 +2050,10 @@ func (s *CloudletApi) FindFlavorMatch(ctx context.Context, in *edgeproto.FlavorM
 	if !s.all.cloudletInfoApi.cache.Get(&in.Key, &cli) {
 		return nil, in.Key.NotFoundError()
 	}
+	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cl.PlatformType)
+	if err != nil {
+		return nil, err
+	}
 	mexFlavor := edgeproto.Flavor{}
 	mexFlavor.Key.Name = in.FlavorName
 	if !s.all.flavorApi.cache.Get(&mexFlavor.Key, &mexFlavor) {
@@ -2020,7 +2063,7 @@ func (s *CloudletApi) FindFlavorMatch(ctx context.Context, in *edgeproto.FlavorM
 	nr := mexFlavor.ToNodeResources()
 	var verr error
 	stm := edgeproto.NewOptionalSTM(nil)
-	spec, verr = s.all.resTagTableApi.GetVMSpec(ctx, stm, nr, "", cl, cli)
+	spec, verr = s.all.resTagTableApi.GetVMSpec(ctx, stm, nr, "", cl, cli, features)
 	if verr != nil {
 		return nil, fmt.Errorf("failed to find flavor match for %s, %s", in.Key.Name, verr)
 	}
@@ -2062,6 +2105,27 @@ func (s *CloudletApi) GetCloudletManifest(ctx context.Context, key *edgeproto.Cl
 	api := edgeproto.NewCloudletPlatformAPIClient(conn)
 	manifest, err := api.GetCloudletManifest(reqCtx, key)
 	return manifest, cloudcommon.GRPCErrorUnwrap(err)
+}
+
+func (s *CloudletApi) GetCloudletNodeSSHKey(ctx context.Context, key *edgeproto.CloudletKey) (*edgeproto.Result, error) {
+	cloudlet := &edgeproto.Cloudlet{}
+	if !s.all.cloudletApi.cache.Get(key, cloudlet) {
+		return &edgeproto.Result{}, key.NotFoundError()
+	}
+	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+	if err != nil {
+		return &edgeproto.Result{}, err
+	}
+	if features.NodeUsage == edgeproto.NodeUsageNone {
+		return &edgeproto.Result{}, errors.New("cloudlet does not use site nodes")
+	}
+	sshKey, err := accessvars.GetCloudletNodeSSHKey(ctx, *region, key, vaultConfig)
+	if err != nil {
+		return &edgeproto.Result{}, err
+	}
+	return &edgeproto.Result{
+		Message: string(sshKey.PublicRawKey),
+	}, nil
 }
 
 func (s *CloudletApi) GetCloudletForVMPool(vmPoolKey *edgeproto.VMPoolKey) *edgeproto.Cloudlet {

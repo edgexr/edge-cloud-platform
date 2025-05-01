@@ -61,6 +61,25 @@ var ReservedPlatformPorts = map[string]string{
 	"tcp:53":    "dns tcp",
 }
 
+const (
+	NodeUsageNone        = ""
+	NodeUsageUserDefined = "user-defined"
+	NodeUsageDynamic     = "dynamic"
+)
+
+const (
+	NodeAssignmentFree     = "Free"
+	NodeAssignmentAdding   = "Adding"
+	NodeAssignmentRemoving = "Removing"
+	NodeAssignmentInUse    = "InUse"
+)
+
+const (
+	NodeHealthUnknown = "Unknown"
+	NodeHealthOnline  = "Online"
+	NodeHealthOffline = "Offline"
+)
+
 // sort each slice by key
 func (a *AllData) Sort() {
 	sort.Slice(a.AppInstances[:], func(i, j int) bool {
@@ -711,6 +730,10 @@ func (s *CloudletRefs) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
+func (s *CloudletNodeRefs) Validate(fmap objstore.FieldMap) error {
+	return nil
+}
+
 func (s *ClusterRefs) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
@@ -896,6 +919,35 @@ func (s *Network) Validate(fmap objstore.FieldMap) error {
 		if ip == nil {
 			return errors.New("Invalid next hop")
 		}
+	}
+	return nil
+}
+
+func (key *NodeKey) ValidateKey() error {
+	if !util.ValidName(key.Name) {
+		return errors.New("invalid site node name")
+	}
+	if !util.ValidName(key.Organization) {
+		return errors.New("invalid site node organization")
+	}
+	return nil
+}
+
+func (s *Node) Validate(fmap objstore.FieldMap) error {
+	if err := s.GetKey().ValidateKey(); err != nil {
+		return err
+	}
+	if err := util.ValidHostnameOrIP(s.PublicAddr); err != nil {
+		return fmt.Errorf("invalid public address, %s", err)
+	}
+	if err := util.ValidHostnameOrIP(s.MgmtAddr); err != nil {
+		return fmt.Errorf("invalid management address, %s", err)
+	}
+	if s.SshPort < 1 || s.SshPort > 65535 {
+		return fmt.Errorf("invalid ssh port %d", s.SshPort)
+	}
+	if s.Username == "" {
+		return errors.New("username cannot be empty")
 	}
 	return nil
 }

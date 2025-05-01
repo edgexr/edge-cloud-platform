@@ -69,6 +69,14 @@ func (s *testSupportData) put(t *testing.T, ctx context.Context, all *AllApis) {
 		_, err := all.zonePoolApi.store.Put(ctx, &obj, all.zonePoolApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
+	for _, obj := range s.Nodes {
+		_, err := all.nodeApi.store.Put(ctx, &obj, all.nodeApi.sync.SyncWait)
+		require.Nil(t, err)
+	}
+	for _, obj := range s.CloudletNodeRefs {
+		_, err := all.cloudletNodeRefsApi.store.Put(ctx, &obj, all.cloudletNodeRefsApi.sync.SyncWait)
+		require.Nil(t, err)
+	}
 	for _, obj := range s.Networks {
 		_, err := all.networkApi.store.Put(ctx, &obj, all.networkApi.sync.SyncWait)
 		require.Nil(t, err)
@@ -174,6 +182,14 @@ func (s *testSupportData) delete(t *testing.T, ctx context.Context, all *AllApis
 	}
 	for _, obj := range s.Networks {
 		_, err := all.networkApi.store.Delete(ctx, &obj, all.networkApi.sync.SyncWait)
+		require.Nil(t, err)
+	}
+	for _, obj := range s.CloudletNodeRefs {
+		_, err := all.cloudletNodeRefsApi.store.Delete(ctx, &obj, all.cloudletNodeRefsApi.sync.SyncWait)
+		require.Nil(t, err)
+	}
+	for _, obj := range s.Nodes {
+		_, err := all.nodeApi.store.Delete(ctx, &obj, all.nodeApi.sync.SyncWait)
 		require.Nil(t, err)
 	}
 	for _, obj := range s.ZonePools {
@@ -294,6 +310,20 @@ func (s *testSupportData) getOneZonePool() *edgeproto.ZonePool {
 		return nil
 	}
 	return &s.ZonePools[0]
+}
+
+func (s *testSupportData) getOneNode() *edgeproto.Node {
+	if len(s.Nodes) == 0 {
+		return nil
+	}
+	return &s.Nodes[0]
+}
+
+func (s *testSupportData) getOneCloudletNodeRefs() *edgeproto.CloudletNodeRefs {
+	if len(s.CloudletNodeRefs) == 0 {
+		return nil
+	}
+	return &s.CloudletNodeRefs[0]
 }
 
 func (s *testSupportData) getOneNetwork() *edgeproto.Network {

@@ -31,7 +31,9 @@ import (
 )
 
 type watcher struct {
-	cb objstore.SyncCb
+	cb     objstore.SyncCb
+	cbData chan *objstore.SyncCbData
+	name   string
 }
 
 type inMemData struct {
@@ -46,6 +48,10 @@ type InMemoryStore struct {
 	rev      int64
 	syncCb   objstore.SyncCb
 	mux      util.Mutex
+}
+
+type CommitData struct {
+	data []*objstore.SyncCbData
 }
 
 func (e *InMemoryStore) Start() error {
@@ -78,7 +84,7 @@ func (e *InMemoryStore) Create(ctx context.Context, key, val string) (int64, err
 		modRev: e.rev,
 	}
 	log.DebugLog(log.DebugLevelEtcd, "Created", "key", key, "val", val, "rev", e.rev)
-	e.triggerWatcher(ctx, objstore.SyncUpdate, key, val, e.rev)
+	e.triggerWatchers(objstore.SyncUpdate, key, val, e.rev, false)
 	return e.rev, nil
 }
 
@@ -101,7 +107,7 @@ func (e *InMemoryStore) Update(ctx context.Context, key, val string, version int
 	data.vers++
 	data.modRev = e.rev
 	log.DebugLog(log.DebugLevelEtcd, "Updated", "key", key, "val", val, "ver", data.vers, "rev", e.rev)
-	e.triggerWatcher(ctx, objstore.SyncUpdate, key, val, e.rev)
+	e.triggerWatchers(objstore.SyncUpdate, key, val, e.rev, false)
 	return e.rev, nil
 }
 
@@ -121,7 +127,7 @@ func (e *InMemoryStore) Put(ctx context.Context, key, val string, ops ...objstor
 	data.vers++
 	data.modRev = e.rev
 	log.DebugLog(log.DebugLevelEtcd, "Put", "key", key, "val", val, "ver", data.vers, "rev", e.rev)
-	e.triggerWatcher(ctx, objstore.SyncUpdate, key, val, e.rev)
+	e.triggerWatchers(objstore.SyncUpdate, key, val, e.rev, false)
 	return e.rev, nil
 }
 
@@ -134,7 +140,7 @@ func (e *InMemoryStore) Delete(ctx context.Context, key string) (int64, error) {
 	delete(e.db, key)
 	e.rev++
 	log.DebugLog(log.DebugLevelEtcd, "Delete", "key", key, "rev", e.rev)
-	e.triggerWatcher(ctx, objstore.SyncDelete, key, "", e.rev)
+	e.triggerWatchers(objstore.SyncDelete, key, "", e.rev, false)
 	return e.rev, nil
 }
 
@@ -185,10 +191,12 @@ func (e *InMemoryStore) Rev(key string) int64 {
 	return e.db[key].modRev
 }
 
-func (e *InMemoryStore) Sync(ctx context.Context, prefix string, cb objstore.SyncCb) error {
+func (e *InMemoryStore) Sync(ctx context.Context, name, prefix string, cb objstore.SyncCb) error {
 	e.mux.Lock()
 	watch := watcher{
-		cb: cb,
+		cb:     cb,
+		cbData: make(chan *objstore.SyncCbData, 20),
+		name:   name,
 	}
 	e.watchers[prefix] = append(e.watchers[prefix], &watch)
 
@@ -215,7 +223,17 @@ func (e *InMemoryStore) Sync(ctx context.Context, prefix string, cb objstore.Syn
 	cb(ctx, &data)
 
 	e.mux.Unlock()
-	<-ctx.Done()
+
+	done := false
+	for !done {
+		select {
+		case <-ctx.Done():
+			done = true
+		case data := <-watch.cbData:
+			log.DebugLog(log.DebugLevelEtcd, "watch data", "name", name, "key", string(data.Key), "val", string(data.Value), "rev", data.Rev, "moreEvents", data.MoreEvents, "remaining", len(watch.cbData))
+			watch.cb(ctx, data)
+		}
+	}
 	e.mux.Lock()
 
 	prefixWatchers, ok := e.watchers[prefix]
@@ -236,7 +254,8 @@ func (e *InMemoryStore) Sync(ctx context.Context, prefix string, cb objstore.Syn
 	return nil
 }
 
-func (e *InMemoryStore) triggerWatcher(ctx context.Context, action objstore.SyncCbAction, key, val string, rev int64) {
+/*
+func (e *InMemoryStore) queueWatchers(action objstore.SyncCbAction, key, val string, rev int64) {
 	for prefix, prefixWatchers := range e.watchers {
 		if strings.HasPrefix(key, prefix) {
 			for _, watch := range prefixWatchers {
@@ -247,8 +266,40 @@ func (e *InMemoryStore) triggerWatcher(ctx context.Context, action objstore.Sync
 					Rev:    rev,
 					ModRev: rev,
 				}
-				log.DebugLog(log.DebugLevelEtcd, "watch data", "key", key, "val", val, "rev", rev)
-				watch.cb(ctx, &data)
+				watch.cbData = append(watch.cbData, &data)
+			}
+		}
+	}
+}
+
+func (e *InMemoryStore) triggerWatchers() {
+	for _, prefixWatchers := range e.watchers {
+		for _, watch := range prefixWatchers {
+			if len(watch.cbData) == 0 {
+				continue
+			}
+			select {
+			case watch.cbGo <- true:
+			default:
+			}
+		}
+	}
+}*/
+
+func (e *InMemoryStore) triggerWatchers(action objstore.SyncCbAction, key, val string, rev int64, moreEvents bool) {
+	for prefix, prefixWatchers := range e.watchers {
+		if strings.HasPrefix(key, prefix) {
+			for _, watch := range prefixWatchers {
+				data := objstore.SyncCbData{
+					Action:     action,
+					Key:        []byte(key),
+					Value:      []byte(val),
+					Rev:        rev,
+					ModRev:     rev,
+					MoreEvents: moreEvents,
+				}
+				log.DebugLog(log.DebugLevelApi, "trigger watchers", "name", watch.name, "remaining", len(watch.cbData))
+				watch.cbData <- &data
 			}
 		}
 	}
@@ -337,14 +388,16 @@ func (e *InMemoryStore) commit(ctx context.Context, stm *inMemorySTM) (int64, er
 	}
 	// commit all changes in one revision
 	e.rev++
+	numWrites := len(stm.wset)
+	curWrite := 1
 	for key, val := range stm.wset {
-
+		moreEvents := curWrite < numWrites
 		if val == "" {
 			// delete
 			delete(e.db, key)
 			log.DebugLog(log.DebugLevelEtcd, "Delete",
 				"key", key, "rev", e.rev)
-			e.triggerWatcher(ctx, objstore.SyncDelete, key, "", e.rev)
+			e.triggerWatchers(objstore.SyncDelete, key, "", e.rev, moreEvents)
 		} else {
 			dd, ok := e.db[key]
 			if !ok {
@@ -356,8 +409,9 @@ func (e *InMemoryStore) commit(ctx context.Context, stm *inMemorySTM) (int64, er
 			dd.modRev = e.rev
 			log.DebugLog(log.DebugLevelEtcd, "Commit", "key", key,
 				"val", val, "ver", dd.vers, "rev", e.rev)
-			e.triggerWatcher(ctx, objstore.SyncUpdate, key, val, e.rev)
+			e.triggerWatchers(objstore.SyncUpdate, key, val, e.rev, moreEvents)
 		}
+		curWrite++
 	}
 	return e.rev, nil
 }

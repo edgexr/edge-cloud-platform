@@ -221,6 +221,47 @@ func (m *AppInstRefs) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AppInstRefs proto.InternalMessageInfo
 
+// CloudletNodeRefs tracks which nodes are assigned to the cloudlet
+type CloudletNodeRefs struct {
+	// Cloudlet key
+	Key CloudletKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
+	// List of site nodes assigned to cloudlet
+	Nodes []NodeKey `protobuf:"bytes,2,rep,name=nodes,proto3" json:"nodes"`
+}
+
+func (m *CloudletNodeRefs) Reset()         { *m = CloudletNodeRefs{} }
+func (m *CloudletNodeRefs) String() string { return proto.CompactTextString(m) }
+func (*CloudletNodeRefs) ProtoMessage()    {}
+func (*CloudletNodeRefs) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6435a763ece979c6, []int{4}
+}
+func (m *CloudletNodeRefs) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloudletNodeRefs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloudletNodeRefs.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloudletNodeRefs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloudletNodeRefs.Merge(m, src)
+}
+func (m *CloudletNodeRefs) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloudletNodeRefs) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloudletNodeRefs.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloudletNodeRefs proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*VMResource)(nil), "edgeproto.VMResource")
 	proto.RegisterType((*CloudletRefs)(nil), "edgeproto.CloudletRefs")
@@ -230,68 +271,74 @@ func init() {
 	proto.RegisterType((*AppInstRefs)(nil), "edgeproto.AppInstRefs")
 	proto.RegisterMapType((map[string]uint32)(nil), "edgeproto.AppInstRefs.DeleteRequestedInstsEntry")
 	proto.RegisterMapType((map[string]uint32)(nil), "edgeproto.AppInstRefs.InstsEntry")
+	proto.RegisterType((*CloudletNodeRefs)(nil), "edgeproto.CloudletNodeRefs")
 }
 
 func init() { proto.RegisterFile("refs.proto", fileDescriptor_6435a763ece979c6) }
 
 var fileDescriptor_6435a763ece979c6 = []byte{
-	// 891 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x95, 0x41, 0x6f, 0x1b, 0xc5,
-	0x1b, 0xc6, 0x3d, 0xb1, 0xb7, 0xff, 0xf8, 0x75, 0x36, 0x76, 0xa7, 0xf9, 0x9b, 0xa9, 0x29, 0xc6,
-	0xf8, 0x80, 0x2c, 0x94, 0xba, 0x26, 0x70, 0x08, 0x16, 0x02, 0xdc, 0x16, 0x68, 0x69, 0xab, 0xa0,
-	0x8d, 0xe8, 0x75, 0xb5, 0xf1, 0x4e, 0x8c, 0x95, 0xf5, 0xce, 0xb0, 0x33, 0xeb, 0xca, 0x9c, 0xb8,
-	0x81, 0x0a, 0x87, 0x7e, 0x00, 0x0e, 0x5c, 0xb9, 0xf2, 0x29, 0x72, 0xec, 0x91, 0x13, 0x82, 0xe4,
-	0x82, 0x7c, 0x42, 0xaa, 0xe5, 0x72, 0x44, 0x3b, 0xb3, 0x9b, 0xdd, 0x60, 0xbb, 0x25, 0xb7, 0x79,
-	0x9f, 0x7d, 0xe7, 0x99, 0x9f, 0xe7, 0x7d, 0x32, 0x01, 0x08, 0xe8, 0xa1, 0x68, 0xf3, 0x80, 0x49,
-	0x86, 0x8b, 0xd4, 0x1d, 0x50, 0xb5, 0xac, 0xbd, 0x26, 0x19, 0xf3, 0xc4, 0x0d, 0x55, 0x0c, 0xa8,
-	0x7f, 0xb6, 0xd0, 0x9d, 0xb5, 0xad, 0x01, 0x1b, 0x30, 0xb5, 0xbc, 0x11, 0xad, 0x62, 0xf5, 0x72,
-	0xdf, 0x63, 0xa1, 0xeb, 0x51, 0x79, 0x44, 0x27, 0xb1, 0x64, 0xf6, 0xbd, 0x50, 0x48, 0x1a, 0xc4,
-	0x65, 0xd1, 0xe1, 0x3c, 0xf9, 0xe2, 0x70, 0x3e, 0xf4, 0x85, 0xd4, 0x65, 0xf3, 0x3b, 0x04, 0xf0,
-	0xf0, 0x81, 0x45, 0x05, 0x0b, 0x83, 0x3e, 0xc5, 0xd7, 0x21, 0x7f, 0x44, 0x27, 0x04, 0x35, 0x50,
-	0xab, 0xb4, 0xf3, 0xff, 0xf6, 0x19, 0x58, 0xfb, 0x96, 0xf6, 0xbb, 0x47, 0x27, 0x37, 0x0b, 0xc7,
-	0xbf, 0xbd, 0x9e, 0xb3, 0xa2, 0x3e, 0xfc, 0x2a, 0x14, 0xc7, 0x23, 0xfb, 0xd0, 0x73, 0xc6, 0x2c,
-	0x20, 0x6b, 0x0d, 0xd4, 0x2a, 0x5a, 0xeb, 0xe3, 0xd1, 0x27, 0xaa, 0xc6, 0x18, 0x0a, 0x72, 0xc2,
-	0x29, 0xc9, 0x2b, 0x5d, 0xad, 0xf1, 0x16, 0x18, 0x7d, 0x16, 0xfa, 0x92, 0x18, 0x0d, 0xd4, 0x32,
-	0x2d, 0x5d, 0x7c, 0x56, 0x58, 0x2f, 0x54, 0x8c, 0xe6, 0xdc, 0x80, 0x8d, 0x5b, 0xf1, 0x2f, 0xb1,
-	0xe8, 0xa1, 0xc0, 0xdd, 0x2c, 0x4c, 0xf5, 0x1c, 0x8c, 0xee, 0x8a, 0x68, 0x2a, 0xd3, 0x39, 0x59,
-	0x4f, 0x84, 0x94, 0xec, 0x3e, 0x98, 0x01, 0x63, 0xd2, 0xf6, 0x0e, 0x6c, 0xce, 0x02, 0x29, 0xc8,
-	0x7a, 0x23, 0xdf, 0x2a, 0xed, 0xb4, 0x96, 0xb8, 0x44, 0x67, 0xb5, 0x2d, 0xc6, 0xe4, 0xfd, 0x83,
-	0xcf, 0xa3, 0xd6, 0x8f, 0x7d, 0x19, 0x4c, 0xac, 0x52, 0x90, 0x2a, 0xb8, 0x05, 0x95, 0x50, 0x50,
-	0xd7, 0x76, 0x27, 0xbe, 0x33, 0x1a, 0xf6, 0xed, 0x21, 0x17, 0xa4, 0xd8, 0x40, 0x2d, 0xc3, 0xda,
-	0x8c, 0xf4, 0xdb, 0x5a, 0xbe, 0xcb, 0x05, 0x7e, 0x13, 0xca, 0xaa, 0x53, 0x48, 0x47, 0xc6, 0x8d,
-	0xa0, 0x7e, 0xbf, 0x19, 0xc9, 0xfb, 0x4a, 0x8d, 0xfa, 0xf6, 0xa1, 0xc2, 0xb8, 0xb4, 0x03, 0x2a,
-	0x6c, 0xd5, 0x3f, 0x72, 0x38, 0x29, 0x29, 0xc4, 0xb7, 0x56, 0x21, 0xee, 0x71, 0x69, 0x51, 0xf1,
-	0x85, 0xa0, 0xee, 0x03, 0x87, 0x6b, 0x48, 0x93, 0x65, 0x35, 0xfc, 0x1e, 0x5c, 0x0d, 0xa8, 0xa0,
-	0xc1, 0x98, 0xba, 0xb6, 0x13, 0x4a, 0x66, 0xc7, 0x29, 0xb0, 0x87, 0xae, 0x20, 0x1b, 0x0d, 0xd4,
-	0xba, 0x64, 0x55, 0x93, 0x86, 0x5e, 0x28, 0x59, 0x3c, 0xd4, 0xbb, 0xae, 0xc0, 0x7b, 0x60, 0x9e,
-	0x35, 0xfb, 0x42, 0x0a, 0x62, 0x2a, 0x98, 0x15, 0x11, 0xb8, 0xf2, 0xf8, 0x39, 0x29, 0x25, 0xbb,
-	0x7d, 0xa1, 0xef, 0x7d, 0xa3, 0x9f, 0x0a, 0x02, 0xdf, 0x81, 0x8d, 0xf1, 0xc8, 0x76, 0x38, 0x8f,
-	0xfd, 0x36, 0x17, 0xfc, 0x7a, 0x9c, 0x47, 0xad, 0x91, 0x5f, 0xf9, 0xf1, 0x73, 0xf2, 0xbf, 0xb8,
-	0x56, 0x5e, 0x30, 0x1e, 0xc5, 0xa5, 0xc0, 0x1f, 0x82, 0x79, 0xb4, 0x2b, 0x32, 0x56, 0xe5, 0x17,
-	0x59, 0xe9, 0x74, 0x96, 0x8e, 0x76, 0x45, 0x62, 0x50, 0xfb, 0x00, 0x2a, 0xff, 0x1e, 0x2f, 0xae,
-	0xa4, 0xd9, 0x32, 0x74, 0x62, 0xb6, 0xc0, 0x18, 0x3b, 0x5e, 0x48, 0x55, 0x8e, 0x0d, 0x4b, 0x17,
-	0xdd, 0xb5, 0x5d, 0x54, 0xfb, 0x08, 0xf0, 0xe2, 0xdd, 0x67, 0x1d, 0x8a, 0x4b, 0x1c, 0xcc, 0x8c,
-	0x43, 0xf7, 0xda, 0x9f, 0xcf, 0x08, 0xfa, 0xeb, 0x19, 0x41, 0xdf, 0xcc, 0x08, 0xfa, 0x69, 0x46,
-	0xd0, 0x2f, 0x73, 0x52, 0xf0, 0x99, 0x4f, 0xff, 0x9e, 0x13, 0xd4, 0xfc, 0x19, 0x41, 0x72, 0x99,
-	0x2a, 0xf7, 0xef, 0xff, 0x87, 0x3f, 0xc2, 0x2b, 0xd3, 0xf9, 0xe2, 0x04, 0x14, 0x45, 0x17, 0x0a,
-	0x0e, 0xe7, 0x82, 0xac, 0x5d, 0xe8, 0xc2, 0xd5, 0x9e, 0x6e, 0x23, 0xcb, 0xf9, 0x64, 0x19, 0xeb,
-	0x8f, 0x79, 0x28, 0xc5, 0xfb, 0x14, 0x6b, 0x27, 0xcb, 0x7a, 0xf9, 0xfc, 0x61, 0xd1, 0x41, 0xa5,
-	0xe9, 0x9c, 0xe4, 0x7b, 0x9c, 0xa7, 0x7c, 0x77, 0xc0, 0xd0, 0x63, 0xd4, 0x80, 0x6f, 0x2c, 0x02,
-	0xaa, 0xb4, 0xab, 0xd1, 0xa9, 0x9b, 0x5e, 0x84, 0xd5, 0x06, 0xd8, 0x83, 0xaa, 0x4b, 0x3d, 0x2a,
-	0xa9, 0x1d, 0xd0, 0xaf, 0x42, 0x2a, 0x24, 0x75, 0xe3, 0x84, 0xe4, 0x95, 0x75, 0x67, 0x85, 0xf5,
-	0x6d, 0xb5, 0xc9, 0x4a, 0xf6, 0x64, 0x4e, 0xd2, 0xe1, 0xd9, 0x72, 0x97, 0x34, 0xd4, 0x76, 0x01,
-	0xd2, 0xce, 0x8b, 0x4c, 0xbf, 0xf6, 0x29, 0x5c, 0x5d, 0x79, 0xe4, 0x85, 0x62, 0xf4, 0xd2, 0xf1,
-	0xec, 0xfc, 0x80, 0xa0, 0x9c, 0x7d, 0x34, 0x7a, 0x7c, 0x88, 0x27, 0x50, 0xd9, 0xff, 0x92, 0x3d,
-	0x3a, 0xf7, 0xb4, 0xbe, 0xb2, 0xe2, 0x91, 0xa9, 0xad, 0xfa, 0xd0, 0x7c, 0x7b, 0x3a, 0x23, 0xd7,
-	0x93, 0xff, 0x13, 0xc9, 0x17, 0xb1, 0xdd, 0xeb, 0xcb, 0x21, 0xf3, 0x1f, 0x0e, 0xe9, 0xa3, 0xed,
-	0x7b, 0x74, 0xd2, 0xde, 0x0b, 0x06, 0x8e, 0x3f, 0xfc, 0xda, 0x89, 0xc4, 0x0e, 0xda, 0xf9, 0x1e,
-	0xc1, 0x66, 0x26, 0xd9, 0x9a, 0xa6, 0xac, 0x69, 0xd2, 0xbc, 0x57, 0x17, 0x23, 0xae, 0x58, 0x56,
-	0xe8, 0xcd, 0x77, 0xa7, 0x33, 0xd2, 0x49, 0x51, 0xd2, 0x47, 0xe7, 0x25, 0x34, 0xdf, 0x22, 0xd8,
-	0xcc, 0xe4, 0x20, 0xa2, 0x09, 0x35, 0x4d, 0x36, 0xd1, 0xd5, 0xe5, 0xa9, 0xa9, 0xad, 0xd0, 0x9b,
-	0x9d, 0xe9, 0x8c, 0x6c, 0x27, 0x34, 0xc9, 0x9b, 0xf3, 0x62, 0x92, 0x9b, 0xd7, 0x8e, 0xff, 0xa8,
-	0xe7, 0x8e, 0x4f, 0xea, 0xe8, 0xe9, 0x49, 0x1d, 0xfd, 0x7e, 0x52, 0x47, 0x4f, 0x4e, 0xeb, 0xb9,
-	0xa7, 0xa7, 0xf5, 0xdc, 0xaf, 0xa7, 0xf5, 0xdc, 0xc1, 0x25, 0x75, 0xc8, 0x3b, 0xff, 0x04, 0x00,
-	0x00, 0xff, 0xff, 0xe3, 0x67, 0x4a, 0x98, 0x24, 0x08, 0x00, 0x00,
+	// 965 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x95, 0x41, 0x6f, 0x1b, 0x45,
+	0x14, 0xc7, 0x33, 0xb1, 0xb7, 0xc4, 0xcf, 0x76, 0xec, 0x6e, 0x8c, 0x99, 0xba, 0xc5, 0x18, 0x1f,
+	0x90, 0x85, 0x52, 0xd7, 0x04, 0x84, 0x82, 0x85, 0x00, 0xb7, 0x05, 0x5a, 0xda, 0x12, 0xb4, 0x11,
+	0xbd, 0xae, 0x36, 0xde, 0x89, 0xb1, 0x62, 0xef, 0x0c, 0x3b, 0xb3, 0xae, 0xcc, 0x89, 0x0b, 0x02,
+	0x05, 0x0e, 0xfd, 0x00, 0x20, 0x71, 0xe0, 0xc2, 0x95, 0x4f, 0x91, 0x63, 0x8f, 0x9c, 0x10, 0x24,
+	0x17, 0xe4, 0x13, 0x52, 0x2d, 0x87, 0x23, 0x9a, 0x99, 0xdd, 0x78, 0x53, 0xdb, 0x09, 0x81, 0xdb,
+	0xbc, 0x37, 0x6f, 0xfe, 0xf3, 0xdb, 0x79, 0xff, 0x99, 0x05, 0xf0, 0xc9, 0x2e, 0xaf, 0x33, 0x9f,
+	0x0a, 0x6a, 0xa6, 0x88, 0xdb, 0x21, 0x6a, 0x58, 0x7a, 0x51, 0x50, 0xda, 0xe3, 0x37, 0x54, 0xd0,
+	0x21, 0xde, 0xc9, 0x40, 0x57, 0x96, 0x0a, 0x1d, 0xda, 0xa1, 0x6a, 0x78, 0x43, 0x8e, 0xc2, 0xec,
+	0xe5, 0x76, 0x8f, 0x06, 0x6e, 0x8f, 0x88, 0x3d, 0x32, 0x0c, 0x53, 0xd9, 0x76, 0x2f, 0xe0, 0x82,
+	0xf8, 0x61, 0x98, 0x72, 0x18, 0x8b, 0x66, 0x1c, 0xc6, 0xba, 0x1e, 0x17, 0x61, 0x08, 0x1e, 0x75,
+	0x89, 0x1e, 0x57, 0xbf, 0x41, 0x00, 0x0f, 0x1f, 0x58, 0x84, 0xd3, 0xc0, 0x6f, 0x13, 0xf3, 0x3a,
+	0x24, 0xf6, 0xc8, 0x10, 0xa3, 0x0a, 0xaa, 0xa5, 0x37, 0x9e, 0xaf, 0x9f, 0x40, 0xd6, 0x6f, 0x69,
+	0xed, 0x7b, 0x64, 0x78, 0x33, 0x79, 0xf0, 0xdb, 0x4b, 0x4b, 0x96, 0xac, 0x33, 0xaf, 0x42, 0x6a,
+	0xd0, 0xb7, 0x77, 0x7b, 0xce, 0x80, 0xfa, 0x78, 0xb9, 0x82, 0x6a, 0x29, 0x6b, 0x65, 0xd0, 0xff,
+	0x40, 0xc5, 0xa6, 0x09, 0x49, 0x31, 0x64, 0x04, 0x27, 0x54, 0x5e, 0x8d, 0xcd, 0x02, 0x18, 0x6d,
+	0x1a, 0x78, 0x02, 0x1b, 0x15, 0x54, 0xcb, 0x5a, 0x3a, 0xf8, 0x28, 0xb9, 0x92, 0xcc, 0x1b, 0xd5,
+	0x89, 0x01, 0x99, 0x5b, 0xe1, 0x57, 0x59, 0x64, 0x97, 0x9b, 0xcd, 0x38, 0x4c, 0xf1, 0x14, 0x8c,
+	0xae, 0x92, 0x34, 0xf9, 0xd1, 0x04, 0xaf, 0x44, 0x89, 0x29, 0xd9, 0x7d, 0xc8, 0xfa, 0x94, 0x0a,
+	0xbb, 0xb7, 0x63, 0x33, 0xea, 0x0b, 0x8e, 0x57, 0x2a, 0x89, 0x5a, 0x7a, 0xa3, 0x36, 0x47, 0x45,
+	0xee, 0x55, 0xb7, 0x28, 0x15, 0xf7, 0x77, 0x3e, 0x91, 0xa5, 0xef, 0x7b, 0xc2, 0x1f, 0x5a, 0x69,
+	0x7f, 0x9a, 0x31, 0x6b, 0x90, 0x0f, 0x38, 0x71, 0x6d, 0x77, 0xe8, 0x39, 0xfd, 0x6e, 0xdb, 0xee,
+	0x32, 0x8e, 0x53, 0x15, 0x54, 0x33, 0xac, 0x55, 0x99, 0xbf, 0xad, 0xd3, 0x77, 0x19, 0x37, 0x5f,
+	0x81, 0x9c, 0xaa, 0xe4, 0xc2, 0x11, 0x61, 0x21, 0xa8, 0xef, 0xcf, 0xca, 0xf4, 0xb6, 0xca, 0xca,
+	0xba, 0x6d, 0xc8, 0x53, 0x26, 0x6c, 0x9f, 0x70, 0x5b, 0xd5, 0xf7, 0x1d, 0x86, 0xd3, 0x0a, 0xf1,
+	0xd5, 0x45, 0x88, 0x5b, 0x4c, 0x58, 0x84, 0x7f, 0xca, 0x89, 0xfb, 0xc0, 0x61, 0x1a, 0x32, 0x4b,
+	0xe3, 0x39, 0xf3, 0x2d, 0xb8, 0xe2, 0x13, 0x4e, 0xfc, 0x01, 0x71, 0x6d, 0x27, 0x10, 0xd4, 0x0e,
+	0x1d, 0x61, 0x77, 0x5d, 0x8e, 0x33, 0x15, 0x54, 0xbb, 0x64, 0x15, 0xa3, 0x82, 0x56, 0x20, 0x68,
+	0xd8, 0xd4, 0xbb, 0x2e, 0x37, 0xb7, 0x20, 0x7b, 0x52, 0xec, 0x71, 0xc1, 0x71, 0x56, 0xc1, 0x2c,
+	0xb0, 0xc0, 0xda, 0xfe, 0x31, 0x4e, 0x47, 0xab, 0x3d, 0xae, 0xcf, 0x3d, 0xd3, 0x9e, 0x26, 0xb8,
+	0x79, 0x07, 0x32, 0x83, 0xbe, 0xed, 0x30, 0x16, 0xea, 0xad, 0xce, 0xe8, 0xb5, 0x18, 0x93, 0xa5,
+	0x52, 0x2f, 0xb7, 0x7f, 0x8c, 0x9f, 0x0b, 0x63, 0xa5, 0x05, 0x83, 0x7e, 0x18, 0x72, 0xf3, 0x5d,
+	0xc8, 0xee, 0x6d, 0xf2, 0x98, 0x54, 0xee, 0x2c, 0x29, 0xed, 0xce, 0xf4, 0xde, 0x26, 0x8f, 0x04,
+	0x4a, 0xef, 0x40, 0xfe, 0xd9, 0xf6, 0x9a, 0xf9, 0xa9, 0xb7, 0x0c, 0xed, 0x98, 0x02, 0x18, 0x03,
+	0xa7, 0x17, 0x10, 0xe5, 0x63, 0xc3, 0xd2, 0x41, 0x73, 0x79, 0x13, 0x95, 0xde, 0x03, 0x73, 0xf6,
+	0xec, 0xe3, 0x0a, 0xa9, 0x39, 0x0a, 0xd9, 0x98, 0x42, 0xf3, 0xda, 0x9f, 0x4f, 0x31, 0xfa, 0xeb,
+	0x29, 0x46, 0x5f, 0x8e, 0x31, 0xfa, 0x71, 0x8c, 0xd1, 0x2f, 0x13, 0x9c, 0xf4, 0xa8, 0x47, 0xfe,
+	0x9e, 0x60, 0x54, 0xfd, 0x19, 0x41, 0x74, 0x98, 0xca, 0xf7, 0x6f, 0xff, 0x8b, 0x4b, 0xb8, 0x36,
+	0x9a, 0xcc, 0x76, 0x40, 0x51, 0x34, 0x21, 0xe9, 0x30, 0xc6, 0xf1, 0xf2, 0x85, 0x0e, 0x5c, 0xad,
+	0x69, 0x56, 0xe2, 0x9c, 0x8f, 0xe7, 0xb1, 0x7e, 0x9f, 0x80, 0x74, 0xb8, 0x4e, 0xb1, 0x36, 0xe2,
+	0xac, 0x97, 0x4f, 0x6f, 0x26, 0x37, 0x4a, 0x8f, 0x26, 0x38, 0xd1, 0x62, 0x6c, 0xca, 0x77, 0x07,
+	0x0c, 0xdd, 0x46, 0x0d, 0xf8, 0xf2, 0x2c, 0xa0, 0x72, 0xbb, 0x6a, 0x9d, 0x3a, 0xe9, 0x59, 0x58,
+	0x2d, 0x60, 0xf6, 0xa0, 0xe8, 0x92, 0x1e, 0x11, 0xc4, 0xf6, 0xc9, 0xe7, 0x01, 0xe1, 0x82, 0xb8,
+	0xa1, 0x43, 0x12, 0x4a, 0xba, 0xb1, 0x40, 0xfa, 0xb6, 0x5a, 0x64, 0x45, 0x6b, 0x62, 0x3b, 0x69,
+	0xf3, 0x14, 0xdc, 0x39, 0x05, 0xa5, 0x4d, 0x80, 0x69, 0xe5, 0x45, 0xba, 0x5f, 0xfa, 0x10, 0xae,
+	0x2c, 0xdc, 0xf2, 0x42, 0x36, 0x3a, 0xbf, 0x3d, 0x3f, 0x21, 0xc8, 0x47, 0x8f, 0xc6, 0xc7, 0xd4,
+	0x25, 0xff, 0xfb, 0x1d, 0x7d, 0x13, 0x0c, 0xf9, 0xb7, 0x88, 0xba, 0x65, 0xc6, 0x56, 0x4b, 0x7d,
+	0xb9, 0x32, 0xb3, 0x7f, 0x8c, 0x93, 0x32, 0xd0, 0xbd, 0x51, 0xe5, 0x67, 0x3b, 0x7e, 0xe3, 0x3b,
+	0x04, 0xb9, 0xf8, 0xdb, 0xd6, 0x62, 0x5d, 0x73, 0x08, 0xf9, 0xed, 0xcf, 0xe8, 0xa3, 0x53, 0x7f,
+	0x80, 0x17, 0x16, 0xbc, 0x85, 0xa5, 0x45, 0x13, 0xd5, 0xd7, 0x46, 0x63, 0x7c, 0x3d, 0xfa, 0x9d,
+	0x45, 0x33, 0x7c, 0xbd, 0xd5, 0x16, 0x5d, 0xea, 0x3d, 0xec, 0x92, 0x47, 0xeb, 0xf7, 0xc8, 0xb0,
+	0xbe, 0xe5, 0x77, 0x1c, 0xaf, 0xfb, 0x85, 0x23, 0x93, 0x0d, 0xb4, 0xf1, 0x2d, 0x82, 0xd5, 0xd8,
+	0x05, 0xd4, 0x34, 0x39, 0x4d, 0x33, 0xbd, 0x96, 0xc5, 0xd9, 0x9b, 0xa8, 0x58, 0x16, 0xe4, 0xab,
+	0x6f, 0x8c, 0xc6, 0xb8, 0x31, 0x45, 0x99, 0xbe, 0x8d, 0xe7, 0xd0, 0x7c, 0x8d, 0x60, 0x35, 0x66,
+	0x57, 0x49, 0x13, 0x68, 0x9a, 0xf8, 0xc5, 0x2b, 0xce, 0x37, 0x77, 0x69, 0x41, 0xbe, 0xda, 0x18,
+	0x8d, 0xf1, 0x7a, 0x44, 0x13, 0x3d, 0x8d, 0xe7, 0x90, 0xfc, 0x80, 0x60, 0xed, 0x59, 0x37, 0x49,
+	0x9c, 0xaf, 0x10, 0x14, 0xe2, 0xbd, 0x3a, 0x71, 0xda, 0xd5, 0x39, 0x6d, 0x89, 0x26, 0x4b, 0x67,
+	0x4d, 0xfe, 0xa7, 0xbe, 0xdd, 0xbc, 0x76, 0xf0, 0x47, 0x79, 0xe9, 0xe0, 0xb0, 0x8c, 0x9e, 0x1c,
+	0x96, 0xd1, 0xef, 0x87, 0x65, 0xf4, 0xf8, 0xa8, 0xbc, 0xf4, 0xe4, 0xa8, 0xbc, 0xf4, 0xeb, 0x51,
+	0x79, 0x69, 0xe7, 0x92, 0xda, 0xea, 0xf5, 0x7f, 0x02, 0x00, 0x00, 0xff, 0xff, 0xee, 0xc7, 0x12,
+	0x1e, 0x77, 0x09, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -605,6 +652,105 @@ var _AppInstRefsApi_serviceDesc = grpc.ServiceDesc{
 	Metadata: "refs.proto",
 }
 
+// CloudletNodeRefsApiClient is the client API for CloudletNodeRefsApi service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type CloudletNodeRefsApiClient interface {
+	ShowCloudletNodeRefs(ctx context.Context, in *CloudletNodeRefs, opts ...grpc.CallOption) (CloudletNodeRefsApi_ShowCloudletNodeRefsClient, error)
+}
+
+type cloudletNodeRefsApiClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewCloudletNodeRefsApiClient(cc *grpc.ClientConn) CloudletNodeRefsApiClient {
+	return &cloudletNodeRefsApiClient{cc}
+}
+
+func (c *cloudletNodeRefsApiClient) ShowCloudletNodeRefs(ctx context.Context, in *CloudletNodeRefs, opts ...grpc.CallOption) (CloudletNodeRefsApi_ShowCloudletNodeRefsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_CloudletNodeRefsApi_serviceDesc.Streams[0], "/edgeproto.CloudletNodeRefsApi/ShowCloudletNodeRefs", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &cloudletNodeRefsApiShowCloudletNodeRefsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type CloudletNodeRefsApi_ShowCloudletNodeRefsClient interface {
+	Recv() (*CloudletNodeRefs, error)
+	grpc.ClientStream
+}
+
+type cloudletNodeRefsApiShowCloudletNodeRefsClient struct {
+	grpc.ClientStream
+}
+
+func (x *cloudletNodeRefsApiShowCloudletNodeRefsClient) Recv() (*CloudletNodeRefs, error) {
+	m := new(CloudletNodeRefs)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// CloudletNodeRefsApiServer is the server API for CloudletNodeRefsApi service.
+type CloudletNodeRefsApiServer interface {
+	ShowCloudletNodeRefs(*CloudletNodeRefs, CloudletNodeRefsApi_ShowCloudletNodeRefsServer) error
+}
+
+// UnimplementedCloudletNodeRefsApiServer can be embedded to have forward compatible implementations.
+type UnimplementedCloudletNodeRefsApiServer struct {
+}
+
+func (*UnimplementedCloudletNodeRefsApiServer) ShowCloudletNodeRefs(req *CloudletNodeRefs, srv CloudletNodeRefsApi_ShowCloudletNodeRefsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ShowCloudletNodeRefs not implemented")
+}
+
+func RegisterCloudletNodeRefsApiServer(s *grpc.Server, srv CloudletNodeRefsApiServer) {
+	s.RegisterService(&_CloudletNodeRefsApi_serviceDesc, srv)
+}
+
+func _CloudletNodeRefsApi_ShowCloudletNodeRefs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(CloudletNodeRefs)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CloudletNodeRefsApiServer).ShowCloudletNodeRefs(m, &cloudletNodeRefsApiShowCloudletNodeRefsServer{stream})
+}
+
+type CloudletNodeRefsApi_ShowCloudletNodeRefsServer interface {
+	Send(*CloudletNodeRefs) error
+	grpc.ServerStream
+}
+
+type cloudletNodeRefsApiShowCloudletNodeRefsServer struct {
+	grpc.ServerStream
+}
+
+func (x *cloudletNodeRefsApiShowCloudletNodeRefsServer) Send(m *CloudletNodeRefs) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+var _CloudletNodeRefsApi_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "edgeproto.CloudletNodeRefsApi",
+	HandlerType: (*CloudletNodeRefsApiServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ShowCloudletNodeRefs",
+			Handler:       _CloudletNodeRefsApi_ShowCloudletNodeRefs_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "refs.proto",
+}
+
 func (m *VMResource) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -879,6 +1025,53 @@ func (m *AppInstRefs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i--
 			dAtA[i] = 0xa
 			i = encodeVarintRefs(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	{
+		size, err := m.Key.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintRefs(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CloudletNodeRefs) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloudletNodeRefs) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloudletNodeRefs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Nodes) > 0 {
+		for iNdEx := len(m.Nodes) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Nodes[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintRefs(dAtA, i, uint64(size))
+			}
 			i--
 			dAtA[i] = 0x12
 		}
@@ -3658,6 +3851,793 @@ func (s *AppInstRefs) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
 }
 
+func (m *CloudletNodeRefs) Matches(o *CloudletNodeRefs, fopts ...MatchOpt) bool {
+	opts := MatchOptions{}
+	applyMatchOptions(&opts, fopts...)
+	if o == nil {
+		if opts.Filter {
+			return true
+		}
+		return false
+	}
+	if !m.Key.Matches(&o.Key, fopts...) {
+		return false
+	}
+	if !opts.Filter || o.Nodes != nil {
+		if len(m.Nodes) == 0 && len(o.Nodes) > 0 || len(m.Nodes) > 0 && len(o.Nodes) == 0 {
+			return false
+		} else if m.Nodes != nil && o.Nodes != nil {
+			if !opts.Filter && len(m.Nodes) != len(o.Nodes) {
+				return false
+			}
+			if opts.SortArrayedKeys {
+				sort.Slice(m.Nodes, func(i, j int) bool {
+					return m.Nodes[i].GetKeyString() < m.Nodes[j].GetKeyString()
+				})
+				sort.Slice(o.Nodes, func(i, j int) bool {
+					return o.Nodes[i].GetKeyString() < o.Nodes[j].GetKeyString()
+				})
+			}
+			found := 0
+			for oIndex, _ := range o.Nodes {
+				for mIndex, _ := range m.Nodes {
+					if m.Nodes[mIndex].Matches(&o.Nodes[oIndex], fopts...) {
+						found++
+						break
+					}
+				}
+			}
+			if found != len(o.Nodes) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (m *CloudletNodeRefs) Clone() *CloudletNodeRefs {
+	cp := &CloudletNodeRefs{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletNodeRefs) AddNodes(vals ...NodeKey) int {
+	changes := 0
+	cur := make(map[string]struct{})
+	for _, v := range m.Nodes {
+		cur[v.GetKeyString()] = struct{}{}
+	}
+	for _, v := range vals {
+		if _, found := cur[v.GetKeyString()]; found {
+			continue // duplicate
+		}
+		m.Nodes = append(m.Nodes, v)
+		changes++
+	}
+	return changes
+}
+
+func (m *CloudletNodeRefs) RemoveNodes(vals ...NodeKey) int {
+	changes := 0
+	remove := make(map[string]struct{})
+	for _, v := range vals {
+		remove[v.GetKeyString()] = struct{}{}
+	}
+	for i := len(m.Nodes); i >= 0; i-- {
+		if _, found := remove[m.Nodes[i].GetKeyString()]; found {
+			m.Nodes = append(m.Nodes[:i], m.Nodes[i+1:]...)
+			changes++
+		}
+	}
+	return changes
+}
+
+func (m *CloudletNodeRefs) CopyInFields(src *CloudletNodeRefs) int {
+	updateListAction := "replace"
+	changed := 0
+	if m.Key.Organization != src.Key.Organization {
+		m.Key.Organization = src.Key.Organization
+		changed++
+	}
+	if m.Key.Name != src.Key.Name {
+		m.Key.Name = src.Key.Name
+		changed++
+	}
+	if m.Key.FederatedOrganization != src.Key.FederatedOrganization {
+		m.Key.FederatedOrganization = src.Key.FederatedOrganization
+		changed++
+	}
+	if src.Nodes != nil {
+		if updateListAction == "add" {
+			changed += m.AddNodes(src.Nodes...)
+		} else if updateListAction == "remove" {
+			changed += m.RemoveNodes(src.Nodes...)
+		} else {
+			m.Nodes = make([]NodeKey, 0)
+			for k0, _ := range src.Nodes {
+				m.Nodes = append(m.Nodes, *src.Nodes[k0].Clone())
+			}
+			changed++
+		}
+	} else if m.Nodes != nil {
+		m.Nodes = nil
+		changed++
+	}
+	return changed
+}
+
+func (m *CloudletNodeRefs) DeepCopyIn(src *CloudletNodeRefs) {
+	m.Key.DeepCopyIn(&src.Key)
+	if src.Nodes != nil {
+		m.Nodes = make([]NodeKey, len(src.Nodes), len(src.Nodes))
+		for ii, s := range src.Nodes {
+			m.Nodes[ii].DeepCopyIn(&s)
+		}
+	} else {
+		m.Nodes = nil
+	}
+}
+
+func (s *CloudletNodeRefs) HasFields() bool {
+	return false
+}
+
+type CloudletNodeRefsStore interface {
+	Create(ctx context.Context, m *CloudletNodeRefs, wait func(int64)) (*Result, error)
+	Update(ctx context.Context, m *CloudletNodeRefs, wait func(int64)) (*Result, error)
+	Delete(ctx context.Context, m *CloudletNodeRefs, wait func(int64)) (*Result, error)
+	Put(ctx context.Context, m *CloudletNodeRefs, wait func(int64), ops ...objstore.KVOp) (*Result, error)
+	LoadOne(key string) (*CloudletNodeRefs, int64, error)
+	Get(ctx context.Context, key *CloudletKey, buf *CloudletNodeRefs) bool
+	STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletNodeRefs) bool
+	STMPut(stm concurrency.STM, obj *CloudletNodeRefs, ops ...objstore.KVOp)
+	STMDel(stm concurrency.STM, key *CloudletKey)
+	STMHas(stm concurrency.STM, key *CloudletKey) bool
+}
+
+type CloudletNodeRefsStoreImpl struct {
+	kvstore objstore.KVStore
+}
+
+func NewCloudletNodeRefsStore(kvstore objstore.KVStore) *CloudletNodeRefsStoreImpl {
+	return &CloudletNodeRefsStoreImpl{kvstore: kvstore}
+}
+
+func (s *CloudletNodeRefsStoreImpl) Create(ctx context.Context, m *CloudletNodeRefs, wait func(int64)) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("CloudletNodeRefs", m.GetKey())
+	val, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Create(ctx, key, string(val))
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *CloudletNodeRefsStoreImpl) Update(ctx context.Context, m *CloudletNodeRefs, wait func(int64)) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("CloudletNodeRefs", m.GetKey())
+	var vers int64 = 0
+	val, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Update(ctx, key, string(val), vers)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *CloudletNodeRefsStoreImpl) Put(ctx context.Context, m *CloudletNodeRefs, wait func(int64), ops ...objstore.KVOp) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("CloudletNodeRefs", m.GetKey())
+	var val []byte
+	val, err = json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Put(ctx, key, string(val), ops...)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *CloudletNodeRefsStoreImpl) Delete(ctx context.Context, m *CloudletNodeRefs, wait func(int64)) (*Result, error) {
+	err := m.GetKey().ValidateKey()
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("CloudletNodeRefs", m.GetKey())
+	rev, err := s.kvstore.Delete(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *CloudletNodeRefsStoreImpl) LoadOne(key string) (*CloudletNodeRefs, int64, error) {
+	val, rev, _, err := s.kvstore.Get(key)
+	if err != nil {
+		return nil, 0, err
+	}
+	var obj CloudletNodeRefs
+	err = json.Unmarshal(val, &obj)
+	if err != nil {
+		log.DebugLog(log.DebugLevelApi, "Failed to parse CloudletNodeRefs data", "val", string(val), "err", err)
+		return nil, 0, err
+	}
+	return &obj, rev, nil
+}
+
+func (s *CloudletNodeRefsStoreImpl) Get(ctx context.Context, key *CloudletKey, buf *CloudletNodeRefs) bool {
+	keystr := objstore.DbKeyString("CloudletNodeRefs", key)
+	val, _, _, err := s.kvstore.Get(keystr)
+	if err != nil {
+		return false
+	}
+	return s.parseGetData(val, buf)
+}
+
+func (s *CloudletNodeRefsStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletNodeRefs) bool {
+	keystr := objstore.DbKeyString("CloudletNodeRefs", key)
+	valstr := stm.Get(keystr)
+	return s.parseGetData([]byte(valstr), buf)
+}
+
+func (s *CloudletNodeRefsStoreImpl) STMHas(stm concurrency.STM, key *CloudletKey) bool {
+	keystr := objstore.DbKeyString("CloudletNodeRefs", key)
+	return stm.Get(keystr) != ""
+}
+
+func (s *CloudletNodeRefsStoreImpl) parseGetData(val []byte, buf *CloudletNodeRefs) bool {
+	if len(val) == 0 {
+		return false
+	}
+	if buf != nil {
+		// clear buf, because empty values in val won't
+		// overwrite non-empty values in buf.
+		*buf = CloudletNodeRefs{}
+		err := json.Unmarshal(val, buf)
+		if err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *CloudletNodeRefsStoreImpl) STMPut(stm concurrency.STM, obj *CloudletNodeRefs, ops ...objstore.KVOp) {
+	keystr := objstore.DbKeyString("CloudletNodeRefs", obj.GetKey())
+
+	val, err := json.Marshal(obj)
+	if err != nil {
+		log.InfoLog("CloudletNodeRefs json marshal failed", "obj", obj, "err", err)
+	}
+	v3opts := GetSTMOpts(ops...)
+	stm.Put(keystr, string(val), v3opts...)
+}
+
+func (s *CloudletNodeRefsStoreImpl) STMDel(stm concurrency.STM, key *CloudletKey) {
+	keystr := objstore.DbKeyString("CloudletNodeRefs", key)
+	stm.Del(keystr)
+}
+
+func StoreListCloudletNodeRefs(ctx context.Context, kvstore objstore.KVStore) ([]CloudletNodeRefs, error) {
+	keyPrefix := objstore.DbKeyPrefixString("CloudletNodeRefs") + "/"
+	objs := []CloudletNodeRefs{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := CloudletNodeRefs{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal CloudletNodeRefs json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
+type CloudletNodeRefsKeyWatcher struct {
+	cb func(ctx context.Context)
+}
+
+type CloudletNodeRefsCacheData struct {
+	Obj    *CloudletNodeRefs
+	ModRev int64
+}
+
+func (s *CloudletNodeRefsCacheData) Clone() *CloudletNodeRefsCacheData {
+	cp := CloudletNodeRefsCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &CloudletNodeRefs{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
+// CloudletNodeRefsCache caches CloudletNodeRefs objects in memory in a hash table
+// and keeps them in sync with the database.
+type CloudletNodeRefsCache struct {
+	Objs          map[CloudletKey]*CloudletNodeRefsCacheData
+	Mux           util.Mutex
+	List          map[CloudletKey]struct{}
+	FlushAll      bool
+	NotifyCbs     []func(ctx context.Context, obj *CloudletNodeRefs, modRev int64)
+	UpdatedCbs    []func(ctx context.Context, old *CloudletNodeRefs, new *CloudletNodeRefs)
+	DeletedCbs    []func(ctx context.Context, old *CloudletNodeRefs)
+	KeyWatchers   map[CloudletKey][]*CloudletNodeRefsKeyWatcher
+	UpdatedKeyCbs []func(ctx context.Context, key *CloudletKey)
+	DeletedKeyCbs []func(ctx context.Context, key *CloudletKey)
+	Store         CloudletNodeRefsStore
+}
+
+func NewCloudletNodeRefsCache() *CloudletNodeRefsCache {
+	cache := CloudletNodeRefsCache{}
+	InitCloudletNodeRefsCache(&cache)
+	return &cache
+}
+
+func InitCloudletNodeRefsCache(cache *CloudletNodeRefsCache) {
+	cache.Objs = make(map[CloudletKey]*CloudletNodeRefsCacheData)
+	cache.KeyWatchers = make(map[CloudletKey][]*CloudletNodeRefsKeyWatcher)
+	cache.NotifyCbs = nil
+	cache.UpdatedCbs = nil
+	cache.DeletedCbs = nil
+	cache.UpdatedKeyCbs = nil
+	cache.DeletedKeyCbs = nil
+}
+
+func (c *CloudletNodeRefsCache) GetTypeString() string {
+	return "CloudletNodeRefs"
+}
+
+func (c *CloudletNodeRefsCache) Get(key *CloudletKey, valbuf *CloudletNodeRefs) bool {
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *CloudletNodeRefsCache) STMGet(ostm *OptionalSTM, key *CloudletKey, valbuf *CloudletNodeRefs) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("CloudletNodeRefsCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
+func (c *CloudletNodeRefsCache) GetWithRev(key *CloudletKey, valbuf *CloudletNodeRefs, modRev *int64) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	inst, found := c.Objs[*key]
+	if found {
+		valbuf.DeepCopyIn(inst.Obj)
+		*modRev = inst.ModRev
+	}
+	return found
+}
+
+func (c *CloudletNodeRefsCache) HasKey(key *CloudletKey) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	_, found := c.Objs[*key]
+	return found
+}
+
+func (c *CloudletNodeRefsCache) GetAllKeys(ctx context.Context, cb func(key *CloudletKey, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for key, data := range c.Objs {
+		cb(&key, data.ModRev)
+	}
+}
+
+func (c *CloudletNodeRefsCache) GetAllLocked(ctx context.Context, cb func(obj *CloudletNodeRefs, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
+func (c *CloudletNodeRefsCache) Update(ctx context.Context, in *CloudletNodeRefs, modRev int64) {
+	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *CloudletNodeRefs) (*CloudletNodeRefs, bool) {
+		return in, true
+	})
+}
+
+func (c *CloudletNodeRefsCache) UpdateModFunc(ctx context.Context, key *CloudletKey, modRev int64, modFunc func(old *CloudletNodeRefs) (new *CloudletNodeRefs, changed bool)) {
+	c.Mux.Lock()
+	var old *CloudletNodeRefs
+	if oldData, found := c.Objs[*key]; found {
+		old = oldData.Obj
+	}
+	new, changed := modFunc(old)
+	if !changed {
+		c.Mux.Unlock()
+		return
+	}
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
+		newCopy := &CloudletNodeRefs{}
+		newCopy.DeepCopyIn(new)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
+		}
+	}
+	for _, cb := range c.UpdatedKeyCbs {
+		defer cb(ctx, key)
+	}
+	store := &CloudletNodeRefs{}
+	store.DeepCopyIn(new)
+	c.Objs[new.GetKeyVal()] = &CloudletNodeRefsCacheData{
+		Obj:    store,
+		ModRev: modRev,
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "cache update", "new", store)
+	c.Mux.Unlock()
+	c.TriggerKeyWatchers(ctx, new.GetKey())
+}
+
+func (c *CloudletNodeRefsCache) Delete(ctx context.Context, in *CloudletNodeRefs, modRev int64) {
+	c.DeleteCondFunc(ctx, in, modRev, func(old *CloudletNodeRefs) bool {
+		return true
+	})
+}
+
+func (c *CloudletNodeRefsCache) DeleteCondFunc(ctx context.Context, in *CloudletNodeRefs, modRev int64, condFunc func(old *CloudletNodeRefs) bool) {
+	c.Mux.Lock()
+	var old *CloudletNodeRefs
+	oldData, found := c.Objs[in.GetKeyVal()]
+	if found {
+		old = oldData.Obj
+		if !condFunc(old) {
+			c.Mux.Unlock()
+			return
+		}
+	}
+	delete(c.Objs, in.GetKeyVal())
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
+	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
+	for _, cb := range c.NotifyCbs {
+		if cb != nil {
+			cb(ctx, obj, modRev)
+		}
+	}
+	if old != nil {
+		for _, cb := range c.DeletedCbs {
+			cb(ctx, old)
+		}
+	}
+	for _, cb := range c.DeletedKeyCbs {
+		cb(ctx, in.GetKey())
+	}
+	c.TriggerKeyWatchers(ctx, in.GetKey())
+}
+
+func (c *CloudletNodeRefsCache) Prune(ctx context.Context, validKeys map[CloudletKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune CloudletNodeRefs", "numValidKeys", len(validKeys))
+	notify := make(map[CloudletKey]*CloudletNodeRefsCacheData)
+	c.Mux.Lock()
+	for key, _ := range c.Objs {
+		if _, ok := validKeys[key]; !ok {
+			if len(c.NotifyCbs) > 0 || len(c.DeletedKeyCbs) > 0 || len(c.DeletedCbs) > 0 {
+				notify[key] = c.Objs[key]
+			}
+			delete(c.Objs, key)
+		}
+	}
+	c.Mux.Unlock()
+	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &CloudletNodeRefs{}
+			obj.SetKey(&key)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				cb(ctx, obj, old.ModRev)
+			}
+		}
+		for _, cb := range c.DeletedKeyCbs {
+			cb(ctx, &key)
+		}
+		if old.Obj != nil {
+			for _, cb := range c.DeletedCbs {
+				cb(ctx, old.Obj)
+			}
+		}
+		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (c *CloudletNodeRefsCache) GetCount() int {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	return len(c.Objs)
+}
+
+func (c *CloudletNodeRefsCache) Flush(ctx context.Context, notifyId int64) {
+}
+
+func (c *CloudletNodeRefsCache) Show(filter *CloudletNodeRefs, cb func(ret *CloudletNodeRefs) error) error {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		if !data.Obj.Matches(filter, MatchFilter()) {
+			continue
+		}
+		err := cb(data.Obj)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func CloudletNodeRefsGenericNotifyCb(fn func(key *CloudletKey, old *CloudletNodeRefs)) func(objstore.ObjKey, objstore.Obj) {
+	return func(objkey objstore.ObjKey, obj objstore.Obj) {
+		fn(objkey.(*CloudletKey), obj.(*CloudletNodeRefs))
+	}
+}
+
+func (c *CloudletNodeRefsCache) SetNotifyCb(fn func(ctx context.Context, obj *CloudletNodeRefs, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *CloudletNodeRefs, modRev int64){fn}
+}
+
+func (c *CloudletNodeRefsCache) SetUpdatedCb(fn func(ctx context.Context, old *CloudletNodeRefs, new *CloudletNodeRefs)) {
+	c.UpdatedCbs = []func(ctx context.Context, old *CloudletNodeRefs, new *CloudletNodeRefs){fn}
+}
+
+func (c *CloudletNodeRefsCache) SetDeletedCb(fn func(ctx context.Context, old *CloudletNodeRefs)) {
+	c.DeletedCbs = []func(ctx context.Context, old *CloudletNodeRefs){fn}
+}
+
+func (c *CloudletNodeRefsCache) SetUpdatedKeyCb(fn func(ctx context.Context, key *CloudletKey)) {
+	c.UpdatedKeyCbs = []func(ctx context.Context, key *CloudletKey){fn}
+}
+
+func (c *CloudletNodeRefsCache) SetDeletedKeyCb(fn func(ctx context.Context, key *CloudletKey)) {
+	c.DeletedKeyCbs = []func(ctx context.Context, key *CloudletKey){fn}
+}
+
+func (c *CloudletNodeRefsCache) AddUpdatedCb(fn func(ctx context.Context, old *CloudletNodeRefs, new *CloudletNodeRefs)) {
+	c.UpdatedCbs = append(c.UpdatedCbs, fn)
+}
+
+func (c *CloudletNodeRefsCache) AddDeletedCb(fn func(ctx context.Context, old *CloudletNodeRefs)) {
+	c.DeletedCbs = append(c.DeletedCbs, fn)
+}
+
+func (c *CloudletNodeRefsCache) AddNotifyCb(fn func(ctx context.Context, obj *CloudletNodeRefs, modRev int64)) {
+	c.NotifyCbs = append(c.NotifyCbs, fn)
+}
+
+func (c *CloudletNodeRefsCache) AddUpdatedKeyCb(fn func(ctx context.Context, key *CloudletKey)) {
+	c.UpdatedKeyCbs = append(c.UpdatedKeyCbs, fn)
+}
+
+func (c *CloudletNodeRefsCache) AddDeletedKeyCb(fn func(ctx context.Context, key *CloudletKey)) {
+	c.DeletedKeyCbs = append(c.DeletedKeyCbs, fn)
+}
+
+func (c *CloudletNodeRefsCache) SetFlushAll() {
+	c.FlushAll = true
+}
+
+func (c *CloudletNodeRefsCache) WatchKey(key *CloudletKey, cb func(ctx context.Context)) context.CancelFunc {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	list, ok := c.KeyWatchers[*key]
+	if !ok {
+		list = make([]*CloudletNodeRefsKeyWatcher, 0)
+	}
+	watcher := CloudletNodeRefsKeyWatcher{cb: cb}
+	c.KeyWatchers[*key] = append(list, &watcher)
+	log.DebugLog(log.DebugLevelApi, "Watching CloudletNodeRefs", "key", key)
+	return func() {
+		c.Mux.Lock()
+		defer c.Mux.Unlock()
+		list, ok := c.KeyWatchers[*key]
+		if !ok {
+			return
+		}
+		for ii, _ := range list {
+			if list[ii] != &watcher {
+				continue
+			}
+			if len(list) == 1 {
+				delete(c.KeyWatchers, *key)
+				return
+			}
+			list[ii] = list[len(list)-1]
+			list[len(list)-1] = nil
+			c.KeyWatchers[*key] = list[:len(list)-1]
+			return
+		}
+	}
+}
+
+func (c *CloudletNodeRefsCache) TriggerKeyWatchers(ctx context.Context, key *CloudletKey) {
+	watchers := make([]*CloudletNodeRefsKeyWatcher, 0)
+	c.Mux.Lock()
+	if list, ok := c.KeyWatchers[*key]; ok {
+		watchers = append(watchers, list...)
+	}
+	c.Mux.Unlock()
+	for ii, _ := range watchers {
+		watchers[ii].cb(ctx)
+	}
+}
+
+// Note that we explicitly ignore the global revision number, because of the way
+// the notify framework sends updates (by hashing keys and doing lookups, instead
+// of sequentially through a history buffer), updates may be done out-of-order
+// or multiple updates compressed into one update, so the state of the cache at
+// any point in time may not by in sync with a particular database revision number.
+
+func (c *CloudletNodeRefsCache) SyncUpdate(ctx context.Context, key, val []byte, rev, modRev int64) {
+	obj := CloudletNodeRefs{}
+	err := json.Unmarshal(val, &obj)
+	if err != nil {
+		log.WarnLog("Failed to parse CloudletNodeRefs data", "val", string(val), "err", err)
+		return
+	}
+	c.Update(ctx, &obj, modRev)
+	c.Mux.Lock()
+	if c.List != nil {
+		c.List[obj.GetKeyVal()] = struct{}{}
+	}
+	c.Mux.Unlock()
+}
+
+func (c *CloudletNodeRefsCache) SyncDelete(ctx context.Context, key []byte, rev, modRev int64) {
+	obj := CloudletNodeRefs{}
+	keystr := objstore.DbKeyPrefixRemove(string(key))
+	CloudletKeyStringParse(keystr, obj.GetKey())
+	c.Delete(ctx, &obj, modRev)
+}
+
+func (c *CloudletNodeRefsCache) SyncListStart(ctx context.Context) {
+	c.List = make(map[CloudletKey]struct{})
+}
+
+func (c *CloudletNodeRefsCache) SyncListEnd(ctx context.Context) {
+	deleted := make(map[CloudletKey]*CloudletNodeRefsCacheData)
+	c.Mux.Lock()
+	for key, val := range c.Objs {
+		if _, found := c.List[key]; !found {
+			deleted[key] = val
+			delete(c.Objs, key)
+		}
+	}
+	c.List = nil
+	c.Mux.Unlock()
+	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &CloudletNodeRefs{}
+			obj.SetKey(&key)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				cb(ctx, obj, val.ModRev)
+			}
+		}
+		for _, cb := range c.DeletedKeyCbs {
+			cb(ctx, &key)
+		}
+		if val.Obj != nil {
+			for _, cb := range c.DeletedCbs {
+				cb(ctx, val.Obj)
+			}
+		}
+		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *CloudletNodeRefsCache) InitCacheWithSync(sync DataSync) {
+	InitCloudletNodeRefsCache(s)
+	s.InitSync(sync)
+}
+
+func (s *CloudletNodeRefsCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewCloudletNodeRefsStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
+func InitCloudletNodeRefsCacheWithStore(cache *CloudletNodeRefsCache, store CloudletNodeRefsStore) {
+	InitCloudletNodeRefsCache(cache)
+	cache.Store = store
+}
+
+func (c *CloudletNodeRefsCache) UsesOrg(org string) bool {
+	return false
+}
+
+func (m *CloudletNodeRefs) GetObjKey() objstore.ObjKey {
+	return m.GetKey()
+}
+
+func (m *CloudletNodeRefs) GetKey() *CloudletKey {
+	return &m.Key
+}
+
+func (m *CloudletNodeRefs) GetKeyVal() CloudletKey {
+	return m.Key
+}
+
+func (m *CloudletNodeRefs) SetKey(key *CloudletKey) {
+	m.Key = *key
+}
+
+func CmpSortCloudletNodeRefs(a CloudletNodeRefs, b CloudletNodeRefs) bool {
+	return a.Key.GetKeyString() < b.Key.GetKeyString()
+}
+
+// Helper method to check that enums have valid values
+func (m *CloudletNodeRefs) ValidateEnums() error {
+	if err := m.Key.ValidateEnums(); err != nil {
+		return err
+	}
+	for _, e := range m.Nodes {
+		if err := e.ValidateEnums(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *CloudletNodeRefs) ClearTagged(tags map[string]struct{}) {
+	s.Key.ClearTagged(tags)
+	if s.Nodes != nil {
+		for ii := 0; ii < len(s.Nodes); ii++ {
+			s.Nodes[ii].ClearTagged(tags)
+		}
+	}
+}
+
 func (m *VMResource) Size() (n int) {
 	if m == nil {
 		return 0
@@ -3774,6 +4754,23 @@ func (m *AppInstRefs) Size() (n int) {
 			_ = v
 			mapEntrySize := 1 + len(k) + sovRefs(uint64(len(k))) + 1 + sovRefs(uint64(v))
 			n += mapEntrySize + 1 + sovRefs(uint64(mapEntrySize))
+		}
+	}
+	return n
+}
+
+func (m *CloudletNodeRefs) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Key.Size()
+	n += 1 + l + sovRefs(uint64(l))
+	if len(m.Nodes) > 0 {
+		for _, e := range m.Nodes {
+			l = e.Size()
+			n += 1 + l + sovRefs(uint64(l))
 		}
 	}
 	return n
@@ -4813,6 +5810,123 @@ func (m *AppInstRefs) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.DeleteRequestedInsts[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRefs(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloudletNodeRefs) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRefs
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CloudletNodeRefs: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CloudletNodeRefs: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Key.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nodes", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Nodes = append(m.Nodes, NodeKey{})
+			if err := m.Nodes[len(m.Nodes)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

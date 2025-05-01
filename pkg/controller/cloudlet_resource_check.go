@@ -127,12 +127,8 @@ func (s *CloudletResCalc) CloudletFitsCluster(ctx context.Context, clusterInst, 
 	if err := s.InitDeps(ctx); err != nil {
 		return nil, err
 	}
-	isManagedK8s := false
-	if s.deps.features.KubernetesRequiresWorkerNodes {
-		isManagedK8s = true
-	}
 	reqd := NewCloudletResources()
-	err := reqd.AddClusterInstResources(ctx, clusterInst, s.deps.lbFlavor, isManagedK8s)
+	err := reqd.AddClusterInstResources(ctx, clusterInst, s.deps.lbFlavor, s.deps.features)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +139,7 @@ func (s *CloudletResCalc) CloudletFitsCluster(ctx context.Context, clusterInst, 
 	if oldClusterInst != nil {
 		// oldClusterInst will be set for an update
 		old := NewCloudletResources()
-		err := old.AddClusterInstResources(ctx, clusterInst, s.deps.lbFlavor, isManagedK8s)
+		err := old.AddClusterInstResources(ctx, clusterInst, s.deps.lbFlavor, s.deps.features)
 		if err != nil {
 			return nil, err
 		}
@@ -368,6 +364,12 @@ func (s ResLimitMap) AddMax(name, resourceType, units string, max uint64) {
 	res.InfraMaxValue += max
 }
 
+func (s ResLimitMap) AddMaxFromResVals(resValMap resspec.ResValMap) {
+	for _, res := range resValMap {
+		s.AddMax(res.Name, res.ResourceType, res.Units, res.Value.Whole)
+	}
+}
+
 func (s ResLimitMap) AddQuota(name, resourceType, units string, quota uint64, alertThreshold int32) {
 	resKey := edgeproto.BuildResKey(resourceType, name)
 	res, ok := s[resKey]
@@ -412,8 +414,16 @@ func (s *CloudletResCalc) addResourceLimits(ctx context.Context, limits ResLimit
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to add node pool resources", "pool", pool.Name, "err", err)
 		}
 	}
-	for _, kres := range kresCounts {
-		limits.AddMax(kres.Name, kres.ResourceType, kres.Units, kres.Value.Whole)
+	limits.AddMaxFromResVals(kresCounts)
+	// resource limits from user-defined sitenode platforms comes
+	// from the number of node flavors available
+	if s.deps.features.NodeUsage == edgeproto.NodeUsageUserDefined {
+		for _, flavor := range s.deps.cloudletInfo.Flavors {
+			if flavor.Limit == 0 {
+				continue
+			}
+			limits.AddMax(flavor.Name, cloudcommon.ResourceTypeFlavor, "", uint64(flavor.Limit))
+		}
 	}
 
 	// add limits from quotas

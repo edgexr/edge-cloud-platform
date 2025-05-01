@@ -473,12 +473,14 @@ func startServices() error {
 	edgeproto.RegisterCloudletManagedClusterApiServer(server, allApis.cloudletApi)
 	edgeproto.RegisterCloudletNodeApiServer(server, allApis.cloudletNodeApi)
 	edgeproto.RegisterZoneApiServer(server, allApis.zoneApi)
+	edgeproto.RegisterNodeApiServer(server, allApis.nodeApi)
 	edgeproto.RegisterAppInstApiServer(server, allApis.appInstApi)
 	edgeproto.RegisterCloudletInfoApiServer(server, allApis.cloudletInfoApi)
 	edgeproto.RegisterVMPoolApiServer(server, allApis.vmPoolApi)
 	edgeproto.RegisterCloudletRefsApiServer(server, allApis.cloudletRefsApi)
 	edgeproto.RegisterClusterRefsApiServer(server, allApis.clusterRefsApi)
 	edgeproto.RegisterAppInstRefsApiServer(server, allApis.appInstRefsApi)
+	edgeproto.RegisterCloudletNodeRefsApiServer(server, allApis.cloudletNodeRefsApi)
 	edgeproto.RegisterStreamObjApiServer(server, allApis.streamObjApi)
 	edgeproto.RegisterControllerApiServer(server, allApis.controllerApi)
 	edgeproto.RegisterSvcNodeApiServer(server, &svcNodeApi)
@@ -526,6 +528,7 @@ func startServices() error {
 			edgeproto.RegisterCloudletNodeApiHandler,
 			edgeproto.RegisterCloudletInfoApiHandler,
 			edgeproto.RegisterZoneApiHandler,
+			edgeproto.RegisterNodeApiHandler,
 			edgeproto.RegisterVMPoolApiHandler,
 			edgeproto.RegisterGPUDriverApiHandler,
 			edgeproto.RegisterFlavorApiHandler,
@@ -717,6 +720,7 @@ type AllApis struct {
 	cloudletApi                 *CloudletApi
 	cloudletNodeApi             *CloudletNodeApi
 	zoneApi                     *ZoneApi
+	nodeApi                     *NodeApi
 	appInstApi                  *AppInstApi
 	flavorApi                   *FlavorApi
 	streamObjApi                *StreamObjApi
@@ -729,6 +733,7 @@ type AllApis struct {
 	cloudletRefsApi             *CloudletRefsApi
 	clusterRefsApi              *ClusterRefsApi
 	appInstRefsApi              *AppInstRefsApi
+	cloudletNodeRefsApi         *CloudletNodeRefsApi
 	controllerApi               *ControllerApi
 	zonePoolApi                 *ZonePoolApi
 	execApi                     *ExecApi
@@ -761,6 +766,7 @@ func NewAllApis(sync *regiondata.Sync) *AllApis {
 	all.cloudletApi = NewCloudletApi(sync, all)
 	all.cloudletNodeApi = NewCloudletNodeApi(sync, all)
 	all.zoneApi = NewZoneApi(sync, all)
+	all.nodeApi = NewNodeApi(sync, all)
 	all.appInstApi = NewAppInstApi(sync, all)
 	all.flavorApi = NewFlavorApi(sync, all)
 	all.streamObjApi = NewStreamObjApi(sync, all)
@@ -773,6 +779,7 @@ func NewAllApis(sync *regiondata.Sync) *AllApis {
 	all.cloudletRefsApi = NewCloudletRefsApi(sync, all)
 	all.clusterRefsApi = NewClusterRefsApi(sync, all)
 	all.appInstRefsApi = NewAppInstRefsApi(sync, all)
+	all.cloudletNodeRefsApi = NewCloudletNodeRefsApi(sync, all)
 	all.controllerApi = NewControllerApi(sync, all)
 	all.zonePoolApi = NewZonePoolApi(sync, all)
 	all.execApi = NewExecApi(all)
@@ -796,6 +803,7 @@ func NewAllApis(sync *regiondata.Sync) *AllApis {
 	all.networkApi = NewNetworkApi(sync, all)
 	all.platformFeaturesApi = NewPlatformFeaturesApi(sync, all)
 	all.syncLeaseData = NewSyncLeaseData(sync, all)
+	sync.SetName("allapis")
 	return all
 }
 
@@ -967,6 +975,7 @@ func (s *AllApis) GetAppInstApi() edgeproto.AppInstApiServer         { return s.
 func (s *AllApis) GetGPUDriverApi() edgeproto.GPUDriverApiServer     { return s.gpuDriverApi }
 func (s *AllApis) GetZoneApi() edgeproto.ZoneApiServer               { return s.zoneApi }
 func (s *AllApis) GetCloudletApi() edgeproto.CloudletApiServer       { return s.cloudletApi }
+func (s *AllApis) GetNodeApi() edgeproto.NodeApiServer               { return s.nodeApi }
 func (s *AllApis) GetZonePoolApi() edgeproto.ZonePoolApiServer       { return s.zonePoolApi }
 func (s *AllApis) GetVMPoolApi() edgeproto.VMPoolApiServer           { return s.vmPoolApi }
 func (s *AllApis) GetClusterInstApi() edgeproto.ClusterInstApiServer { return s.clusterInstApi }

@@ -269,6 +269,12 @@ const (
 	AnnotationKubernetesVersion       = "kubernetes-version"
 )
 
+const (
+	SiteNodeStatusChecking    = "Checking"
+	SiteNodeStatusReady       = "Ready"
+	SiteNodeStatusUnreachable = "Unreachable"
+)
+
 var InstanceUp = "UP"
 var InstanceDown = "DOWN"
 
@@ -332,6 +338,13 @@ const AppFederatedIdMaxLen = 50
 const TagPrioritySessionId string = "priority_session_id"
 const TagQosProfileName string = "qos_profile_name"
 const TagIpUserEquipment string = "ip_user_equipment"
+
+const (
+	SiteNodeRoleNone       = ""
+	SiteNodeRoleDocker     = "docker"
+	SiteNodeRoleK8SControl = "control-plane"
+	SiteNodeRoleK8SWorker  = "worker"
+)
 
 var DefaultPlatformFlavorKey = edgeproto.FlavorKey{
 	Name: "DefaultPlatformFlavor",
@@ -615,7 +628,7 @@ func (s *AppInstLabelsOld) FromMap(labels map[string]string) {
 // reveal the cloudlet name (which would likely reveal its location).
 func GetCloudletKeyHash(key *edgeproto.CloudletKey) string {
 	cname := key.Name + "::" + key.Organization
-	return getShortHash(cname)
+	return GetShortHash(cname, 8)
 }
 
 // GetZoneKeyHash returns a short hash of the zone key to allow
@@ -625,18 +638,15 @@ func GetCloudletKeyHash(key *edgeproto.CloudletKey) string {
 // doesn't confuse the user by referencing the old zone by name.
 func GetZoneKeyHash(key *edgeproto.ZoneKey) string {
 	zname := key.Name + "::" + key.Organization
-	return getShortHash(zname)
+	return GetShortHash(zname, 8)
 }
 
-func getShortHash(str string) string {
+func GetShortHash(str string, limit int) string {
 	h := sha256.New()
 	h.Write([]byte(str))
 	bytesum := h.Sum(nil)
 	strsum := fmt.Sprintf("%x", bytesum)
-	num := len(strsum)
-	if num > 8 {
-		num = 8
-	}
+	num := min(len(strsum), limit)
 	return strsum[:num]
 }
 

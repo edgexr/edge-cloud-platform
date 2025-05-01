@@ -2785,6 +2785,7 @@ const ClusterInstFieldNodeResourcesGpusCount = "45.7.2"
 const ClusterInstFieldNodeResourcesGpusVendor = "45.7.3"
 const ClusterInstFieldNodeResourcesGpusMemory = "45.7.4"
 const ClusterInstFieldNodeResourcesGpusInUse = "45.7.5"
+const ClusterInstFieldNodeResourcesNodeName = "45.8"
 const ClusterInstFieldNodePools = "46"
 const ClusterInstFieldNodePoolsName = "46.1"
 const ClusterInstFieldNodePoolsNumNodes = "46.2"
@@ -2803,7 +2804,10 @@ const ClusterInstFieldNodePoolsNodeResourcesGpusCount = "46.3.7.2"
 const ClusterInstFieldNodePoolsNodeResourcesGpusVendor = "46.3.7.3"
 const ClusterInstFieldNodePoolsNodeResourcesGpusMemory = "46.3.7.4"
 const ClusterInstFieldNodePoolsNodeResourcesGpusInUse = "46.3.7.5"
+const ClusterInstFieldNodePoolsNodeResourcesNodeName = "46.3.8"
 const ClusterInstFieldNodePoolsScalable = "46.4"
+const ClusterInstFieldNodePoolsControlPlane = "46.5"
+const ClusterInstFieldNodePoolsNodes = "46.6"
 const ClusterInstFieldInfraAnnotations = "47"
 const ClusterInstFieldInfraAnnotationsKey = "47.1"
 const ClusterInstFieldInfraAnnotationsValue = "47.2"
@@ -2887,6 +2891,7 @@ var ClusterInstAllFields = []string{
 	ClusterInstFieldNodeResourcesGpusVendor,
 	ClusterInstFieldNodeResourcesGpusMemory,
 	ClusterInstFieldNodeResourcesGpusInUse,
+	ClusterInstFieldNodeResourcesNodeName,
 	ClusterInstFieldNodePoolsName,
 	ClusterInstFieldNodePoolsNumNodes,
 	ClusterInstFieldNodePoolsNodeResourcesVcpus,
@@ -2901,7 +2906,10 @@ var ClusterInstAllFields = []string{
 	ClusterInstFieldNodePoolsNodeResourcesGpusVendor,
 	ClusterInstFieldNodePoolsNodeResourcesGpusMemory,
 	ClusterInstFieldNodePoolsNodeResourcesGpusInUse,
+	ClusterInstFieldNodePoolsNodeResourcesNodeName,
 	ClusterInstFieldNodePoolsScalable,
+	ClusterInstFieldNodePoolsControlPlane,
+	ClusterInstFieldNodePoolsNodes,
 	ClusterInstFieldInfraAnnotationsKey,
 	ClusterInstFieldInfraAnnotationsValue,
 	ClusterInstFieldKubernetesVersion,
@@ -2984,6 +2992,7 @@ var ClusterInstAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstFieldNodeResourcesGpusVendor:                  struct{}{},
 	ClusterInstFieldNodeResourcesGpusMemory:                  struct{}{},
 	ClusterInstFieldNodeResourcesGpusInUse:                   struct{}{},
+	ClusterInstFieldNodeResourcesNodeName:                    struct{}{},
 	ClusterInstFieldNodePoolsName:                            struct{}{},
 	ClusterInstFieldNodePoolsNumNodes:                        struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesVcpus:              struct{}{},
@@ -2998,7 +3007,10 @@ var ClusterInstAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstFieldNodePoolsNodeResourcesGpusVendor:         struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesGpusMemory:         struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesGpusInUse:          struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesNodeName:           struct{}{},
 	ClusterInstFieldNodePoolsScalable:                        struct{}{},
+	ClusterInstFieldNodePoolsControlPlane:                    struct{}{},
+	ClusterInstFieldNodePoolsNodes:                           struct{}{},
 	ClusterInstFieldInfraAnnotationsKey:                      struct{}{},
 	ClusterInstFieldInfraAnnotationsValue:                    struct{}{},
 	ClusterInstFieldKubernetesVersion:                        struct{}{},
@@ -3081,6 +3093,7 @@ var ClusterInstAllFieldsStringMap = map[string]string{
 	ClusterInstFieldNodeResourcesGpusVendor:                  "Node Resources Gpus Vendor",
 	ClusterInstFieldNodeResourcesGpusMemory:                  "Node Resources Gpus Memory",
 	ClusterInstFieldNodeResourcesGpusInUse:                   "Node Resources Gpus In Use",
+	ClusterInstFieldNodeResourcesNodeName:                    "Node Resources Node Name",
 	ClusterInstFieldNodePoolsName:                            "Node Pools Name",
 	ClusterInstFieldNodePoolsNumNodes:                        "Node Pools Num Nodes",
 	ClusterInstFieldNodePoolsNodeResourcesVcpus:              "Node Pools Node Resources Vcpus",
@@ -3095,7 +3108,10 @@ var ClusterInstAllFieldsStringMap = map[string]string{
 	ClusterInstFieldNodePoolsNodeResourcesGpusVendor:         "Node Pools Node Resources Gpus Vendor",
 	ClusterInstFieldNodePoolsNodeResourcesGpusMemory:         "Node Pools Node Resources Gpus Memory",
 	ClusterInstFieldNodePoolsNodeResourcesGpusInUse:          "Node Pools Node Resources Gpus In Use",
+	ClusterInstFieldNodePoolsNodeResourcesNodeName:           "Node Pools Node Resources Node Name",
 	ClusterInstFieldNodePoolsScalable:                        "Node Pools Scalable",
+	ClusterInstFieldNodePoolsControlPlane:                    "Node Pools Control Plane",
+	ClusterInstFieldNodePoolsNodes:                           "Node Pools Nodes",
 	ClusterInstFieldInfraAnnotationsKey:                      "Infra Annotations Key",
 	ClusterInstFieldInfraAnnotationsValue:                    "Infra Annotations Value",
 	ClusterInstFieldKubernetesVersion:                        "Kubernetes Version",
@@ -3469,6 +3485,10 @@ func (m *ClusterInst) DiffFields(o *ClusterInst, fields *FieldMap) {
 			fields.Set(ClusterInstFieldNodeResourcesGpus)
 			fields.Set(ClusterInstFieldNodeResources)
 		}
+		if m.NodeResources.NodeName != o.NodeResources.NodeName {
+			fields.Set(ClusterInstFieldNodeResourcesNodeName)
+			fields.Set(ClusterInstFieldNodeResources)
+		}
 	} else if (m.NodeResources != nil && o.NodeResources == nil) || (m.NodeResources == nil && o.NodeResources != nil) {
 		fields.Set(ClusterInstFieldNodeResources)
 	}
@@ -3582,6 +3602,11 @@ func (m *ClusterInst) DiffFields(o *ClusterInst, fields *FieldMap) {
 						fields.Set(ClusterInstFieldNodePoolsNodeResources)
 						fields.Set(ClusterInstFieldNodePools)
 					}
+					if m.NodePools[i0].NodeResources.NodeName != o.NodePools[i0].NodeResources.NodeName {
+						fields.Set(ClusterInstFieldNodePoolsNodeResourcesNodeName)
+						fields.Set(ClusterInstFieldNodePoolsNodeResources)
+						fields.Set(ClusterInstFieldNodePools)
+					}
 				} else if (m.NodePools[i0].NodeResources != nil && o.NodePools[i0].NodeResources == nil) || (m.NodePools[i0].NodeResources == nil && o.NodePools[i0].NodeResources != nil) {
 					fields.Set(ClusterInstFieldNodePoolsNodeResources)
 					fields.Set(ClusterInstFieldNodePools)
@@ -3589,6 +3614,22 @@ func (m *ClusterInst) DiffFields(o *ClusterInst, fields *FieldMap) {
 				if m.NodePools[i0].Scalable != o.NodePools[i0].Scalable {
 					fields.Set(ClusterInstFieldNodePoolsScalable)
 					fields.Set(ClusterInstFieldNodePools)
+				}
+				if m.NodePools[i0].ControlPlane != o.NodePools[i0].ControlPlane {
+					fields.Set(ClusterInstFieldNodePoolsControlPlane)
+					fields.Set(ClusterInstFieldNodePools)
+				}
+				if len(m.NodePools[i0].Nodes) != len(o.NodePools[i0].Nodes) {
+					fields.Set(ClusterInstFieldNodePoolsNodes)
+					fields.Set(ClusterInstFieldNodePools)
+				} else {
+					for i1 := 0; i1 < len(m.NodePools[i0].Nodes); i1++ {
+						if m.NodePools[i0].Nodes[i1] != o.NodePools[i0].Nodes[i1] {
+							fields.Set(ClusterInstFieldNodePoolsNodes)
+							fields.Set(ClusterInstFieldNodePools)
+							break
+						}
+					}
 				}
 			}
 		}
@@ -3686,7 +3727,10 @@ var UpdateClusterInstFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstFieldNodePoolsNodeResourcesGpusVendor:         struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesGpusMemory:         struct{}{},
 	ClusterInstFieldNodePoolsNodeResourcesGpusInUse:          struct{}{},
+	ClusterInstFieldNodePoolsNodeResourcesNodeName:           struct{}{},
 	ClusterInstFieldNodePoolsScalable:                        struct{}{},
+	ClusterInstFieldNodePoolsControlPlane:                    struct{}{},
+	ClusterInstFieldNodePoolsNodes:                           struct{}{},
 	ClusterInstFieldInfraAnnotations:                         struct{}{},
 	ClusterInstFieldInfraAnnotationsKey:                      struct{}{},
 	ClusterInstFieldInfraAnnotationsValue:                    struct{}{},
@@ -4322,6 +4366,12 @@ func (m *ClusterInst) CopyInFields(src *ClusterInst) int {
 					}
 				} else if m.NodeResources.Gpus != nil {
 					m.NodeResources.Gpus = nil
+					changed++
+				}
+			}
+			if fmap.Has("45.8") {
+				if m.NodeResources.NodeName != src.NodeResources.NodeName {
+					m.NodeResources.NodeName = src.NodeResources.NodeName
 					changed++
 				}
 			}
@@ -5860,7 +5910,10 @@ const ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusCo
 const ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusVendor = "8.2.3.7.3"
 const ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusMemory = "8.2.3.7.4"
 const ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusInUse = "8.2.3.7.5"
+const ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesNodeName = "8.2.3.8"
 const ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsScalable = "8.2.4"
+const ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsControlPlane = "8.2.5"
+const ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodes = "8.2.6"
 const ClusterInstInfoFieldInfraAnnotations = "45"
 const ClusterInstInfoFieldInfraAnnotationsKey = "45.1"
 const ClusterInstInfoFieldInfraAnnotationsValue = "45.2"
@@ -5903,7 +5956,10 @@ var ClusterInstInfoAllFields = []string{
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusVendor,
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusMemory,
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusInUse,
+	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesNodeName,
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsScalable,
+	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsControlPlane,
+	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodes,
 	ClusterInstInfoFieldInfraAnnotationsKey,
 	ClusterInstInfoFieldInfraAnnotationsValue,
 }
@@ -5946,7 +6002,10 @@ var ClusterInstInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusVendor:         struct{}{},
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusMemory:         struct{}{},
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusInUse:          struct{}{},
+	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesNodeName:           struct{}{},
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsScalable:                        struct{}{},
+	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsControlPlane:                    struct{}{},
+	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodes:                           struct{}{},
 	ClusterInstInfoFieldInfraAnnotationsKey:                                                struct{}{},
 	ClusterInstInfoFieldInfraAnnotationsValue:                                              struct{}{},
 })
@@ -5989,7 +6048,10 @@ var ClusterInstInfoAllFieldsStringMap = map[string]string{
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusVendor:         "Cloudlet Managed Cluster Info Node Pools Node Resources Gpus Vendor",
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusMemory:         "Cloudlet Managed Cluster Info Node Pools Node Resources Gpus Memory",
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesGpusInUse:          "Cloudlet Managed Cluster Info Node Pools Node Resources Gpus In Use",
+	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesNodeName:           "Cloudlet Managed Cluster Info Node Pools Node Resources Node Name",
 	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsScalable:                        "Cloudlet Managed Cluster Info Node Pools Scalable",
+	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsControlPlane:                    "Cloudlet Managed Cluster Info Node Pools Control Plane",
+	ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodes:                           "Cloudlet Managed Cluster Info Node Pools Nodes",
 	ClusterInstInfoFieldInfraAnnotationsKey:                                                "Infra Annotations Key",
 	ClusterInstInfoFieldInfraAnnotationsValue:                                              "Infra Annotations Value",
 }
@@ -6280,6 +6342,12 @@ func (m *ClusterInstInfo) DiffFields(o *ClusterInstInfo, fields *FieldMap) {
 							fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePools)
 							fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfo)
 						}
+						if m.CloudletManagedClusterInfo.NodePools[i1].NodeResources.NodeName != o.CloudletManagedClusterInfo.NodePools[i1].NodeResources.NodeName {
+							fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResourcesNodeName)
+							fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResources)
+							fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePools)
+							fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfo)
+						}
 					} else if (m.CloudletManagedClusterInfo.NodePools[i1].NodeResources != nil && o.CloudletManagedClusterInfo.NodePools[i1].NodeResources == nil) || (m.CloudletManagedClusterInfo.NodePools[i1].NodeResources == nil && o.CloudletManagedClusterInfo.NodePools[i1].NodeResources != nil) {
 						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodeResources)
 						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePools)
@@ -6289,6 +6357,25 @@ func (m *ClusterInstInfo) DiffFields(o *ClusterInstInfo, fields *FieldMap) {
 						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsScalable)
 						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePools)
 						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfo)
+					}
+					if m.CloudletManagedClusterInfo.NodePools[i1].ControlPlane != o.CloudletManagedClusterInfo.NodePools[i1].ControlPlane {
+						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsControlPlane)
+						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePools)
+						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfo)
+					}
+					if len(m.CloudletManagedClusterInfo.NodePools[i1].Nodes) != len(o.CloudletManagedClusterInfo.NodePools[i1].Nodes) {
+						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodes)
+						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePools)
+						fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfo)
+					} else {
+						for i2 := 0; i2 < len(m.CloudletManagedClusterInfo.NodePools[i1].Nodes); i2++ {
+							if m.CloudletManagedClusterInfo.NodePools[i1].Nodes[i2] != o.CloudletManagedClusterInfo.NodePools[i1].Nodes[i2] {
+								fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePoolsNodes)
+								fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfoNodePools)
+								fields.Set(ClusterInstInfoFieldCloudletManagedClusterInfo)
+								break
+							}
+						}
 					}
 				}
 			}

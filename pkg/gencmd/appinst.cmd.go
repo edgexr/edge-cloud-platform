@@ -942,6 +942,7 @@ var AppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"noderesources.nodename",
 	"isstandalone",
 	"tags",
 }
@@ -1090,6 +1091,7 @@ var AppInstComments = map[string]string{
 	"noderesources.optresmap":                                    "Optional resources request, i.e. optresmap=restype=resname:1, specify noderesources.optresmap:empty=true to clear",
 	"noderesources.infranodeflavor":                              "Infrastructure specific node flavor",
 	"noderesources.externalvolumesize":                           "Size of external volume to be attached to nodes. This is for the root partition",
+	"noderesources.nodename":                                     "Site node name if using site nodes",
 	"isstandalone":                                               "A standalone AppInst will not share a cluster with another AppInst unless explicitly targeted to the same cluster",
 	"tags":                                                       "Vendor-specific data, specify tags:empty=true to clear",
 }
@@ -1418,6 +1420,7 @@ var CreateAppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"noderesources.nodename",
 	"isstandalone",
 	"tags",
 }
@@ -1497,6 +1500,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"noderesources.nodename",
 	"isstandalone",
 	"tags",
 }
@@ -1572,6 +1576,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"noderesources.nodename",
 	"isstandalone",
 	"tags",
 }
@@ -1651,6 +1656,7 @@ var UpdateAppInstOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"noderesources.nodename",
 	"isstandalone",
 	"tags",
 }

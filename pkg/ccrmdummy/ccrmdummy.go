@@ -65,6 +65,7 @@ func StartDummyCCRM(ctx context.Context, vaultConfig *vault.Config, kvstore objs
 		sync:                  regiondata.InitSync(kvstore),
 		testutilCloudletInfos: make(map[edgeproto.CloudletKey]*edgeproto.CloudletInfo),
 	}
+	dummy.sync.SetName("ccrm")
 	for _, info := range testutil.CloudletInfoData() {
 		dummy.testutilCloudletInfos[info.Key] = &info
 	}
@@ -73,6 +74,7 @@ func StartDummyCCRM(ctx context.Context, vaultConfig *vault.Config, kvstore objs
 		platform.PlatformTypeFakeSingleCluster: dummy.NewPlatform(fake.NewPlatformSingleCluster),
 		platform.PlatformTypeFakeVMPool:        dummy.NewPlatform(fake.NewPlatformVMPool),
 		"ccrm":                                 dummy.NewPlatform(fake.NewPlatform), // matches platformType from testutil/test_data.go
+		platform.PlatformTypeFakeSiteNodes:     dummy.NewPlatform(fake.NewPlatformSiteNodes),
 	}
 	nodeMgr := svcnode.SvcNodeMgr{}
 	nodeMgr.VaultConfig = vaultConfig
@@ -150,6 +152,8 @@ func castToFakePlatform(p platform.Platform) *fake.Platform {
 	case *fake.PlatformSingleCluster:
 		return &v.Platform
 	case *fake.PlatformVMPool:
+		return &v.Platform
+	case *fake.FakeSiteNodes:
 		return &v.Platform
 	}
 	return nil

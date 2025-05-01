@@ -504,6 +504,7 @@ var VMOptionalArgs = []string{
 	"flavor.gpus:#.vendor",
 	"flavor.gpus:#.memory",
 	"flavor.gpus:#.inuse",
+	"flavor.limit",
 	"flavor.propmap",
 }
 var VMAliasArgs = []string{}
@@ -525,6 +526,7 @@ var VMComments = map[string]string{
 	"flavor.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
 	"flavor.gpus:#.memory":  "Memory in GB",
 	"flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"flavor.limit":          "Limit or quota on the number of this flavor that the platform provides",
 	"flavor.propmap":        "Infra flavor Properties, if any",
 }
 var VMSpecialArgs = map[string]string{
@@ -581,6 +583,7 @@ var VMPoolComments = map[string]string{
 	"vms:#.flavor.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
 	"vms:#.flavor.gpus:#.memory":  "Memory in GB",
 	"vms:#.flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"vms:#.flavor.limit":          "Limit or quota on the number of this flavor that the platform provides",
 	"vms:#.flavor.propmap":        "Infra flavor Properties, if any, specify vms:#.flavor.propmap:empty=true to clear",
 	"state":                       "Current state of the VM pool, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                      "Any errors trying to add/remove VM to/from VM Pool, specify errors:empty=true to clear",
@@ -626,6 +629,7 @@ var VMPoolMemberComments = map[string]string{
 	"vm.flavor.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
 	"vm.flavor.gpus:#.memory":  "Memory in GB",
 	"vm.flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"vm.flavor.limit":          "Limit or quota on the number of this flavor that the platform provides",
 	"vm.flavor.propmap":        "Infra flavor Properties, if any",
 	"crmoverride":              "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
 }
@@ -695,6 +699,7 @@ var VMPoolInfoOptionalArgs = []string{
 	"vms:#.flavor.gpus:#.vendor",
 	"vms:#.flavor.gpus:#.memory",
 	"vms:#.flavor.gpus:#.inuse",
+	"vms:#.flavor.limit",
 	"vms:#.flavor.propmap",
 	"state",
 	"errors",
@@ -731,6 +736,7 @@ var VMPoolInfoComments = map[string]string{
 	"vms:#.flavor.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
 	"vms:#.flavor.gpus:#.memory":  "Memory in GB",
 	"vms:#.flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"vms:#.flavor.limit":          "Limit or quota on the number of this flavor that the platform provides",
 	"vms:#.flavor.propmap":        "Infra flavor Properties, if any",
 	"state":                       "Current state of the VM pool on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                      "Any errors trying to add/remove VM to/from VM Pool",

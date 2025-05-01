@@ -16,6 +16,9 @@ package controller
 
 import (
 	"context"
+	"crypto"
+	"crypto/rand"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -28,6 +31,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
@@ -43,6 +47,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/etcd/client/v3/concurrency"
+	"golang.org/x/crypto/ssh"
 	"google.golang.org/grpc"
 )
 
@@ -221,6 +226,8 @@ func TestCloudletApi(t *testing.T) {
 	testCloudletZoneRef(t, ctx, apis)
 	testCloudletDnsLabel(t, ctx, apis)
 	testChangeCloudletDNS(t, ctx, apis)
+	//Needs Vault
+	//testCloudletNodeSSHKey(t, ctx, apis, nodeMgr.VaultConfig)
 
 	// Resource Mapping tests
 	testResMapKeysApi(t, ctx, &cl, apis)
@@ -1348,4 +1355,49 @@ func testCloudletManagedClusters(t *testing.T, ctx context.Context, apis *AllApi
 		found = apis.clusterInstApi.cache.Get(&cmc.ClusterKey, &ci)
 		require.False(t, found)
 	}
+}
+
+func testCloudletNodeSSHKey(t *testing.T, ctx context.Context, apis *AllApis, vaultConfig *vault.Config) {
+	cloudlet := &testutil.CloudletData()[0]
+	cloudlet.Key.Name = "node-ssh-key-test"
+	cloudlet.PlatformType = "fakesitenodes"
+
+	features := testutil.PlatformFeaturesData()[0]
+	features.PlatformType = "fakesitenodes"
+	features.NodeUsage = edgeproto.NodeUsageUserDefined
+	apis.platformFeaturesApi.Update(ctx, &features, 0)
+	defer func() {
+		apis.platformFeaturesApi.Delete(ctx, &features, 0)
+	}()
+
+	// create cloudlet
+	err := apis.cloudletApi.CreateCloudlet(cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	defer func() {
+		err = apis.cloudletApi.DeleteCloudlet(cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+		require.Nil(t, err)
+	}()
+
+	// check that ssh key was created
+	keys, err := accessvars.GetCloudletNodeSSHKey(ctx, *region, &cloudlet.Key, vaultConfig)
+	require.Nil(t, err)
+
+	fmt.Printf("public key: %s\n", keys.PublicRawKey)
+
+	// parse PEM keys
+	pubKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(keys.PublicRawKey))
+	require.Nil(t, err)
+	privKey, err := x509.ParsePKCS8PrivateKey([]byte(keys.PrivateRawKey))
+	require.Nil(t, err)
+	cryptoSigner, ok := privKey.(crypto.Signer)
+	require.True(t, ok)
+	signer, err := ssh.NewSignerFromSigner(cryptoSigner)
+	require.Nil(t, err)
+
+	// sign and verify
+	data := []byte("some data")
+	signature, err := signer.Sign(rand.Reader, data)
+	require.Nil(t, err)
+	pubKey.Verify(data, signature)
+	require.Nil(t, err)
 }

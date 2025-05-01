@@ -47,6 +47,7 @@ var NodeResourcesOptionalArgs = []string{
 	"optresmap",
 	"infranodeflavor",
 	"externalvolumesize",
+	"nodename",
 }
 var NodeResourcesAliasArgs = []string{}
 var NodeResourcesComments = map[string]string{
@@ -61,6 +62,7 @@ var NodeResourcesComments = map[string]string{
 	"optresmap":          "Optional resources request, i.e. optresmap=restype=resname:1",
 	"infranodeflavor":    "Infrastructure specific node flavor",
 	"externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
+	"nodename":           "Site node name if using site nodes",
 }
 var NodeResourcesSpecialArgs = map[string]string{
 	"optresmap": "StringToString",
@@ -247,7 +249,10 @@ var NodePoolOptionalArgs = []string{
 	"noderesources.optresmap",
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
+	"noderesources.nodename",
 	"scalable",
+	"controlplane",
+	"nodes",
 }
 var NodePoolAliasArgs = []string{}
 var NodePoolComments = map[string]string{
@@ -264,8 +269,12 @@ var NodePoolComments = map[string]string{
 	"noderesources.optresmap":          "Optional resources request, i.e. optresmap=restype=resname:1",
 	"noderesources.infranodeflavor":    "Infrastructure specific node flavor",
 	"noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
+	"noderesources.nodename":           "Site node name if using site nodes",
 	"scalable":                         "Scalable indicates the system may scale the number of nodes",
+	"controlplane":                     "Pool is the control-plane pool for a Kubernetes cluster",
+	"nodes":                            "Node names in pool when using site nodes",
 }
 var NodePoolSpecialArgs = map[string]string{
 	"noderesources.optresmap": "StringToString",
+	"nodes":                   "StringArray",
 }

@@ -1386,6 +1386,63 @@ func GetCloudletManifests(c *cli.Command, data []edgeproto.CloudletKey, err *err
 	}
 }
 
+var GetCloudletNodeSSHKeyCmd = &cli.Command{
+	Use:          "GetCloudletNodeSSHKey",
+	RequiredArgs: strings.Join(CloudletKeyRequiredArgs, " "),
+	OptionalArgs: strings.Join(CloudletKeyOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletKeyAliasArgs, " "),
+	SpecialArgs:  &CloudletKeySpecialArgs,
+	Comments:     CloudletKeyComments,
+	ReqData:      &edgeproto.CloudletKey{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runGetCloudletNodeSSHKey,
+}
+
+func runGetCloudletNodeSSHKey(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.CloudletKey)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return GetCloudletNodeSSHKey(c, obj)
+}
+
+func GetCloudletNodeSSHKey(c *cli.Command, in *edgeproto.CloudletKey) error {
+	if CloudletApiCmd == nil {
+		return fmt.Errorf("CloudletApi client not initialized")
+	}
+	ctx := context.Background()
+	obj, err := CloudletApiCmd.GetCloudletNodeSSHKey(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("GetCloudletNodeSSHKey failed: %s", errstr)
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func GetCloudletNodeSSHKeys(c *cli.Command, data []edgeproto.CloudletKey, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("GetCloudletNodeSSHKey %v\n", data[ii])
+		myerr := GetCloudletNodeSSHKey(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var GetCloudletPropsCmd = &cli.Command{
 	Use:          "GetCloudletProps",
 	RequiredArgs: strings.Join(GetCloudletPropsRequiredArgs, " "),
@@ -2496,6 +2553,7 @@ var CloudletApiCmds = []*cobra.Command{
 	UpdateCloudletCmd.GenCmd(),
 	ShowCloudletCmd.GenCmd(),
 	GetCloudletManifestCmd.GenCmd(),
+	GetCloudletNodeSSHKeyCmd.GenCmd(),
 	GetCloudletPropsCmd.GenCmd(),
 	GetCloudletResourceQuotaPropsCmd.GenCmd(),
 	GetCloudletResourceUsageCmd.GenCmd(),
@@ -3188,6 +3246,7 @@ var PlatformFeaturesOptionalArgs = []string{
 	"requiresgpudriver",
 	"usesrootlb",
 	"supportscloudletmanagedclusters",
+	"nodeusage",
 	"resourcequotaproperties:#.name",
 	"resourcequotaproperties:#.value",
 	"resourcequotaproperties:#.inframaxvalue",
@@ -3233,6 +3292,7 @@ var PlatformFeaturesComments = map[string]string{
 	"requiresgpudriver":                        "Platform requires GPU Driver to be managed by Edge Cloud for installation onto new VMs or nodes with the license provided by the operator.",
 	"usesrootlb":                               "Platform users a shared root load balancer",
 	"supportscloudletmanagedclusters":          "Platform supports cloudlet managed clusters",
+	"nodeusage":                                "Set if the platform uses nodes as its base resource",
 	"resourcequotaproperties:#.name":           "Resource name",
 	"resourcequotaproperties:#.value":          "Resource value",
 	"resourcequotaproperties:#.inframaxvalue":  "Resource infra max value",
@@ -3505,6 +3565,7 @@ var CloudletOptionalArgs = []string{
 	"infraflavors:#.gpus:#.vendor",
 	"infraflavors:#.gpus:#.memory",
 	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.limit",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",
@@ -3631,6 +3692,7 @@ var CloudletComments = map[string]string{
 	"infraflavors:#.gpus:#.vendor":           "GPU vendor (nvidia, amd, etc)",
 	"infraflavors:#.gpus:#.memory":           "Memory in GB",
 	"infraflavors:#.gpus:#.inuse":            "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"infraflavors:#.limit":                   "Limit or quota on the number of this flavor that the platform provides",
 	"infraflavors:#.propmap":                 "Infra flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
 	"edgeboxonly":                            "Edgebox only cloudlets allow for developers to set up cloudlets anywhere (laptop, etc) but can only use public images and do not support DNS mapping.",
 	"crmonedge":                              "CRM shall run on the edge site if true (required for restricted cloudlets), otherwise runs centrally (default)",
@@ -3849,6 +3911,7 @@ var FlavorInfoOptionalArgs = []string{
 	"gpus:#.vendor",
 	"gpus:#.memory",
 	"gpus:#.inuse",
+	"limit",
 	"propmap",
 }
 var FlavorInfoAliasArgs = []string{}
@@ -3862,6 +3925,7 @@ var FlavorInfoComments = map[string]string{
 	"gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
 	"gpus:#.memory":  "Memory in GB",
 	"gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"limit":          "Limit or quota on the number of this flavor that the platform provides",
 	"propmap":        "Infra flavor Properties, if any",
 }
 var FlavorInfoSpecialArgs = map[string]string{
@@ -3915,6 +3979,7 @@ var CloudletInfoOptionalArgs = []string{
 	"flavors:#.gpus:#.vendor",
 	"flavors:#.gpus:#.memory",
 	"flavors:#.gpus:#.inuse",
+	"flavors:#.limit",
 	"flavors:#.propmap",
 	"containerversion",
 	"availabilityzones:#.name",
@@ -3977,7 +4042,10 @@ var CloudletInfoOptionalArgs = []string{
 	"nodepools:#.noderesources.optresmap",
 	"nodepools:#.noderesources.infranodeflavor",
 	"nodepools:#.noderesources.externalvolumesize",
+	"nodepools:#.noderesources.nodename",
 	"nodepools:#.scalable",
+	"nodepools:#.controlplane",
+	"nodepools:#.nodes",
 }
 var CloudletInfoAliasArgs = []string{
 	"cloudletorg=key.organization",
@@ -4005,6 +4073,7 @@ var CloudletInfoComments = map[string]string{
 	"flavors:#.gpus:#.vendor":                "GPU vendor (nvidia, amd, etc)",
 	"flavors:#.gpus:#.memory":                "Memory in GB",
 	"flavors:#.gpus:#.inuse":                 "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"flavors:#.limit":                        "Limit or quota on the number of this flavor that the platform provides",
 	"flavors:#.propmap":                      "Infra flavor Properties, if any",
 	"status.tasknumber":                      "Task number",
 	"status.maxtasks":                        "Max tasks",
@@ -4073,13 +4142,17 @@ var CloudletInfoComments = map[string]string{
 	"nodepools:#.noderesources.optresmap":                      "Optional resources request, i.e. optresmap=restype=resname:1",
 	"nodepools:#.noderesources.infranodeflavor":                "Infrastructure specific node flavor",
 	"nodepools:#.noderesources.externalvolumesize":             "Size of external volume to be attached to nodes. This is for the root partition",
+	"nodepools:#.noderesources.nodename":                       "Site node name if using site nodes",
 	"nodepools:#.scalable":                                     "Scalable indicates the system may scale the number of nodes",
+	"nodepools:#.controlplane":                                 "Pool is the control-plane pool for a Kubernetes cluster",
+	"nodepools:#.nodes":                                        "Node names in pool when using site nodes",
 }
 var CloudletInfoSpecialArgs = map[string]string{
 	"errors":                              "StringArray",
 	"fields":                              "StringArray",
 	"flavors:#.propmap":                   "StringToString",
 	"nodepools:#.noderesources.optresmap": "StringToString",
+	"nodepools:#.nodes":                   "StringArray",
 	"properties":                          "StringToString",
 	"status.msgs":                         "StringArray",
 }
@@ -4265,6 +4338,7 @@ var CreateCloudletOptionalArgs = []string{
 	"infraflavors:#.gpus:#.vendor",
 	"infraflavors:#.gpus:#.memory",
 	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.limit",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",
@@ -4339,6 +4413,7 @@ var DeleteCloudletOptionalArgs = []string{
 	"infraflavors:#.gpus:#.vendor",
 	"infraflavors:#.gpus:#.memory",
 	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.limit",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",
@@ -4404,6 +4479,7 @@ var UpdateCloudletOptionalArgs = []string{
 	"infraflavors:#.gpus:#.vendor",
 	"infraflavors:#.gpus:#.memory",
 	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.limit",
 	"infraflavors:#.propmap",
 	"crmonedge",
 	"objid",
@@ -4477,6 +4553,7 @@ var ShowCloudletOptionalArgs = []string{
 	"infraflavors:#.gpus:#.vendor",
 	"infraflavors:#.gpus:#.memory",
 	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.limit",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",
@@ -4570,6 +4647,7 @@ var ShowCloudletResourceUsageOptionalArgs = []string{
 	"infraflavors:#.gpus:#.vendor",
 	"infraflavors:#.gpus:#.memory",
 	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.limit",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",
@@ -4643,6 +4721,7 @@ var ShowCloudletGPUUsageOptionalArgs = []string{
 	"infraflavors:#.gpus:#.vendor",
 	"infraflavors:#.gpus:#.memory",
 	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.limit",
 	"infraflavors:#.propmap",
 	"edgeboxonly",
 	"crmonedge",

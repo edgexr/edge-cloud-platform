@@ -348,9 +348,11 @@ type DummyServer struct {
 	NetworkCache                  edgeproto.NetworkCache
 	ClusterInstCache              edgeproto.ClusterInstCache
 	ClusterInstInfoCache          edgeproto.ClusterInstInfoCache
+	NodeCache                     edgeproto.NodeCache
 	CloudletRefsCache             edgeproto.CloudletRefsCache
 	ClusterRefsCache              edgeproto.ClusterRefsCache
 	AppInstRefsCache              edgeproto.AppInstRefsCache
+	CloudletNodeRefsCache         edgeproto.CloudletNodeRefsCache
 	FlowRateLimitSettingsCache    edgeproto.FlowRateLimitSettingsCache
 	MaxReqsRateLimitSettingsCache edgeproto.MaxReqsRateLimitSettingsCache
 	AppInstClientKeyCache         edgeproto.AppInstClientKeyCache
@@ -394,9 +396,11 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitNetworkCache(&d.NetworkCache)
 	edgeproto.InitClusterInstCache(&d.ClusterInstCache)
 	edgeproto.InitClusterInstInfoCache(&d.ClusterInstInfoCache)
+	edgeproto.InitNodeCache(&d.NodeCache)
 	edgeproto.InitCloudletRefsCache(&d.CloudletRefsCache)
 	edgeproto.InitClusterRefsCache(&d.ClusterRefsCache)
 	edgeproto.InitAppInstRefsCache(&d.AppInstRefsCache)
+	edgeproto.InitCloudletNodeRefsCache(&d.CloudletNodeRefsCache)
 	edgeproto.InitFlowRateLimitSettingsCache(&d.FlowRateLimitSettingsCache)
 	edgeproto.InitMaxReqsRateLimitSettingsCache(&d.MaxReqsRateLimitSettingsCache)
 	edgeproto.InitAppInstClientKeyCache(&d.AppInstClientKeyCache)
@@ -427,9 +431,11 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterNetworkApiServer(server, d)
 	edgeproto.RegisterClusterInstApiServer(server, d)
 	edgeproto.RegisterClusterInstInfoApiServer(server, d)
+	edgeproto.RegisterNodeApiServer(server, d)
 	edgeproto.RegisterCloudletRefsApiServer(server, d)
 	edgeproto.RegisterClusterRefsApiServer(server, d)
 	edgeproto.RegisterAppInstRefsApiServer(server, d)
+	edgeproto.RegisterCloudletNodeRefsApiServer(server, d)
 	edgeproto.RegisterRateLimitSettingsApiServer(server, d)
 	edgeproto.RegisterAppInstClientApiServer(server, d)
 	edgeproto.RegisterCloudletNodeApiServer(server, d)
@@ -485,9 +491,11 @@ type Client interface {
 	NetworkApiClient
 	ClusterInstApiClient
 	ClusterInstInfoApiClient
+	NodeApiClient
 	CloudletRefsApiClient
 	ClusterRefsApiClient
 	AppInstRefsApiClient
+	CloudletNodeRefsApiClient
 	RateLimitSettingsApiClient
 	AppInstClientApiClient
 	ExecApiClient
@@ -518,5 +526,6 @@ type InternalCUDAPIs interface {
 	GetTrustPolicyExceptionApi() edgeproto.TrustPolicyExceptionApiServer
 	GetNetworkApi() edgeproto.NetworkApiServer
 	GetClusterInstApi() edgeproto.ClusterInstApiServer
+	GetNodeApi() edgeproto.NodeApiServer
 	GetCloudletNodeApi() edgeproto.CloudletNodeApiServer
 }

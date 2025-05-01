@@ -445,6 +445,7 @@ func (s *CloudletStoreTracker) STMPut(stm concurrency.STM, obj *edgeproto.Cloudl
 type CloudletDeleteDataGen interface {
 	GetCloudletTestObj() (*edgeproto.Cloudlet, *testSupportData)
 	GetNetworkKeyCloudletKeyRef(key *edgeproto.CloudletKey) (*edgeproto.Network, *testSupportData)
+	GetCloudletNodeNodesRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletNodeRefs, *testSupportData)
 	GetCloudletClusterInstClusterInstsRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletRefs, *testSupportData)
 	GetCloudletAppInstVmAppInstsRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletRefs, *testSupportData)
 }
@@ -521,9 +522,11 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		allApis:       all,
 	}
 	api.store = deleteStore
+	cloudletNodeRefsApiStore, cloudletNodeRefsApiUnwrap := wrapCloudletNodeRefsTrackerStore(all.cloudletNodeRefsApi)
 	cloudletRefsApiStore, cloudletRefsApiUnwrap := wrapCloudletRefsTrackerStore(all.cloudletRefsApi)
 	defer func() {
 		api.store = origStore
+		cloudletNodeRefsApiUnwrap()
 		cloudletRefsApiUnwrap()
 	}()
 
@@ -542,6 +545,8 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		// make sure ref objects reads happen in same stm
 		// as delete prepare is set
 		require.NotNil(t, deleteStore.putDeletePrepareSTM, "must set delete prepare in STM")
+		require.NotNil(t, cloudletNodeRefsApiStore.getSTM, "must check for refs from CloudletNodeRefs in STM")
+		require.Equal(t, deleteStore.putDeletePrepareSTM, cloudletNodeRefsApiStore.getSTM, "delete prepare and ref check for CloudletNodeRefs must be done in the same STM")
 		require.NotNil(t, cloudletRefsApiStore.getSTM, "must check for refs from CloudletRefs in STM")
 		require.Equal(t, deleteStore.putDeletePrepareSTM, cloudletRefsApiStore.getSTM, "delete prepare and ref check for CloudletRefs must be done in the same STM")
 		require.NotNil(t, cloudletRefsApiStore.getSTM, "must check for refs from CloudletRefs in STM")
@@ -586,6 +591,24 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		_, err = all.networkApi.store.Delete(ctx, refBy, all.networkApi.sync.SyncWait)
 		require.Nil(t, err, "cleanup ref from Network must succeed")
 		deleteStore.putDeletePrepareCb = nil
+		supportData.delete(t, ctx, all)
+	}
+	{
+		// Negative test, CloudletNodeRefs refers to Cloudlet via refs object.
+		// Inject the refs object to trigger an "in use" error.
+		refBy, supportData := dataGen.GetCloudletNodeNodesRef(testObj.GetKey())
+		supportData.put(t, ctx, all)
+		_, err = all.cloudletNodeRefsApi.store.Put(ctx, refBy, all.cloudletNodeRefsApi.sync.SyncWait)
+		require.Nil(t, err)
+		testObj, _ = dataGen.GetCloudletTestObj()
+		err = api.DeleteCloudlet(testObj, testutil.NewCudStreamoutCloudlet(ctx))
+		require.NotNil(t, err, "delete with ref from CloudletNodeRefs must fail")
+		require.Contains(t, err.Error(), "in use")
+		// check that delete prepare was reset
+		deleteStore.requireUndoDeletePrepare(ctx, testObj)
+		// remove CloudletNodeRefs obj
+		_, err = all.cloudletNodeRefsApi.store.Delete(ctx, refBy, all.cloudletNodeRefsApi.sync.SyncWait)
+		require.Nil(t, err, "cleanup ref from CloudletNodeRefs must succeed")
 		supportData.delete(t, ctx, all)
 	}
 	{

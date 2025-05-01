@@ -730,6 +730,7 @@ const ZoneFieldInfraFlavorsGpusCount = "4.6.2"
 const ZoneFieldInfraFlavorsGpusVendor = "4.6.3"
 const ZoneFieldInfraFlavorsGpusMemory = "4.6.4"
 const ZoneFieldInfraFlavorsGpusInUse = "4.6.5"
+const ZoneFieldInfraFlavorsLimit = "4.7"
 const ZoneFieldLocation = "5"
 const ZoneFieldLocationLatitude = "5.1"
 const ZoneFieldLocationLongitude = "5.2"
@@ -766,6 +767,7 @@ var ZoneAllFields = []string{
 	ZoneFieldInfraFlavorsGpusVendor,
 	ZoneFieldInfraFlavorsGpusMemory,
 	ZoneFieldInfraFlavorsGpusInUse,
+	ZoneFieldInfraFlavorsLimit,
 	ZoneFieldLocationLatitude,
 	ZoneFieldLocationLongitude,
 	ZoneFieldLocationHorizontalAccuracy,
@@ -799,6 +801,7 @@ var ZoneAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ZoneFieldInfraFlavorsGpusVendor:     struct{}{},
 	ZoneFieldInfraFlavorsGpusMemory:     struct{}{},
 	ZoneFieldInfraFlavorsGpusInUse:      struct{}{},
+	ZoneFieldInfraFlavorsLimit:          struct{}{},
 	ZoneFieldLocationLatitude:           struct{}{},
 	ZoneFieldLocationLongitude:          struct{}{},
 	ZoneFieldLocationHorizontalAccuracy: struct{}{},
@@ -832,6 +835,7 @@ var ZoneAllFieldsStringMap = map[string]string{
 	ZoneFieldInfraFlavorsGpusVendor:     "Infra Flavors Gpus Vendor",
 	ZoneFieldInfraFlavorsGpusMemory:     "Infra Flavors Gpus Memory",
 	ZoneFieldInfraFlavorsGpusInUse:      "Infra Flavors Gpus In Use",
+	ZoneFieldInfraFlavorsLimit:          "Infra Flavors Limit",
 	ZoneFieldLocationLatitude:           "Location Latitude",
 	ZoneFieldLocationLongitude:          "Location Longitude",
 	ZoneFieldLocationHorizontalAccuracy: "Location Horizontal Accuracy",
@@ -950,6 +954,10 @@ func (m *Zone) DiffFields(o *Zone, fields *FieldMap) {
 					fields.Set(ZoneFieldInfraFlavorsGpus)
 					fields.Set(ZoneFieldInfraFlavors)
 				}
+				if m.InfraFlavors[i0].Limit != o.InfraFlavors[i0].Limit {
+					fields.Set(ZoneFieldInfraFlavorsLimit)
+					fields.Set(ZoneFieldInfraFlavors)
+				}
 			}
 		}
 	} else if (m.InfraFlavors != nil && o.InfraFlavors == nil) || (m.InfraFlavors == nil && o.InfraFlavors != nil) {
@@ -1044,6 +1052,7 @@ var UpdateZoneFieldsMap = NewFieldMap(map[string]struct{}{
 	ZoneFieldInfraFlavorsGpusVendor:   struct{}{},
 	ZoneFieldInfraFlavorsGpusMemory:   struct{}{},
 	ZoneFieldInfraFlavorsGpusInUse:    struct{}{},
+	ZoneFieldInfraFlavorsLimit:        struct{}{},
 	ZoneFieldObjId:                    struct{}{},
 })
 

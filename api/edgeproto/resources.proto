@@ -70,6 +70,8 @@ message NodeResources {
   string infra_node_flavor = 5 [(protogen.backend) = true];
   // Size of external volume to be attached to nodes. This is for the root partition
   uint64 external_volume_size = 6 [(protogen.backend) = true];
+  // Site node name if using site nodes
+  string node_name = 8 [(protogen.backend) = true];
 }
 
 // KubernetesResources defines resource requirements for Kubernetes Applications
@@ -125,4 +127,8 @@ message NodePool {
   NodeResources node_resources = 3;
   // Scalable indicates the system may scale the number of nodes
   bool scalable = 4;
+  // Pool is the control-plane pool for a Kubernetes cluster
+  bool control_plane = 5;
+  // Node names in pool when using site nodes
+  repeated string nodes = 6 [(protogen.backend) = true];
 }

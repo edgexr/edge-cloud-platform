@@ -20,6 +20,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	ssh "github.com/edgexr/golang-ssh"
 )
 
 // CRMAccessKeys are used by on-site CRMs to authenticate
@@ -51,4 +52,25 @@ func GetCRMAccessKeys(ctx context.Context, region string, cloudlet *edgeproto.Cl
 	keys := CRMAccessKeys{}
 	err := vault.GetData(vaultConfig, path, 0, &keys)
 	return &keys, err
+}
+
+func getNodeSSHKeyPath(region string, key *edgeproto.CloudletKey) string {
+	return fmt.Sprintf("secret/data/%s/cloudlet/%s/%s/nodesshkey", region, key.Organization, key.Name)
+}
+
+func SaveCloudletNodeSSHKey(ctx context.Context, region string, key *edgeproto.CloudletKey, vaultConfig *vault.Config, sshKey *ssh.KeyPair) error {
+	path := getNodeSSHKeyPath(region, key)
+	return vault.PutData(vaultConfig, path, sshKey)
+}
+
+func DeleteCloudletNodeSSHKey(ctx context.Context, region string, key *edgeproto.CloudletKey, vaultConfig *vault.Config) error {
+	path := getNodeSSHKeyPath(region, key)
+	return vault.DeleteData(vaultConfig, path)
+}
+
+func GetCloudletNodeSSHKey(ctx context.Context, region string, key *edgeproto.CloudletKey, vaultConfig *vault.Config) (*ssh.KeyPair, error) {
+	path := getNodeSSHKeyPath(region, key)
+	sshKey := ssh.KeyPair{}
+	err := vault.GetData(vaultConfig, path, 0, &sshKey)
+	return &sshKey, err
 }

@@ -40,6 +40,7 @@ func NewResTagTableApi(sync *regiondata.Sync, all *AllApis) *ResTagTableApi {
 	resTagTableApi := ResTagTableApi{}
 	resTagTableApi.all = all
 	resTagTableApi.sync = sync
+	fmt.Printf("NewResTagTableApi cache %p\n", &resTagTableApi.cache)
 	resTagTableApi.store = edgeproto.NewResTagTableStore(sync.GetKVStore())
 	edgeproto.InitResTagTableCacheWithStore(&resTagTableApi.cache, resTagTableApi.store)
 	sync.RegisterCache(&resTagTableApi.cache)
@@ -278,11 +279,11 @@ func (s *ResTagTableApi) UsesGpu(ctx context.Context, stm *edgeproto.OptionalSTM
 }
 
 // GetVMSpec returns the VMCreationAttributes including flavor name and the size of the external volume which is required, if any
-func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm *edgeproto.OptionalSTM, nodeResources *edgeproto.NodeResources, cloudletFlavorName string, cl edgeproto.Cloudlet, cli edgeproto.CloudletInfo) (*resspec.VMCreationSpec, error) {
+func (s *ResTagTableApi) GetVMSpec(ctx context.Context, stm *edgeproto.OptionalSTM, nodeResources *edgeproto.NodeResources, cloudletFlavorName string, cl edgeproto.Cloudlet, cli edgeproto.CloudletInfo, features *edgeproto.PlatformFeatures) (*resspec.VMCreationSpec, error) {
 	log.SpanLog(ctx, log.DebugLevelApi, "GetVMSpec", "nodeResources", *nodeResources, "cloudletFlavorName", cloudletFlavorName, "cloudlet", cl.Key.Name)
 	// for those platforms with no concept of a quantized set of resources (flavors)
 	// return a VMCreationSpec  based on the our meta-flavor resource request.
-	if len(cli.Flavors) == 0 {
+	if len(cli.Flavors) == 0 && features.NodeUsage == edgeproto.NodeUsageNone {
 		spec := resspec.VMCreationSpec{
 			FlavorName: "noderesources",
 			FlavorInfo: &edgeproto.FlavorInfo{

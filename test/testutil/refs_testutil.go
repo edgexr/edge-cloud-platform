@@ -603,6 +603,198 @@ func FindAppInstRefsData(key *edgeproto.AppKey, testData []edgeproto.AppInstRefs
 	return nil, false
 }
 
+type ShowCloudletNodeRefs struct {
+	Data map[string]edgeproto.CloudletNodeRefs
+	grpc.ServerStream
+	Ctx context.Context
+}
+
+func (x *ShowCloudletNodeRefs) Init() {
+	x.Data = make(map[string]edgeproto.CloudletNodeRefs)
+}
+
+func (x *ShowCloudletNodeRefs) Send(m *edgeproto.CloudletNodeRefs) error {
+	x.Data[m.GetKey().GetKeyString()] = *m
+	return nil
+}
+
+func (x *ShowCloudletNodeRefs) Context() context.Context {
+	return x.Ctx
+}
+
+var CloudletNodeRefsShowExtraCount = 0
+
+func (x *ShowCloudletNodeRefs) ReadStream(stream edgeproto.CloudletNodeRefsApi_ShowCloudletNodeRefsClient, err error) {
+	x.Data = make(map[string]edgeproto.CloudletNodeRefs)
+	if err != nil {
+		return
+	}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			break
+		}
+		x.Data[obj.GetKey().GetKeyString()] = *obj
+	}
+}
+
+func (x *ShowCloudletNodeRefs) CheckFound(obj *edgeproto.CloudletNodeRefs) bool {
+	_, found := x.Data[obj.GetKey().GetKeyString()]
+	return found
+}
+
+func (x *ShowCloudletNodeRefs) AssertFound(t *testing.T, obj *edgeproto.CloudletNodeRefs) {
+	check, found := x.Data[obj.GetKey().GetKeyString()]
+	require.True(t, found, "find CloudletNodeRefs %s", obj.GetKey().GetKeyString())
+	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
+		require.Equal(t, *obj, check, "CloudletNodeRefs are equal")
+	}
+	if found {
+		// remove in case there are dups in the list, so the
+		// same object cannot be used again
+		delete(x.Data, obj.GetKey().GetKeyString())
+	}
+}
+
+func (x *ShowCloudletNodeRefs) AssertNotFound(t *testing.T, obj *edgeproto.CloudletNodeRefs) {
+	_, found := x.Data[obj.GetKey().GetKeyString()]
+	require.False(t, found, "do not find CloudletNodeRefs %s", obj.GetKey().GetKeyString())
+}
+
+func WaitAssertFoundCloudletNodeRefs(t *testing.T, api edgeproto.CloudletNodeRefsApiClient, obj *edgeproto.CloudletNodeRefs, count int, retry time.Duration) {
+	show := ShowCloudletNodeRefs{}
+	for ii := 0; ii < count; ii++ {
+		ctx, cancel := context.WithTimeout(context.Background(), retry)
+		stream, err := api.ShowCloudletNodeRefs(ctx, obj)
+		show.ReadStream(stream, err)
+		cancel()
+		if show.CheckFound(obj) {
+			break
+		}
+		time.Sleep(retry)
+	}
+	show.AssertFound(t, obj)
+}
+
+func WaitAssertNotFoundCloudletNodeRefs(t *testing.T, api edgeproto.CloudletNodeRefsApiClient, obj *edgeproto.CloudletNodeRefs, count int, retry time.Duration) {
+	show := ShowCloudletNodeRefs{}
+	filterNone := edgeproto.CloudletNodeRefs{}
+	for ii := 0; ii < count; ii++ {
+		ctx, cancel := context.WithTimeout(context.Background(), retry)
+		stream, err := api.ShowCloudletNodeRefs(ctx, &filterNone)
+		show.ReadStream(stream, err)
+		cancel()
+		if !show.CheckFound(obj) {
+			break
+		}
+		time.Sleep(retry)
+	}
+	show.AssertNotFound(t, obj)
+}
+
+// Wrap the api with a common interface
+type CloudletNodeRefsCommonApi struct {
+	internal_api edgeproto.CloudletNodeRefsApiServer
+	client_api   edgeproto.CloudletNodeRefsApiClient
+}
+
+func (x *CloudletNodeRefsCommonApi) ShowCloudletNodeRefs(ctx context.Context, filter *edgeproto.CloudletNodeRefs, showData *ShowCloudletNodeRefs) error {
+	if x.internal_api != nil {
+		showData.Ctx = ctx
+		return x.internal_api.ShowCloudletNodeRefs(filter, showData)
+	} else {
+		stream, err := x.client_api.ShowCloudletNodeRefs(ctx, filter)
+		showData.ReadStream(stream, err)
+		return unwrapGrpcError(err)
+	}
+}
+
+func NewInternalCloudletNodeRefsApi(api edgeproto.CloudletNodeRefsApiServer) *CloudletNodeRefsCommonApi {
+	apiWrap := CloudletNodeRefsCommonApi{}
+	apiWrap.internal_api = api
+	return &apiWrap
+}
+
+func NewClientCloudletNodeRefsApi(api edgeproto.CloudletNodeRefsApiClient) *CloudletNodeRefsCommonApi {
+	apiWrap := CloudletNodeRefsCommonApi{}
+	apiWrap.client_api = api
+	return &apiWrap
+}
+
+type CloudletNodeRefsTestOptions struct {
+	createdData []edgeproto.CloudletNodeRefs
+}
+
+type CloudletNodeRefsTestOp func(opts *CloudletNodeRefsTestOptions)
+
+func WithCreatedCloudletNodeRefsTestData(createdData []edgeproto.CloudletNodeRefs) CloudletNodeRefsTestOp {
+	return func(opts *CloudletNodeRefsTestOptions) { opts.createdData = createdData }
+}
+
+func InternalCloudletNodeRefsTest(t *testing.T, test string, api edgeproto.CloudletNodeRefsApiServer, testData []edgeproto.CloudletNodeRefs, ops ...CloudletNodeRefsTestOp) {
+	span := log.StartSpan(log.DebugLevelApi, "InternalCloudletNodeRefsTest")
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
+
+	switch test {
+	case "show":
+		basicCloudletNodeRefsShowTest(t, ctx, NewInternalCloudletNodeRefsApi(api), testData)
+	}
+}
+
+func ClientCloudletNodeRefsTest(t *testing.T, test string, api edgeproto.CloudletNodeRefsApiClient, testData []edgeproto.CloudletNodeRefs, ops ...CloudletNodeRefsTestOp) {
+	span := log.StartSpan(log.DebugLevelApi, "ClientCloudletNodeRefsTest")
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
+
+	switch test {
+	case "show":
+		basicCloudletNodeRefsShowTest(t, ctx, NewClientCloudletNodeRefsApi(api), testData)
+	}
+}
+
+func basicCloudletNodeRefsShowTest(t *testing.T, ctx context.Context, api *CloudletNodeRefsCommonApi, testData []edgeproto.CloudletNodeRefs) {
+	var err error
+
+	show := ShowCloudletNodeRefs{}
+	show.Init()
+	filterNone := edgeproto.CloudletNodeRefs{}
+	err = api.ShowCloudletNodeRefs(ctx, &filterNone, &show)
+	require.Nil(t, err, "show data")
+	require.Equal(t, len(testData)+CloudletNodeRefsShowExtraCount, len(show.Data), "Show count")
+	for _, obj := range testData {
+		show.AssertFound(t, &obj)
+	}
+}
+
+func GetCloudletNodeRefs(t *testing.T, ctx context.Context, api *CloudletNodeRefsCommonApi, key *edgeproto.CloudletKey, out *edgeproto.CloudletNodeRefs) bool {
+	var err error
+
+	show := ShowCloudletNodeRefs{}
+	show.Init()
+	filter := edgeproto.CloudletNodeRefs{}
+	filter.SetKey(key)
+	err = api.ShowCloudletNodeRefs(ctx, &filter, &show)
+	require.Nil(t, err, "show data")
+	obj, found := show.Data[key.GetKeyString()]
+	if found {
+		*out = obj
+	}
+	return found
+}
+
+func FindCloudletNodeRefsData(key *edgeproto.CloudletKey, testData []edgeproto.CloudletNodeRefs) (*edgeproto.CloudletNodeRefs, bool) {
+	for ii, _ := range testData {
+		if testData[ii].GetKey().Matches(key) {
+			return &testData[ii], true
+		}
+	}
+	return nil, false
+}
+
 func (r *Run) CloudletRefsApi(data *[]edgeproto.CloudletRefs, dataMap interface{}, dataOut interface{}) {
 	log.DebugLog(log.DebugLevelApi, "API for CloudletRefs", "mode", r.Mode)
 	if r.Mode == "show" {
@@ -777,6 +969,64 @@ func (s *DummyServer) ShowAppInstRefs(in *edgeproto.AppInstRefs, server edgeprot
 	return err
 }
 
+func (r *Run) CloudletNodeRefsApi(data *[]edgeproto.CloudletNodeRefs, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for CloudletNodeRefs", "mode", r.Mode)
+	if r.Mode == "show" {
+		obj := &edgeproto.CloudletNodeRefs{}
+		out, err := r.client.ShowCloudletNodeRefs(r.ctx, obj)
+		if err != nil {
+			r.logErr("CloudletNodeRefsApi", err)
+		} else {
+			outp, ok := dataOut.(*[]edgeproto.CloudletNodeRefs)
+			if !ok {
+				panic(fmt.Sprintf("RunCloudletNodeRefsApi expected dataOut type *[]edgeproto.CloudletNodeRefs, but was %T", dataOut))
+			}
+			*outp = append(*outp, out...)
+		}
+		return
+	}
+	for ii, objD := range *data {
+		obj := &objD
+		switch r.Mode {
+		case "showfiltered":
+			out, err := r.client.ShowCloudletNodeRefs(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("CloudletNodeRefsApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.CloudletNodeRefs)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletNodeRefsApi expected dataOut type *[]edgeproto.CloudletNodeRefs, but was %T", dataOut))
+				}
+				*outp = append(*outp, out...)
+			}
+		}
+	}
+}
+
+func (s *DummyServer) ShowCloudletNodeRefs(in *edgeproto.CloudletNodeRefs, server edgeproto.CloudletNodeRefsApi_ShowCloudletNodeRefsServer) error {
+	var err error
+	obj := &edgeproto.CloudletNodeRefs{}
+	if obj.Matches(in, edgeproto.MatchFilter()) {
+		for ii := 0; ii < s.ShowDummyCount; ii++ {
+			server.Send(&edgeproto.CloudletNodeRefs{})
+		}
+		if ch, ok := s.MidstreamFailChs["ShowCloudletNodeRefs"]; ok {
+			// Wait until client receives the SendMsg, since they
+			// are buffered and dropped once we return err here.
+			select {
+			case <-ch:
+			case <-time.After(5 * time.Second):
+			}
+			return fmt.Errorf("midstream failure!")
+		}
+	}
+	err = s.CloudletNodeRefsCache.Show(in, func(obj *edgeproto.CloudletNodeRefs) error {
+		err := server.Send(obj)
+		return err
+	})
+	return err
+}
+
 type CloudletRefsStream interface {
 	Recv() (*edgeproto.CloudletRefs, error)
 }
@@ -892,4 +1142,43 @@ func (s *CliClient) ShowAppInstRefs(ctx context.Context, in *edgeproto.AppInstRe
 
 type AppInstRefsApiClient interface {
 	ShowAppInstRefs(ctx context.Context, in *edgeproto.AppInstRefs) ([]edgeproto.AppInstRefs, error)
+}
+
+type CloudletNodeRefsStream interface {
+	Recv() (*edgeproto.CloudletNodeRefs, error)
+}
+
+func CloudletNodeRefsReadStream(stream CloudletNodeRefsStream) ([]edgeproto.CloudletNodeRefs, error) {
+	output := []edgeproto.CloudletNodeRefs{}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return output, fmt.Errorf("read CloudletNodeRefs stream failed, %v", err)
+		}
+		output = append(output, *obj)
+	}
+	return output, nil
+}
+
+func (s *ApiClient) ShowCloudletNodeRefs(ctx context.Context, in *edgeproto.CloudletNodeRefs) ([]edgeproto.CloudletNodeRefs, error) {
+	api := edgeproto.NewCloudletNodeRefsApiClient(s.Conn)
+	stream, err := api.ShowCloudletNodeRefs(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return CloudletNodeRefsReadStream(stream)
+}
+
+func (s *CliClient) ShowCloudletNodeRefs(ctx context.Context, in *edgeproto.CloudletNodeRefs) ([]edgeproto.CloudletNodeRefs, error) {
+	output := []edgeproto.CloudletNodeRefs{}
+	args := append(s.BaseArgs, "controller", "ShowCloudletNodeRefs")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
+type CloudletNodeRefsApiClient interface {
+	ShowCloudletNodeRefs(ctx context.Context, in *edgeproto.CloudletNodeRefs) ([]edgeproto.CloudletNodeRefs, error)
 }

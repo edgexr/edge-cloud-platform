@@ -23,6 +23,7 @@ import "cloudletkey.proto";
 import "cluster.proto";
 import "app.proto";
 import "appinst.proto";
+import "node.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -134,5 +135,25 @@ service AppInstRefsApi {
   // Show AppInstRefs (debug only)
   rpc ShowAppInstRefs(AppInstRefs) returns (stream AppInstRefs) {
     option (protogen.mc2_api) = "ResourceAppInsts,ActionView,Key.Organization";
+  }
+}
+
+// CloudletNodeRefs tracks which nodes are assigned to the cloudlet
+message CloudletNodeRefs {
+  // Cloudlet key
+  CloudletKey key = 1 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
+  // List of site nodes assigned to cloudlet
+  repeated NodeKey nodes = 2 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "Node"];
+  option (protogen.generate_matches) = true;
+  option (protogen.generate_cud) = true;
+  option (protogen.generate_cache) = true;
+  option (protogen.generate_show_test) = true;
+  option (protogen.uses_org) = "none";
+  option (protogen.tracks_refers_to) = true;
+}
+
+service CloudletNodeRefsApi {
+  rpc ShowCloudletNodeRefs(CloudletNodeRefs) returns (stream CloudletNodeRefs) {
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
   }
 }

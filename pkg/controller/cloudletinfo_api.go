@@ -91,6 +91,17 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 		log.SpanLog(ctx, log.DebugLevelNotify, "skipping due to info from standby CRM")
 		return
 	}
+	var features *edgeproto.PlatformFeatures
+	cloudlet := edgeproto.Cloudlet{}
+	if s.all.cloudletApi.cache.Get(&in.Key, &cloudlet) {
+		features, err = s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelApi, "unable to get features for cloudlet", "cloudlet", in.Key, "err", err)
+		}
+	} else {
+		log.SpanLog(ctx, log.DebugLevelNotify, "cloudlet not found, cannot determine features", "cloudlet", in.Key)
+	}
+
 	fmap := edgeproto.MakeFieldMap(in.Fields)
 
 	inCopy := *in // save Status to publish to Redis
@@ -127,6 +138,13 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 				in.Flavors = append(in.Flavors, flavor)
 			}
 		}
+		if features != nil && features.NodeUsage == edgeproto.NodeUsageUserDefined {
+			// user-defined site-node based cloudlet flavors are
+			// updated via the CCRM callback whenever a site node
+			// changes, not via info updates sent back from the
+			// platform code.
+			fmap.Clear(edgeproto.CloudletInfoFieldFlavors)
+		}
 
 		diffFields := info.GetDiffFields(in)
 		if diffFields.Count() > 0 {
@@ -144,14 +162,6 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 	// must be done after updating etcd, see AppInst UpdateFromInfo comment
 	s.all.streamObjApi.UpdateStatus(ctx, inCopy, nil, &in.State, in.Key.StreamKey())
 
-	cloudlet := edgeproto.Cloudlet{}
-	if !s.all.cloudletApi.cache.Get(&in.Key, &cloudlet) {
-		return
-	}
-	features, err := s.all.platformFeaturesApi.GetCloudletFeatures(ctx, cloudlet.PlatformType)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelApi, "unable to get features for cloudlet", "cloudlet", in.Key, "err", err)
-	}
 	if changedToOnline {
 		log.SpanLog(ctx, log.DebugLevelApi, "cloudlet online", "cloudlet", in.Key)
 		nodeMgr.Event(ctx, "Cloudlet online", in.Key.Organization, in.Key.GetTags(), nil, "state", in.State.String(), "version", in.ContainerVersion)
