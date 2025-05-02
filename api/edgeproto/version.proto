@@ -37,6 +37,7 @@ enum VersionHash {
   HASH_b25b4e18e9a1dadfd3006e23fabfbf95 = 58 [(protogen.upgrade_func) = "AppObjID"];
   HASH_abec45b13db5cd29e3bcf63d3b80be29 = 59;
   HASH_2d0b51b0cb6eaff42225cd1795e168e7 = 60;
+  HASH_686f58291a546684177e2c4452f74300 = 61;
   option (protogen.version_hash) = true;
   option (protogen.version_hash_salt) = "2";
 }

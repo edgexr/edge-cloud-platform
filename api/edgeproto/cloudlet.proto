@@ -207,6 +207,8 @@ message PlatformFeatures {
   bool uses_root_lb = 35;
   // Platform supports cloudlet managed clusters
   bool supports_cloudlet_managed_clusters = 36;
+  // Set if the platform uses nodes as its base resource
+  string node_usage = 37;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties
@@ -785,6 +787,14 @@ service CloudletApi {
     };
     option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
   }
+  // Get Cloudlet Node SSH Key for node-based cloudlets
+  rpc GetCloudletNodeSSHKey(CloudletKey) returns (Result) {
+    option (google.api.http) = {
+      post: "/get/cloudlet/nodesshkey"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Organization";
+  }
   // Get Cloudlet Properties. Shows all the infra properties used to setup cloudlet
   rpc GetCloudletProps(CloudletProps) returns (CloudletProps) {
     option (google.api.http) = {
@@ -959,6 +969,8 @@ message FlavorInfo {
   uint64 disk = 4;
   // GPUs for the infra flavor
   repeated GPUResource gpus = 6;
+  // Limit or quota on the number of this flavor that the platform provides
+  uint32 limit = 7;
   // Infra flavor Properties, if any
   map<string,string> prop_map = 5 [(protogen.backend) = true];
 }

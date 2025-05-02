@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -307,7 +308,7 @@ func (s *ClusterInstApi) GetRootLBFlavorInfo(ctx context.Context, stm *edgeproto
 	nodeResources := rootlbFlavor.ToNodeResources()
 	lbFlavor := &edgeproto.FlavorInfo{}
 	if rootlbFlavor != nil {
-		vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, nodeResources, "", *cloudlet, *cloudletInfo)
+		vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, nodeResources, "", *cloudlet, *cloudletInfo, features)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get infra flavor for root LB flavor %s: %v", rootlbFlavor.Key.Name, err)
 		}
@@ -385,11 +386,7 @@ func (s *CloudletResCalc) getCloudletUsedResources(ctx context.Context) (*Cloudl
 		// We are being conservative here. If clusterInst exists in DB, then we should
 		// assume it's taking up resources, or going to take up resources (CreateRequested),
 		// or may not actually be able to free up resources yet (DeleteRequested, etc)
-		isManagedK8s := false
-		if features.KubernetesRequiresWorkerNodes {
-			isManagedK8s = true
-		}
-		err := cloudletRes.AddClusterInstResources(ctx, &ci, lbFlavor, isManagedK8s)
+		err := cloudletRes.AddClusterInstResources(ctx, &ci, lbFlavor, features)
 		if err != nil {
 			return nil, err
 		}
@@ -863,7 +860,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 					}
 				}
 				log.SpanLog(ctx, log.DebugLevelApi, "lookup infra flavor for master nodes", "in.MasterNodeFlavor", in.MasterNodeFlavor, "settings.MasterNodeFlavor", settings.MasterNodeFlavor, "nodeResources", masterNodeResources)
-				vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, ostm, masterNodeResources, in.MasterNodeFlavor, cloudlet, info)
+				vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, ostm, masterNodeResources, in.MasterNodeFlavor, cloudlet, info, features)
 				if err != nil {
 					return fmt.Errorf("failed to get infra flavor for default master node resources %v, %s, please contact your administrator", masterNodeResources, err)
 				} else {
@@ -898,11 +895,16 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 				}
 			}
 			// make sure to do resource calculation under transactional STM
-			resCalc := NewCloudletResCalc(s.all, edgeproto.NewOptionalSTM(stm), &cloudlet.Key)
+			resCalc := NewCloudletResCalc(s.all, ostm, &cloudlet.Key)
 			resCalc.deps.cloudlet = &cloudlet
 			resCalc.deps.cloudletInfo = &info
 			resCalc.deps.cloudletRefs = &refs
 			resourceWarnings, err = resCalc.CloudletFitsCluster(ctx, in, nil)
+			if err != nil {
+				resourceFailure = true
+				return err
+			}
+			err = s.startAssignClusterNodes(ctx, cctx, stm, features, in, nil, cloudcommon.Create)
 			if err != nil {
 				resourceFailure = true
 				return err
@@ -1175,6 +1177,10 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 			resCalc := NewCloudletResCalc(s.all, edgeproto.NewOptionalSTM(stm), &cloudlet.Key)
 			resCalc.deps.cloudlet = &cloudlet
 			warnings, err := resCalc.CloudletFitsCluster(ctx, &inbuf, oldClusterInst)
+			if err != nil {
+				return err
+			}
+			err = s.startAssignClusterNodes(ctx, cctx, stm, features, &inbuf, oldClusterInst, cloudcommon.Create)
 			if err != nil {
 				return err
 			}
@@ -1452,6 +1458,7 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 
 	crmOnEdge := false
 	platformType := ""
+	var features *edgeproto.PlatformFeatures
 	err = s.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		if !s.store.STMGet(stm, &in.Key, in) {
 			return in.Key.NotFoundError()
@@ -1496,6 +1503,14 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 				}
 			}
 			s.all.cloudletRefsApi.store.STMPut(stm, &refs)
+		}
+		features, err = s.all.platformFeaturesApi.GetCloudletFeatures(ctx, platformType)
+		if err != nil {
+			return err
+		}
+		err = s.startAssignClusterNodes(ctx, cctx, stm, features, in, nil, cloudcommon.Delete)
+		if err != nil {
+			return err
 		}
 		if ignoreCRM(cctx) {
 			// CRM state should be the same as before the
@@ -1677,6 +1692,7 @@ func (s *ClusterInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.Clust
 					log.SpanLog(ctx, log.DebugLevelApi, "invalid state transition", "cur", inst.State, "next", in.State)
 					return nil
 				}
+				s.finishAssignClusterNodes(ctx, stm, &inst, in.State)
 			}
 			inst.State = in.State
 			if in.State == edgeproto.TrackedState_CREATE_ERROR || in.State == edgeproto.TrackedState_DELETE_ERROR || in.State == edgeproto.TrackedState_UPDATE_ERROR {
@@ -2168,7 +2184,7 @@ func (s *ClusterInstApi) updateRootLbFQDN(key *edgeproto.ClusterKey, cloudlet *e
 
 func (s *ClusterInstApi) setInfraFlavor(ctx context.Context, stm *edgeproto.OptionalSTM, cloudlet *edgeproto.Cloudlet, features *edgeproto.PlatformFeatures, info *edgeproto.CloudletInfo, res *edgeproto.NodeResources) (string, string, error) {
 	var az, optRes string
-	vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, res, res.InfraNodeFlavor, *cloudlet, *info)
+	vmspec, err := s.all.resTagTableApi.GetVMSpec(ctx, stm, res, res.InfraNodeFlavor, *cloudlet, *info, features)
 	if err != nil {
 		return az, optRes, err
 	}
@@ -2309,6 +2325,263 @@ func (s *ClusterInstApi) ShowClusterResourceUsage(in *edgeproto.ClusterInst, cb 
 		if err := cb.Send(usage); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// Assign nodes to cluster for user-defined node platform.
+// Ensures that nodes are available to be assigned to the cluster
+// for resource calculations.
+// Nodes are added in a transitional "Added" state, and only committed
+// to the "InUse" state after the infra platform code has successfully
+// created the cluster.
+func (s *ClusterInstApi) startAssignClusterNodes(ctx context.Context, cctx *CallContext, stm concurrency.STM, features *edgeproto.PlatformFeatures, ci, old *edgeproto.ClusterInst, action cloudcommon.Action) error {
+	if features.NodeUsage != edgeproto.NodeUsageUserDefined {
+		return nil
+	}
+	// refs tracks all nodes for the cloudlet
+	refs := edgeproto.CloudletNodeRefs{}
+	if !s.all.cloudletNodeRefsApi.store.STMGet(stm, &ci.CloudletKey, &refs) {
+		refs.Key = ci.CloudletKey
+	}
+	// find free nodes by flavor
+	freeNodesByFlavor := map[string][]*edgeproto.Node{}
+	for _, nodeKey := range refs.Nodes {
+		node := &edgeproto.Node{}
+		// use cache to avoid overloading STM
+		if !s.all.nodeApi.cache.Get(&nodeKey, node) {
+			log.SpanLog(ctx, log.DebugLevelApi, "assignK8SClusterNodes, no node found for ref", "ref", nodeKey)
+			continue
+		}
+		if err := checkNodeUsable(node); err != nil {
+			continue
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes, found free node", "node", node.Key, "flavor", node.FlavorName)
+		freeNodesByFlavor[node.FlavorName] = append(freeNodesByFlavor[node.FlavorName], node)
+	}
+	if ci.Deployment == cloudcommon.DeploymentTypeKubernetes || ci.Deployment == cloudcommon.DeploymentTypeHelm {
+		return s.startAssignK8SClusterNodes(ctx, cctx, stm, ci, old, freeNodesByFlavor, action)
+	} else if ci.Deployment == cloudcommon.DeploymentTypeDocker {
+		return s.startAssignDockerClusterNodes(ctx, cctx, stm, ci, freeNodesByFlavor, action)
+	} else {
+		return fmt.Errorf("unsupported deployment type %s for user defined nodes platform", ci.Deployment)
+	}
+}
+
+func freeNode(node *edgeproto.Node) {
+	node.Owner = nil
+	node.Assignment = edgeproto.NodeAssignmentFree
+	node.Role = ""
+	node.NodePool = ""
+}
+
+func checkNodeUsable(node *edgeproto.Node) error {
+	if node.Owner != nil {
+		return errors.New("owner set")
+	}
+	if node.Assignment != edgeproto.NodeAssignmentFree {
+		return fmt.Errorf("assignment is %s", node.Assignment)
+	}
+	if node.Health != edgeproto.NodeHealthOnline {
+		return fmt.Errorf("health is %s", node.Health)
+	}
+	return nil
+}
+
+func (s *ClusterInstApi) startAssignK8SClusterNodes(ctx context.Context, cctx *CallContext, stm concurrency.STM, ci, old *edgeproto.ClusterInst, freeNodesByFlavor map[string][]*edgeproto.Node, action cloudcommon.Action) error {
+	oldClusterPools := map[string]*edgeproto.NodePool{}
+	if old != nil {
+		for _, pool := range old.NodePools {
+			oldClusterPools[pool.Name] = pool
+		}
+	}
+	hasControlPlane := false
+	for _, pool := range ci.NodePools {
+		if pool.ControlPlane {
+			hasControlPlane = true
+		}
+		numNodesDelta := int(pool.NumNodes)
+		if action == cloudcommon.Delete { // clear all pools if delete
+			numNodesDelta = -numNodesDelta
+		} else {
+			oldPool := oldClusterPools[pool.Name]
+			if oldPool != nil {
+				numNodesDelta -= int(oldPool.NumNodes)
+			}
+		}
+		log.SpanLog(ctx, log.DebugLevelApi, "startAssignK8SClusterNodes pool", "cluster", ci.Key, "pool", pool.Name, "numNodesDelta", numNodesDelta)
+		if numNodesDelta < 0 {
+			// remove nodes
+			for ii := len(pool.Nodes) - 1; ii > int(pool.NumNodes); ii-- {
+				node := edgeproto.Node{}
+				nodeKey := edgeproto.NodeKey{
+					Name:         pool.Nodes[ii],
+					Organization: ci.CloudletKey.Organization,
+				}
+				if !s.all.nodeApi.store.STMGet(stm, &nodeKey, &node) {
+					// not found, but we're removing it so it's ok
+					log.SpanLog(ctx, log.DebugLevelApi, "removing node from cluster but not found", "cluster", ci.Key, "pool", pool.Name, "node", nodeKey)
+					continue
+				}
+				log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes removing node", "cluster", ci.Key, "pool", pool.Name, "node", node.Key)
+				if ignoreCRM(cctx) {
+					freeNode(&node)
+				} else {
+					node.Assignment = edgeproto.NodeAssignmentRemoving
+				}
+				s.all.nodeApi.store.STMPut(stm, &node)
+			}
+		} else if numNodesDelta > 0 {
+			// add nodes
+			freeNodes, ok := freeNodesByFlavor[pool.NodeResources.InfraNodeFlavor]
+			if !ok {
+				return fmt.Errorf("no nodes found for flavor %s for clusterinst %s pool %s", pool.NodeResources.InfraNodeFlavor, ci.Key.Name, pool.Name)
+			}
+			// sort for determinism, so we always select the same nodes
+			slices.SortFunc(freeNodes, func(a, b *edgeproto.Node) int {
+				return strings.Compare(a.Key.Name, b.Key.Name)
+			})
+			assigned := 0
+			for _, freeNode := range freeNodes {
+				if assigned >= numNodesDelta {
+					break
+				}
+				// use STM to look it up
+				node := edgeproto.Node{}
+				if !s.all.nodeApi.store.STMGet(stm, &freeNode.Key, &node) {
+					// not found, may have been deleted
+					log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes node not found, may have been deleted", "cluster", ci.Key, "pool", pool.Name, "node", freeNode.Key)
+					continue
+				}
+				if err := checkNodeUsable(&node); err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes node not usable", "cluster", ci.Key, "pool", pool.Name, "node", freeNode.Key, "err", err)
+				}
+				log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes adding node", "cluster", ci.Key, "pool", pool.Name, "node", freeNode.Key)
+				if pool.ControlPlane {
+					node.Role = cloudcommon.NodeRoleK8SControl
+				} else {
+					node.Role = cloudcommon.NodeRoleK8SWorker
+				}
+				if ignoreCRM(cctx) {
+					node.Assignment = edgeproto.NodeAssignmentInUse
+				} else {
+					node.Assignment = edgeproto.NodeAssignmentAdding
+				}
+				node.Owner = &ci.Key
+				node.NodePool = pool.Name
+				s.all.nodeApi.store.STMPut(stm, &node)
+				pool.Nodes = append(pool.Nodes, freeNode.Key.Name)
+				assigned++
+			}
+			if assigned < numNodesDelta {
+				return fmt.Errorf("not enough nodes found for flavor %s for clusterinst %s pool %s", pool.NodeResources.InfraNodeFlavor, ci.Key.Name, pool.Name)
+			}
+		}
+	}
+	if !hasControlPlane {
+		return fmt.Errorf("kubernetes cluster %s must have one node pool which is marked as the control plane", ci.Key.Name)
+	}
+	return nil
+}
+
+func (s *ClusterInstApi) startAssignDockerClusterNodes(ctx context.Context, cctx *CallContext, stm concurrency.STM, ci *edgeproto.ClusterInst, freeNodesByFlavor map[string][]*edgeproto.Node, action cloudcommon.Action) error {
+	if action == cloudcommon.Create {
+		if ci.NodeResources == nil {
+			return fmt.Errorf("clusterinst %s has no node resources", ci.Key.Name)
+		}
+		freeNodes, ok := freeNodesByFlavor[ci.NodeResources.InfraNodeFlavor]
+		if !ok {
+			return fmt.Errorf("no nodes found for %s for clusterinst %s", ci.NodeResources.InfraNodeFlavor, ci.Key.Name)
+		}
+		// sort for determinism, so we always select the same nodes
+		slices.SortFunc(freeNodes, func(a, b *edgeproto.Node) int {
+			return strings.Compare(a.Key.Name, b.Key.Name)
+		})
+		for _, freeNode := range freeNodes {
+			// use STM to look it up
+			node := edgeproto.Node{}
+			if !s.all.nodeApi.store.STMGet(stm, &freeNode.Key, &node) {
+				// not found, may have been deleted
+				log.SpanLog(ctx, log.DebugLevelApi, "assignDockerClusterNodes node not found, may have been deleted", "cluster", ci.Key, "node", freeNode.Key)
+				continue
+			}
+			if err := checkNodeUsable(&node); err != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "assignDockerClusterNodes node not usable", "cluster", ci.Key, "node", freeNode.Key, "err", err)
+				continue
+			}
+			log.SpanLog(ctx, log.DebugLevelApi, "assignDockerClusterNodes adding node", "cluster", ci.Key, "node", freeNode.Key)
+			if ignoreCRM(cctx) {
+				node.Assignment = edgeproto.NodeAssignmentInUse
+			} else {
+				node.Assignment = edgeproto.NodeAssignmentAdding
+			}
+			node.Owner = &ci.Key
+			node.Role = cloudcommon.NodeRoleDocker
+			node.NodePool = ""
+			s.all.nodeApi.store.STMPut(stm, &node)
+			ci.NodeResources.NodeName = node.Key.Name
+			return nil
+		}
+		return fmt.Errorf("no nodes avaialable for size %s", ci.NodeResources.InfraNodeFlavor)
+	} else if action == cloudcommon.Delete {
+		node := edgeproto.Node{
+			Key: edgeproto.NodeKey{
+				Name:         ci.NodeResources.NodeName,
+				Organization: ci.CloudletKey.Organization,
+			},
+		}
+		if !s.all.nodeApi.store.STMGet(stm, &node.Key, &node) {
+			return nil
+		}
+		if ignoreCRM(cctx) {
+			freeNode(&node)
+		} else {
+			node.Assignment = edgeproto.NodeAssignmentRemoving
+		}
+		s.all.nodeApi.store.STMPut(stm, &node)
+	}
+	return nil
+}
+
+func (s *ClusterInstApi) finishAssignClusterNodes(ctx context.Context, stm concurrency.STM, ci *edgeproto.ClusterInst, state edgeproto.TrackedState) error {
+	finishNode := func(name string) string {
+		key := edgeproto.NodeKey{
+			Name:         name,
+			Organization: ci.CloudletKey.Organization,
+		}
+		node := edgeproto.Node{}
+		if !s.all.nodeApi.store.STMGet(stm, &key, &node) {
+			log.SpanLog(ctx, log.DebugLevelApi, "finishAssignClusterNodes node not found for cluster", "cluster", ci.Key, "cloudlet", ci.CloudletKey, "node", name)
+		}
+		changed := false
+		if state == edgeproto.TrackedState_DELETE_DONE || node.Assignment == edgeproto.NodeAssignmentRemoving {
+			freeNode(&node)
+			changed = true
+		} else if node.Assignment == edgeproto.NodeAssignmentAdding {
+			node.Assignment = edgeproto.NodeAssignmentInUse
+			changed = true
+		}
+		if changed {
+			log.SpanLog(ctx, log.DebugLevelApi, "finishAssignClusterNodes node updated", "node", key, "assignment", node.Assignment)
+			s.all.nodeApi.store.STMPut(stm, &node)
+		}
+		return node.Assignment
+	}
+	clusterChanged := false
+	for _, pool := range ci.NodePools {
+		for ii := len(pool.Nodes) - 1; ii >= 0; ii-- {
+			assignment := finishNode(pool.Nodes[ii])
+			if assignment == edgeproto.NodeAssignmentFree {
+				pool.Nodes = slices.Delete(pool.Nodes, ii, ii+1)
+				clusterChanged = true
+			}
+		}
+	}
+	if ci.NodeResources != nil && ci.NodeResources.NodeName != "" {
+		finishNode(ci.NodeResources.NodeName)
+	}
+	if clusterChanged {
+		s.all.clusterInstApi.store.STMPut(stm, ci)
 	}
 	return nil
 }

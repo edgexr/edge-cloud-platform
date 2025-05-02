@@ -149,3 +149,46 @@ func (s *AppInstRefsStoreTracker) STMPut(stm concurrency.STM, obj *edgeproto.App
 		s.putSTM = stm
 	}
 }
+
+// CloudletNodeRefsStoreTracker wraps around the usual
+// store to track the STM used for gets/puts.
+type CloudletNodeRefsStoreTracker struct {
+	edgeproto.CloudletNodeRefsStore
+	getSTM concurrency.STM
+	putSTM concurrency.STM
+}
+
+// Wrap the Api's store with a tracker store.
+// Returns the tracker store, and the unwrap function to defer.
+func wrapCloudletNodeRefsTrackerStore(api *CloudletNodeRefsApi) (*CloudletNodeRefsStoreTracker, func()) {
+	orig := api.store
+	tracker := &CloudletNodeRefsStoreTracker{
+		CloudletNodeRefsStore: api.store,
+	}
+	api.store = tracker
+	if api.cache.Store != nil {
+		api.cache.Store = tracker
+	}
+	unwrap := func() {
+		api.store = orig
+		if api.cache.Store != nil {
+			api.cache.Store = orig
+		}
+	}
+	return tracker, unwrap
+}
+
+func (s *CloudletNodeRefsStoreTracker) STMGet(stm concurrency.STM, key *edgeproto.CloudletKey, buf *edgeproto.CloudletNodeRefs) bool {
+	found := s.CloudletNodeRefsStore.STMGet(stm, key, buf)
+	if s.getSTM == nil {
+		s.getSTM = stm
+	}
+	return found
+}
+
+func (s *CloudletNodeRefsStoreTracker) STMPut(stm concurrency.STM, obj *edgeproto.CloudletNodeRefs, ops ...objstore.KVOp) {
+	s.CloudletNodeRefsStore.STMPut(stm, obj, ops...)
+	if s.putSTM == nil {
+		s.putSTM = stm
+	}
+}

@@ -16,7 +16,11 @@ package controller
 
 import (
 	"context"
+	"crypto"
+	"crypto/rand"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -28,6 +32,7 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/accessvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/ccrmdummy"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
@@ -43,6 +48,7 @@ import (
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/require"
 	"go.etcd.io/etcd/client/v3/concurrency"
+	"golang.org/x/crypto/ssh"
 	"google.golang.org/grpc"
 )
 
@@ -1348,4 +1354,109 @@ func testCloudletManagedClusters(t *testing.T, ctx context.Context, apis *AllApi
 		found = apis.clusterInstApi.cache.Get(&cmc.ClusterKey, &ci)
 		require.False(t, found)
 	}
+}
+
+func TestVaultDeps(t *testing.T) {
+	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify | log.DebugLevelEvents)
+	log.InitTracer(nil)
+	defer log.FinishTracer()
+	ctx := log.StartTestSpan(context.Background())
+
+	testSvcs := testinit(ctx, t)
+	defer testfinish(testSvcs)
+
+	dummy := regiondata.InMemoryStore{}
+	dummy.Start()
+	defer dummy.Stop()
+
+	sync := regiondata.InitSync(&dummy)
+	apis := NewAllApis(sync)
+	sync.Start()
+	defer sync.Done()
+	responder := DefaultDummyInfoResponder(apis)
+	responder.InitDummyInfoResponder()
+
+	reduceInfoTimeouts(t, ctx, apis)
+
+	region := "local"
+	vp := process.Vault{
+		Common: process.Common{
+			Name: "vault",
+		},
+		Regions:    region,
+		ListenAddr: "TestVaultDeps",
+		PKIDomain:  "edgecloud.net",
+	}
+	_, vroles, vaultCleanup := testutil.NewVaultTestCluster(t, &vp)
+	defer vaultCleanup()
+	vaultConfig := vault.NewAppRoleConfig(vp.ListenAddr, vroles.RegionRoles[region].CtrlRoleID, vroles.RegionRoles[region].CtrlSecretID)
+
+	nodeMgr = svcnode.SvcNodeMgr{
+		VaultAddr:   vault.UnitTestIgnoreVaultAddr,
+		VaultConfig: vaultConfig,
+	}
+
+	ccrm := ccrmdummy.StartDummyCCRM(ctx, nodeMgr.VaultConfig, &dummy)
+	registerDummyCCRMConn(t, ccrm)
+	defer ccrm.Stop()
+
+	// create support data
+	testutil.InternalFlavorCreate(t, apis.flavorApi, testutil.FlavorData())
+	testutil.InternalGPUDriverTest(t, "cud", apis.gpuDriverApi, testutil.GPUDriverData())
+	testutil.InternalResTagTableCreate(t, apis.resTagTableApi, testutil.ResTagTableData())
+	testutil.InternalZoneCreate(t, apis.zoneApi, testutil.ZoneData())
+
+	testCloudletNodeSSHKey(t, ctx, apis, nodeMgr.VaultConfig)
+}
+
+func testCloudletNodeSSHKey(t *testing.T, ctx context.Context, apis *AllApis, vaultConfig *vault.Config) {
+	cloudlet := &testutil.CloudletData()[0]
+	cloudlet.Key.Name = "node-ssh-key-test"
+	cloudlet.PlatformType = "fakenodes"
+
+	features := testutil.PlatformFeaturesData()[0]
+	features.PlatformType = "fakenodes"
+	features.NodeUsage = edgeproto.NodeUsageUserDefined
+	apis.platformFeaturesApi.Update(ctx, &features, 0)
+	defer func() {
+		apis.platformFeaturesApi.Delete(ctx, &features, 0)
+	}()
+
+	// create cloudlet
+	err := apis.cloudletApi.CreateCloudlet(cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	defer func() {
+		err = apis.cloudletApi.DeleteCloudlet(cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+		require.Nil(t, err)
+	}()
+
+	// check that ssh key was created
+	keys, err := accessvars.GetCloudletNodeSSHKey(ctx, *region, &cloudlet.Key, vaultConfig)
+	require.Nil(t, err)
+
+	// Check that we can sign and verify using the key pair
+	pubKey, _, _, _, err := ssh.ParseAuthorizedKey(keys.PublicRawKey)
+	require.Nil(t, err)
+	privBlock, _ := pem.Decode(keys.PrivateRawKey)
+	require.NotNil(t, privBlock)
+	var privKey any
+	if privBlock.Type == "RSA PRIVATE KEY" {
+		privKey, err = x509.ParsePKCS1PrivateKey(privBlock.Bytes)
+	} else if privBlock.Type == "PRIVATE KEY" {
+		privKey, err = x509.ParsePKCS8PrivateKey(privBlock.Bytes)
+	} else {
+		require.Fail(t, "unknown private key type %s", privBlock.Type)
+	}
+	require.Nil(t, err)
+	cryptoSigner, ok := privKey.(crypto.Signer)
+	require.True(t, ok)
+	signer, err := ssh.NewSignerFromSigner(cryptoSigner)
+	require.Nil(t, err)
+
+	// sign and verify
+	data := []byte("some data")
+	signature, err := signer.Sign(rand.Reader, data)
+	require.Nil(t, err)
+	pubKey.Verify(data, signature)
+	require.Nil(t, err)
 }

@@ -2984,6 +2984,7 @@ const AppFieldNodeResourcesGpusCount = "51.7.2"
 const AppFieldNodeResourcesGpusVendor = "51.7.3"
 const AppFieldNodeResourcesGpusMemory = "51.7.4"
 const AppFieldNodeResourcesGpusInUse = "51.7.5"
+const AppFieldNodeResourcesNodeName = "51.8"
 const AppFieldObjId = "52"
 const AppFieldAppAnnotations = "53"
 const AppFieldAppAnnotationsKey = "53.1"
@@ -3110,6 +3111,7 @@ var AppAllFields = []string{
 	AppFieldNodeResourcesGpusVendor,
 	AppFieldNodeResourcesGpusMemory,
 	AppFieldNodeResourcesGpusInUse,
+	AppFieldNodeResourcesNodeName,
 	AppFieldObjId,
 	AppFieldAppAnnotationsKey,
 	AppFieldAppAnnotationsValue,
@@ -3235,6 +3237,7 @@ var AppAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AppFieldNodeResourcesGpusVendor:                              struct{}{},
 	AppFieldNodeResourcesGpusMemory:                              struct{}{},
 	AppFieldNodeResourcesGpusInUse:                               struct{}{},
+	AppFieldNodeResourcesNodeName:                                struct{}{},
 	AppFieldObjId:                                                struct{}{},
 	AppFieldAppAnnotationsKey:                                    struct{}{},
 	AppFieldAppAnnotationsValue:                                  struct{}{},
@@ -3360,6 +3363,7 @@ var AppAllFieldsStringMap = map[string]string{
 	AppFieldNodeResourcesGpusVendor:                              "Node Resources Gpus Vendor",
 	AppFieldNodeResourcesGpusMemory:                              "Node Resources Gpus Memory",
 	AppFieldNodeResourcesGpusInUse:                               "Node Resources Gpus In Use",
+	AppFieldNodeResourcesNodeName:                                "Node Resources Node Name",
 	AppFieldObjId:                                                "Obj Id",
 	AppFieldAppAnnotationsKey:                                    "App Annotations Key",
 	AppFieldAppAnnotationsValue:                                  "App Annotations Value",
@@ -4138,6 +4142,10 @@ func (m *App) DiffFields(o *App, fields *FieldMap) {
 			fields.Set(AppFieldNodeResourcesGpus)
 			fields.Set(AppFieldNodeResources)
 		}
+		if m.NodeResources.NodeName != o.NodeResources.NodeName {
+			fields.Set(AppFieldNodeResourcesNodeName)
+			fields.Set(AppFieldNodeResources)
+		}
 	} else if (m.NodeResources != nil && o.NodeResources == nil) || (m.NodeResources == nil && o.NodeResources != nil) {
 		fields.Set(AppFieldNodeResources)
 	}
@@ -4330,6 +4338,7 @@ var UpdateAppFieldsMap = NewFieldMap(map[string]struct{}{
 	AppFieldNodeResourcesGpusVendor:                              struct{}{},
 	AppFieldNodeResourcesGpusMemory:                              struct{}{},
 	AppFieldNodeResourcesGpusInUse:                               struct{}{},
+	AppFieldNodeResourcesNodeName:                                struct{}{},
 	AppFieldObjId:                                                struct{}{},
 	AppFieldAppAnnotations:                                       struct{}{},
 	AppFieldAppAnnotationsKey:                                    struct{}{},
@@ -5490,6 +5499,12 @@ func (m *App) CopyInFields(src *App) int {
 					}
 				} else if m.NodeResources.Gpus != nil {
 					m.NodeResources.Gpus = nil
+					changed++
+				}
+			}
+			if fmap.Has("51.8") {
+				if m.NodeResources.NodeName != src.NodeResources.NodeName {
+					m.NodeResources.NodeName = src.NodeResources.NodeName
 					changed++
 				}
 			}
@@ -7740,6 +7755,10 @@ func (m *DeploymentZoneRequest) CopyInFields(src *DeploymentZoneRequest) int {
 				}
 			} else if m.App.NodeResources.Gpus != nil {
 				m.App.NodeResources.Gpus = nil
+				changed++
+			}
+			if m.App.NodeResources.NodeName != src.App.NodeResources.NodeName {
+				m.App.NodeResources.NodeName = src.App.NodeResources.NodeName
 				changed++
 			}
 		} else if m.App.NodeResources != nil {

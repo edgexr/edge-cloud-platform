@@ -32,6 +32,7 @@ type AllDataOut struct {
 	Cloudlets                  [][]edgeproto.Result
 	CloudletInfos              []edgeproto.Result
 	ZonePools                  []edgeproto.Result
+	Nodes                      []edgeproto.Result
 	Networks                   [][]edgeproto.Result
 	AutoProvPolicies           []edgeproto.Result
 	AutoProvPolicyZones        []edgeproto.Result
@@ -77,6 +78,8 @@ func RunAllDataApis(run *Run, in *edgeproto.AllData, inMap map[string]interface{
 	apicb("cloudletinfos")
 	run.ZonePoolApi(&in.ZonePools, inMap["zonepools"], &out.ZonePools)
 	apicb("zonepools")
+	run.NodeApi(&in.Nodes, inMap["nodes"], &out.Nodes)
+	apicb("nodes")
 	run.NetworkApi(&in.Networks, inMap["networks"], &out.Networks)
 	apicb("networks")
 	run.AutoProvPolicyApi(&in.AutoProvPolicies, inMap["autoprovpolicies"], &out.AutoProvPolicies)
@@ -133,6 +136,8 @@ func RunAllDataReverseApis(run *Run, in *edgeproto.AllData, inMap map[string]int
 	run.AutoProvPolicyApi(&in.AutoProvPolicies, inMap["autoprovpolicies"], &out.AutoProvPolicies)
 	apicb("networks")
 	run.NetworkApi(&in.Networks, inMap["networks"], &out.Networks)
+	apicb("nodes")
+	run.NodeApi(&in.Nodes, inMap["nodes"], &out.Nodes)
 	apicb("zonepools")
 	run.ZonePoolApi(&in.ZonePools, inMap["zonepools"], &out.ZonePools)
 	apicb("cloudletinfos")
@@ -193,6 +198,12 @@ func RunAllDataShowApis(run *Run, in *edgeproto.AllData, selector edgeproto.AllS
 	if selector.Has("zonepools") {
 		run.ZonePoolApi(&in.ZonePools, nil, &out.ZonePools)
 	}
+	if selector.Has("nodes") {
+		run.NodeApi(&in.Nodes, nil, &out.Nodes)
+	}
+	if selector.Has("cloudletnoderefs") {
+		run.CloudletNodeRefsApi(&in.CloudletNodeRefs, nil, &out.CloudletNodeRefs)
+	}
 	if selector.Has("networks") {
 		run.NetworkApi(&in.Networks, nil, &out.Networks)
 	}
@@ -244,6 +255,7 @@ func DeleteAllAllDataInternal(t *testing.T, ctx context.Context, apis InternalCU
 	InternalAutoScalePolicyDeleteAll(t, ctx, apis.GetAutoScalePolicyApi(), in.AutoScalePolicies)
 	InternalAutoProvPolicyDeleteAll(t, ctx, apis.GetAutoProvPolicyApi(), in.AutoProvPolicies)
 	InternalNetworkDeleteAll(t, ctx, apis.GetNetworkApi(), in.Networks)
+	InternalNodeDeleteAll(t, ctx, apis.GetNodeApi(), in.Nodes)
 	InternalZonePoolDeleteAll(t, ctx, apis.GetZonePoolApi(), in.ZonePools)
 	InternalCloudletDeleteAll(t, ctx, apis.GetCloudletApi(), in.Cloudlets)
 	InternalZoneDeleteAll(t, ctx, apis.GetZoneApi(), in.Zones)

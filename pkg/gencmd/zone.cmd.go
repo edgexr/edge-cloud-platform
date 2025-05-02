@@ -402,6 +402,7 @@ var ZoneOptionalArgs = []string{
 	"infraflavors:#.gpus:#.vendor",
 	"infraflavors:#.gpus:#.memory",
 	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.limit",
 	"infraflavors:#.propmap",
 	"objid",
 }
@@ -426,6 +427,7 @@ var ZoneComments = map[string]string{
 	"infraflavors:#.gpus:#.vendor":  "GPU vendor (nvidia, amd, etc)",
 	"infraflavors:#.gpus:#.memory":  "Memory in GB",
 	"infraflavors:#.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
+	"infraflavors:#.limit":          "Limit or quota on the number of this flavor that the platform provides",
 	"infraflavors:#.propmap":        "Infra flavor Properties, if any, specify infraflavors:#.propmap:empty=true to clear",
 	"location.latitude":             "Latitude in WGS 84 coordinates",
 	"location.longitude":            "Longitude in WGS 84 coordinates",

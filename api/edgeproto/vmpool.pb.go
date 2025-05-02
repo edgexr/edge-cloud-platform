@@ -1500,6 +1500,10 @@ func (m *VM) CopyInFields(src *VM) int {
 			m.Flavor.Gpus = nil
 			changed++
 		}
+		if m.Flavor.Limit != src.Flavor.Limit {
+			m.Flavor.Limit = src.Flavor.Limit
+			changed++
+		}
 	} else if m.Flavor != nil {
 		m.Flavor = nil
 		changed++
@@ -1755,6 +1759,7 @@ const VMPoolFieldVmsFlavorGpusCount = "3.7.6.2"
 const VMPoolFieldVmsFlavorGpusVendor = "3.7.6.3"
 const VMPoolFieldVmsFlavorGpusMemory = "3.7.6.4"
 const VMPoolFieldVmsFlavorGpusInUse = "3.7.6.5"
+const VMPoolFieldVmsFlavorLimit = "3.7.7"
 const VMPoolFieldState = "4"
 const VMPoolFieldErrors = "5"
 const VMPoolFieldCrmOverride = "7"
@@ -1782,6 +1787,7 @@ var VMPoolAllFields = []string{
 	VMPoolFieldVmsFlavorGpusVendor,
 	VMPoolFieldVmsFlavorGpusMemory,
 	VMPoolFieldVmsFlavorGpusInUse,
+	VMPoolFieldVmsFlavorLimit,
 	VMPoolFieldState,
 	VMPoolFieldErrors,
 	VMPoolFieldCrmOverride,
@@ -1810,6 +1816,7 @@ var VMPoolAllFieldsMap = NewFieldMap(map[string]struct{}{
 	VMPoolFieldVmsFlavorGpusVendor:   struct{}{},
 	VMPoolFieldVmsFlavorGpusMemory:   struct{}{},
 	VMPoolFieldVmsFlavorGpusInUse:    struct{}{},
+	VMPoolFieldVmsFlavorLimit:        struct{}{},
 	VMPoolFieldState:                 struct{}{},
 	VMPoolFieldErrors:                struct{}{},
 	VMPoolFieldCrmOverride:           struct{}{},
@@ -1838,6 +1845,7 @@ var VMPoolAllFieldsStringMap = map[string]string{
 	VMPoolFieldVmsFlavorGpusVendor:   "Vms Flavor Gpus Vendor",
 	VMPoolFieldVmsFlavorGpusMemory:   "Vms Flavor Gpus Memory",
 	VMPoolFieldVmsFlavorGpusInUse:    "Vms Flavor Gpus In Use",
+	VMPoolFieldVmsFlavorLimit:        "Vms Flavor Limit",
 	VMPoolFieldState:                 "State",
 	VMPoolFieldErrors:                "Errors",
 	VMPoolFieldCrmOverride:           "Crm Override",
@@ -1989,6 +1997,11 @@ func (m *VMPool) DiffFields(o *VMPool, fields *FieldMap) {
 					fields.Set(VMPoolFieldVmsFlavor)
 					fields.Set(VMPoolFieldVms)
 				}
+				if m.Vms[i0].Flavor.Limit != o.Vms[i0].Flavor.Limit {
+					fields.Set(VMPoolFieldVmsFlavorLimit)
+					fields.Set(VMPoolFieldVmsFlavor)
+					fields.Set(VMPoolFieldVms)
+				}
 			} else if (m.Vms[i0].Flavor != nil && o.Vms[i0].Flavor == nil) || (m.Vms[i0].Flavor == nil && o.Vms[i0].Flavor != nil) {
 				fields.Set(VMPoolFieldVmsFlavor)
 				fields.Set(VMPoolFieldVms)
@@ -2048,6 +2061,7 @@ var UpdateVMPoolFieldsMap = NewFieldMap(map[string]struct{}{
 	VMPoolFieldVmsFlavorGpusVendor:   struct{}{},
 	VMPoolFieldVmsFlavorGpusMemory:   struct{}{},
 	VMPoolFieldVmsFlavorGpusInUse:    struct{}{},
+	VMPoolFieldVmsFlavorLimit:        struct{}{},
 	VMPoolFieldCrmOverride:           struct{}{},
 	VMPoolFieldDeletePrepare:         struct{}{},
 })
@@ -3092,6 +3106,10 @@ func (m *VMPoolMember) CopyInFields(src *VMPoolMember) int {
 			m.Vm.Flavor.Gpus = nil
 			changed++
 		}
+		if m.Vm.Flavor.Limit != src.Vm.Flavor.Limit {
+			m.Vm.Flavor.Limit = src.Vm.Flavor.Limit
+			changed++
+		}
 	} else if m.Vm.Flavor != nil {
 		m.Vm.Flavor = nil
 		changed++
@@ -3384,6 +3402,7 @@ const VMPoolInfoFieldVmsFlavorGpusCount = "4.7.6.2"
 const VMPoolInfoFieldVmsFlavorGpusVendor = "4.7.6.3"
 const VMPoolInfoFieldVmsFlavorGpusMemory = "4.7.6.4"
 const VMPoolInfoFieldVmsFlavorGpusInUse = "4.7.6.5"
+const VMPoolInfoFieldVmsFlavorLimit = "4.7.7"
 const VMPoolInfoFieldState = "5"
 const VMPoolInfoFieldErrors = "6"
 const VMPoolInfoFieldStatus = "7"
@@ -3417,6 +3436,7 @@ var VMPoolInfoAllFields = []string{
 	VMPoolInfoFieldVmsFlavorGpusVendor,
 	VMPoolInfoFieldVmsFlavorGpusMemory,
 	VMPoolInfoFieldVmsFlavorGpusInUse,
+	VMPoolInfoFieldVmsFlavorLimit,
 	VMPoolInfoFieldState,
 	VMPoolInfoFieldErrors,
 	VMPoolInfoFieldStatusTaskNumber,
@@ -3450,6 +3470,7 @@ var VMPoolInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
 	VMPoolInfoFieldVmsFlavorGpusVendor:   struct{}{},
 	VMPoolInfoFieldVmsFlavorGpusMemory:   struct{}{},
 	VMPoolInfoFieldVmsFlavorGpusInUse:    struct{}{},
+	VMPoolInfoFieldVmsFlavorLimit:        struct{}{},
 	VMPoolInfoFieldState:                 struct{}{},
 	VMPoolInfoFieldErrors:                struct{}{},
 	VMPoolInfoFieldStatusTaskNumber:      struct{}{},
@@ -3483,6 +3504,7 @@ var VMPoolInfoAllFieldsStringMap = map[string]string{
 	VMPoolInfoFieldVmsFlavorGpusVendor:   "Vms Flavor Gpus Vendor",
 	VMPoolInfoFieldVmsFlavorGpusMemory:   "Vms Flavor Gpus Memory",
 	VMPoolInfoFieldVmsFlavorGpusInUse:    "Vms Flavor Gpus In Use",
+	VMPoolInfoFieldVmsFlavorLimit:        "Vms Flavor Limit",
 	VMPoolInfoFieldState:                 "State",
 	VMPoolInfoFieldErrors:                "Errors",
 	VMPoolInfoFieldStatusTaskNumber:      "Status Task Number",
@@ -3638,6 +3660,11 @@ func (m *VMPoolInfo) DiffFields(o *VMPoolInfo, fields *FieldMap) {
 					}
 				} else if (m.Vms[i0].Flavor.Gpus != nil && o.Vms[i0].Flavor.Gpus == nil) || (m.Vms[i0].Flavor.Gpus == nil && o.Vms[i0].Flavor.Gpus != nil) {
 					fields.Set(VMPoolInfoFieldVmsFlavorGpus)
+					fields.Set(VMPoolInfoFieldVmsFlavor)
+					fields.Set(VMPoolInfoFieldVms)
+				}
+				if m.Vms[i0].Flavor.Limit != o.Vms[i0].Flavor.Limit {
+					fields.Set(VMPoolInfoFieldVmsFlavorLimit)
 					fields.Set(VMPoolInfoFieldVmsFlavor)
 					fields.Set(VMPoolInfoFieldVms)
 				}

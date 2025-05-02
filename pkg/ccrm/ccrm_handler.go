@@ -122,11 +122,13 @@ func (s *CCRMHandler) InitConnectivity(client *notify.Client, kvstore objstore.K
 	s.crmHandler.GPUDriverCache.InitSync(sync)
 	s.crmHandler.AlertPolicyCache.InitSync(sync)
 	s.crmHandler.NetworkCache.InitSync(sync)
+	s.crmHandler.NodeCache.InitSync(sync)
 	s.caches.PlatformFeaturesCache.InitSync(sync)
 	s.caches.CloudletNodeCache.InitSync(sync)
 	s.caches.CloudletInfoCache.InitSync(sync)
 	s.caches.ClusterInstInfoCache.InitSync(sync)
 	s.caches.AppInstInfoCache.InitSync(sync)
+	s.caches.CloudletNodeRefsCache.InitSync(sync)
 	nodeMgr.CloudletLookup.GetCloudletCache(nodeMgr.Region).InitSync(sync)
 	nodeMgr.ZonePoolLookup.GetZonePoolCache(nodeMgr.Region).InitSync(sync)
 

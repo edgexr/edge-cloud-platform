@@ -868,9 +868,9 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		clusterInst.NodePools[0].NumNodes = 2
 		clusterInst.NodePools[0].NodeResources.InfraNodeFlavor = "flavor.large"
 		clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_DEDICATED
-		isManagedK8s := false // Master nodes & RootLB should be counted
+		features := edgeproto.PlatformFeatures{} // Master nodes & RootLB should be counted
 		ciResources := NewCloudletResources()
-		ciResources.AddClusterInstResources(ctx, &clusterInst, lbFlavor, isManagedK8s)
+		ciResources.AddClusterInstResources(ctx, &clusterInst, lbFlavor, &features)
 		// number of vm resources = num_nodes + num_masters + num_of_rootLBs
 		require.Equal(t, 5, ciResources.numVms, "matches number of vm resources")
 		numNodes := 0
@@ -892,10 +892,10 @@ func testClusterInstResourceUsage(t *testing.T, ctx context.Context, apis *AllAp
 		require.Equal(t, numNodes, int(clusterInst.GetNumNodes()), "resource type count matches")
 		require.Equal(t, numRootLB, 1, "resource type count matches")
 
-		isManagedK8s = true // Master nodes not allowed & RootLB should not be counted
+		features.KubernetesRequiresWorkerNodes = true // Master nodes not allowed & RootLB should not be counted
 		clusterInst.NumMasters = 0
 		ciResources = NewCloudletResources()
-		ciResources.AddClusterInstResources(ctx, &clusterInst, lbFlavor, isManagedK8s)
+		ciResources.AddClusterInstResources(ctx, &clusterInst, lbFlavor, &features)
 		// number of vm resources = num_nodes
 		require.Equal(t, 2, ciResources.numVms, "matches number of vm resources")
 
