@@ -323,27 +323,11 @@ func ValidateGPUResource(ctx context.Context, nodeResources *edgeproto.NodeResou
 	return nil
 }
 
-type GetVMSpecOptions struct {
-	numNodes int
-}
-
-type GetVMSpecOp func(*GetVMSpecOptions)
-
-func WithNumNodes(numNodes int) GetVMSpecOp {
-	return func(opts *GetVMSpecOptions) {
-		opts.numNodes = numNodes
-	}
-}
-
 // GetVMSpec returns the VMCreationAttributes including flavor name and the size of the external volume which is required, if any
-func GetVMSpec(ctx context.Context, nodeResources *edgeproto.NodeResources, cli edgeproto.CloudletInfo, tbls map[string]*edgeproto.ResTagTable, ops ...GetVMSpecOp) (*VMCreationSpec, error) {
+func GetVMSpec(ctx context.Context, nodeResources *edgeproto.NodeResources, cli edgeproto.CloudletInfo, tbls map[string]*edgeproto.ResTagTable) (*VMCreationSpec, error) {
 	var flavorList []*edgeproto.FlavorInfo
 	var vmspec VMCreationSpec
 	var az, img string
-	opts := &GetVMSpecOptions{}
-	for _, op := range ops {
-		op(opts)
-	}
 
 	err := ValidateGPUResource(ctx, nodeResources, cli, tbls)
 	if err != nil {
@@ -380,6 +364,7 @@ func GetVMSpec(ctx context.Context, nodeResources *edgeproto.NodeResources, cli 
 	skippedExtra := map[string]int{}
 	skippedExtraRes := 0
 	for _, flavor := range flavorList {
+
 		if flavor.Vcpus < nodeResources.Vcpus {
 			skipped[cloudcommon.ResourceVcpus]++
 			continue

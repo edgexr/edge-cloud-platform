@@ -58,9 +58,20 @@ func getNodeSSHKeyPath(region string, key *edgeproto.CloudletKey) string {
 	return fmt.Sprintf("secret/data/%s/cloudlet/%s/%s/nodesshkey", region, key.Organization, key.Name)
 }
 
+type vaultSSHKeyPair struct {
+	PublicRawKey  string
+	PrivateRawKey string
+}
+
 func SaveCloudletNodeSSHKey(ctx context.Context, region string, key *edgeproto.CloudletKey, vaultConfig *vault.Config, sshKey *ssh.KeyPair) error {
+	// note: vault does some encoding if a byte array is used,
+	// so convert to strings for saving to vault.
+	kp := vaultSSHKeyPair{
+		PublicRawKey:  string(sshKey.PublicRawKey),
+		PrivateRawKey: string(sshKey.PrivateRawKey),
+	}
 	path := getNodeSSHKeyPath(region, key)
-	return vault.PutData(vaultConfig, path, sshKey)
+	return vault.PutData(vaultConfig, path, kp)
 }
 
 func DeleteCloudletNodeSSHKey(ctx context.Context, region string, key *edgeproto.CloudletKey, vaultConfig *vault.Config) error {
@@ -70,7 +81,11 @@ func DeleteCloudletNodeSSHKey(ctx context.Context, region string, key *edgeproto
 
 func GetCloudletNodeSSHKey(ctx context.Context, region string, key *edgeproto.CloudletKey, vaultConfig *vault.Config) (*ssh.KeyPair, error) {
 	path := getNodeSSHKeyPath(region, key)
-	sshKey := ssh.KeyPair{}
-	err := vault.GetData(vaultConfig, path, 0, &sshKey)
+	kp := vaultSSHKeyPair{}
+	err := vault.GetData(vaultConfig, path, 0, &kp)
+	sshKey := ssh.KeyPair{
+		PublicRawKey:  []byte(kp.PublicRawKey),
+		PrivateRawKey: []byte(kp.PrivateRawKey),
+	}
 	return &sshKey, err
 }

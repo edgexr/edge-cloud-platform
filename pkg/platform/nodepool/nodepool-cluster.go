@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sitenodepool
+package nodepool
 
 import (
 	"context"
@@ -23,37 +23,37 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 )
 
-func (s *SiteNodePool) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
+func (s *NodePool) CreateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, timeout time.Duration) (map[string]string, error) {
 	// TODO
 	return nil, errors.New("TODO")
 }
 
-func (s *SiteNodePool) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *NodePool) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	return errors.New("TODO")
 }
 
-func (s *SiteNodePool) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
+func (s *NodePool) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	return nil, errors.New("TODO")
 }
 
-func (s *SiteNodePool) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *NodePool) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("cluster dns change not supported")
 }
 
-func (s *SiteNodePool) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
+func (s *NodePool) GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error) {
 	return nil, nil
 }
 
-func (s *SiteNodePool) GetClusterName(cluster *edgeproto.ClusterInst) string {
+func (s *NodePool) GetClusterName(cluster *edgeproto.ClusterInst) string {
 	// GetClusterName is used for OSMWM,
-	// but SiteNodePool does not support OSM
+	// but NodePool does not support OSM
 	return "not-supported"
 }
 
-func (s *SiteNodePool) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
+func (s *NodePool) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {
 	return nil, errors.New("not supported")
 }
 
-func (s *SiteNodePool) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
+func (s *NodePool) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
 	return nil, errors.New("not supported")
 }

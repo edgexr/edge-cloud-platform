@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package sitenodemgr manages site nodes which are bare metal
+// Package nodemgr manages nodes which are bare metal
 // machines or VMs.
 package nodemgr
 
@@ -30,13 +30,13 @@ import (
 
 const ClientVersion = "SSH-2.0-edgexr-client-1.0.0"
 
-var CheckSiteNodeTimeout = time.Second * 10
+var CheckNodeTimeout = time.Second * 10
 
 var SupportedOSes = map[string]struct{}{
 	"Ubuntu": {},
 }
 
-type SiteNodeInfo struct {
+type NodeInfo struct {
 	OSName    string
 	Arch      string
 	Resources edgeproto.NodeResources
@@ -55,15 +55,15 @@ func GetSSHClient(node *edgeproto.Node, privKey []byte, timeout time.Duration) (
 	return ssh.NewNativeClient(node.Username, ClientVersion, node.MgmtAddr, int(node.SshPort), &auth, timeout, nil)
 }
 
-func CheckNode(node *edgeproto.Node, privKey []byte) (*SiteNodeInfo, error) {
-	client, err := GetSSHClient(node, privKey, CheckSiteNodeTimeout)
+func CheckNode(node *edgeproto.Node, privKey []byte) (*NodeInfo, error) {
+	client, err := GetSSHClient(node, privKey, CheckNodeTimeout)
 	if err != nil {
 		return nil, err
 	}
-	nodeInfo := SiteNodeInfo{}
+	nodeInfo := NodeInfo{}
 
 	// get OS info
-	lsbdat, err := client.OutputWithTimeout("lsb_release -a", CheckSiteNodeTimeout)
+	lsbdat, err := client.OutputWithTimeout("lsb_release -a", CheckNodeTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run lsb_release, %s, %s", lsbdat, err)
 	}
@@ -83,7 +83,7 @@ func CheckNode(node *edgeproto.Node, privKey []byte) (*SiteNodeInfo, error) {
 	}
 
 	// get vcpu info
-	cpudat, err := client.OutputWithTimeout("lscpu -J", CheckSiteNodeTimeout)
+	cpudat, err := client.OutputWithTimeout("lscpu -J", CheckNodeTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run lscpu, %s, %s", string(cpudat), err)
 	}
@@ -115,7 +115,7 @@ func CheckNode(node *edgeproto.Node, privKey []byte) (*SiteNodeInfo, error) {
 	}
 
 	// get mem info
-	memdat, err := client.OutputWithTimeout("cat /proc/meminfo", CheckSiteNodeTimeout)
+	memdat, err := client.OutputWithTimeout("cat /proc/meminfo", CheckNodeTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run cat /proc/meminfo, %s, %s", memdat, err)
 	}
@@ -135,7 +135,7 @@ func CheckNode(node *edgeproto.Node, privKey []byte) (*SiteNodeInfo, error) {
 	}
 
 	// get disk info
-	diskdat, err := client.OutputWithTimeout("df -lP", CheckSiteNodeTimeout)
+	diskdat, err := client.OutputWithTimeout("df -lP", CheckNodeTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("failed to run df -lP, %s, %s", diskdat, err)
 	}

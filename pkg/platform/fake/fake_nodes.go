@@ -21,25 +21,25 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
 
-type FakeSiteNodes struct {
+type FakeNodes struct {
 	Platform
 }
 
-func NewPlatformSiteNodes() platform.Platform {
-	return &FakeSiteNodes{}
+func NewPlatformNodes() platform.Platform {
+	return &FakeNodes{}
 }
 
-func (s *FakeSiteNodes) GetFeatures() *edgeproto.PlatformFeatures {
+func (s *FakeNodes) GetFeatures() *edgeproto.PlatformFeatures {
 	features := s.Platform.GetFeatures()
-	features.PlatformType = platform.PlatformTypeFakeSiteNodes
+	features.PlatformType = platform.PlatformTypeFakeNodes
 	features.NodeUsage = edgeproto.NodeUsageUserDefined
 	return features
 }
 
-func (s *FakeSiteNodes) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
+func (s *FakeNodes) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	return nil
 }
 
-func (s *FakeSiteNodes) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResourcesSnapshot, error) {
+func (s *FakeNodes) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResourcesSnapshot, error) {
 	return &edgeproto.InfraResourcesSnapshot{}, nil
 }

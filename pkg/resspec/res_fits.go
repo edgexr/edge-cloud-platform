@@ -326,19 +326,12 @@ func (s NodeFlavors) AddNode(node *edgeproto.Node) error {
 		s[node.FlavorName] = flavorInfo
 	}
 	flavorInfo.Limit++
-	// note this assumes all nodes on the same cloudlet
-	//flavorInfo.Nodes = append(flavorInfo.Nodes, node.Key.Name)
 	return nil
 }
 
 func (s NodeFlavors) AsList() []*edgeproto.FlavorInfo {
 	flavors := []*edgeproto.FlavorInfo{}
 	for _, flavorInfo := range s {
-		/*
-			slices.SortFunc(flavorInfo.Nodes, func(a, b string) int {
-				return strings.Compare(a, b)
-			})
-		*/
 		flavors = append(flavors, flavorInfo)
 	}
 	slices.SortFunc(flavors, func(a, b *edgeproto.FlavorInfo) int {

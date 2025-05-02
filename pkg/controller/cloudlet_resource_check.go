@@ -415,7 +415,7 @@ func (s *CloudletResCalc) addResourceLimits(ctx context.Context, limits ResLimit
 		}
 	}
 	limits.AddMaxFromResVals(kresCounts)
-	// resource limits from user-defined sitenode platforms comes
+	// resource limits from user-defined node platforms comes
 	// from the number of node flavors available
 	if s.deps.features.NodeUsage == edgeproto.NodeUsageUserDefined {
 		for _, flavor := range s.deps.cloudletInfo.Flavors {

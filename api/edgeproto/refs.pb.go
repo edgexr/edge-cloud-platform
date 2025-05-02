@@ -225,7 +225,7 @@ var xxx_messageInfo_AppInstRefs proto.InternalMessageInfo
 type CloudletNodeRefs struct {
 	// Cloudlet key
 	Key CloudletKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
-	// List of site nodes assigned to cloudlet
+	// List of nodes assigned to cloudlet
 	Nodes []NodeKey `protobuf:"bytes,2,rep,name=nodes,proto3" json:"nodes"`
 }
 

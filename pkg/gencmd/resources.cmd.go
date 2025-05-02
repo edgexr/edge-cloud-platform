@@ -62,7 +62,7 @@ var NodeResourcesComments = map[string]string{
 	"optresmap":          "Optional resources request, i.e. optresmap=restype=resname:1",
 	"infranodeflavor":    "Infrastructure specific node flavor",
 	"externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
-	"nodename":           "Site node name if using site nodes",
+	"nodename":           "node name if using nodes as a resource",
 }
 var NodeResourcesSpecialArgs = map[string]string{
 	"optresmap": "StringToString",
@@ -269,10 +269,10 @@ var NodePoolComments = map[string]string{
 	"noderesources.optresmap":          "Optional resources request, i.e. optresmap=restype=resname:1",
 	"noderesources.infranodeflavor":    "Infrastructure specific node flavor",
 	"noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
-	"noderesources.nodename":           "Site node name if using site nodes",
+	"noderesources.nodename":           "node name if using nodes as a resource",
 	"scalable":                         "Scalable indicates the system may scale the number of nodes",
 	"controlplane":                     "Pool is the control-plane pool for a Kubernetes cluster",
-	"nodes":                            "Node names in pool when using site nodes",
+	"nodes":                            "Node names in pool when using nodes",
 }
 var NodePoolSpecialArgs = map[string]string{
 	"noderesources.optresmap": "StringToString",

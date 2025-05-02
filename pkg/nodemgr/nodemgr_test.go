@@ -26,7 +26,9 @@ import (
 
 func TestCheckNode(t *testing.T) {
 	// this tests a real node, you will need to set the env
-	// vars to run this test
+	// vars to run this test.
+	// To copy your pub key to the node, run:
+	// ssh-copy-id -i ~/.ssh/id_rsa.pub user@hostname
 	privKeyFile := os.Getenv("NODE_PRIV_KEY_FILE")
 	nodeAddr := os.Getenv("NODE_ADDR")
 	username := os.Getenv("NODE_USERNAME")

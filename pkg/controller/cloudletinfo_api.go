@@ -139,8 +139,8 @@ func (s *CloudletInfoApi) UpdateFields(ctx context.Context, in *edgeproto.Cloudl
 			}
 		}
 		if features != nil && features.NodeUsage == edgeproto.NodeUsageUserDefined {
-			// user-defined site-node based cloudlet flavors are
-			// updated via the CCRM callback whenever a site node
+			// user-defined node based cloudlet flavors are
+			// updated via the CCRM callback whenever a node
 			// changes, not via info updates sent back from the
 			// platform code.
 			fmap.Clear(edgeproto.CloudletInfoFieldFlavors)

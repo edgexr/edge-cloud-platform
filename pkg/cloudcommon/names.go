@@ -270,9 +270,9 @@ const (
 )
 
 const (
-	SiteNodeStatusChecking    = "Checking"
-	SiteNodeStatusReady       = "Ready"
-	SiteNodeStatusUnreachable = "Unreachable"
+	NodeStatusChecking    = "Checking"
+	NodeStatusReady       = "Ready"
+	NodeStatusUnreachable = "Unreachable"
 )
 
 var InstanceUp = "UP"
@@ -340,10 +340,10 @@ const TagQosProfileName string = "qos_profile_name"
 const TagIpUserEquipment string = "ip_user_equipment"
 
 const (
-	SiteNodeRoleNone       = ""
-	SiteNodeRoleDocker     = "docker"
-	SiteNodeRoleK8SControl = "control-plane"
-	SiteNodeRoleK8SWorker  = "worker"
+	NodeRoleNone       = ""
+	NodeRoleDocker     = "docker"
+	NodeRoleK8SControl = "control-plane"
+	NodeRoleK8SWorker  = "worker"
 )
 
 var DefaultPlatformFlavorKey = edgeproto.FlavorKey{

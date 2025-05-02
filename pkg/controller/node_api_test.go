@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSiteNodeApi(t *testing.T) {
+func TestNodeApi(t *testing.T) {
 	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
@@ -67,7 +67,7 @@ func TestSiteNodeApi(t *testing.T) {
 
 	// create supporting data
 	zone := testutil.ZoneData()[0]
-	zone.Key.Name = "sitenodes"
+	zone.Key.Name = "nodes"
 	_, err := apis.zoneApi.CreateZone(ctx, &zone)
 	require.Nil(t, err)
 	defer func() {
@@ -76,7 +76,7 @@ func TestSiteNodeApi(t *testing.T) {
 	}()
 
 	features := testutil.PlatformFeaturesData()[0]
-	features.PlatformType = platform.PlatformTypeFakeSiteNodes
+	features.PlatformType = platform.PlatformTypeFakeNodes
 	features.NodeUsage = edgeproto.NodeUsageUserDefined
 	apis.platformFeaturesApi.Update(ctx, &features, 0)
 	defer func() {
@@ -84,11 +84,11 @@ func TestSiteNodeApi(t *testing.T) {
 	}()
 
 	cloudlet := cloudletData[0].Clone()
-	cloudlet.Key.Name = "sitenodes"
+	cloudlet.Key.Name = "nodes"
 	cloudlet.PlatformType = features.PlatformType
 	cloudlet.Zone = zone.Key.Name
 	cloudlet2 := cloudletData[1].Clone()
-	cloudlet2.Key.Name = "sitenodes2"
+	cloudlet2.Key.Name = "nodes2"
 	cloudlet2.PlatformType = features.PlatformType
 	cloudlet2.Zone = zone.Key.Name
 	for _, cl := range []*edgeproto.Cloudlet{cloudlet, cloudlet2} {
@@ -112,12 +112,12 @@ func TestSiteNodeApi(t *testing.T) {
 		}()
 	}
 
-	testBadSiteNodes(t, ctx, apis, cloudlet.Key, cloudletData)
-	testSiteNodeRefs(t, ctx, apis, cloudlet.Key, cloudlet2.Key, cloudletData)
-	testSiteNodeResourceCheck(t, ctx, apis, zone.Key, cloudlet.Key)
+	testBadNodes(t, ctx, apis, cloudlet.Key, cloudletData)
+	testCloudletNodeRefs(t, ctx, apis, cloudlet.Key, cloudlet2.Key, cloudletData)
+	testNodeResourceCheck(t, ctx, apis, zone.Key, cloudlet.Key)
 }
 
-func testBadSiteNodes(t *testing.T, ctx context.Context, apis *AllApis, cloudletKey edgeproto.CloudletKey, cloudletData []edgeproto.Cloudlet) {
+func testBadNodes(t *testing.T, ctx context.Context, apis *AllApis, cloudletKey edgeproto.CloudletKey, cloudletData []edgeproto.Cloudlet) {
 	goodNode := &edgeproto.Node{
 		Key: edgeproto.NodeKey{
 			Name:         "testNode",
@@ -148,7 +148,7 @@ func testBadSiteNodes(t *testing.T, ctx context.Context, apis *AllApis, cloudlet
 		desc:    "test passes",
 		modfunc: func(node *edgeproto.Node) {},
 	}, {
-		desc: "cloudlet does not support site nodes",
+		desc: "cloudlet does not support nodes",
 		modfunc: func(node *edgeproto.Node) {
 			node.CloudletKey = cloudletData[0].Key
 		},
@@ -199,7 +199,7 @@ func testBadSiteNodes(t *testing.T, ctx context.Context, apis *AllApis, cloudlet
 	}
 }
 
-func testSiteNodeRefs(t *testing.T, ctx context.Context, apis *AllApis, cloudletKey, cloudletKey2 edgeproto.CloudletKey, cloudletData []edgeproto.Cloudlet) {
+func testCloudletNodeRefs(t *testing.T, ctx context.Context, apis *AllApis, cloudletKey, cloudletKey2 edgeproto.CloudletKey, cloudletData []edgeproto.Cloudlet) {
 	refs1 := &edgeproto.CloudletNodeRefs{}
 	found := apis.cloudletNodeRefsApi.cache.Get(&cloudletKey, refs1)
 	require.False(t, found)
@@ -221,14 +221,14 @@ func testSiteNodeRefs(t *testing.T, ctx context.Context, apis *AllApis, cloudlet
 	node2 := genNode(2, cloudletKey)
 	node3 := genNode(3, cloudletKey2)
 
-	badNode := genNode(4, cloudletData[0].Key) // not a site node cloudlet
+	badNode := genNode(4, cloudletData[0].Key) // not a node cloudlet
 
 	// verify add refs
 	for _, node := range []*edgeproto.Node{node1, node2, node3} {
 		_, err := apis.nodeApi.CreateNode(ctx, node)
 		require.Nil(t, err)
 	}
-	log.SpanLog(ctx, log.DebugLevelApi, "created site nodes")
+	log.SpanLog(ctx, log.DebugLevelApi, "created nodes")
 	refs1 = &edgeproto.CloudletNodeRefs{}
 	found = apis.cloudletNodeRefsApi.cache.Get(&cloudletKey, refs1)
 	require.True(t, found)
@@ -249,7 +249,7 @@ func testSiteNodeRefs(t *testing.T, ctx context.Context, apis *AllApis, cloudlet
 	}
 	_, err := apis.nodeApi.UpdateNode(ctx, node2)
 	require.Nil(t, err)
-	log.SpanLog(ctx, log.DebugLevelApi, "updated site node2")
+	log.SpanLog(ctx, log.DebugLevelApi, "updated node2")
 	refs1 = &edgeproto.CloudletNodeRefs{}
 	found = apis.cloudletNodeRefsApi.cache.Get(&cloudletKey, refs1)
 	require.True(t, found)
@@ -265,7 +265,7 @@ func testSiteNodeRefs(t *testing.T, ctx context.Context, apis *AllApis, cloudlet
 	// delete node3, refs reduced
 	_, err = apis.nodeApi.DeleteNode(ctx, node3)
 	require.Nil(t, err)
-	log.SpanLog(ctx, log.DebugLevelApi, "deleted site node3")
+	log.SpanLog(ctx, log.DebugLevelApi, "deleted node3")
 	refs2 = &edgeproto.CloudletNodeRefs{}
 	found = apis.cloudletNodeRefsApi.cache.Get(&cloudletKey2, refs2)
 	require.True(t, found)
@@ -274,14 +274,14 @@ func testSiteNodeRefs(t *testing.T, ctx context.Context, apis *AllApis, cloudlet
 	// delete node2, refs deleted
 	_, err = apis.nodeApi.DeleteNode(ctx, node2)
 	require.Nil(t, err)
-	log.SpanLog(ctx, log.DebugLevelApi, "deleted site node2")
+	log.SpanLog(ctx, log.DebugLevelApi, "deleted node2")
 	refs2 = &edgeproto.CloudletNodeRefs{}
 	found = apis.cloudletNodeRefsApi.cache.Get(&cloudletKey2, refs2)
 	require.False(t, found)
 	// delete node1, refs deleted
 	_, err = apis.nodeApi.DeleteNode(ctx, node1)
 	require.Nil(t, err)
-	log.SpanLog(ctx, log.DebugLevelApi, "deleted site node1")
+	log.SpanLog(ctx, log.DebugLevelApi, "deleted node1")
 	refs1 = &edgeproto.CloudletNodeRefs{}
 	found = apis.cloudletNodeRefsApi.cache.Get(&cloudletKey, refs1)
 	require.False(t, found)
@@ -294,7 +294,7 @@ func testSiteNodeRefs(t *testing.T, ctx context.Context, apis *AllApis, cloudlet
 	require.False(t, found)
 }
 
-func testSiteNodeResourceCheck(t *testing.T, ctx context.Context, apis *AllApis, zkey edgeproto.ZoneKey, ckey edgeproto.CloudletKey) {
+func testNodeResourceCheck(t *testing.T, ctx context.Context, apis *AllApis, zkey edgeproto.ZoneKey, ckey edgeproto.CloudletKey) {
 	genNode := func(id int, vcpus, mem uint64) *edgeproto.Node {
 		node := &edgeproto.Node{
 			Key: edgeproto.NodeKey{
@@ -542,7 +542,7 @@ func testSiteNodeResourceCheck(t *testing.T, ctx context.Context, apis *AllApis,
 		found := apis.clusterInstApi.cache.Get(&ci.Key, ciCheck)
 		require.True(t, found, test.desc)
 		require.Equal(t, ckey, ciCheck.CloudletKey, test.desc)
-		// check site node assignment
+		// check node assignment
 		if ci.Deployment == cloudcommon.DeploymentTypeKubernetes {
 			require.Equal(t, len(test.expNodes), len(ci.NodePools), test.desc)
 			for ii := range test.expNodes {
@@ -550,17 +550,17 @@ func testSiteNodeResourceCheck(t *testing.T, ctx context.Context, apis *AllApis,
 				expNames := test.expNodes[ii]
 				require.Equal(t, expNames, pool.Nodes, test.desc)
 				for _, name := range expNames {
-					siteNode := edgeproto.Node{}
-					siteNodeKey := edgeproto.NodeKey{
+					node := edgeproto.Node{}
+					nodeKey := edgeproto.NodeKey{
 						Name:         name,
 						Organization: ci.CloudletKey.Organization,
 					}
-					found := apis.nodeApi.cache.Get(&siteNodeKey, &siteNode)
+					found := apis.nodeApi.cache.Get(&nodeKey, &node)
 					require.True(t, found, test.desc)
-					require.NotNil(t, siteNode.Owner, test.desc)
-					require.Equal(t, ci.Key, *siteNode.Owner, test.desc)
-					require.Equal(t, pool.Name, siteNode.NodePool, test.desc)
-					require.Equal(t, edgeproto.NodeAssignmentInUse, siteNode.Assignment, test.desc)
+					require.NotNil(t, node.Owner, test.desc)
+					require.Equal(t, ci.Key, *node.Owner, test.desc)
+					require.Equal(t, pool.Name, node.NodePool, test.desc)
+					require.Equal(t, edgeproto.NodeAssignmentInUse, node.Assignment, test.desc)
 				}
 			}
 		} else if ci.Deployment == cloudcommon.DeploymentTypeDocker {
@@ -572,10 +572,10 @@ func testSiteNodeResourceCheck(t *testing.T, ctx context.Context, apis *AllApis,
 		cleanupUsed()
 		// check all nodes are free
 		for _, node := range nodes {
-			siteNode := edgeproto.Node{}
-			found := apis.nodeApi.cache.Get(&node.Key, &siteNode)
+			check := edgeproto.Node{}
+			found := apis.nodeApi.cache.Get(&node.Key, &check)
 			require.True(t, found, test.desc)
-			require.Equal(t, edgeproto.NodeAssignmentFree, siteNode.Assignment, test.desc)
+			require.Equal(t, edgeproto.NodeAssignmentFree, check.Assignment, test.desc)
 		}
 	}
 }

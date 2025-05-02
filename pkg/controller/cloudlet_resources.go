@@ -81,8 +81,8 @@ func (s *CloudletResources) AddFlavor(clusterKey *edgeproto.ClusterKey, flavorNa
 	}
 }
 
-func (s *CloudletResources) AddSiteNodeFlavor(flavorName string, count uint32) {
-	// Platforms that use user-defined site nodes measure resources
+func (s *CloudletResources) AddNodeFlavor(flavorName string, count uint32) {
+	// Platforms that use user-defined nodes measure resources
 	// in node sizes, not individual resources. Treat flavors like
 	// a basic resource, because the flavor represents a number of
 	// nodes. We do not add the flavor to the flavors map because
@@ -106,25 +106,25 @@ func (s *CloudletResources) AddPlatformVMs(ctx context.Context, cloudletInfo *ed
 // Optionally the oldClusterInst can be specified if we are
 // calculating resources for an update.
 func (s *CloudletResources) AddClusterInstResources(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBFlavor *edgeproto.FlavorInfo, features *edgeproto.PlatformFeatures) error {
-	userDefinedSiteNodes := features.NodeUsage == edgeproto.NodeUsageUserDefined
+	userDefinedNodes := features.NodeUsage == edgeproto.NodeUsageUserDefined
 	isManagedK8s := features.KubernetesRequiresWorkerNodes
 	if s.debug {
 		log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources", "clusterinst key", clusterInst.Key, "root lb flavor", rootLBFlavor, "managed k8s", isManagedK8s, "nodeRes", clusterInst.NodeResources, "nodepools", clusterInst.NodePools)
 	}
 
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
-		if userDefinedSiteNodes {
-			s.AddSiteNodeFlavor(clusterInst.NodeResources.InfraNodeFlavor, 1)
+		if userDefinedNodes {
+			s.AddNodeFlavor(clusterInst.NodeResources.InfraNodeFlavor, 1)
 		} else {
 			s.AddRes(&clusterInst.Key, clusterInst.NodeResources, cloudcommon.NodeTypeDockerClusterNode.String(), 1)
 		}
 	} else {
-		if !userDefinedSiteNodes {
+		if !userDefinedNodes {
 			s.AddFlavor(&clusterInst.Key, clusterInst.MasterNodeFlavor, cloudcommon.NodeTypeK8sClusterMaster.String(), clusterInst.NumMasters)
 		}
 		for _, pool := range clusterInst.NodePools {
-			if userDefinedSiteNodes {
-				s.AddSiteNodeFlavor(pool.NodeResources.InfraNodeFlavor, pool.NumNodes)
+			if userDefinedNodes {
+				s.AddNodeFlavor(pool.NodeResources.InfraNodeFlavor, pool.NumNodes)
 			} else {
 				s.AddRes(&clusterInst.Key, pool.NodeResources, cloudcommon.NodeTypeK8sClusterNode.String(), pool.NumNodes)
 			}
@@ -132,7 +132,7 @@ func (s *CloudletResources) AddClusterInstResources(ctx context.Context, cluster
 	}
 
 	// For managed-k8s platforms, ignore rootLB for resource calculation
-	if !isManagedK8s && !userDefinedSiteNodes && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
+	if !isManagedK8s && !userDefinedNodes && clusterInst.IpAccess == edgeproto.IpAccess_IP_ACCESS_DEDICATED {
 		if rootLBFlavor == nil {
 			log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources no/skip root lb flavor", "clusterinst key", clusterInst.Key)
 		} else {

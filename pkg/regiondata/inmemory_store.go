@@ -254,38 +254,6 @@ func (e *InMemoryStore) Sync(ctx context.Context, name, prefix string, cb objsto
 	return nil
 }
 
-/*
-func (e *InMemoryStore) queueWatchers(action objstore.SyncCbAction, key, val string, rev int64) {
-	for prefix, prefixWatchers := range e.watchers {
-		if strings.HasPrefix(key, prefix) {
-			for _, watch := range prefixWatchers {
-				data := objstore.SyncCbData{
-					Action: action,
-					Key:    []byte(key),
-					Value:  []byte(val),
-					Rev:    rev,
-					ModRev: rev,
-				}
-				watch.cbData = append(watch.cbData, &data)
-			}
-		}
-	}
-}
-
-func (e *InMemoryStore) triggerWatchers() {
-	for _, prefixWatchers := range e.watchers {
-		for _, watch := range prefixWatchers {
-			if len(watch.cbData) == 0 {
-				continue
-			}
-			select {
-			case watch.cbGo <- true:
-			default:
-			}
-		}
-	}
-}*/
-
 func (e *InMemoryStore) triggerWatchers(action objstore.SyncCbAction, key, val string, rev int64, moreEvents bool) {
 	for prefix, prefixWatchers := range e.watchers {
 		if strings.HasPrefix(key, prefix) {

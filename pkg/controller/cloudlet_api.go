@@ -1656,10 +1656,10 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 				return err
 			}
 		}
-		siteNodeRefs := edgeproto.CloudletNodeRefs{}
-		if s.all.cloudletNodeRefsApi.store.STMGet(stm, &in.Key, &siteNodeRefs) {
-			if len(siteNodeRefs.Nodes) > 0 {
-				nodesInUse = fmt.Errorf("cloudlet in use by nodes %v", siteNodeRefs.Nodes)
+		nodeRefs := edgeproto.CloudletNodeRefs{}
+		if s.all.cloudletNodeRefsApi.store.STMGet(stm, &in.Key, &nodeRefs) {
+			if len(nodeRefs.Nodes) > 0 {
+				nodesInUse = fmt.Errorf("cloudlet in use by nodes %v", nodeRefs.Nodes)
 			}
 		}
 		if in.GpuConfig.Driver.Name != "" {
@@ -2117,7 +2117,7 @@ func (s *CloudletApi) GetCloudletNodeSSHKey(ctx context.Context, key *edgeproto.
 		return &edgeproto.Result{}, err
 	}
 	if features.NodeUsage == edgeproto.NodeUsageNone {
-		return &edgeproto.Result{}, errors.New("cloudlet does not use site nodes")
+		return &edgeproto.Result{}, errors.New("cloudlet does not use nodes")
 	}
 	sshKey, err := accessvars.GetCloudletNodeSSHKey(ctx, *region, key, vaultConfig)
 	if err != nil {

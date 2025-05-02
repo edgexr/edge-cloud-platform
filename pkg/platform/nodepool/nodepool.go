@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package sitenodepool provides a platform for managing applications
+// Package nodepool provides a platform for managing applications
 // on a static set of user-created compute nodes (bare metal or VMs).
-package sitenodepool
+package nodepool
 
 import (
 	"context"
@@ -32,7 +32,7 @@ import (
 	ssh "github.com/edgexr/golang-ssh"
 )
 
-type SiteNodePool struct {
+type NodePool struct {
 	CommonPf infracommon.CommonPlatform
 	caches   *platform.Caches
 	infracommon.CommonEmbedded
@@ -40,12 +40,12 @@ type SiteNodePool struct {
 }
 
 func NewPlatform() platform.Platform {
-	return &SiteNodePool{}
+	return &NodePool{}
 }
 
-func (s *SiteNodePool) GetFeatures() *edgeproto.PlatformFeatures {
+func (s *NodePool) GetFeatures() *edgeproto.PlatformFeatures {
 	return &edgeproto.PlatformFeatures{
-		PlatformType:                  platform.PlatformTypeSiteNodePool,
+		PlatformType:                  platform.PlatformTypeNodePool,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
 		KubernetesRequiresWorkerNodes: true,
@@ -57,7 +57,7 @@ func (s *SiteNodePool) GetFeatures() *edgeproto.PlatformFeatures {
 	}
 }
 
-func (s *SiteNodePool) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *NodePool) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "Init")
 	s.caches = caches
 
@@ -71,63 +71,63 @@ func (s *SiteNodePool) InitCommon(ctx context.Context, platformConfig *platform.
 	return nil
 }
 
-func (s *SiteNodePool) InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
+func (s *NodePool) InitHAConditional(ctx context.Context, updateCallback edgeproto.CacheUpdateCallback) error {
 	return nil
 }
 
-func (s *SiteNodePool) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
+func (s *NodePool) GetInitHAConditionalCompatibilityVersion(ctx context.Context) string {
 	return "k8sop-1.0"
 }
 
-func (s *SiteNodePool) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
+func (s *NodePool) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	return nil
 }
 
-func (s *SiteNodePool) getClient() ssh.Client {
+func (s *NodePool) getClient() ssh.Client {
 	// k8s runs all kubectl commands locally
 	return &pc.LocalClient{}
 }
 
-func (s *SiteNodePool) GetClusterClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
+func (s *NodePool) GetClusterClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {
 	return s.getClient(), nil
 }
 
-func (s *SiteNodePool) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
+func (s *NodePool) GetClusterPlatformClient(ctx context.Context, clusterInst *edgeproto.ClusterInst, clientType string) (ssh.Client, error) {
 	return s.getClient(), nil
 }
 
-func (s *SiteNodePool) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode, ops ...pc.SSHClientOp) (ssh.Client, error) {
+func (s *NodePool) GetNodePlatformClient(ctx context.Context, node *edgeproto.CloudletMgmtNode, ops ...pc.SSHClientOp) (ssh.Client, error) {
 	return s.getClient(), nil
 }
 
-func (s *SiteNodePool) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
+func (s *NodePool) ListCloudletMgmtNodes(ctx context.Context, clusterInsts []edgeproto.ClusterInst, vmAppInsts []edgeproto.AppInst) ([]edgeproto.CloudletMgmtNode, error) {
 	return []edgeproto.CloudletMgmtNode{}, nil
 }
 
-func (s *SiteNodePool) NameSanitize(name string) string {
+func (s *NodePool) NameSanitize(name string) string {
 	return name
 }
 
 // TODO
-func (s *SiteNodePool) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
+func (s *NodePool) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
 	var resources []edgeproto.InfraResource
 	return resources, nil
 }
 
 // TODO
-func (s *SiteNodePool) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {
+func (s *NodePool) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {
 	resInfo := make(map[string]edgeproto.InfraResource)
 	return resInfo
 }
 
 // TODO
-func (s *SiteNodePool) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
+func (s *NodePool) GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error {
 	return nil
 }
 
-func (s *SiteNodePool) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
+func (s *NodePool) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
 	// TODO:
-	// create ssh.Client from one of the cluster master site nodes
+	// create ssh.Client from one of the cluster master nodes
 	// call into rke2 package to get kubeconfig using ssh.Client
 	//return []byte(kubeconfig), nil
 	return nil, errors.New("TODO")

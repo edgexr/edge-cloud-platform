@@ -142,7 +142,7 @@ service AppInstRefsApi {
 message CloudletNodeRefs {
   // Cloudlet key
   CloudletKey key = 1 [(gogoproto.nullable) = false, (protogen.refers_to) = "Cloudlet"];
-  // List of site nodes assigned to cloudlet
+  // List of nodes assigned to cloudlet
   repeated NodeKey nodes = 2 [(gogoproto.nullable) = false, (protogen.tracks_refs_by) = "Node"];
   option (protogen.generate_matches) = true;
   option (protogen.generate_cud) = true;

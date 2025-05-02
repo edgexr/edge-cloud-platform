@@ -904,7 +904,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 				resourceFailure = true
 				return err
 			}
-			err = s.startAssignClusterSiteNodes(ctx, cctx, stm, features, in, nil, cloudcommon.Create)
+			err = s.startAssignClusterNodes(ctx, cctx, stm, features, in, nil, cloudcommon.Create)
 			if err != nil {
 				resourceFailure = true
 				return err
@@ -1180,7 +1180,7 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 			if err != nil {
 				return err
 			}
-			err = s.startAssignClusterSiteNodes(ctx, cctx, stm, features, &inbuf, oldClusterInst, cloudcommon.Create)
+			err = s.startAssignClusterNodes(ctx, cctx, stm, features, &inbuf, oldClusterInst, cloudcommon.Create)
 			if err != nil {
 				return err
 			}
@@ -1508,7 +1508,7 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 		if err != nil {
 			return err
 		}
-		err = s.startAssignClusterSiteNodes(ctx, cctx, stm, features, in, nil, cloudcommon.Delete)
+		err = s.startAssignClusterNodes(ctx, cctx, stm, features, in, nil, cloudcommon.Delete)
 		if err != nil {
 			return err
 		}
@@ -1692,7 +1692,7 @@ func (s *ClusterInstApi) UpdateFromInfo(ctx context.Context, in *edgeproto.Clust
 					log.SpanLog(ctx, log.DebugLevelApi, "invalid state transition", "cur", inst.State, "next", in.State)
 					return nil
 				}
-				s.finishAssignClusterSiteNodes(ctx, stm, &inst, in.State)
+				s.finishAssignClusterNodes(ctx, stm, &inst, in.State)
 			}
 			inst.State = in.State
 			if in.State == edgeproto.TrackedState_CREATE_ERROR || in.State == edgeproto.TrackedState_DELETE_ERROR || in.State == edgeproto.TrackedState_UPDATE_ERROR {
@@ -2329,63 +2329,66 @@ func (s *ClusterInstApi) ShowClusterResourceUsage(in *edgeproto.ClusterInst, cb 
 	return nil
 }
 
-// Assign site nodes to cluster for user-defined site node platform.
-// Ensures that site nodes are available to be assigned to the cluster
+// Assign nodes to cluster for user-defined node platform.
+// Ensures that nodes are available to be assigned to the cluster
 // for resource calculations.
-func (s *ClusterInstApi) startAssignClusterSiteNodes(ctx context.Context, cctx *CallContext, stm concurrency.STM, features *edgeproto.PlatformFeatures, ci, old *edgeproto.ClusterInst, action cloudcommon.Action) error {
+// Nodes are added in a transitional "Added" state, and only committed
+// to the "InUse" state after the infra platform code has successfully
+// created the cluster.
+func (s *ClusterInstApi) startAssignClusterNodes(ctx context.Context, cctx *CallContext, stm concurrency.STM, features *edgeproto.PlatformFeatures, ci, old *edgeproto.ClusterInst, action cloudcommon.Action) error {
 	if features.NodeUsage != edgeproto.NodeUsageUserDefined {
 		return nil
 	}
-	// refs tracks all site nodes for the cloudlet
+	// refs tracks all nodes for the cloudlet
 	refs := edgeproto.CloudletNodeRefs{}
 	if !s.all.cloudletNodeRefsApi.store.STMGet(stm, &ci.CloudletKey, &refs) {
 		refs.Key = ci.CloudletKey
 	}
-	// find free site nodes by flavor
+	// find free nodes by flavor
 	freeNodesByFlavor := map[string][]*edgeproto.Node{}
-	for _, siteNodeKey := range refs.Nodes {
-		siteNode := &edgeproto.Node{}
+	for _, nodeKey := range refs.Nodes {
+		node := &edgeproto.Node{}
 		// use cache to avoid overloading STM
-		if !s.all.nodeApi.cache.Get(&siteNodeKey, siteNode) {
-			log.SpanLog(ctx, log.DebugLevelApi, "assignK8SClusterSiteNodes, no site node found for ref", "ref", siteNodeKey)
+		if !s.all.nodeApi.cache.Get(&nodeKey, node) {
+			log.SpanLog(ctx, log.DebugLevelApi, "assignK8SClusterNodes, no node found for ref", "ref", nodeKey)
 			continue
 		}
-		if err := checkSiteNodeUsable(siteNode); err != nil {
+		if err := checkNodeUsable(node); err != nil {
 			continue
 		}
-		log.SpanLog(ctx, log.DebugLevelApi, "assignClusterSiteNodes, found free site node", "siteNode", siteNode.Key, "flavor", siteNode.FlavorName)
-		freeNodesByFlavor[siteNode.FlavorName] = append(freeNodesByFlavor[siteNode.FlavorName], siteNode)
+		log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes, found free node", "node", node.Key, "flavor", node.FlavorName)
+		freeNodesByFlavor[node.FlavorName] = append(freeNodesByFlavor[node.FlavorName], node)
 	}
 	if ci.Deployment == cloudcommon.DeploymentTypeKubernetes || ci.Deployment == cloudcommon.DeploymentTypeHelm {
-		return s.startAssignK8SClusterSiteNodes(ctx, cctx, stm, ci, old, freeNodesByFlavor, action)
+		return s.startAssignK8SClusterNodes(ctx, cctx, stm, ci, old, freeNodesByFlavor, action)
 	} else if ci.Deployment == cloudcommon.DeploymentTypeDocker {
-		return s.startAssignDockerClusterSiteNodes(ctx, cctx, stm, ci, freeNodesByFlavor, action)
+		return s.startAssignDockerClusterNodes(ctx, cctx, stm, ci, freeNodesByFlavor, action)
 	} else {
-		return fmt.Errorf("unsupported deployment type %s for user defined site nodes platform", ci.Deployment)
+		return fmt.Errorf("unsupported deployment type %s for user defined nodes platform", ci.Deployment)
 	}
 }
 
-func freeSiteNode(siteNode *edgeproto.Node) {
-	siteNode.Owner = nil
-	siteNode.Assignment = edgeproto.NodeAssignmentFree
-	siteNode.Role = ""
-	siteNode.NodePool = ""
+func freeNode(node *edgeproto.Node) {
+	node.Owner = nil
+	node.Assignment = edgeproto.NodeAssignmentFree
+	node.Role = ""
+	node.NodePool = ""
 }
 
-func checkSiteNodeUsable(siteNode *edgeproto.Node) error {
-	if siteNode.Owner != nil {
+func checkNodeUsable(node *edgeproto.Node) error {
+	if node.Owner != nil {
 		return errors.New("owner set")
 	}
-	if siteNode.Assignment != edgeproto.NodeAssignmentFree {
-		return fmt.Errorf("assignment is %s", siteNode.Assignment)
+	if node.Assignment != edgeproto.NodeAssignmentFree {
+		return fmt.Errorf("assignment is %s", node.Assignment)
 	}
-	if siteNode.Health != edgeproto.NodeHealthOnline {
-		return fmt.Errorf("health is %s", siteNode.Health)
+	if node.Health != edgeproto.NodeHealthOnline {
+		return fmt.Errorf("health is %s", node.Health)
 	}
 	return nil
 }
 
-func (s *ClusterInstApi) startAssignK8SClusterSiteNodes(ctx context.Context, cctx *CallContext, stm concurrency.STM, ci, old *edgeproto.ClusterInst, freeNodesByFlavor map[string][]*edgeproto.Node, action cloudcommon.Action) error {
+func (s *ClusterInstApi) startAssignK8SClusterNodes(ctx context.Context, cctx *CallContext, stm concurrency.STM, ci, old *edgeproto.ClusterInst, freeNodesByFlavor map[string][]*edgeproto.Node, action cloudcommon.Action) error {
 	oldClusterPools := map[string]*edgeproto.NodePool{}
 	if old != nil {
 		for _, pool := range old.NodePools {
@@ -2406,72 +2409,72 @@ func (s *ClusterInstApi) startAssignK8SClusterSiteNodes(ctx context.Context, cct
 				numNodesDelta -= int(oldPool.NumNodes)
 			}
 		}
-		log.SpanLog(ctx, log.DebugLevelApi, "startAssignK8SClusterSiteNodes pool", "cluster", ci.Key, "pool", pool.Name, "numNodesDelta", numNodesDelta)
+		log.SpanLog(ctx, log.DebugLevelApi, "startAssignK8SClusterNodes pool", "cluster", ci.Key, "pool", pool.Name, "numNodesDelta", numNodesDelta)
 		if numNodesDelta < 0 {
 			// remove nodes
 			for ii := len(pool.Nodes) - 1; ii > int(pool.NumNodes); ii-- {
-				siteNode := edgeproto.Node{}
-				siteNodeKey := edgeproto.NodeKey{
+				node := edgeproto.Node{}
+				nodeKey := edgeproto.NodeKey{
 					Name:         pool.Nodes[ii],
 					Organization: ci.CloudletKey.Organization,
 				}
-				if !s.all.nodeApi.store.STMGet(stm, &siteNodeKey, &siteNode) {
+				if !s.all.nodeApi.store.STMGet(stm, &nodeKey, &node) {
 					// not found, but we're removing it so it's ok
-					log.SpanLog(ctx, log.DebugLevelApi, "removing site node from cluster but not found", "cluster", ci.Key, "pool", pool.Name, "siteNode", siteNodeKey)
+					log.SpanLog(ctx, log.DebugLevelApi, "removing node from cluster but not found", "cluster", ci.Key, "pool", pool.Name, "node", nodeKey)
 					continue
 				}
-				log.SpanLog(ctx, log.DebugLevelApi, "assignClusterSiteNodes removing node", "cluster", ci.Key, "pool", pool.Name, "siteNode", siteNode.Key)
+				log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes removing node", "cluster", ci.Key, "pool", pool.Name, "node", node.Key)
 				if ignoreCRM(cctx) {
-					freeSiteNode(&siteNode)
+					freeNode(&node)
 				} else {
-					siteNode.Assignment = edgeproto.NodeAssignmentRemoving
+					node.Assignment = edgeproto.NodeAssignmentRemoving
 				}
-				s.all.nodeApi.store.STMPut(stm, &siteNode)
+				s.all.nodeApi.store.STMPut(stm, &node)
 			}
 		} else if numNodesDelta > 0 {
 			// add nodes
 			freeNodes, ok := freeNodesByFlavor[pool.NodeResources.InfraNodeFlavor]
 			if !ok {
-				return fmt.Errorf("no site nodes found for flavor %s for clusterinst %s pool %s", pool.NodeResources.InfraNodeFlavor, ci.Key.Name, pool.Name)
+				return fmt.Errorf("no nodes found for flavor %s for clusterinst %s pool %s", pool.NodeResources.InfraNodeFlavor, ci.Key.Name, pool.Name)
 			}
 			// sort for determinism, so we always select the same nodes
 			slices.SortFunc(freeNodes, func(a, b *edgeproto.Node) int {
 				return strings.Compare(a.Key.Name, b.Key.Name)
 			})
 			assigned := 0
-			for _, node := range freeNodes {
+			for _, freeNode := range freeNodes {
 				if assigned >= numNodesDelta {
 					break
 				}
 				// use STM to look it up
-				siteNode := edgeproto.Node{}
-				if !s.all.nodeApi.store.STMGet(stm, &node.Key, &siteNode) {
+				node := edgeproto.Node{}
+				if !s.all.nodeApi.store.STMGet(stm, &freeNode.Key, &node) {
 					// not found, may have been deleted
-					log.SpanLog(ctx, log.DebugLevelApi, "assignClusterSiteNodes node not found, may have been deleted", "cluster", ci.Key, "pool", pool.Name, "siteNode", node.Key)
+					log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes node not found, may have been deleted", "cluster", ci.Key, "pool", pool.Name, "node", freeNode.Key)
 					continue
 				}
-				if err := checkSiteNodeUsable(&siteNode); err != nil {
-					log.SpanLog(ctx, log.DebugLevelApi, "assignClusterSiteNodes node not usable", "cluster", ci.Key, "pool", pool.Name, "siteNode", node.Key, "err", err)
+				if err := checkNodeUsable(&node); err != nil {
+					log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes node not usable", "cluster", ci.Key, "pool", pool.Name, "node", freeNode.Key, "err", err)
 				}
-				log.SpanLog(ctx, log.DebugLevelApi, "assignClusterSiteNodes adding node", "cluster", ci.Key, "pool", pool.Name, "siteNode", node.Key)
+				log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes adding node", "cluster", ci.Key, "pool", pool.Name, "node", freeNode.Key)
 				if pool.ControlPlane {
-					siteNode.Role = cloudcommon.SiteNodeRoleK8SControl
+					node.Role = cloudcommon.NodeRoleK8SControl
 				} else {
-					siteNode.Role = cloudcommon.SiteNodeRoleK8SWorker
+					node.Role = cloudcommon.NodeRoleK8SWorker
 				}
 				if ignoreCRM(cctx) {
-					siteNode.Assignment = edgeproto.NodeAssignmentInUse
+					node.Assignment = edgeproto.NodeAssignmentInUse
 				} else {
-					siteNode.Assignment = edgeproto.NodeAssignmentAdding
+					node.Assignment = edgeproto.NodeAssignmentAdding
 				}
-				siteNode.Owner = &ci.Key
-				siteNode.NodePool = pool.Name
-				s.all.nodeApi.store.STMPut(stm, &siteNode)
-				pool.Nodes = append(pool.Nodes, node.Key.Name)
+				node.Owner = &ci.Key
+				node.NodePool = pool.Name
+				s.all.nodeApi.store.STMPut(stm, &node)
+				pool.Nodes = append(pool.Nodes, freeNode.Key.Name)
 				assigned++
 			}
 			if assigned < numNodesDelta {
-				return fmt.Errorf("not enough site nodes found for flavor %s for clusterinst %s pool %s", pool.NodeResources.InfraNodeFlavor, ci.Key.Name, pool.Name)
+				return fmt.Errorf("not enough nodes found for flavor %s for clusterinst %s pool %s", pool.NodeResources.InfraNodeFlavor, ci.Key.Name, pool.Name)
 			}
 		}
 	}
@@ -2481,93 +2484,93 @@ func (s *ClusterInstApi) startAssignK8SClusterSiteNodes(ctx context.Context, cct
 	return nil
 }
 
-func (s *ClusterInstApi) startAssignDockerClusterSiteNodes(ctx context.Context, cctx *CallContext, stm concurrency.STM, ci *edgeproto.ClusterInst, freeNodesByFlavor map[string][]*edgeproto.Node, action cloudcommon.Action) error {
+func (s *ClusterInstApi) startAssignDockerClusterNodes(ctx context.Context, cctx *CallContext, stm concurrency.STM, ci *edgeproto.ClusterInst, freeNodesByFlavor map[string][]*edgeproto.Node, action cloudcommon.Action) error {
 	if action == cloudcommon.Create {
 		if ci.NodeResources == nil {
 			return fmt.Errorf("clusterinst %s has no node resources", ci.Key.Name)
 		}
 		freeNodes, ok := freeNodesByFlavor[ci.NodeResources.InfraNodeFlavor]
 		if !ok {
-			return fmt.Errorf("no site nodes found for %s for clusterinst %s", ci.NodeResources.InfraNodeFlavor, ci.Key.Name)
+			return fmt.Errorf("no nodes found for %s for clusterinst %s", ci.NodeResources.InfraNodeFlavor, ci.Key.Name)
 		}
 		// sort for determinism, so we always select the same nodes
 		slices.SortFunc(freeNodes, func(a, b *edgeproto.Node) int {
 			return strings.Compare(a.Key.Name, b.Key.Name)
 		})
-		for _, node := range freeNodes {
+		for _, freeNode := range freeNodes {
 			// use STM to look it up
-			siteNode := edgeproto.Node{}
-			if !s.all.nodeApi.store.STMGet(stm, &node.Key, &siteNode) {
+			node := edgeproto.Node{}
+			if !s.all.nodeApi.store.STMGet(stm, &freeNode.Key, &node) {
 				// not found, may have been deleted
-				log.SpanLog(ctx, log.DebugLevelApi, "assignDockerClusterSiteNodes node not found, may have been deleted", "cluster", ci.Key, "siteNode", node.Key)
+				log.SpanLog(ctx, log.DebugLevelApi, "assignDockerClusterNodes node not found, may have been deleted", "cluster", ci.Key, "node", freeNode.Key)
 				continue
 			}
-			if err := checkSiteNodeUsable(&siteNode); err != nil {
-				log.SpanLog(ctx, log.DebugLevelApi, "assignDockerClusterSiteNodes node not usable", "cluster", ci.Key, "siteNode", node.Key, "err", err)
+			if err := checkNodeUsable(&node); err != nil {
+				log.SpanLog(ctx, log.DebugLevelApi, "assignDockerClusterNodes node not usable", "cluster", ci.Key, "node", freeNode.Key, "err", err)
 				continue
 			}
-			log.SpanLog(ctx, log.DebugLevelApi, "assignDockerClusterSiteNodes adding node", "cluster", ci.Key, "siteNode", node.Key)
+			log.SpanLog(ctx, log.DebugLevelApi, "assignDockerClusterNodes adding node", "cluster", ci.Key, "node", freeNode.Key)
 			if ignoreCRM(cctx) {
-				siteNode.Assignment = edgeproto.NodeAssignmentInUse
+				node.Assignment = edgeproto.NodeAssignmentInUse
 			} else {
-				siteNode.Assignment = edgeproto.NodeAssignmentAdding
+				node.Assignment = edgeproto.NodeAssignmentAdding
 			}
-			siteNode.Owner = &ci.Key
-			siteNode.Role = cloudcommon.SiteNodeRoleDocker
-			siteNode.NodePool = ""
-			s.all.nodeApi.store.STMPut(stm, &siteNode)
-			ci.NodeResources.NodeName = siteNode.Key.Name
+			node.Owner = &ci.Key
+			node.Role = cloudcommon.NodeRoleDocker
+			node.NodePool = ""
+			s.all.nodeApi.store.STMPut(stm, &node)
+			ci.NodeResources.NodeName = node.Key.Name
 			return nil
 		}
 		return fmt.Errorf("no nodes avaialable for size %s", ci.NodeResources.InfraNodeFlavor)
 	} else if action == cloudcommon.Delete {
-		siteNode := edgeproto.Node{
+		node := edgeproto.Node{
 			Key: edgeproto.NodeKey{
 				Name:         ci.NodeResources.NodeName,
 				Organization: ci.CloudletKey.Organization,
 			},
 		}
-		if !s.all.nodeApi.store.STMGet(stm, &siteNode.Key, &siteNode) {
+		if !s.all.nodeApi.store.STMGet(stm, &node.Key, &node) {
 			return nil
 		}
 		if ignoreCRM(cctx) {
-			freeSiteNode(&siteNode)
+			freeNode(&node)
 		} else {
-			siteNode.Assignment = edgeproto.NodeAssignmentRemoving
+			node.Assignment = edgeproto.NodeAssignmentRemoving
 		}
-		s.all.nodeApi.store.STMPut(stm, &siteNode)
+		s.all.nodeApi.store.STMPut(stm, &node)
 	}
 	return nil
 }
 
-func (s *ClusterInstApi) finishAssignClusterSiteNodes(ctx context.Context, stm concurrency.STM, ci *edgeproto.ClusterInst, state edgeproto.TrackedState) error {
-	finishSiteNode := func(name string) string {
+func (s *ClusterInstApi) finishAssignClusterNodes(ctx context.Context, stm concurrency.STM, ci *edgeproto.ClusterInst, state edgeproto.TrackedState) error {
+	finishNode := func(name string) string {
 		key := edgeproto.NodeKey{
 			Name:         name,
 			Organization: ci.CloudletKey.Organization,
 		}
-		siteNode := edgeproto.Node{}
-		if !s.all.nodeApi.store.STMGet(stm, &key, &siteNode) {
-			log.SpanLog(ctx, log.DebugLevelApi, "finishAssignClusterSiteNodes site node not found for cluster", "cluster", ci.Key, "cloudlet", ci.CloudletKey, "siteNode", name)
+		node := edgeproto.Node{}
+		if !s.all.nodeApi.store.STMGet(stm, &key, &node) {
+			log.SpanLog(ctx, log.DebugLevelApi, "finishAssignClusterNodes node not found for cluster", "cluster", ci.Key, "cloudlet", ci.CloudletKey, "node", name)
 		}
 		changed := false
-		if state == edgeproto.TrackedState_DELETE_DONE || siteNode.Assignment == edgeproto.NodeAssignmentRemoving {
-			freeSiteNode(&siteNode)
+		if state == edgeproto.TrackedState_DELETE_DONE || node.Assignment == edgeproto.NodeAssignmentRemoving {
+			freeNode(&node)
 			changed = true
-		} else if siteNode.Assignment == edgeproto.NodeAssignmentAdding {
-			siteNode.Assignment = edgeproto.NodeAssignmentInUse
+		} else if node.Assignment == edgeproto.NodeAssignmentAdding {
+			node.Assignment = edgeproto.NodeAssignmentInUse
 			changed = true
 		}
 		if changed {
-			log.SpanLog(ctx, log.DebugLevelApi, "finishAssignClusterSiteNodes node updated", "siteNode", key, "assignment", siteNode.Assignment)
-			s.all.nodeApi.store.STMPut(stm, &siteNode)
+			log.SpanLog(ctx, log.DebugLevelApi, "finishAssignClusterNodes node updated", "node", key, "assignment", node.Assignment)
+			s.all.nodeApi.store.STMPut(stm, &node)
 		}
-		return siteNode.Assignment
+		return node.Assignment
 	}
 	clusterChanged := false
 	for _, pool := range ci.NodePools {
 		for ii := len(pool.Nodes) - 1; ii >= 0; ii-- {
-			assignment := finishSiteNode(pool.Nodes[ii])
+			assignment := finishNode(pool.Nodes[ii])
 			if assignment == edgeproto.NodeAssignmentFree {
 				pool.Nodes = slices.Delete(pool.Nodes, ii, ii+1)
 				clusterChanged = true
@@ -2575,7 +2578,7 @@ func (s *ClusterInstApi) finishAssignClusterSiteNodes(ctx context.Context, stm c
 		}
 	}
 	if ci.NodeResources != nil && ci.NodeResources.NodeName != "" {
-		finishSiteNode(ci.NodeResources.NodeName)
+		finishNode(ci.NodeResources.NodeName)
 	}
 	if clusterChanged {
 		s.all.clusterInstApi.store.STMPut(stm, ci)

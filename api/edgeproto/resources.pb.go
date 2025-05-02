@@ -88,7 +88,7 @@ type NodeResources struct {
 	InfraNodeFlavor string `protobuf:"bytes,5,opt,name=infra_node_flavor,json=infraNodeFlavor,proto3" json:"infra_node_flavor,omitempty"`
 	// Size of external volume to be attached to nodes. This is for the root partition
 	ExternalVolumeSize uint64 `protobuf:"varint,6,opt,name=external_volume_size,json=externalVolumeSize,proto3" json:"external_volume_size,omitempty"`
-	// Site node name if using site nodes
+	// node name if using nodes as a resource
 	NodeName string `protobuf:"bytes,8,opt,name=node_name,json=nodeName,proto3" json:"node_name,omitempty"`
 }
 
@@ -279,7 +279,7 @@ type NodePool struct {
 	Scalable bool `protobuf:"varint,4,opt,name=scalable,proto3" json:"scalable,omitempty"`
 	// Pool is the control-plane pool for a Kubernetes cluster
 	ControlPlane bool `protobuf:"varint,5,opt,name=control_plane,json=controlPlane,proto3" json:"control_plane,omitempty"`
-	// Node names in pool when using site nodes
+	// Node names in pool when using nodes
 	Nodes []string `protobuf:"bytes,6,rep,name=nodes,proto3" json:"nodes,omitempty"`
 }
 

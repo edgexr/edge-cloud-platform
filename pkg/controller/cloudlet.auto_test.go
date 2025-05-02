@@ -522,12 +522,12 @@ func deleteCloudletChecks(t *testing.T, ctx context.Context, all *AllApis, dataG
 		allApis:       all,
 	}
 	api.store = deleteStore
-	cloudletNodeRefsApiStore, cloudletNodeRefsApiUnwrap := wrapCloudletNodeRefsTrackerStore(all.cloudletNodeRefsApi)
 	cloudletRefsApiStore, cloudletRefsApiUnwrap := wrapCloudletRefsTrackerStore(all.cloudletRefsApi)
+	cloudletNodeRefsApiStore, cloudletNodeRefsApiUnwrap := wrapCloudletNodeRefsTrackerStore(all.cloudletNodeRefsApi)
 	defer func() {
 		api.store = origStore
-		cloudletNodeRefsApiUnwrap()
 		cloudletRefsApiUnwrap()
+		cloudletNodeRefsApiUnwrap()
 	}()
 
 	// inject testObj directly, bypassing create checks/deps

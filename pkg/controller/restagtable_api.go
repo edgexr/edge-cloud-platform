@@ -40,7 +40,6 @@ func NewResTagTableApi(sync *regiondata.Sync, all *AllApis) *ResTagTableApi {
 	resTagTableApi := ResTagTableApi{}
 	resTagTableApi.all = all
 	resTagTableApi.sync = sync
-	fmt.Printf("NewResTagTableApi cache %p\n", &resTagTableApi.cache)
 	resTagTableApi.store = edgeproto.NewResTagTableStore(sync.GetKVStore())
 	edgeproto.InitResTagTableCacheWithStore(&resTagTableApi.cache, resTagTableApi.store)
 	sync.RegisterCache(&resTagTableApi.cache)

@@ -4142,10 +4142,10 @@ var CloudletInfoComments = map[string]string{
 	"nodepools:#.noderesources.optresmap":                      "Optional resources request, i.e. optresmap=restype=resname:1",
 	"nodepools:#.noderesources.infranodeflavor":                "Infrastructure specific node flavor",
 	"nodepools:#.noderesources.externalvolumesize":             "Size of external volume to be attached to nodes. This is for the root partition",
-	"nodepools:#.noderesources.nodename":                       "Site node name if using site nodes",
+	"nodepools:#.noderesources.nodename":                       "node name if using nodes as a resource",
 	"nodepools:#.scalable":                                     "Scalable indicates the system may scale the number of nodes",
 	"nodepools:#.controlplane":                                 "Pool is the control-plane pool for a Kubernetes cluster",
-	"nodepools:#.nodes":                                        "Node names in pool when using site nodes",
+	"nodepools:#.nodes":                                        "Node names in pool when using nodes",
 }
 var CloudletInfoSpecialArgs = map[string]string{
 	"errors":                              "StringArray",

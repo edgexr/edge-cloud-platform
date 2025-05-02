@@ -172,7 +172,6 @@ func (s *DeleteDataGen) GetCloudletAppInstVmAppInstsRef(key *edgeproto.CloudletK
 func (s *DeleteDataGen) GetCloudletNodeNodesRef(key *edgeproto.CloudletKey) (*edgeproto.CloudletNodeRefs, *testSupportData) {
 	ref := edgeproto.CloudletNodeRefs{}
 	ref.Key = *key
-	//supportData.PlatformFeatures[0].NodeUsage = edgeproto.NodeUsageUserDefined
 	node := &edgeproto.Node{
 		Key: edgeproto.NodeKey{
 			Name:         "testNode",

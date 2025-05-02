@@ -32,6 +32,18 @@ import (
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
 
+// NodeApi is used to manage bare metal or VM nodes.
+// There are two approaches to node management.
+// The first approach are user-defined nodes, where the operator
+// manually creates node objects to correspond to existing
+// bare metal or VM nodes. In this case, the actual
+// bare metal machines or VMs are created outside of the scope
+// of Edge Cloud. EdgeCloud and the platform code then create
+// clusters from the pool of nodes.
+// The second approach are dynamic nodes, where the platform
+// provides an API to create the underlying bare metal or VM
+// instances. In this case, nodes are created and deleted on demand
+// via the platform, and there is no pool of nodes to manage.
 type NodeApi struct {
 	all   *AllApis
 	sync  *regiondata.Sync
@@ -219,10 +231,10 @@ func (s *NodeApi) validateNode(ctx context.Context, stm concurrency.STM, in *edg
 		// verify node is valid
 		nodeInfo, err := nodemgr.CheckNode(in, sshKey.PrivateRawKey)
 		if err != nil && strings.Contains(err.Error(), "unable to authenticate") {
-			return fmt.Errorf("failed to authenticate with site node, did you install the cloudlet node ssh key? %s", err)
+			return fmt.Errorf("failed to authenticate with node, did you install the cloudlet node ssh key? %s", err)
 		}
 		if err != nil {
-			return fmt.Errorf("failed to check site node, %s", err)
+			return fmt.Errorf("failed to check node, %s", err)
 		}
 		in.NodeResources = &nodeInfo.Resources
 		in.Health = edgeproto.NodeHealthOnline
@@ -244,7 +256,7 @@ func (s *NodeApi) validateNode(ctx context.Context, stm concurrency.STM, in *edg
 }
 
 func (s *NodeApi) removeRef(ctx context.Context, stm concurrency.STM, in *edgeproto.Node) {
-	// get cloudlet site node refs
+	// get cloudlet node refs
 	refs := edgeproto.CloudletNodeRefs{}
 	if !s.all.cloudletNodeRefsApi.store.STMGet(stm, &in.CloudletKey, &refs) {
 		log.SpanLog(ctx, log.DebugLevelApi, "nodeApi removeRef refs not found", "cloudlet", in.CloudletKey)
@@ -275,7 +287,7 @@ func (s *NodeApi) addRef(ctx context.Context, stm concurrency.STM, in *edgeproto
 	if !s.all.cloudletApi.store.STMGet(stm, &in.CloudletKey, cloudlet) {
 		return in.CloudletKey.NotFoundError()
 	}
-	// get cloudlet site node refs
+	// get cloudlet node refs
 	refs := edgeproto.CloudletNodeRefs{}
 	if !s.all.cloudletNodeRefsApi.store.STMGet(stm, &in.CloudletKey, &refs) {
 		refs.Key = in.CloudletKey
@@ -312,10 +324,10 @@ func (s *NodeApi) updateFlavorInfo(ctx context.Context, ckey edgeproto.CloudletK
 			if s.cache.Get(&key, buf) {
 				err := nodeFlavors.AddNode(buf)
 				if err != nil {
-					log.SpanLog(ctx, log.DebugLevelApi, "updateFlavorInfo failed to add site node flavor", "cloudlet", ckey, "node", key, "err", err)
+					log.SpanLog(ctx, log.DebugLevelApi, "updateFlavorInfo failed to add node flavor", "cloudlet", ckey, "node", key, "err", err)
 				}
 			} else {
-				log.SpanLog(ctx, log.DebugLevelApi, "updateFlavorInfo site node not found", "cloudlet", ckey, "node", key)
+				log.SpanLog(ctx, log.DebugLevelApi, "updateFlavorInfo node not found", "cloudlet", ckey, "node", key)
 			}
 		}
 		info.Flavors = nodeFlavors.AsList()

@@ -925,10 +925,10 @@ func (s *Network) Validate(fmap objstore.FieldMap) error {
 
 func (key *NodeKey) ValidateKey() error {
 	if !util.ValidName(key.Name) {
-		return errors.New("invalid site node name")
+		return errors.New("invalid node name")
 	}
 	if !util.ValidName(key.Organization) {
-		return errors.New("invalid site node organization")
+		return errors.New("invalid node organization")
 	}
 	return nil
 }
