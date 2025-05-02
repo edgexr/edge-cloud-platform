@@ -153,6 +153,7 @@ message CloudletNodeRefs {
 }
 
 service CloudletNodeRefsApi {
+  // Show CloudletNodeRefs (debug only)
   rpc ShowCloudletNodeRefs(CloudletNodeRefs) returns (stream CloudletNodeRefs) {
     option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
   }

@@ -656,6 +656,7 @@ var _AppInstRefsApi_serviceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type CloudletNodeRefsApiClient interface {
+	// Show CloudletNodeRefs (debug only)
 	ShowCloudletNodeRefs(ctx context.Context, in *CloudletNodeRefs, opts ...grpc.CallOption) (CloudletNodeRefsApi_ShowCloudletNodeRefsClient, error)
 }
 
@@ -701,6 +702,7 @@ func (x *cloudletNodeRefsApiShowCloudletNodeRefsClient) Recv() (*CloudletNodeRef
 
 // CloudletNodeRefsApiServer is the server API for CloudletNodeRefsApi service.
 type CloudletNodeRefsApiServer interface {
+	// Show CloudletNodeRefs (debug only)
 	ShowCloudletNodeRefs(*CloudletNodeRefs, CloudletNodeRefsApi_ShowCloudletNodeRefsServer) error
 }
 
