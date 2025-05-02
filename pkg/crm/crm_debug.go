@@ -23,17 +23,56 @@ import (
 	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/confignode"
 )
 
 const (
 	GetEnvoyVersionCmd = "get-cluster-envoy-version"
 	CRMCmd             = "crmcmd"
+	CRMLogsCmd         = "crmlogs"
 )
 
 func InitDebug(nodeMgr *svcnode.SvcNodeMgr) {
 	nodeMgr.Debug.AddDebugFunc(CRMCmd, runCrmCmd)
+}
+
+// Format of the command is:
+// cmd=crmlogs args="<grep-arg>"
+func (s *CRMData) runCrmLogsCmd(ctx context.Context, req *edgeproto.DebugRequest) string {
+	// run logs command only on a single PlatformVM at once
+	if req.Node.CloudletKey.Name == "" {
+		return "please specify cloudlet"
+	}
+	nodes, err := s.platform.ListCloudletMgmtNodes(ctx, nil, nil)
+	if err != nil {
+		return fmt.Sprintf("unable to get list of cluster nodes, %v", err)
+	}
+	if len(nodes) == 0 {
+		return "no nodes found"
+	}
+	for _, node := range nodes {
+		if !strings.Contains(node.Type, cloudcommon.NodeTypePlatformVM.String()) {
+			continue
+		}
+		client, err := s.platform.GetNodePlatformClient(ctx, &node)
+		if err != nil {
+			return fmt.Sprintf("failed to get ssh client for node %s, %v", node.Name, err)
+		}
+		cmd := fmt.Sprintf("docker logs %s", confignode.ServiceTypeCRM)
+		if req.Args != "" {
+			cmd = fmt.Sprintf("%s 2>&1| grep \"%s\"", cmd, req.Args)
+		}
+		out, err := client.Output(cmd)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to find crmserver containers on platformVM", "pfVM", node, "err", err, "out", out)
+			return fmt.Sprintf("failed to find crmserver container %s, %v", node.Name, err)
+		}
+		return out
+	}
+	return "no platformVM found"
 }
 
 func runCrmCmd(ctx context.Context, req *edgeproto.DebugRequest) string {
