@@ -91,6 +91,9 @@ defaultRules:
     prometheus: true
     prometheusOperator: true
     time: true
+kube-state-metrics:
+  extraArgs:
+    - --metric-labels-allowlist=pods=[*]
 grafana:
   enabled: false
 alertmanager:
