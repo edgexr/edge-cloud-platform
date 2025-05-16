@@ -310,7 +310,7 @@ var appTemplate = `apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
   name: ${APPNAME}
-  namespace: ${TARGET_NS}
+  namespace: flux-system
 spec:
   interval: 1h0m0s
   path: ./apps/{{ .Name }}/manifests
