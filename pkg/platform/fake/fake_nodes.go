@@ -33,6 +33,8 @@ func (s *FakeNodes) GetFeatures() *edgeproto.PlatformFeatures {
 	features := s.Platform.GetFeatures()
 	features.PlatformType = platform.PlatformTypeFakeNodes
 	features.NodeUsage = edgeproto.NodeUsageUserDefined
+	features.UsesRootLb = false
+	features.RequiresControlPool = true
 	return features
 }
 

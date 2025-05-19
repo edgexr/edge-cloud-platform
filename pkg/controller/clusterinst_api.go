@@ -2400,6 +2400,8 @@ func (s *ClusterInstApi) startAssignK8SClusterNodes(ctx context.Context, cctx *C
 		if pool.ControlPlane {
 			hasControlPlane = true
 		}
+	}
+	for ii, pool := range ci.NodePools {
 		numNodesDelta := int(pool.NumNodes)
 		if action == cloudcommon.Delete { // clear all pools if delete
 			numNodesDelta = -numNodesDelta
@@ -2456,8 +2458,13 @@ func (s *ClusterInstApi) startAssignK8SClusterNodes(ctx context.Context, cctx *C
 				if err := checkNodeUsable(&node); err != nil {
 					log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes node not usable", "cluster", ci.Key, "pool", pool.Name, "node", freeNode.Key, "err", err)
 				}
-				log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes adding node", "cluster", ci.Key, "pool", pool.Name, "node", freeNode.Key)
-				if pool.ControlPlane {
+				// cluster create may choose betweeen different
+				// cloudlets that may treat control plane pools
+				// differently, so we automatically mark the first
+				// pool as the control plane if not specified.
+				controlPlane := pool.ControlPlane || (!hasControlPlane && ii == 0)
+				log.SpanLog(ctx, log.DebugLevelApi, "assignClusterNodes adding node", "cluster", ci.Key, "pool", pool.Name, "node", freeNode.Key, "controlPlane", controlPlane)
+				if controlPlane {
 					node.Role = cloudcommon.NodeRoleK8SControl
 				} else {
 					node.Role = cloudcommon.NodeRoleK8SWorker
@@ -2477,9 +2484,6 @@ func (s *ClusterInstApi) startAssignK8SClusterNodes(ctx context.Context, cctx *C
 				return fmt.Errorf("not enough nodes found for flavor %s for clusterinst %s pool %s", pool.NodeResources.InfraNodeFlavor, ci.Key.Name, pool.Name)
 			}
 		}
-	}
-	if !hasControlPlane {
-		return fmt.Errorf("kubernetes cluster %s must have one node pool which is marked as the control plane", ci.Key.Name)
 	}
 	return nil
 }

@@ -195,6 +195,8 @@ message PlatformFeatures {
   bool requires_crm_off_edge = 29;
   // Requires certificate refresh (deprecated, not used)
   bool requires_cert_refresh = 30;
+  // Requires one of the kubernetes node pools to be a control plane
+  bool requires_control_pool = 38;
   // Kubernetes clusters support more than one node pool
   bool supports_multiple_node_pools = 31;
   // Platform manages Kubernetes control nodes
