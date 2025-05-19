@@ -343,7 +343,7 @@ func NewSyncCheck(t *testing.T, objstore objstore.KVStore) *SyncCheck {
 	ctx, cancel := context.WithCancel(context.Background())
 	sy.syncCancel = cancel
 	go func() {
-		err := objstore.Sync(ctx, "", sy.Cb)
+		err := objstore.Sync(ctx, "etcd-test", "", sy.Cb)
 		assert.Nil(t, err, "Sync error")
 	}()
 	return &sy

@@ -270,6 +270,88 @@ var AppInstRefsApiCmds = []*cobra.Command{
 	ShowAppInstRefsCmd.GenCmd(),
 }
 
+var CloudletNodeRefsApiCmd edgeproto.CloudletNodeRefsApiClient
+
+var ShowCloudletNodeRefsCmd = &cli.Command{
+	Use:          "ShowCloudletNodeRefs",
+	OptionalArgs: strings.Join(append(CloudletNodeRefsRequiredArgs, CloudletNodeRefsOptionalArgs...), " "),
+	AliasArgs:    strings.Join(CloudletNodeRefsAliasArgs, " "),
+	SpecialArgs:  &CloudletNodeRefsSpecialArgs,
+	Comments:     CloudletNodeRefsComments,
+	ReqData:      &edgeproto.CloudletNodeRefs{},
+	ReplyData:    &edgeproto.CloudletNodeRefs{},
+	Run:          runShowCloudletNodeRefs,
+}
+
+func runShowCloudletNodeRefs(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.CloudletNodeRefs)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowCloudletNodeRefs(c, obj)
+}
+
+func ShowCloudletNodeRefs(c *cli.Command, in *edgeproto.CloudletNodeRefs) error {
+	if CloudletNodeRefsApiCmd == nil {
+		return fmt.Errorf("CloudletNodeRefsApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := CloudletNodeRefsApiCmd.ShowCloudletNodeRefs(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowCloudletNodeRefs failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.CloudletNodeRefs, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowCloudletNodeRefs recv failed: %s", errstr)
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowCloudletNodeRefss(c *cli.Command, data []edgeproto.CloudletNodeRefs, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowCloudletNodeRefs %v\n", data[ii])
+		myerr := ShowCloudletNodeRefs(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
+var CloudletNodeRefsApiCmds = []*cobra.Command{
+	ShowCloudletNodeRefsCmd.GenCmd(),
+}
+
 var VMResourceRequiredArgs = []string{
 	"key.name",
 	"key.organization",
@@ -349,3 +431,21 @@ var AppInstRefsComments = map[string]string{
 	"key.version":      "App version",
 }
 var AppInstRefsSpecialArgs = map[string]string{}
+var CloudletNodeRefsRequiredArgs = []string{
+	"key.organization",
+	"key.name",
+	"key.federatedorganization",
+}
+var CloudletNodeRefsOptionalArgs = []string{
+	"nodes:#.organization",
+	"nodes:#.name",
+}
+var CloudletNodeRefsAliasArgs = []string{}
+var CloudletNodeRefsComments = map[string]string{
+	"key.organization":          "Organization of the cloudlet site",
+	"key.name":                  "Name of the cloudlet",
+	"key.federatedorganization": "Federated operator organization who shared this cloudlet",
+	"nodes:#.organization":      "Organization the node belongs to.",
+	"nodes:#.name":              "Name of the node",
+}
+var CloudletNodeRefsSpecialArgs = map[string]string{}

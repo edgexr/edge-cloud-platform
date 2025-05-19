@@ -19,6 +19,7 @@ package util
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -101,6 +102,51 @@ func DockerSanitize(name string) string {
 		",", "",
 		"!", ".")
 	return r.Replace(name)
+}
+
+func ValidHostname(name string) error {
+	if name == "" {
+		return errors.New("empty hostname")
+	}
+	if len(name) > 253 {
+		return errors.New("hostname longer than 253 chars")
+	}
+	parts := strings.Split(name, ".")
+	for _, part := range parts {
+		if len(part) > maxHostnameLength {
+			return fmt.Errorf("hostname label %s longer than 63 chars", part)
+		}
+		for _, ch := range part {
+			if ch >= 'a' && ch <= 'z' {
+				continue
+			}
+			if ch >= 'A' && ch <= 'Z' {
+				continue
+			}
+			if ch >= '0' && ch <= '9' {
+				continue
+			}
+			if ch == '-' {
+				continue
+			}
+			return fmt.Errorf("hostname label %s contains invalid char %c", part, ch)
+		}
+	}
+	return nil
+}
+
+func ValidHostnameOrIP(name string) error {
+	if name == "" {
+		return errors.New("empty hostname or IP")
+	}
+	ip := net.ParseIP(name)
+	if ip != nil {
+		return nil
+	}
+	if err := ValidHostname(name); err != nil {
+		return err
+	}
+	return nil
 }
 
 // DNSSanitize santizies the name string for RFC 1123 DNS format.

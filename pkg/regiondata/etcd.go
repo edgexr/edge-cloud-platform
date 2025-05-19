@@ -241,7 +241,7 @@ func (e *EtcdClient) List(key string, cb objstore.ListCb) error {
 // were watching on the proxy for the same data, when the upstream data changes,
 // that data would be sent back to each one in serial. So it may not be as
 // performant as our own cache.
-func (e *EtcdClient) Sync(ctx context.Context, key string, cb objstore.SyncCb) error {
+func (e *EtcdClient) Sync(ctx context.Context, name, key string, cb objstore.SyncCb) error {
 	refresh := true
 	done := false
 	// we keep track of the revision so that we don't miss any changes

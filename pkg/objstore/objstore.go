@@ -57,7 +57,10 @@ type KVStore interface {
 	// of SyncAllStart and SyncAllEnd. Any objects that were not received
 	// during that time must be removed from the local cache.
 	// Use a context with cancel to be able to cancel the call.
-	Sync(ctx context.Context, key string, cb SyncCb) error
+	// The name argument is only used for unit-tests.
+	// The key argument specifies the key prefix which will trigger
+	// watch callbacks to the SyncCb parameter.
+	Sync(ctx context.Context, name, key string, cb SyncCb) error
 	// ApplySTM applies a Software Transaction Model which basically
 	// collects gets/puts and does an all-or-nothing transaction.
 	// It tracks revisions for all gets and puts. If any keys were

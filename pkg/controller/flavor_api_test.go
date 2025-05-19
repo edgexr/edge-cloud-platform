@@ -69,6 +69,7 @@ func testMasterFlavor(t *testing.T, ctx context.Context, apis *AllApis) {
 	masterFlavor := edgeproto.Flavor{}
 	flavorKey := edgeproto.FlavorKey{}
 	flavorKey.Name = settings.MasterNodeFlavor
+	features := &edgeproto.PlatformFeatures{}
 
 	err = apis.cloudletApi.sync.ApplySTMWait(ctx, func(stm concurrency.STM) error {
 		if !apis.flavorApi.store.STMGet(stm, &flavorKey, &masterFlavor) {
@@ -82,7 +83,7 @@ func testMasterFlavor(t *testing.T, ctx context.Context, apis *AllApis) {
 		}
 
 		ostm := edgeproto.NewOptionalSTM(stm)
-		vmspec, err := apis.resTagTableApi.GetVMSpec(ctx, ostm, masterFlavor.ToNodeResources(), "", cl, cli)
+		vmspec, err := apis.resTagTableApi.GetVMSpec(ctx, ostm, masterFlavor.ToNodeResources(), "", cl, cli, features)
 		require.Nil(t, err, "GetVmSpec masterNodeFlavor")
 		require.Equal(t, "flavor.medium", vmspec.FlavorName)
 

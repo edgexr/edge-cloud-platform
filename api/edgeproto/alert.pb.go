@@ -1472,7 +1472,7 @@ func GetEnumParseHelp(t reflect.Type) (string, string, bool) {
 	case reflect.TypeOf(StreamState(0)):
 		return "StreamState", ", valid values are one of Unknown, Start, Stop, Error, or 0, 1, 2, 3", true
 	case reflect.TypeOf(VersionHash(0)):
-		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, Eac56710C013D954Db31Eeb306B514A4, 75883D14000640B2Ecf694Fe8Ef9192B, E65C39Ec2A489834Dd06E87F7239F9A8, B25B4E18E9A1Dadfd3006E23Fabfbf95, Abec45B13Db5Cd29E3Bcf63D3B80Be29, 2D0B51B0Cb6Eaff42225Cd1795E168E7, or 0, 52, 53, 54, 55, 56, 57, 58, 59, 60", true
+		return "VersionHash", ", valid values are one of D41D8Cd98F00B204E9800998Ecf8427E, C2D882033B0C14F28Cece41Cf4010060, 14Ae4C721C1Bace6E8379D0061A72A77, Eff9D3A6C74Fd02840Efce05D1984E8D, Eac56710C013D954Db31Eeb306B514A4, 75883D14000640B2Ecf694Fe8Ef9192B, E65C39Ec2A489834Dd06E87F7239F9A8, B25B4E18E9A1Dadfd3006E23Fabfbf95, Abec45B13Db5Cd29E3Bcf63D3B80Be29, 2D0B51B0Cb6Eaff42225Cd1795E168E7, 686F58291A546684177E2C4452F74300, or 0, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61", true
 	}
 	return "", "", false
 }
@@ -1507,9 +1507,11 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowNetwork":                  struct{}{},
 	"ShowClusterInst":              struct{}{},
 	"ShowClusterInstInfo":          struct{}{},
+	"ShowNode":                     struct{}{},
 	"ShowCloudletRefs":             struct{}{},
 	"ShowClusterRefs":              struct{}{},
 	"ShowAppInstRefs":              struct{}{},
+	"ShowCloudletNodeRefs":         struct{}{},
 	"ShowRateLimitSettings":        struct{}{},
 	"ShowFlowRateLimitSettings":    struct{}{},
 	"ShowMaxReqsRateLimitSettings": struct{}{},
@@ -1556,6 +1558,8 @@ var AllKeyTags = []string{
 	"name",
 	"network",
 	"node",
+	"nodename",
+	"nodeorg",
 	"noderegion",
 	"nodetype",
 	"policy",
@@ -1605,6 +1609,8 @@ var AllKeyTagsMap = map[string]struct{}{
 	"name":                struct{}{},
 	"network":             struct{}{},
 	"node":                struct{}{},
+	"nodename":            struct{}{},
+	"nodeorg":             struct{}{},
 	"noderegion":          struct{}{},
 	"nodetype":            struct{}{},
 	"policy":              struct{}{},
@@ -1637,6 +1643,7 @@ func GetReferencesMap() map[string][]string {
 	refs["AutoProvPolicy"] = []string{"Zone"}
 	refs["AutoProvPolicyZone"] = []string{"AutoProvPolicy", "Zone"}
 	refs["Cloudlet"] = []string{"Flavor", "GPUDriver", "PlatformFeatures", "ResTagTable", "TrustPolicy", "VMPool"}
+	refs["CloudletNodeRefs"] = []string{"Node"}
 	refs["CloudletRefs"] = []string{"AppInst", "ClusterInst"}
 	refs["CloudletResMap"] = []string{"Cloudlet", "ResTagTable"}
 	refs["ClusterInst"] = []string{"AutoScalePolicy", "Cloudlet", "Network"}
