@@ -178,7 +178,7 @@ func CallOPERALPHAQosPriorityAPI(ctx context.Context, sesId string, method strin
 		if strings.HasPrefix(respBody, "Found session") {
 			words := strings.Split(respBody, " ")
 			if len(words) < 3 {
-				return nil, fmt.Errorf(fmt.Sprintf("Could not parse response: %s", respBody))
+				return nil, fmt.Errorf("Could not parse response: %s", respBody)
 			}
 			sessionId := words[2]
 			url := fmt.Sprintf("%s/%s", reqUrl, sessionId)
@@ -210,7 +210,7 @@ func CallOPERALPHAQosPriorityAPI(ctx context.Context, sesId string, method strin
 					if status == http.StatusNoContent {
 						log.SpanLog(ctx, log.DebugLevelDmereq, "Successfully deleted QOS session")
 					} else {
-						return nil, fmt.Errorf(fmt.Sprintf("Failed to delete existing QOS session: Error code: %d", status))
+						return nil, fmt.Errorf("Failed to delete existing QOS session: Error code: %d", status)
 					}
 
 					// Send new request to create session with desired QOS profile.
@@ -256,10 +256,10 @@ func CallOPERALPHAQosPriorityAPI(ctx context.Context, sesId string, method strin
 		// This status will be returned in the reply.
 	} else if status == http.StatusBadRequest {
 		log.SpanLog(ctx, log.DebugLevelDmereq, "400 Bad request")
-		return nil, fmt.Errorf(respBody)
+		return nil, fmt.Errorf("Bad request: %s", respBody)
 	} else {
 		log.WarnLog("returning error", "received ", status)
-		return nil, fmt.Errorf(fmt.Sprintf("API call received unknown status: %d", status))
+		return nil, fmt.Errorf("API call received unknown status: %d", status)
 	}
 
 	reply.HttpStatus = uint32(status)

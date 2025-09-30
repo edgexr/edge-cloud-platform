@@ -235,7 +235,7 @@ func (s *StreamObjApi) StreamMsgs(ctx context.Context, streamKey string, cb edge
 				if !ok {
 					return done, infoDone, fmt.Errorf("Invalid stream error %v, must be of type string", v)
 				}
-				return done, infoDone, fmt.Errorf(val)
+				return done, infoDone, errors.New(val)
 			case StreamMsgTypeEOM:
 				done = true
 			case StreamMsgTypeInfoEOM:

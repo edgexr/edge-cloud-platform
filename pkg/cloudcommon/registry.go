@@ -17,6 +17,7 @@ package cloudcommon
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -532,7 +533,7 @@ func handleWWWAuth(ctx context.Context, method, regUrl, authHeader string, auth 
 				if resp != nil {
 					resp.Body.Close()
 				}
-				return nil, fmt.Errorf(http.StatusText(resp.StatusCode))
+				return nil, errors.New(http.StatusText(resp.StatusCode))
 			}
 			return resp, nil
 		}
@@ -541,7 +542,7 @@ func handleWWWAuth(ctx context.Context, method, regUrl, authHeader string, auth 
 				return nil, fmt.Errorf("Unable to find hostname in Vault")
 			}
 		}
-		return nil, fmt.Errorf(http.StatusText(resp.StatusCode))
+		return nil, errors.New(http.StatusText(resp.StatusCode))
 	}
 	return nil, fmt.Errorf("unable to find bearer token")
 }

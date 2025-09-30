@@ -17,13 +17,14 @@ package awsec2
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	awsgen "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-generic"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 const FreeInternalSubnetType string = "free-internal"
@@ -57,7 +58,7 @@ func (a *AwsEc2Platform) GetVPC(ctx context.Context, name string) (*AwsEc2Vpc, e
 		return nil, err
 	}
 	if len(vpclist.Vpcs) == 0 {
-		return nil, fmt.Errorf(VpcDoesNotExistError + ":" + name)
+		return nil, errors.New(VpcDoesNotExistError + ":" + name)
 	}
 	// there is nothing to prevent creating 2 VPCs with the same name tag, but it indicates
 	// an error for us.
@@ -123,7 +124,7 @@ func (a *AwsEc2Platform) GetInternetGateway(ctx context.Context, name string) (*
 		return nil, err
 	}
 	if len(gwList.InternetGateways) == 0 {
-		return nil, fmt.Errorf(GatewayDoesNotExistError + ":" + name)
+		return nil, errors.New(GatewayDoesNotExistError + ":" + name)
 	}
 	// there is nothing to prevent creating 2 GWs with the same name tag, but it indicates
 	// an error for us.
@@ -340,7 +341,7 @@ func (a *AwsEc2Platform) GetElasticIP(ctx context.Context, name, vpcId string) (
 		}
 		return addr.AllocationId, nil
 	}
-	return "", fmt.Errorf(ElasticIpDoesNotExistError + ":" + name)
+	return "", errors.New(ElasticIpDoesNotExistError + ":" + name)
 }
 
 func (a *AwsEc2Platform) AllocateElasticIP(ctx context.Context) (string, error) {
@@ -417,7 +418,7 @@ func (a *AwsEc2Platform) GetSubnet(ctx context.Context, name string) (*AwsEc2Sub
 		return nil, err
 	}
 	if len(subnetList.Subnets) == 0 {
-		return nil, fmt.Errorf(SubnetDoesNotExistError + ":" + name)
+		return nil, errors.New(SubnetDoesNotExistError + ":" + name)
 	}
 	// there is nothing to prevent creating 2 VPCs with the same name tag, but it indicates
 	// an error for us.
@@ -435,7 +436,7 @@ func (a *AwsEc2Platform) CreateSubnet(ctx context.Context, vmGroupName, name str
 	sn, err := a.GetSubnet(ctx, name)
 	if err == nil {
 		// already exists
-		return sn.SubnetId, fmt.Errorf(SubnetAlreadyExistsError + ": " + name)
+		return sn.SubnetId, errors.New(SubnetAlreadyExistsError + ": " + name)
 	}
 	if !strings.Contains(err.Error(), SubnetDoesNotExistError) {
 		return "", err
@@ -515,7 +516,7 @@ func (a *AwsEc2Platform) GetNatGateway(ctx context.Context, name string) (*AwsEc
 		}
 	}
 	if numgw == 0 {
-		return nil, fmt.Errorf(GatewayDoesNotExistError + ":" + name)
+		return nil, errors.New(GatewayDoesNotExistError + ":" + name)
 	}
 	// there is nothing to prevent creating 2 GWs with the same name tag, but it indicates
 	// an error for us.

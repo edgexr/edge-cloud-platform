@@ -500,7 +500,7 @@ func (s *server) RegisterClient(ctx context.Context,
 
 	cookie, err := uaemcommon.GenerateCookie(&key, ctx, cookieExpiration)
 	if err != nil {
-		return mstatus, grpc.Errorf(codes.Internal, err.Error())
+		return mstatus, status.Error(codes.Internal, err.Error())
 	}
 
 	// Set UUID in the reply if none were sent in the request

@@ -90,8 +90,7 @@ func handleSession(w http.ResponseWriter, r *http.Request, priorityType string) 
 			return
 		}
 		sesId := parts[3]
-		log.Printf(r.Method)
-		log.Printf("sesId: %v", sesId)
+		log.Printf("method: %v, sesId: %v", r.Method, sesId)
 		if sesId == "" {
 			msg := "400 - Missing sesId"
 			log.Print(msg)

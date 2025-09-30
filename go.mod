@@ -1,8 +1,8 @@
 module github.com/edgexr/edge-cloud-platform
 
-go 1.22
+go 1.25.1
 
-toolchain go1.22.9
+toolchain go1.25.1
 
 require (
 	github.com/AsGz/geo v0.0.0-20170331085501-324ae0e80045

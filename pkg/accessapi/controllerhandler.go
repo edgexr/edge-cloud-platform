@@ -17,6 +17,7 @@ package accessapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -146,7 +147,7 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 			return nil, err
 		}
 		if !s.cloudletVerified.Key.Matches(&cloudletNode.Key.CloudletKey) {
-			return nil, fmt.Errorf("create cloudlet node permission denied for cloudlet " + cloudletNode.Key.CloudletKey.GetKeyString())
+			return nil, errors.New("create cloudlet node permission denied for cloudlet " + cloudletNode.Key.CloudletKey.GetKeyString())
 		}
 		cloudletNode.Key.CloudletKey = s.cloudletVerified.Key
 		password, err := s.vaultClient.CreateCloudletNode(ctx, &cloudletNode)
@@ -161,7 +162,7 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 			return nil, err
 		}
 		if !s.cloudletVerified.Key.Matches(&nodeKey.CloudletKey) {
-			return nil, fmt.Errorf("delete cloudlet node permission denied for cloudlet " + nodeKey.CloudletKey.GetKeyString())
+			return nil, errors.New("delete cloudlet node permission denied for cloudlet " + nodeKey.CloudletKey.GetKeyString())
 		}
 		err = s.vaultClient.DeleteCloudletNode(ctx, &nodeKey)
 		if err != nil {

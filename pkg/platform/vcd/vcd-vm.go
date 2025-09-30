@@ -16,6 +16,7 @@ package vcd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -212,7 +213,7 @@ func (v *VcdPlatform) CreateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -686,7 +687,7 @@ func (v *VcdPlatform) UpdateVMs(ctx context.Context, vmgp *vmlayer.VMGroupOrches
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -832,7 +833,7 @@ func (v *VcdPlatform) DeleteVMs(ctx context.Context, vmGroupName, ownerID string
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -864,7 +865,7 @@ func (v *VcdPlatform) SetPowerState(ctx context.Context, serverName, serverActio
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -1016,7 +1017,7 @@ func (v *VcdPlatform) GetServerGroupResources(ctx context.Context, name string) 
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return nil, fmt.Errorf(NoVCDClientInContext)
+		return nil, errors.New(NoVCDClientInContext)
 	}
 	// xxx need ContainerInfo as well
 	vdc, err := v.GetVdcFromContext(ctx, vcdClient)

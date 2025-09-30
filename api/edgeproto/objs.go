@@ -724,7 +724,7 @@ func (key *PolicyKey) ValidateKey() error {
 		errstring := err.Error()
 		// lowercase the first letter of the error message
 		errstring = strings.ToLower(string(errstring[0])) + errstring[1:len(errstring)]
-		return fmt.Errorf("Invalid organization, " + errstring)
+		return fmt.Errorf("Invalid organization %s", errstring)
 	}
 	if key.Name == "" {
 		return errors.New("Policy name cannot be empty")
@@ -1477,11 +1477,11 @@ func (s *TrustPolicy) Validate(fmap objstore.FieldMap) error {
 func (key *TrustPolicyExceptionKey) ValidateKey() error {
 	if err := key.AppKey.ValidateKey(); err != nil {
 		errstring := err.Error()
-		return fmt.Errorf("Invalid AppKey in TrustPolicyExceptionKey, " + errstring)
+		return fmt.Errorf("Invalid AppKey in TrustPolicyExceptionKey: %s", errstring)
 	}
 	if err := key.ZonePoolKey.ValidateKey(); err != nil {
 		errstring := err.Error()
-		return fmt.Errorf("Invalid ZonePoolKey in TrustPolicyExceptionKey, " + errstring)
+		return fmt.Errorf("Invalid ZonePoolKey in TrustPolicyExceptionKey: %s", errstring)
 	}
 	if key.Name == "" {
 		return fmt.Errorf("TrustPolicyException name cannot be empty")

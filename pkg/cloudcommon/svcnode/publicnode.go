@@ -206,7 +206,7 @@ func (s *PublicCertManager) GetCertificateFunc() func(*tls.ClientHelloInfo) (*tl
 			}
 			log.DebugLog(log.DebugLevelApi, "no cert found for tls client", "serverName", info.ServerName, "validNames", s.getCommonNames())
 		}
-		return nil, fmt.Errorf("no certificate found for serverName %q" + info.ServerName)
+		return nil, fmt.Errorf("no certificate found for serverName %q", info.ServerName)
 	}
 }
 

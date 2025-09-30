@@ -36,6 +36,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 )
 
 // 1 km is considered near enough to call 2 locations equivalent
@@ -1402,14 +1403,14 @@ func StreamEdgeEvent(ctx context.Context, svr dme.MatchEngineApi_StreamEdgeEvent
 		sessionCookieKey, err = VerifyCookie(ctx, sessionCookie)
 		log.SpanLog(ctx, log.DebugLevelDmereq, "EdgeEvent VerifyCookie result", "ckey", sessionCookieKey, "err", err)
 		if err != nil {
-			return grpc.Errorf(codes.Unauthenticated, err.Error())
+			return status.Error(codes.Unauthenticated, err.Error())
 		}
 		ctx = NewCookieContext(ctx, sessionCookieKey)
 		// Verify EdgeEventsCookieKey
 		edgeEventsCookieKey, err = VerifyEdgeEventsCookie(ctx, initMsg.EdgeEventsCookie)
 		log.SpanLog(ctx, log.DebugLevelDmereq, "EdgeEvent VerifyEdgeEventsCookie result", "key", edgeEventsCookieKey, "err", err)
 		if err != nil {
-			return grpc.Errorf(codes.Unauthenticated, err.Error())
+			return status.Error(codes.Unauthenticated, err.Error())
 		}
 		lastLocation = &edgeEventsCookieKey.Location
 		// Initialize deviceInfoStatic for stats

@@ -147,7 +147,7 @@ func updateLocation(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatalf("unable to write to file: %s, err: %v\n", *locdbfile, err)
 		}
-		fmt.Fprintf(ofile, string(ymlout))
+		fmt.Fprint(ofile, string(ymlout))
 	}
 	w.Write([]byte("Location DB Updated OK for " + req.Ipaddress + "\n"))
 
