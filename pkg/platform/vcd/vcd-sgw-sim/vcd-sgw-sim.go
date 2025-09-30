@@ -72,7 +72,7 @@ func validateRequest(r *http.Request) int {
 
 	contentType := r.Header.Get("Content-Type")
 	if contentType != vcd.ContentFormUrlEncoded {
-		log.Printf("Bad Content-Type: " + contentType)
+		log.Print("Bad Content-Type: " + contentType)
 		return http.StatusBadRequest
 	}
 

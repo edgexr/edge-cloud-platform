@@ -16,6 +16,7 @@ package openstack
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"net"
@@ -35,7 +36,7 @@ func (o *OpenstackPlatform) GetServerDetail(ctx context.Context, serverName stri
 	var sd vmlayer.ServerDetail
 	osd, err := o.GetOpenstackServerDetails(ctx, serverName)
 	if err != nil && strings.Contains(err.Error(), "No Server found") {
-		return nil, fmt.Errorf(vmlayer.ServerDoesNotExistError + " for " + serverName)
+		return nil, errors.New(vmlayer.ServerDoesNotExistError + " for " + serverName)
 	}
 	if err != nil {
 		return &sd, err

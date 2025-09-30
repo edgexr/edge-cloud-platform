@@ -196,7 +196,7 @@ func run() {
 		panic(err.Error())
 	}
 
-	log.Printf("Listening on " + listenAddr)
+	log.Print("Listening on " + listenAddr)
 	certfile := fmt.Sprintf("%s/%s.crt", *certdir, *certname)
 	keyfile := fmt.Sprintf("%s/%s.key", *certdir, *certname)
 	cafile := fmt.Sprintf("%s/%s.crt", *certdir, *caname)

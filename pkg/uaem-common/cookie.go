@@ -22,14 +22,15 @@ import (
 	"strings"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v4"
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 )
 
 var Jwks vault.JWKS
@@ -160,7 +161,7 @@ func UnaryAuthInterceptor(ctx context.Context, req interface{}, info *grpc.Unary
 		// Verify session cookie, add decoded CookieKey to context
 		ckey, err := VerifyCookie(ctx, cookie)
 		if err != nil {
-			return nil, grpc.Errorf(codes.Unauthenticated, err.Error())
+			return nil, status.Error(codes.Unauthenticated, err.Error())
 		}
 		ctx = NewCookieContext(ctx, ckey)
 	}

@@ -16,6 +16,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"path/filepath"
@@ -139,7 +140,7 @@ func (s *GPUDriverApi) validateLicenseConfig(ctx context.Context, licenseConfig 
 	}
 	checksum := resp.Header.Get(cloudcommon.VmRegHeaderMD5)
 	if checksum == "" {
-		return fmt.Errorf("no MD5 checksum in HEAD response for " + licenseConfig)
+		return errors.New("no MD5 checksum in HEAD response for " + licenseConfig)
 	}
 	*md5sum = checksum
 	return nil

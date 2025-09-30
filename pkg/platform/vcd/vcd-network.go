@@ -16,6 +16,7 @@ package vcd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
@@ -161,7 +162,7 @@ func (v *VcdPlatform) GetNetworkDetail(ctx context.Context, networkName string) 
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return nil, fmt.Errorf(NoVCDClientInContext)
+		return nil, errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -245,7 +246,7 @@ func (v *VcdPlatform) GetExternalGateway(ctx context.Context, extNetname string)
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return "", fmt.Errorf(NoVCDClientInContext)
+		return "", errors.New(NoVCDClientInContext)
 	}
 	vdcNet, err := v.GetExtNetwork(ctx, vcdClient, extNetname)
 	if err != nil {
@@ -467,7 +468,7 @@ func (v *VcdPlatform) AttachPortToServer(ctx context.Context, serverName string,
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -568,7 +569,7 @@ func (v *VcdPlatform) DetachPortFromServer(ctx context.Context, serverName strin
 	networkName := subnetName
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -1187,7 +1188,7 @@ func (v *VcdPlatform) ValidateAdditionalNetworks(ctx context.Context, additional
 
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {

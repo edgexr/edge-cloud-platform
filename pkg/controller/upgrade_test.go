@@ -188,7 +188,7 @@ func compareJson(funcName, key, expected, actual string) (bool, error) {
 	if !cmp.Equal(expectedMap, actualMap) {
 		fmt.Printf("[%s] comparsion fail for key: %s\n", funcName, key)
 		fmt.Printf("expected vs actual:\n")
-		fmt.Printf(cmp.Diff(expectedMap, actualMap))
+		fmt.Print(cmp.Diff(expectedMap, actualMap))
 		return true, fmt.Errorf("Values don't match for the key, upgradeFunc: %s", funcName)
 	}
 	return true, nil

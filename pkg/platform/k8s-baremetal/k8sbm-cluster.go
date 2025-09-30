@@ -17,7 +17,6 @@ package k8sbm
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -33,19 +32,19 @@ func (k *K8sBareMetalPlatform) CreateClusterInst(ctx context.Context, clusterIns
 		// This is a no-op as the cluster already exists.
 		return nil, nil
 	}
-	return nil, fmt.Errorf("CreateClusterInst not supported on " + platformName())
+	return nil, errors.New("CreateClusterInst not supported on " + platformName())
 }
 
 func (k *K8sBareMetalPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
-	return nil, fmt.Errorf("UpdateClusterInst not supported on " + platformName())
+	return nil, errors.New("UpdateClusterInst not supported on " + platformName())
 }
 
 func (k *K8sBareMetalPlatform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("DeleteClusterInst not supported on " + platformName())
+	return errors.New("DeleteClusterInst not supported on " + platformName())
 }
 
 func (s *K8sBareMetalPlatform) ChangeClusterInstDNS(ctx context.Context, clusterInst *edgeproto.ClusterInst, oldFqdn string, updateCallback edgeproto.CacheUpdateCallback) error {
-	return fmt.Errorf("ChangeClusterInstDNS not supported on " + platformName())
+	return errors.New("ChangeClusterInstDNS not supported on " + platformName())
 }
 
 func (s *K8sBareMetalPlatform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error) {

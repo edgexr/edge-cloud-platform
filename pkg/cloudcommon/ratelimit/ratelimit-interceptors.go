@@ -52,7 +52,7 @@ func GetDmeUnaryRateLimiterInterceptor(limiter Limiter) grpc.UnaryServerIntercep
 				errMsg += fmt.Sprintf(" Error is: %s.", err.Error())
 			}
 			log.SpanLog(ctx, log.DebugLevelDmereq, "Unary Dme API Rate limited", "api", method, "err", errMsg)
-			return nil, status.Errorf(codes.ResourceExhausted, errMsg)
+			return nil, status.Error(codes.ResourceExhausted, errMsg)
 
 		}
 		return handler(ctx, req)
@@ -93,7 +93,7 @@ func GetDmeStreamRateLimiterInterceptor(limiter Limiter) grpc.StreamServerInterc
 				errMsg += fmt.Sprintf(" Error is: %s.", err.Error())
 			}
 			log.SpanLog(cctx, log.DebugLevelDmereq, "Stream Dme API Rate limited", "api", method, "err", errMsg)
-			return status.Errorf(codes.ResourceExhausted, errMsg)
+			return status.Error(codes.ResourceExhausted, errMsg)
 		}
 
 		wrapper := &LimiterStreamWrapper{ServerStream: ss, ctx: cctx}

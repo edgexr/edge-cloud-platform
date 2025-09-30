@@ -16,6 +16,7 @@ package vcd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -88,7 +89,7 @@ func (v *VcdPlatform) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edge
 	vcdClient := v.GetVcdClientFromContext(ctx)
 
 	if vcdClient == nil {
-		return nil, fmt.Errorf(NoVCDClientInContext)
+		return nil, errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdcFromContext(ctx, vcdClient)
 	if err != nil {

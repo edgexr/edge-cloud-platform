@@ -17,6 +17,7 @@ package vcd
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -218,7 +219,7 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	// first see if this template already exists within our catalog
 	_, err = v.FindTemplate(ctx, imageInfo.LocalImageName, vcdClient)
@@ -384,7 +385,7 @@ func (v *VcdPlatform) uploadToVCD(ctx context.Context, imageInfo *infracommon.Im
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 
 	// get a token that VCD can use to pull from the artifactory
@@ -420,7 +421,7 @@ func (v *VcdPlatform) DeleteImage(ctx context.Context, folder, image string) err
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	if !v.GetTemplateArtifactoryImportEnabled() {
 		log.SpanLog(ctx, log.DebugLevelInfra, "skipping template delete because import is disabled, delete manually if needed", "template", image)

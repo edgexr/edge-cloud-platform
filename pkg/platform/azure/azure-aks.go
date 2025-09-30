@@ -159,7 +159,7 @@ func (a *AzurePlatform) GetCredentials(ctx context.Context, clusterName string, 
 		return nil, err
 	}
 	if len(creds.Kubeconfigs) == 0 {
-		return nil, fmt.Errorf("no kubeconfig credentials found for cluster " + clusterName)
+		return nil, errors.New("no kubeconfig credentials found for cluster " + clusterName)
 	}
 	// Note: although comments for azure sdk code say the data is
 	// base64 encoded, the actual values from Azure are not.

@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc"
 
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // A wrapper for the real grpc.ServerStream
@@ -53,7 +54,7 @@ func (s *ServerStreamWrapper) RecvMsg(m interface{}) error {
 		ckey, err := VerifyCookie(ctx, cookie)
 		log.SpanLog(s.Context(), log.DebugLevelDmereq, "QosPosition VerifyCookie result", "ckey", ckey, "err", err)
 		if err != nil {
-			return grpc.Errorf(codes.Unauthenticated, err.Error())
+			return status.Error(codes.Unauthenticated, err.Error())
 		}
 		s.ctx = NewCookieContext(ctx, ckey)
 	case *dme.ClientEdgeEvent:
@@ -61,7 +62,7 @@ func (s *ServerStreamWrapper) RecvMsg(m interface{}) error {
 		break
 	default:
 		log.InfoLog("Unknown streaming operation, cannot verify cookie", "type", reflect.TypeOf(m).String())
-		return grpc.Errorf(codes.Unauthenticated, err.Error())
+		return status.Error(codes.Unauthenticated, err.Error())
 	}
 	return err
 }

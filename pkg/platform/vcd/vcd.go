@@ -16,6 +16,7 @@ package vcd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -187,7 +188,7 @@ func (v *VcdPlatform) GetResourceID(ctx context.Context, resourceType vmlayer.Re
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return "", fmt.Errorf(NoVCDClientInContext)
+		return "", errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -289,7 +290,7 @@ func (v *VcdPlatform) ImportImage(ctx context.Context, folder, imageFile string)
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return fmt.Errorf(NoVCDClientInContext)
+		return errors.New(NoVCDClientInContext)
 	}
 	// first delete anything that may be there for this image
 	v.DeleteImage(ctx, folder, imageFile)
@@ -338,7 +339,7 @@ func (v *VcdPlatform) GetServerDetail(ctx context.Context, serverName string) (*
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, NoVCDClientInContext)
-		return nil, fmt.Errorf(NoVCDClientInContext)
+		return nil, errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {

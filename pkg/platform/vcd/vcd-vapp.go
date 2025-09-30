@@ -17,6 +17,7 @@ package vcd
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -601,7 +602,7 @@ func (v *VcdPlatform) DumpVapps(ctx context.Context, matchPattern string) (strin
 	}
 	vcdClient := v.GetVcdClientFromContext(ctx)
 	if vcdClient == nil {
-		return "", fmt.Errorf(NoVCDClientInContext)
+		return "", errors.New(NoVCDClientInContext)
 	}
 	vdc, err := v.GetVdc(ctx, vcdClient)
 	if err != nil {
@@ -609,7 +610,7 @@ func (v *VcdPlatform) DumpVapps(ctx context.Context, matchPattern string) (strin
 		return "", err
 	}
 	if v.vmProperties == nil { // paranoid check because this runs in debug
-		return "", fmt.Errorf("nil vmProperties")
+		return "", errors.New("nil vmProperties")
 	}
 	// For all vapps in vdc
 	for _, r := range vdc.Vdc.ResourceEntities {
