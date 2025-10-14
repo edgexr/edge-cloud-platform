@@ -92,6 +92,7 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.4
 	go.etcd.io/etcd/client/v3 v3.5.4
 	google.golang.org/grpc/examples v0.0.0-20220805221237-6f34b7ad1546
+	gopkg.in/yaml.v3 v3.0.1
 	sigs.k8s.io/yaml v1.3.0
 )
 
@@ -218,7 +219,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.0 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
 	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 // indirect
