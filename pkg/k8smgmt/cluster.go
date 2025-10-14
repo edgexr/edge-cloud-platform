@@ -257,7 +257,7 @@ func filterWarnings(out string) string {
 	lines := strings.Split(out, "\n")
 	linesFiltered := []string{}
 	for _, line := range lines {
-		if strings.HasPrefix(line, "WARNING: ") {
+		if strings.HasPrefix(strings.ToLower(line), "warning: ") {
 			continue
 		}
 		linesFiltered = append(linesFiltered, line)

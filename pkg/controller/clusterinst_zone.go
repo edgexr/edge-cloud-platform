@@ -99,7 +99,7 @@ func (s *ClusterInstApi) validatePotentialCloudlet(ctx context.Context, cctx *Ca
 		return nil, NoSupportClusterInst, errors.New(NoSupportClusterInst)
 	}
 	if features.SupportsKubernetesOnly && in.Deployment != cloudcommon.DeploymentTypeKubernetes {
-		return nil, KubernetesOnly, fmt.Errorf("app deployment %s but cloudlet only supports kubernetes", in.Deployment)
+		return nil, KubernetesOnly, fmt.Errorf("deployment %s but cloudlet only supports kubernetes", in.Deployment)
 	}
 	if in.SharedVolumeSize != 0 && !features.SupportsSharedVolume {
 		return nil, NoSupportSharedVolumes, errors.New(NoSupportSharedVolumes)

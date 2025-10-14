@@ -16,7 +16,7 @@ build-edge-cloud-infra-base:
 publish-edge-cloud-infra-base:
 	docker push $(REGISTRY)/edge-cloud-infra-base:$(TAG)
 
-GOVERS = go1.22.9
+GOVERS = go1.25.1
 
 gobuild:
 	docker build -t edgexr/build:$(GOVERS) -f Dockerfile.build .

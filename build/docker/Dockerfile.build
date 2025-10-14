@@ -10,10 +10,10 @@
 # All the tools will be inside the docker.
 #
 
-FROM ubuntu:22.04 AS build
+FROM ubuntu:24.04 AS build
 
-ENV GOVERS 1.22.9
-ENV PROTOCVERS 3.6.0
+ENV GOVERS=1.25.1
+ENV PROTOCVERS=3.6.0
 
 RUN apt-get update
 RUN apt-get install -y wget curl unzip  make git build-essential
