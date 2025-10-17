@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/deployvars"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 )
@@ -71,6 +72,17 @@ func getHelmOpts(ctx context.Context, client ssh.Client, appName, delims string,
 	return getHelmYamlOpt(ymls), nil
 }
 
+func getHelmNamespaceArgs(namespace string, action cloudcommon.Action) string {
+	if namespace == "" {
+		return ""
+	}
+	args := "--namespace=" + namespace
+	if action == cloudcommon.Create {
+		args += " --create-namespace"
+	}
+	return args
+}
+
 // helm chart install options are passed as app annotations.
 // Example: "version=1.2.2,wait=true,timeout=60" would result in "--version 1.2.2 --wait --timeout 60"
 func getHelmInstallOptsString(annotations string) (string, error) {
@@ -112,56 +124,119 @@ func getHelmInstallOptsString(annotations string) (string, error) {
 	return strings.Join(outArr, " "), nil
 }
 
-// helm chart repositories are encoded in image path
-// There are two types of charts:
-//   - standard: "stable/prometheus-operator" which come from the default repo
-//   - external: "https://resources.gigaspaces.com/helm-charts:gigaspaces/insightedge"
-//   - repo name is "gigaspaces" and path is "https://resources.gigaspaces.com/helm-charts"
-func getHelmRepoAndChart(imagePath string) (string, string, error) {
-	var chart = ""
-	// scheme + host + first part of path gives repo path
-	chartUrl, err := url.Parse(imagePath)
-	if err != nil {
-		return "", "", err
-	}
-	sepIndex := strings.IndexByte(chartUrl.Path, ':')
-	if sepIndex < 0 {
-		chart = chartUrl.Path
-	} else {
-		// split path into path, and chart
-		chart = chartUrl.Path[sepIndex+1:]
-		chartUrl.Path = chartUrl.Path[0:sepIndex]
-	}
-
-	chartParts := strings.Split(chart, "/")
-	if len(chartParts) != 2 {
-		return "", "", fmt.Errorf("Could not parse the chart: <%s>", imagePath)
-	}
-
-	if chartUrl.Hostname() != "" {
-		return chartParts[0] + " " + chartUrl.String(), chart, nil
-	}
-	return "", chart, nil
+type HelmChartSpec struct {
+	// Original image path from the App
+	ImagePath string
+	// The URL portion of the spec, may be http(s) or oci
+	URLPath string
+	// The repo name for an http url
+	RepoName string
+	// The chart name for an http url
+	ChartName string
+	// The reference to the chart to be used in helm install/upgrade
+	ChartRef string
 }
 
-func CreateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+// helm chart repositories are encoded in image path
+// There are two types of charts:
+// 1. repo add: "https://resources.gigaspaces.com/helm-charts:gigaspaces/insightedge"
+// repo name is "gigaspaces" and path is "https://resources.gigaspaces.com/helm-charts"
+// 2. OCI path: "oci://registry-1.docker.io/bitnamicharts/nginx"
+func GetHelmChartSpec(imagePath string) (*HelmChartSpec, error) {
+	spec := &HelmChartSpec{
+		ImagePath: imagePath,
+	}
+	if strings.HasPrefix(imagePath, "http") {
+		// break off ending repo/chart
+		expectedHTTPFormat := "<repoURL>:<repo-name>/<chart-name>"
+		idx := strings.LastIndex(imagePath, ":")
+		if idx == -1 {
+			return nil, fmt.Errorf("missing repo/chart in helm image path %q, expected format %q", imagePath, expectedHTTPFormat)
+		}
+		spec.URLPath = imagePath[:idx]
+		if spec.URLPath == "" {
+			return nil, fmt.Errorf("missing repo URL in helm image path %q, expected format %q", imagePath, expectedHTTPFormat)
+		}
+		// check syntax of URL
+		_, err := url.Parse(spec.URLPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse helm image path URL %q, %w", imagePath, err)
+		}
+		chartParts := strings.Split(imagePath[idx+1:], "/")
+		if len(chartParts) != 2 {
+			return nil, fmt.Errorf("invalid repo/chart in helm image path %q, expected format %q", imagePath, expectedHTTPFormat)
+		}
+		spec.RepoName = chartParts[0]
+		spec.ChartName = chartParts[1]
+		if spec.RepoName == "" {
+			return nil, fmt.Errorf("empty repo name in helm image path %q, expected format %q", imagePath, expectedHTTPFormat)
+		}
+		if spec.ChartName == "" {
+			return nil, fmt.Errorf("empty chart name in helm image path %q, expected format %q", imagePath, expectedHTTPFormat)
+		}
+		spec.ChartRef = fmt.Sprintf("%s/%s", spec.RepoName, spec.ChartName)
+	} else if strings.HasPrefix(imagePath, "oci://") {
+		_, err := url.Parse(imagePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse helm image path URL %q, %w", imagePath, err)
+		}
+		spec.URLPath = imagePath
+		spec.ChartRef = imagePath
+	} else {
+		return nil, fmt.Errorf("unsupported helm chart URL scheme for %q, must be http(s):// or oci://", imagePath)
+	}
+	return spec, nil
+}
+
+func helmLogin(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App) error {
+	if accessApi == nil {
+		return nil
+	}
+	_, server, auth, err := cloudcommon.GetSecretAuth(ctx, app.ImagePath, app.Key, accessApi, nil)
+	if err != nil {
+		return err
+	}
+	if auth == nil {
+		return nil
+	}
+	if strings.HasPrefix(app.ImagePath, "oci://") {
+		// use docker login, as helm registry login wasn't working
+		log.SpanLog(ctx, log.DebugLevelApi, "docker login for helm registry", "server", server, "username", auth.Username, "app", app.Key)
+		cmd := fmt.Sprintf("docker login %s -u %s -p '%s'", server, auth.Username, auth.Password)
+		out, err := client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("docker login for oci helm chart to server %s failed, %s, %s", server, out, err)
+		}
+	} else {
+		log.SpanLog(ctx, log.DebugLevelApi, "helm registry login", "server", server, "username", auth.Username, "app", app.Key)
+		cmd := fmt.Sprintf("helm %s registry login %s -u %s -p '%s'", names.KconfArg, server, auth.Username, auth.Password)
+		out, err := client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("helm registry login to server %s failed, %s, %s", server, out, err)
+		}
+	}
+	return nil
+}
+
+func CreateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "create kubernetes helm app", "clusterInst", clusterInst, "kubeNames", names)
 
 	// install helm if it's not installed yet
 	cmd := fmt.Sprintf("helm %s version", names.KconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
-		return err
+		return fmt.Errorf("helm version failed, %s, %s", out, err)
 	}
 
 	// get helm repository config for the app
-	helmRepo, chart, err := getHelmRepoAndChart(app.ImagePath)
+	chartSpec, err := GetHelmChartSpec(app.ImagePath)
+	//helmRepo, chart, err := GetHelmChartSpec(app.ImagePath)
 	if err != nil {
 		return err
 	}
-	// Need to add helm repository first
-	if helmRepo != "" {
-		cmd = fmt.Sprintf("helm %s repo add %s", names.KconfArg, helmRepo)
+	if strings.HasPrefix(chartSpec.URLPath, "http") {
+		// Need to add helm repository first
+		cmd = fmt.Sprintf("helm %s repo add %s %s", names.KconfArg, chartSpec.RepoName, chartSpec.URLPath)
 		out, err = client.Output(cmd)
 		if err != nil && strings.Contains(out, "already exists") {
 			err = nil
@@ -170,14 +245,15 @@ func CreateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 			return fmt.Errorf("error adding helm repo, %s, %s, %v", cmd, out, err)
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "added helm repository", "app name", app.Key.Name)
+		// update repo
+		cmd = fmt.Sprintf("helm %s repo update %s", names.KconfArg, chartSpec.RepoName)
+		out, err = client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("updating helm repo, %s, %s, %v", cmd, out, err)
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "helm repo updated", "app name", app.Key.Name)
 	}
-	cmd = fmt.Sprintf("helm %s repo update", names.KconfArg)
-	out, err = client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("updating helm repos, %s, %s, %v", cmd, out, err)
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "helm repos updated", "app name", app.Key.Name)
-
+	nsArgs := getHelmNamespaceArgs(names.InstanceNamespace, cloudcommon.Create)
 	helmArgs, err := getHelmInstallOptsString(app.Annotations)
 	if err != nil {
 		return err
@@ -187,9 +263,13 @@ func CreateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 	if err != nil {
 		return err
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "Helm options", "helmOpts", helmOpts, "helmArgs", helmArgs)
-	cmd = fmt.Sprintf("helm %s install %s %s %s %s", names.KconfArg, names.HelmAppName, chart,
-		helmArgs, helmOpts)
+	err = helmLogin(ctx, accessApi, client, names, app)
+	if err != nil {
+		return err
+	}
+	cmd = fmt.Sprintf("helm %s install %s %s %s %s %s", names.KconfArg, names.HelmAppName, chartSpec.ChartRef,
+		helmArgs, helmOpts, nsArgs)
+	log.SpanLog(ctx, log.DebugLevelInfra, "helm install", "cmd", cmd)
 	out, err = client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error deploying helm chart, %s, %s, %v", cmd, out, err)
@@ -198,7 +278,8 @@ func CreateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 	return nil
 }
 
-func UpdateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+func UpdateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	nsArgs := getHelmNamespaceArgs(names.InstanceNamespace, cloudcommon.Update)
 	log.SpanLog(ctx, log.DebugLevelInfra, "update kubernetes helm app", "app", app, "kubeNames", names)
 	helmArgs, err := getHelmInstallOptsString(app.Annotations)
 	if err != nil {
@@ -212,21 +293,26 @@ func UpdateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 
 	// get helm repository config for the app
 	// NOTE: since upgrading, no need to add the repo, should already exist
-	_, chart, err := getHelmRepoAndChart(app.ImagePath)
+	chartSpec, err := GetHelmChartSpec(app.ImagePath)
 	if err != nil {
 		return err
 	}
 
-	// Update repos, just in case we need to refresh available versions
-	cmd := fmt.Sprintf("helm %s repo update", names.KconfArg)
-	out, err := client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("updating helm repos, %s, %s, %v", cmd, out, err)
+	if strings.HasPrefix(chartSpec.URLPath, "http") {
+		// Update repos, just in case we need to refresh available versions
+		cmd := fmt.Sprintf("helm %s repo update", names.KconfArg)
+		out, err := client.Output(cmd)
+		if err != nil {
+			return fmt.Errorf("updating helm repos, %s, %s, %v", cmd, out, err)
+		}
 	}
-
-	log.SpanLog(ctx, log.DebugLevelInfra, "Helm options", "helmOpts", helmOpts, "helmArgs", helmArgs)
-	cmd = fmt.Sprintf("helm %s upgrade %s %s %s %s", names.KconfArg, helmArgs, helmOpts, names.HelmAppName, chart)
-	out, err = client.Output(cmd)
+	err = helmLogin(ctx, accessApi, client, names, app)
+	if err != nil {
+		return err
+	}
+	cmd := fmt.Sprintf("helm %s upgrade %s %s %s %s %s", names.KconfArg, nsArgs, helmArgs, helmOpts, names.HelmAppName, chartSpec.ChartRef)
+	log.SpanLog(ctx, log.DebugLevelInfra, "Helm options", "helmOpts", helmOpts, "helmArgs", helmArgs, "cmd", cmd)
+	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("error updating helm chart, %s, %s, %v", cmd, out, err)
 	}
@@ -235,8 +321,9 @@ func UpdateHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 }
 
 func DeleteHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "delete kubernetes helm app")
-	cmd := fmt.Sprintf("helm %s delete %s", names.KconfArg, names.HelmAppName)
+	nsArgs := getHelmNamespaceArgs(names.InstanceNamespace, cloudcommon.Delete)
+	cmd := fmt.Sprintf("helm %s delete %s %s", names.KconfArg, nsArgs, names.HelmAppName)
+	log.SpanLog(ctx, log.DebugLevelInfra, "delete kubernetes helm app", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
 		if !strings.Contains(out, "not found") {

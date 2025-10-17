@@ -178,6 +178,7 @@ func AppData() []edgeproto.App {
 		},
 		Deployment:  "helm",
 		ImageType:   edgeproto.ImageType_IMAGE_TYPE_HELM,
+		ImagePath:   "https://myhelmrepo/charts:mycharts/myhelmapp",
 		AccessPorts: "udp:2024",
 		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		KubernetesResources: &edgeproto.KubernetesResources{

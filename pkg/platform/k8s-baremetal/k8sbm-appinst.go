@@ -77,7 +77,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 			if err != nil {
 				return err
 			}
-			err = infracommon.CreateDockerRegistrySecret(ctx, client, k.cloudletKubeConfig, imagePath, k.commonPf.PlatformConfig.AccessApi, names, nil)
+			err = infracommon.CreateDockerRegistrySecret(ctx, client, k.cloudletKubeConfig, imagePath, app.Key, k.commonPf.PlatformConfig.AccessApi, names, nil)
 			if err != nil {
 				return err
 			}
@@ -109,7 +109,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 			err = k8smgmt.CreateAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithAppInstNoWait())
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Creating Helm App")
-			err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
+			err = k8smgmt.CreateHelmAppInst(ctx, k.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst)
 		}
 		if err != nil {
 			return err
@@ -118,7 +118,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 		// wait for the appinst in parallel with other tasks
 		go func() {
 			if deployment == cloudcommon.DeploymentTypeKubernetes {
-				waitErr := k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
+				waitErr := k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning, k8smgmt.WithAppInstUpdateSender(updateSender))
 				if waitErr == nil {
 					appWaitChan <- ""
 				} else {

@@ -243,6 +243,7 @@ const (
 	GetCloudletAccessVars   = "get-cloudlet-access-vars"
 	GetAppSecretVars        = "get-app-secret-vars"
 	GetRegistryAuth         = "get-registry-auth"
+	GetAppRegistryAuth      = "get-app-registry-auth"
 	SignSSHKey              = "sign-ssh-key"
 	GetSSHPublicKey         = "get-ssh-public-key"
 	GetOldSSHKey            = "get-old-ssh-key"
@@ -269,6 +270,11 @@ type DNSRequest struct {
 type RootLBClient struct {
 	Client ssh.Client
 	FQDN   string
+}
+
+type AppRegAuthRequest struct {
+	ImgURL string
+	AppKey edgeproto.AppKey
 }
 
 // GetTypeBC converts the old enum-based name into the

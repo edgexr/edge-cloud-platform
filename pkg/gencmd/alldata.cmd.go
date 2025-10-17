@@ -229,6 +229,9 @@ func AllDataHideTags(in *edgeproto.AllData) {
 	}
 	for i0 := 0; i0 < len(in.Apps); i0++ {
 		if _, found := tags["nocmp"]; found {
+			in.Apps[i0].Credentials = ""
+		}
+		if _, found := tags["nocmp"]; found {
 			in.Apps[i0].AuthPublicKey = ""
 		}
 		for i1 := 0; i1 < len(in.Apps[i0].Configs); i1++ {
@@ -847,6 +850,8 @@ var AllDataOptionalArgs = []string{
 	"apps:#.imagetype",
 	"apps:#.accessports",
 	"apps:#.defaultflavor.name",
+	"apps:#.username",
+	"apps:#.credentials",
 	"apps:#.authpublickey",
 	"apps:#.command",
 	"apps:#.commandargs",
@@ -1650,10 +1655,12 @@ var AllDataComments = map[string]string{
 	"apps:#.key.organization":                                                    "App developer organization",
 	"apps:#.key.name":                                                            "App name",
 	"apps:#.key.version":                                                         "App version",
-	"apps:#.imagepath":                                                           "URI of where image resides",
+	"apps:#.imagepath":                                                           "URI of where image resides. For container images, this may be a path on docker hub, i.e. nginx:latest or nginx/nginx-ingress:5.2-alpine, or a full path like ghcr.io/cloudnative-pg/postgresql:14.9. For helm charts, the format is either https://<helm-repo>:<repo-name>/<chart-name>, i.e. https://charts.bitnami.com/bitnami:bitnami/redis, or an OCI path, i.e. oci://ghcr.io/company/chart. Note for Helm the chart version goes on the App Annotations field, i.e. version=1.2.3,wait=true,timeout=60. For VM images, this should be an http(s) URL to the image file.",
 	"apps:#.imagetype":                                                           "Image type, one of Unknown, Docker, Qcow, Helm, Ovf, Ova",
 	"apps:#.accessports":                                                         "Comma separated list of protocol:port pairs that the App listens on. Ex: tcp:80,udp:10002. Also supports additional configurations per port: (1) tls (tcp-only) - Enables TLS on specified port. Ex: tcp:443:tls. (2) nginx (udp-only) - Use NGINX LB instead of envoy for specified port. Ex: udp:10001:nginx. (3) maxpktsize (udp-only) - Configures maximum UDP datagram size allowed on port for both upstream/downstream traffic. Ex: udp:10001:maxpktsize=8000. (4) intvis (internal-visibility)- Port is not externally accessible. Ex: tcp:9000:intvis (5) id - Port ID. Ex: tcp:9000:id=p9000 (6) pathprefix (http-only) - Specifies the path prefix to use in the kubernetes ingress, required if multiple http ports are present, defaults to / (7) svcname - For Kubernetes apps, if there are multiple of the same port on different services, this denotes the service name. Ex: tcp:9000:tls:svcname=svc1",
 	"apps:#.defaultflavor.name":                                                  "Flavor name",
+	"apps:#.username":                                                            "Username for authenticating to a private image registry",
+	"apps:#.credentials":                                                         "Credentials for authenticating to a private image registry, saved in encrypted storage",
 	"apps:#.authpublickey":                                                       "Public key used for authentication",
 	"apps:#.command":                                                             "Command that the container runs to start service, separate multiple commands by a space",
 	"apps:#.commandargs":                                                         "Command args to append to command, on cli specify multiple times in order",

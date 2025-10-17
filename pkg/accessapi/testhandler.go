@@ -43,6 +43,10 @@ func (s *TestHandler) GetRegistryAuth(ctx context.Context, imgUrl string) (*clou
 	return &s.RegistryAuth, nil
 }
 
+func (s *TestHandler) GetAppRegistryAuth(ctx context.Context, imgUrl string, appKey edgeproto.AppKey) (*cloudcommon.RegistryAuth, error) {
+	return &s.RegistryAuth, nil
+}
+
 func (s *TestHandler) GetRegistryImageAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
 	return &cloudcommon.RegistryAuth{}, nil
 }

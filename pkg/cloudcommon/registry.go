@@ -31,6 +31,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -140,7 +141,10 @@ func (s *RegistryAuthMgr) getVaultRegistryPathUnfiltered(registry, org string) s
 }
 
 type RegistryAuthApi interface {
+	// Get registry auth for an image, based on registry URL
 	GetRegistryAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error)
+	// Get registry auth for an app, based on app key or registry URL
+	GetAppRegistryAuth(ctx context.Context, imgUrl string, appKey edgeproto.AppKey) (*RegistryAuth, error)
 }
 
 // return host and org (only valid for internal repositories)
@@ -207,6 +211,42 @@ func (s *RegistryAuthMgr) GetRegistryImageAuth(ctx context.Context, imgUrl strin
 		return nil, err
 	}
 	return s.GetRegistryOrgAuth(ctx, host, org)
+}
+
+func (s *RegistryAuthMgr) GetAppRegistryImageAuth(ctx context.Context, imgUrl string, region string, appKey edgeproto.AppKey) (*RegistryAuth, error) {
+	host, org, err := parseImageUrl(imgUrl)
+	if err != nil {
+		return nil, err
+	}
+	return s.GetAppRegistryOrgAuth(ctx, host, org, region, appKey)
+}
+
+// GetAppRegistryOrgAuth gets the credentials for accessing the
+// image registry for an app. If no creds are found for the app,
+// fallback to look up by org with GetRegistryOrgAuth.
+func (s *RegistryAuthMgr) GetAppRegistryOrgAuth(ctx context.Context, hostOrURL, org, region string, appKey edgeproto.AppKey) (*RegistryAuth, error) {
+	// look up app-specific registry auth. If not found, fallback to org auth
+	if s.vaultConfig == nil || s.vaultConfig.Addr == "" {
+		return nil, fmt.Errorf("no vault specified")
+	}
+	appAuth, err := GetAppRegistryAuth(ctx, region, appKey, s.vaultConfig)
+	if err == nil {
+		hostname, port, err := ParseHost(hostOrURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse %q, %s", hostOrURL, err)
+		}
+		auth := &RegistryAuth{
+			AuthType: BasicAuth,
+			Username: appAuth.Username,
+			Password: appAuth.Credentials,
+			Hostname: hostname,
+			Port:     port,
+		}
+		return auth, nil
+	} else if !vault.IsErrNoSecretsAtPath(err) {
+		return nil, err
+	}
+	return s.GetRegistryOrgAuth(ctx, hostOrURL, org)
 }
 
 // GetRegistryOrgAuth gets the credentials for accessing the
@@ -764,12 +804,64 @@ func ValidateOvfRegistryPath(ctx context.Context, imgUrl string, authApi Registr
 	return nil
 }
 
+// GetSecretAuth returns secretName, dockerServer, auth, error
+func GetSecretAuth(ctx context.Context, imagePath string, appKey edgeproto.AppKey, authApi RegistryAuthApi, existingCreds *RegistryAuth) (string, string, *RegistryAuth, error) {
+	var err error
+	var auth *RegistryAuth
+	if existingCreds == nil {
+		auth, err = authApi.GetAppRegistryAuth(ctx, imagePath, appKey)
+		if err != nil {
+			return "", "", nil, err
+		}
+	} else {
+		auth = existingCreds
+		if auth.Username == "" || auth.Password == "" {
+			// no creds found, assume public registry
+			log.SpanLog(ctx, log.DebugLevelApi, "warning, no credentials found, assume public registry")
+			auth.AuthType = NoAuth
+		}
+	}
+	if auth == nil || auth.AuthType == NoAuth {
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry")
+		return "", "", nil, nil
+	}
+	if auth.AuthType != BasicAuth {
+		// This can be ignored as it'll only happen for internally
+		// used non-docker registry hostnames like artifactory.edgecloud.net
+		log.SpanLog(ctx, log.DebugLevelInfra, "warning, auth type is not basic auth type - assume internal registry", "hostname", auth.Hostname, "authType", auth.AuthType)
+		return "", "", nil, nil
+	}
+	// Note: docker-server must contain port if imagepath contains port,
+	// otherwise imagepullsecrets won't work.
+	// Also secret name includes port in case multiple docker registries
+	// are running on different ports on the same host.
+	secretName := auth.Hostname
+	dockerServer := auth.Hostname
+	if auth.Port != "" {
+		secretName = auth.Hostname + "-" + auth.Port
+		dockerServer = auth.Hostname + ":" + auth.Port
+	}
+	return secretName, dockerServer, auth, nil
+}
+
 type VaultRegistryAuthApi struct {
+	region     string
 	RegAuthMgr *RegistryAuthMgr
+}
+
+func NewVaultRegistryAuthApi(region string, regAuthMgr *RegistryAuthMgr) *VaultRegistryAuthApi {
+	return &VaultRegistryAuthApi{
+		region:     region,
+		RegAuthMgr: regAuthMgr,
+	}
 }
 
 func (s *VaultRegistryAuthApi) GetRegistryAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error) {
 	return s.RegAuthMgr.GetRegistryOrgAuth(ctx, imgUrl, AllOrgs)
+}
+
+func (s *VaultRegistryAuthApi) GetAppRegistryAuth(ctx context.Context, imgUrl string, appKey edgeproto.AppKey) (*RegistryAuth, error) {
+	return s.RegAuthMgr.GetAppRegistryOrgAuth(ctx, imgUrl, AllOrgs, s.region, appKey)
 }
 
 // For unit tests
@@ -778,5 +870,9 @@ type DummyRegistryAuthApi struct {
 }
 
 func (s *DummyRegistryAuthApi) GetRegistryAuth(ctx context.Context, imgUrl string) (*RegistryAuth, error) {
+	return &s.DummyAuth, nil
+}
+
+func (s *DummyRegistryAuthApi) GetAppRegistryAuth(ctx context.Context, imgUrl string, appKey edgeproto.AppKey) (*RegistryAuth, error) {
 	return &s.DummyAuth, nil
 }

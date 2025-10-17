@@ -180,7 +180,7 @@ func (s *Platform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return err
 		}
-		return k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
+		return k8smgmt.CreateHelmAppInst(ctx, s.platformConfig.AccessApi, client, names, clusterInst, app, appInst)
 	}
 	return fmt.Errorf("unsupported deployment")
 }

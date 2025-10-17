@@ -26,11 +26,7 @@ var testValidBooleanAnnotationStr = "version=val1.2,wait=true,timeout=60"
 var testInvalidAnnotationsVal = "version=1.2.2;touch /tmp/broken"
 var testInvalidAnnotationsOpt = "version`touch /tmp/broken`;ls -lf /tmp/broken=1.2.2"
 
-var testHemlExistingRepoChart = "existing/testchart"
-var testHemlNewRepoChart = "testcharts/testchart"
-var testHelmNewRepoImage = "http://testchartRepo.mex/charts:testcharts/testchart"
-var testHelmImageWithPort = "http://testchartRepo.mex:8000/charts:testcharts/testchart"
-var testInvalidHelmImageNoRepoName = "http://testchartRepo.mex/charts:testchart"
+var missingURL = "existing/testchart"
 
 func TestHelm(t *testing.T) {
 	str := getHelmYamlOpt(testCustomizationFileList)
@@ -61,27 +57,69 @@ func TestHelm(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, "--version \"val1.2\" --wait --timeout 60", str, "Invalid options string returned")
 
-	repo, chart, err := getHelmRepoAndChart(testHemlExistingRepoChart)
-	require.Nil(t, err)
-	require.Equal(t, "", repo, "Repo should be empty")
-	require.Equal(t, testHemlExistingRepoChart, chart)
-	repo, chart, err = getHelmRepoAndChart(testHelmNewRepoImage)
-	require.Nil(t, err)
-	require.Equal(t, "testcharts http://testchartRepo.mex/charts", repo, "Couldn't get repo from path")
-	require.Equal(t, testHemlNewRepoChart, chart)
-	repo, chart, err = getHelmRepoAndChart(testHelmImageWithPort)
-	require.Nil(t, err)
-	require.Equal(t, "testcharts http://testchartRepo.mex:8000/charts", repo)
-	require.Equal(t, testHemlNewRepoChart, chart)
-	repo, chart, err = getHelmRepoAndChart(testInvalidHelmImageNoRepoName)
-	require.NotNil(t, err, "Repo should have a name")
-	require.Contains(t, err.Error(), "Could not parse the chart")
-	require.Equal(t, "", repo, "Error should result in an empty repo")
-	require.Equal(t, "", chart, "Error should result in an emty chart")
-	//Random string test
-	repo, chart, err = getHelmRepoAndChart("random string : ")
-	require.NotNil(t, err, "Random string should be invalid path")
-	require.Equal(t, "", repo, "Error should result in an empty repo")
-	require.Equal(t, "", chart, "Error should result in an emty chart")
-
+	imagePathTests := []struct {
+		desc        string
+		path        string
+		expURL      string
+		expRepoName string
+		expChart    string
+		expChartRef string
+		expErr      string
+	}{{
+		"missing URL",
+		"existing/testchart", "", "", "", "",
+		"unsupported helm chart URL scheme",
+	}, {
+		"valid path",
+		"http://testchartRepo.mex/charts:testcharts/testchart",
+		"http://testchartRepo.mex/charts",
+		"testcharts",
+		"testchart",
+		"testcharts/testchart",
+		"",
+	}, {
+		"valid path with port",
+		"https://testchartRepo.mex:8000/charts:testcharts/testchart",
+		"https://testchartRepo.mex:8000/charts",
+		"testcharts",
+		"testchart",
+		"testcharts/testchart",
+		"",
+	}, {
+		"valid path with port 2",
+		"https://helm.edgexr.org:edgexr/nexusai",
+		"https://helm.edgexr.org",
+		"edgexr",
+		"nexusai",
+		"edgexr/nexusai",
+		"",
+	}, {
+		"missing repo name",
+		"http://testchartRepo.mex/charts:testchart",
+		"", "", "", "",
+		"invalid repo/chart in helm image path",
+	}, {
+		"random string",
+		"random string : ", "", "", "", "",
+		"unsupported helm chart URL scheme for",
+	}, {
+		"oci path",
+		"oci://testchartRepo.mex:8000/charts/testchart",
+		"oci://testchartRepo.mex:8000/charts/testchart",
+		"", "",
+		"oci://testchartRepo.mex:8000/charts/testchart",
+		"",
+	}}
+	for _, tt := range imagePathTests {
+		spec, err := GetHelmChartSpec(tt.path)
+		if tt.expErr != "" {
+			require.NotNil(t, err, tt.desc)
+			require.Contains(t, err.Error(), tt.expErr, tt.desc)
+		} else {
+			require.Nil(t, err, tt.desc)
+			require.Equal(t, tt.expURL, spec.URLPath, tt.desc)
+			require.Equal(t, tt.expRepoName, spec.RepoName, tt.desc)
+			require.Equal(t, tt.expChart, spec.ChartName, tt.desc)
+		}
+	}
 }

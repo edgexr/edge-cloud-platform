@@ -82,7 +82,7 @@ func (s *K8SWorkloadMgr) ApplyAppInstWorkload(ctx context.Context, accessAPI pla
 		return fmt.Errorf("error running kubectl command %s: %s, %v", cmd, out, err)
 	}
 	if opts.Wait {
-		err := WaitForAppInst(ctx, client, names, app, WaitRunning)
+		err := WaitForAppInst(ctx, client, names, app, WaitRunning, ops...)
 		if err != nil {
 			return err
 		}

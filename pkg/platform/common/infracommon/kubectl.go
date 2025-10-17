@@ -28,49 +28,9 @@ import (
 	ssh "github.com/edgexr/golang-ssh"
 )
 
-// getSecretAuth returns secretName, dockerServer, auth, error
-func getSecretAuth(ctx context.Context, imagePath string, authApi cloudcommon.RegistryAuthApi, existingCreds *cloudcommon.RegistryAuth) (string, string, *cloudcommon.RegistryAuth, error) {
-	var err error
-	var auth *cloudcommon.RegistryAuth
-	if existingCreds == nil {
-		auth, err = authApi.GetRegistryAuth(ctx, imagePath)
-		if err != nil {
-			return "", "", nil, err
-		}
-	} else {
-		auth = existingCreds
-		if auth.Username == "" || auth.Password == "" {
-			// no creds found, assume public registry
-			log.SpanLog(ctx, log.DebugLevelApi, "warning, no credentials found, assume public registry")
-			auth.AuthType = cloudcommon.NoAuth
-		}
-	}
-	if auth == nil || auth.AuthType == cloudcommon.NoAuth {
-		log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot get docker registry secret from vault - assume public registry")
-		return "", "", nil, nil
-	}
-	if auth.AuthType != cloudcommon.BasicAuth {
-		// This can be ignored as it'll only happen for internally
-		// used non-docker registry hostnames like artifactory.edgecloud.net
-		log.SpanLog(ctx, log.DebugLevelInfra, "warning, auth type is not basic auth type - assume internal registry", "hostname", auth.Hostname, "authType", auth.AuthType)
-		return "", "", nil, nil
-	}
-	// Note: docker-server must contain port if imagepath contains port,
-	// otherwise imagepullsecrets won't work.
-	// Also secret name includes port in case multiple docker registries
-	// are running on different ports on the same host.
-	secretName := auth.Hostname
-	dockerServer := auth.Hostname
-	if auth.Port != "" {
-		secretName = auth.Hostname + "-" + auth.Port
-		dockerServer = auth.Hostname + ":" + auth.Port
-	}
-	return secretName, dockerServer, auth, nil
-}
-
-func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames, existingCreds *cloudcommon.RegistryAuth) error {
+func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, appKey edgeproto.AppKey, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames, existingCreds *cloudcommon.RegistryAuth) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting docker registry secret in kubernetes cluster", "imagePath", imagePath)
-	secretName, _, auth, err := getSecretAuth(ctx, imagePath, authApi, existingCreds)
+	secretName, _, auth, err := cloudcommon.GetSecretAuth(ctx, imagePath, appKey, authApi, existingCreds)
 	if err != nil {
 		return err
 	}
@@ -89,10 +49,10 @@ func DeleteDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf st
 	return nil
 }
 
-func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames, existingCreds *cloudcommon.RegistryAuth) error {
+func CreateDockerRegistrySecret(ctx context.Context, client ssh.Client, kconf string, imagePath string, appKey edgeproto.AppKey, authApi cloudcommon.RegistryAuthApi, names *k8smgmt.KubeNames, existingCreds *cloudcommon.RegistryAuth) error {
 	var out string
 	log.SpanLog(ctx, log.DebugLevelInfra, "creating docker registry secret in kubernetes cluster", "imagePath", imagePath)
-	secretName, dockerServer, auth, err := getSecretAuth(ctx, imagePath, authApi, existingCreds)
+	secretName, dockerServer, auth, err := cloudcommon.GetSecretAuth(ctx, imagePath, appKey, authApi, existingCreds)
 	if err != nil {
 		return err
 	}

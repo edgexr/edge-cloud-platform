@@ -68,9 +68,7 @@ func validateGPUDriver(ctx context.Context, driver *edgeproto.GPUDriver, build *
 	}
 	ext := filepath.Ext(driverFileName)
 	// Download the driver package
-	authApi := &cloudcommon.VaultRegistryAuthApi{
-		RegAuthMgr: services.regAuthMgr,
-	}
+	authApi := cloudcommon.NewVaultRegistryAuthApi(*region, services.regAuthMgr)
 	cb.Send(&edgeproto.Result{Message: "Checking GPU driver build " + build.Name})
 	fileName := build.StoragePath
 	localFilePath := "/tmp/" + strings.ReplaceAll(fileName, "/", "_")
@@ -125,9 +123,7 @@ func (s *GPUDriverApi) validateLicenseConfig(ctx context.Context, licenseConfig 
 		return fmt.Errorf("failed to parse LicenseConfig URL %s, %s", licenseConfig, err)
 	}
 	// check if its accessible
-	authApi := &cloudcommon.VaultRegistryAuthApi{
-		RegAuthMgr: services.regAuthMgr,
-	}
+	authApi := cloudcommon.NewVaultRegistryAuthApi(*region, services.regAuthMgr)
 	reqConfig := &cloudcommon.RequestConfig{
 		Timeout: 3 * time.Second,
 	}
