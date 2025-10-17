@@ -470,9 +470,38 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		}
 	}
 
-	authApi := &cloudcommon.VaultRegistryAuthApi{
-		RegAuthMgr: services.regAuthMgr,
+	if in.Username != "" && in.Credentials == "" {
+		return fmt.Errorf("registry username specified but credentials missing")
 	}
+	if in.Username == "" && in.Credentials != "" {
+		return fmt.Errorf("registry credentials specified but username missing")
+	}
+	if in.Username != "" && in.Credentials != "" {
+		if in.Credentials == RedactedAccessVarValue {
+			// no change
+		} else {
+			// new or changed credentials, save to vault and
+			// clear from app struct
+			auth := &cloudcommon.AppRegAuth{
+				Username:    in.Username,
+				Credentials: in.Credentials,
+			}
+			err := cloudcommon.SaveAppRegistryAuth(ctx, *region, in.Key, vaultConfig, auth)
+			if err != nil {
+				return fmt.Errorf("failed to save registry credentials, %v", err)
+			}
+			// clear credentials from app struct
+			in.Credentials = RedactedAccessVarValue
+		}
+	} else {
+		// make sure no stale credentials in vault
+		err := cloudcommon.DeleteAppRegistryAuth(ctx, *region, in.Key, vaultConfig)
+		if err != nil {
+			return fmt.Errorf("failed to delete old registry credentials, %v", err)
+		}
+	}
+	authApi := cloudcommon.NewVaultRegistryAuthApi(*region, services.regAuthMgr)
+
 	if in.ImageType == edgeproto.ImageType_IMAGE_TYPE_QCOW || in.ImageType == edgeproto.ImageType_IMAGE_TYPE_OVA {
 		if !strings.Contains(in.ImagePath, "://") {
 			in.ImagePath = "https://" + in.ImagePath
@@ -520,6 +549,13 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 			}
 		}
 	}
+	if in.ImageType == edgeproto.ImageType_IMAGE_TYPE_HELM {
+		_, err := k8smgmt.GetHelmChartSpec(in.ImagePath)
+		if err != nil {
+			return err
+		}
+	}
+
 	deploymf, err := cloudcommon.GetAppDeploymentManifest(ctx, authApi, in)
 	if err != nil {
 		return err
@@ -593,9 +629,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	}
 
 	if in.Deployment == cloudcommon.DeploymentTypeKubernetes {
-		authApi := &cloudcommon.VaultRegistryAuthApi{
-			RegAuthMgr: services.regAuthMgr,
-		}
+		authApi := cloudcommon.NewVaultRegistryAuthApi(*region, services.regAuthMgr)
 		_, err = k8smgmt.GetAppEnvVars(ctx, in, authApi, &k8smgmt.TestReplacementVars)
 		if err != nil {
 			return err
@@ -914,6 +948,10 @@ func (s *AppApi) DeleteApp(ctx context.Context, in *edgeproto.App) (res *edgepro
 	err = cloudcommon.DeleteAppSecretVars(ctx, *region, &in.Key, nodeMgr.VaultConfig)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelApi, "failed to delete secret env vars from Vault", "app", in.Key, "err", err)
+	}
+	err = cloudcommon.DeleteAppRegistryAuth(ctx, *region, in.Key, vaultConfig)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelApi, "failed to delete registry auth from Vault", "app", in.Key, "err", err)
 	}
 	return &edgeproto.Result{}, nil
 }

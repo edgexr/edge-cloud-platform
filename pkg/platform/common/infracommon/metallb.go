@@ -82,7 +82,7 @@ func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, clusterInst *e
 	kconfArg := k8smgmt.GetKconfArg(clusterInst)
 	start := time.Now()
 	for {
-		done, err := k8smgmt.CheckPodsStatus(ctx, client, kconfArg, metalLbNameSpace, "app=metallb", k8smgmt.WaitRunning, start)
+		done, statuses, err := k8smgmt.CheckPodsStatus(ctx, client, kconfArg, metalLbNameSpace, "app=metallb", k8smgmt.WaitRunning, start)
 		if err != nil {
 			return fmt.Errorf("MetalLB pod status error - %v", err)
 		}
@@ -95,7 +95,11 @@ func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, clusterInst *e
 			// for now we will return no errors when we time out.  In future we will use some other state or status
 			// field to reflect this and employ health checks to track these appinsts
 			log.SpanLog(ctx, log.DebugLevelInfra, "MetalLB startup wait timed out")
-			return fmt.Errorf("MetalLB startup wait timed out")
+			err := fmt.Errorf("MetalLB startup wait timed out")
+			if len(statuses) > 0 {
+				err = fmt.Errorf("%w: %s", err, strings.Join(statuses, "; "))
+			}
+			return err
 		}
 		time.Sleep(1 * time.Second)
 	}

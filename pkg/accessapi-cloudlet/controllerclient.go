@@ -70,6 +70,28 @@ func (s *ControllerClient) GetRegistryAuth(ctx context.Context, imgUrl string) (
 	return auth, err
 }
 
+func (s *ControllerClient) GetAppRegistryAuth(ctx context.Context, imgUrl string, appKey edgeproto.AppKey) (*cloudcommon.RegistryAuth, error) {
+	authReq := platform.AppRegAuthRequest{
+		ImgURL: imgUrl,
+		AppKey: appKey,
+	}
+	data, err := json.Marshal(authReq)
+	if err != nil {
+		return nil, err
+	}
+	req := &edgeproto.AccessDataRequest{
+		Type: platform.GetAppRegistryAuth,
+		Data: data,
+	}
+	reply, err := s.client.GetAccessData(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	auth := &cloudcommon.RegistryAuth{}
+	err = json.Unmarshal(reply.Data, auth)
+	return auth, err
+}
+
 func (s *ControllerClient) SignSSHKey(ctx context.Context, publicKey string) (string, error) {
 	req := &edgeproto.AccessDataRequest{
 		Type: platform.SignSSHKey,

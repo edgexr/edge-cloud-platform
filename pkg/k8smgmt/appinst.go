@@ -60,6 +60,7 @@ type AppInstOptions struct {
 	Wait            bool
 	WM              WorkloadMgr
 	NamespaceLabels map[string]string
+	UpdateSender    edgeproto.AppInstInfoSender
 }
 
 type AppInstOp func(*AppInstOptions)
@@ -93,6 +94,12 @@ func WithNamespaceLabels(labels map[string]string) AppInstOp {
 	}
 }
 
+func WithAppInstUpdateSender(sender edgeproto.AppInstInfoSender) AppInstOp {
+	return func(opts *AppInstOptions) {
+		opts.UpdateSender = sender
+	}
+}
+
 func GetAppInstOptions(ops []AppInstOp) *AppInstOptions {
 	opts := &AppInstOptions{
 		Wait: true, // by default, we wait for pods
@@ -115,22 +122,22 @@ func LbServicePortToString(p *v1.ServicePort) string {
 	return edgeproto.ProtoPortToString(string(proto), port)
 }
 
-func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace, selector, waitFor string, startTimer time.Time) (bool, error) {
+func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace, selector, waitFor string, startTimer time.Time) (bool, []string, error) {
 	done := false
+	statuses := []string{}
 	log.SpanLog(ctx, log.DebugLevelInfra, "check pods status", "namespace", namespace, "selector", selector)
 	cmd := fmt.Sprintf("kubectl %s get pods -n %s --selector=%s -o json", kConfArg, namespace, selector)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "error getting pods", "err", err, "out", out)
-		return done, fmt.Errorf("error getting pods: %v", err)
+		return done, statuses, fmt.Errorf("error getting pods: %v", err)
 	}
 	podList := v1.PodList{}
 	if err := json.Unmarshal([]byte(out), &podList); err != nil {
-		return done, fmt.Errorf("failed to unmarshal pods info, %s", err)
+		return done, statuses, fmt.Errorf("failed to unmarshal pods info, %s", err)
 	}
 	podCount := len(podList.Items)
 
-	statuses := []string{}
 	failReason := false
 	allPodsRunning := false
 	if len(podList.Items) > 0 {
@@ -182,23 +189,23 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace
 				st, stErr := CheckReplicaSetStatus(ctx, client, kConfArg, namespace, selector)
 				if stErr != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "no pods found and failed to check replicaset status, %s", err)
-					return false, fmt.Errorf("no pods found")
+					return false, statuses, fmt.Errorf("no pods found")
 				} else {
-					return false, fmt.Errorf("no pods found, replicaset statuses: %s", st)
+					return false, statuses, fmt.Errorf("no pods found, replicaset statuses: %s", st)
 				}
 			}
 			log.SpanLog(ctx, log.DebugLevelInfra, "not delete, but no pods found, assume command run before pods deployed", "selector", selector)
-			return false, nil
+			return false, statuses, nil
 		}
 		if failReason {
-			return false, fmt.Errorf("invalid pod state, %s", strings.Join(statuses, "; "))
+			return false, []string{}, fmt.Errorf("invalid pod state, %s", strings.Join(statuses, "; "))
 		}
 		if allPodsRunning {
 			log.SpanLog(ctx, log.DebugLevelInfra, "all pods up", "selector", selector)
 			done = true
 		}
 	}
-	return done, nil
+	return done, statuses, nil
 }
 
 func CheckReplicaSetStatus(ctx context.Context, client ssh.Client, kConfArg, namespace, selector string) (string, error) {
@@ -230,7 +237,8 @@ func CheckReplicaSetStatus(ctx context.Context, client ssh.Client, kConfArg, nam
 
 // WaitForAppInst waits for pods to either start or result in an error if WaitRunning specified,
 // or if WaitDeleted is specified then wait for them to all disappear.
-func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, waitFor string) error {
+func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, waitFor string, ops ...AppInstOp) error {
+	opts := GetAppInstOptions(ops)
 	// wait half as long as the total controller wait time, which includes all tasks
 	log.SpanLog(ctx, log.DebugLevelInfra, "waiting for appinst pods", "appName", app.Key.Name, "maxWait", maxWait, "waitFor", waitFor)
 	start := time.Now()
@@ -244,6 +252,7 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 		log.InfoLog("unable to decode k8s yaml", "err", err)
 		return err
 	}
+	lastStatus := ""
 	var name string
 	for ii, _ := range objs {
 		for {
@@ -271,12 +280,19 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 				}
 			}
 			selector := fmt.Sprintf("%s=%s", MexAppLabel, name)
-			done, err := CheckPodsStatus(ctx, client, kconfArg, namespace, selector, waitFor, start)
+			done, statuses, err := CheckPodsStatus(ctx, client, kconfArg, namespace, selector, waitFor, start)
 			if err != nil {
 				return err
 			}
 			if done {
 				break
+			}
+			if opts.UpdateSender != nil {
+				status := strings.Join(statuses, "; ")
+				if status != lastStatus {
+					opts.UpdateSender.SendStatus(edgeproto.UpdateTask, "Status: "+status)
+					lastStatus = status
+				}
 			}
 			if err := ctx.Err(); err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "context error, aborting wait for appinst", "app", app.Key, "err", err)

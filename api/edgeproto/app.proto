@@ -163,7 +163,15 @@ message App {
   // Unique identifier key
   // required: true
   AppKey key = 2 [(gogoproto.nullable) = false];
-  // URI of where image resides
+  // URI of where image resides. For container images, this may be a path
+  // on docker hub, i.e. "nginx:latest" or "nginx/nginx-ingress:5.2-alpine",
+  // or a full path like "ghcr.io/cloudnative-pg/postgresql:14.9".
+  // For helm charts, the format is either "https://<helm-repo>:<repo-name>/<chart-name>",
+  // i.e. "https://charts.bitnami.com/bitnami:bitnami/redis",
+  // or an OCI path, i.e. "oci://ghcr.io/company/chart". Note for Helm
+  // the chart version goes on the App Annotations field, i.e.
+  // "version=1.2.3,wait=true,timeout=60". For VM images, this should be
+  // an http(s) URL to the image file.
   string image_path = 4 [(protogen.backend) = true];
   // Image type
   ImageType image_type = 5;
@@ -180,6 +188,10 @@ message App {
   string access_ports = 7;
   // Default flavor for the App, which may be overridden by the AppInst
   FlavorKey default_flavor = 9 [(gogoproto.nullable) = false, (protogen.refers_to) = "Flavor"];
+  // Username for authenticating to a private image registry
+  string username = 57;
+  // Credentials for authenticating to a private image registry, saved in encrypted storage
+  string credentials = 58 [(protogen.backend) = true];
   // Public key used for authentication
   string auth_public_key = 12 [(protogen.hidetag) = "nocmp"];
   // Command that the container runs to start service, separate multiple commands by a space

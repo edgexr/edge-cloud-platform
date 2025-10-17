@@ -109,7 +109,7 @@ func (s *Xind) CreateAppInstNoPatch(ctx context.Context, clusterInst *edgeproto.
 			return err
 		}
 	} else if DeploymentType == cloudcommon.DeploymentTypeHelm {
-		err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
+		err = k8smgmt.CreateHelmAppInst(ctx, nil, client, names, clusterInst, app, appInst)
 	} else {
 		err = fmt.Errorf("invalid deployment type %s", DeploymentType)
 	}
@@ -216,7 +216,7 @@ func (s *Xind) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.Cluster
 	if DeploymentType == cloudcommon.DeploymentTypeKubernetes {
 		return k8smgmt.UpdateAppInst(ctx, nil, client, names, clusterInst, app, appInst)
 	} else if DeploymentType == cloudcommon.DeploymentTypeHelm {
-		return k8smgmt.UpdateHelmAppInst(ctx, client, names, app, appInst)
+		return k8smgmt.UpdateHelmAppInst(ctx, nil, client, names, app, appInst)
 	}
 	return fmt.Errorf("UpdateAppInst not supported for deployment: %s", DeploymentType)
 }

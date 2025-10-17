@@ -131,6 +131,7 @@ func TestAppApi(t *testing.T) {
 	app.DeploymentManifest = testK8SManifest1
 	app.NodeResources = nil
 	app.ImageType = edgeproto.ImageType_IMAGE_TYPE_HELM
+	app.ImagePath = "https://myhelmrepo/charts:mycharts/myhelmapp"
 	_, err = apis.appApi.CreateApp(ctx, &app)
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "Manifest is not used for Helm deployments")

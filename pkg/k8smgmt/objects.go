@@ -44,7 +44,6 @@ func GetObject(ctx context.Context, client ssh.Client, names *KconfNames, objTyp
 	for _, op := range ops {
 		op(&opts)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "get objects", "objType", objType, "name", name, "kconf", names.KconfName, "opts", opts)
 
 	ns := "-A"
 	if name != "" {
@@ -59,6 +58,7 @@ func GetObject(ctx context.Context, client ssh.Client, names *KconfNames, objTyp
 	}
 
 	cmd := fmt.Sprintf("kubectl %s get %s %s -o json %s %s", names.KconfArg, objType, name, ns, labels)
+	log.SpanLog(ctx, log.DebugLevelInfra, "get objects", "objType", objType, "name", name, "kconf", names.KconfName, "opts", opts, "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
 		if name != "" && strings.Contains(out, fmt.Sprintf("%q not found", name)) {

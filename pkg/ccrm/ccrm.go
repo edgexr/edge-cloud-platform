@@ -169,9 +169,7 @@ func (s *CCRM) Start() error {
 		return err
 	}
 	regAuthMgr := cloudcommon.NewRegistryAuthMgr(s.nodeMgr.VaultConfig, s.nodeMgr.ValidDomains)
-	s.registryAuthAPI = &cloudcommon.VaultRegistryAuthApi{
-		RegAuthMgr: regAuthMgr,
-	}
+	s.registryAuthAPI = cloudcommon.NewVaultRegistryAuthApi(s.flags.Region, regAuthMgr)
 
 	// initialize caches and handlers
 	s.caches.Init(ctx)
@@ -285,9 +283,9 @@ func (s *CCRM) validateRegistries(ctx context.Context) error {
 			return fmt.Errorf("Invalid registry path")
 		}
 		platformRegistryPath := s.flags.GetPlatformRegistryPath()
-		authApi := &cloudcommon.VaultRegistryAuthApi{
-			RegAuthMgr: cloudcommon.NewRegistryAuthMgr(s.nodeMgr.VaultConfig, s.nodeMgr.ValidDomains),
-		}
+		regAuthMgr := cloudcommon.NewRegistryAuthMgr(s.nodeMgr.VaultConfig, s.nodeMgr.ValidDomains)
+		authApi := cloudcommon.NewVaultRegistryAuthApi(s.flags.Region, regAuthMgr)
+
 		err = cloudcommon.ValidateDockerRegistryPath(ctx, platformRegistryPath, authApi)
 		if err != nil {
 			return err

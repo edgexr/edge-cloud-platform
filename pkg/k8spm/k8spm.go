@@ -85,7 +85,7 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	}
 	updateSender.SendStatus(edgeproto.UpdateTask, "Creating Registry Secret")
 	for _, imagePath := range names.ImagePaths {
-		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, m.commonPf.PlatformConfig.AccessApi, names, nil)
+		err = infracommon.CreateDockerRegistrySecret(ctx, client, k8smgmt.GetKconfName(clusterInst), imagePath, app.Key, m.commonPf.PlatformConfig.AccessApi, names, nil)
 		if err != nil {
 			return err
 		}
@@ -98,9 +98,9 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	// policies are common to both.
 	switch app.Deployment {
 	case cloudcommon.DeploymentTypeKubernetes:
-		err = k8smgmt.CreateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithWorkloadManager(m.wm))
+		err = k8smgmt.CreateAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithWorkloadManager(m.wm), k8smgmt.WithAppInstUpdateSender(updateSender))
 	case cloudcommon.DeploymentTypeHelm:
-		err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
+		err = k8smgmt.CreateHelmAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst)
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", app.Deployment)
 	}

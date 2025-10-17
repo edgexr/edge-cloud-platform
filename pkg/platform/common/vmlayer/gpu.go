@@ -357,7 +357,7 @@ func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Cli
 	switch action {
 	case ActionCreate:
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Setting up GPU operator for k8s cluster"))
-		err = k8smgmt.CreateHelmAppInst(ctx, rootLBClient, kubeNames, clusterInst, &NvidiaGPUOperatorApp, &appInst)
+		err = k8smgmt.CreateHelmAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, rootLBClient, kubeNames, clusterInst, &NvidiaGPUOperatorApp, &appInst)
 		if err != nil {
 			return err
 		}
@@ -382,7 +382,7 @@ func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Cli
 	}
 	start := time.Now()
 	for {
-		done, err := k8smgmt.CheckPodsStatus(ctx, rootLBClient, kubeNames.KconfArg, GPUOperatorNamespace, GPUOperatorSelector, waitFor, start)
+		done, _, err := k8smgmt.CheckPodsStatus(ctx, rootLBClient, kubeNames.KconfArg, GPUOperatorNamespace, GPUOperatorSelector, waitFor, start)
 		if err != nil {
 			return err
 		}

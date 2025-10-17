@@ -79,8 +79,16 @@ func (s *VaultClient) GetRegistryAuth(ctx context.Context, hostOrURL string) (*c
 	return s.regAuthMgr.GetRegistryOrgAuth(ctx, hostOrURL, cloudcommon.AllOrgs)
 }
 
+func (s *VaultClient) GetAppRegistryAuth(ctx context.Context, hostOrURL string, appKey edgeproto.AppKey) (*cloudcommon.RegistryAuth, error) {
+	return s.regAuthMgr.GetAppRegistryOrgAuth(ctx, hostOrURL, cloudcommon.AllOrgs, s.region, appKey)
+}
+
 func (s *VaultClient) GetRegistryImageAuth(ctx context.Context, imgUrl string) (*cloudcommon.RegistryAuth, error) {
 	return s.regAuthMgr.GetRegistryImageAuth(ctx, imgUrl)
+}
+
+func (s *VaultClient) GetAppRegistryImageAuth(ctx context.Context, imgUrl string, appKey edgeproto.AppKey) (*cloudcommon.RegistryAuth, error) {
+	return s.regAuthMgr.GetAppRegistryImageAuth(ctx, imgUrl, s.region, appKey)
 }
 
 func (s *VaultClient) SignSSHKey(ctx context.Context, publicKey string) (string, error) {

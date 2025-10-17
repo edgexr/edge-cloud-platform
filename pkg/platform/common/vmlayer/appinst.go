@@ -462,7 +462,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		updateCallback(edgeproto.UpdateTask, "Setting up registry secret")
 		kconf := k8smgmt.GetKconfName(clusterInst)
 		for _, imagePath := range names.ImagePaths {
-			err = infracommon.CreateDockerRegistrySecret(ctx, client, kconf, imagePath, v.VMProperties.CommonPf.PlatformConfig.AccessApi, names, nil)
+			err = infracommon.CreateDockerRegistrySecret(ctx, client, kconf, imagePath, app.Key, v.VMProperties.CommonPf.PlatformConfig.AccessApi, names, nil)
 			if err != nil {
 				return err
 			}
@@ -491,7 +491,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		} else {
 			updateCallback(edgeproto.UpdateTask, "Creating Helm App")
 
-			err = k8smgmt.CreateHelmAppInst(ctx, client, names, clusterInst, app, appInst)
+			err = k8smgmt.CreateHelmAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst)
 		}
 		if err != nil {
 			return err
@@ -500,7 +500,7 @@ func (v *VMPlatform) CreateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		// wait for the appinst in parallel with other tasks
 		go func() {
 			if deployment == cloudcommon.DeploymentTypeKubernetes {
-				waitErr := k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning)
+				waitErr := k8smgmt.WaitForAppInst(ctx, client, names, app, k8smgmt.WaitRunning, k8smgmt.WithAppInstUpdateSender(updateSender))
 				if waitErr == nil {
 					appWaitChan <- ""
 				} else {
@@ -886,7 +886,7 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 		kconf := k8smgmt.GetKconfName(clusterInst)
 		for _, imagePath := range names.ImagePaths {
 			// secret may have changed, so delete and re-create
-			err = infracommon.DeleteDockerRegistrySecret(ctx, client, kconf, imagePath, v.VMProperties.CommonPf.PlatformConfig.AccessApi, names, nil)
+			err = infracommon.DeleteDockerRegistrySecret(ctx, client, kconf, imagePath, app.Key, v.VMProperties.CommonPf.PlatformConfig.AccessApi, names, nil)
 			if err != nil {
 				return err
 			}
@@ -895,7 +895,7 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 			if err != nil {
 				return err
 			}
-			err = infracommon.CreateDockerRegistrySecret(ctx, client, kconf, imagePath, v.VMProperties.CommonPf.PlatformConfig.AccessApi, names, nil)
+			err = infracommon.CreateDockerRegistrySecret(ctx, client, kconf, imagePath, app.Key, v.VMProperties.CommonPf.PlatformConfig.AccessApi, names, nil)
 			if err != nil {
 				return err
 			}
@@ -906,7 +906,7 @@ func (v *VMPlatform) UpdateAppInst(ctx context.Context, clusterInst *edgeproto.C
 	case cloudcommon.DeploymentTypeKubernetes:
 		return k8smgmt.UpdateAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst)
 	case cloudcommon.DeploymentTypeHelm:
-		return k8smgmt.UpdateHelmAppInst(ctx, client, names, app, appInst)
+		return k8smgmt.UpdateHelmAppInst(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, client, names, app, appInst)
 
 	default:
 		return fmt.Errorf("UpdateAppInst not supported for deployment: %s", app.Deployment)

@@ -55,6 +55,17 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 			return nil, err
 		}
 		out, merr = json.Marshal(auth)
+	case platform.GetAppRegistryAuth:
+		authReq := platform.AppRegAuthRequest{}
+		err := json.Unmarshal(req.Data, &authReq)
+		if err != nil {
+			return nil, err
+		}
+		auth, err := s.vaultClient.GetAppRegistryImageAuth(ctx, authReq.ImgURL, authReq.AppKey)
+		if err != nil {
+			return nil, err
+		}
+		out, merr = json.Marshal(auth)
 	case platform.SignSSHKey:
 		signed, err := s.vaultClient.SignSSHKey(ctx, string(req.Data))
 		if err != nil {
