@@ -137,7 +137,7 @@ type HelmChartSpec struct {
 	ChartRef string
 }
 
-// helm chart repositories are encoded in image path
+// GetHelmChartSpec parses the image path and extracs the helm chart information.
 // There are two types of charts:
 // 1. repo add: "https://resources.gigaspaces.com/helm-charts:gigaspaces/insightedge"
 // repo name is "gigaspaces" and path is "https://resources.gigaspaces.com/helm-charts"
@@ -230,7 +230,6 @@ func CreateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 
 	// get helm repository config for the app
 	chartSpec, err := GetHelmChartSpec(app.ImagePath)
-	//helmRepo, chart, err := GetHelmChartSpec(app.ImagePath)
 	if err != nil {
 		return err
 	}

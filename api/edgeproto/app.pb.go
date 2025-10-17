@@ -373,7 +373,8 @@ type App struct {
 	// URI of where image resides. For container images, this may be a path
 	// on docker hub, i.e. "nginx:latest" or "nginx/nginx-ingress:5.2-alpine",
 	// or a full path like "ghcr.io/cloudnative-pg/postgresql:14.9".
-	// For helm charts, the format is either "https://<helm-repo>:<repo-name>/<chart-name>", i.e. "https://charts.bitnami.com/bitnami:bitnami/redis",
+	// For helm charts, the format is either "https://<helm-repo>:<repo-name>/<chart-name>",
+	// i.e. "https://charts.bitnami.com/bitnami:bitnami/redis",
 	// or an OCI path, i.e. "oci://ghcr.io/company/chart". Note for Helm
 	// the chart version goes on the App Annotations field, i.e.
 	// "version=1.2.3,wait=true,timeout=60". For VM images, this should be
