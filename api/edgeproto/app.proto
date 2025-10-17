@@ -190,7 +190,7 @@ message App {
   // Username for authenticating to a private image registry
   string username = 57;
   // Credentials for authenticating to a private image registry, saved in encrypted storage
-  string credentials = 58 [(protogen.hidetag) = "nocmp"];
+  string credentials = 58 [(protogen.backend) = true];
   // Public key used for authentication
   string auth_public_key = 12 [(protogen.hidetag) = "nocmp"];
   // Command that the container runs to start service, separate multiple commands by a space

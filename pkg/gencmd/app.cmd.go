@@ -36,9 +36,6 @@ func AppHideTags(in *edgeproto.App) {
 		tags[tag] = struct{}{}
 	}
 	if _, found := tags["nocmp"]; found {
-		in.Credentials = ""
-	}
-	if _, found := tags["nocmp"]; found {
 		in.AuthPublicKey = ""
 	}
 	for i0 := 0; i0 < len(in.Configs); i0++ {
@@ -79,9 +76,6 @@ func DeploymentZoneRequestHideTags(in *edgeproto.DeploymentZoneRequest) {
 	tags := make(map[string]struct{})
 	for _, tag := range strings.Split(cli.HideTags, ",") {
 		tags[tag] = struct{}{}
-	}
-	if _, found := tags["nocmp"]; found {
-		in.App.Credentials = ""
 	}
 	if _, found := tags["nocmp"]; found {
 		in.App.AuthPublicKey = ""
