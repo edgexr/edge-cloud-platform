@@ -49,3 +49,47 @@ func TestParseImgUrl(t *testing.T) {
 		}
 	}
 }
+
+func TestParseHost(t *testing.T) {
+	// Ensure that we can parse expected ImagePaths.
+	// Note that we assume for docker apps, image path has had
+	// k8smgmt.FixImagePath() run on it already, so that
+	// the default docker registry has been added if it was
+	// not specified.
+	tests := []struct {
+		in   string
+		host string
+		port string
+		err  bool
+	}{{
+		"docker.io/library/ubuntu:18.04",
+		"docker.io", "",
+		false,
+	}, {
+		"ghcr.io/edgexr/nginxdemos-hello:0.4",
+		"ghcr.io", "",
+		false,
+	}, {
+		"https://charts.bitnami.com:8080/bitnami:bitnami/redis",
+		"charts.bitnami.com", "8080",
+		false,
+	}, {
+		"oci://ghcr.io/edgexr/postgresql",
+		"ghcr.io", "",
+		false,
+	}, {
+		"https://cloud-images.ubuntu.com/releases/oracular/release/ubuntu-24.10-server-cloudimg-amd64.img#md5:3d1d134d66318f982d32f02aec00fe879bfeb0338147b4038a25d1f9cddb527f",
+		"cloud-images.ubuntu.com", "",
+		false,
+	}}
+	for ii, test := range tests {
+		host, port, err := ParseHost(test.in)
+		if test.err {
+			require.NotNil(t, err, "[%d] expected error for %s", ii, test.in)
+		} else {
+			require.Nil(t, err, "[%d] unexpected error for %s: %v", ii, test.in, err)
+			require.Equal(t, test.host, host, "[%d] host mismatch for %s", ii, test.in)
+			require.Equal(t, test.port, port, "[%d] port mismatch for %s", ii, test.in)
+		}
+	}
+}

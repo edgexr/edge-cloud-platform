@@ -39,7 +39,7 @@ var validHelmInstallOpts = map[string]struct{}{
 	"username": struct{}{},
 }
 
-func getHelmOpts(ctx context.Context, client ssh.Client, appName, delims string, configs []*edgeproto.ConfigFile) (string, error) {
+func getHelmOpts(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, appKey *edgeproto.AppKey, appName, delims string, configs []*edgeproto.ConfigFile) (string, error) {
 	var ymls []string
 
 	deploymentVars, varsFound := ctx.Value(deployvars.DeploymentReplaceVarsKey).(*deployvars.DeploymentReplaceVars)
@@ -48,7 +48,7 @@ func getHelmOpts(ctx context.Context, client ssh.Client, appName, delims string,
 		// skip non helm and empty configs
 		if v.Kind == edgeproto.AppConfigHelmYaml && v.Config != "" {
 			// config can either be remote, or local
-			cfg, err := cloudcommon.GetDeploymentManifest(ctx, nil, v.Config)
+			cfg, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, appKey, v.Config)
 			if err != nil {
 				return "", err
 			}
@@ -258,7 +258,7 @@ func CreateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 		return err
 	}
 	configs := append(app.Configs, appInst.Configs...)
-	helmOpts, err := getHelmOpts(ctx, client, names.AppName, app.TemplateDelimiter, configs)
+	helmOpts, err := getHelmOpts(ctx, accessApi, client, &app.Key, names.AppName, app.TemplateDelimiter, configs)
 	if err != nil {
 		return err
 	}
@@ -285,7 +285,7 @@ func UpdateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 		return err
 	}
 	configs := append(app.Configs, appInst.Configs...)
-	helmOpts, err := getHelmOpts(ctx, client, names.AppName, app.TemplateDelimiter, configs)
+	helmOpts, err := getHelmOpts(ctx, accessApi, client, &app.Key, names.AppName, app.TemplateDelimiter, configs)
 	if err != nil {
 		return err
 	}

@@ -238,7 +238,7 @@ func GetAppEnvVars(ctx context.Context, app *edgeproto.App, authApi cloudcommon.
 	for _, v := range app.Configs {
 		if v.Kind == edgeproto.AppConfigEnvYaml {
 			var curVars []v1.EnvVar
-			cfg, err := cloudcommon.GetDeploymentManifest(ctx, authApi, v.Config)
+			cfg, err := cloudcommon.GetDeploymentManifest(ctx, authApi, &app.Key, v.Config)
 			if err != nil {
 				return nil, err
 			}

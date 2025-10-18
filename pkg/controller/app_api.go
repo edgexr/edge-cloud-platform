@@ -389,7 +389,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	if !cloudcommon.IsValidDeploymentForImage(in.ImageType, in.Deployment) {
 		return fmt.Errorf("Deployment is not valid for image type")
 	}
-	if err := validateAppConfigsForDeployment(ctx, in.Configs, in.Deployment); err != nil {
+	if err := validateAppConfigsForDeployment(ctx, &in.Key, in.Configs, in.Deployment); err != nil {
 		return err
 	}
 	if len(in.EnvVars) > 0 || len(in.SecretEnvVars) > 0 {
@@ -480,13 +480,20 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		if in.Credentials == RedactedAccessVarValue {
 			// no change
 		} else {
+			hostname, port, err := cloudcommon.ParseHost(in.ImagePath)
+			if err != nil {
+				return err
+			}
 			// new or changed credentials, save to vault and
 			// clear from app struct
-			auth := &cloudcommon.AppRegAuth{
-				Username:    in.Username,
-				Credentials: in.Credentials,
+			auth := &cloudcommon.RegistryAuth{
+				AuthType: cloudcommon.BasicAuth,
+				Username: in.Username,
+				Password: in.Credentials,
+				Hostname: hostname,
+				Port:     port,
 			}
-			err := cloudcommon.SaveAppRegistryAuth(ctx, *region, in.Key, vaultConfig, auth)
+			err = cloudcommon.SaveAppRegistryAuth(ctx, *region, in.Key, vaultConfig, auth)
 			if err != nil {
 				return fmt.Errorf("failed to save registry credentials, %v", err)
 			}
@@ -510,7 +517,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		if err != nil {
 			return err
 		}
-		err = cloudcommon.ValidateVMRegistryPath(ctx, in.ImagePath, authApi)
+		err = cloudcommon.ValidateVMRegistryPath(ctx, in.ImagePath, &in.Key, authApi)
 		if err != nil {
 			if *testMode {
 				log.SpanLog(ctx, log.DebugLevelApi, "Warning, could not validate VM registry path.", "path", in.ImagePath, "err", err)
@@ -527,7 +534,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		if !strings.Contains(in.ImagePath, ".ovf") {
 			return fmt.Errorf("image path does not specify an OVF file %s, %v", in.ImagePath, err)
 		}
-		err = cloudcommon.ValidateOvfRegistryPath(ctx, in.ImagePath, authApi)
+		err = cloudcommon.ValidateOvfRegistryPath(ctx, in.ImagePath, &in.Key, authApi)
 		if err != nil {
 			if *testMode {
 				log.SpanLog(ctx, log.DebugLevelApi, "Warning, could not validate ovf file path.", "path", in.ImagePath, "err", err)
@@ -540,7 +547,7 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	if in.ImageType == edgeproto.ImageType_IMAGE_TYPE_DOCKER &&
 		!cloudcommon.IsPlatformApp(in.Key.Organization, in.Key.Name) &&
 		in.ImagePath != "" {
-		err := cloudcommon.ValidateDockerRegistryPath(ctx, in.ImagePath, authApi)
+		err := cloudcommon.ValidateDockerRegistryPath(ctx, in.ImagePath, &in.Key, authApi)
 		if err != nil {
 			if *testMode {
 				log.SpanLog(ctx, log.DebugLevelApi, "Warning, could not validate docker registry image path", "path", in.ImagePath, "err", err)
@@ -1024,7 +1031,7 @@ func (s *AppApi) RemoveAppAutoProvPolicy(ctx context.Context, in *edgeproto.AppA
 	return &edgeproto.Result{}, err
 }
 
-func validateAppConfigsForDeployment(ctx context.Context, configs []*edgeproto.ConfigFile, deployment string) error {
+func validateAppConfigsForDeployment(ctx context.Context, appKey *edgeproto.AppKey, configs []*edgeproto.ConfigFile, deployment string) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validateAppConfigsForDeployment")
 	for _, cfg := range configs {
 		invalid := false
@@ -1034,7 +1041,7 @@ func validateAppConfigsForDeployment(ctx context.Context, configs []*edgeproto.C
 				invalid = true
 			}
 			// Validate that this is a valid url
-			_, err := cloudcommon.GetDeploymentManifest(ctx, nil, cfg.Config)
+			_, err := cloudcommon.GetDeploymentManifest(ctx, nil, appKey, cfg.Config)
 			log.SpanLog(ctx, log.DebugLevelApi, "error getting deployment manifest for app", "err", err)
 			if err != nil {
 				return err

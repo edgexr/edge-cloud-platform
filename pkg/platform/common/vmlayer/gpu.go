@@ -63,7 +63,7 @@ func (v *VMPlatform) getGPUDriverPackagePath(ctx context.Context, build *edgepro
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GPU driver pkg not found/corrupted in local cache, downloading it", "build.DriverPath", build.DriverPath)
 	accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
-	err = cloudcommon.DownloadFile(ctx, accessApi, build.DriverPath, "", localFilePath, nil)
+	err = cloudcommon.DownloadFile(ctx, accessApi, nil, build.DriverPath, "", localFilePath, nil)
 	if err != nil {
 		return "", fmt.Errorf("Failed to download GPU driver package %s to %s, %v", build.DriverPath, localFilePath, err)
 	}
@@ -91,7 +91,7 @@ func (v *VMPlatform) downloadGPUDriverLicenseConfig(ctx context.Context, license
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "GPU driver license not found in local cache/is outdated/corrupted, downloading it", "licenseconfig", licenseConfig)
 	accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
-	err = cloudcommon.DownloadFile(ctx, accessApi, licenseConfig, "", localFilePath, nil)
+	err = cloudcommon.DownloadFile(ctx, accessApi, nil, licenseConfig, "", localFilePath, nil)
 	if err != nil {
 		return "", fmt.Errorf("Failed to download GPU driver license config %s to %s, %v", licenseConfig, localFilePath, err)
 	}

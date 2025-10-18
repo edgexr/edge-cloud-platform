@@ -320,7 +320,7 @@ func GetImageTypeForDeployment(deployment string) (edgeproto.ImageType, error) {
 // GetAppDeploymentManifest gets the deployment-specific manifest.
 func GetAppDeploymentManifest(ctx context.Context, authApi RegistryAuthApi, app *edgeproto.App) (string, error) {
 	if app.DeploymentManifest != "" {
-		return GetDeploymentManifest(ctx, authApi, app.DeploymentManifest)
+		return GetDeploymentManifest(ctx, authApi, &app.Key, app.DeploymentManifest)
 	} else if app.DeploymentGenerator != "" {
 		return GenerateManifest(app)
 	} else if app.Deployment == DeploymentTypeKubernetes {
@@ -336,12 +336,12 @@ func GetAppDeploymentManifest(ctx context.Context, authApi RegistryAuthApi, app 
 	return "", nil
 }
 
-func GetRemoteZipDockerManifests(ctx context.Context, authApi RegistryAuthApi, manifest, zipfile, downloadAction string) ([]map[string]DockerContainer, error) {
+func GetRemoteZipDockerManifests(ctx context.Context, authApi RegistryAuthApi, appKey *edgeproto.AppKey, manifest, zipfile, downloadAction string) ([]map[string]DockerContainer, error) {
 	if zipfile == "" {
 		zipfile = "/var/tmp/temp.zip"
 	}
 	if downloadAction == Download {
-		err := GetRemoteManifestToFile(ctx, authApi, manifest, zipfile)
+		err := GetRemoteManifestToFile(ctx, authApi, appKey, manifest, zipfile)
 		if err != nil {
 			return nil, fmt.Errorf("cannot get manifest from %s, %v", manifest, err)
 		}
@@ -399,20 +399,20 @@ func GetRemoteZipDockerManifests(ctx context.Context, authApi RegistryAuthApi, m
 	return zipContainers, nil
 }
 
-func validateRemoteZipManifest(ctx context.Context, authApi RegistryAuthApi, manifest string) error {
-	_, err := GetRemoteZipDockerManifests(ctx, authApi, manifest, "", Download)
+func validateRemoteZipManifest(ctx context.Context, authApi RegistryAuthApi, appKey *edgeproto.AppKey, manifest string) error {
+	_, err := GetRemoteZipDockerManifests(ctx, authApi, appKey, manifest, "", Download)
 	return err
 }
 
-func GetDeploymentManifest(ctx context.Context, authApi RegistryAuthApi, manifest string) (string, error) {
+func GetDeploymentManifest(ctx context.Context, authApi RegistryAuthApi, appKey *edgeproto.AppKey, manifest string) (string, error) {
 	// manifest may be remote target or inline json/yaml
 	if strings.HasPrefix(manifest, "http://") || strings.HasPrefix(manifest, "https://") {
 
 		if strings.HasSuffix(manifest, ".zip") {
 			log.SpanLog(ctx, log.DebugLevelApi, "zipfile manifest found", "manifest", manifest)
-			return manifest, validateRemoteZipManifest(ctx, authApi, manifest)
+			return manifest, validateRemoteZipManifest(ctx, authApi, appKey, manifest)
 		}
-		mf, err := GetRemoteManifest(ctx, authApi, manifest)
+		mf, err := GetRemoteManifest(ctx, authApi, appKey, manifest)
 		if err != nil {
 			return "", fmt.Errorf("cannot get manifest from %s, %v", manifest, err)
 		}
@@ -436,17 +436,17 @@ func GenerateManifest(app *edgeproto.App) (string, error) {
 	return "", fmt.Errorf("invalid deployment generator %s", target)
 }
 
-func GetRemoteManifest(ctx context.Context, authApi RegistryAuthApi, target string) (string, error) {
+func GetRemoteManifest(ctx context.Context, authApi RegistryAuthApi, appKey *edgeproto.AppKey, target string) (string, error) {
 	var content string
-	err := DownloadFile(ctx, authApi, target, NoCreds, "", &content)
+	err := DownloadFile(ctx, authApi, appKey, target, NoCreds, "", &content)
 	if err != nil {
 		return "", err
 	}
 	return content, nil
 }
 
-func GetRemoteManifestToFile(ctx context.Context, authApi RegistryAuthApi, target string, filename string) error {
-	return DownloadFile(ctx, authApi, target, NoCreds, filename, nil)
+func GetRemoteManifestToFile(ctx context.Context, authApi RegistryAuthApi, appKey *edgeproto.AppKey, target string, filename string) error {
+	return DownloadFile(ctx, authApi, appKey, target, NoCreds, filename, nil)
 }
 
 // 5GB = 10minutes
@@ -459,7 +459,7 @@ func GetTimeout(cLen int) time.Duration {
 	return 15 * time.Minute
 }
 
-func DownloadFile(ctx context.Context, authApi RegistryAuthApi, fileUrlPath, urlCreds, filePath string, content *string) (reterr error) {
+func DownloadFile(ctx context.Context, authApi RegistryAuthApi, appKey *edgeproto.AppKey, fileUrlPath, urlCreds, filePath string, content *string) (reterr error) {
 	var reqConfig *RequestConfig
 
 	log.SpanLog(ctx, log.DebugLevelApi, "attempt to download file", "file-url", fileUrlPath)
@@ -467,7 +467,7 @@ func DownloadFile(ctx context.Context, authApi RegistryAuthApi, fileUrlPath, url
 	// Adjust request timeout based on File Size
 	//  - Timeout is increased by 10min for every 5GB
 	//  - If less than 5GB, then use default timeout
-	resp, err := SendHTTPReq(ctx, "HEAD", fileUrlPath, authApi, urlCreds, nil, nil)
+	resp, err := SendHTTPReq(ctx, "HEAD", fileUrlPath, appKey, authApi, urlCreds, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -484,7 +484,7 @@ func DownloadFile(ctx context.Context, authApi RegistryAuthApi, fileUrlPath, url
 		}
 	}
 
-	resp, err = SendHTTPReq(ctx, "GET", fileUrlPath, authApi, urlCreds, reqConfig, nil)
+	resp, err = SendHTTPReq(ctx, "GET", fileUrlPath, appKey, authApi, urlCreds, reqConfig, nil)
 	if err != nil {
 		return err
 	}

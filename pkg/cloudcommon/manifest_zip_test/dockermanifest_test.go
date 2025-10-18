@@ -93,7 +93,7 @@ func TestRemoteZipManifests(t *testing.T) {
 	require.Nil(t, err)
 
 	// Zip file will be cleaned up by the following function
-	zipContainers, err := cloudcommon.GetRemoteZipDockerManifests(ctx, nil, "", "", cloudcommon.NoDownload)
+	zipContainers, err := cloudcommon.GetRemoteZipDockerManifests(ctx, nil, nil, "", "", cloudcommon.NoDownload)
 	require.Nil(t, err)
 	for _, containers := range zipContainers {
 		for _, container := range containers {

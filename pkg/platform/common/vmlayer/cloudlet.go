@@ -124,7 +124,7 @@ func (v *VMPlatform) GetCloudletImageToUse(ctx context.Context, updateCallback e
 	}
 	cloudletImagePath := util.SetExtension(imagePath, v.VMProvider.GetCloudletImageSuffix(ctx))
 	log.SpanLog(ctx, log.DebugLevelInfra, "Getting cloudlet image from platform config", "cloudletImagePath", cloudletImagePath, "imageNameWithoutExt", imageNameWithoutExt)
-	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, cloudletImagePath)
+	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, nil, cloudletImagePath)
 	if err != nil {
 		return "", fmt.Errorf("unable to get URL info for cloudlet image: %s - %v", v.VMProperties.CommonPf.PlatformConfig.CloudletVMImagePath, err)
 	}

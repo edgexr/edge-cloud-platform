@@ -267,14 +267,14 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 
 	// we generate a VMDK only if it is not there. We always regenerate the OVF in case the OS type changed
 	log.SpanLog(ctx, log.DebugLevelInfra, "Will generate VMDK if not present", "artifactoryVmdkPath", artifactoryVmdkPath)
-	_, _, err = infracommon.GetUrlInfo(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, artifactoryVmdkPath)
+	_, _, err = infracommon.GetUrlInfo(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageInfo.AppKey, artifactoryVmdkPath)
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "VMDK already in artifactory", "artifactoryVmdkPath", artifactoryVmdkPath)
 	} else {
 		log.SpanLog(ctx, log.DebugLevelInfra, "VMDK not yet in artifactory", "artifactoryVmdkPath", artifactoryVmdkPath)
 		// need to download the qcow, convert to vmdk and then import to either VCD or Artifactory
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Downloading VM Image: %s", imageInfo.LocalImageName))
-		fileWithPath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageInfo.LocalImageName, imageInfo.ImagePath, imageInfo.Md5sum)
+		fileWithPath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageInfo.AppKey, imageInfo.LocalImageName, imageInfo.ImagePath, imageInfo.Md5sum)
 		filesToCleanup = append(filesToCleanup, fileWithPath)
 		if err != nil {
 			return err
@@ -298,7 +298,7 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 	}
 
 	// check if OVF exists
-	_, _, err = infracommon.GetUrlInfo(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, artifactoryOvfPath)
+	_, _, err = infracommon.GetUrlInfo(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageInfo.AppKey, artifactoryOvfPath)
 	if err == nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "OVF already in artifactory", "artifactoryOvfPath", artifactoryOvfPath)
 		ovfExistsInArtifactory = true
@@ -351,7 +351,7 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 		}
 		reqConfig := cloudcommon.RequestConfig{}
 		// artifactory does not replace files on PUT (although it should) so delete it first if it is there
-		resp, err := cloudcommon.SendHTTPReq(ctx, "DELETE", uploadPath, v.vmProperties.CommonPf.PlatformConfig.AccessApi, cloudcommon.NoCreds, &reqConfig, nil)
+		resp, err := cloudcommon.SendHTTPReq(ctx, "DELETE", uploadPath, imageInfo.AppKey, v.vmProperties.CommonPf.PlatformConfig.AccessApi, cloudcommon.NoCreds, &reqConfig, nil)
 		log.SpanLog(ctx, log.DebugLevelInfra, "Existing file deleted if present", "err", err)
 		if err == nil {
 			resp.Body.Close()
@@ -367,7 +367,7 @@ func (v *VcdPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infra
 
 		reqConfig.Headers = make(map[string]string)
 		reqConfig.Headers["Content-Type"] = "application/octet-stream"
-		resp, err = cloudcommon.SendHTTPReq(ctx, "PUT", uploadPath, v.vmProperties.CommonPf.PlatformConfig.AccessApi, cloudcommon.NoCreds, &reqConfig, body)
+		resp, err = cloudcommon.SendHTTPReq(ctx, "PUT", uploadPath, imageInfo.AppKey, v.vmProperties.CommonPf.PlatformConfig.AccessApi, cloudcommon.NoCreds, &reqConfig, body)
 		log.SpanLog(ctx, log.DebugLevelInfra, "File uploaded", "file", file, "resp", resp, "err", err)
 		if err != nil {
 			return fmt.Errorf("Error uploading %s to artifactory - %v", f, err)

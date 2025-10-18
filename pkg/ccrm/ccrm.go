@@ -286,7 +286,7 @@ func (s *CCRM) validateRegistries(ctx context.Context) error {
 		regAuthMgr := cloudcommon.NewRegistryAuthMgr(s.nodeMgr.VaultConfig, s.nodeMgr.ValidDomains)
 		authApi := cloudcommon.NewVaultRegistryAuthApi(s.flags.Region, regAuthMgr)
 
-		err = cloudcommon.ValidateDockerRegistryPath(ctx, platformRegistryPath, authApi)
+		err = cloudcommon.ValidateDockerRegistryPath(ctx, platformRegistryPath, nil, authApi)
 		if err != nil {
 			return err
 		}

@@ -235,17 +235,21 @@ func (s *RegistryAuthMgr) GetAppRegistryOrgAuth(ctx context.Context, hostOrURL, 
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse %q, %s", hostOrURL, err)
 		}
-		auth := &RegistryAuth{
-			AuthType: BasicAuth,
-			Username: appAuth.Username,
-			Password: appAuth.Credentials,
-			Hostname: hostname,
-			Port:     port,
+		// We require that the hostname and port match between the
+		// target URL and the stored credentials. This is because
+		// these credentials may be used for manifests, which may
+		// or may not be hosted in the same registry as the image.
+		// We do not want to send the image's registry credentials
+		// to a different registry.
+		if appAuth.Hostname != hostname || appAuth.Port != port {
+			log.SpanLog(ctx, log.DebugLevelApi, "app registry credentials hostname/port mismatch, ignoring", "target", hostOrURL, "creds-hostname", appAuth.Hostname, "creds-port", appAuth.Port)
+		} else {
+			return appAuth, nil
 		}
-		return auth, nil
 	} else if !vault.IsErrNoSecretsAtPath(err) {
 		return nil, err
 	}
+	// fallback to GetRegistryOrgAuth().
 	return s.GetRegistryOrgAuth(ctx, hostOrURL, org)
 }
 
@@ -424,7 +428,7 @@ func GetAuthToken(ctx context.Context, host string, authApi RegistryAuthApi, use
 	reqConfig.Headers = make(map[string]string)
 	reqConfig.Headers["Content-Type"] = "application/x-www-form-urlencoded"
 
-	resp, err := SendHTTPReq(ctx, "POST", url, authApi, NoCreds, &reqConfig, strings.NewReader("username="+userName+"&scope=member-of-groups:readers"))
+	resp, err := SendHTTPReq(ctx, "POST", url, nil, authApi, NoCreds, &reqConfig, strings.NewReader("username="+userName+"&scope=member-of-groups:readers"))
 	if err != nil {
 		return "", err
 	}
@@ -602,13 +606,17 @@ func handleWWWAuth(ctx context.Context, method, regUrl, authHeader string, auth 
  * - The Registry authorizes the client by validating the Bearer token and the claim set embedded within
  *   it and begins the session as usual
  */
-func SendHTTPReq(ctx context.Context, method, regUrl string, authApi RegistryAuthApi, urlCreds string, reqConfig *RequestConfig, body io.Reader) (*http.Response, error) {
+func SendHTTPReq(ctx context.Context, method, regUrl string, appKey *edgeproto.AppKey, authApi RegistryAuthApi, urlCreds string, reqConfig *RequestConfig, body io.Reader) (*http.Response, error) {
 	var auth *RegistryAuth
 	var err error
 
 	// if authApi is nil, this is a public registry
 	if authApi != nil {
-		auth, err = authApi.GetRegistryAuth(ctx, regUrl)
+		if appKey != nil {
+			auth, err = authApi.GetAppRegistryAuth(ctx, regUrl, *appKey)
+		} else {
+			auth, err = authApi.GetRegistryAuth(ctx, regUrl)
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -661,7 +669,12 @@ func SendHTTPReq(ctx context.Context, method, regUrl string, authApi RegistryAut
 	}
 }
 
-func ValidateDockerRegistryPath(ctx context.Context, regUrl string, authApi RegistryAuthApi) error {
+// ValidateDockerRegistryPath checks that we have permission to
+// access the registry path specified by regUrl.
+// The appKey is optional, and should be specified if the
+// credentials for regUrl are stored under the appKey instead of
+// the registry domain.
+func ValidateDockerRegistryPath(ctx context.Context, regUrl string, appKey *edgeproto.AppKey, authApi RegistryAuthApi) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validate registry path", "path", regUrl)
 
 	if regUrl == "" {
@@ -693,7 +706,7 @@ func ValidateDockerRegistryPath(ctx context.Context, regUrl string, authApi Regi
 	regUrl = fmt.Sprintf("%s://%s/%s%s/tags/list", urlObj.Scheme, urlObj.Host, version, regPath)
 	log.SpanLog(ctx, log.DebugLevelApi, "registry api url", "url", regUrl)
 
-	resp, err := SendHTTPReq(ctx, "GET", regUrl, authApi, NoCreds, nil, nil)
+	resp, err := SendHTTPReq(ctx, "GET", regUrl, appKey, authApi, NoCreds, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -719,13 +732,13 @@ func ValidateDockerRegistryPath(ctx context.Context, regUrl string, authApi Regi
 	return fmt.Errorf("Invalid registry path: %s", http.StatusText(resp.StatusCode))
 }
 
-func ValidateVMRegistryPath(ctx context.Context, imgUrl string, authApi RegistryAuthApi) error {
+func ValidateVMRegistryPath(ctx context.Context, imgUrl string, appKey *edgeproto.AppKey, authApi RegistryAuthApi) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validate vm-image path", "path", imgUrl)
 	if imgUrl == "" {
 		return fmt.Errorf("image path is empty")
 	}
 
-	resp, err := SendHTTPReq(ctx, "GET", imgUrl, authApi, NoCreds, nil, nil)
+	resp, err := SendHTTPReq(ctx, "GET", imgUrl, appKey, authApi, NoCreds, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -736,7 +749,7 @@ func ValidateVMRegistryPath(ctx context.Context, imgUrl string, authApi Registry
 	return fmt.Errorf("Invalid image path: %s", http.StatusText(resp.StatusCode))
 }
 
-func ValidateOvfRegistryPath(ctx context.Context, imgUrl string, authApi RegistryAuthApi) error {
+func ValidateOvfRegistryPath(ctx context.Context, imgUrl string, appKey *edgeproto.AppKey, authApi RegistryAuthApi) error {
 	log.SpanLog(ctx, log.DebugLevelApi, "validate ovf path", "path", imgUrl)
 	if imgUrl == "" {
 		return fmt.Errorf("image path is empty")
@@ -746,7 +759,7 @@ func ValidateOvfRegistryPath(ctx context.Context, imgUrl string, authApi Registr
 		return fmt.Errorf("cannot parse url %s - %v", imgUrl, err)
 	}
 	urlMinusFile := strings.Replace(imgUrl, path.Base(parsedUrl.Path), "", 1)
-	resp, err := SendHTTPReq(ctx, "GET", imgUrl, authApi, NoCreds, nil, nil)
+	resp, err := SendHTTPReq(ctx, "GET", imgUrl, appKey, authApi, NoCreds, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -792,7 +805,7 @@ func ValidateOvfRegistryPath(ctx context.Context, imgUrl string, authApi Registr
 	}
 	// check that all referenced files are available
 	for _, f := range filesToCheck {
-		fresp, err := SendHTTPReq(ctx, "HEAD", f, authApi, NoCreds, nil, nil)
+		fresp, err := SendHTTPReq(ctx, "HEAD", f, appKey, authApi, NoCreds, nil, nil)
 		if err != nil {
 			return fmt.Errorf("unable to get referenced file: %s - %v", f, err)
 		}
