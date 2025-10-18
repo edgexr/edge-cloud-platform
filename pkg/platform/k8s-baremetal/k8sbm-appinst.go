@@ -223,7 +223,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 		if !app.InternalPorts {
 			// Clean up DNS entries
 			configs := append(app.Configs, appInst.Configs...)
-			aac, err := access.GetAppAccessConfig(ctx, configs, app.TemplateDelimiter)
+			aac, err := access.GetAppAccessConfig(ctx, k.commonPf.PlatformConfig.AccessApi, &app.Key, configs, app.TemplateDelimiter)
 			if err != nil {
 				return err
 			}

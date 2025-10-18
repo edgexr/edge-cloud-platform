@@ -703,8 +703,8 @@ func (s *OpenstackPlatform) CreateImage(ctx context.Context, imageName, fileName
 }
 
 // CreateImageFromUrl downloads image from URL and then puts into glance
-func (s *OpenstackPlatform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string) error {
-	filePath, err := vmlayer.DownloadVMImage(ctx, s.VMProperties.CommonPf.PlatformConfig.AccessApi, imageName, imageUrl, md5Sum)
+func (s *OpenstackPlatform) CreateImageFromUrl(ctx context.Context, appKey *edgeproto.AppKey, imageName, imageUrl, md5Sum string) error {
+	filePath, err := vmlayer.DownloadVMImage(ctx, s.VMProperties.CommonPf.PlatformConfig.AccessApi, appKey, imageName, imageUrl, md5Sum)
 	if err != nil {
 		return err
 	}
@@ -1248,7 +1248,7 @@ func (o *OpenstackPlatform) AddImageIfNotPresent(ctx context.Context, imageInfo 
 	}
 	if createImage {
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Creating VM Image from URL: %s", imageInfo.LocalImageName))
-		err = o.CreateImageFromUrl(ctx, imageInfo.LocalImageName, imageInfo.ImagePath, imageInfo.Md5sum)
+		err = o.CreateImageFromUrl(ctx, imageInfo.AppKey, imageInfo.LocalImageName, imageInfo.ImagePath, imageInfo.Md5sum)
 		if err != nil {
 			return err
 		}

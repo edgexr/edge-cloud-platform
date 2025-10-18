@@ -523,7 +523,7 @@ func TestValidateAppConfigs(t *testing.T) {
 			Config: testValidYmlHelmCfg,
 		},
 	}
-	err := validateAppConfigsForDeployment(ctx, configs, cloudcommon.DeploymentTypeHelm)
+	err := validateAppConfigsForDeployment(ctx, nil, configs, cloudcommon.DeploymentTypeHelm)
 	require.Nil(t, err)
 
 	// invalid url
@@ -533,7 +533,7 @@ func TestValidateAppConfigs(t *testing.T) {
 			Config: testInvalidUrlHelmCfg,
 		},
 	}
-	err = validateAppConfigsForDeployment(ctx, configs, cloudcommon.DeploymentTypeHelm)
+	err = validateAppConfigsForDeployment(ctx, nil, configs, cloudcommon.DeploymentTypeHelm)
 	require.NotNil(t, err)
 }
 

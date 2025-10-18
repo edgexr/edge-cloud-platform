@@ -89,7 +89,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	appVmName := appInst.UniqueId
 	groupName := appInst.UniqueId
 	var imageInfo infracommon.ImageInfo
-	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
+	sourceImageTime, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, &app.Key, app.ImagePath)
 	imageInfo.LocalImageName = imageName + "-" + md5Sum
 	if v.VMProperties.AppendFlavorToVmAppImage {
 		imageInfo.LocalImageName = imageInfo.LocalImageName + "-" + appInst.Flavor.Name
@@ -102,6 +102,7 @@ func (v *VMPlatform) PerformOrchestrationForVMApp(ctx context.Context, app *edge
 	imageInfo.VmName = appVmName
 	imageInfo.Flavor = appInst.Flavor.Name
 	imageInfo.ImageCategory = infracommon.ImageCategoryVmApp
+	imageInfo.AppKey = &app.Key
 	if err != nil {
 		return &orchVals, err
 	}
@@ -557,7 +558,7 @@ func (v *VMPlatform) setupDockerAppInst(ctx context.Context, clusterInst *edgepr
 	if app.DeploymentManifest != "" && strings.HasSuffix(app.DeploymentManifest, ".zip") {
 		filename := util.DockerSanitize(app.Key.Name + app.Key.Organization + app.Key.Version)
 		zipfile := FileDownloadDir + filename + ".zip"
-		zipContainers, err := cloudcommon.GetRemoteZipDockerManifests(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.DeploymentManifest, zipfile, cloudcommon.Download)
+		zipContainers, err := cloudcommon.GetRemoteZipDockerManifests(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, &app.Key, app.DeploymentManifest, zipfile, cloudcommon.Download)
 		if err != nil {
 			return err
 		}
@@ -699,10 +700,11 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 		if err := v.VMProperties.CommonPf.DeleteProxySecurityGroupRules(ctx, client, dockermgmt.GetContainerName(appInst), v.VMProvider.RemoveWhitelistSecurityRules, &wlParams); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "cannot delete security rules", "name", names.AppName, "rootlb", rootLBName, "error", err)
 		}
+		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
 		if !app.InternalPorts {
 			// Clean up DNS entries
 			configs := append(app.Configs, appInst.Configs...)
-			aac, err := access.GetAppAccessConfig(ctx, configs, app.TemplateDelimiter)
+			aac, err := access.GetAppAccessConfig(ctx, accessApi, &app.Key, configs, app.TemplateDelimiter)
 			if err != nil {
 				return err
 			}
@@ -710,7 +712,6 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 				log.SpanLog(ctx, log.DebugLevelInfra, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}
-		accessApi := v.VMProperties.CommonPf.PlatformConfig.AccessApi
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
 			return k8smgmt.DeleteAppInst(ctx, accessApi, client, names, clusterInst, app, appInst)
 		} else {
@@ -741,7 +742,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 			return err
 		}
 
-		_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, app.ImagePath)
+		_, md5Sum, err := infracommon.GetUrlInfo(ctx, v.VMProperties.CommonPf.PlatformConfig.AccessApi, &app.Key, app.ImagePath)
 		localImageName := imgName + "-" + md5Sum
 		if v.VMProperties.AppendFlavorToVmAppImage {
 			localImageName = localImageName + "-" + appInst.Flavor.Name
@@ -758,7 +759,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 		if appInst.Uri != "" {
 			fqdn := appInst.Uri
 			configs := append(app.Configs, appInst.Configs...)
-			aac, err := access.GetAppAccessConfig(ctx, configs, app.TemplateDelimiter)
+			aac, err := access.GetAppAccessConfig(ctx, accessApi, &app.Key, configs, app.TemplateDelimiter)
 			if err != nil {
 				return err
 			}
@@ -964,7 +965,7 @@ func (v *VMPlatform) GetContainerCommand(ctx context.Context, clusterInst *edgep
 	}
 }
 
-func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageName, imageUrl, md5Sum string) (outPath string, reterr error) {
+func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, appKey *edgeproto.AppKey, imageName, imageUrl, md5Sum string) (outPath string, reterr error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DownloadVMImage", "imageName", imageName, "imageUrl", imageUrl)
 
 	fileExt, err := cloudcommon.GetFileNameWithExt(imageUrl)
@@ -980,7 +981,7 @@ func DownloadVMImage(ctx context.Context, accessApi platform.AccessApi, imageNam
 		}
 	}()
 
-	err = cloudcommon.DownloadFile(ctx, accessApi, imageUrl, cloudcommon.NoCreds, filePath, nil)
+	err = cloudcommon.DownloadFile(ctx, accessApi, appKey, imageUrl, cloudcommon.NoCreds, filePath, nil)
 	if err != nil {
 		return "", fmt.Errorf("error downloading image from %s, %v", imageUrl, err)
 	}

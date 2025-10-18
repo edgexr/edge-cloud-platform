@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/edgexr/edge-cloud-platform/test/testutil"
@@ -104,6 +105,7 @@ func TestAccessVars(t *testing.T) {
 	// Run tests against Vault
 	testCloudletAccessVars(t, ctx, vaultConfig)
 	testCloudletTotp(t, ctx, vaultConfig, region)
+	testAppRegistryAuth(t, ctx, vaultConfig)
 }
 
 func testCloudletAccessVars(t *testing.T, ctx context.Context, vaultConfig *vault.Config) {
@@ -180,4 +182,50 @@ func testCloudletAccessVars(t *testing.T, ctx context.Context, vaultConfig *vaul
 	paths, err = vault.ListData(vaultConfig, "secret", "", true)
 	require.Nil(t, err)
 	require.Equal(t, []string{}, paths)
+}
+
+func testAppRegistryAuth(t *testing.T, ctx context.Context, vaultConfig *vault.Config) {
+	appKey := &edgeproto.AppKey{
+		Organization: "testorg",
+		Name:         "testapp",
+		Version:      "1.0.0",
+	}
+	region := "local"
+
+	check := func(expAuth *cloudcommon.RegistryAuth) {
+		authOut, err := cloudcommon.GetAppRegistryAuth(ctx, region, *appKey, vaultConfig)
+		if expAuth == nil {
+			require.NotNil(t, err)
+			require.True(t, vault.IsErrNoSecretsAtPath(err))
+			return
+		}
+		require.Nil(t, err)
+		require.Equal(t, expAuth, authOut)
+	}
+
+	// No vars to begin with
+	check(nil)
+
+	// Write vars to Vault
+	auth := &cloudcommon.RegistryAuth{
+		AuthType: cloudcommon.BasicAuth,
+		Username: "user1",
+		Password: "mycreds",
+		Hostname: "ghcr.io",
+		Port:     "",
+	}
+	err := cloudcommon.SaveAppRegistryAuth(ctx, region, *appKey, vaultConfig, auth)
+	require.Nil(t, err)
+	check(auth)
+
+	// Update vars in Vault
+	auth.Password = "newcreds"
+	err = cloudcommon.SaveAppRegistryAuth(ctx, region, *appKey, vaultConfig, auth)
+	require.Nil(t, err)
+	check(auth)
+
+	// Delete vars from Vault
+	err = cloudcommon.DeleteAppRegistryAuth(ctx, region, *appKey, vaultConfig)
+	require.Nil(t, err)
+	check(nil)
 }

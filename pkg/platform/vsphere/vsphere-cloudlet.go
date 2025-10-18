@@ -40,7 +40,7 @@ func (v *VSpherePlatform) GetCloudletImageSuffix(ctx context.Context) string {
 // CreateImageFromUrl downloads image from URL and then imports to the datastore
 func (v *VSpherePlatform) CreateImageFromUrl(ctx context.Context, imageName, imageUrl, md5Sum string, diskSize uint64) error {
 
-	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageName, imageUrl, md5Sum)
+	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, nil, imageName, imageUrl, md5Sum)
 	if err != nil {
 		return err
 	}

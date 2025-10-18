@@ -21,11 +21,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/vmlayer"
-	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
-	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
-	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 func (v *VSpherePlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *infracommon.ImageInfo, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -54,7 +54,7 @@ func (v *VSpherePlatform) AddImageIfNotPresent(ctx context.Context, imageInfo *i
 	}
 
 	updateCallback(edgeproto.UpdateTask, "Downloading VM Image")
-	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageInfo.LocalImageName, imageInfo.ImagePath, imageInfo.Md5sum)
+	filePath, err := vmlayer.DownloadVMImage(ctx, v.vmProperties.CommonPf.PlatformConfig.AccessApi, imageInfo.AppKey, imageInfo.LocalImageName, imageInfo.ImagePath, imageInfo.Md5sum)
 	if err != nil {
 		return err
 	}

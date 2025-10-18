@@ -23,16 +23,11 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 )
 
-type AppRegAuth struct {
-	Username    string
-	Credentials string
-}
-
 func getAppRegistryAuthPath(region string, key edgeproto.AppKey) string {
 	return fmt.Sprintf("secret/data/%s/app/%s/%s/%s/regauth", region, key.Organization, key.Name, key.Version)
 }
 
-func SaveAppRegistryAuth(ctx context.Context, region string, key edgeproto.AppKey, vaultConfig *vault.Config, auth *AppRegAuth) error {
+func SaveAppRegistryAuth(ctx context.Context, region string, key edgeproto.AppKey, vaultConfig *vault.Config, auth *RegistryAuth) error {
 	path := getAppRegistryAuthPath(region, key)
 	log.SpanLog(ctx, log.DebugLevelApi, "save app registry auth", "path", path)
 	return vault.PutData(vaultConfig, path, auth)
@@ -44,9 +39,9 @@ func DeleteAppRegistryAuth(ctx context.Context, region string, key edgeproto.App
 	return vault.DeleteData(vaultConfig, path)
 }
 
-func GetAppRegistryAuth(ctx context.Context, region string, key edgeproto.AppKey, vaultConfig *vault.Config) (*AppRegAuth, error) {
+func GetAppRegistryAuth(ctx context.Context, region string, key edgeproto.AppKey, vaultConfig *vault.Config) (*RegistryAuth, error) {
 	path := getAppRegistryAuthPath(region, key)
-	auth := AppRegAuth{}
+	auth := RegistryAuth{}
 	err := vault.GetData(vaultConfig, path, 0, &auth)
 	log.SpanLog(ctx, log.DebugLevelApi, "get app registry auth", "path", path, "err", err)
 	return &auth, err

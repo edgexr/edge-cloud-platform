@@ -72,7 +72,7 @@ func validateGPUDriver(ctx context.Context, driver *edgeproto.GPUDriver, build *
 	cb.Send(&edgeproto.Result{Message: "Checking GPU driver build " + build.Name})
 	fileName := build.StoragePath
 	localFilePath := "/tmp/" + strings.ReplaceAll(fileName, "/", "_")
-	err = cloudcommon.DownloadFile(ctx, authApi, build.DriverPath, build.DriverPathCreds, localFilePath, nil)
+	err = cloudcommon.DownloadFile(ctx, authApi, nil, build.DriverPath, build.DriverPathCreds, localFilePath, nil)
 	if err != nil {
 		return fmt.Errorf("Failed to download GPU driver build %s, %v", build.DriverPath, err)
 	}
@@ -127,7 +127,7 @@ func (s *GPUDriverApi) validateLicenseConfig(ctx context.Context, licenseConfig 
 	reqConfig := &cloudcommon.RequestConfig{
 		Timeout: 3 * time.Second,
 	}
-	resp, err := cloudcommon.SendHTTPReq(ctx, http.MethodHead, licenseConfig, authApi, "", reqConfig, nil)
+	resp, err := cloudcommon.SendHTTPReq(ctx, http.MethodHead, licenseConfig, nil, authApi, "", reqConfig, nil)
 	if err != nil {
 		return fmt.Errorf("failed to HEAD license config %s, %s", licenseConfig, err)
 	}

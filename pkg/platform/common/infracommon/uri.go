@@ -43,10 +43,11 @@ type ImageInfo struct {
 	ImagePath       string
 	ImageCategory   ImageCategoryType
 	Flavor          string
-	VmName          string // for use only if the image is to be imported directly into a VM
+	VmName          string            // for use only if the image is to be imported directly into a VM
+	AppKey          *edgeproto.AppKey // optional app key associated with the image
 }
 
-//validateDomain does strange validation, not strictly domain, due to the data passed from controller.
+// validateDomain does strange validation, not strictly domain, due to the data passed from controller.
 // if it is Fqdn it is valid. And if it starts with http:// or https:// and followed by fqdn, it is valid.
 func validateDomain(uri string) error {
 	if isDomainName(uri) {
@@ -76,9 +77,9 @@ func GetHTTPFile(ctx context.Context, uri string) ([]byte, error) {
 	return nil, fmt.Errorf("http status not OK, %v", resp.StatusCode)
 }
 
-func GetUrlInfo(ctx context.Context, accessApi platform.AccessApi, fileUrlPath string) (time.Time, string, error) {
+func GetUrlInfo(ctx context.Context, accessApi platform.AccessApi, appKey *edgeproto.AppKey, fileUrlPath string) (time.Time, string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get url last-modified time", "file-url", fileUrlPath)
-	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, accessApi, cloudcommon.NoCreds, nil, nil)
+	resp, err := cloudcommon.SendHTTPReq(ctx, "HEAD", fileUrlPath, appKey, accessApi, cloudcommon.NoCreds, nil, nil)
 	if err != nil {
 		return time.Time{}, "", err
 	}

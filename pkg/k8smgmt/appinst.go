@@ -480,7 +480,7 @@ func GenerateAppInstPolicyManifest(ctx context.Context, names *KubeNames, app *e
 }
 
 func GenerateAppInstManifest(ctx context.Context, accessApi platform.AccessApi, names *KubeNames, app *edgeproto.App, appInst *edgeproto.AppInst) (string, error) {
-	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, app.DeploymentManifest)
+	mf, err := cloudcommon.GetDeploymentManifest(ctx, accessApi, &app.Key, app.DeploymentManifest)
 	if err != nil {
 		return "", err
 	}

@@ -41,7 +41,7 @@ type TLSCert struct {
 	ExpiresAt  time.Time
 }
 
-func GetAppAccessConfig(ctx context.Context, configs []*edgeproto.ConfigFile, delims string) (*AppAccessConfig, error) {
+func GetAppAccessConfig(ctx context.Context, authApi cloudcommon.RegistryAuthApi, appKey *edgeproto.AppKey, configs []*edgeproto.ConfigFile, delims string) (*AppAccessConfig, error) {
 	deploymentVars, varsFound := ctx.Value(deployvars.DeploymentReplaceVarsKey).(*deployvars.DeploymentReplaceVars)
 	var aac AppAccessConfig
 
@@ -53,7 +53,7 @@ func GetAppAccessConfig(ctx context.Context, configs []*edgeproto.ConfigFile, de
 	// Walk the Configs in the App and generate the yaml files from the helm customization ones
 	for _, v := range configs {
 		if v.Kind == edgeproto.AppAccessCustomization {
-			cfg, err := cloudcommon.GetDeploymentManifest(ctx, nil, v.Config)
+			cfg, err := cloudcommon.GetDeploymentManifest(ctx, authApi, appKey, v.Config)
 			if err != nil {
 				return nil, err
 			}
