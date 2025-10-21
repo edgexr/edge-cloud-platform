@@ -715,7 +715,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 		if deployment == cloudcommon.DeploymentTypeKubernetes {
 			return k8smgmt.DeleteAppInst(ctx, accessApi, client, names, clusterInst, app, appInst)
 		} else {
-			return k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
+			return k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst, app, appInst)
 		}
 
 	case cloudcommon.DeploymentTypeVM:

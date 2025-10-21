@@ -196,7 +196,7 @@ func (m *K8sPlatformMgr) DeleteAppInst(ctx context.Context, clusterInst *edgepro
 	case cloudcommon.DeploymentTypeKubernetes:
 		err = k8smgmt.DeleteAppInst(ctx, m.commonPf.PlatformConfig.AccessApi, client, names, clusterInst, app, appInst, k8smgmt.WithWorkloadManager(m.wm))
 	case cloudcommon.DeploymentTypeHelm:
-		err = k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
+		err = k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst, app, appInst)
 	default:
 		err = fmt.Errorf("unsupported deployment type %s", app.Deployment)
 	}

@@ -35,6 +35,7 @@ type KubeNames struct {
 	AppInstName                string
 	AppInstOrg                 string
 	HelmAppName                string
+	HelmCacheDir               string
 	AppURI                     string
 	AppImage                   string
 	AppRevision                string
@@ -215,7 +216,9 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 		kubeNames.TenantKconfArg = "--kubeconfig=" + kubeNames.TenantKconfName
 	}
 	kubeNames.MultiTenantRestricted = clusterInst.MultiTenant && !cloudcommon.IsSideCarApp(app)
-
+	if app.Credentials != "" {
+		kubeNames.HelmCacheDir = kubeNames.AppName + kubeNames.AppOrg + kubeNames.AppVersion + ".helm-cache"
+	}
 	kubeNames.DeploymentType = app.Deployment
 	if app.ImagePath != "" {
 		kubeNames.ImagePaths = append(kubeNames.ImagePaths, app.ImagePath)

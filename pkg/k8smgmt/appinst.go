@@ -403,11 +403,15 @@ func PopulateAppInstLoadBalancerIps(ctx context.Context, client ssh.Client, name
 	}
 }
 
+// GetConfigDirName gets the config dir for storing manifest files
+// for an AppInst. This used to be tied to the namespace, but we now tie it
+// to the AppInst. We separate it per AppInst to make it easier
+// to clean up configs when multiple Apps may be deployed to the same
+// namespace. Note that configdirs are by nature ephemeral and must not
+// be depended upon being present long term, as they will get reset when
+// the CRM/CCRM service is restarted.
 func GetConfigDirName(names *KubeNames) string {
-	dir := names.ClusterName
-	if names.InstanceNamespace != "" {
-		dir += "." + names.InstanceNamespace
-	}
+	dir := names.ClusterName + "." + names.AppInstName + "-" + names.AppInstOrg
 	return dir
 }
 
@@ -431,6 +435,21 @@ func getConfigFileName(names *KubeNames, appInst *edgeproto.AppInst, suffix stri
 		return appInstName + names.AppInstOrg + ".yaml"
 	}
 	return names.AppInstName + names.AppInstOrg + suffix + ".yaml"
+}
+
+// For private registries, use a private helm cache to avoid mixing private
+// helm charts from different tenants in a common cache.
+func getHelmCacheArgs(names *KubeNames) string {
+	if names.HelmCacheDir == "" {
+		// public helm chart
+		return ""
+	}
+	args := []string{
+		"--registry-config", names.HelmCacheDir + "/config.json",
+		"--repository-cache", names.HelmCacheDir + "/repository",
+		"--repository-config", names.HelmCacheDir + "/repositories.yaml",
+	}
+	return strings.Join(args, " ")
 }
 
 // CreateAllNamespaces creates all the namespaces the app will use. It does not create a manifest for

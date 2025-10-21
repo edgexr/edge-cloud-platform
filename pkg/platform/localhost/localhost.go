@@ -211,7 +211,7 @@ func (s *Platform) DeleteAppInst(ctx context.Context, clusterInst *edgeproto.Clu
 		if err != nil {
 			return err
 		}
-		return k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst)
+		return k8smgmt.DeleteHelmAppInst(ctx, client, names, clusterInst, app, appInst)
 	}
 	return fmt.Errorf("unsupported deployment")
 }

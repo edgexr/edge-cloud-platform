@@ -31,6 +31,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/deploygen"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/oklog/ulid/v2"
@@ -557,9 +558,14 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		}
 	}
 	if in.ImageType == edgeproto.ImageType_IMAGE_TYPE_HELM {
-		_, err := k8smgmt.GetHelmChartSpec(in.ImagePath)
+		client := &pc.LocalClient{}
+		err := k8smgmt.ValidateHelmRegistryPath(ctx, authApi, client, in)
 		if err != nil {
-			return err
+			if *testMode {
+				log.SpanLog(ctx, log.DebugLevelApi, "Warning, could not validate helm registry image path", "path", in.ImagePath, "err", err)
+			} else {
+				return fmt.Errorf("failed to validate helm registry image, path %s, %v", in.ImagePath, err)
+			}
 		}
 	}
 

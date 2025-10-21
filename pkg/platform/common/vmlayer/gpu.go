@@ -343,6 +343,8 @@ var NvidiaGPUOperatorApp = edgeproto.App{
 }
 
 func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Client, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback, action ActionType) error {
+	app := edgeproto.App{}
+	app.Key = NvidiaGPUOperatorApp.Key
 	appInst := edgeproto.AppInst{}
 	appInst.AppKey = NvidiaGPUOperatorApp.Key
 	appInst.ClusterKey = clusterInst.Key
@@ -366,7 +368,7 @@ func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Cli
 		timeoutErr = fmt.Errorf("Timed out waiting for NVIDIA GPU operator pods to be online")
 	case ActionDelete:
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Cleaning up GPU operator for k8s cluster"))
-		err = k8smgmt.DeleteHelmAppInst(ctx, rootLBClient, kubeNames, clusterInst)
+		err = k8smgmt.DeleteHelmAppInst(ctx, rootLBClient, kubeNames, clusterInst, &app, &appInst)
 		if err != nil {
 			return err
 		}
