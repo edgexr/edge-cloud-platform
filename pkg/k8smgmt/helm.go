@@ -188,33 +188,54 @@ func GetHelmChartSpec(imagePath string) (*HelmChartSpec, error) {
 	return spec, nil
 }
 
-func helmLogin(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, app *edgeproto.App) error {
-	if accessApi == nil {
+func helmLogin(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, names *KubeNames, app *edgeproto.App) error {
+	if authApi == nil {
 		return nil
 	}
-	_, server, auth, err := cloudcommon.GetSecretAuth(ctx, app.ImagePath, app.Key, accessApi, nil)
+	_, server, auth, err := cloudcommon.GetSecretAuth(ctx, app.ImagePath, app.Key, authApi, nil)
 	if err != nil {
 		return err
 	}
 	if auth == nil {
 		return nil
 	}
-	if strings.HasPrefix(app.ImagePath, "oci://") {
-		// use docker login, as helm registry login wasn't working
-		log.SpanLog(ctx, log.DebugLevelApi, "docker login for helm registry", "server", server, "username", auth.Username, "app", app.Key)
-		cmd := fmt.Sprintf("docker login %s -u %s -p '%s'", server, auth.Username, auth.Password)
-		out, err := client.Output(cmd)
-		if err != nil {
-			return fmt.Errorf("docker login for oci helm chart to server %s failed, %s, %s", server, out, err)
-		}
-	} else {
-		log.SpanLog(ctx, log.DebugLevelApi, "helm registry login", "server", server, "username", auth.Username, "app", app.Key)
-		cmd := fmt.Sprintf("helm %s registry login %s -u %s -p '%s'", names.KconfArg, server, auth.Username, auth.Password)
-		out, err := client.Output(cmd)
-		if err != nil {
-			return fmt.Errorf("helm registry login to server %s failed, %s, %s", server, out, err)
-		}
+	cacheArgs := getHelmCacheArgs(names)
+
+	// Note: if helm registry login succeeds, but fails to download the chart,
+	// check for any credsStore setting ~/.config/helm/registry/config.json
+	// that may be causing problems and potentially remove it.
+	log.SpanLog(ctx, log.DebugLevelApi, "helm registry login", "server", server, "username", auth.Username, "app", app.Key, "cacheArgs", cacheArgs)
+	cmd := fmt.Sprintf("helm %s registry login %s -u %s", cacheArgs, server, auth.Username)
+	cmdp := cmd + fmt.Sprintf(" -p '%s'", auth.Password)
+	out, err := client.Output(cmdp)
+	if err != nil {
+		return fmt.Errorf("helm registry login failed, %s, %s, %s", cmd, out, err)
 	}
+	return nil
+}
+
+func helmRepoAdd(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, chartSpec *HelmChartSpec) error {
+	cacheArgs := getHelmCacheArgs(names)
+	cmd := fmt.Sprintf("helm %s repo add %s %s", cacheArgs, chartSpec.RepoName, chartSpec.URLPath)
+	out, err := client.Output(cmd)
+	if err != nil && strings.Contains(out, "already exists") {
+		err = nil
+	}
+	if err != nil {
+		return fmt.Errorf("error adding helm repo, %s, %s, %v", cmd, out, err)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "added helm repository", "app name", app.Key.Name)
+	return nil
+}
+
+func helmRepoUpdate(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, chartSpec *HelmChartSpec) error {
+	cacheArgs := getHelmCacheArgs(names)
+	cmd := fmt.Sprintf("helm %s repo update %s", cacheArgs, chartSpec.RepoName)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("updating helm repo, %s, %s, %v", cmd, out, err)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "helm repo updated", "app name", app.Key.Name)
 	return nil
 }
 
@@ -233,24 +254,19 @@ func CreateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 	if err != nil {
 		return err
 	}
+	err = helmLogin(ctx, accessApi, client, names, app)
+	if err != nil {
+		return err
+	}
 	if strings.HasPrefix(chartSpec.URLPath, "http") {
 		// Need to add helm repository first
-		cmd = fmt.Sprintf("helm %s repo add %s %s", names.KconfArg, chartSpec.RepoName, chartSpec.URLPath)
-		out, err = client.Output(cmd)
-		if err != nil && strings.Contains(out, "already exists") {
-			err = nil
+		if err := helmRepoAdd(ctx, client, names, app, chartSpec); err != nil {
+			return err
 		}
-		if err != nil {
-			return fmt.Errorf("error adding helm repo, %s, %s, %v", cmd, out, err)
-		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "added helm repository", "app name", app.Key.Name)
 		// update repo
-		cmd = fmt.Sprintf("helm %s repo update %s", names.KconfArg, chartSpec.RepoName)
-		out, err = client.Output(cmd)
-		if err != nil {
-			return fmt.Errorf("updating helm repo, %s, %s, %v", cmd, out, err)
+		if err := helmRepoUpdate(ctx, client, names, app, chartSpec); err != nil {
+			return err
 		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "helm repo updated", "app name", app.Key.Name)
 	}
 	nsArgs := getHelmNamespaceArgs(names.InstanceNamespace, cloudcommon.Create)
 	helmArgs, err := getHelmInstallOptsString(app.Annotations)
@@ -262,11 +278,8 @@ func CreateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 	if err != nil {
 		return err
 	}
-	err = helmLogin(ctx, accessApi, client, names, app)
-	if err != nil {
-		return err
-	}
-	cmd = fmt.Sprintf("helm %s install %s %s %s %s %s", names.KconfArg, names.HelmAppName, chartSpec.ChartRef,
+	cacheArgs := getHelmCacheArgs(names)
+	cmd = fmt.Sprintf("helm %s %s install %s %s %s %s %s", cacheArgs, names.KconfArg, names.HelmAppName, chartSpec.ChartRef,
 		helmArgs, helmOpts, nsArgs)
 	log.SpanLog(ctx, log.DebugLevelInfra, "helm install", "cmd", cmd)
 	out, err = client.Output(cmd)
@@ -297,19 +310,20 @@ func UpdateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 		return err
 	}
 
-	if strings.HasPrefix(chartSpec.URLPath, "http") {
-		// Update repos, just in case we need to refresh available versions
-		cmd := fmt.Sprintf("helm %s repo update", names.KconfArg)
-		out, err := client.Output(cmd)
-		if err != nil {
-			return fmt.Errorf("updating helm repos, %s, %s, %v", cmd, out, err)
-		}
-	}
 	err = helmLogin(ctx, accessApi, client, names, app)
 	if err != nil {
 		return err
 	}
-	cmd := fmt.Sprintf("helm %s upgrade %s %s %s %s %s", names.KconfArg, nsArgs, helmArgs, helmOpts, names.HelmAppName, chartSpec.ChartRef)
+	if strings.HasPrefix(chartSpec.URLPath, "http") {
+		if err := helmRepoAdd(ctx, client, names, app, chartSpec); err != nil {
+			return err
+		}
+		if err := helmRepoUpdate(ctx, client, names, app, chartSpec); err != nil {
+			return err
+		}
+	}
+	cacheArgs := getHelmCacheArgs(names)
+	cmd := fmt.Sprintf("helm %s %s upgrade %s %s %s %s %s", cacheArgs, names.KconfArg, nsArgs, helmArgs, helmOpts, names.HelmAppName, chartSpec.ChartRef)
 	log.SpanLog(ctx, log.DebugLevelInfra, "Helm options", "helmOpts", helmOpts, "helmArgs", helmArgs, "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -319,9 +333,10 @@ func UpdateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 	return nil
 }
 
-func DeleteHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst) error {
+func DeleteHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) error {
+	cacheArgs := getHelmCacheArgs(names)
 	nsArgs := getHelmNamespaceArgs(names.InstanceNamespace, cloudcommon.Delete)
-	cmd := fmt.Sprintf("helm %s delete %s %s", names.KconfArg, nsArgs, names.HelmAppName)
+	cmd := fmt.Sprintf("helm %s %s delete %s %s", cacheArgs, names.KconfArg, nsArgs, names.HelmAppName)
 	log.SpanLog(ctx, log.DebugLevelInfra, "delete kubernetes helm app", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
@@ -335,6 +350,58 @@ func DeleteHelmAppInst(ctx context.Context, client ssh.Client, names *KubeNames,
 	err = CleanupHelmConfigs(ctx, client, names.AppName)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "failed to cleanup helm app configs", "appname", names.AppName, "err", err)
+	}
+	return nil
+}
+
+func ValidateHelmRegistryPath(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client ssh.Client, app *edgeproto.App) error {
+	log.SpanLog(ctx, log.DebugLevelApi, "validate helm registry path", "path", app.ImagePath)
+	// make temporary dir to download helm chart
+	cmd := "mktemp -d"
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("error creating temp dir, %s, %s, %v", cmd, out, err)
+	}
+	tmpdir := strings.TrimSpace(out)
+	if len(tmpdir) == 0 {
+		return fmt.Errorf("created blank temp dir via %s, %s", cmd, out)
+	}
+	names, err := GetKubeNames(&edgeproto.ClusterInst{}, app, &edgeproto.AppInst{})
+	if err != nil {
+		return fmt.Errorf("failed to get kube names, %v", err)
+	}
+	if names.HelmCacheDir != "" {
+		// for the pull test, use a temp dir for the cache dir.
+		names.HelmCacheDir = tmpdir
+	}
+
+	chartSpec, err := GetHelmChartSpec(app.ImagePath)
+	if err != nil {
+		return err
+	}
+	err = helmLogin(ctx, authApi, client, names, app)
+	if err != nil {
+		return err
+	}
+	if strings.HasPrefix(chartSpec.URLPath, "http") {
+		// Need to add helm repository first
+		if err := helmRepoAdd(ctx, client, names, app, chartSpec); err != nil {
+			return err
+		}
+		// update repo
+		if err := helmRepoUpdate(ctx, client, names, app, chartSpec); err != nil {
+			return err
+		}
+	}
+	cacheArgs := getHelmCacheArgs(names)
+	cmd = fmt.Sprintf("helm %s pull %s -d %s", cacheArgs, chartSpec.ChartRef, tmpdir)
+	log.SpanLog(ctx, log.DebugLevelApi, "helm pull test", "cmd", cmd)
+	out, err = client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("error verifying helm chart, %s, %s, %v", cmd, out, err)
+	}
+	if err := pc.DeleteDir(ctx, client, tmpdir, pc.NoSudo); err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete helm chart temp dir", "err", err)
 	}
 	return nil
 }
