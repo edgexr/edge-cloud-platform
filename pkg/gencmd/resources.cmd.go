@@ -248,6 +248,7 @@ var NodePoolOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"scalable",
+	"controlplane",
 }
 var NodePoolAliasArgs = []string{}
 var NodePoolComments = map[string]string{
@@ -265,6 +266,7 @@ var NodePoolComments = map[string]string{
 	"noderesources.infranodeflavor":    "Infrastructure specific node flavor",
 	"noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
 	"scalable":                         "Scalable indicates the system may scale the number of nodes",
+	"controlplane":                     "Node pool hosts the kubernetes control plane",
 }
 var NodePoolSpecialArgs = map[string]string{
 	"noderesources.optresmap": "StringToString",

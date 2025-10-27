@@ -214,7 +214,7 @@ func helmLogin(ctx context.Context, authApi cloudcommon.RegistryAuthApi, client 
 	return nil
 }
 
-func helmRepoAdd(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, chartSpec *HelmChartSpec) error {
+func helmRepoAdd(ctx context.Context, client ssh.Client, names *KubeNames, chartSpec *HelmChartSpec) error {
 	cacheArgs := getHelmCacheArgs(names)
 	cmd := fmt.Sprintf("helm %s repo add %s %s", cacheArgs, chartSpec.RepoName, chartSpec.URLPath)
 	out, err := client.Output(cmd)
@@ -224,18 +224,18 @@ func helmRepoAdd(ctx context.Context, client ssh.Client, names *KubeNames, app *
 	if err != nil {
 		return fmt.Errorf("error adding helm repo, %s, %s, %v", cmd, out, err)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "added helm repository", "app name", app.Key.Name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "added helm repository", "repo", chartSpec.RepoName)
 	return nil
 }
 
-func helmRepoUpdate(ctx context.Context, client ssh.Client, names *KubeNames, app *edgeproto.App, chartSpec *HelmChartSpec) error {
+func helmRepoUpdate(ctx context.Context, client ssh.Client, names *KubeNames, chartSpec *HelmChartSpec) error {
 	cacheArgs := getHelmCacheArgs(names)
 	cmd := fmt.Sprintf("helm %s repo update %s", cacheArgs, chartSpec.RepoName)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("updating helm repo, %s, %s, %v", cmd, out, err)
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "helm repo updated", "app name", app.Key.Name)
+	log.SpanLog(ctx, log.DebugLevelInfra, "helm repo updated", "repo", chartSpec.RepoName)
 	return nil
 }
 
@@ -260,11 +260,11 @@ func CreateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 	}
 	if strings.HasPrefix(chartSpec.URLPath, "http") {
 		// Need to add helm repository first
-		if err := helmRepoAdd(ctx, client, names, app, chartSpec); err != nil {
+		if err := helmRepoAdd(ctx, client, names, chartSpec); err != nil {
 			return err
 		}
 		// update repo
-		if err := helmRepoUpdate(ctx, client, names, app, chartSpec); err != nil {
+		if err := helmRepoUpdate(ctx, client, names, chartSpec); err != nil {
 			return err
 		}
 	}
@@ -315,10 +315,10 @@ func UpdateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 		return err
 	}
 	if strings.HasPrefix(chartSpec.URLPath, "http") {
-		if err := helmRepoAdd(ctx, client, names, app, chartSpec); err != nil {
+		if err := helmRepoAdd(ctx, client, names, chartSpec); err != nil {
 			return err
 		}
-		if err := helmRepoUpdate(ctx, client, names, app, chartSpec); err != nil {
+		if err := helmRepoUpdate(ctx, client, names, chartSpec); err != nil {
 			return err
 		}
 	}
@@ -385,11 +385,11 @@ func ValidateHelmRegistryPath(ctx context.Context, authApi cloudcommon.RegistryA
 	}
 	if strings.HasPrefix(chartSpec.URLPath, "http") {
 		// Need to add helm repository first
-		if err := helmRepoAdd(ctx, client, names, app, chartSpec); err != nil {
+		if err := helmRepoAdd(ctx, client, names, chartSpec); err != nil {
 			return err
 		}
 		// update repo
-		if err := helmRepoUpdate(ctx, client, names, app, chartSpec); err != nil {
+		if err := helmRepoUpdate(ctx, client, names, chartSpec); err != nil {
 			return err
 		}
 	}

@@ -63,7 +63,7 @@ func NewPlatform() platform.Platform {
 	}
 }
 
-func (g *GCPPlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties) error {
+func (g *GCPPlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform) error {
 	g.accessVars = accessVars
 	g.properties = properties
 	var err error

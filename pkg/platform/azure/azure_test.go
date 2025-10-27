@@ -77,7 +77,7 @@ func TestClusterCreate(t *testing.T) {
 	start := time.Now()
 	clusterName := getTestClusterName()
 	ci := getTestClusterInst()
-	_, err = a.RunClusterCreateCommand(ctx, clusterName, &ci)
+	_, err = a.RunClusterCreateCommand(ctx, clusterName, &ci, edgeproto.GetUnitTestUpdateCallback(ctx))
 	require.Nil(t, err)
 	fmt.Printf("Cluster create took %s\n", time.Since(start).String())
 
@@ -107,7 +107,7 @@ func TestClusterDelete(t *testing.T) {
 
 	clusterName := getTestClusterName()
 	ci := getTestClusterInst()
-	err = a.RunClusterDeleteCommand(ctx, clusterName, &ci)
+	err = a.RunClusterDeleteCommand(ctx, clusterName, &ci, edgeproto.GetUnitTestUpdateCallback(ctx))
 	require.Nil(t, err)
 }
 

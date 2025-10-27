@@ -62,7 +62,7 @@ func (a *AzurePlatform) CreateClusterPrerequisites(ctx context.Context, clusterN
 }
 
 // RunClusterCreateCommand creates a kubernetes cluster on azure
-func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+func (a *AzurePlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	return a.createOrUpdateCluster(ctx, clusterName, clusterInst, "create")
 }
 
@@ -117,12 +117,12 @@ func (a *AzurePlatform) createOrUpdateCluster(ctx context.Context, clusterName s
 	return nil, nil
 }
 
-func (a *AzurePlatform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+func (a *AzurePlatform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	return a.createOrUpdateCluster(ctx, clusterName, clusterInst, "update")
 }
 
 // RunClusterDeleteCommand removes the kubernetes cluster on azure
-func (a *AzurePlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error {
+func (a *AzurePlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
 	log.SpanLog(ctx, log.DebugLevelInfra, "Delete Cluster", "clusterName", clusterName, "resourceGroup", resourceGroup)
 	managedClustersClient, err := a.getManagedClusterClient(ctx)

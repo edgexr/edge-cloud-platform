@@ -54,7 +54,7 @@ func (a *GCPPlatform) CreateClusterPrerequisites(ctx context.Context, clusterNam
 }
 
 // RunClusterCreateCommand creates a kubernetes cluster on gcloud
-func (g *GCPPlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+func (g *GCPPlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RunClusterCreateCommand", "clusterName", clusterName)
 	pool := clusterInst.NodePools[0]
 	flavor := pool.NodeResources.InfraNodeFlavor
@@ -67,12 +67,12 @@ func (g *GCPPlatform) RunClusterCreateCommand(ctx context.Context, clusterName s
 	return nil, nil
 }
 
-func (s *GCPPlatform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+func (s *GCPPlatform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	return nil, errors.New("update cluster instance not implemented")
 }
 
 // RunClusterDeleteCommand removes kubernetes cluster on gcloud
-func (g *GCPPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error {
+func (g *GCPPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "RunClusterDeleteCommand", "clusterName", clusterName)
 	out, err := infracommon.Sh(g.accessVars).Command("gcloud", "container", "clusters", "delete", "--quiet", clusterName).CombinedOutput()
 	if err != nil {

@@ -47,8 +47,20 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 		if len(clusterInst.NodePools) == 0 {
 			return nil, errors.New("no node pools specified for cluster")
 		}
+		numControlPools := 0
+		numWorkerPools := 0
+		for _, pool := range clusterInst.NodePools {
+			if pool.ControlPlane {
+				numControlPools++
+			} else {
+				numWorkerPools++
+			}
+		}
+		if numControlPools > 1 {
+			return nil, errors.New("only one control plane node pool is allowed")
+		}
 		// for now, only support a single node pool
-		if len(clusterInst.NodePools) > 1 {
+		if numWorkerPools > 1 {
 			return nil, errors.New("currently only one node pool is supported")
 		}
 	}
@@ -112,7 +124,7 @@ func (m *ManagedK8sPlatform) createClusterInstInternal(ctx context.Context, clie
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in creating cluster prereqs", "err", err)
 		return nil, err
 	}
-	infraAnnotations, err := m.Provider.RunClusterCreateCommand(ctx, clusterName, clusterInst)
+	infraAnnotations, err := m.Provider.RunClusterCreateCommand(ctx, clusterName, clusterInst, updateCallback)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in creating cluster", "err", err)
 		return nil, err
@@ -143,7 +155,7 @@ func (m *ManagedK8sPlatform) deleteClusterInstInternal(ctx context.Context, clus
 	if clusterInst.IsCloudletManaged() {
 		return nil
 	}
-	return m.Provider.RunClusterDeleteCommand(ctx, clusterName, clusterInst)
+	return m.Provider.RunClusterDeleteCommand(ctx, clusterName, clusterInst, updateCallback)
 }
 
 func (m *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
@@ -153,6 +165,7 @@ func (m *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst 
 	}
 	// for now, only support a single node pool
 	if len(clusterInst.NodePools) > 1 {
+
 		return nil, errors.New("currently only one node pool is supported")
 	}
 	if err := m.Provider.Login(ctx); err != nil {
@@ -160,7 +173,7 @@ func (m *ManagedK8sPlatform) UpdateClusterInst(ctx context.Context, clusterInst 
 	}
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
 
-	infraAnnotations, err := m.Provider.RunClusterUpdateCommand(ctx, clusterName, clusterInst)
+	infraAnnotations, err := m.Provider.RunClusterUpdateCommand(ctx, clusterName, clusterInst, updateCallback)
 	if err != nil {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Error in updating cluster", "err", err)
 		return nil, err

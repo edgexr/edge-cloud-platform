@@ -60,6 +60,12 @@ type CacheUpdateCallback func(updateType CacheUpdateType, value string)
 // DummyUpdateCallback is used when we don't want any cache status updates
 func DummyUpdateCallback(updateType CacheUpdateType, value string) {}
 
+func GetUnitTestUpdateCallback(ctx context.Context) CacheUpdateCallback {
+	return func(updateType CacheUpdateType, value string) {
+		log.SpanLog(ctx, log.DebugLevelApi, "unittest update callback", "updateType", updateType, "value", value)
+	}
+}
+
 type SenderOptions struct {
 	resetStatus bool
 	stateErr    error

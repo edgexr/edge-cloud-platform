@@ -1650,3 +1650,11 @@ func (s OrgName) Matches(o OrgName) bool {
 func (s *ClusterInst) IsCloudletManaged() bool {
 	return s.CloudletManagedClusterId != "" || s.CloudletManagedClusterName != ""
 }
+
+func (s FlavorInfo) ResBasedName() string {
+	name := fmt.Sprintf("f%dvcpu-%dMbram", s.Vcpus, s.Ram)
+	for _, gpu := range s.Gpus {
+		name += fmt.Sprintf("-%sx%d", gpu.ModelId, gpu.Count)
+	}
+	return name
+}

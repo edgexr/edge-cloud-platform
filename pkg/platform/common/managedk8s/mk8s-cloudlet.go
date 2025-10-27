@@ -62,7 +62,7 @@ func (m *ManagedK8sPlatform) CreateCloudlet(ctx context.Context, cloudlet *edgep
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return cloudletResourcesCreated, err
 	}
-	err = m.Provider.Init(accessVars, &m.CommonPf.Properties)
+	err = m.Provider.Init(accessVars, &m.CommonPf.Properties, &m.CommonPf)
 	if err != nil {
 		return cloudletResourcesCreated, err
 	}
@@ -112,7 +112,7 @@ func (m *ManagedK8sPlatform) DeleteCloudlet(ctx context.Context, cloudlet *edgep
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	err = m.Provider.Init(accessVars, &m.CommonPf.Properties)
+	err = m.Provider.Init(accessVars, &m.CommonPf.Properties, &m.CommonPf)
 	if err != nil {
 		return err
 	}

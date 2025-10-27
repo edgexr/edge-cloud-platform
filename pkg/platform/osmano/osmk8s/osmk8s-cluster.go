@@ -28,7 +28,7 @@ func (s *Platform) CreateClusterPrerequisites(ctx context.Context, clusterName s
 	return nil
 }
 
-func (s *Platform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+func (s *Platform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	id, err := s.osmClient.CreateCluster(ctx, clusterName, clusterInst)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (s *Platform) RunClusterCreateCommand(ctx context.Context, clusterName stri
 	return infraAnnotations, nil
 }
 
-func (s *Platform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error {
+func (s *Platform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	err := s.osmClient.DeleteCluster(ctx, clusterName, clusterInst)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (s *Platform) RunClusterDeleteCommand(ctx context.Context, clusterName stri
 	return nil
 }
 
-func (s *Platform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+func (s *Platform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	// only perform node scaling
 	fmap := edgeproto.MakeFieldMap(clusterInst.Fields)
 	if fmap.Has(edgeproto.ClusterInstFieldNodePoolsNumNodes) {

@@ -28,6 +28,8 @@ const (
 	IngressControllerPresent = "INGRESS_CONTROLLER_PRESENT"
 	WorkloadManager          = "WORKLOAD_MANAGER"
 	NamespaceLabels          = "NAMESPACE_LABELS"
+	Kubeconfig               = "Kubeconfig"
+	FloatingVIPs             = "FloatingVIPs"
 )
 
 var IngressHTTPPortProp = &edgeproto.PropertyInfo{

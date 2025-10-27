@@ -1131,6 +1131,32 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 			}
 		}
 
+		versionChange := false
+		if fmap.Has(edgeproto.ClusterInstFieldKubernetesVersion) && in.KubernetesVersion != inbuf.KubernetesVersion {
+			newver, err := semver.NewVersion(in.KubernetesVersion)
+			if err != nil {
+				return fmt.Errorf("invalid kubernetes version %q: %w", in.KubernetesVersion, err)
+			}
+			// Follow the requirement that kubeadm only allows
+			// minor version upgrades in sequence, although clusters
+			// may be using other control planes than kubeadm.
+			if inbuf.KubernetesVersion != "" {
+				oldver, err := semver.NewVersion(inbuf.KubernetesVersion)
+				if err == nil {
+					if newver.Major() != oldver.Major() {
+						return fmt.Errorf("cannot change major kubernetes version")
+					}
+					if newver.Minor() < oldver.Minor() {
+						return fmt.Errorf("downgrading kubernetes version is not supported")
+					}
+					if newver.Minor() != oldver.Minor()+1 {
+						return fmt.Errorf("skipping minor versions from %q to %q is not supported", inbuf.KubernetesVersion, in.KubernetesVersion)
+					}
+				}
+			}
+			versionChange = true
+		}
+
 		// Note that resource changes can be fairly complex with
 		// multiple node pools, for example if an existing node pool
 		// is scaled up at the same time another node pool is removed.
@@ -1141,6 +1167,9 @@ func (s *ClusterInstApi) updateClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 		if resChange || scaleSpec != nil {
 			oldClusterInst = inbuf.Clone()
+		}
+		if resChange && versionChange {
+			return fmt.Errorf("cannot change node resources and kubernetes version at the same time")
 		}
 
 		changeCount = inbuf.CopyInFields(in)

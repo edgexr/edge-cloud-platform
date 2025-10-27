@@ -38,18 +38,18 @@ import (
 type ManagedK8sProvider interface {
 	GetFeatures() *edgeproto.PlatformFeatures
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
-	Init(accessVars map[string]string, properties *infracommon.InfraProperties) error
+	Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform) error
 	Login(ctx context.Context) error
 	// GetCredentials retrieves kubeconfig credentials from the cluster
 	GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error)
 	NameSanitize(name string) string
 	CreateClusterPrerequisites(ctx context.Context, clusterName string) error
 	// RunClusterCreateCommand creates the specified cluster, returning any infra annotations to add to the cluster.
-	RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
+	RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error)
 	// RunClusterUpdateCommand updates the specified cluster, returning any infra annotations to add to the cluster.
 	// Check clusterInst.Fields to see which fields are updated.
-	RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
-	RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error
+	RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error)
+	RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error
 	GetClusterAddonInfo(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (*k8smgmt.ClusterAddonInfo, error)
 	GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error)
 	GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource
@@ -90,7 +90,7 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	err = m.Provider.Init(accessVars, &m.CommonPf.Properties)
+	err = m.Provider.Init(accessVars, &m.CommonPf.Properties, &m.CommonPf)
 	if err != nil {
 		return err
 	}

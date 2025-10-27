@@ -33,6 +33,7 @@ import (
 type TestHandler struct {
 	AccessVars   map[string]string
 	RegistryAuth cloudcommon.RegistryAuth
+	SkipVault    bool
 }
 
 func (s *TestHandler) GetCloudletAccessVars(ctx context.Context) (map[string]string, error) {
@@ -52,12 +53,18 @@ func (s *TestHandler) GetRegistryImageAuth(ctx context.Context, imgUrl string) (
 }
 
 func (s *TestHandler) SignSSHKey(ctx context.Context, publicKey string) (string, error) {
+	if s.SkipVault {
+		return "signedKey", nil
+	}
 	auth := vault.NewTokenAuth(os.Getenv("VAULT_TOKEN"))
 	vaultConfig := vault.NewConfig(os.Getenv("VAULT_ADDR"), auth)
 	return vault.SignSSHKey(vaultConfig, publicKey)
 }
 
 func (s *TestHandler) GetSSHPublicKey(ctx context.Context) (string, error) {
+	if s.SkipVault {
+		return "publicKey", nil
+	}
 	auth := vault.NewTokenAuth(os.Getenv("VAULT_TOKEN"))
 	vaultConfig := vault.NewConfig(os.Getenv("VAULT_ADDR"), auth)
 	cmd := exec.Command("curl", "-s", fmt.Sprintf("%s/v1/ssh/public_key", vaultConfig.Addr))
