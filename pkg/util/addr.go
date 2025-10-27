@@ -67,6 +67,7 @@ func TrimScheme(addr string) string {
 
 // MapIPs turns an IPs comma separated list of ips or
 // ip ranges into a lookup map of the ip strings.
+// See the unit test for example strings.
 func MapIPs(ips string) (map[string]struct{}, error) {
 	mappedIPs := map[string]struct{}{}
 

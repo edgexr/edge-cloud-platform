@@ -37,9 +37,6 @@ import (
 	"sigs.k8s.io/cluster-api/api/core/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
-	//ipamv1 "github.com/metal3-io/ip-address-manager/api/v1alpha1"
-	//corev1 "k8s.io/api/core/v1"
-	//bmov1alpha1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 )
@@ -55,9 +52,6 @@ func init() {
 	_ = infrav1.AddToScheme(scheme.Scheme)
 	_ = controlplanev1.AddToScheme(scheme.Scheme)
 	_ = bootstrapv1.AddToScheme(scheme.Scheme)
-	//_ = ipamv1.AddToScheme(scheme.Scheme)
-	//_ = corev1.AddToScheme(scheme.Scheme)
-	//_ = bmov1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme)
 	kubeVIPTemplate = template.Must(template.New("kube-vip").Parse(kubeVIPTemplateString))
 }
 

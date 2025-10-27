@@ -247,7 +247,9 @@ func Run(client ssh.Client, cmd string) error {
 }
 
 // RunOutput runs the command and returns separate stdout and
-// stderr strings
+// stderr strings. Use this for commands that are intended to
+// generate machine-parsable output to stdout, but can generate
+// warnings on stderr even on success that can mess up the parsing.
 func RunOutput(client ssh.Client, cmd string) (string, string, error) {
 	outReader, errReader, inWriter, err := client.Start(cmd)
 	if err != nil {
