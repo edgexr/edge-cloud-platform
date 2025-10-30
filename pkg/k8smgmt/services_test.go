@@ -305,6 +305,16 @@ func TestGetAppServices(t *testing.T) {
 		managesOwnNamespace: true,
 		expSvcs:             []string{"app210-http/default"},
 	}, {
+		desc:                    "app2/org2 clusterIP managed namespace, filtered, missing port",
+		appName:                 "app2",
+		appInstName:             "inst2",
+		appOrg:                  org2,
+		accessPorts:             "tcp:80:svcname={{.AppName}}{{.AppVers}},tcp:443:tls:svcname={{.AppName}}{{.AppVers}},tcp:8888:svcname={{.AppName}}{{.AppVers}}",
+		deployment:              cloudcommon.DeploymentTypeKubernetes,
+		managesOwnNamespace:     true,
+		expPortsWithoutServices: []string{"8888/tcp"},
+		expSvcs:                 []string{"app210-http/default"},
+	}, {
 		desc:        "helm inst with conflicts",
 		appName:     "redis",
 		appOrg:      org1,

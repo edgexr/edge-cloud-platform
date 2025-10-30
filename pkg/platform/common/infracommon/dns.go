@@ -70,7 +70,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			return err
 		}
 	}
-	svcs, err := k8smgmt.WaitForAppLBServices(ctx, client, kubeNames, appInst.MappedPorts)
+	svcs, err := k8smgmt.WaitForAppServices(ctx, client, kubeNames, appInst.MappedPorts)
 	if err != nil {
 		return err
 	}

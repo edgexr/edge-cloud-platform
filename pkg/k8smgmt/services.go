@@ -118,7 +118,7 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 	}
 
 	// There is no reliable way to match a load balancer/cluster IP service
-	// with the AppInst the deployed it, given the ways in which we have
+	// with the AppInst that deployed it, given the ways in which we can have
 	// layers of manifests, helm charts, and operators. Consider an AppInst
 	// with a custom manifest that deploys an operator, and the operator
 	// deploys both another manifest and a helm chart.
@@ -127,20 +127,20 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 	// with the helm release name. However because of the layering, for
 	// example you can have a helm chart that deploys another helm chart,
 	// services will have different annotations than expected. So it's not
-	// possible to filter out services just based on labels/annotations.
-	// The only guarantee we have is if the user specified for a specific
-	// port, the service name that it must match.
+	// possible to match services just based on labels/annotations.
+	// To resolve ambiguity we need the user to tell us, per exposed port
+	// on the App, what the service name should be.
 
 	// Previously we filtered by namespace, but now we allow multiple
-	// apps per namespace. We still only allow an App to deploy to a
-	// single namespace, so we can limit our search to that namespace.
+	// apps per namespace. We do not support a single App to create
+	// objects across multiple namespaces.
 
 	// track filtered out services for logging
 	filteredByHeadless := []string{}
 	filteredByAppInstLabel := []string{}
 	filteredByPortServiceStr := []string{}
 
-	// Determine services by the ports they provide
+	// Matche services to the exposed App ports
 	reqdPorts := map[PortProto]*edgeproto.InstPort{}
 	portsList := []string{}
 	for _, port := range mappedPorts {
@@ -156,7 +156,6 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 		}
 		portsList = append(portsList, ppStr)
 	}
-	// Match services to required ports
 	appServices := &AppServices{
 		SvcsByPort: map[PortProto]*v1.Service{},
 	}
@@ -208,11 +207,13 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 						conflictsByPort[pp] = append(conflictsByPort[pp], getServiceID(&svc))
 					}
 					continue
-				} else {
-					appServices.SvcsByPort[pp] = &svc
-					conflictsByPort[pp] = []string{getServiceID(&svc)}
 				}
+				// Some callers want services by port.
+				// Some callers want a list of services.
 				svcID := getServiceID(&svc)
+				appServices.SvcsByPort[pp] = &svc
+				conflictsByPort[pp] = []string{svcID}
+				// avoid adding the same service twice for different ports
 				if _, found := addedServices[svcID]; !found {
 					addedServices[svcID] = struct{}{}
 					appServices.Services = append(appServices.Services, &svc)
@@ -244,16 +245,14 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 	return appServices, nil
 }
 
-func WaitForAppLBServices(ctx context.Context, client ssh.Client, names *KubeNames, mappedPorts []edgeproto.InstPort) (*AppServices, error) {
+// WaitForAppServices waits for AppInst services to be created.
+func WaitForAppServices(ctx context.Context, client ssh.Client, names *KubeNames, mappedPorts []edgeproto.InstPort) (*AppServices, error) {
 	var appServices *AppServices
 	var err error
 	maxTries := 50
-	svcsOps := []GetObjectsOp{
-		WithLoadBalancersOnly(),
-	}
 	for i := 0; ; i++ {
 		log.SpanLog(ctx, log.DebugLevelInfra, "getting AppInst load balancers", "appinst", names.AppInstName)
-		appServices, err = GetAppServices(ctx, client, names, mappedPorts, svcsOps...)
+		appServices, err = GetAppServices(ctx, client, names, mappedPorts)
 		if err != nil {
 			return nil, err
 		}
@@ -263,6 +262,8 @@ func WaitForAppLBServices(ctx context.Context, client ssh.Client, names *KubeNam
 		if len(appServices.PortsWithoutServices) == 0 {
 			return appServices, nil
 		}
+		// There were some ports without services. Try again later, as the
+		// service may not be created yet.
 		if i > maxTries {
 			return nil, fmt.Errorf("timed out waiting for AppInst services, ports without services: %s", strings.Join(appServices.PortsWithoutServices, ", "))
 		}
@@ -270,21 +271,3 @@ func WaitForAppLBServices(ctx context.Context, client ssh.Client, names *KubeNam
 		time.Sleep(3 * time.Second)
 	}
 }
-
-/*
-	if annotations := svc.GetAnnotations(); annotations != nil {
-		// If AppInst is deployed via helm, services should have
-		// helm release name annotation.
-		helmReleaseName, ok := annotations["meta.helm.sh/release-name"]
-		helmReleaseNamespace, ok2 := annotations["meta.helm.sh/release-namespace"]
-		ns := names.InstanceNamespace
-		if ns == "" {
-			ns = DefaultNamespace
-		}
-		if ok && ok2 && (names.DeploymentType != cloudcommon.DeploymentTypeHelm || names.HelmAppName != helmReleaseName || ns != helmReleaseNamespace) {
-			// non-matching helm service
-			filteredByHelmAnnotation = append(filteredByHelmAnnotation, getServiceID(&svc))
-			continue
-		}
-	}
-*/

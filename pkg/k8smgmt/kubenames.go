@@ -274,9 +274,8 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 			}
 		}
 	} else if app.Deployment == cloudcommon.DeploymentTypeHelm {
-		// for helm chart just make sure it's the same prefix
-		// we have no idea what the service names will be
-		//kubeNames.ServiceNames = append(kubeNames.ServiceNames, kubeNames.AppName)
+		// we have no guarantee what the service names will be, so do
+		// not set them.
 	} else if app.Deployment == cloudcommon.DeploymentTypeDocker {
 		// for docker use the app name
 		kubeNames.ServiceNames = append(kubeNames.ServiceNames, kubeNames.AppName)

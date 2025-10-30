@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
+	v1 "k8s.io/api/core/v1"
 )
 
 type ClusterManager interface {
@@ -263,12 +264,15 @@ func (s *Xind) patchServiceIp(ctx context.Context, clusterInst *edgeproto.Cluste
 	if err != nil {
 		return err
 	}
-	svcs, err := k8smgmt.WaitForAppLBServices(ctx, client, names, appInst.MappedPorts)
+	svcs, err := k8smgmt.WaitForAppServices(ctx, client, names, appInst.MappedPorts)
 	if err != nil {
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Patch service", "kubeNames", names, "ipaddr", ipaddr)
 	for _, svc := range svcs.Services {
+		if svc.Spec.Type != v1.ServiceTypeLoadBalancer {
+			continue
+		}
 		serviceName := svc.ObjectMeta.Name
 		namespace := svc.ObjectMeta.Namespace
 		if namespace == "" {
