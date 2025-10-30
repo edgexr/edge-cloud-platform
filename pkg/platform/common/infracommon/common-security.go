@@ -119,7 +119,7 @@ func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, c
 	}()
 	go func() {
 		if ops.AddDnsAndPatchKubeSvc {
-			err := c.CreateAppDNSAndPatchKubeSvc(ctx, client, kubeNames, aac.DnsOverride, getDnsSvcAction)
+			err := c.CreateAppDNSAndPatchKubeSvc(ctx, client, kubeNames, appInst, aac.DnsOverride, getDnsSvcAction)
 			if err == nil {
 				dnschan <- ""
 			} else {

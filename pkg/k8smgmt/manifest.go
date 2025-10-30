@@ -40,6 +40,8 @@ import (
 
 const MexAppLabel = "mex-app"
 const ConfigLabel = "config"
+const AppInstNameLabel = "app.edgexr.org/appinst-name"
+const AppInstOrgLabel = "app.edgexr.org/appinst-org"
 
 // TestReplacementVars are used to syntax check app envvars
 var TestReplacementVars = deployvars.DeploymentReplaceVars{
@@ -349,6 +351,8 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 			}
 			// config label is used to mark for pruning
 			labels[ConfigLabel] = getConfigLabel(names)
+			labels[AppInstNameLabel] = names.AppInstName
+			labels[AppInstOrgLabel] = names.AppInstOrg
 			metaObj.SetLabels(labels)
 		}
 

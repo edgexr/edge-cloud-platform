@@ -144,7 +144,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 			}
 			// If this is all internal ports, all we need is patch of kube service
 			if app.InternalPorts {
-				err = k.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)
+				err = k.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, appInst, infracommon.NoDnsOverride, getDnsAction)
 			} else {
 				updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules add DNS")
 				wlParams := infracommon.WhiteListParams{
@@ -227,7 +227,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 			if err != nil {
 				return err
 			}
-			if err := k.commonPf.DeleteAppDNS(ctx, client, names, aac.DnsOverride); err != nil {
+			if err := k.commonPf.DeleteAppDNS(ctx, client, names, appInst, aac.DnsOverride); err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}

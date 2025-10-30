@@ -116,8 +116,12 @@ func GetCloudletClusterName(cluster *edgeproto.ClusterInst) string {
 	return GetK8sNodeNameSuffix(cluster)
 }
 
-func GetNamespace(appInst *edgeproto.AppInst) string {
+func GetNamespace(app *edgeproto.App, appInst *edgeproto.AppInst) string {
 	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityRegionScopeName {
+		if app.ManagesOwnNamespaces {
+			// TODO: allow user to specify target namespace
+			return DefaultNamespace
+		}
 		return util.NamespaceSanitize(fmt.Sprintf("%s-%s", appInst.Key.Name, appInst.Key.Organization))
 	} else if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
 		name := cloudcommon.GetAppInstCloudletScopedName(appInst)
@@ -131,7 +135,7 @@ func GetNamespace(appInst *edgeproto.AppInst) string {
 
 func SetNamespace(clusterInst *edgeproto.ClusterInst, app *edgeproto.App) bool {
 	if app.CompatibilityVersion >= cloudcommon.AppCompatibilityPerInstanceNamespace {
-		return !app.ManagesOwnNamespaces
+		return true
 	} else {
 		// for older apps, namespaces were only set in a multi
 		// tenant cluster.
@@ -198,8 +202,13 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 	kubeNames.AppOrg = NormalizeName(app.Key.Organization)
 	kubeNames.AppInstName = NormalizeName(appInstName)
 	kubeNames.AppInstOrg = NormalizeName(appInst.Key.Organization)
-	// Helm app name has to conform to DNS naming standards
-	kubeNames.HelmAppName = util.DNSSanitize(app.Key.Name + "v" + app.Key.Version)
+	if app.Deployment == cloudcommon.DeploymentTypeHelm {
+		// Helm app name has to conform to DNS naming standards
+		// Helm release name needs to be based on App name, not AppInst name,
+		// so that an Access Port's svcname filter can reliably match, since
+		// the filter is defined on the App definition.
+		kubeNames.HelmAppName = util.DNSSanitize(app.Key.Name + "v" + app.Key.Version)
+	}
 	kubeNames.AppURI = appInst.Uri
 	kubeNames.AppRevision = app.Revision
 	kubeNames.AppInstRevision = appInst.Revision
@@ -207,9 +216,12 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 	kubeNames.OperatorName = NormalizeName(clusterInst.CloudletKey.Organization)
 	kubeNames.KconfName = GetKconfName(clusterInst)
 	kubeNames.KconfArg = "--kubeconfig=" + kubeNames.KconfName
-	// Configure namespace
-	if SetNamespace(clusterInst, app) && appInstName != "" {
-		kubeNames.InstanceNamespace = GetNamespace(appInst)
+	// Configure namespace.
+	if SetNamespace(clusterInst, app) {
+		// An Application can only be deployed to a single namespace.
+		// To deploy across multiple namespaces, we should add support for
+		// App bundles.
+		kubeNames.InstanceNamespace = GetNamespace(app, appInst)
 		baseName := strings.TrimSuffix(kubeNames.KconfName, ".kubeconfig")
 		// The tenant kubeconfig is scoped to the instance namespace
 		kubeNames.TenantKconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.InstanceNamespace)
@@ -231,7 +243,6 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 		}
 		var template *v1.PodTemplateSpec
 		for _, o := range objs {
-			log.DebugLog(log.DebugLevelInfra, "k8s obj", "obj", o)
 			template = nil
 			switch obj := o.(type) {
 			case *v1.Service:
@@ -264,7 +275,8 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 		}
 	} else if app.Deployment == cloudcommon.DeploymentTypeHelm {
 		// for helm chart just make sure it's the same prefix
-		kubeNames.ServiceNames = append(kubeNames.ServiceNames, kubeNames.AppName)
+		// we have no idea what the service names will be
+		//kubeNames.ServiceNames = append(kubeNames.ServiceNames, kubeNames.AppName)
 	} else if app.Deployment == cloudcommon.DeploymentTypeDocker {
 		// for docker use the app name
 		kubeNames.ServiceNames = append(kubeNames.ServiceNames, kubeNames.AppName)

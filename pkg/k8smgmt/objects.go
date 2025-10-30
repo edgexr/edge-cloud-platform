@@ -75,8 +75,9 @@ func GetObject(ctx context.Context, client ssh.Client, names *KconfNames, objTyp
 }
 
 type GetObjectsOptions struct {
-	namespace string
-	labels    []string // name=value
+	namespace         string
+	labels            []string // name=value
+	loadBalancersOnly bool
 }
 
 type GetObjectsOp func(*GetObjectsOptions)
@@ -90,5 +91,11 @@ func WithObjectNamespace(ns string) GetObjectsOp {
 func WithObjectLabel(name, val string) GetObjectsOp {
 	return func(opts *GetObjectsOptions) {
 		opts.labels = append(opts.labels, name+"="+val)
+	}
+}
+
+func WithLoadBalancersOnly() GetObjectsOp {
+	return func(opts *GetObjectsOptions) {
+		opts.loadBalancersOnly = true
 	}
 }

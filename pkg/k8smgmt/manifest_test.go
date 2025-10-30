@@ -87,6 +87,8 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
+    app.edgexr.org/appinst-name: pillimogo1
+    app.edgexr.org/appinst-org: atlanticinc
     config: pillimogo1-atlanticinc
     run: pillimogo1.0.0
   name: pillimogo100-http
@@ -107,6 +109,8 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
+    app.edgexr.org/appinst-name: pillimogo1
+    app.edgexr.org/appinst-org: atlanticinc
     config: pillimogo1-atlanticinc
     run: pillimogo1.0.0
   name: pillimogo100-tcp
@@ -127,6 +131,8 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
+    app.edgexr.org/appinst-name: pillimogo1
+    app.edgexr.org/appinst-org: atlanticinc
     config: pillimogo1-atlanticinc
     run: pillimogo1.0.0
   name: pillimogo100-udp
@@ -147,6 +153,8 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
+    app.edgexr.org/appinst-name: pillimogo1
+    app.edgexr.org/appinst-org: atlanticinc
     config: pillimogo1-atlanticinc
   name: pillimogo100-deployment
 spec:
@@ -198,6 +206,8 @@ kind: ConfigMap
 metadata:
   creationTimestamp: null
   labels:
+    app.edgexr.org/appinst-name: pillimogo1
+    app.edgexr.org/appinst-org: atlanticinc
     config: pillimogo1-atlanticinc
   name: pillimogo1.0.0-envvars
 `
@@ -343,7 +353,9 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    config: ""
+    app.edgexr.org/appinst-name: pillimogo1
+    app.edgexr.org/appinst-org: atlanticinc
+    config: pillimosatlanticinc
     run: pillimogo
   name: pillimogo-tcp
 spec:
@@ -363,7 +375,9 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    config: ""
+    app.edgexr.org/appinst-name: pillimogo1
+    app.edgexr.org/appinst-org: atlanticinc
+    config: pillimosatlanticinc
   name: pillimogo-deployment
 spec:
   replicas: 2
@@ -418,7 +432,9 @@ kind: DaemonSet
 metadata:
   creationTimestamp: null
   labels:
-    config: ""
+    app.edgexr.org/appinst-name: pillimogo1
+    app.edgexr.org/appinst-org: atlanticinc
+    config: pillimosatlanticinc
   name: pillimogo2-deployment
 spec:
   selector:
@@ -459,8 +475,10 @@ kind: StatefulSet
 metadata:
   creationTimestamp: null
   labels:
+    app.edgexr.org/appinst-name: pillimogo1
+    app.edgexr.org/appinst-org: atlanticinc
     app.kubernetes.io/name: influxdb
-    config: ""
+    config: pillimosatlanticinc
   name: influxdb
 spec:
   replicas: 1
@@ -537,7 +555,7 @@ func TestImagePullSecrets(t *testing.T) {
 			TotalMemory: 1024,
 		},
 	}
-	newMf, err := MergeEnvVars(ctx, nil, app, appInst, baseMf, names.ImagePullSecrets, &KubeNames{}, &defaultFlavor)
+	newMf, err := MergeEnvVars(ctx, nil, app, appInst, baseMf, names.ImagePullSecrets, names, &defaultFlavor)
 	require.Nil(t, err)
 	fmt.Println(newMf)
 	require.Equal(t, expectedDeploymentManifest, newMf)
