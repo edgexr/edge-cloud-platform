@@ -55,21 +55,7 @@ func GetKubeServices(ctx context.Context, client ssh.Client, names *KconfNames, 
 	if err != nil {
 		return nil, err
 	}
-	opts := GetObjectsOptions{}
-	for _, op := range ops {
-		op(&opts)
-	}
-	items := svcs.Items
-	if opts.loadBalancersOnly {
-		var filtered []v1.Service
-		for _, svc := range items {
-			if svc.Spec.Type == v1.ServiceTypeLoadBalancer {
-				filtered = append(filtered, svc)
-			}
-		}
-		items = filtered
-	}
-	return items, nil
+	return svcs.Items, nil
 }
 
 type PortProto string
@@ -118,7 +104,7 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 		return nil, err
 	}
 
-	// There is no reliable way to match a load balancer/cluster IP service
+	// There is no guaranteed way to match a load balancer/cluster IP service
 	// with the AppInst that deployed it, given the ways in which we can have
 	// layers of manifests, helm charts, and operators. Consider an AppInst
 	// with a custom manifest that deploys an operator, and the operator
@@ -127,7 +113,7 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 	// with the AppInst name. For helm charts, helm annotates the services
 	// with the helm release name. However because of the layering, for
 	// example you can have a helm chart that deploys another helm chart,
-	// services will have different annotations than expected. So it's not
+	// services may have different annotations than expected. So it's not
 	// possible to match services just based on labels/annotations.
 	// To resolve ambiguity we need the user to tell us, per exposed port
 	// on the App, what the service name should be.
@@ -141,7 +127,7 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 	filteredByAppInstLabel := []string{}
 	filteredByPortServiceStr := []string{}
 
-	// Matche services to the exposed App ports
+	// Get the ports we need to get services for
 	reqdPorts := map[PortProto]*edgeproto.InstPort{}
 	portsList := []string{}
 	for _, port := range mappedPorts {
@@ -157,6 +143,7 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 		}
 		portsList = append(portsList, ppStr)
 	}
+	// Match services to the required ports
 	type SvcMatch struct {
 		svc       *v1.Service
 		conflicts []string
@@ -174,21 +161,17 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 			// skip system services and mismatched namespaces
 			continue
 		}
-		// Try to eliminate services based on labels that indicate they
-		// are from a different AppInst.
+		// Check AppInst labels.
 		// Special case: if the label matches, ignore other services
 		// that do not have matching labels for the same port.
 		// Note that it's still possible to have a conflict if there are
-		// two matching labelled services for the same port.
+		// two matching labeled services for the same port.
 		labelMatched := false
 		if labels := svc.GetLabels(); labels != nil {
-			// If the service has an AppInst label, we can filter it if
-			// it belongs to a different AppInst.
-			// This filtering is valid because it is not subject to layering,
-			// i.e. an operator or helm chart will never apply these labels.
 			aiName, hasAiName := labels[AppInstNameLabel]
 			aiOrg, hasAiOrg := labels[AppInstOrgLabel]
 			if hasAiName && hasAiOrg && (aiName != names.AppInstName || aiOrg != names.AppInstOrg) {
+				// service from a different AppInst
 				filteredByAppInstLabel = append(filteredByAppInstLabel, getServiceID(&svc))
 				continue
 			}
@@ -208,7 +191,7 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 				continue
 			}
 			if instPort.ServiceName != "" && !strings.Contains(svc.Name, instPort.ServiceName) {
-				// specified service name substring for port doesn't match
+				// user specified service name substring for port doesn't match
 				filteredByPortServiceStr = append(filteredByPortServiceStr, getServiceID(&svc)+fmt.Sprintf(":%d", port.Port))
 				continue
 			}

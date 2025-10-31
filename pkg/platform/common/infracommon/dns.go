@@ -162,7 +162,7 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 	if err != nil {
 		return err
 	}
-	svcs, err := k8smgmt.GetAppServices(ctx, client, kubeNames, appInst.MappedPorts, k8smgmt.WithLoadBalancersOnly())
+	svcs, err := k8smgmt.GetAppServices(ctx, client, kubeNames, appInst.MappedPorts)
 	if err != nil {
 		return err
 	}
