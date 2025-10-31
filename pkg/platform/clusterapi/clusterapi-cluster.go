@@ -32,7 +32,6 @@ import (
 	"github.com/mobiledgex/yaml/v2"
 	"golang.org/x/crypto/bcrypt"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/cluster-api/api/core/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
@@ -122,6 +121,9 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	if !ok {
 		return "", fmt.Errorf("no floating VIP allocated for cluster %s", clusterName)
 	}
+	if vip == "" {
+		return "", fmt.Errorf("empty floating VIP for cluster %s", clusterName)
+	}
 	imageURL, _ := s.properties.GetValue(ImageURL)
 	imageChecksum, _ := s.properties.GetValue(ImageChecksum)
 	imageChecksumType, _ := s.properties.GetValue(ImageChecksumType)
@@ -168,14 +170,9 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	}
 	manifest := out
 
-	objs, kinds, err := cloudcommon.DecodeK8SYaml(manifest)
+	objs, _, err := cloudcommon.DecodeK8SYaml(manifest)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode cluster manifests, %s", err)
-	}
-	for i := range objs {
-		if obj, ok := objs[i].(metav1.Object); ok {
-			fmt.Printf("obj %s kind %s\n", obj.GetName(), kinds[i].Kind)
-		}
 	}
 
 	buf := bytes.Buffer{}

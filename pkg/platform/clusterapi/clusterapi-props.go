@@ -77,7 +77,7 @@ var Props = map[string]*edgeproto.PropertyInfo{
 	},
 	ImageChecksumType: {
 		Name:        "Image Checksum Type",
-		Description: "Type of checksum for the OS iamge, e.g. sha256, sha512; defaults to sha256",
+		Description: "Type of checksum for the OS image, e.g. sha256, sha512; defaults to sha256",
 		Value:       "sha256",
 		Mandatory:   false,
 	},
