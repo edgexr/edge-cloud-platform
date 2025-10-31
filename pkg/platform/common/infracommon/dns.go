@@ -78,9 +78,6 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 		if kubeNames.DeploymentType != cloudcommon.DeploymentTypeDocker && svc.Spec.Type != v1.ServiceTypeLoadBalancer {
 			continue
 		}
-		if !kubeNames.ContainsService(svc.Name) {
-			continue
-		}
 		sn := svc.ObjectMeta.Name
 		namespace := svc.ObjectMeta.Namespace
 		if namespace == "" {
@@ -169,9 +166,6 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 	fqdnBase := uri2fqdn(kubeNames.AppURI)
 	for _, svc := range svcs.Services {
 		if kubeNames.DeploymentType != cloudcommon.DeploymentTypeDocker && svc.Spec.Type != v1.ServiceTypeLoadBalancer {
-			continue
-		}
-		if !kubeNames.ContainsService(svc.Name) {
 			continue
 		}
 		sn := svc.ObjectMeta.Name
