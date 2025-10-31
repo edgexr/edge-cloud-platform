@@ -15,11 +15,9 @@
 package edgeproto
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	fmt "fmt"
-	"html/template"
 	"net"
 	"sort"
 	"strconv"
@@ -1126,41 +1124,6 @@ func ParseAppPorts(ports string) ([]InstPort, error) {
 		appports = append(appports, p)
 	}
 	return appports, nil
-}
-
-type instPortTemplateArgs struct {
-	AppName string
-	AppVers string
-}
-
-func ResolveAppPortsTemplates(ports []InstPort, appKey *AppKey) error {
-	for i := range ports {
-		err := ports[i].ResolveTemplates(appKey)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (s *InstPort) ResolveTemplates(appKey *AppKey) error {
-	if s.ServiceName != "" {
-		tmpl, err := template.New("serviceName").Parse(s.ServiceName)
-		if err != nil {
-			return err
-		}
-		args := instPortTemplateArgs{
-			AppName: appKey.Name,
-			AppVers: appKey.Version,
-		}
-		var b bytes.Buffer
-		err = tmpl.Execute(&b, args)
-		if err != nil {
-			return err
-		}
-		s.ServiceName = util.K8SServiceSanitize(b.String())
-	}
-	return nil
 }
 
 func DoPortsOverlap(a, b InstPort, skipHTTP bool) bool {

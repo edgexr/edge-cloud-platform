@@ -619,10 +619,6 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 	if err != nil {
 		return err
 	}
-	err = edgeproto.ResolveAppPortsTemplates(ports, &in.Key)
-	if err != nil {
-		return fmt.Errorf("failed to resolve ports templates %s, %v", in.AccessPorts, err)
-	}
 	if !cloudcommon.AppDeploysToKubernetes(in.Deployment) {
 		httpPorts := []int32{}
 		for _, p := range ports {

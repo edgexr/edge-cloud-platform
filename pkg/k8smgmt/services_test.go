@@ -17,6 +17,7 @@ package k8smgmt
 import (
 	"context"
 	"encoding/json"
+	"slices"
 	"testing"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -119,6 +120,24 @@ func TestGetAppServices(t *testing.T) {
 			Type:        v1.ServiceTypeClusterIP,
 			ClusterIP:   "1.2.3.4",
 			AppInstName: "inst2",
+			AppInstOrg:  org2,
+		}),
+		genTestService(TestServiceSpec{ // app3/org2 managed namespace dups
+			Name:        "app310-http1",
+			Namespace:   "default",
+			Ports:       []v1.ServicePort{{Port: 80}, {Port: 443}},
+			Type:        v1.ServiceTypeClusterIP,
+			ClusterIP:   "1.2.3.4",
+			AppInstName: "inst3",
+			AppInstOrg:  org2,
+		}),
+		genTestService(TestServiceSpec{ // app3/org2 managed namespace dups
+			Name:        "app310-http2",
+			Namespace:   "default",
+			Ports:       []v1.ServicePort{{Port: 80}, {Port: 443}},
+			Type:        v1.ServiceTypeClusterIP,
+			ClusterIP:   "1.2.3.4",
+			AppInstName: "inst3",
 			AppInstOrg:  org2,
 		}),
 		genTestService(TestServiceSpec{
@@ -269,51 +288,51 @@ func TestGetAppServices(t *testing.T) {
 		deployment:  cloudcommon.DeploymentTypeKubernetes,
 		expSvcs:     []string{"app210-tcp/inst2-devorg1"},
 	}, {
-		desc:                "app1/org2 load balancer managed namespace, conflicts",
+		desc:                "app1/org2 load balancer managed namespace",
 		appName:             "app1",
 		appOrg:              org2,
 		appInstName:         "inst1",
 		accessPorts:         "tcp:80,tcp:443:tls",
 		deployment:          cloudcommon.DeploymentTypeKubernetes,
 		managesOwnNamespace: true,
-		expErr:              "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname={{.AppName}}{{.AppVers}}\"): port 443/tcp is served by services app110-tcp/default, myhelm/default, operator-svc/default, random/default; port 80/tcp is served by services app110-tcp/default, random/default",
-	}, {
-		desc:                "app1/org2 load balancer managed namespace, filtered",
-		appName:             "app1",
-		appOrg:              org2,
-		appInstName:         "inst1",
-		accessPorts:         "tcp:80:svcname={{.AppName}}{{.AppVers}},tcp:443:tls:svcname={{.AppName}}{{.AppVers}}",
-		deployment:          cloudcommon.DeploymentTypeKubernetes,
-		managesOwnNamespace: true,
 		expSvcs:             []string{"app110-tcp/default"},
 	}, {
-		desc:                "app2/org2 clusterIP managed namespace, conflicts",
+		desc:                "app2/org2 clusterIP managed namespace",
 		appName:             "app2",
-		appOrg:              org2,
 		appInstName:         "inst2",
+		appOrg:              org2,
 		accessPorts:         "http:80,http:443:tls",
-		deployment:          cloudcommon.DeploymentTypeKubernetes,
-		managesOwnNamespace: true,
-		expErr:              "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname={{.AppName}}{{.AppVers}}\"): port 443/tcp is served by services app210-http/default, myhelm/default, operator-svc/default, random/default; port 80/tcp is served by services app210-http/default, random/default",
-	}, {
-		desc:                "app2/org2 clusterIP managed namespace, filtered",
-		appName:             "app2",
-		appInstName:         "inst2",
-		appOrg:              org2,
-		accessPorts:         "tcp:80:svcname={{.AppName}}{{.AppVers}},tcp:443:tls:svcname={{.AppName}}{{.AppVers}}",
 		deployment:          cloudcommon.DeploymentTypeKubernetes,
 		managesOwnNamespace: true,
 		expSvcs:             []string{"app210-http/default"},
 	}, {
-		desc:                    "app2/org2 clusterIP managed namespace, filtered, missing port",
+		desc:                    "app2/org2 clusterIP missing port",
 		appName:                 "app2",
 		appInstName:             "inst2",
 		appOrg:                  org2,
-		accessPorts:             "tcp:80:svcname={{.AppName}}{{.AppVers}},tcp:443:tls:svcname={{.AppName}}{{.AppVers}},tcp:8888:svcname={{.AppName}}{{.AppVers}}",
+		accessPorts:             "http:80,http:443:tls,http:8888:tls",
 		deployment:              cloudcommon.DeploymentTypeKubernetes,
 		managesOwnNamespace:     true,
 		expPortsWithoutServices: []string{"8888/tcp"},
 		expSvcs:                 []string{"app210-http/default"},
+	}, {
+		desc:                "app3/org2 duplicate services",
+		appName:             "app3",
+		appInstName:         "inst3",
+		appOrg:              org2,
+		accessPorts:         "http:80,http:443:tls",
+		deployment:          cloudcommon.DeploymentTypeKubernetes,
+		managesOwnNamespace: true,
+		expErr:              "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port 443/tcp is served by services app310-http1/default, app310-http2/default; port 80/tcp is served by services app310-http1/default, app310-http2/default",
+	}, {
+		desc:                "app3/org2 duplicate services resolved",
+		appName:             "app3",
+		appInstName:         "inst3",
+		appOrg:              org2,
+		accessPorts:         "http:80:svcname=http2,http:443:tls:svcname=http1",
+		deployment:          cloudcommon.DeploymentTypeKubernetes,
+		managesOwnNamespace: true,
+		expSvcs:             []string{"app310-http1/default", "app310-http2/default"},
 	}, {
 		desc:        "helm inst with conflicts",
 		appName:     "redis",
@@ -322,7 +341,7 @@ func TestGetAppServices(t *testing.T) {
 		accessPorts: "http:6379:tls",
 		deployment:  cloudcommon.DeploymentTypeHelm,
 		imagePath:   "http://bitnami.charts:8000/redis:bitnami/redis",
-		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname={{.AppName}}{{.AppVers}}\"): port 6379/tcp is served by services myredis-master/myredis-devorg1, myredis-replicas/myredis-devorg1",
+		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port 6379/tcp is served by services myredis-master/myredis-devorg1, myredis-replicas/myredis-devorg1",
 	}, {
 		desc:        "helm inst with svcname",
 		appName:     "redis",
@@ -341,7 +360,7 @@ func TestGetAppServices(t *testing.T) {
 		deployment:          cloudcommon.DeploymentTypeHelm,
 		imagePath:           "http://bitnami.charts:8000/redis:bitnami/redis",
 		managesOwnNamespace: true,
-		expErr:              "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname={{.AppName}}{{.AppVers}}\"): port 6379/tcp is served by services myredis-master/default, myredis-replicas/default",
+		expErr:              "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port 6379/tcp is served by services myredis-master/default, myredis-replicas/default",
 	}, {
 		desc:                "helm inst managed namespace with filter",
 		appName:             "redis",
@@ -370,7 +389,7 @@ func TestGetAppServices(t *testing.T) {
 		deployment:          cloudcommon.DeploymentTypeHelm,
 		imagePath:           "http://bitnami.charts:8000/redis:bitnami/redis",
 		managesOwnNamespace: true,
-		expErr:              "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname={{.AppName}}{{.AppVers}}\"): port 443/tcp is served by services myhelm/default, operator-svc/default, random/default; port 6379/tcp is served by services myredis-master/default, myredis-replicas/default, operator-redis/default",
+		expErr:              "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port 443/tcp is served by services myhelm/default, operator-svc/default, random/default; port 6379/tcp is served by services myredis-master/default, myredis-replicas/default, operator-redis/default",
 	}, {
 		desc:                "operator multi-service managed namespace, filtered",
 		appName:             "operator",
@@ -407,8 +426,6 @@ func TestGetAppServices(t *testing.T) {
 		}
 		ports, err := edgeproto.ParseAppPorts(app.AccessPorts)
 		require.Nil(t, err, test.desc)
-		err = edgeproto.ResolveAppPortsTemplates(ports, &app.Key)
-		require.Nil(t, err, test.desc)
 		ai.MappedPorts = ports
 		ai.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
 
@@ -431,6 +448,7 @@ func TestGetAppServices(t *testing.T) {
 		for _, svc := range appServices.Services {
 			svcNames = append(svcNames, svc.Name+"/"+svc.Namespace)
 		}
+		slices.Sort(svcNames)
 		require.Equal(t, test.expSvcs, svcNames, test.desc)
 	}
 }
