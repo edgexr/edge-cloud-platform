@@ -25,6 +25,7 @@ const (
 	PlatformTypeAWSEC2            = "awsec2"
 	PlatformTypeAWSEKS            = "awseks"
 	PlatformTypeAzure             = "azure"
+	PlatformTypeClusterAPI        = "clusterapi"
 	PlatformTypeDind              = "dind" // docker in docker
 	PlatformTypeEdgebox           = "edgebox"
 	PlatformTypeLocalhost         = "localhost"

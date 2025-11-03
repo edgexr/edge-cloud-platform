@@ -729,6 +729,7 @@ var ClusterInstOptionalArgs = []string{
 	"nodepools:#.noderesources.infranodeflavor",
 	"nodepools:#.noderesources.externalvolumesize",
 	"nodepools:#.scalable",
+	"nodepools:#.controlplane",
 	"infraannotations",
 	"kubernetesversion",
 	"disabledynamicappinstplacement",
@@ -834,8 +835,9 @@ var ClusterInstComments = map[string]string{
 	"nodepools:#.noderesources.infranodeflavor":    "Infrastructure specific node flavor",
 	"nodepools:#.noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
 	"nodepools:#.scalable":                         "Scalable indicates the system may scale the number of nodes",
+	"nodepools:#.controlplane":                     "Node pool hosts the kubernetes control plane",
 	"infraannotations":                             "Annotations added by the implementing infrastructure, specify infraannotations:empty=true to clear",
-	"kubernetesversion":                            "Kubernetes version of cluster if applicable",
+	"kubernetesversion":                            "Kubernetes version of cluster if applicable, semver format, i.e. v1.34.0",
 	"disabledynamicappinstplacement":               "Disables dynamic placement of AppInsts on this cluster",
 	"cloudletmanagedclusterid":                     "Cloudlet managed cluster ID, if cluster based on cloudlet managed cluster",
 	"cloudletmanagedclustername":                   "Cloudlet managed cluster name, if cluster based on cloudlet managed cluster",
@@ -960,6 +962,7 @@ var CloudletManagedClusterInfoOptionalArgs = []string{
 	"nodepools:#.noderesources.infranodeflavor",
 	"nodepools:#.noderesources.externalvolumesize",
 	"nodepools:#.scalable",
+	"nodepools:#.controlplane",
 }
 var CloudletManagedClusterInfoAliasArgs = []string{}
 var CloudletManagedClusterInfoComments = map[string]string{
@@ -978,6 +981,7 @@ var CloudletManagedClusterInfoComments = map[string]string{
 	"nodepools:#.noderesources.infranodeflavor":    "Infrastructure specific node flavor",
 	"nodepools:#.noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
 	"nodepools:#.scalable":                         "Scalable indicates the system may scale the number of nodes",
+	"nodepools:#.controlplane":                     "Node pool hosts the kubernetes control plane",
 }
 var CloudletManagedClusterInfoSpecialArgs = map[string]string{
 	"nodepools:#.noderesources.optresmap": "StringToString",
@@ -1022,6 +1026,7 @@ var ClusterInstInfoOptionalArgs = []string{
 	"cloudletmanagedclusterinfo.nodepools:#.noderesources.infranodeflavor",
 	"cloudletmanagedclusterinfo.nodepools:#.noderesources.externalvolumesize",
 	"cloudletmanagedclusterinfo.nodepools:#.scalable",
+	"cloudletmanagedclusterinfo.nodepools:#.controlplane",
 	"infraannotations",
 }
 var ClusterInstInfoAliasArgs = []string{}
@@ -1064,6 +1069,7 @@ var ClusterInstInfoComments = map[string]string{
 	"cloudletmanagedclusterinfo.nodepools:#.noderesources.infranodeflavor":    "Infrastructure specific node flavor",
 	"cloudletmanagedclusterinfo.nodepools:#.noderesources.externalvolumesize": "Size of external volume to be attached to nodes. This is for the root partition",
 	"cloudletmanagedclusterinfo.nodepools:#.scalable":                         "Scalable indicates the system may scale the number of nodes",
+	"cloudletmanagedclusterinfo.nodepools:#.controlplane":                     "Node pool hosts the kubernetes control plane",
 	"infraannotations": "Annotations added by the implementing infrastructure",
 }
 var ClusterInstInfoSpecialArgs = map[string]string{
@@ -1092,6 +1098,7 @@ var UpdateClusterInstOptionalArgs = []string{
 	"nodepools:empty",
 	"nodepools:#.numnodes",
 	"nodepools:#.scalable",
+	"nodepools:#.controlplane",
 	"infraannotations",
 	"disabledynamicappinstplacement",
 	"cloudletmanagedclusterid",
@@ -1147,6 +1154,7 @@ var ShowClusterResourceUsageOptionalArgs = []string{
 	"nodepools:#.noderesources.infranodeflavor",
 	"nodepools:#.noderesources.externalvolumesize",
 	"nodepools:#.scalable",
+	"nodepools:#.controlplane",
 	"infraannotations",
 	"kubernetesversion",
 	"disabledynamicappinstplacement",

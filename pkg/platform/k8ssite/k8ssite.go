@@ -105,14 +105,14 @@ func (s *K8sSite) ensureKubeconfig() (*k8smgmt.KconfNames, error) {
 	key := s.CommonPf.PlatformConfig.CloudletKey
 	kconfNames := k8smgmt.GetCloudletKConfNames(key)
 	kconfName := kconfNames.KconfName
-	data := s.accessVars[KUBECONFIG]
+	data := s.accessVars[cloudcommon.Kubeconfig]
 	// check if file exists and is correct
 	out, err := os.ReadFile(kconfName)
 	if err == nil && string(out) == data {
 		return kconfNames, nil
 	}
 	// write out file
-	err = os.WriteFile(kconfName, []byte(s.accessVars[KUBECONFIG]), KconfPerms)
+	err = os.WriteFile(kconfName, []byte(s.accessVars[cloudcommon.Kubeconfig]), KconfPerms)
 	if err != nil {
 		return nil, fmt.Errorf("failed to write kubeconfig file %s, %s", kconfName, err)
 	}
@@ -204,12 +204,12 @@ func (k *K8sSite) GetClusterAdditionalResourceMetric(ctx context.Context, cloudl
 }
 
 func (m *K8sSite) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
-	kubeconfig, ok := m.accessVars[KUBECONFIG]
+	kubeconfig, ok := m.accessVars[cloudcommon.Kubeconfig]
 	if !ok {
-		return nil, errors.New(KUBECONFIG + " access var not set")
+		return nil, errors.New(cloudcommon.Kubeconfig + " access var not set")
 	}
 	if kubeconfig == "" {
-		return nil, errors.New(KUBECONFIG + " access var is empty")
+		return nil, errors.New(cloudcommon.Kubeconfig + " access var is empty")
 	}
 	return []byte(kubeconfig), nil
 }

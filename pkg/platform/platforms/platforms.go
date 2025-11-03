@@ -20,6 +20,7 @@ import (
 	awsec2 "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-ec2"
 	awseks "github.com/edgexr/edge-cloud-platform/pkg/platform/aws/aws-eks"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/azure"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/clusterapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/dind"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fakeinfra"
@@ -64,6 +65,7 @@ var builders = []platform.PlatformBuilder{
 	mockmanagedk8s.NewPlatform,
 	localhost.NewPlatform,
 	osmk8s.NewPlatform,
+	clusterapi.NewPlatform,
 }
 
 type PlatformsData struct {

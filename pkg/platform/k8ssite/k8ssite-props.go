@@ -23,12 +23,8 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 )
 
-const (
-	KUBECONFIG = "KUBECONFIG"
-)
-
 var AccessVarProps = map[string]*edgeproto.PropertyInfo{
-	KUBECONFIG: {
+	cloudcommon.Kubeconfig: {
 		Name:        "Kubernetes cluster config file data",
 		Description: "Contents of Kubernetes cluster config file used with kubectl to access the cluster, must have admin permissions for the cluster",
 		Mandatory:   true,

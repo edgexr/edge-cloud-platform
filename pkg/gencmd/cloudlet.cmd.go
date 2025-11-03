@@ -3978,6 +3978,7 @@ var CloudletInfoOptionalArgs = []string{
 	"nodepools:#.noderesources.infranodeflavor",
 	"nodepools:#.noderesources.externalvolumesize",
 	"nodepools:#.scalable",
+	"nodepools:#.controlplane",
 }
 var CloudletInfoAliasArgs = []string{
 	"cloudletorg=key.organization",
@@ -4074,6 +4075,7 @@ var CloudletInfoComments = map[string]string{
 	"nodepools:#.noderesources.infranodeflavor":                "Infrastructure specific node flavor",
 	"nodepools:#.noderesources.externalvolumesize":             "Size of external volume to be attached to nodes. This is for the root partition",
 	"nodepools:#.scalable":                                     "Scalable indicates the system may scale the number of nodes",
+	"nodepools:#.controlplane":                                 "Node pool hosts the kubernetes control plane",
 }
 var CloudletInfoSpecialArgs = map[string]string{
 	"errors":                              "StringArray",

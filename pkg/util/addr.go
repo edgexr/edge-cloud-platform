@@ -17,6 +17,7 @@ package util
 import (
 	"fmt"
 	"net"
+	"net/netip"
 	"os"
 	"strings"
 )
@@ -62,4 +63,44 @@ func TrimScheme(addr string) string {
 		return addr
 	}
 	return addr[idx+3:]
+}
+
+// MapIPs turns an IPs comma separated list of ips or
+// ip ranges into a lookup map of the ip strings.
+// See the unit test for example strings.
+func MapIPs(ips string) (map[string]struct{}, error) {
+	mappedIPs := map[string]struct{}{}
+
+	parts := strings.SplitSeq(ips, ",")
+	for part := range parts {
+		part = strings.TrimSpace(part)
+		iprange := strings.Split(part, "-")
+		if len(iprange) == 2 {
+			start, err := netip.ParseAddr(iprange[0])
+			if err != nil {
+				return nil, fmt.Errorf("invalid IP range start %s, %s", part, err)
+			}
+			end, err := netip.ParseAddr(iprange[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid IP range end %s, %s", part, err)
+			}
+			cmp := start.Compare(end)
+			if cmp == 0 {
+				mappedIPs[start.String()] = struct{}{}
+			} else if cmp < 0 {
+				for ip := start; ip.Compare(end) <= 0; ip = ip.Next() {
+					mappedIPs[ip.String()] = struct{}{}
+				}
+			} else {
+				return nil, fmt.Errorf("invalid IP range %s, end must be greater than start", part)
+			}
+		} else {
+			ip, err := netip.ParseAddr(part)
+			if err != nil {
+				return nil, fmt.Errorf("invalid IP %s, %s", part, err)
+			}
+			mappedIPs[ip.String()] = struct{}{}
+		}
+	}
+	return mappedIPs, nil
 }

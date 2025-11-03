@@ -16641,6 +16641,7 @@ const CloudletInfoFieldNodePoolsNodeResourcesGpusVendor = "46.3.7.3"
 const CloudletInfoFieldNodePoolsNodeResourcesGpusMemory = "46.3.7.4"
 const CloudletInfoFieldNodePoolsNodeResourcesGpusInUse = "46.3.7.5"
 const CloudletInfoFieldNodePoolsScalable = "46.4"
+const CloudletInfoFieldNodePoolsControlPlane = "46.5"
 
 var CloudletInfoAllFields = []string{
 	CloudletInfoFieldKeyOrganization,
@@ -16740,6 +16741,7 @@ var CloudletInfoAllFields = []string{
 	CloudletInfoFieldNodePoolsNodeResourcesGpusMemory,
 	CloudletInfoFieldNodePoolsNodeResourcesGpusInUse,
 	CloudletInfoFieldNodePoolsScalable,
+	CloudletInfoFieldNodePoolsControlPlane,
 }
 
 var CloudletInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
@@ -16840,6 +16842,7 @@ var CloudletInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
 	CloudletInfoFieldNodePoolsNodeResourcesGpusMemory:                  struct{}{},
 	CloudletInfoFieldNodePoolsNodeResourcesGpusInUse:                   struct{}{},
 	CloudletInfoFieldNodePoolsScalable:                                 struct{}{},
+	CloudletInfoFieldNodePoolsControlPlane:                             struct{}{},
 })
 
 var CloudletInfoAllFieldsStringMap = map[string]string{
@@ -16940,6 +16943,7 @@ var CloudletInfoAllFieldsStringMap = map[string]string{
 	CloudletInfoFieldNodePoolsNodeResourcesGpusMemory:                  "Node Pools Node Resources Gpus Memory",
 	CloudletInfoFieldNodePoolsNodeResourcesGpusInUse:                   "Node Pools Node Resources Gpus In Use",
 	CloudletInfoFieldNodePoolsScalable:                                 "Node Pools Scalable",
+	CloudletInfoFieldNodePoolsControlPlane:                             "Node Pools Control Plane",
 }
 
 func (m *CloudletInfo) IsKeyField(s string) bool {
@@ -17623,6 +17627,10 @@ func (m *CloudletInfo) DiffFields(o *CloudletInfo, fields *FieldMap) {
 				}
 				if m.NodePools[i0].Scalable != o.NodePools[i0].Scalable {
 					fields.Set(CloudletInfoFieldNodePoolsScalable)
+					fields.Set(CloudletInfoFieldNodePools)
+				}
+				if m.NodePools[i0].ControlPlane != o.NodePools[i0].ControlPlane {
+					fields.Set(CloudletInfoFieldNodePoolsControlPlane)
 					fields.Set(CloudletInfoFieldNodePools)
 				}
 			}

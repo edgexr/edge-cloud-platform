@@ -157,7 +157,7 @@ message ClusterInst {
   repeated NodePool node_pools = 46;
   // Annotations added by the implementing infrastructure
   map<string, string> infra_annotations = 47 [(protogen.backend) = true, (protogen.hidetag) = "nocmp"];
-  // Kubernetes version of cluster if applicable
+  // Kubernetes version of cluster if applicable, semver format, i.e. v1.34.0
   string kubernetes_version = 48;
   // Disables dynamic placement of AppInsts on this cluster
   bool disable_dynamic_appinst_placement = 49;

@@ -246,6 +246,30 @@ func Run(client ssh.Client, cmd string) error {
 	return nil
 }
 
+// RunOutput runs the command and returns separate stdout and
+// stderr strings. Use this for commands that are intended to
+// generate machine-parsable output to stdout, but can generate
+// warnings on stderr even on success that can mess up the parsing.
+func RunOutput(client ssh.Client, cmd string) (string, string, error) {
+	outReader, errReader, inWriter, err := client.Start(cmd)
+	if err != nil {
+		return "", "", err
+	}
+	out, err := io.ReadAll(outReader)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to read stdout, %s", err)
+	}
+	errStr, err := io.ReadAll(errReader)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to read stderr, %s", err)
+	}
+	inWriter.Close()
+	err = client.Wait()
+	outReader.Close()
+	errReader.Close()
+	return string(out), string(errStr), err
+}
+
 const runSafeScript = `import subprocess
 import base64
 import sys

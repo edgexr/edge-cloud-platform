@@ -55,7 +55,7 @@ func NewPlatform() platform.Platform {
 	}
 }
 
-func (a *AwsEksPlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties) error {
+func (a *AwsEksPlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform) error {
 	a.awsGenPf = &awsgen.AwsGenericPlatform{Properties: properties}
 	return nil
 }
@@ -82,7 +82,7 @@ func (a *AwsEksPlatform) CreateClusterPrerequisites(ctx context.Context, cluster
 }
 
 // RunClusterCreateCommand creates a kubernetes cluster on AWS
-func (a *AwsEksPlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+func (a *AwsEksPlatform) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	pool := clusterInst.NodePools[0]
 	numNodes := pool.NumNodes
 	flavor := pool.NodeResources.InfraNodeFlavor
@@ -97,12 +97,12 @@ func (a *AwsEksPlatform) RunClusterCreateCommand(ctx context.Context, clusterNam
 	return nil, nil
 }
 
-func (s *AwsEksPlatform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error) {
+func (s *AwsEksPlatform) RunClusterUpdateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
 	return nil, errors.New("update cluster instance not implemented")
 }
 
 // RunClusterDeleteCommand removes the kubernetes cluster on AWS
-func (a *AwsEksPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) error {
+func (a *AwsEksPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.DebugLog(log.DebugLevelInfra, "RunClusterDeleteCommand", "clusterName:", clusterName)
 	out, err := infracommon.Sh(a.awsGenPf.AccountAccessVars).Command("eksctl", "delete", "cluster", "--name", clusterName).CombinedOutput()
 	if err != nil {

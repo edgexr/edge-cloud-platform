@@ -331,7 +331,7 @@ func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*e
 			}
 			nodeInfo.Capacity[name] = dec
 		}
-		gpus, gpuSW, err := getNodeGPUInfo(item.Labels)
+		gpus, gpuSW, err := GetNodeGPUInfo(item.Labels)
 		if err != nil {
 			return nil, err
 		}
@@ -413,7 +413,7 @@ func convertNodeResource(res v1.ResourceName, quantity resource.Quantity) (strin
 	return name, dec, nil
 }
 
-func getNodeGPUInfo(labels map[string]string) ([]*edgeproto.GPUResource, *edgeproto.GPUSoftwareInfo, error) {
+func GetNodeGPUInfo(labels map[string]string) ([]*edgeproto.GPUResource, *edgeproto.GPUSoftwareInfo, error) {
 	// Note: we only support one GPU type per node, although
 	// the data structures are designed to support multiple
 	// gpu types (i.e. an A100 and a T4) per node in the future.

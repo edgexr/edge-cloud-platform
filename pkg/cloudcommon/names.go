@@ -267,6 +267,7 @@ const (
 	AnnotationPreviousDNSName         = "previous-dns-name"
 	AnnotationFedPartnerAppProviderID = "fed-partner-app-provider-id"
 	AnnotationKubernetesVersion       = "kubernetes-version"
+	AnnotationFloatingVIP             = "floating-vip"
 )
 
 var InstanceUp = "UP"

@@ -125,4 +125,6 @@ message NodePool {
   NodeResources node_resources = 3;
   // Scalable indicates the system may scale the number of nodes
   bool scalable = 4;
+  // Node pool hosts the kubernetes control plane
+  bool control_plane = 5;
 }
