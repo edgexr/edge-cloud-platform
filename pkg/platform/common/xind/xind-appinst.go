@@ -264,16 +264,13 @@ func (s *Xind) patchServiceIp(ctx context.Context, clusterInst *edgeproto.Cluste
 	if err != nil {
 		return err
 	}
-	svcs, err := k8smgmt.GetServices(ctx, client, names)
+	svcs, err := k8smgmt.WaitForAppServices(ctx, client, names, appInst.MappedPorts)
 	if err != nil {
 		return err
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "Patch service", "kubeNames", names, "ipaddr", ipaddr)
-	for _, svc := range svcs {
+	for _, svc := range svcs.Services {
 		if svc.Spec.Type != v1.ServiceTypeLoadBalancer {
-			continue
-		}
-		if !names.ContainsService(svc.Name) {
 			continue
 		}
 		serviceName := svc.ObjectMeta.Name

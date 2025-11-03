@@ -126,7 +126,7 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 		action.AddDNS = !app.InternalPorts && features.IpAllocatedPerService
 		return &action, nil
 	}
-	err = m.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, infracommon.NoDnsOverride, getDnsAction)
+	err = m.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, appInst, infracommon.NoDnsOverride, getDnsAction)
 	if err != nil {
 		return err
 	}
@@ -175,7 +175,7 @@ func (m *K8sPlatformMgr) DeleteAppInst(ctx context.Context, clusterInst *edgepro
 		return err
 	}
 	if !app.InternalPorts {
-		if err = m.commonPf.DeleteAppDNS(ctx, client, names, infracommon.NoDnsOverride); err != nil {
+		if err = m.commonPf.DeleteAppDNS(ctx, client, names, appInst, infracommon.NoDnsOverride); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete DNS record", "error", err)
 		}
 	}

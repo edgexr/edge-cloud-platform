@@ -38,8 +38,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const MexAppLabel = "mex-app"
-const ConfigLabel = "config"
+const MexDeploymentLabel = "mex-app"
+const ConfigLabel = "app.edgexr.org/config"
 
 // TestReplacementVars are used to syntax check app envvars
 var TestReplacementVars = deployvars.DeploymentReplaceVars{
@@ -104,33 +104,47 @@ func addImagePullSecret(ctx context.Context, template *v1.PodTemplateSpec, secre
 	}
 }
 
-func addMexLabel(meta *metav1.ObjectMeta, label string) {
+func addDeploymentLabel(meta *metav1.ObjectMeta, label string) {
 	// Add a label so we can lookup the pods created by this
 	// deployment. Pods names are used for shell access.
-	meta.Labels[MexAppLabel] = label
+	meta.Labels[MexDeploymentLabel] = label
 }
 
-// Add app details to the deployment as labels
+// Add owner labels based on the AppInst key.
 // these labels will be picked up by Prometheus and added to the metrics
-func addAppInstLabels(meta *metav1.ObjectMeta, appInst *edgeproto.AppInst) {
-	labels := cloudcommon.GetAppInstLabels(appInst)
-	for k, v := range labels.Map() {
-		meta.Labels[k] = v
-	}
+func addOwnerLabels(labels map[string]string, names *KubeNames) {
+	labels[cloudcommon.AppInstNameLabel] = names.AppInstNameLabelValue
+	labels[cloudcommon.AppInstOrgLabel] = names.AppInstOrgLabelValue
 }
 
 // The config label marks all objects that are part of config files in the
-// config dir. We use this with apply --prune -l config=configlabel to
+// manifest. We use this with apply --prune -l config=configlabel to
 // only prune objects that were created with the config label, and are no
-// longer present in the configDir files.
-// Only objects that are created via files in the configDir should have
-// the config label. Typically this would be all the AppInsts in the
-// Cluster (or namespace for multi-tenant clusters).
+// longer present in the manifest.
+// This shall only be set on the objects in the AppInst's deployment
+// manifest, and not on objects from other files: ingress, network policy,
+// etc. This avoids deleting other objects during an apply --prune.
 func getConfigLabel(names *KubeNames) string {
-	if names.InstanceNamespace != "" {
-		return names.InstanceNamespace
-	}
-	return names.ClusterName
+	// Previously, the config label was based on the namespace.
+	// That was ok when there was only one AppInst per namespace.
+	// However, we now support multiple AppInsts per namespace,
+	// so we use a more precise label based on the AppInst key.
+	// In terms of backwards compatibility, there is some risk
+	// that an update of an old AppInst whose manifest now no longer
+	// includes an object will not prune that object. This case
+	// seems unlikely as the AppInst manifest is unlikely to change.
+	return names.AppInstNameLabelValue + "." + names.AppInstOrgLabelValue
+}
+
+func addConfigLabel(labels map[string]string, names *KubeNames) {
+	labels[ConfigLabel] = getConfigLabel(names)
+}
+
+// getConfigSelector gets the prune selector when running kubectl
+// apply --prune for updating the AppInst manifest.
+// See getConfigLabel.
+func getConfigSelector(names *KubeNames) string {
+	return fmt.Sprintf("-l %s=%s", ConfigLabel, getConfigLabel(names))
 }
 
 type resourceQuotaArgs struct {
@@ -168,9 +182,8 @@ func GetResourceQuota(ctx context.Context, names *KubeNames, kr *edgeproto.Kuber
 	args := resourceQuotaArgs{}
 	args.Name = namespace
 	args.Namespace = namespace
-	args.Labels = map[string]string{
-		ConfigLabel: getConfigLabel(names),
-	}
+	args.Labels = map[string]string{}
+	addOwnerLabels(args.Labels, names)
 	res, err := getKubernetesResourceQuants(kr)
 	if err != nil {
 		return "", err
@@ -348,7 +361,8 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 				labels = make(map[string]string)
 			}
 			// config label is used to mark for pruning
-			labels[ConfigLabel] = getConfigLabel(names)
+			addConfigLabel(labels, names)
+			addOwnerLabels(labels, names)
 			metaObj.SetLabels(labels)
 		}
 
@@ -370,10 +384,12 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 		if template == nil {
 			continue
 		}
+		if template.ObjectMeta.Labels == nil {
+			template.ObjectMeta.Labels = make(map[string]string)
+		}
+		addOwnerLabels(template.ObjectMeta.Labels, names)
 		addEnvVars(ctx, template, *envVars, appEnvVars, appSecretVars)
-		addMexLabel(&template.ObjectMeta, name)
-		// Add labels for all the appKey data
-		addAppInstLabels(&template.ObjectMeta, appInst)
+		addDeploymentLabel(&template.ObjectMeta, name)
 		if imagePullSecrets != nil {
 			addImagePullSecret(ctx, template, imagePullSecrets)
 		}

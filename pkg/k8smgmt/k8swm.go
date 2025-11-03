@@ -47,6 +47,8 @@ func (s *K8SWorkloadMgr) ApplyAppInstWorkload(ctx context.Context, accessAPI pla
 		return err
 	}
 	configDir := GetConfigDirName(names)
+	configName := getConfigFileName(names, appInst, DeploymentManifestSuffix)
+	file := configDir + "/" + configName
 
 	defer func() {
 		if reterr == nil || opts.Undo {
@@ -67,9 +69,13 @@ func (s *K8SWorkloadMgr) ApplyAppInstWorkload(ctx context.Context, accessAPI pla
 	// for an AppInst must be stored in their own directory.
 
 	// Selector selects which objects to consider for pruning.
+	// Note that we now apply just the manifest file, and not the whole
+	// config directory. This is because other manifests for ingress,
+	// network/resource policies, etc may not necessarily be present
+	// during an update if the CCRM pod was restarted, or we landed on
+	// a different CCRM pod instance than the original one.
 	kconfArg := names.GetTenantKconfArg()
-	selector := fmt.Sprintf("-l %s=%s", ConfigLabel, getConfigLabel(names))
-	cmd := fmt.Sprintf("kubectl %s apply -f %s --prune %s", kconfArg, configDir, selector)
+	cmd := fmt.Sprintf("kubectl %s apply -f %s --prune %s", kconfArg, file, getConfigSelector(names))
 	log.SpanLog(ctx, log.DebugLevelInfra, "running kubectl", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil && strings.Contains(string(out), `pruning nonNamespaced object /v1, Kind=Namespace: namespaces "kube-system" is forbidden: this namespace may not be deleted`) {

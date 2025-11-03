@@ -20,6 +20,7 @@ import (
 	"time"
 
 	dnsapi "github.com/edgexr/dnsproviders/api"
+	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
@@ -58,7 +59,7 @@ var NoDnsOverride = ""
 // The passed in GetDnsSvcActionFunc function should provide this function
 // with the actions to perform for each service, since different platforms
 // will use different IPs and patching.
-func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
+func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppDNSAndPatchKubeSvc")
 
@@ -69,15 +70,12 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			return err
 		}
 	}
-	svcs, err := k8smgmt.GetServices(ctx, client, kubeNames, k8smgmt.WithObjectNamespace(kubeNames.InstanceNamespace))
+	svcs, err := k8smgmt.WaitForAppServices(ctx, client, kubeNames, appInst.MappedPorts)
 	if err != nil {
 		return err
 	}
-	for _, svc := range svcs {
+	for _, svc := range svcs.Services {
 		if kubeNames.DeploymentType != cloudcommon.DeploymentTypeDocker && svc.Spec.Type != v1.ServiceTypeLoadBalancer {
-			continue
-		}
-		if !kubeNames.ContainsService(svc.Name) {
 			continue
 		}
 		sn := svc.ObjectMeta.Name
@@ -86,7 +84,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			namespace = k8smgmt.DefaultNamespace
 		}
 
-		action, err := getSvcAction(svc)
+		action, err := getSvcAction(*svc)
 		if err != nil {
 			return err
 		}
@@ -151,7 +149,7 @@ func (c *CommonPlatform) AddDNS(ctx context.Context, fqdn string, action *DnsSvc
 	return nil
 }
 
-func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, overrideDns string) error {
+func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, overrideDns string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppDNS", "kubeNames", kubeNames)
 	if kubeNames.AppURI == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "URI not specified, no DNS entry to delete")
@@ -161,16 +159,13 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 	if err != nil {
 		return err
 	}
-	svcs, err := k8smgmt.GetServices(ctx, client, kubeNames)
+	svcs, err := k8smgmt.GetAppServices(ctx, client, kubeNames, appInst.MappedPorts)
 	if err != nil {
 		return err
 	}
 	fqdnBase := uri2fqdn(kubeNames.AppURI)
-	for _, svc := range svcs {
+	for _, svc := range svcs.Services {
 		if kubeNames.DeploymentType != cloudcommon.DeploymentTypeDocker && svc.Spec.Type != v1.ServiceTypeLoadBalancer {
-			continue
-		}
-		if !kubeNames.ContainsService(svc.Name) {
 			continue
 		}
 		sn := svc.ObjectMeta.Name

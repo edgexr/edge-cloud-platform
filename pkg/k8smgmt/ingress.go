@@ -69,9 +69,9 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 	ingress.APIVersion = "networking.k8s.io/v1"
 	ingress.Kind = "Ingress"
 	ingress.ObjectMeta.Name = names.AppInstName
-	ingress.ObjectMeta.Labels = map[string]string{
-		ConfigLabel: getConfigLabel(names),
-	}
+	labels := map[string]string{}
+	addOwnerLabels(labels, names)
+	ingress.ObjectMeta.Labels = labels
 	ingress.Spec.IngressClassName = &ingressClass
 
 	// The ingress object needs to know the name of the service
@@ -80,33 +80,9 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 	// will be deployed. Look up service name by port. If there
 	// are port conflicts, user must specify the service name in the
 	// App.AccessPorts spec.
-	svcsOps := []GetObjectsOp{}
-	if names.InstanceNamespace != "" {
-		svcsOps = append(svcsOps, WithObjectNamespace(names.InstanceNamespace))
-	}
-	svcs, err := GetKubeServices(ctx, client, names.GetKConfNames(), svcsOps...)
+	appServices, err := GetAppServices(ctx, client, names, appInst.MappedPorts)
 	if err != nil {
 		return nil, err
-	}
-	svcNameByPort := map[int32]string{}
-	for _, svc := range svcs {
-		// for non-multitenant, typically everything will be in the
-		// default namespace, but there may be Helm charts or an
-		// operator which installs in other namespaces.
-		// The GetKubeServices command thus looks in all
-		// namespaces. We should probably add a namespace annotation
-		// to the ports spec so we know which namespace to look in.
-		// For now at least skip kube-system and ingress-nginx
-		// namespaces.
-		if svc.GetNamespace() == "kube-system" || svc.GetNamespace() == IngressNginxNamespace {
-			continue
-		}
-		for _, port := range svc.Spec.Ports {
-			if port.Protocol != "TCP" {
-				continue
-			}
-			svcNameByPort[port.Port] = svc.ObjectMeta.Name
-		}
 	}
 
 	// Build the ingress object
@@ -120,13 +96,11 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 		if port.Tls {
 			hasTLS = true
 		}
-		svcName := port.ServiceName
-		if svcName == "" {
-			svcName = svcNameByPort[port.InternalPort]
-		}
-		if svcName == "" {
-			log.SpanLog(ctx, log.DebugLevelApi, "failed to find service for port", "port", port.InternalPort, "svcNameByPort", svcNameByPort)
-			return nil, fmt.Errorf("failed to find service for port %s(%d)", port.Id, port.InternalPort)
+		pp := GetSvcPortLProto(port.InternalPort, port.Proto)
+		svc, ok := appServices.SvcsByPort[pp]
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to find service for port", "port", pp)
+			return nil, fmt.Errorf("failed to find service for port %s", string(pp))
 		}
 		path := networkingv1.HTTPIngressPath{}
 		pathType := networkingv1.PathTypePrefix
@@ -136,7 +110,7 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 			path.Path = "/"
 		}
 		path.Backend.Service = &networkingv1.IngressServiceBackend{
-			Name: svcName,
+			Name: svc.Name,
 			Port: networkingv1.ServiceBackendPort{
 				Number: port.InternalPort,
 			},

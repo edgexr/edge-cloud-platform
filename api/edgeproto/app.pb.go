@@ -391,7 +391,7 @@ type App struct {
 	// (4) intvis (internal-visibility)- Port is not externally accessible. Ex: "tcp:9000:intvis"
 	// (5) id - Port ID. Ex: "tcp:9000:id=p9000"
 	// (6) pathprefix (http-only) - Specifies the path prefix to use in the kubernetes ingress, required if multiple http ports are present, defaults to "/"
-	// (7) svcname - For Kubernetes apps, if there are multiple of the same port on different services, this denotes the service name. Ex: "tcp:9000:tls:svcname=svc1"
+	// (7) svcname - For Kubernetes apps, if there are multiple of the same port on different services, this denotes a substring of the service name, Ex: "tcp:9000:tls:svcname=myapp".
 	AccessPorts string `protobuf:"bytes,7,opt,name=access_ports,json=accessPorts,proto3" json:"access_ports,omitempty"`
 	// Default flavor for the App, which may be overridden by the AppInst
 	DefaultFlavor FlavorKey `protobuf:"bytes,9,opt,name=default_flavor,json=defaultFlavor,proto3" json:"default_flavor"`
@@ -486,7 +486,9 @@ type App struct {
 	AppAnnotations map[string]string `protobuf:"bytes,53,rep,name=app_annotations,json=appAnnotations,proto3" json:"app_annotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster
 	IsStandalone bool `protobuf:"varint,54,opt,name=is_standalone,json=isStandalone,proto3" json:"is_standalone,omitempty"`
-	// Specifies if the kubernetes application manages creating and deleting its own namespaces. If true, it is disallowed from deployment to multi-tenant clusters, and it is up to the application developer to manage namespace conflicts if they deploy multiple applications to the same cluster. If false, each application instance is deployed to its own namespace set by the platform.
+	// This is a placeholder until we allow for specifying the target namespace
+	// for Kubernetes apps. For now, this bypasses the automatic namespace
+	// allocation and deploys the application to the default namespace.
 	ManagesOwnNamespaces bool `protobuf:"varint,55,opt,name=manages_own_namespaces,json=managesOwnNamespaces,proto3" json:"manages_own_namespaces,omitempty"`
 	// Internal compatibility version
 	CompatibilityVersion uint32 `protobuf:"varint,56,opt,name=compatibility_version,json=compatibilityVersion,proto3" json:"compatibility_version,omitempty"`

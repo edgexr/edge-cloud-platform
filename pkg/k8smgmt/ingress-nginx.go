@@ -101,6 +101,11 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 	// This annotation is needed for ingress to work if deploying
 	// on Azure
 	azureArgs := `--set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz`
+	if os.Getenv("E2ETEST_TLS") != "" {
+		// for e2e tests, change the status update interval from 60s
+		// default to 2s, this avoids a 60s wait for the external IP check.
+		opts.helmSetCmds = append(opts.helmSetCmds, "--set controller.extraArgs.status-update-interval=2")
+	}
 
 	// This specifies a default certificate, which should be a
 	// wildcard cert for the entire cluster/cloudlet.
