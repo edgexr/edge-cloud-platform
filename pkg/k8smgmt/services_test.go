@@ -24,6 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,8 +54,8 @@ func genTestService(spec TestServiceSpec) v1.Service {
 		},
 	}
 	if spec.AppInstName != "" {
-		svc.ObjectMeta.Labels[AppInstNameLabel] = spec.AppInstName
-		svc.ObjectMeta.Labels[AppInstOrgLabel] = spec.AppInstOrg
+		svc.ObjectMeta.Labels[cloudcommon.AppInstNameLabel] = util.K8SLabelValueSanitize(spec.AppInstName)
+		svc.ObjectMeta.Labels[cloudcommon.AppInstOrgLabel] = util.K8SLabelValueSanitize(spec.AppInstOrg)
 	}
 	return svc
 }

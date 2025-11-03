@@ -69,9 +69,9 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 	ingress.APIVersion = "networking.k8s.io/v1"
 	ingress.Kind = "Ingress"
 	ingress.ObjectMeta.Name = names.AppInstName
-	ingress.ObjectMeta.Labels = map[string]string{
-		ConfigLabel: getConfigLabel(names),
-	}
+	labels := map[string]string{}
+	addOwnerLabels(labels, names)
+	ingress.ObjectMeta.Labels = labels
 	ingress.Spec.IngressClassName = &ingressClass
 
 	// The ingress object needs to know the name of the service

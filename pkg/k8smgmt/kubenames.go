@@ -29,32 +29,36 @@ import (
 )
 
 type KubeNames struct {
-	AppName                    string
-	AppVersion                 string
-	AppOrg                     string
-	AppInstName                string
-	AppInstOrg                 string
-	HelmAppName                string
-	HelmCacheDir               string
-	AppURI                     string
-	AppImage                   string
-	AppRevision                string
-	AppInstRevision            string
-	ClusterName                string
-	K8sNodeNameSuffix          string
-	OperatorName               string
-	ServiceNames               []string
-	DeveloperDefinedNamespaces []string // namespaces included by developer in manifest
-	KconfName                  string
-	KconfArg                   string
-	DeploymentType             string
-	ImagePullSecrets           []string
-	ImagePaths                 []string
-	IsUriIPAddr                bool
-	InstanceNamespace          string
-	MultiTenantRestricted      bool
-	TenantKconfName            string
-	TenantKconfArg             string
+	AppName                     string
+	AppVersion                  string
+	AppOrg                      string
+	AppInstName                 string
+	AppInstOrg                  string
+	HelmAppName                 string
+	HelmCacheDir                string
+	AppURI                      string
+	AppImage                    string
+	AppRevision                 string
+	AppInstRevision             string
+	AppInstNameLabelValue       string
+	AppInstOrgLabelValue        string
+	AppCompatibilityVersion     uint32
+	AppInstCompatibilityVersion uint32
+	ClusterName                 string
+	K8sNodeNameSuffix           string
+	OperatorName                string
+	ServiceNames                []string
+	DeveloperDefinedNamespaces  []string // namespaces included by developer in manifest
+	KconfName                   string
+	KconfArg                    string
+	DeploymentType              string
+	ImagePullSecrets            []string
+	ImagePaths                  []string
+	IsUriIPAddr                 bool
+	InstanceNamespace           string
+	MultiTenantRestricted       bool
+	TenantKconfName             string
+	TenantKconfArg              string
 }
 
 // In the case of single tenancy, there is only one kubeconfig
@@ -209,6 +213,10 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 		// the filter is defined on the App definition.
 		kubeNames.HelmAppName = util.DNSSanitize(app.Key.Name + "v" + app.Key.Version)
 	}
+	kubeNames.AppInstNameLabelValue = util.K8SLabelValueSanitize(appInst.Key.Name)
+	kubeNames.AppInstOrgLabelValue = util.K8SLabelValueSanitize(appInst.Key.Organization)
+	kubeNames.AppCompatibilityVersion = app.CompatibilityVersion
+	kubeNames.AppInstCompatibilityVersion = appInst.CompatibilityVersion
 	kubeNames.AppURI = appInst.Uri
 	kubeNames.AppRevision = app.Revision
 	kubeNames.AppInstRevision = appInst.Revision
@@ -327,6 +335,9 @@ func GetCloudletKConfNames(key *edgeproto.CloudletKey) *KconfNames {
 func EnsureNamespace(ctx context.Context, client ssh.Client, names *KconfNames, namespace string, labels map[string]string) error {
 	// this creates the yaml and applies it so there is no
 	// failure if the namespace already exists.
+	if namespace == DefaultNamespace {
+		return nil
+	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "ensuring namespace", "namespace", namespace, "labels", labels)
 	cmd := fmt.Sprintf("kubectl %s create ns %s --dry-run=client -o yaml | kubectl %s apply -f -", names.KconfArg, namespace, names.KconfArg)
 	out, err := client.Output(cmd)

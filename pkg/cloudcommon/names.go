@@ -138,11 +138,14 @@ var InternalVMRegistry = "internal-vm-registry"
 var AutoProvMeasurement = "auto-prov-counts"
 
 // AppLabels for the application containers
-var MexAppInstNameLabel = "mexAppInstName"
-var MexAppInstOrgLabel = "mexAppInstOrg"
+var MexAppInstNameLabel = "mexAppInstName" // deprecated, use AppInstNameLabel
+var MexAppInstOrgLabel = "mexAppInstOrg"   // deprecated, use AppInstOrgLabel
 var MexAppNameLabel = "mexAppName"
 var MexAppVersionLabel = "mexAppVersion"
 var MexMetricEndpoint = "mexMetricsEndpoint"
+
+const AppInstNameLabel = "app.edgexr.org/appinst-name"
+const AppInstOrgLabel = "app.edgexr.org/appinst-org"
 
 // Instance Lifecycle variables
 var EventsDbName = "events"
@@ -580,8 +583,18 @@ func (s *AppInstLabels) Map() map[string]string {
 }
 
 func (s *AppInstLabels) FromMap(labels map[string]string) {
+	if labels == nil {
+		return
+	}
+	// for backwards compatibility we support the old labels as well
 	s.AppInstNameLabel = labels[MexAppInstNameLabel]
 	s.AppInstOrgLabel = labels[MexAppInstOrgLabel]
+	if v, ok := labels[AppInstNameLabel]; ok {
+		s.AppInstNameLabel = v
+	}
+	if v, ok := labels[AppInstOrgLabel]; ok {
+		s.AppInstOrgLabel = v
+	}
 }
 
 // AppInstLabelsOld are the version of AppInstLabels before the

@@ -279,7 +279,7 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 					namespace = DefaultNamespace
 				}
 			}
-			selector := fmt.Sprintf("%s=%s", MexAppLabel, name)
+			selector := fmt.Sprintf("%s=%s", MexDeploymentLabel, name)
 			done, statuses, err := CheckPodsStatus(ctx, client, kconfArg, namespace, selector, waitFor, start)
 			if err != nil {
 				return err
@@ -458,13 +458,10 @@ func getHelmCacheArgs(names *KubeNames) string {
 func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeNames, labels map[string]string) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAllNamespaces", "names", names, "labels", labels)
 	namespaces := names.DeveloperDefinedNamespaces
-	if names.InstanceNamespace != "" {
+	if names.InstanceNamespace != "" && names.InstanceNamespace != DefaultNamespace {
 		namespaces = append(namespaces, names.InstanceNamespace)
 	}
 	for _, n := range namespaces {
-		if n == DefaultNamespace {
-			continue
-		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "Creating Namespace", "name", n)
 		err := EnsureNamespace(ctx, client, names.GetKConfNames(), n, labels)
 		if err != nil {
@@ -587,7 +584,7 @@ func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 		return err
 	}
 
-	if names.InstanceNamespace != "" {
+	if names.InstanceNamespace != "" && names.InstanceNamespace != DefaultNamespace {
 		// clean up namespace
 		if err = DeleteNamespace(ctx, client, names.GetKConfNames(), names.InstanceNamespace); err != nil {
 			return err
@@ -647,7 +644,7 @@ func GetAppInstRuntime(ctx context.Context, client ssh.Client, names *KubeNames,
 		//       Hence, look at table output and then get list of running pods and use this to fetch container names
 		cmd := fmt.Sprintf("kubectl %s get pods -n %s --no-headers --sort-by=.metadata.name --selector=%s=%s "+
 			"| awk '{if ($3 == \"Running\") print $1}'",
-			kconfArg, namespace, MexAppLabel, name)
+			kconfArg, namespace, MexDeploymentLabel, name)
 		out, err := client.Output(cmd)
 		if err != nil {
 			return nil, fmt.Errorf("error getting kubernetes pods, %s, %s, %s", cmd, out, err.Error())

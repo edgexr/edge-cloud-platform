@@ -57,7 +57,8 @@ func TestGetNetworkPolicy(t *testing.T) {
 kind: NetworkPolicy
 metadata:
   labels:
-    config: appinst1-devorg
+    app.edgexr.org/appinst-name: appInst1
+    app.edgexr.org/appinst-org: devorg
   name: networkpolicy-appinst1-devorg
   namespace: appinst1-devorg
 spec:
@@ -102,7 +103,8 @@ spec:
 kind: NetworkPolicy
 metadata:
   labels:
-    config: devorg-myapp-10-autocluster1
+    app.edgexr.org/appinst-name: appInst1
+    app.edgexr.org/appinst-org: devorg
   name: networkpolicy-devorg-myapp-10-autocluster1
   namespace: devorg-myapp-10-autocluster1
 spec:
@@ -146,7 +148,8 @@ spec:
 kind: NetworkPolicy
 metadata:
   labels:
-    config: appinst1-devorg
+    app.edgexr.org/appinst-name: appInst1
+    app.edgexr.org/appinst-org: devorg
   name: networkpolicy-appinst1-devorg
   namespace: appinst1-devorg
 spec:

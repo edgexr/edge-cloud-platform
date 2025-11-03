@@ -87,9 +87,9 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    app.edgexr.org/appinst-name: pillimogo1
-    app.edgexr.org/appinst-org: atlanticinc
-    config: pillimogo1-atlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
+    app.edgexr.org/config: PillimoGo1.AtlanticInc
     run: pillimogo1.0.0
   name: pillimogo100-http
 spec:
@@ -109,9 +109,9 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    app.edgexr.org/appinst-name: pillimogo1
-    app.edgexr.org/appinst-org: atlanticinc
-    config: pillimogo1-atlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
+    app.edgexr.org/config: PillimoGo1.AtlanticInc
     run: pillimogo1.0.0
   name: pillimogo100-tcp
 spec:
@@ -131,9 +131,9 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    app.edgexr.org/appinst-name: pillimogo1
-    app.edgexr.org/appinst-org: atlanticinc
-    config: pillimogo1-atlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
+    app.edgexr.org/config: PillimoGo1.AtlanticInc
     run: pillimogo1.0.0
   name: pillimogo100-udp
 spec:
@@ -153,9 +153,9 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    app.edgexr.org/appinst-name: pillimogo1
-    app.edgexr.org/appinst-org: atlanticinc
-    config: pillimogo1-atlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
+    app.edgexr.org/config: PillimoGo1.AtlanticInc
   name: pillimogo100-deployment
 spec:
   replicas: 1
@@ -167,9 +167,9 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
+        app.edgexr.org/appinst-name: PillimoGo1
+        app.edgexr.org/appinst-org: AtlanticInc
         mex-app: pillimogo100-deployment
-        mexAppInstName: PillimoGo1
-        mexAppInstOrg: AtlanticInc
         mexDeployGen: kubernetes-basic
         run: pillimogo1.0.0
     spec:
@@ -206,9 +206,9 @@ kind: ConfigMap
 metadata:
   creationTimestamp: null
   labels:
-    app.edgexr.org/appinst-name: pillimogo1
-    app.edgexr.org/appinst-org: atlanticinc
-    config: pillimogo1-atlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
+    app.edgexr.org/config: PillimoGo1.AtlanticInc
   name: pillimogo1.0.0-envvars
 `
 
@@ -216,7 +216,8 @@ var expectedPolicyManifest = `apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   labels:
-    config: pillimogo1-atlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
   name: networkpolicy-pillimogo1-atlanticinc
   namespace: pillimogo1-atlanticinc
 spec:
@@ -240,7 +241,8 @@ apiVersion: v1
 kind: ResourceQuota
 metadata:
   labels:
-    config: pillimogo1-atlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
   name: pillimogo1-atlanticinc
   namespace: pillimogo1-atlanticinc
 spec:
@@ -353,9 +355,9 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    app.edgexr.org/appinst-name: pillimogo1
-    app.edgexr.org/appinst-org: atlanticinc
-    config: pillimosatlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
+    app.edgexr.org/config: PillimoGo1.AtlanticInc
     run: pillimogo
   name: pillimogo-tcp
 spec:
@@ -375,9 +377,9 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    app.edgexr.org/appinst-name: pillimogo1
-    app.edgexr.org/appinst-org: atlanticinc
-    config: pillimosatlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
+    app.edgexr.org/config: PillimoGo1.AtlanticInc
   name: pillimogo-deployment
 spec:
   replicas: 2
@@ -390,9 +392,9 @@ spec:
       creationTimestamp: null
       labels:
         app: pillimogo
+        app.edgexr.org/appinst-name: PillimoGo1
+        app.edgexr.org/appinst-org: AtlanticInc
         mex-app: pillimogo-deployment
-        mexAppInstName: PillimoGo1
-        mexAppInstOrg: AtlanticInc
     spec:
       containers:
       - image: docker.mobiledgex.net/atlanticinc/images/pillimogo10:1.0.1
@@ -432,9 +434,9 @@ kind: DaemonSet
 metadata:
   creationTimestamp: null
   labels:
-    app.edgexr.org/appinst-name: pillimogo1
-    app.edgexr.org/appinst-org: atlanticinc
-    config: pillimosatlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
+    app.edgexr.org/config: PillimoGo1.AtlanticInc
   name: pillimogo2-deployment
 spec:
   selector:
@@ -444,9 +446,9 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
+        app.edgexr.org/appinst-name: PillimoGo1
+        app.edgexr.org/appinst-org: AtlanticInc
         mex-app: pillimogo2-deployment
-        mexAppInstName: PillimoGo1
-        mexAppInstOrg: AtlanticInc
         run: pillimogo2
     spec:
       containers:
@@ -475,10 +477,10 @@ kind: StatefulSet
 metadata:
   creationTimestamp: null
   labels:
-    app.edgexr.org/appinst-name: pillimogo1
-    app.edgexr.org/appinst-org: atlanticinc
+    app.edgexr.org/appinst-name: PillimoGo1
+    app.edgexr.org/appinst-org: AtlanticInc
+    app.edgexr.org/config: PillimoGo1.AtlanticInc
     app.kubernetes.io/name: influxdb
-    config: pillimosatlanticinc
   name: influxdb
 spec:
   replicas: 1
@@ -490,10 +492,10 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
+        app.edgexr.org/appinst-name: PillimoGo1
+        app.edgexr.org/appinst-org: AtlanticInc
         app.kubernetes.io/name: influxdb
         mex-app: influxdb
-        mexAppInstName: PillimoGo1
-        mexAppInstOrg: AtlanticInc
     spec:
       containers:
       - image: registry-int.mobiledgex.net/atlanticinc/influxdb:1.8.0-alpine

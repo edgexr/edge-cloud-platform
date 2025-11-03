@@ -168,14 +168,14 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 		// two matching labeled services for the same port.
 		labelMatched := false
 		if labels := svc.GetLabels(); labels != nil {
-			aiName, hasAiName := labels[AppInstNameLabel]
-			aiOrg, hasAiOrg := labels[AppInstOrgLabel]
-			if hasAiName && hasAiOrg && (aiName != names.AppInstName || aiOrg != names.AppInstOrg) {
+			aiName, hasAiName := labels[cloudcommon.AppInstNameLabel]
+			aiOrg, hasAiOrg := labels[cloudcommon.AppInstOrgLabel]
+			if hasAiName && hasAiOrg && (aiName != names.AppInstNameLabelValue || aiOrg != names.AppInstOrgLabelValue) {
 				// service from a different AppInst
 				filteredByAppInstLabel = append(filteredByAppInstLabel, getServiceID(&svc))
 				continue
 			}
-			if hasAiName && hasAiOrg && aiName == names.AppInstName && aiOrg == names.AppInstOrg {
+			if hasAiName && hasAiOrg && aiName == names.AppInstNameLabelValue && aiOrg == names.AppInstOrgLabelValue {
 				labelMatched = true
 			}
 		}

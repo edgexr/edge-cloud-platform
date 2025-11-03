@@ -78,9 +78,8 @@ func GetNetworkPolicy(ctx context.Context, app *edgeproto.App, appInst *edgeprot
 	}
 	args := networkPolicyArgs{}
 	args.Namespace = names.InstanceNamespace
-	args.Labels = map[string]string{
-		ConfigLabel: getConfigLabel(names),
-	}
+	args.Labels = map[string]string{}
+	addOwnerLabels(args.Labels, names)
 
 	for _, port := range appInst.MappedPorts {
 		npp := networkPolicyPort{}
