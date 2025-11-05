@@ -15,6 +15,7 @@
 package k8smgmt
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -63,10 +64,11 @@ func TestHelm(t *testing.T) {
 		expChart    string
 		expChartRef string
 		expErr      string
+		expFixed    string
 	}{{
 		"missing URL",
 		"existing/testchart", "", "", "", "",
-		"unsupported helm chart URL scheme",
+		"unsupported helm chart URL scheme", "",
 	}, {
 		"valid path",
 		"http://testchartRepo.mex/charts:testcharts/testchart",
@@ -74,7 +76,7 @@ func TestHelm(t *testing.T) {
 		"testcharts",
 		"testchart",
 		"testcharts/testchart",
-		"",
+		"", "",
 	}, {
 		"valid path with port",
 		"https://testchartRepo.mex:8000/charts:testcharts/testchart",
@@ -82,31 +84,40 @@ func TestHelm(t *testing.T) {
 		"testcharts",
 		"testchart",
 		"testcharts/testchart",
-		"",
+		"", "",
 	}, {
-		"valid path with port 2",
+		"valid path, repo with no path",
 		"https://helm.edgexr.org:edgexr/nexusai",
 		"https://helm.edgexr.org",
 		"edgexr",
 		"nexusai",
 		"edgexr/nexusai",
 		"",
+		"https://helm.edgexr.org/:edgexr/nexusai",
+	}, {
+		"valid path, repo with no path but trailing slash",
+		"https://helm.edgexr.org/:edgexr/nexusai",
+		"https://helm.edgexr.org/",
+		"edgexr",
+		"nexusai",
+		"edgexr/nexusai",
+		"", "",
 	}, {
 		"missing repo name",
 		"http://testchartRepo.mex/charts:testchart",
 		"", "", "", "",
-		"invalid repo/chart in helm image path",
+		"invalid repo/chart in helm image path", "",
 	}, {
 		"random string",
 		"random string : ", "", "", "", "",
-		"unsupported helm chart URL scheme for",
+		"unsupported helm chart URL scheme for", "",
 	}, {
 		"oci path",
 		"oci://testchartRepo.mex:8000/charts/testchart",
 		"oci://testchartRepo.mex:8000/charts/testchart",
 		"", "",
 		"oci://testchartRepo.mex:8000/charts/testchart",
-		"",
+		"", "",
 	}}
 	for _, tt := range imagePathTests {
 		spec, err := GetHelmChartSpec(tt.path)
@@ -118,6 +129,16 @@ func TestHelm(t *testing.T) {
 			require.Equal(t, tt.expURL, spec.URLPath, tt.desc)
 			require.Equal(t, tt.expRepoName, spec.RepoName, tt.desc)
 			require.Equal(t, tt.expChart, spec.ChartName, tt.desc)
+			fixed, err := FixHelmImagePath(tt.path)
+			require.Nil(t, err, tt.desc)
+			if tt.expFixed != "" {
+				require.Equal(t, tt.expFixed, fixed, tt.desc)
+			} else {
+				require.Equal(t, tt.path, fixed, tt.desc)
+			}
+			// url parsing must work
+			_, err = url.Parse(fixed)
+			require.Nil(t, err)
 		}
 	}
 }

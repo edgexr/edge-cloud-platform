@@ -135,6 +135,26 @@ type HelmChartSpec struct {
 	ChartName string
 	// The reference to the chart to be used in helm install/upgrade
 	ChartRef string
+	// URL parse
+	URL *url.URL
+}
+
+// FixHelmImagePath fixes a corner case of the helm image path
+// that causes url.Parse to fail, when the image path specifies
+// a repo with no path, i.e. https://charts.min.io:minio/minio
+// because it parses minio as a port number.
+// All other image paths can be parsed ok, so we just fix
+// this image path so it can be parsed by adding a trailing
+// slash.
+func FixHelmImagePath(imagePath string) (string, error) {
+	spec, err := GetHelmChartSpec(imagePath)
+	if err != nil {
+		return imagePath, err
+	}
+	if spec.URL.Path == "" {
+		return spec.URLPath + "/:" + spec.ChartRef, nil
+	}
+	return imagePath, nil
 }
 
 // GetHelmChartSpec parses the image path and extracs the helm chart information.
@@ -158,10 +178,11 @@ func GetHelmChartSpec(imagePath string) (*HelmChartSpec, error) {
 			return nil, fmt.Errorf("missing repo URL in helm image path %q, expected format %q", imagePath, expectedHTTPFormat)
 		}
 		// check syntax of URL
-		_, err := url.Parse(spec.URLPath)
+		u, err := url.Parse(spec.URLPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse helm image path URL %q, %w", imagePath, err)
 		}
+		spec.URL = u
 		chartParts := strings.Split(imagePath[idx+1:], "/")
 		if len(chartParts) != 2 {
 			return nil, fmt.Errorf("invalid repo/chart in helm image path %q, expected format %q", imagePath, expectedHTTPFormat)
@@ -176,10 +197,11 @@ func GetHelmChartSpec(imagePath string) (*HelmChartSpec, error) {
 		}
 		spec.ChartRef = fmt.Sprintf("%s/%s", spec.RepoName, spec.ChartName)
 	} else if strings.HasPrefix(imagePath, "oci://") {
-		_, err := url.Parse(imagePath)
+		u, err := url.Parse(imagePath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse helm image path URL %q, %w", imagePath, err)
 		}
+		spec.URL = u
 		spec.URLPath = imagePath
 		spec.ChartRef = imagePath
 	} else {
