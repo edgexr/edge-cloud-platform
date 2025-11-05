@@ -28,7 +28,7 @@ import (
 func InstallCilium(ctx context.Context, client ssh.Client, names *KconfNames, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
 	kubeNames := &KubeNames{}
 	chartSpec := HelmChartSpec{
-		ImagePath: "https://helm.cilium.io:cilium/cilium",
+		ImagePath: "https://helm.cilium.io/:cilium/cilium",
 		URLPath:   "https://helm.cilium.io/",
 		ChartName: "cilium",
 		RepoName:  "cilium",

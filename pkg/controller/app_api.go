@@ -457,6 +457,14 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 			in.ImagePath = in.ImagePath[len("https://"):]
 		}
 	}
+	if in.ImageType == edgeproto.ImageType_IMAGE_TYPE_HELM && in.ImagePath != "" {
+		// this needs to be done before URL parsing of image path
+		// for credentials hostname.
+		in.ImagePath, err = k8smgmt.FixHelmImagePath(in.ImagePath)
+		if err != nil {
+			return err
+		}
+	}
 
 	if in.ScaleWithCluster && in.Deployment != cloudcommon.DeploymentTypeKubernetes {
 		return fmt.Errorf("app scaling is only supported for Kubernetes deployments")
