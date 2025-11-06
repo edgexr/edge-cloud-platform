@@ -28,7 +28,7 @@ const (
 	IngressControllerPresent = "INGRESS_CONTROLLER_PRESENT"
 	WorkloadManager          = "WORKLOAD_MANAGER"
 	NamespaceLabels          = "NAMESPACE_LABELS"
-	Kubeconfig               = "Kubeconfig"
+	Kubeconfig               = "KUBECONFIG"
 	FloatingVIPs             = "FloatingVIPs"
 )
 
