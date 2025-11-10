@@ -200,7 +200,8 @@ func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallCo
 			// for a multi-tenant cluster, to avoid namespace conflicts.
 			// We should allow it at some point but we'd need to determine
 			// a scheme to avoid conflicts with other tenants and
-			// potentially other instances from the same tenant.
+			// potentially other instances from the same tenant, perhaps
+			// requiring the namespace is prefixed by the org name.
 			return nil, MTNamespaceInvalid, fmt.Errorf("cannot specify instance namespace %s for a multi-tenant cluster", in.Namespace)
 		}
 		if pc.cloudlet.SingleKubernetesNamespace != "" && in.Namespace != "" && pc.cloudlet.SingleKubernetesNamespace != in.Namespace {

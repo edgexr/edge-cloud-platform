@@ -128,10 +128,7 @@ func GetAppInstDedicatedNamespace(key edgeproto.AppInstKey) string {
 	return util.NamespaceSanitize(fmt.Sprintf("%s-%s", key.Name, key.Organization))
 }
 
-// GetNamespace gets the namespace for an AppInst that has already
-// been committed to Etcd by the Controller. It has various fallbacks
-// for backwards compatibility for AppInsts that did not save their
-// namespace on the AppInst.
+// GetNamespace gets the namespace for an AppInst.
 func GetNamespace(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) string {
 	if !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
 		// not a k8s app, no namespace

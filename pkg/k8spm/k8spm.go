@@ -146,6 +146,9 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 		if err != nil {
 			return err
 		}
+		// Some ingress controllers like HAproxy in HA mode may not
+		// set the IP address on the ingress object, so the operator
+		// will need to specify the IP address for the ingress.
 		ip, found := m.commonPf.Properties.GetValue(cloudcommon.IngressIPV4)
 		if !found {
 			ip, err = k8smgmt.GetIngressExternalIP(ctx, client, names, ingress.ObjectMeta.Name)

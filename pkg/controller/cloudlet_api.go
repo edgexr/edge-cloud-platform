@@ -691,7 +691,7 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 				return fmt.Errorf("Single kubernetes cluster owner can only be set on a single cluster platform")
 			}
 			if in.SingleKubernetesNamespace != "" {
-				return fmt.Errorf("Single kubernetes namespace can only be set on a single cluster platform with single kubernetes cluster owner specified")
+				return fmt.Errorf("Single kubernetes namespace can only be set on a single cluster platform")
 			}
 		}
 
