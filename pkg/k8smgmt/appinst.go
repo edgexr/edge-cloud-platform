@@ -456,10 +456,15 @@ func getHelmCacheArgs(names *KubeNames) string {
 // the namespaces, just allows the basic dependencies can be defined against
 // them. Manifest definition can later be used to update the namespaces.
 func CreateAllNamespaces(ctx context.Context, client ssh.Client, names *KubeNames, labels map[string]string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAllNamespaces", "names", names, "labels", labels)
 	namespaces := names.DeveloperDefinedNamespaces
 	if names.InstanceNamespace != "" && names.InstanceNamespace != DefaultNamespace {
 		namespaces = append(namespaces, names.InstanceNamespace)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAllNamespaces", "appInst", names.AppInstName, "labels", labels, "namespaces", namespaces, "clusterNamespace", names.ClusterSingleNamespace)
+	if names.ClusterSingleNamespace != "" {
+		// restricted cluster namespace, we don't have permissions
+		// to create namespaces
+		return nil
 	}
 	for _, n := range namespaces {
 		log.SpanLog(ctx, log.DebugLevelInfra, "Creating Namespace", "name", n)
@@ -549,7 +554,7 @@ func ApplyAppInstPolicy(ctx context.Context, client ssh.Client, names *KubeNames
 
 func createOrUpdateAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh.Client, names *KubeNames, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, action string, ops ...AppInstOp) (reterr error) {
 	opts := GetAppInstOptions(ops)
-	if action == createManifest && names.InstanceNamespace != "" {
+	if action == createManifest && names.InstanceNamespace != "" && clusterInst.SingleKubernetesNamespace == "" {
 		err := EnsureNamespace(ctx, client, names.GetKConfNames(), names.InstanceNamespace, opts.NamespaceLabels)
 		if err != nil {
 			return err
@@ -583,8 +588,12 @@ func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 	if err != nil {
 		return err
 	}
+	keepNamespace := false
+	if appInst.Annotations != nil {
+		_, keepNamespace = appInst.Annotations[cloudcommon.AnnotationKeepNamespaceOnDelete]
+	}
 
-	if names.InstanceNamespace != "" && names.InstanceNamespace != DefaultNamespace {
+	if names.InstanceNamespace != "" && names.InstanceNamespace != DefaultNamespace && names.InstanceNamespace != clusterInst.SingleKubernetesNamespace && !keepNamespace {
 		// clean up namespace
 		if err = DeleteNamespace(ctx, client, names.GetKConfNames(), names.InstanceNamespace); err != nil {
 			return err
@@ -594,9 +603,9 @@ func DeleteAppInst(ctx context.Context, accessApi platform.AccessApi, client ssh
 		}
 		// delete the config dir
 		configDir := GetConfigDirName(names)
-		err := pc.DeleteDir(ctx, client, configDir, pc.NoSudo)
+		err = pc.DeleteDir(ctx, client, configDir, pc.NoSudo)
 		if err != nil {
-			return fmt.Errorf("Unable to delete config dir %s - %v", configDir, err)
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to clean up appinst config dir", "configDir", configDir, "err", err)
 		}
 	}
 	return nil

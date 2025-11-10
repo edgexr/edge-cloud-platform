@@ -816,6 +816,8 @@ var CloudletNodeAllFields = []string{
 	CloudletNodeFieldKeyCloudletKeyOrganization,
 	CloudletNodeFieldKeyCloudletKeyName,
 	CloudletNodeFieldKeyCloudletKeyFederatedOrganization,
+	CloudletNodeFieldKeyCloudletKey,
+	CloudletNodeFieldKey,
 	CloudletNodeFieldNodeType,
 	CloudletNodeFieldNodeRole,
 	CloudletNodeFieldPasswordHash,
@@ -823,8 +825,10 @@ var CloudletNodeAllFields = []string{
 	CloudletNodeFieldIter,
 	CloudletNodeFieldOwnerTagsKey,
 	CloudletNodeFieldOwnerTagsValue,
+	CloudletNodeFieldOwnerTags,
 	CloudletNodeFieldAttributesKey,
 	CloudletNodeFieldAttributesValue,
+	CloudletNodeFieldAttributes,
 }
 
 var CloudletNodeAllFieldsMap = NewFieldMap(map[string]struct{}{
@@ -832,6 +836,8 @@ var CloudletNodeAllFieldsMap = NewFieldMap(map[string]struct{}{
 	CloudletNodeFieldKeyCloudletKeyOrganization:          struct{}{},
 	CloudletNodeFieldKeyCloudletKeyName:                  struct{}{},
 	CloudletNodeFieldKeyCloudletKeyFederatedOrganization: struct{}{},
+	CloudletNodeFieldKeyCloudletKey:                      struct{}{},
+	CloudletNodeFieldKey:                                 struct{}{},
 	CloudletNodeFieldNodeType:                            struct{}{},
 	CloudletNodeFieldNodeRole:                            struct{}{},
 	CloudletNodeFieldPasswordHash:                        struct{}{},
@@ -839,8 +845,10 @@ var CloudletNodeAllFieldsMap = NewFieldMap(map[string]struct{}{
 	CloudletNodeFieldIter:                                struct{}{},
 	CloudletNodeFieldOwnerTagsKey:                        struct{}{},
 	CloudletNodeFieldOwnerTagsValue:                      struct{}{},
+	CloudletNodeFieldOwnerTags:                           struct{}{},
 	CloudletNodeFieldAttributesKey:                       struct{}{},
 	CloudletNodeFieldAttributesValue:                     struct{}{},
+	CloudletNodeFieldAttributes:                          struct{}{},
 })
 
 var CloudletNodeAllFieldsStringMap = map[string]string{
@@ -848,6 +856,8 @@ var CloudletNodeAllFieldsStringMap = map[string]string{
 	CloudletNodeFieldKeyCloudletKeyOrganization:          "Key Cloudlet Key Organization",
 	CloudletNodeFieldKeyCloudletKeyName:                  "Key Cloudlet Key Name",
 	CloudletNodeFieldKeyCloudletKeyFederatedOrganization: "Key Cloudlet Key Federated Organization",
+	CloudletNodeFieldKeyCloudletKey:                      "Key Cloudlet Key",
+	CloudletNodeFieldKey:                                 "Key",
 	CloudletNodeFieldNodeType:                            "Node Type",
 	CloudletNodeFieldNodeRole:                            "Node Role",
 	CloudletNodeFieldPasswordHash:                        "Password Hash",
@@ -855,12 +865,22 @@ var CloudletNodeAllFieldsStringMap = map[string]string{
 	CloudletNodeFieldIter:                                "Iter",
 	CloudletNodeFieldOwnerTagsKey:                        "Owner Tags Key",
 	CloudletNodeFieldOwnerTagsValue:                      "Owner Tags Value",
+	CloudletNodeFieldOwnerTags:                           "Owner Tags",
 	CloudletNodeFieldAttributesKey:                       "Attributes Key",
 	CloudletNodeFieldAttributesValue:                     "Attributes Value",
+	CloudletNodeFieldAttributes:                          "Attributes",
 }
 
 func (m *CloudletNode) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, CloudletNodeFieldKey+".") || s == CloudletNodeFieldKey
+}
+
+var CloudletNodeBackendFieldsMap = map[string]struct{}{}
+
+var CloudletNodeNoConfigFieldsMap = map[string]struct{}{
+	CloudletNodeFieldPasswordHash: struct{}{},
+	CloudletNodeFieldSalt:         struct{}{},
+	CloudletNodeFieldIter:         struct{}{},
 }
 
 func (m *CloudletNode) DiffFields(o *CloudletNode, fields *FieldMap) {

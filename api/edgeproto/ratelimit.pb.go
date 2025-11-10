@@ -1793,9 +1793,12 @@ var FlowRateLimitSettingsAllFields = []string{
 	FlowRateLimitSettingsFieldKeyRateLimitKeyApiName,
 	FlowRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType,
 	FlowRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget,
+	FlowRateLimitSettingsFieldKeyRateLimitKey,
+	FlowRateLimitSettingsFieldKey,
 	FlowRateLimitSettingsFieldSettingsFlowAlgorithm,
 	FlowRateLimitSettingsFieldSettingsReqsPerSecond,
 	FlowRateLimitSettingsFieldSettingsBurstSize,
+	FlowRateLimitSettingsFieldSettings,
 }
 
 var FlowRateLimitSettingsAllFieldsMap = NewFieldMap(map[string]struct{}{
@@ -1803,9 +1806,12 @@ var FlowRateLimitSettingsAllFieldsMap = NewFieldMap(map[string]struct{}{
 	FlowRateLimitSettingsFieldKeyRateLimitKeyApiName:         struct{}{},
 	FlowRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType: struct{}{},
 	FlowRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget: struct{}{},
+	FlowRateLimitSettingsFieldKeyRateLimitKey:                struct{}{},
+	FlowRateLimitSettingsFieldKey:                            struct{}{},
 	FlowRateLimitSettingsFieldSettingsFlowAlgorithm:          struct{}{},
 	FlowRateLimitSettingsFieldSettingsReqsPerSecond:          struct{}{},
 	FlowRateLimitSettingsFieldSettingsBurstSize:              struct{}{},
+	FlowRateLimitSettingsFieldSettings:                       struct{}{},
 })
 
 var FlowRateLimitSettingsAllFieldsStringMap = map[string]string{
@@ -1813,14 +1819,21 @@ var FlowRateLimitSettingsAllFieldsStringMap = map[string]string{
 	FlowRateLimitSettingsFieldKeyRateLimitKeyApiName:         "Key Rate Limit Key Api Name",
 	FlowRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType: "Key Rate Limit Key Api Endpoint Type",
 	FlowRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget: "Key Rate Limit Key Rate Limit Target",
+	FlowRateLimitSettingsFieldKeyRateLimitKey:                "Key Rate Limit Key",
+	FlowRateLimitSettingsFieldKey:                            "Key",
 	FlowRateLimitSettingsFieldSettingsFlowAlgorithm:          "Settings Flow Algorithm",
 	FlowRateLimitSettingsFieldSettingsReqsPerSecond:          "Settings Reqs Per Second",
 	FlowRateLimitSettingsFieldSettingsBurstSize:              "Settings Burst Size",
+	FlowRateLimitSettingsFieldSettings:                       "Settings",
 }
 
 func (m *FlowRateLimitSettings) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, FlowRateLimitSettingsFieldKey+".") || s == FlowRateLimitSettingsFieldKey
 }
+
+var FlowRateLimitSettingsBackendFieldsMap = map[string]struct{}{}
+
+var FlowRateLimitSettingsNoConfigFieldsMap = map[string]struct{}{}
 
 func (m *FlowRateLimitSettings) DiffFields(o *FlowRateLimitSettings, fields *FieldMap) {
 	if m.Key.FlowSettingsName != o.Key.FlowSettingsName {
@@ -2808,9 +2821,12 @@ var MaxReqsRateLimitSettingsAllFields = []string{
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiName,
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType,
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget,
+	MaxReqsRateLimitSettingsFieldKeyRateLimitKey,
+	MaxReqsRateLimitSettingsFieldKey,
 	MaxReqsRateLimitSettingsFieldSettingsMaxReqsAlgorithm,
 	MaxReqsRateLimitSettingsFieldSettingsMaxRequests,
 	MaxReqsRateLimitSettingsFieldSettingsInterval,
+	MaxReqsRateLimitSettingsFieldSettings,
 }
 
 var MaxReqsRateLimitSettingsAllFieldsMap = NewFieldMap(map[string]struct{}{
@@ -2818,9 +2834,12 @@ var MaxReqsRateLimitSettingsAllFieldsMap = NewFieldMap(map[string]struct{}{
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiName:         struct{}{},
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType: struct{}{},
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget: struct{}{},
+	MaxReqsRateLimitSettingsFieldKeyRateLimitKey:                struct{}{},
+	MaxReqsRateLimitSettingsFieldKey:                            struct{}{},
 	MaxReqsRateLimitSettingsFieldSettingsMaxReqsAlgorithm:       struct{}{},
 	MaxReqsRateLimitSettingsFieldSettingsMaxRequests:            struct{}{},
 	MaxReqsRateLimitSettingsFieldSettingsInterval:               struct{}{},
+	MaxReqsRateLimitSettingsFieldSettings:                       struct{}{},
 })
 
 var MaxReqsRateLimitSettingsAllFieldsStringMap = map[string]string{
@@ -2828,14 +2847,21 @@ var MaxReqsRateLimitSettingsAllFieldsStringMap = map[string]string{
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiName:         "Key Rate Limit Key Api Name",
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyApiEndpointType: "Key Rate Limit Key Api Endpoint Type",
 	MaxReqsRateLimitSettingsFieldKeyRateLimitKeyRateLimitTarget: "Key Rate Limit Key Rate Limit Target",
+	MaxReqsRateLimitSettingsFieldKeyRateLimitKey:                "Key Rate Limit Key",
+	MaxReqsRateLimitSettingsFieldKey:                            "Key",
 	MaxReqsRateLimitSettingsFieldSettingsMaxReqsAlgorithm:       "Settings Max Reqs Algorithm",
 	MaxReqsRateLimitSettingsFieldSettingsMaxRequests:            "Settings Max Requests",
 	MaxReqsRateLimitSettingsFieldSettingsInterval:               "Settings Interval",
+	MaxReqsRateLimitSettingsFieldSettings:                       "Settings",
 }
 
 func (m *MaxReqsRateLimitSettings) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, MaxReqsRateLimitSettingsFieldKey+".") || s == MaxReqsRateLimitSettingsFieldKey
 }
+
+var MaxReqsRateLimitSettingsBackendFieldsMap = map[string]struct{}{}
+
+var MaxReqsRateLimitSettingsNoConfigFieldsMap = map[string]struct{}{}
 
 func (m *MaxReqsRateLimitSettings) DiffFields(o *MaxReqsRateLimitSettings, fields *FieldMap) {
 	if m.Key.MaxReqsSettingsName != o.Key.MaxReqsSettingsName {

@@ -30,6 +30,7 @@ const (
 	PlatformTypeEdgebox           = "edgebox"
 	PlatformTypeLocalhost         = "localhost"
 	PlatformTypeFake              = "fake"
+	PlatformTypeFakeBareMetal     = "fakebaremetal"
 	PlatformTypeFakeInfra         = "fakeinfra"
 	PlatformTypeFakeEdgebox       = "fakeedgebox"
 	PlatformTypeFakeSingleCluster = "fakesinglecluster"

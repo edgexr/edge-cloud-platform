@@ -75,7 +75,19 @@ func (x *ShowSvcNode) AssertFound(t *testing.T, obj *edgeproto.SvcNode) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find SvcNode %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "SvcNode are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.SvcNodeBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.SvcNodeNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.SvcNodeAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "SvcNode differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

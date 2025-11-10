@@ -77,7 +77,19 @@ func (x *ShowVMPool) AssertFound(t *testing.T, obj *edgeproto.VMPool) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find VMPool %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "VMPool are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.VMPoolBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.VMPoolNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.VMPoolAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "VMPool differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

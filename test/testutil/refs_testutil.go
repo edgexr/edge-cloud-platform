@@ -74,7 +74,7 @@ func (x *ShowCloudletRefs) AssertFound(t *testing.T, obj *edgeproto.CloudletRefs
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find CloudletRefs %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "CloudletRefs are equal")
+		require.Equal(t, *obj, check, "CloudletRefs differ")
 	}
 	if found {
 		// remove in case there are dups in the list, so the
@@ -266,7 +266,7 @@ func (x *ShowClusterRefs) AssertFound(t *testing.T, obj *edgeproto.ClusterRefs) 
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find ClusterRefs %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "ClusterRefs are equal")
+		require.Equal(t, *obj, check, "ClusterRefs differ")
 	}
 	if found {
 		// remove in case there are dups in the list, so the
@@ -458,7 +458,7 @@ func (x *ShowAppInstRefs) AssertFound(t *testing.T, obj *edgeproto.AppInstRefs) 
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find AppInstRefs %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "AppInstRefs are equal")
+		require.Equal(t, *obj, check, "AppInstRefs differ")
 	}
 	if found {
 		// remove in case there are dups in the list, so the

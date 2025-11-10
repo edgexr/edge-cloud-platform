@@ -684,7 +684,7 @@ func (m *mex) getInvalidMethodFields(names []string, subAllInvalidFields bool, d
 	message := desc.DescriptorProto
 	noconfig := gensupport.GetNoConfig(message, method)
 	noconfigMap := make(map[string]string)
-	for _, nc := range strings.Split(noconfig, ",") {
+	for nc := range strings.SplitSeq(noconfig, ",") {
 		if nc == "" {
 			continue
 		}
@@ -922,12 +922,71 @@ func (m *mex) generateAllFields(afg AllFieldsGen, names, nums []string, desc *ge
 		case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
 			subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
 			m.generateAllFields(afg, append(names, name), append(nums, num), subDesc)
+			fallthrough
 		default:
 			switch afg {
 			case AllFieldsGenSlice:
 				m.P(strings.Join(append(names, name), ""), ",")
 			case AllFieldsGenMap:
 				m.P(strings.Join(append(names, name), ""), ": struct{}{},")
+			}
+		}
+	}
+}
+
+func (m *mex) generateBackendFields(afg AllFieldsGen, names, nums []string, desc *generator.Descriptor, parentBackend bool) {
+	message := desc.DescriptorProto
+	for ii, field := range message.Field {
+		if ii == 0 && *field.Name == "fields" {
+			continue
+		}
+		backend := parentBackend || GetBackend(field)
+		name := generator.CamelCase(*field.Name)
+		num := fmt.Sprintf("%d", *field.Number)
+		switch *field.Type {
+		case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
+			subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
+			m.generateBackendFields(afg, append(names, name), append(nums, num), subDesc, backend)
+			fallthrough
+		default:
+			if !backend {
+				continue
+			}
+			switch afg {
+			case AllFieldsGenSlice:
+				m.P(strings.Join(append(names, name), ""), ",")
+			case AllFieldsGenMap:
+				m.P(strings.Join(append(names, name), ""), ": struct{}{},")
+			}
+		}
+	}
+}
+
+func (m *mex) generateNoConfigFields(afg AllFieldsGen, prefix string, names, nums []string, desc *generator.Descriptor, noconfigMap map[string]struct{}, parentNoConfig bool) {
+	message := desc.DescriptorProto
+	for ii, field := range message.Field {
+		if ii == 0 && *field.Name == "fields" {
+			continue
+		}
+		name := generator.CamelCase(*field.Name)
+		num := fmt.Sprintf("%d", *field.Number)
+		fieldName := strings.Join(append(names, name), ".")
+		_, ncFound := noconfigMap[fieldName]
+		noconfig := parentNoConfig || ncFound
+		switch *field.Type {
+		case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
+			subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
+			m.generateNoConfigFields(afg, prefix, append(names, name), append(nums, num), subDesc, noconfigMap, noconfig)
+			fallthrough
+		default:
+			if !noconfig {
+				continue
+			}
+			switch afg {
+			case AllFieldsGenSlice:
+				m.P(prefix+strings.Join(append(names, name), ""), ",")
+			case AllFieldsGenMap:
+				m.P(prefix+strings.Join(append(names, name), ""), ": struct{}{},")
 			}
 		}
 	}
@@ -984,6 +1043,7 @@ func (m *mex) generateAllStringFieldsMap(afg AllFieldsGen, names, nums []string,
 		case descriptor.FieldDescriptorProto_TYPE_MESSAGE:
 			subDesc := gensupport.GetDesc(m.gen, field.GetTypeName())
 			m.generateAllStringFieldsMap(afg, append(names, name), append(nums, num), fprefix, subDesc)
+			fallthrough
 		default:
 
 			switch afg {
@@ -2778,6 +2838,22 @@ func (m *mex) generateMessage(file *generator.FileDescriptor, desc *generator.De
 		m.P("")
 		m.P("func (m *", *message.Name, ") IsKeyField(s string) bool {")
 		m.generateIsKeyField([]string{}, []string{*message.Name + "Field"}, desc)
+		m.P("}")
+		m.P("")
+		m.P("var ", *message.Name, "BackendFieldsMap = map[string]struct{}{")
+		m.generateBackendFields(AllFieldsGenMap, []string{*message.Name + "Field"}, []string{}, desc, false)
+		m.P("}")
+		m.P("")
+		noconfig := gensupport.GetNoConfig(message, nil)
+		noconfigMap := make(map[string]struct{})
+		for nc := range strings.SplitSeq(noconfig, ",") {
+			if nc == "" {
+				continue
+			}
+			noconfigMap[nc] = struct{}{}
+		}
+		m.P("var ", *message.Name, "NoConfigFieldsMap = map[string]struct{}{")
+		m.generateNoConfigFields(AllFieldsGenMap, *message.Name+"Field", []string{}, []string{}, desc, noconfigMap, false)
 		m.P("}")
 		m.P("")
 		m.P("func (m *", message.Name, ") DiffFields(o *", message.Name, ", fields *FieldMap) {")

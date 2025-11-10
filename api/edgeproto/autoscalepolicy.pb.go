@@ -771,6 +771,7 @@ const AutoScalePolicyFieldDeletePrepare = "12"
 var AutoScalePolicyAllFields = []string{
 	AutoScalePolicyFieldKeyOrganization,
 	AutoScalePolicyFieldKeyName,
+	AutoScalePolicyFieldKey,
 	AutoScalePolicyFieldMinNodes,
 	AutoScalePolicyFieldMaxNodes,
 	AutoScalePolicyFieldScaleUpCpuThresh,
@@ -786,6 +787,7 @@ var AutoScalePolicyAllFields = []string{
 var AutoScalePolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AutoScalePolicyFieldKeyOrganization:         struct{}{},
 	AutoScalePolicyFieldKeyName:                 struct{}{},
+	AutoScalePolicyFieldKey:                     struct{}{},
 	AutoScalePolicyFieldMinNodes:                struct{}{},
 	AutoScalePolicyFieldMaxNodes:                struct{}{},
 	AutoScalePolicyFieldScaleUpCpuThresh:        struct{}{},
@@ -801,6 +803,7 @@ var AutoScalePolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 var AutoScalePolicyAllFieldsStringMap = map[string]string{
 	AutoScalePolicyFieldKeyOrganization:         "Key Organization",
 	AutoScalePolicyFieldKeyName:                 "Key Name",
+	AutoScalePolicyFieldKey:                     "Key",
 	AutoScalePolicyFieldMinNodes:                "Min Nodes",
 	AutoScalePolicyFieldMaxNodes:                "Max Nodes",
 	AutoScalePolicyFieldScaleUpCpuThresh:        "Scale Up Cpu Thresh",
@@ -815,6 +818,14 @@ var AutoScalePolicyAllFieldsStringMap = map[string]string{
 
 func (m *AutoScalePolicy) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AutoScalePolicyFieldKey+".") || s == AutoScalePolicyFieldKey
+}
+
+var AutoScalePolicyBackendFieldsMap = map[string]struct{}{
+	AutoScalePolicyFieldDeletePrepare: struct{}{},
+}
+
+var AutoScalePolicyNoConfigFieldsMap = map[string]struct{}{
+	AutoScalePolicyFieldDeletePrepare: struct{}{},
 }
 
 func (m *AutoScalePolicy) DiffFields(o *AutoScalePolicy, fields *FieldMap) {

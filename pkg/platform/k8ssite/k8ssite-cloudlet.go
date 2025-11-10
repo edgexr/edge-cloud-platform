@@ -68,8 +68,7 @@ func (s *K8sSite) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudl
 		CommerialCerts: s.CommonPf.PlatformConfig.CommercialCerts,
 		InitCluster:    true,
 	}
-	hasIngressController, ok := s.CommonPf.Properties.GetValue(cloudcommon.IngressControllerPresent)
-	if !ok || hasIngressController == "" {
+	if s.weManageIngressController(cloudlet) {
 		nsLabels, err := s.CommonPf.Properties.GetJSONMapValue(cloudcommon.NamespaceLabels)
 		if err != nil {
 			return false, err
@@ -82,9 +81,13 @@ func (s *K8sSite) CreateCloudlet(ctx context.Context, cloudlet *edgeproto.Cloudl
 		// TODO: for now we're only maintaining the cert in the
 		// default namespace, but we'd need to populate it for
 		// all namespaces.
+		ns := k8smgmt.DefaultNamespace
+		if cloudlet.SingleKubernetesNamespace != "" {
+			ns = cloudlet.SingleKubernetesNamespace
+		}
 		updateCallback(edgeproto.UpdateTask, "Generating ingress certificate")
 		// set up certificate in default namespace
-		err = k8smgmt.RefreshCert(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, k8smgmt.DefaultNamespace, wildcardName, refreshOpts)
+		err = k8smgmt.RefreshCert(ctx, client, kconfNames, &cloudlet.Key, pfInitConfig.ProxyCertsCache, ns, wildcardName, refreshOpts)
 		if err != nil {
 			return false, err
 		}
@@ -147,11 +150,13 @@ func (s *K8sSite) RefreshCerts(ctx context.Context, certsCache *certscache.Proxy
 	client := s.getClient()
 
 	var namespace string
-	hasIngressController, ok := s.CommonPf.Properties.GetValue(cloudcommon.IngressControllerPresent)
-	if !ok || hasIngressController == "" {
+	if s.weManageIngressController(cloudlet) {
 		namespace = k8smgmt.IngressNginxNamespace
 	} else {
 		namespace = k8smgmt.DefaultNamespace
+		if cloudlet.SingleKubernetesNamespace != "" {
+			namespace = cloudlet.SingleKubernetesNamespace
+		}
 	}
 
 	wildcardName := certscache.GetWildcardName(cloudlet.RootLbFqdn)
@@ -163,4 +168,19 @@ func (s *K8sSite) RefreshCerts(ctx context.Context, certsCache *certscache.Proxy
 		return err
 	}
 	return nil
+}
+
+func (s *K8sSite) weManageIngressController(cloudlet *edgeproto.Cloudlet) bool {
+	if cloudlet.SingleKubernetesNamespace != "" {
+		// we are limited to a restricted namespace, assume operator
+		// manages the ingress controller for the cluster.
+		return false
+	}
+	hasIngressController, ok := s.CommonPf.Properties.GetValue(cloudcommon.IngressControllerPresent)
+	if ok && hasIngressController != "" {
+		// user has specified that the ingress controller is already
+		// present and managed by them.
+		return false
+	}
+	return true
 }

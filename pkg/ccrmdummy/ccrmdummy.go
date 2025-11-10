@@ -72,6 +72,7 @@ func StartDummyCCRM(ctx context.Context, vaultConfig *vault.Config, kvstore objs
 		platform.PlatformTypeFake:              dummy.NewPlatform(fake.NewPlatform),
 		platform.PlatformTypeFakeSingleCluster: dummy.NewPlatform(fake.NewPlatformSingleCluster),
 		platform.PlatformTypeFakeVMPool:        dummy.NewPlatform(fake.NewPlatformVMPool),
+		platform.PlatformTypeFakeBareMetal:     dummy.NewPlatform(fake.NewPlatformBareMetal),
 		"ccrm":                                 dummy.NewPlatform(fake.NewPlatform), // matches platformType from testutil/test_data.go
 	}
 	nodeMgr := svcnode.SvcNodeMgr{}
@@ -148,6 +149,8 @@ func castToFakePlatform(p platform.Platform) *fake.Platform {
 	case *fake.Platform:
 		return v
 	case *fake.PlatformSingleCluster:
+		return &v.Platform
+	case *fake.PlatformBareMetal:
 		return &v.Platform
 	case *fake.PlatformVMPool:
 		return &v.Platform

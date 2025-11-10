@@ -68,14 +68,33 @@ func (s *K8SWorkloadMgr) ApplyAppInstWorkload(ctx context.Context, accessAPI pla
 	// Only "apply" and "delete" should be used. All configuration files
 	// for an AppInst must be stored in their own directory.
 
-	// Selector selects which objects to consider for pruning.
+	// Using --prune with a label selector without full admin access
+	// can generate errors like:
+	// pruning nonNamespaced object /v1, Kind=Namespace: namespaces is forbidden
+	// even when namespaces were not part of the manifest file.
+	// For new AppInsts, we will use the new (alpha) applyset instead
+	// of labels to avoid this issue with the old prune algorithm.
+	// See https://kubernetes.io/blog/2023/05/09/introducing-kubectl-applyset-pruning/
+	cmdEnv := ""
+	pruneSelector := ""
+	nsArg := ""
+	if names.AppInstCompatibilityVersion >= cloudcommon.AppInstCompatibilityNamespaceField {
+		cmdEnv = "KUBECTL_APPLYSET=true "
+		pruneSelector = "--applyset=" + getApplySet(names)
+		// Normally namespace is inferred via it being set on the
+		// kubeconfig, but applyset requires it as part of the command.
+		nsArg = "-n " + names.InstanceNamespace
+	} else {
+		pruneSelector = getConfigSelector(names)
+	}
+
 	// Note that we now apply just the manifest file, and not the whole
 	// config directory. This is because other manifests for ingress,
 	// network/resource policies, etc may not necessarily be present
 	// during an update if the CCRM pod was restarted, or we landed on
 	// a different CCRM pod instance than the original one.
 	kconfArg := names.GetTenantKconfArg()
-	cmd := fmt.Sprintf("kubectl %s apply -f %s --prune %s", kconfArg, file, getConfigSelector(names))
+	cmd := fmt.Sprintf("%skubectl %s apply -f %s %s --prune %s", cmdEnv, kconfArg, file, nsArg, pruneSelector)
 	log.SpanLog(ctx, log.DebugLevelInfra, "running kubectl", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil && strings.Contains(string(out), `pruning nonNamespaced object /v1, Kind=Namespace: namespaces "kube-system" is forbidden: this namespace may not be deleted`) {
@@ -132,6 +151,14 @@ func (s *K8SWorkloadMgr) DeleteAppInstWorkload(ctx context.Context, accessAPI pl
 			log.SpanLog(ctx, log.DebugLevelInfra, "ignoring wait delete failed error because undo", "err", err)
 		} else {
 			return err
+		}
+	}
+	if names.AppInstCompatibilityVersion >= cloudcommon.AppInstCompatibilityNamespaceField {
+		// cleanup applyset secret
+		cmd := fmt.Sprintf("kubectl %s -n %s delete secret %s", kconfArg, names.InstanceNamespace, getApplySet(names))
+		out, err := client.Output(cmd)
+		if err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to delete applyset secret", "cmd", cmd, "out", out, "err", err)
 		}
 	}
 	// delete manifest file

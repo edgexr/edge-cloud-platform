@@ -704,12 +704,13 @@ func testShowPlatformFeaturesForZone(t *testing.T, ctx context.Context, apis *Al
 	filter := edgeproto.ZoneKey{
 		Organization: testutil.OperatorData()[2],
 	}
-	// operatorData[2] yields CloudletData[3] (fake) and CloudletData[4] (fakesinglecluster)
+	// operatorData[2] yields CloudletData[3] (fake) and CloudletData[4] (fakesinglecluster) and CloudletData[5] (fakebaremetal)
 	err = apis.platformFeaturesApi.ShowPlatformFeaturesForZone(&filter, show)
 	require.Nil(t, err)
-	require.Equal(t, 2, len(show.Data))
+	require.Equal(t, 3, len(show.Data))
 	require.Equal(t, "fake", show.Data[0].PlatformType)
-	require.Equal(t, "fakesinglecluster", show.Data[1].PlatformType)
+	require.Equal(t, "fakebaremetal", show.Data[1].PlatformType)
+	require.Equal(t, "fakesinglecluster", show.Data[2].PlatformType)
 }
 
 func testAllianceOrgs(t *testing.T, ctx context.Context, apis *AllApis) {
@@ -826,7 +827,7 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 
 	err := cAppApi.ShowZonesForAppDeployment(ctx, &filter, &show)
 	require.Nil(t, err, "ShowZonesForAppDeployment")
-	require.Equal(t, 5, len(show.Data), "ShowZonesForAppDeployment")
+	require.Equal(t, 6, len(show.Data), "ShowZonesForAppDeployment")
 
 	for k, v := range show.Data {
 		fmt.Printf("\t next k: %s v: %+v flavor %s \n", k, v, filter.App.DefaultFlavor)
@@ -838,7 +839,7 @@ func TestShowCloudletsAppDeploy(t *testing.T) {
 	app.DefaultFlavor = testutil.FlavorData()[2].Key // 3 = x1.large 4 = x1.tiny.gpu 2 = x1.medium
 	err = cAppApi.ShowZonesForAppDeployment(ctx, &filter, &show)
 	require.Nil(t, err, "ShowZonesForAppDeployment")
-	require.Equal(t, 4, len(show.Data), "ShowZonesForAppDeployment")
+	require.Equal(t, 5, len(show.Data), "ShowZonesForAppDeployment")
 
 	show.Init()
 	app.DefaultFlavor = testutil.FlavorData()[3].Key // 3 = x1.large 4 = x1.tiny.gpu 2 = x1.medium

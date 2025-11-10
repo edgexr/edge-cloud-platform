@@ -76,7 +76,19 @@ func (x *ShowAutoScalePolicy) AssertFound(t *testing.T, obj *edgeproto.AutoScale
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find AutoScalePolicy %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "AutoScalePolicy are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.AutoScalePolicyBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.AutoScalePolicyNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.AutoScalePolicyAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "AutoScalePolicy differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

@@ -165,6 +165,8 @@ message ClusterInst {
   string cloudlet_managed_cluster_id = 50 [(protogen.backend) = true];
   // Cloudlet managed cluster name, if cluster based on cloudlet managed cluster
   string cloudlet_managed_cluster_name = 51 [(protogen.backend) = true];
+  // Restricted namespace for the default cluster on a single kubernetes cluster cloudlet
+  string single_kubernetes_namespace = 52 [(protogen.backend) = true];
   // Vendor-specific data
   map<string, string> tags = 100;
 

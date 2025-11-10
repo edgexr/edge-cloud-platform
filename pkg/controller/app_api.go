@@ -34,6 +34,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/util"
+	ssh "github.com/edgexr/golang-ssh"
 	"github.com/oklog/ulid/v2"
 	"go.etcd.io/etcd/client/v3/concurrency"
 	appsv1 "k8s.io/api/apps/v1"
@@ -566,7 +567,11 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		}
 	}
 	if in.ImageType == edgeproto.ImageType_IMAGE_TYPE_HELM {
-		client := &pc.LocalClient{}
+		var client ssh.Client
+		client = &pc.LocalClient{}
+		if *testMode {
+			client = &pc.DummyClient{}
+		}
 		err := k8smgmt.ValidateHelmRegistryPath(ctx, authApi, client, in)
 		if err != nil {
 			if *testMode {

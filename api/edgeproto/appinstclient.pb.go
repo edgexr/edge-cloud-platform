@@ -1322,11 +1322,14 @@ const AppInstClientFieldNotifyId = "4"
 var AppInstClientAllFields = []string{
 	AppInstClientFieldClientKeyAppInstKeyName,
 	AppInstClientFieldClientKeyAppInstKeyOrganization,
+	AppInstClientFieldClientKeyAppInstKey,
 	AppInstClientFieldClientKeyUniqueId,
 	AppInstClientFieldClientKeyUniqueIdType,
 	AppInstClientFieldClientKeyAppKeyOrganization,
 	AppInstClientFieldClientKeyAppKeyName,
 	AppInstClientFieldClientKeyAppKeyVersion,
+	AppInstClientFieldClientKeyAppKey,
+	AppInstClientFieldClientKey,
 	AppInstClientFieldLocationLatitude,
 	AppInstClientFieldLocationLongitude,
 	AppInstClientFieldLocationHorizontalAccuracy,
@@ -1336,17 +1339,22 @@ var AppInstClientAllFields = []string{
 	AppInstClientFieldLocationSpeed,
 	AppInstClientFieldLocationTimestampSeconds,
 	AppInstClientFieldLocationTimestampNanos,
+	AppInstClientFieldLocationTimestamp,
+	AppInstClientFieldLocation,
 	AppInstClientFieldNotifyId,
 }
 
 var AppInstClientAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AppInstClientFieldClientKeyAppInstKeyName:         struct{}{},
 	AppInstClientFieldClientKeyAppInstKeyOrganization: struct{}{},
+	AppInstClientFieldClientKeyAppInstKey:             struct{}{},
 	AppInstClientFieldClientKeyUniqueId:               struct{}{},
 	AppInstClientFieldClientKeyUniqueIdType:           struct{}{},
 	AppInstClientFieldClientKeyAppKeyOrganization:     struct{}{},
 	AppInstClientFieldClientKeyAppKeyName:             struct{}{},
 	AppInstClientFieldClientKeyAppKeyVersion:          struct{}{},
+	AppInstClientFieldClientKeyAppKey:                 struct{}{},
+	AppInstClientFieldClientKey:                       struct{}{},
 	AppInstClientFieldLocationLatitude:                struct{}{},
 	AppInstClientFieldLocationLongitude:               struct{}{},
 	AppInstClientFieldLocationHorizontalAccuracy:      struct{}{},
@@ -1356,17 +1364,22 @@ var AppInstClientAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AppInstClientFieldLocationSpeed:                   struct{}{},
 	AppInstClientFieldLocationTimestampSeconds:        struct{}{},
 	AppInstClientFieldLocationTimestampNanos:          struct{}{},
+	AppInstClientFieldLocationTimestamp:               struct{}{},
+	AppInstClientFieldLocation:                        struct{}{},
 	AppInstClientFieldNotifyId:                        struct{}{},
 })
 
 var AppInstClientAllFieldsStringMap = map[string]string{
 	AppInstClientFieldClientKeyAppInstKeyName:         "Client Key App Inst Key Name",
 	AppInstClientFieldClientKeyAppInstKeyOrganization: "Client Key App Inst Key Organization",
+	AppInstClientFieldClientKeyAppInstKey:             "Client Key App Inst Key",
 	AppInstClientFieldClientKeyUniqueId:               "Client Key Unique Id",
 	AppInstClientFieldClientKeyUniqueIdType:           "Client Key Unique Id Type",
 	AppInstClientFieldClientKeyAppKeyOrganization:     "Client Key App Key Organization",
 	AppInstClientFieldClientKeyAppKeyName:             "Client Key App Key Name",
 	AppInstClientFieldClientKeyAppKeyVersion:          "Client Key App Key Version",
+	AppInstClientFieldClientKeyAppKey:                 "Client Key App Key",
+	AppInstClientFieldClientKey:                       "Client Key",
 	AppInstClientFieldLocationLatitude:                "Location Latitude",
 	AppInstClientFieldLocationLongitude:               "Location Longitude",
 	AppInstClientFieldLocationHorizontalAccuracy:      "Location Horizontal Accuracy",
@@ -1376,12 +1389,20 @@ var AppInstClientAllFieldsStringMap = map[string]string{
 	AppInstClientFieldLocationSpeed:                   "Location Speed",
 	AppInstClientFieldLocationTimestampSeconds:        "Location Timestamp Seconds",
 	AppInstClientFieldLocationTimestampNanos:          "Location Timestamp Nanos",
+	AppInstClientFieldLocationTimestamp:               "Location Timestamp",
+	AppInstClientFieldLocation:                        "Location",
 	AppInstClientFieldNotifyId:                        "Notify Id",
 }
 
 func (m *AppInstClient) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AppInstClientFieldClientKey+".") || s == AppInstClientFieldClientKey
 }
+
+var AppInstClientBackendFieldsMap = map[string]struct{}{
+	AppInstClientFieldNotifyId: struct{}{},
+}
+
+var AppInstClientNoConfigFieldsMap = map[string]struct{}{}
 
 func (m *AppInstClient) DiffFields(o *AppInstClient, fields *FieldMap) {
 	if m.ClientKey.AppInstKey.Name != o.ClientKey.AppInstKey.Name {

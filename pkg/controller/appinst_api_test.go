@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -211,12 +212,24 @@ func TestAppInstApi(t *testing.T) {
 	// test show zone gpus when all clusters and appinsts are present
 	testShowGPUs(t, ctx, apis)
 
-	// ensure two appinsts of same app cannot deploy to same cluster
-	dup := testutil.AppInstData()[0]
+	// ensure two docker appinsts of same app cannot deploy to same cluster
+	dup := testutil.AppInstData()[17]
 	dup.Key.Name = "dup"
 	err := apis.appInstApi.CreateAppInst(&dup, testutil.NewCudStreamoutAppInst(ctx))
-	require.NotNil(t, err, "create duplicate instance of app in cluster")
+	require.NotNil(t, err, "create duplicate instance of docker app in cluster")
 	require.Contains(t, err.Error(), "cannot deploy another instance of App")
+
+	// ensure two kubernetes appinsts of same app can deploy to the
+	// same cluster (defaults to different namespaces), assuming
+	// no port conflicts
+	dup = testutil.AppInstData()[18]
+	dup.Key.Name = "dup"
+	err = apis.appInstApi.CreateAppInst(&dup, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err, "create duplicate instance of k8s app in same cluster different namespace")
+	err = apis.appInstApi.DeleteAppInst(&dup, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err, "cleanup")
+
+	testAppInstNamespaces(t, ctx, apis)
 
 	// Test for being created and being deleted errors.
 	testBeingErrors(t, ctx, responder, ccrm, apis)
@@ -576,6 +589,7 @@ func TestAutoClusterInst(t *testing.T) {
 
 	// create auto-cluster AppInsts
 	appInst := testutil.AppInstData()[0]
+	appInst.IsStandalone = true                  // force new auto-cluster for each appinst
 	appInst.AppKey = testutil.AppData()[1].Key   // does not support multi-tenant
 	appInst.ZoneKey = testutil.ZoneData()[0].Key // resolves to cloudletData[0]
 	appInst.ClusterKey = edgeproto.ClusterKey{}
@@ -1377,6 +1391,7 @@ func testAppInstPotentialCloudlets(t *testing.T, ctx context.Context, apis *AllA
 				TotalMemory: 1024,
 			},
 		},
+		IsStandalone: true, // prevent instances from sharing clusters
 	}
 	_, err := apis.appApi.CreateApp(ctx, &app)
 	require.Nil(t, err)
@@ -1969,6 +1984,34 @@ func testShowCloudletGPUUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 			},
 		}},
 	}
+	cloudlet5GPUs := &edgeproto.CloudletGPUUsage{
+		Key: cloudlets[5].Key,
+		Gpus: []*edgeproto.GPUUsage{{
+			Gpu: &edgeproto.GPUResource{
+				ModelId: "nvidia-t4",
+				Vendor:  "nvidia",
+				Memory:  4,
+			},
+			Usage: &edgeproto.InfraResource{
+				Name:          "nvidia-t4",
+				Value:         0,
+				InfraMaxValue: 8,
+				Type:          "gpu",
+			},
+		}, {
+			Gpu: &edgeproto.GPUResource{
+				ModelId: "nvidia-v1",
+				Vendor:  "nvidia",
+				Memory:  2,
+			},
+			Usage: &edgeproto.InfraResource{
+				Name:          "nvidia-v1",
+				Value:         0,
+				InfraMaxValue: 16,
+				Type:          "gpu",
+			},
+		}},
+	}
 
 	var tests = []struct {
 		desc   string
@@ -1987,10 +2030,17 @@ func testShowCloudletGPUUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 		filter: cloudlets[4].Key,
 		exp:    []*edgeproto.CloudletGPUUsage{cloudlet4GPUs},
 	}, {
+		desc:   "cloudlet[5] gpus (bare metal cloudlet)",
+		filter: cloudlets[5].Key,
+		exp:    []*edgeproto.CloudletGPUUsage{cloudlet5GPUs},
+	}, {
 		desc:   "all cloudlets",
 		filter: edgeproto.CloudletKey{},
-		exp:    []*edgeproto.CloudletGPUUsage{cloudlet0GPUs, cloudlet4GPUs},
+		exp:    []*edgeproto.CloudletGPUUsage{cloudlet5GPUs, cloudlet0GPUs, cloudlet4GPUs},
 	}}
+	sortFunc := func(i, j *edgeproto.CloudletGPUUsage) int {
+		return strings.Compare(i.Key.GetKeyString(), j.Key.GetKeyString())
+	}
 	for _, test := range tests {
 		show := ShowCloudletGPUUsageData{}
 		show.ctx = ctx
@@ -1999,6 +2049,8 @@ func testShowCloudletGPUUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 		}
 		err := apis.cloudletApi.ShowCloudletGPUUsage(&filter, &show)
 		require.Nil(t, err, test.desc)
+		slices.SortFunc(test.exp, sortFunc)
+		slices.SortFunc(show.data, sortFunc)
 		require.Equal(t, test.exp, show.data, test.desc)
 	}
 }
@@ -2048,6 +2100,20 @@ func testShowZoneGPUs(t *testing.T, ctx context.Context, apis *AllApis) {
 			Memory:  96,
 		}},
 	}
+	zone5GPUs := &edgeproto.ZoneGPUs{
+		ZoneKey: zones[5].Key,
+		Gpus: []*edgeproto.GPUResource{{
+			ModelId: "nvidia-t4",
+			Vendor:  "nvidia",
+			Memory:  4,
+			Count:   1,
+		}, {
+			ModelId: "nvidia-v1",
+			Vendor:  "nvidia",
+			Memory:  2,
+			Count:   1,
+		}},
+	}
 	var tests = []struct {
 		desc   string
 		filter edgeproto.Zone
@@ -2065,17 +2131,147 @@ func testShowZoneGPUs(t *testing.T, ctx context.Context, apis *AllApis) {
 		filter: zones[4],
 		exp:    []*edgeproto.ZoneGPUs{zone4GPUs},
 	}, {
+		desc:   "zone[5] gpus (bare metal cloudlet)",
+		filter: zones[5],
+		exp:    []*edgeproto.ZoneGPUs{zone5GPUs},
+	}, {
 		desc:   "zones gpus",
 		filter: edgeproto.Zone{},
 		exp: []*edgeproto.ZoneGPUs{
-			zone0GPUs, zone4GPUs,
+			zone0GPUs, zone4GPUs, zone5GPUs,
 		},
 	}}
+	sortFunc := func(i, j *edgeproto.ZoneGPUs) int {
+		return strings.Compare(i.ZoneKey.GetKeyString(), j.ZoneKey.GetKeyString())
+	}
 	for _, test := range tests {
 		show := ShowZoneGPUsData{}
 		show.ctx = ctx
 		err := apis.zoneApi.ShowZoneGPUs(&test.filter, &show)
 		require.Nil(t, err, test.desc)
+		slices.SortFunc(test.exp, sortFunc)
+		slices.SortFunc(show.data, sortFunc)
 		require.Equal(t, test.exp, show.data, test.desc)
 	}
+}
+
+func testAppInstNamespaces(t *testing.T, ctx context.Context, apis *AllApis) {
+	// verify that AppInst has namespaces set
+	aiCheck := &edgeproto.AppInst{}
+	found := apis.appInstApi.cache.Get(&testutil.AppInstData()[20].Key, aiCheck)
+	require.True(t, found)
+	// dynamically generated namespace
+	ns := util.NamespaceSanitize(fmt.Sprintf("%s-%s", aiCheck.Key.Name, aiCheck.Key.Organization))
+	require.Equal(t, ns, aiCheck.Namespace)
+
+	// cannot specify namespace for multi-tenant cluster
+	aiMT := testutil.AppInstData()[18]
+	// check that cluster is multi-tenant
+	found = apis.appInstApi.cache.Get(&aiMT.Key, aiCheck)
+	require.True(t, found)
+	cluster := &edgeproto.ClusterInst{}
+	found = apis.clusterInstApi.cache.Get(&aiCheck.ClusterKey, cluster)
+	require.True(t, found)
+	require.True(t, cluster.MultiTenant)
+	// appinst create should fail
+	aiMT.Key.Name = "appinst-with-namespace"
+	aiMT.Namespace = "myns"
+	err := apis.appInstApi.CreateAppInst(&aiMT, testutil.NewCudStreamoutAppInst(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "no available edge sites in zone USWest, some sites were skipped because cannot set namespace for multi-tenant cluster")
+
+	// create an AppInst with specific namespace on dedicated cluster
+	ai := testutil.AppInstData()[20]
+	ai.Key.Name = "appinst-with-namespace"
+	ai.Namespace = "myns"
+	err = apis.appInstApi.CreateAppInst(&ai, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err)
+	found = apis.appInstApi.cache.Get(&ai.Key, aiCheck)
+	require.True(t, found)
+	require.Equal(t, "myns", aiCheck.Namespace)
+
+	// fail to deploy same app to the same namespace again
+	ai2 := ai
+	ai2.Key.Name = "appinst-with-namespace2"
+	err = apis.appInstApi.CreateAppInst(&ai2, testutil.NewCudStreamoutAppInst(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("cannot deploy another instance of App %s to the same namespace \"myns\" in the same cluster", ai.AppKey.GetKeyString()))
+
+	// cleanup
+	err = apis.appInstApi.DeleteAppInst(&ai, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err)
+
+	// ==============================================================
+	//  tests for single kubernetes cluster with restricted namespace
+	zz := testutil.ZoneData()[4]
+	zz.Key.Name = "restricted-namespace"
+	_, err = apis.zoneApi.CreateZone(ctx, &zz)
+	require.Nil(t, err)
+	cl := testutil.CloudletData()[4]
+	cl.Key.Name = "single-k8s-restricted"
+	cl.SingleKubernetesClusterOwner = ai.Key.Organization
+	cl.SingleKubernetesNamespace = "restricted"
+	cl.Zone = zz.Key.Name
+	err = apis.cloudletApi.CreateCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	defer func() {
+		err = apis.cloudletApi.DeleteCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
+		require.Nil(t, err)
+		_, err = apis.zoneApi.DeleteZone(ctx, &zz)
+		require.Nil(t, err)
+	}()
+	// verify cloudlet namespace can be changed if no appinsts
+	cl.SingleKubernetesNamespace = "restricted2"
+	cl.Fields = []string{edgeproto.CloudletFieldSingleKubernetesNamespace}
+	err = apis.cloudletApi.UpdateCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	// check
+	clCheck := &edgeproto.Cloudlet{}
+	found = apis.cloudletApi.cache.Get(&cl.Key, clCheck)
+	require.True(t, found)
+	require.Equal(t, cl.SingleKubernetesNamespace, clCheck.SingleKubernetesNamespace)
+
+	// AppInst not allowed to specify non-restricted namespace
+	ai3 := ai
+	ai3.Key.Name = "appinst-restricted-namespace"
+	ai3.Namespace = "custom"
+	ai3.ZoneKey = zz.Key
+	log.SpanLog(ctx, log.DebugLevelApi, "test restricted namespace appinst", "zone", ai3.ZoneKey, "appinst", ai3.Key)
+	ai3.CloudletKey = edgeproto.CloudletKey{}
+	ai3.ClusterKey = edgeproto.ClusterKey{}
+	err = apis.appInstApi.CreateAppInst(&ai3, testutil.NewCudStreamoutAppInst(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "no available edge sites in zone restricted-namespace, some sites were skipped because instance namespace conflict")
+
+	// deploy to empty namespace will use restricted namespace
+	ai3.Namespace = ""
+	err = apis.appInstApi.CreateAppInst(&ai3, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err)
+	found = apis.appInstApi.cache.Get(&ai3.Key, aiCheck)
+	require.True(t, found)
+	require.Equal(t, cl.SingleKubernetesNamespace, aiCheck.Namespace)
+	// cleanup ai3
+	err = apis.appInstApi.DeleteAppInst(&ai3, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err)
+
+	// deploy to restricted namespace will work
+	ai3.Namespace = cl.SingleKubernetesNamespace
+	err = apis.appInstApi.CreateAppInst(&ai3, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err)
+	// deploy duplicate to same namespace will fail
+	ai4 := ai3
+	ai4.Key.Name = "appinst-restricted-namespace-2"
+	err = apis.appInstApi.CreateAppInst(&ai4, testutil.NewCudStreamoutAppInst(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), fmt.Sprintf("cannot deploy another instance of App %s to the same namespace \"restricted2\" in the same cluster", ai3.AppKey.GetKeyString()))
+
+	// cannot change cloudlet namespace with existing appinsts
+	cl.SingleKubernetesNamespace = "restricted3"
+	err = apis.cloudletApi.UpdateCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "cannot change single kubernetes namespace when app instances exist")
+
+	// cleanup ai3
+	err = apis.appInstApi.DeleteAppInst(&ai3, testutil.NewCudStreamoutAppInst(ctx))
+	require.Nil(t, err)
 }

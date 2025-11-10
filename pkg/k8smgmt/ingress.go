@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	IngressClassName         = "nginx"
+	IngressClassNginx        = "nginx"
 	IngressExternalIPRetries = 60
 	IngressExternalIPRetry   = 2 * time.Second
 	IngressManifestSuffix    = "-ingress"
@@ -47,10 +47,10 @@ const (
 // creates a single ingress.
 // For complex AppInsts (helm charts) it may need create an
 // ingress per namespace if the AppInst uses multiple namespaces.
-func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) (*networkingv1.Ingress, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "creating ingress", "appInst", appInst.Key.GetKeyString())
+func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst, ingressClass string) (*networkingv1.Ingress, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "creating ingress", "appInst", appInst.Key.GetKeyString(), "ingressClass", ingressClass)
 
-	ingress, err := WriteIngressFile(ctx, client, names, appInst)
+	ingress, err := WriteIngressFile(ctx, client, names, appInst, ingressClass)
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +61,8 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 	return ingress, nil
 }
 
-func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) (*networkingv1.Ingress, error) {
+func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst, ingressClass string) (*networkingv1.Ingress, error) {
 	kconfArg := names.GetTenantKconfArg()
-	ingressClass := IngressClassName
 
 	ingress := networkingv1.Ingress{}
 	ingress.APIVersion = "networking.k8s.io/v1"
@@ -158,7 +157,7 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 
 func DeleteIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) error {
 	// make sure the ingress file exists
-	_, err := WriteIngressFile(ctx, client, names, appInst)
+	_, err := WriteIngressFile(ctx, client, names, appInst, "")
 	if err != nil {
 		return err
 	}

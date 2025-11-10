@@ -76,7 +76,19 @@ func (x *ShowAlertPolicy) AssertFound(t *testing.T, obj *edgeproto.AlertPolicy) 
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find AlertPolicy %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "AlertPolicy are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.AlertPolicyBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.AlertPolicyNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.AlertPolicyAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "AlertPolicy differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

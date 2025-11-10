@@ -943,6 +943,7 @@ var AppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"namespace",
 	"tags",
 }
 var AppInstAliasArgs = []string{
@@ -1091,6 +1092,7 @@ var AppInstComments = map[string]string{
 	"noderesources.infranodeflavor":                              "Infrastructure specific node flavor",
 	"noderesources.externalvolumesize":                           "Size of external volume to be attached to nodes. This is for the root partition",
 	"isstandalone":                                               "A standalone AppInst will not share a cluster with another AppInst unless explicitly targeted to the same cluster",
+	"namespace":                                                  "Target kubernetes namespace, can only be specified for dedicated clusters",
 	"tags":                                                       "Vendor-specific data, specify tags:empty=true to clear",
 }
 var AppInstSpecialArgs = map[string]string{
@@ -1419,6 +1421,7 @@ var CreateAppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"namespace",
 	"tags",
 }
 var DeleteAppInstRequiredArgs = []string{
@@ -1498,6 +1501,7 @@ var DeleteAppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"namespace",
 	"tags",
 }
 var RefreshAppInstRequiredArgs = []string{
@@ -1573,6 +1577,7 @@ var RefreshAppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"namespace",
 	"tags",
 }
 var UpdateAppInstRequiredArgs = []string{
@@ -1652,5 +1657,6 @@ var UpdateAppInstOptionalArgs = []string{
 	"noderesources.infranodeflavor",
 	"noderesources.externalvolumesize",
 	"isstandalone",
+	"namespace",
 	"tags",
 }

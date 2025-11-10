@@ -690,35 +690,49 @@ const TrustPolicyFieldDeletePrepare = "4"
 var TrustPolicyAllFields = []string{
 	TrustPolicyFieldKeyOrganization,
 	TrustPolicyFieldKeyName,
+	TrustPolicyFieldKey,
 	TrustPolicyFieldOutboundSecurityRulesProtocol,
 	TrustPolicyFieldOutboundSecurityRulesPortRangeMin,
 	TrustPolicyFieldOutboundSecurityRulesPortRangeMax,
 	TrustPolicyFieldOutboundSecurityRulesRemoteCidr,
+	TrustPolicyFieldOutboundSecurityRules,
 	TrustPolicyFieldDeletePrepare,
 }
 
 var TrustPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 	TrustPolicyFieldKeyOrganization:                   struct{}{},
 	TrustPolicyFieldKeyName:                           struct{}{},
+	TrustPolicyFieldKey:                               struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesProtocol:     struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesPortRangeMin: struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesPortRangeMax: struct{}{},
 	TrustPolicyFieldOutboundSecurityRulesRemoteCidr:   struct{}{},
+	TrustPolicyFieldOutboundSecurityRules:             struct{}{},
 	TrustPolicyFieldDeletePrepare:                     struct{}{},
 })
 
 var TrustPolicyAllFieldsStringMap = map[string]string{
 	TrustPolicyFieldKeyOrganization:                   "Key Organization",
 	TrustPolicyFieldKeyName:                           "Key Name",
+	TrustPolicyFieldKey:                               "Key",
 	TrustPolicyFieldOutboundSecurityRulesProtocol:     "Outbound Security Rules Protocol",
 	TrustPolicyFieldOutboundSecurityRulesPortRangeMin: "Outbound Security Rules Port Range Min",
 	TrustPolicyFieldOutboundSecurityRulesPortRangeMax: "Outbound Security Rules Port Range Max",
 	TrustPolicyFieldOutboundSecurityRulesRemoteCidr:   "Outbound Security Rules Remote Cidr",
+	TrustPolicyFieldOutboundSecurityRules:             "Outbound Security Rules",
 	TrustPolicyFieldDeletePrepare:                     "Delete Prepare",
 }
 
 func (m *TrustPolicy) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, TrustPolicyFieldKey+".") || s == TrustPolicyFieldKey
+}
+
+var TrustPolicyBackendFieldsMap = map[string]struct{}{
+	TrustPolicyFieldDeletePrepare: struct{}{},
+}
+
+var TrustPolicyNoConfigFieldsMap = map[string]struct{}{
+	TrustPolicyFieldDeletePrepare: struct{}{},
 }
 
 func (m *TrustPolicy) DiffFields(o *TrustPolicy, fields *FieldMap) {

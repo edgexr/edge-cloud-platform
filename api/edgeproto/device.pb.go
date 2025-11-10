@@ -1188,36 +1188,51 @@ const DeviceFieldNotifyId = "5"
 var DeviceAllFields = []string{
 	DeviceFieldKeyUniqueIdType,
 	DeviceFieldKeyUniqueId,
+	DeviceFieldKey,
 	DeviceFieldFirstSeenSeconds,
 	DeviceFieldFirstSeenNanos,
+	DeviceFieldFirstSeen,
 	DeviceFieldLastSeenSeconds,
 	DeviceFieldLastSeenNanos,
+	DeviceFieldLastSeen,
 	DeviceFieldNotifyId,
 }
 
 var DeviceAllFieldsMap = NewFieldMap(map[string]struct{}{
 	DeviceFieldKeyUniqueIdType:  struct{}{},
 	DeviceFieldKeyUniqueId:      struct{}{},
+	DeviceFieldKey:              struct{}{},
 	DeviceFieldFirstSeenSeconds: struct{}{},
 	DeviceFieldFirstSeenNanos:   struct{}{},
+	DeviceFieldFirstSeen:        struct{}{},
 	DeviceFieldLastSeenSeconds:  struct{}{},
 	DeviceFieldLastSeenNanos:    struct{}{},
+	DeviceFieldLastSeen:         struct{}{},
 	DeviceFieldNotifyId:         struct{}{},
 })
 
 var DeviceAllFieldsStringMap = map[string]string{
 	DeviceFieldKeyUniqueIdType:  "Key Unique Id Type",
 	DeviceFieldKeyUniqueId:      "Key Unique Id",
+	DeviceFieldKey:              "Key",
 	DeviceFieldFirstSeenSeconds: "First Seen Seconds",
 	DeviceFieldFirstSeenNanos:   "First Seen Nanos",
+	DeviceFieldFirstSeen:        "First Seen",
 	DeviceFieldLastSeenSeconds:  "Last Seen Seconds",
 	DeviceFieldLastSeenNanos:    "Last Seen Nanos",
+	DeviceFieldLastSeen:         "Last Seen",
 	DeviceFieldNotifyId:         "Notify Id",
 }
 
 func (m *Device) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, DeviceFieldKey+".") || s == DeviceFieldKey
 }
+
+var DeviceBackendFieldsMap = map[string]struct{}{
+	DeviceFieldNotifyId: struct{}{},
+}
+
+var DeviceNoConfigFieldsMap = map[string]struct{}{}
 
 func (m *Device) DiffFields(o *Device, fields *FieldMap) {
 	if m.Key.UniqueIdType != o.Key.UniqueIdType {

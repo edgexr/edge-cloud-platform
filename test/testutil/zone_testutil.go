@@ -77,7 +77,19 @@ func (x *ShowZone) AssertFound(t *testing.T, obj *edgeproto.Zone) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find Zone %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "Zone are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.ZoneBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.ZoneNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.ZoneAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "Zone differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

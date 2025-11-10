@@ -908,44 +908,76 @@ const ZonePoolFieldDeletePrepare = "6"
 var ZonePoolAllFields = []string{
 	ZonePoolFieldKeyOrganization,
 	ZonePoolFieldKeyName,
+	ZonePoolFieldKey,
 	ZonePoolFieldZonesOrganization,
 	ZonePoolFieldZonesName,
 	ZonePoolFieldZonesFederatedOrganization,
+	ZonePoolFieldZones,
 	ZonePoolFieldCreatedAtSeconds,
 	ZonePoolFieldCreatedAtNanos,
+	ZonePoolFieldCreatedAt,
 	ZonePoolFieldUpdatedAtSeconds,
 	ZonePoolFieldUpdatedAtNanos,
+	ZonePoolFieldUpdatedAt,
 	ZonePoolFieldDeletePrepare,
 }
 
 var ZonePoolAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ZonePoolFieldKeyOrganization:            struct{}{},
 	ZonePoolFieldKeyName:                    struct{}{},
+	ZonePoolFieldKey:                        struct{}{},
 	ZonePoolFieldZonesOrganization:          struct{}{},
 	ZonePoolFieldZonesName:                  struct{}{},
 	ZonePoolFieldZonesFederatedOrganization: struct{}{},
+	ZonePoolFieldZones:                      struct{}{},
 	ZonePoolFieldCreatedAtSeconds:           struct{}{},
 	ZonePoolFieldCreatedAtNanos:             struct{}{},
+	ZonePoolFieldCreatedAt:                  struct{}{},
 	ZonePoolFieldUpdatedAtSeconds:           struct{}{},
 	ZonePoolFieldUpdatedAtNanos:             struct{}{},
+	ZonePoolFieldUpdatedAt:                  struct{}{},
 	ZonePoolFieldDeletePrepare:              struct{}{},
 })
 
 var ZonePoolAllFieldsStringMap = map[string]string{
 	ZonePoolFieldKeyOrganization:            "Key Organization",
 	ZonePoolFieldKeyName:                    "Key Name",
+	ZonePoolFieldKey:                        "Key",
 	ZonePoolFieldZonesOrganization:          "Zones Organization",
 	ZonePoolFieldZonesName:                  "Zones Name",
 	ZonePoolFieldZonesFederatedOrganization: "Zones Federated Organization",
+	ZonePoolFieldZones:                      "Zones",
 	ZonePoolFieldCreatedAtSeconds:           "Created At Seconds",
 	ZonePoolFieldCreatedAtNanos:             "Created At Nanos",
+	ZonePoolFieldCreatedAt:                  "Created At",
 	ZonePoolFieldUpdatedAtSeconds:           "Updated At Seconds",
 	ZonePoolFieldUpdatedAtNanos:             "Updated At Nanos",
+	ZonePoolFieldUpdatedAt:                  "Updated At",
 	ZonePoolFieldDeletePrepare:              "Delete Prepare",
 }
 
 func (m *ZonePool) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, ZonePoolFieldKey+".") || s == ZonePoolFieldKey
+}
+
+var ZonePoolBackendFieldsMap = map[string]struct{}{
+	ZonePoolFieldCreatedAtSeconds: struct{}{},
+	ZonePoolFieldCreatedAtNanos:   struct{}{},
+	ZonePoolFieldCreatedAt:        struct{}{},
+	ZonePoolFieldUpdatedAtSeconds: struct{}{},
+	ZonePoolFieldUpdatedAtNanos:   struct{}{},
+	ZonePoolFieldUpdatedAt:        struct{}{},
+	ZonePoolFieldDeletePrepare:    struct{}{},
+}
+
+var ZonePoolNoConfigFieldsMap = map[string]struct{}{
+	ZonePoolFieldCreatedAtSeconds: struct{}{},
+	ZonePoolFieldCreatedAtNanos:   struct{}{},
+	ZonePoolFieldCreatedAt:        struct{}{},
+	ZonePoolFieldUpdatedAtSeconds: struct{}{},
+	ZonePoolFieldUpdatedAtNanos:   struct{}{},
+	ZonePoolFieldUpdatedAt:        struct{}{},
+	ZonePoolFieldDeletePrepare:    struct{}{},
 }
 
 func (m *ZonePool) DiffFields(o *ZonePool, fields *FieldMap) {

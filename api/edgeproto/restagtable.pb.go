@@ -885,8 +885,10 @@ const ResTagTableFieldDeletePrepare = "5"
 var ResTagTableAllFields = []string{
 	ResTagTableFieldKeyName,
 	ResTagTableFieldKeyOrganization,
+	ResTagTableFieldKey,
 	ResTagTableFieldTagsKey,
 	ResTagTableFieldTagsValue,
+	ResTagTableFieldTags,
 	ResTagTableFieldAzone,
 	ResTagTableFieldDeletePrepare,
 }
@@ -894,8 +896,10 @@ var ResTagTableAllFields = []string{
 var ResTagTableAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ResTagTableFieldKeyName:         struct{}{},
 	ResTagTableFieldKeyOrganization: struct{}{},
+	ResTagTableFieldKey:             struct{}{},
 	ResTagTableFieldTagsKey:         struct{}{},
 	ResTagTableFieldTagsValue:       struct{}{},
+	ResTagTableFieldTags:            struct{}{},
 	ResTagTableFieldAzone:           struct{}{},
 	ResTagTableFieldDeletePrepare:   struct{}{},
 })
@@ -903,14 +907,24 @@ var ResTagTableAllFieldsMap = NewFieldMap(map[string]struct{}{
 var ResTagTableAllFieldsStringMap = map[string]string{
 	ResTagTableFieldKeyName:         "Key Name",
 	ResTagTableFieldKeyOrganization: "Key Organization",
+	ResTagTableFieldKey:             "Key",
 	ResTagTableFieldTagsKey:         "Tags Key",
 	ResTagTableFieldTagsValue:       "Tags Value",
+	ResTagTableFieldTags:            "Tags",
 	ResTagTableFieldAzone:           "Azone",
 	ResTagTableFieldDeletePrepare:   "Delete Prepare",
 }
 
 func (m *ResTagTable) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, ResTagTableFieldKey+".") || s == ResTagTableFieldKey
+}
+
+var ResTagTableBackendFieldsMap = map[string]struct{}{
+	ResTagTableFieldDeletePrepare: struct{}{},
+}
+
+var ResTagTableNoConfigFieldsMap = map[string]struct{}{
+	ResTagTableFieldDeletePrepare: struct{}{},
 }
 
 func (m *ResTagTable) DiffFields(o *ResTagTable, fields *FieldMap) {

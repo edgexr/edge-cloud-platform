@@ -2040,6 +2040,7 @@ func (s *ClusterInstApi) createCloudletSingularCluster(stm concurrency.STM, clou
 	clusterInst.IpAccess = edgeproto.IpAccess_IP_ACCESS_SHARED
 	clusterInst.CloudletKey = cloudlet.Key
 	clusterInst.ObjId = ulid.Make().String()
+	clusterInst.SingleKubernetesNamespace = cloudlet.SingleKubernetesNamespace
 	if err := s.setDnsLabel(stm, &clusterInst); err != nil {
 		return err
 	}

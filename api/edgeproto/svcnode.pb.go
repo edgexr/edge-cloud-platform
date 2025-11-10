@@ -853,8 +853,10 @@ var SvcNodeAllFields = []string{
 	SvcNodeFieldKeyCloudletKeyOrganization,
 	SvcNodeFieldKeyCloudletKeyName,
 	SvcNodeFieldKeyCloudletKeyFederatedOrganization,
+	SvcNodeFieldKeyCloudletKey,
 	SvcNodeFieldKeyType,
 	SvcNodeFieldKeyRegion,
+	SvcNodeFieldKey,
 	SvcNodeFieldNotifyId,
 	SvcNodeFieldBuildMaster,
 	SvcNodeFieldBuildHead,
@@ -865,6 +867,7 @@ var SvcNodeAllFields = []string{
 	SvcNodeFieldBuildDate,
 	SvcNodeFieldPropertiesKey,
 	SvcNodeFieldPropertiesValue,
+	SvcNodeFieldProperties,
 }
 
 var SvcNodeAllFieldsMap = NewFieldMap(map[string]struct{}{
@@ -872,8 +875,10 @@ var SvcNodeAllFieldsMap = NewFieldMap(map[string]struct{}{
 	SvcNodeFieldKeyCloudletKeyOrganization:          struct{}{},
 	SvcNodeFieldKeyCloudletKeyName:                  struct{}{},
 	SvcNodeFieldKeyCloudletKeyFederatedOrganization: struct{}{},
+	SvcNodeFieldKeyCloudletKey:                      struct{}{},
 	SvcNodeFieldKeyType:                             struct{}{},
 	SvcNodeFieldKeyRegion:                           struct{}{},
+	SvcNodeFieldKey:                                 struct{}{},
 	SvcNodeFieldNotifyId:                            struct{}{},
 	SvcNodeFieldBuildMaster:                         struct{}{},
 	SvcNodeFieldBuildHead:                           struct{}{},
@@ -884,6 +889,7 @@ var SvcNodeAllFieldsMap = NewFieldMap(map[string]struct{}{
 	SvcNodeFieldBuildDate:                           struct{}{},
 	SvcNodeFieldPropertiesKey:                       struct{}{},
 	SvcNodeFieldPropertiesValue:                     struct{}{},
+	SvcNodeFieldProperties:                          struct{}{},
 })
 
 var SvcNodeAllFieldsStringMap = map[string]string{
@@ -891,8 +897,10 @@ var SvcNodeAllFieldsStringMap = map[string]string{
 	SvcNodeFieldKeyCloudletKeyOrganization:          "Key Cloudlet Key Organization",
 	SvcNodeFieldKeyCloudletKeyName:                  "Key Cloudlet Key Name",
 	SvcNodeFieldKeyCloudletKeyFederatedOrganization: "Key Cloudlet Key Federated Organization",
+	SvcNodeFieldKeyCloudletKey:                      "Key Cloudlet Key",
 	SvcNodeFieldKeyType:                             "Key Type",
 	SvcNodeFieldKeyRegion:                           "Key Region",
+	SvcNodeFieldKey:                                 "Key",
 	SvcNodeFieldNotifyId:                            "Notify Id",
 	SvcNodeFieldBuildMaster:                         "Build Master",
 	SvcNodeFieldBuildHead:                           "Build Head",
@@ -903,11 +911,25 @@ var SvcNodeAllFieldsStringMap = map[string]string{
 	SvcNodeFieldBuildDate:                           "Build Date",
 	SvcNodeFieldPropertiesKey:                       "Properties Key",
 	SvcNodeFieldPropertiesValue:                     "Properties Value",
+	SvcNodeFieldProperties:                          "Properties",
 }
 
 func (m *SvcNode) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, SvcNodeFieldKey+".") || s == SvcNodeFieldKey
 }
+
+var SvcNodeBackendFieldsMap = map[string]struct{}{
+	SvcNodeFieldNotifyId:         struct{}{},
+	SvcNodeFieldBuildMaster:      struct{}{},
+	SvcNodeFieldBuildHead:        struct{}{},
+	SvcNodeFieldBuildAuthor:      struct{}{},
+	SvcNodeFieldHostname:         struct{}{},
+	SvcNodeFieldContainerVersion: struct{}{},
+	SvcNodeFieldInternalPki:      struct{}{},
+	SvcNodeFieldBuildDate:        struct{}{},
+}
+
+var SvcNodeNoConfigFieldsMap = map[string]struct{}{}
 
 func (m *SvcNode) DiffFields(o *SvcNode, fields *FieldMap) {
 	if m.Key.Name != o.Key.Name {

@@ -1022,7 +1022,7 @@ var AppComments = map[string]string{
 	"objid":                                                      "Universally unique object ID",
 	"appannotations":                                             "Internal Annotations, specify appannotations:empty=true to clear",
 	"isstandalone":                                               "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
-	"managesownnamespaces":                                       "This is a placeholder until we allow for specifying the target namespace for Kubernetes apps. For now, this bypasses the automatic namespace allocation and deploys the application to the default namespace.",
+	"managesownnamespaces":                                       "(Deprecated) For older Apps, this set the AppInst namespace to  the default namespace. It was intended to allow for a App to deploy workloads across multiple namespaces, but we have decided to only support one namespace per App. Use the AppInst.Namespace field to control the target namespace.",
 	"compatibilityversion":                                       "Internal compatibility version",
 	"tags":                                                       "Vendor-specific data, specify tags:empty=true to clear",
 }
@@ -1340,7 +1340,7 @@ var DeploymentZoneRequestComments = map[string]string{
 	"app.objid":                                                      "Universally unique object ID",
 	"app.appannotations":                                             "Internal Annotations",
 	"app.isstandalone":                                               "A standalone App will not share a cluster with another App unless explicitly targeted to the same cluster",
-	"app.managesownnamespaces":                                       "This is a placeholder until we allow for specifying the target namespace for Kubernetes apps. For now, this bypasses the automatic namespace allocation and deploys the application to the default namespace.",
+	"app.managesownnamespaces":                                       "(Deprecated) For older Apps, this set the AppInst namespace to  the default namespace. It was intended to allow for a App to deploy workloads across multiple namespaces, but we have decided to only support one namespace per App. Use the AppInst.Namespace field to control the target namespace.",
 	"app.compatibilityversion":                                       "Internal compatibility version",
 	"app.tags":                                                       "Vendor-specific data",
 	"dryrundeploy":                                                   "Attempt to qualify zones resources for deployment",

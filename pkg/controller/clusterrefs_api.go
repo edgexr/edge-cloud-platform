@@ -16,6 +16,7 @@ package controller
 
 import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"go.etcd.io/etcd/client/v3/concurrency"
 )
@@ -111,4 +112,35 @@ func (s *ClusterRefsApi) canReleaseReservation(stm concurrency.STM, appInst *edg
 		}
 	}
 	return true
+}
+
+func (s *ClusterRefsApi) namespaceStillInUse(stm concurrency.STM, clusterInst *edgeproto.ClusterInst, appInst *edgeproto.AppInst) bool {
+	key := appInst.GetClusterKey()
+	refs := edgeproto.ClusterRefs{}
+	if !s.store.STMGet(stm, key, &refs) {
+		return false
+	}
+	for ii := range refs.Apps {
+		if appInst.Key.Matches(&refs.Apps[ii]) {
+			continue
+		}
+		ai := edgeproto.AppInst{}
+		// use cache instead of STM to avoid loading too much into STM
+		if !s.all.appInstApi.cache.Get(&refs.Apps[ii], &ai) {
+			continue
+		}
+		aiNS := ai.Namespace
+		if aiNS == "" {
+			// old AppInst, need to generate namespace name
+			app := edgeproto.App{}
+			if !s.all.appApi.cache.Get(&ai.AppKey, &app) {
+				continue
+			}
+			aiNS = k8smgmt.GetNamespace(clusterInst, &app, &ai)
+		}
+		if appInst.Namespace == aiNS {
+			return true
+		}
+	}
+	return false
 }

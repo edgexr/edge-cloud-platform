@@ -271,6 +271,7 @@ const (
 	AnnotationFedPartnerAppProviderID = "fed-partner-app-provider-id"
 	AnnotationKubernetesVersion       = "kubernetes-version"
 	AnnotationFloatingVIP             = "floating-vip"
+	AnnotationKeepNamespaceOnDelete   = "keep-namespace-on-delete"
 )
 
 var InstanceUp = "UP"
