@@ -234,6 +234,7 @@ func TestCloudletApi(t *testing.T) {
 	testAllianceOrgs(t, ctx, apis)
 	testCloudletEdgeboxOnly(t, ctx, cloudletData[2], apis)
 	testCloudletUpdateInfo(t, ctx, apis)
+	testCloudletManagedClusters(t, ctx, apis)
 }
 
 func testBadLat(t *testing.T, ctx context.Context, clbad *edgeproto.Cloudlet, lats []float64, action string, apis *AllApis) {

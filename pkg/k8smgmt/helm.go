@@ -280,18 +280,6 @@ func CreateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 	if err != nil {
 		return err
 	}
-	if strings.HasPrefix(chartSpec.URLPath, "http") {
-		/*
-			// Need to add helm repository first
-			if err := helmRepoAdd(ctx, client, names, chartSpec); err != nil {
-				return err
-			}
-			// update repo
-			if err := helmRepoUpdate(ctx, client, names, chartSpec); err != nil {
-				return err
-			}
-		*/
-	}
 	nsArgs := getHelmNamespaceArgs(names.InstanceNamespace, cloudcommon.Create)
 	helmArgs, err := getHelmInstallOptsString(app.Annotations)
 	if err != nil {
@@ -307,7 +295,7 @@ func CreateHelmAppInst(ctx context.Context, accessApi platform.AccessApi, client
 	cacheArgs := getHelmCacheArgs(names)
 	if strings.HasPrefix(chartSpec.URLPath, "http") {
 		cmd = fmt.Sprintf("helm %s %s upgrade --install %s %s --repo %s %s %s %s", cacheArgs, names.KconfArg, names.HelmAppName, chartSpec.ChartName, chartSpec.URLPath, helmArgs, helmOpts, nsArgs)
-	} else {
+	} else { // oci based chart
 		cmd = fmt.Sprintf("helm %s %s upgrade --install %s %s %s %s %s", cacheArgs, names.KconfArg, names.HelmAppName, chartSpec.ChartRef, helmArgs, helmOpts, nsArgs)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "helm install", "cmd", cmd)

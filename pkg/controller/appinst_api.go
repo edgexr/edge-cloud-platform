@@ -2412,9 +2412,6 @@ func allocateIP(ctx context.Context, inst *edgeproto.ClusterInst, cloudlet *edge
 }
 
 func freeIP(inst *edgeproto.ClusterInst, cloudlet *edgeproto.Cloudlet, refs *edgeproto.CloudletRefs) {
-	// note: any control plane IP is freed by deleting the
-	// cluster from the cloudletIPs object.
-
 	if inst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
 		return
 	}

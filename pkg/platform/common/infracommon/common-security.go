@@ -21,6 +21,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/pkg/access"
 	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/proxy"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -119,7 +120,7 @@ func (c *CommonPlatform) AddProxySecurityRulesAndPatchDNS(ctx context.Context, c
 	}()
 	go func() {
 		if ops.AddDnsAndPatchKubeSvc {
-			err := c.CreateAppDNSAndPatchKubeSvc(ctx, client, kubeNames, appInst, aac.DnsOverride, nil, getDnsSvcAction)
+			err := c.CreateAppDNSAndPatchKubeSvc(ctx, client, kubeNames, appInst, aac.DnsOverride, platform.NoLBAPI, getDnsSvcAction)
 			if err == nil {
 				dnschan <- ""
 			} else {

@@ -180,29 +180,3 @@ func GetFreeIP(allIPs string, cloudletIPs *edgeproto.CloudletIPs) (string, error
 	}
 	return "", fmt.Errorf("no free IP available")
 }
-
-/*
-func GetFreeIP(allIPs string, cloudletIPs *edgeproto.CloudletIPs) (string, error) {
-	// get all IPs
-	ips, err := util.MapIPs(allIPs)
-	if err != nil {
-		return "", err
-	}
-	// remove IPs in use
-	for _, clb := range cloudletIPs.ClusterIps {
-		if clb.ControlPlaneIpv4 != "" {
-			delete(ips, clb.ControlPlaneIpv4)
-		}
-		for _, lb := range clb.LoadBalancers {
-			if lb.Ipv4 != "" {
-				delete(ips, lb.Ipv4)
-			}
-		}
-	}
-	// return free IP
-	for ip := range ips {
-		return ip, nil
-	}
-	return "", fmt.Errorf("no free IP available")
-}
-*/

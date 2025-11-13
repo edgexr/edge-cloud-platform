@@ -49,8 +49,6 @@ type DnsSvcAction struct {
 	PatchIPV6 string
 	// Should we add DNS, or not
 	AddDNS bool
-	// Call EnsureLoadBalancer if LoadBalancerAPI is set.
-	LoadBalancerAPI platform.LoadBalancerApi
 }
 
 // Callback function for callers to control the behavior of DNS changes.
@@ -64,7 +62,7 @@ var NoDnsOverride = ""
 // will use different IPs and patching.
 func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, overrideDns string, lbAPI platform.LoadBalancerApi, getSvcAction GetDnsSvcActionFunc) error {
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppDNSAndPatchKubeSvc", "lbApi", lbAPI)
+	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppDNSAndPatchKubeSvc")
 
 	// Validate URI just once
 	if kubeNames.AppURI != "" && !kubeNames.IsUriIPAddr {

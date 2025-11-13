@@ -45,7 +45,6 @@ var SvcNodeTypeMC = "mc"
 var SvcNodeTypeAutoProv = "autoprov"
 var SvcNodeTypeFRM = "frm"
 var SvcNodeTypeAddonMgr = "addonmgr"
-var SvcNodeTypeCloudProvider = "cloud-provider"
 
 // SvcNodeMgr tracks all the nodes connected via notify, and handles common
 // requests over all nodes.

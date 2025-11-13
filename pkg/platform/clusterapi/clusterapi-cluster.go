@@ -504,12 +504,6 @@ func (s *ClusterAPI) EnsureLoadBalancer(ctx context.Context, cloudletKey edgepro
 	if err != nil {
 		return nil, err
 	}
-	/*
-		err = k8smgmt.PatchServiceIP(ctx, client, clusterNames, lbKey.Name, lb.Ipv4, "", lbKey.Namespace)
-		if err != nil {
-			return nil, err
-		}
-	*/
 	return lb, nil
 }
 

@@ -385,8 +385,6 @@ var CloudletRefsOptionalArgs = []string{
 	"vmappinsts:#.organization",
 	"k8sappinsts:#.name",
 	"k8sappinsts:#.organization",
-	"clustercontrolvips",
-	"clusterlbvips",
 }
 var CloudletRefsAliasArgs = []string{}
 var CloudletRefsComments = map[string]string{
@@ -402,13 +400,8 @@ var CloudletRefsComments = map[string]string{
 	"vmappinsts:#.organization":   "App Instance organization",
 	"k8sappinsts:#.name":          "App Instance name",
 	"k8sappinsts:#.organization":  "App Instance organization",
-	"clustercontrolvips":          "Cluster used control plane VIPs. Key is cluster key json, value is IP",
-	"clusterlbvips":               "Cluster used load balancer VIPs. Key is cluster load balancer key json, value is IP",
 }
-var CloudletRefsSpecialArgs = map[string]string{
-	"clustercontrolvips": "StringToString",
-	"clusterlbvips":      "StringToString",
-}
+var CloudletRefsSpecialArgs = map[string]string{}
 var ClusterRefsRequiredArgs = []string{
 	"key.name",
 	"key.organization",

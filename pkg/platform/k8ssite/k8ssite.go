@@ -87,7 +87,7 @@ func (s *K8sSite) InitCommon(ctx context.Context, platformConfig *platform.Platf
 		return err
 	}
 	workloadMgr := &k8smgmt.K8SWorkloadMgr{}
-	s.K8sPlatformMgr.Init(s, features, &s.CommonPf, workloadMgr, nil)
+	s.K8sPlatformMgr.Init(s, features, &s.CommonPf, workloadMgr, platform.NoLBAPI)
 	return nil
 }
 

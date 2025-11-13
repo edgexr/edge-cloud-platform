@@ -259,6 +259,8 @@ type LoadBalancerApi interface {
 	DeleteLoadBalancer(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) error
 }
 
+var NoLBAPI = LoadBalancerApi(nil)
+
 // AccessData types
 const (
 	GetCloudletAccessVars   = "get-cloudlet-access-vars"

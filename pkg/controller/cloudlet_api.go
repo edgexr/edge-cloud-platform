@@ -142,6 +142,7 @@ func (s *CloudletApi) ReplaceErrorState(ctx context.Context, in *edgeproto.Cloud
 			s.store.STMDel(stm, &in.Key)
 			s.dnsLabelStore.STMDel(stm, inst.DnsLabel)
 			s.all.cloudletRefsApi.store.STMDel(stm, &in.Key)
+			s.all.cloudletIPsApi.cache.Store.STMDel(stm, &in.Key)
 			s.all.clusterInstApi.deleteCloudletSingularCluster(stm, &in.Key, inst.SingleKubernetesClusterOwner)
 		} else {
 			inst.State = newState
