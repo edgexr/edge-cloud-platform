@@ -1096,6 +1096,7 @@ var SettingsAllFields = []string{
 	SettingsFieldLocationTileSideLengthKm,
 	SettingsFieldEdgeEventsMetricsContinuousQueriesCollectionIntervalsInterval,
 	SettingsFieldEdgeEventsMetricsContinuousQueriesCollectionIntervalsRetention,
+	SettingsFieldEdgeEventsMetricsContinuousQueriesCollectionIntervals,
 	SettingsFieldInfluxDbDownsampledMetricsRetention,
 	SettingsFieldInfluxDbEdgeEventsMetricsRetention,
 	SettingsFieldAppinstClientCleanupInterval,
@@ -1140,6 +1141,7 @@ var SettingsAllFieldsMap = NewFieldMap(map[string]struct{}{
 	SettingsFieldLocationTileSideLengthKm:                                       struct{}{},
 	SettingsFieldEdgeEventsMetricsContinuousQueriesCollectionIntervalsInterval:  struct{}{},
 	SettingsFieldEdgeEventsMetricsContinuousQueriesCollectionIntervalsRetention: struct{}{},
+	SettingsFieldEdgeEventsMetricsContinuousQueriesCollectionIntervals:          struct{}{},
 	SettingsFieldInfluxDbDownsampledMetricsRetention:                            struct{}{},
 	SettingsFieldInfluxDbEdgeEventsMetricsRetention:                             struct{}{},
 	SettingsFieldAppinstClientCleanupInterval:                                   struct{}{},
@@ -1184,6 +1186,7 @@ var SettingsAllFieldsStringMap = map[string]string{
 	SettingsFieldLocationTileSideLengthKm:                                       "Location Tile Side Length Km",
 	SettingsFieldEdgeEventsMetricsContinuousQueriesCollectionIntervalsInterval:  "Edge Events Metrics Continuous Queries Collection Intervals Interval",
 	SettingsFieldEdgeEventsMetricsContinuousQueriesCollectionIntervalsRetention: "Edge Events Metrics Continuous Queries Collection Intervals Retention",
+	SettingsFieldEdgeEventsMetricsContinuousQueriesCollectionIntervals:          "Edge Events Metrics Continuous Queries Collection Intervals",
 	SettingsFieldInfluxDbDownsampledMetricsRetention:                            "Influx Db Downsampled Metrics Retention",
 	SettingsFieldInfluxDbEdgeEventsMetricsRetention:                             "Influx Db Edge Events Metrics Retention",
 	SettingsFieldAppinstClientCleanupInterval:                                   "Appinst Client Cleanup Interval",
@@ -1202,6 +1205,10 @@ var SettingsAllFieldsStringMap = map[string]string{
 func (m *Settings) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, SettingsFieldShepherdMetricsCollectionInterval+".") || s == SettingsFieldShepherdMetricsCollectionInterval
 }
+
+var SettingsBackendFieldsMap = map[string]struct{}{}
+
+var SettingsNoConfigFieldsMap = map[string]struct{}{}
 
 func (m *Settings) DiffFields(o *Settings, fields *FieldMap) {
 	if m.ShepherdMetricsCollectionInterval != o.ShepherdMetricsCollectionInterval {

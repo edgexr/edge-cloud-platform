@@ -839,6 +839,7 @@ const AlertPolicyFieldDeletePrepare = "12"
 var AlertPolicyAllFields = []string{
 	AlertPolicyFieldKeyOrganization,
 	AlertPolicyFieldKeyName,
+	AlertPolicyFieldKey,
 	AlertPolicyFieldCpuUtilizationLimit,
 	AlertPolicyFieldMemUtilizationLimit,
 	AlertPolicyFieldDiskUtilizationLimit,
@@ -847,8 +848,10 @@ var AlertPolicyAllFields = []string{
 	AlertPolicyFieldTriggerTime,
 	AlertPolicyFieldLabelsKey,
 	AlertPolicyFieldLabelsValue,
+	AlertPolicyFieldLabels,
 	AlertPolicyFieldAnnotationsKey,
 	AlertPolicyFieldAnnotationsValue,
+	AlertPolicyFieldAnnotations,
 	AlertPolicyFieldDescription,
 	AlertPolicyFieldDeletePrepare,
 }
@@ -856,6 +859,7 @@ var AlertPolicyAllFields = []string{
 var AlertPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AlertPolicyFieldKeyOrganization:      struct{}{},
 	AlertPolicyFieldKeyName:              struct{}{},
+	AlertPolicyFieldKey:                  struct{}{},
 	AlertPolicyFieldCpuUtilizationLimit:  struct{}{},
 	AlertPolicyFieldMemUtilizationLimit:  struct{}{},
 	AlertPolicyFieldDiskUtilizationLimit: struct{}{},
@@ -864,8 +868,10 @@ var AlertPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AlertPolicyFieldTriggerTime:          struct{}{},
 	AlertPolicyFieldLabelsKey:            struct{}{},
 	AlertPolicyFieldLabelsValue:          struct{}{},
+	AlertPolicyFieldLabels:               struct{}{},
 	AlertPolicyFieldAnnotationsKey:       struct{}{},
 	AlertPolicyFieldAnnotationsValue:     struct{}{},
+	AlertPolicyFieldAnnotations:          struct{}{},
 	AlertPolicyFieldDescription:          struct{}{},
 	AlertPolicyFieldDeletePrepare:        struct{}{},
 })
@@ -873,6 +879,7 @@ var AlertPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 var AlertPolicyAllFieldsStringMap = map[string]string{
 	AlertPolicyFieldKeyOrganization:      "Key Organization",
 	AlertPolicyFieldKeyName:              "Key Name",
+	AlertPolicyFieldKey:                  "Key",
 	AlertPolicyFieldCpuUtilizationLimit:  "Cpu Utilization Limit",
 	AlertPolicyFieldMemUtilizationLimit:  "Mem Utilization Limit",
 	AlertPolicyFieldDiskUtilizationLimit: "Disk Utilization Limit",
@@ -881,14 +888,24 @@ var AlertPolicyAllFieldsStringMap = map[string]string{
 	AlertPolicyFieldTriggerTime:          "Trigger Time",
 	AlertPolicyFieldLabelsKey:            "Labels Key",
 	AlertPolicyFieldLabelsValue:          "Labels Value",
+	AlertPolicyFieldLabels:               "Labels",
 	AlertPolicyFieldAnnotationsKey:       "Annotations Key",
 	AlertPolicyFieldAnnotationsValue:     "Annotations Value",
+	AlertPolicyFieldAnnotations:          "Annotations",
 	AlertPolicyFieldDescription:          "Description",
 	AlertPolicyFieldDeletePrepare:        "Delete Prepare",
 }
 
 func (m *AlertPolicy) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AlertPolicyFieldKey+".") || s == AlertPolicyFieldKey
+}
+
+var AlertPolicyBackendFieldsMap = map[string]struct{}{
+	AlertPolicyFieldDeletePrepare: struct{}{},
+}
+
+var AlertPolicyNoConfigFieldsMap = map[string]struct{}{
+	AlertPolicyFieldDeletePrepare: struct{}{},
 }
 
 func (m *AlertPolicy) DiffFields(o *AlertPolicy, fields *FieldMap) {

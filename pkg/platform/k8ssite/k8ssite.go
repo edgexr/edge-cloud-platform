@@ -130,10 +130,7 @@ func (s *K8sSite) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloudl
 	if err != nil {
 		return err
 	}
-	info.NodeInfos, err = k8smgmt.GetNodeInfos(ctx, s.getClient(), kconfNames.KconfArg)
-	if err != nil {
-		return err
-	}
+
 	clusterVersion, err := k8smgmt.GetClusterVersion(ctx, s.getClient(), kconfNames.KconfArg)
 	if err != nil {
 		return err
@@ -143,27 +140,69 @@ func (s *K8sSite) GatherCloudletInfo(ctx context.Context, info *edgeproto.Cloudl
 	}
 	info.Properties[cloudcommon.AnnotationKubernetesVersion] = clusterVersion
 
-	// set total resource limits based on sum of all nodes
-	vcpus := edgeproto.Udec64{}
-	ram := edgeproto.Udec64{}
-	disk := edgeproto.Udec64{}
-	for _, nodeInfo := range info.NodeInfos {
-		for res, val := range nodeInfo.Allocatable {
-			switch res {
-			case cloudcommon.ResourceVcpus:
-				vcpus.Add(val)
-			case cloudcommon.ResourceRamMb:
-				ram.Add(val)
-			case cloudcommon.ResourceDiskGb:
-				disk.Add(val)
-			}
+	cloudletKey := s.CommonPf.PlatformConfig.CloudletKey
+	cloudlet := &edgeproto.Cloudlet{}
+	if !s.caches.CloudletCache.Get(cloudletKey, cloudlet) {
+		return cloudletKey.NotFoundError()
+	}
+
+	info.NodeInfos, err = k8smgmt.GetNodeInfos(ctx, s.getClient(), kconfNames.KconfArg)
+	if err != nil {
+		if cloudlet.SingleKubernetesNamespace != "" {
+			// likely we do not have permission, just log error
+			log.SpanLog(ctx, log.DebugLevelInfra, "get node infos failed for single namespace cloudlet, ignoring error", "err", err)
+		} else {
+			return err
 		}
 	}
-	info.OsMaxVcores = vcpus.Whole
-	info.OsMaxRam = ram.Whole
-	info.OsMaxVolGb = disk.Whole
-	info.NodePools = k8smgmt.GetNodePools(ctx, info.NodeInfos)
-	return err
+	if cloudlet.SingleKubernetesNamespace != "" {
+		// TODO: look for resource quotas in namespace.
+		// May not be present, or may not have permissions to view,
+		// or may only set limits on some instead of all resources.
+		// TODO: Allow/require operator to specify resource info
+		// from env vars, as there may not be any way for us to
+		// dynamically determine the limits.
+	}
+
+	if info.NodeInfos == nil {
+		// For now, we just set very high limits (unlimited).
+		log.SpanLog(ctx, log.DebugLevelInfra, "unable to determine available resource limits in cluster, using high defaults")
+		// Controller checks resource availability based on node pools
+		info.OsMaxVcores = 10000
+		info.OsMaxRam = 81920000
+		info.OsMaxVolGb = 500000
+		info.NodePools = []*edgeproto.NodePool{{
+			Name:     "fake",
+			NumNodes: 10,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 50,
+				Ram:   819200,
+				Disk:  1000,
+			},
+		}}
+	} else {
+		// set total resource limits based on sum of all nodes
+		vcpus := edgeproto.Udec64{}
+		ram := edgeproto.Udec64{}
+		disk := edgeproto.Udec64{}
+		for _, nodeInfo := range info.NodeInfos {
+			for res, val := range nodeInfo.Allocatable {
+				switch res {
+				case cloudcommon.ResourceVcpus:
+					vcpus.Add(val)
+				case cloudcommon.ResourceRamMb:
+					ram.Add(val)
+				case cloudcommon.ResourceDiskGb:
+					disk.Add(val)
+				}
+			}
+		}
+		info.OsMaxVcores = vcpus.Whole
+		info.OsMaxRam = ram.Whole
+		info.OsMaxVolGb = disk.Whole
+		info.NodePools = k8smgmt.GetNodePools(ctx, info.NodeInfos)
+	}
+	return nil
 }
 
 func (s *K8sSite) GetClusterClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error) {

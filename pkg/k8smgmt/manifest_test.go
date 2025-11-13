@@ -61,6 +61,8 @@ func TestGenerateAppInstManifest(t *testing.T) {
 			},
 		},
 	}
+	// namespace set by Controller during CreateAppInst()
+	appInst.Namespace = GetAppInstDedicatedNamespace(appInst.Key)
 	appInst.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
 	names, err := GetKubeNames(&edgeproto.ClusterInst{}, app, appInst)
 	require.Nil(t, err)

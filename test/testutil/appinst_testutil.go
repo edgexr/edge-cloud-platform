@@ -113,7 +113,19 @@ func (x *ShowAppInst) AssertFound(t *testing.T, obj *edgeproto.AppInst) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find AppInst %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "AppInst are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.AppInstBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.AppInstNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.AppInstAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "AppInst differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the
@@ -456,7 +468,19 @@ func (x *ShowAppInstInfo) AssertFound(t *testing.T, obj *edgeproto.AppInstInfo) 
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find AppInstInfo %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "AppInstInfo are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.AppInstInfoBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.AppInstInfoNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.AppInstInfoAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "AppInstInfo differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

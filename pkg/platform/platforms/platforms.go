@@ -47,6 +47,7 @@ var builders = []platform.PlatformBuilder{
 	fake.NewPlatform,
 	fake.NewPlatformSingleCluster,
 	fake.NewPlatformPublicCloud,
+	fake.NewPlatformBareMetal,
 	kind.NewPlatform,
 	fake.NewPlatformVMPool,
 	openstack.NewPlatform,

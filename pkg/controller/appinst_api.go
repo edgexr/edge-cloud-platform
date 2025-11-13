@@ -27,6 +27,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
@@ -491,6 +492,11 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 	if in.Liveness == edgeproto.Liveness_LIVENESS_UNKNOWN {
 		in.Liveness = edgeproto.Liveness_LIVENESS_STATIC
 	}
+	if in.Namespace != "" {
+		if err := util.ValidDNSName(in.Namespace); err != nil {
+			return fmt.Errorf("invalid namespace: %v", err)
+		}
+	}
 
 	createCluster := false
 	autoClusterType := NoAutoCluster
@@ -567,6 +573,9 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 		}
 		if app.IsStandalone {
 			in.IsStandalone = true
+		}
+		if in.Namespace != "" && !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
+			return fmt.Errorf("namespace can only be specified for Kubernetes deployments")
 		}
 
 		// if no resources specified, inherit from app
@@ -894,10 +903,15 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 						continue
 					}
 					ai := edgeproto.AppInst{}
-					if s.all.appInstApi.store.STMGet(stm, &aiKey, &ai) {
-						if ai.AppKey == in.AppKey {
-							return fmt.Errorf("cannot deploy another instance of App %s to the target cluster", ai.AppKey.GetKeyString())
-						}
+					if !s.all.appInstApi.store.STMGet(stm, &aiKey, &ai) {
+						continue
+					}
+					aiApp := edgeproto.App{}
+					if !s.all.appApi.store.STMGet(stm, &ai.AppKey, &aiApp) {
+						continue
+					}
+					if err := checkAppDuplicateConflict(&clusterInst, &app, in, in.Namespace, &aiApp, &ai); err != nil {
+						return err
 					}
 				}
 			}
@@ -1248,6 +1262,13 @@ func (s *AppInstApi) createAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			s.all.cloudletRefsApi.store.STMPut(stm, &cloudletRefs)
 		}
 		in.CreatedAt = dme.TimeToTimestamp(time.Now())
+
+		// Save namespace on AppInst. This is not really required
+		// because we can dynamically derive the namespace from
+		// k8smgmt.GetNamespace(), but for users managing a dedicated
+		// cluster, it may be helpful to see which namespace their
+		// application was deployed to.
+		in.Namespace = k8smgmt.GetNamespace(&clusterInst, &app, in)
 
 		if ignoreCRM(cctx) {
 			in.State = edgeproto.TrackedState_READY
@@ -1951,6 +1972,15 @@ func (s *AppInstApi) deleteAppInstInternal(cctx *CallContext, in *edgeproto.AppI
 			clusterInst.ReservationEndedAt = dme.TimeToTimestamp(time.Now())
 			s.all.clusterInstApi.store.STMPut(stm, &clusterInst)
 			reservationFreed = true
+		}
+		if cloudcommon.AppDeploysToKubernetes(app.Deployment) {
+			if clusterInst.SingleKubernetesNamespace != "" || s.all.clusterRefsApi.namespaceStillInUse(stm, &clusterInst, in) {
+				// set annotation on AppInst to avoid deletion of namespace
+				if in.Annotations == nil {
+					in.Annotations = make(map[string]string)
+				}
+				in.Annotations[cloudcommon.AnnotationKeepNamespaceOnDelete] = "true"
+			}
 		}
 
 		// delete app inst
@@ -2734,4 +2764,22 @@ func (s *AppInstApi) getAppInstByID(ctx context.Context, id string) (*edgeproto.
 		return nil, err
 	}
 	return appInst, nil
+}
+
+func checkAppDuplicateConflict(clusterInst *edgeproto.ClusterInst, createApp *edgeproto.App, createAppInst *edgeproto.AppInst, targetNamespace string, existingApp *edgeproto.App, existingAppInst *edgeproto.AppInst) error {
+	if !createApp.Key.Matches(&existingApp.Key) {
+		// different apps, no conflict
+		return nil
+	}
+	if !cloudcommon.AppDeploysToKubernetes(createApp.Deployment) {
+		// for non-k8s apps, we don't support multiple instances
+		// of the same app in the same cluster
+		return fmt.Errorf("cannot deploy another instance of App %s in the cluster", createApp.Key.GetKeyString())
+	}
+	// kubernetes app, ok if different namespaces
+	refAiNamespace := k8smgmt.GetNamespace(clusterInst, existingApp, existingAppInst)
+	if refAiNamespace == targetNamespace {
+		return fmt.Errorf("cannot deploy another instance of App %s to the same namespace %q in the same cluster", createApp.Key.GetKeyString(), targetNamespace)
+	}
+	return nil
 }

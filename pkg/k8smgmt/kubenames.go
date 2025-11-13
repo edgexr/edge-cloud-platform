@@ -56,6 +56,7 @@ type KubeNames struct {
 	ImagePaths                  []string
 	IsUriIPAddr                 bool
 	InstanceNamespace           string
+	ClusterSingleNamespace      string
 	MultiTenantRestricted       bool
 	TenantKconfName             string
 	TenantKconfArg              string
@@ -120,13 +121,46 @@ func GetCloudletClusterName(cluster *edgeproto.ClusterInst) string {
 	return GetK8sNodeNameSuffix(cluster)
 }
 
-func GetNamespace(app *edgeproto.App, appInst *edgeproto.AppInst) string {
-	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityRegionScopeName {
+// GetAppInstDedicatedNamespace returns the namespace for an AppInst
+// based on its key. This namespace is typically used to segregate
+// the AppInst from all other AppInsts.
+func GetAppInstDedicatedNamespace(key edgeproto.AppInstKey) string {
+	return util.NamespaceSanitize(fmt.Sprintf("%s-%s", key.Name, key.Organization))
+}
+
+// GetNamespace gets the namespace for an AppInst.
+func GetNamespace(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst) string {
+	if !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
+		// not a k8s app, no namespace
+		return ""
+	}
+	if !SetNamespace(clusterInst, app) {
+		// this check is only for backwards compatibility,
+		// we now always set the namespace for k8s apps
+		return ""
+	}
+	if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityNamespaceField {
+		if clusterInst.SingleKubernetesNamespace != "" {
+			// restricted namespace for cluster
+			return clusterInst.SingleKubernetesNamespace
+		}
+		if appInst.Namespace != "" {
+			// AppInst specifies its namespace, or Controller
+			// has set the derived namespace on the AppInst.
+			return appInst.Namespace
+		}
 		if app.ManagesOwnNamespaces {
-			// TODO: allow user to specify target namespace
+			// Deprecated, kept for backwards compatibility
 			return DefaultNamespace
 		}
-		return util.NamespaceSanitize(fmt.Sprintf("%s-%s", appInst.Key.Name, appInst.Key.Organization))
+		// AppInst gets its own namespace
+		return GetAppInstDedicatedNamespace(appInst.Key)
+	} else if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityRegionScopeName {
+		if app.ManagesOwnNamespaces {
+			// Note: manages own namespaces is deprecated
+			return DefaultNamespace
+		}
+		return GetAppInstDedicatedNamespace(appInst.Key)
 	} else if appInst.CompatibilityVersion >= cloudcommon.AppInstCompatibilityUniqueNameKey {
 		name := cloudcommon.GetAppInstCloudletScopedName(appInst)
 		return util.NamespaceSanitize(fmt.Sprintf("%s-%s", name, appInst.Key.Organization))
@@ -229,12 +263,13 @@ func GetKubeNames(clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appIns
 		// An Application can only be deployed to a single namespace.
 		// To deploy across multiple namespaces, we should add support for
 		// App bundles.
-		kubeNames.InstanceNamespace = GetNamespace(app, appInst)
+		kubeNames.InstanceNamespace = GetNamespace(clusterInst, app, appInst)
 		baseName := strings.TrimSuffix(kubeNames.KconfName, ".kubeconfig")
 		// The tenant kubeconfig is scoped to the instance namespace
 		kubeNames.TenantKconfName = fmt.Sprintf("%s.%s.kubeconfig", baseName, kubeNames.InstanceNamespace)
 		kubeNames.TenantKconfArg = "--kubeconfig=" + kubeNames.TenantKconfName
 	}
+	kubeNames.ClusterSingleNamespace = clusterInst.SingleKubernetesNamespace
 	kubeNames.MultiTenantRestricted = clusterInst.MultiTenant && !cloudcommon.IsSideCarApp(app)
 	if app.Credentials != "" {
 		kubeNames.HelmCacheDir = kubeNames.AppName + kubeNames.AppOrg + kubeNames.AppVersion + ".helm-cache"

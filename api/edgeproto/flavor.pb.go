@@ -830,51 +830,68 @@ const FlavorFieldGpusInUse = "8.5"
 
 var FlavorAllFields = []string{
 	FlavorFieldKeyName,
+	FlavorFieldKey,
 	FlavorFieldRam,
 	FlavorFieldVcpus,
 	FlavorFieldDisk,
 	FlavorFieldOptResMapKey,
 	FlavorFieldOptResMapValue,
+	FlavorFieldOptResMap,
 	FlavorFieldDeletePrepare,
 	FlavorFieldGpusModelId,
 	FlavorFieldGpusCount,
 	FlavorFieldGpusVendor,
 	FlavorFieldGpusMemory,
 	FlavorFieldGpusInUse,
+	FlavorFieldGpus,
 }
 
 var FlavorAllFieldsMap = NewFieldMap(map[string]struct{}{
 	FlavorFieldKeyName:        struct{}{},
+	FlavorFieldKey:            struct{}{},
 	FlavorFieldRam:            struct{}{},
 	FlavorFieldVcpus:          struct{}{},
 	FlavorFieldDisk:           struct{}{},
 	FlavorFieldOptResMapKey:   struct{}{},
 	FlavorFieldOptResMapValue: struct{}{},
+	FlavorFieldOptResMap:      struct{}{},
 	FlavorFieldDeletePrepare:  struct{}{},
 	FlavorFieldGpusModelId:    struct{}{},
 	FlavorFieldGpusCount:      struct{}{},
 	FlavorFieldGpusVendor:     struct{}{},
 	FlavorFieldGpusMemory:     struct{}{},
 	FlavorFieldGpusInUse:      struct{}{},
+	FlavorFieldGpus:           struct{}{},
 })
 
 var FlavorAllFieldsStringMap = map[string]string{
 	FlavorFieldKeyName:        "Key Name",
+	FlavorFieldKey:            "Key",
 	FlavorFieldRam:            "Ram",
 	FlavorFieldVcpus:          "Vcpus",
 	FlavorFieldDisk:           "Disk",
 	FlavorFieldOptResMapKey:   "Opt Res Map Key",
 	FlavorFieldOptResMapValue: "Opt Res Map Value",
+	FlavorFieldOptResMap:      "Opt Res Map",
 	FlavorFieldDeletePrepare:  "Delete Prepare",
 	FlavorFieldGpusModelId:    "Gpus Model Id",
 	FlavorFieldGpusCount:      "Gpus Count",
 	FlavorFieldGpusVendor:     "Gpus Vendor",
 	FlavorFieldGpusMemory:     "Gpus Memory",
 	FlavorFieldGpusInUse:      "Gpus In Use",
+	FlavorFieldGpus:           "Gpus",
 }
 
 func (m *Flavor) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, FlavorFieldKey+".") || s == FlavorFieldKey
+}
+
+var FlavorBackendFieldsMap = map[string]struct{}{
+	FlavorFieldDeletePrepare: struct{}{},
+}
+
+var FlavorNoConfigFieldsMap = map[string]struct{}{
+	FlavorFieldDeletePrepare: struct{}{},
 }
 
 func (m *Flavor) DiffFields(o *Flavor, fields *FieldMap) {

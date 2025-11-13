@@ -77,7 +77,19 @@ func (x *ShowApp) AssertFound(t *testing.T, obj *edgeproto.App) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find App %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "App are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.AppBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.AppNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.AppAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "App differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

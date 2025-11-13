@@ -36,11 +36,12 @@ const (
 	AppInstCompatibilityUniqueNameKeyConfig uint32 = 2
 	AppInstCompatibilityRegionScopeName     uint32 = 3
 	AppInstCompatibilityAppInstLabels       uint32 = 4
+	AppInstCompatibilityNamespaceField      uint32 = 5
 )
 
 // GetAppInstCompatibilityVersion always returns the highest compatibility version
 func GetAppInstCompatibilityVersion() uint32 {
-	return AppInstCompatibilityAppInstLabels
+	return AppInstCompatibilityNamespaceField
 }
 
 // ClusterInst compatibility versions, same as above for AppInsts.

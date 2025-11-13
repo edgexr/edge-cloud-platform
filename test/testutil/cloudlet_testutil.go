@@ -113,7 +113,19 @@ func (x *ShowGPUDriver) AssertFound(t *testing.T, obj *edgeproto.GPUDriver) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find GPUDriver %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "GPUDriver are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.GPUDriverBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.GPUDriverNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.GPUDriverAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "GPUDriver differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the
@@ -492,7 +504,19 @@ func (x *ShowCloudlet) AssertFound(t *testing.T, obj *edgeproto.Cloudlet) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find Cloudlet %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "Cloudlet are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.CloudletBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.CloudletNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.CloudletAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "Cloudlet differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the
@@ -835,7 +859,19 @@ func (x *ShowCloudletInfo) AssertFound(t *testing.T, obj *edgeproto.CloudletInfo
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find CloudletInfo %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "CloudletInfo are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.CloudletInfoBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.CloudletInfoNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.CloudletInfoAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "CloudletInfo differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

@@ -735,6 +735,7 @@ var ClusterInstOptionalArgs = []string{
 	"disabledynamicappinstplacement",
 	"cloudletmanagedclusterid",
 	"cloudletmanagedclustername",
+	"singlekubernetesnamespace",
 	"tags",
 }
 var ClusterInstAliasArgs = []string{
@@ -841,6 +842,7 @@ var ClusterInstComments = map[string]string{
 	"disabledynamicappinstplacement":               "Disables dynamic placement of AppInsts on this cluster",
 	"cloudletmanagedclusterid":                     "Cloudlet managed cluster ID, if cluster based on cloudlet managed cluster",
 	"cloudletmanagedclustername":                   "Cloudlet managed cluster name, if cluster based on cloudlet managed cluster",
+	"singlekubernetesnamespace":                    "Restricted namespace for the default cluster on a single kubernetes cluster cloudlet",
 	"tags":                                         "Vendor-specific data, specify tags:empty=true to clear",
 }
 var ClusterInstSpecialArgs = map[string]string{
@@ -1103,6 +1105,7 @@ var UpdateClusterInstOptionalArgs = []string{
 	"disabledynamicappinstplacement",
 	"cloudletmanagedclusterid",
 	"cloudletmanagedclustername",
+	"singlekubernetesnamespace",
 	"tags",
 }
 var ShowClusterResourceUsageRequiredArgs = []string{}
@@ -1160,5 +1163,6 @@ var ShowClusterResourceUsageOptionalArgs = []string{
 	"disabledynamicappinstplacement",
 	"cloudletmanagedclusterid",
 	"cloudletmanagedclustername",
+	"singlekubernetesnamespace",
 	"tags",
 }

@@ -46,6 +46,8 @@ func TestGetNetworkPolicy(t *testing.T) {
 	appInst.AppKey = app.Key
 	appInst.ClusterKey = ci.Key
 	appInst.CompatibilityVersion = cloudcommon.GetAppInstCompatibilityVersion()
+	// namespace set by Controller during CreateAppInst()
+	appInst.Namespace = GetAppInstDedicatedNamespace(appInst.Key)
 
 	// Non-multi-tenant cluster does not need a network policy
 	ci.MultiTenant = false

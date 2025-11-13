@@ -600,6 +600,9 @@ message Cloudlet {
   repeated string alliance_orgs = 47;
   // For single kubernetes cluster cloudlet platforms, cluster is owned by this organization instead of multi-tenant
   string single_kubernetes_cluster_owner = 48;
+  // For single kubernetes cluster cloudlet platforms, deployments are
+  // limited to the specified namespace.
+  string single_kubernetes_namespace = 67;
   // Preparing to be deleted
   bool delete_prepare = 49 [(protogen.backend) = true]; 
   // Enable platform H/A

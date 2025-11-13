@@ -76,7 +76,19 @@ func (x *ShowDevice) AssertFound(t *testing.T, obj *edgeproto.Device) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find Device %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "Device are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.DeviceBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.DeviceNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.DeviceAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "Device differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

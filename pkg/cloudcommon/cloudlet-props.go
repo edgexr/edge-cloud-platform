@@ -30,6 +30,8 @@ const (
 	NamespaceLabels          = "NAMESPACE_LABELS"
 	Kubeconfig               = "KUBECONFIG"
 	FloatingVIPs             = "FloatingVIPs"
+	IngressClass             = "IngressClass"
+	IngressIPV4              = "IngressIPV4"
 )
 
 var IngressHTTPPortProp = &edgeproto.PropertyInfo{
@@ -55,6 +57,17 @@ var WorkloadManagerProp = &edgeproto.PropertyInfo{
 var NamespaceLabelsProp = &edgeproto.PropertyInfo{
 	Name:        "Namespace labels",
 	Description: `Namespace labels to add to dynamically created Kubernetes namespaces. Set to a JSON map of labels, for example: {"label1": "value1", "label2": "value2"}`,
+}
+
+var IngressClassProp = &edgeproto.PropertyInfo{
+	Name:        "Ingress class",
+	Description: "Ingress class to use for ingress objects in Kubernetes clusters, depends on the ingress controller",
+	Value:       "nginx",
+}
+
+var IngressIPV4Prop = &edgeproto.PropertyInfo{
+	Name:        "Ingress IPv4",
+	Description: "Ingress IPv4 address to use for ingress objects in Kubernetes clusters, when the address is not updated on the ingress object. This is used to register DNS entries.",
 }
 
 func ValidateProps(vars map[string]string) error {

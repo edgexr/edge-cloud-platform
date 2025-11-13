@@ -101,6 +101,7 @@ type tmplArgs struct {
 	CudFuncs             []cudFunc
 	ObjAndKey            bool
 	CreateOverwritesDups bool
+	HasFields            bool
 }
 
 var tmpl = `
@@ -190,7 +191,23 @@ func (x *Show{{.Name}}) AssertFound(t *testing.T, obj *{{.Pkg}}.{{.Name}}) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find {{.Name}} %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, {{.Pkg}}.MatchIgnoreBackend(), {{.Pkg}}.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "{{.Name}} are equal")
+{{- if .HasFields}}
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := {{.Pkg}}.{{.Name}}BackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := {{.Pkg}}.{{.Name}}NoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := {{.Pkg}}.{{.Name}}AllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "{{.Name}} differ in fields %v", diffFieldStrs)
+{{- else}}
+		require.Equal(t, *obj, check, "{{.Name}} differ")
+{{- end}}
 	}
 	if found {
 		// remove in case there are dups in the list, so the
@@ -649,6 +666,7 @@ func (t *TestCud) generateCudTest(desc *generator.Descriptor) {
 		HasUpdate:            GetGenerateCudTestUpdate(message),
 		ObjAndKey:            gensupport.GetObjAndKey(message),
 		CreateOverwritesDups: GetCreateOverwritesDups(message),
+		HasFields:            gensupport.HasGrpcFields(message),
 	}
 	fncs := []string{}
 	if GetGenerateAddrmTest(message) {

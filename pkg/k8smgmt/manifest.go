@@ -147,6 +147,10 @@ func getConfigSelector(names *KubeNames) string {
 	return fmt.Sprintf("-l %s=%s", ConfigLabel, getConfigLabel(names))
 }
 
+func getApplySet(names *KubeNames) string {
+	return fmt.Sprintf("%s.%s-applyset", names.AppInstName, names.AppInstOrg)
+}
+
 type resourceQuotaArgs struct {
 	Labels       map[string]string
 	Name         string
@@ -393,7 +397,7 @@ func MergeEnvVars(ctx context.Context, accessApi platform.AccessApi, app *edgepr
 		if imagePullSecrets != nil {
 			addImagePullSecret(ctx, template, imagePullSecrets)
 		}
-		if names.MultiTenantRestricted && appInst.KubernetesResources != nil {
+		if (names.MultiTenantRestricted || names.ClusterSingleNamespace != "") && appInst.KubernetesResources != nil {
 			if err := addResourceLimits(template, appInst.KubernetesResources); err != nil {
 				return "", err
 			}

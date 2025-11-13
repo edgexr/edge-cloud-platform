@@ -1096,11 +1096,13 @@ const AutoProvPolicyFieldDeletePrepare = "10"
 var AutoProvPolicyAllFields = []string{
 	AutoProvPolicyFieldKeyOrganization,
 	AutoProvPolicyFieldKeyName,
+	AutoProvPolicyFieldKey,
 	AutoProvPolicyFieldDeployClientCount,
 	AutoProvPolicyFieldDeployIntervalCount,
 	AutoProvPolicyFieldZonesOrganization,
 	AutoProvPolicyFieldZonesName,
 	AutoProvPolicyFieldZonesFederatedOrganization,
+	AutoProvPolicyFieldZones,
 	AutoProvPolicyFieldMinActiveInstances,
 	AutoProvPolicyFieldMaxInstances,
 	AutoProvPolicyFieldUndeployClientCount,
@@ -1111,11 +1113,13 @@ var AutoProvPolicyAllFields = []string{
 var AutoProvPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AutoProvPolicyFieldKeyOrganization:            struct{}{},
 	AutoProvPolicyFieldKeyName:                    struct{}{},
+	AutoProvPolicyFieldKey:                        struct{}{},
 	AutoProvPolicyFieldDeployClientCount:          struct{}{},
 	AutoProvPolicyFieldDeployIntervalCount:        struct{}{},
 	AutoProvPolicyFieldZonesOrganization:          struct{}{},
 	AutoProvPolicyFieldZonesName:                  struct{}{},
 	AutoProvPolicyFieldZonesFederatedOrganization: struct{}{},
+	AutoProvPolicyFieldZones:                      struct{}{},
 	AutoProvPolicyFieldMinActiveInstances:         struct{}{},
 	AutoProvPolicyFieldMaxInstances:               struct{}{},
 	AutoProvPolicyFieldUndeployClientCount:        struct{}{},
@@ -1126,11 +1130,13 @@ var AutoProvPolicyAllFieldsMap = NewFieldMap(map[string]struct{}{
 var AutoProvPolicyAllFieldsStringMap = map[string]string{
 	AutoProvPolicyFieldKeyOrganization:            "Key Organization",
 	AutoProvPolicyFieldKeyName:                    "Key Name",
+	AutoProvPolicyFieldKey:                        "Key",
 	AutoProvPolicyFieldDeployClientCount:          "Deploy Client Count",
 	AutoProvPolicyFieldDeployIntervalCount:        "Deploy Interval Count",
 	AutoProvPolicyFieldZonesOrganization:          "Zones Organization",
 	AutoProvPolicyFieldZonesName:                  "Zones Name",
 	AutoProvPolicyFieldZonesFederatedOrganization: "Zones Federated Organization",
+	AutoProvPolicyFieldZones:                      "Zones",
 	AutoProvPolicyFieldMinActiveInstances:         "Min Active Instances",
 	AutoProvPolicyFieldMaxInstances:               "Max Instances",
 	AutoProvPolicyFieldUndeployClientCount:        "Undeploy Client Count",
@@ -1140,6 +1146,14 @@ var AutoProvPolicyAllFieldsStringMap = map[string]string{
 
 func (m *AutoProvPolicy) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AutoProvPolicyFieldKey+".") || s == AutoProvPolicyFieldKey
+}
+
+var AutoProvPolicyBackendFieldsMap = map[string]struct{}{
+	AutoProvPolicyFieldDeletePrepare: struct{}{},
+}
+
+var AutoProvPolicyNoConfigFieldsMap = map[string]struct{}{
+	AutoProvPolicyFieldDeletePrepare: struct{}{},
 }
 
 func (m *AutoProvPolicy) DiffFields(o *AutoProvPolicy, fields *FieldMap) {
@@ -2496,6 +2510,7 @@ var AutoProvInfoAllFields = []string{
 	AutoProvInfoFieldKeyOrganization,
 	AutoProvInfoFieldKeyName,
 	AutoProvInfoFieldKeyFederatedOrganization,
+	AutoProvInfoFieldKey,
 	AutoProvInfoFieldNotifyId,
 	AutoProvInfoFieldMaintenanceState,
 	AutoProvInfoFieldCompleted,
@@ -2506,6 +2521,7 @@ var AutoProvInfoAllFieldsMap = NewFieldMap(map[string]struct{}{
 	AutoProvInfoFieldKeyOrganization:          struct{}{},
 	AutoProvInfoFieldKeyName:                  struct{}{},
 	AutoProvInfoFieldKeyFederatedOrganization: struct{}{},
+	AutoProvInfoFieldKey:                      struct{}{},
 	AutoProvInfoFieldNotifyId:                 struct{}{},
 	AutoProvInfoFieldMaintenanceState:         struct{}{},
 	AutoProvInfoFieldCompleted:                struct{}{},
@@ -2516,6 +2532,7 @@ var AutoProvInfoAllFieldsStringMap = map[string]string{
 	AutoProvInfoFieldKeyOrganization:          "Key Organization",
 	AutoProvInfoFieldKeyName:                  "Key Name",
 	AutoProvInfoFieldKeyFederatedOrganization: "Key Federated Organization",
+	AutoProvInfoFieldKey:                      "Key",
 	AutoProvInfoFieldNotifyId:                 "Notify Id",
 	AutoProvInfoFieldMaintenanceState:         "Maintenance State",
 	AutoProvInfoFieldCompleted:                "Completed",
@@ -2525,6 +2542,10 @@ var AutoProvInfoAllFieldsStringMap = map[string]string{
 func (m *AutoProvInfo) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, AutoProvInfoFieldKey+".") || s == AutoProvInfoFieldKey
 }
+
+var AutoProvInfoBackendFieldsMap = map[string]struct{}{}
+
+var AutoProvInfoNoConfigFieldsMap = map[string]struct{}{}
 
 func (m *AutoProvInfo) DiffFields(o *AutoProvInfo, fields *FieldMap) {
 	if m.Key.Organization != o.Key.Organization {

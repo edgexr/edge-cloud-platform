@@ -542,6 +542,7 @@ const ControllerFieldHostname = "7"
 
 var ControllerAllFields = []string{
 	ControllerFieldKeyAddr,
+	ControllerFieldKey,
 	ControllerFieldBuildMaster,
 	ControllerFieldBuildHead,
 	ControllerFieldBuildAuthor,
@@ -550,6 +551,7 @@ var ControllerAllFields = []string{
 
 var ControllerAllFieldsMap = NewFieldMap(map[string]struct{}{
 	ControllerFieldKeyAddr:     struct{}{},
+	ControllerFieldKey:         struct{}{},
 	ControllerFieldBuildMaster: struct{}{},
 	ControllerFieldBuildHead:   struct{}{},
 	ControllerFieldBuildAuthor: struct{}{},
@@ -558,6 +560,7 @@ var ControllerAllFieldsMap = NewFieldMap(map[string]struct{}{
 
 var ControllerAllFieldsStringMap = map[string]string{
 	ControllerFieldKeyAddr:     "Key Addr",
+	ControllerFieldKey:         "Key",
 	ControllerFieldBuildMaster: "Build Master",
 	ControllerFieldBuildHead:   "Build Head",
 	ControllerFieldBuildAuthor: "Build Author",
@@ -567,6 +570,15 @@ var ControllerAllFieldsStringMap = map[string]string{
 func (m *Controller) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, ControllerFieldKey+".") || s == ControllerFieldKey
 }
+
+var ControllerBackendFieldsMap = map[string]struct{}{
+	ControllerFieldBuildMaster: struct{}{},
+	ControllerFieldBuildHead:   struct{}{},
+	ControllerFieldBuildAuthor: struct{}{},
+	ControllerFieldHostname:    struct{}{},
+}
+
+var ControllerNoConfigFieldsMap = map[string]struct{}{}
 
 func (m *Controller) DiffFields(o *Controller, fields *FieldMap) {
 	if m.Key.Addr != o.Key.Addr {

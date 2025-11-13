@@ -65,6 +65,7 @@ const (
 	NoSupportDedicatedIPAccess             = "site does not support dedicated IP access"
 	MTClusterOrgInvalid                    = "invalid organization for multi-tenant cluster"
 	NoSupportMultipleNodePools             = "site does not support multiple node pools"
+	MTNamespaceInvalid                     = "cannot set namespace for multi-tenant cluster"
 )
 
 // cluster skip reasons
@@ -82,6 +83,7 @@ const (
 	StandaloneConflict                     = "standalone App conflict"
 	ClusterNoResources                     = "not enough resources"
 	AppManagesOwnNamespace                 = "cluster is multi-tenant but App manages its own namespaces"
+	NamespaceConflict                      = "instance namespace conflict"
 )
 
 type SkipReasons map[SkipReason]struct{}

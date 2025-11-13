@@ -425,6 +425,14 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 		IsSingleKubernetesCluster:  true,
 		SupportsAppInstDedicatedIp: true,
 		UsesIngress:                true,
+		IpAllocatedPerService:      true,
+	}, {
+		PlatformType:                  "fakebaremetal",
+		SupportsKubernetesOnly:        true,
+		KubernetesRequiresWorkerNodes: true,
+		IpAllocatedPerService:         true,
+		RequiresCrmOffEdge:            true,
+		UsesIngress:                   true,
 	}}
 	// common to all fake platforms
 	for ii := range features {
@@ -495,6 +503,12 @@ func ZoneData() []edgeproto.Zone {
 			Organization: operatorData[2],
 		},
 		Description: "US West",
+	}, { // 5
+		Key: edgeproto.ZoneKey{
+			Name:         "BareMetalZone",
+			Organization: operatorData[2],
+		},
+		Description: "Bare Metal",
 	}}
 }
 
@@ -642,6 +656,28 @@ func CloudletData() []edgeproto.Cloudlet {
 		},
 		Zone:                          zoneData[4].Key.Name,
 		PhysicalName:                  "Oregon",
+		Deployment:                    "docker",
+		DefaultResourceAlertThreshold: 80,
+	}, { // 5
+		Key: edgeproto.CloudletKey{
+			Organization: operatorData[2],
+			Name:         "BareMetal",
+		},
+		IpSupport:     edgeproto.IpSupport_IP_SUPPORT_DYNAMIC,
+		NumDynamicIps: 10,
+		Location: dme.Loc{
+			Latitude:  45.5152,
+			Longitude: -122.6784,
+		},
+		Flavor:        flavorData[0].Key,
+		PlatformType:  "fakebaremetal",
+		NotifySrvAddr: "127.0.0.1:51005",
+		EnvVar: map[string]string{
+			"FAKE_RAM_MAX":   "50000000",
+			"FAKE_VCPUS_MAX": "50000",
+		},
+		Zone:                          zoneData[5].Key.Name,
+		PhysicalName:                  "BareMetal",
 		Deployment:                    "docker",
 		DefaultResourceAlertThreshold: 80,
 	}}
@@ -850,6 +886,22 @@ func ClusterInstData() []edgeproto.ClusterInst {
 			Ram:   1024,
 			Disk:  1,
 		},
+		DisableDynamicAppinstPlacement: true,
+	}, { // edgeproto.ClusterInst // 10
+		Key: edgeproto.ClusterKey{
+			Name:         "BM1",
+			Organization: devData[0],
+		},
+		ZoneKey: zoneData[5].Key,
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "default",
+			NumNodes: 3,
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 4,
+				Ram:   4096,
+				Disk:  4,
+			},
+		}},
 		DisableDynamicAppinstPlacement: true,
 	}}
 }
@@ -1159,6 +1211,13 @@ func AppInstData() []edgeproto.AppInst {
 				}},
 			},
 		},
+	}, { // edgeproto.AppInst // 20
+		Key: edgeproto.AppInstKey{
+			Name:         appData[0].Key.Name + "8",
+			Organization: appData[0].Key.Organization,
+		},
+		AppKey:     appData[0].Key,
+		ClusterKey: clusterInstData[10].Key,
 	}}
 }
 
@@ -1195,6 +1254,7 @@ func GetAppInstRefsData() []edgeproto.AppInstRefs {
 			appInstData[2].Key.GetKeyString():  1,
 			appInstData[13].Key.GetKeyString(): 1,
 			appInstData[18].Key.GetKeyString(): 1,
+			appInstData[20].Key.GetKeyString(): 1,
 		},
 	}, { // edgeproto.AppInstRefs
 		Key: appData[1].Key,
@@ -1570,6 +1630,73 @@ func CloudletInfoData() []edgeproto.CloudletInfo {
 				}},
 			},
 		}},
+	}, { // 5 - bare metal cloudlet
+		Key:         cloudletData[5].Key,
+		State:       dme.CloudletState_CLOUDLET_STATE_READY,
+		OsMaxRam:    65536,
+		OsMaxVcores: 16,
+		OsMaxVolGb:  500,
+		Flavors: []*edgeproto.FlavorInfo{{
+			Name:  "flavor.lg-master",
+			Vcpus: uint64(4),
+			Ram:   uint64(8192),
+			Disk:  uint64(60),
+		}, {
+			// restagtbl/clouldlet resource map tests
+			Name:  "flavor.large",
+			Vcpus: uint64(10),
+			Ram:   uint64(8192),
+			Disk:  uint64(40),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-t4",
+				Vendor:  "nvidia",
+				Memory:  4,
+				Count:   1,
+			}},
+		}, {
+			Name:  "flavor.m4.large-vgpu",
+			Vcpus: uint64(12),
+			Ram:   uint64(4096),
+			Disk:  uint64(20),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-v1",
+				Vendor:  "nvidia",
+				Memory:  2,
+				Count:   1,
+			}},
+		}},
+		ResourcesSnapshot: edgeproto.InfraResourcesSnapshot{
+			Info: []edgeproto.InfraResource{{
+				Name:          "RAM",
+				Value:         uint64(1024),
+				InfraMaxValue: uint64(102400),
+			}, {
+				Name:          "vCPUs",
+				Value:         uint64(10),
+				InfraMaxValue: uint64(109),
+			}, {
+				Name:          "Disk",
+				Value:         uint64(20),
+				InfraMaxValue: uint64(5000),
+			}, {
+				Name:          "GPUs",
+				Value:         uint64(6),
+				InfraMaxValue: uint64(20),
+			}, {
+				Name:          "External IPs",
+				Value:         uint64(2),
+				InfraMaxValue: uint64(10),
+			}, {
+				Name:          "nvidia-t4",
+				InfraMaxValue: uint64(8),
+				Type:          "gpu",
+			}, {
+				Name:          "nvidia-v1",
+				InfraMaxValue: uint64(16),
+				Type:          "gpu",
+			}},
+		},
+		CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),
 	}}
 }
 
@@ -1615,6 +1742,12 @@ func CloudletRefsData() []edgeproto.CloudletRefs {
 		Key: cloudletData[4].Key,
 		ClusterInsts: []edgeproto.ClusterKey{
 			*cloudcommon.GetDefaultClustKey(cloudletData[4].Key, cloudletData[4].SingleKubernetesClusterOwner),
+		},
+	}, { // 5: bare metal cloudlet
+		// ClusterInstData[10]
+		Key: cloudletData[5].Key,
+		ClusterInsts: []edgeproto.ClusterKey{
+			clusterInstData[10].Key,
 		},
 	}}
 }
@@ -1686,6 +1819,13 @@ func CloudletRefsWithAppInstsData() []edgeproto.CloudletRefs {
 		RootLbPorts: map[int32]int32{8001: 2, 10002: 3, 65535: 1},
 		ClusterInsts: []edgeproto.ClusterKey{
 			*cloudcommon.GetDefaultClustKey(cloudletData[4].Key, cloudletData[4].SingleKubernetesClusterOwner),
+		},
+	}, { // 5: bare metal cloudlet
+		// AppInstData[20] -> AppData[0] -> ports[http:443,tcp:10002,udp:10002]
+		Key:         cloudletData[5].Key,
+		RootLbPorts: map[int32]int32{10002: 3},
+		ClusterInsts: []edgeproto.ClusterKey{
+			clusterInstData[10].Key,
 		},
 	}}
 }
@@ -2685,6 +2825,9 @@ func CreatedAppInstData() []edgeproto.AppInst {
 			appInst.CloudletKey = cloudletData[4].Key
 			appInst.ClusterKey = cloudlet4ClusterKey
 			appInst.PowerState = edgeproto.PowerState_POWER_ON
+		case 20:
+			appInst.PowerState = edgeproto.PowerState_POWER_ON
+			appInst.KubernetesResources = appData[0].KubernetesResources
 		}
 		// fill in cloudlet from cluster if non-VM app
 		if appInst.ClusterKey.Name != "" {
@@ -2747,6 +2890,9 @@ func CreatedClusterInstData() []edgeproto.ClusterInst {
 			ci.NumNodes = ci.NodePools[0].NumNodes
 		case 9:
 			ci.CloudletKey = cloudletData[1].Key
+		case 10:
+			ci.CloudletKey = cloudletData[5].Key
+			ci.NumNodes = ci.NodePools[0].NumNodes
 		}
 		for _, pool := range ci.NodePools {
 			_ = pool.Validate()

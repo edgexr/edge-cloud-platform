@@ -949,9 +949,12 @@ var NetworkAllFields = []string{
 	NetworkFieldKeyCloudletKeyOrganization,
 	NetworkFieldKeyCloudletKeyName,
 	NetworkFieldKeyCloudletKeyFederatedOrganization,
+	NetworkFieldKeyCloudletKey,
 	NetworkFieldKeyName,
+	NetworkFieldKey,
 	NetworkFieldRoutesDestinationCidr,
 	NetworkFieldRoutesNextHopIp,
+	NetworkFieldRoutes,
 	NetworkFieldConnectionType,
 	NetworkFieldDeletePrepare,
 }
@@ -960,9 +963,12 @@ var NetworkAllFieldsMap = NewFieldMap(map[string]struct{}{
 	NetworkFieldKeyCloudletKeyOrganization:          struct{}{},
 	NetworkFieldKeyCloudletKeyName:                  struct{}{},
 	NetworkFieldKeyCloudletKeyFederatedOrganization: struct{}{},
+	NetworkFieldKeyCloudletKey:                      struct{}{},
 	NetworkFieldKeyName:                             struct{}{},
+	NetworkFieldKey:                                 struct{}{},
 	NetworkFieldRoutesDestinationCidr:               struct{}{},
 	NetworkFieldRoutesNextHopIp:                     struct{}{},
+	NetworkFieldRoutes:                              struct{}{},
 	NetworkFieldConnectionType:                      struct{}{},
 	NetworkFieldDeletePrepare:                       struct{}{},
 })
@@ -971,15 +977,26 @@ var NetworkAllFieldsStringMap = map[string]string{
 	NetworkFieldKeyCloudletKeyOrganization:          "Key Cloudlet Key Organization",
 	NetworkFieldKeyCloudletKeyName:                  "Key Cloudlet Key Name",
 	NetworkFieldKeyCloudletKeyFederatedOrganization: "Key Cloudlet Key Federated Organization",
+	NetworkFieldKeyCloudletKey:                      "Key Cloudlet Key",
 	NetworkFieldKeyName:                             "Key Name",
+	NetworkFieldKey:                                 "Key",
 	NetworkFieldRoutesDestinationCidr:               "Routes Destination Cidr",
 	NetworkFieldRoutesNextHopIp:                     "Routes Next Hop Ip",
+	NetworkFieldRoutes:                              "Routes",
 	NetworkFieldConnectionType:                      "Connection Type",
 	NetworkFieldDeletePrepare:                       "Delete Prepare",
 }
 
 func (m *Network) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, NetworkFieldKey+".") || s == NetworkFieldKey
+}
+
+var NetworkBackendFieldsMap = map[string]struct{}{
+	NetworkFieldDeletePrepare: struct{}{},
+}
+
+var NetworkNoConfigFieldsMap = map[string]struct{}{
+	NetworkFieldDeletePrepare: struct{}{},
 }
 
 func (m *Network) DiffFields(o *Network, fields *FieldMap) {

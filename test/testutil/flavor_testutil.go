@@ -76,7 +76,19 @@ func (x *ShowFlavor) AssertFound(t *testing.T, obj *edgeproto.Flavor) {
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find Flavor %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "Flavor are equal")
+		diffFields := check.GetDiffFields(obj)
+		diffFieldStrs := ""
+		for _, field := range diffFields.Fields() {
+			if _, found := edgeproto.FlavorBackendFieldsMap[field]; found {
+				continue
+			}
+			if _, found := edgeproto.FlavorNoConfigFieldsMap[field]; found {
+				continue
+			}
+			str := edgeproto.FlavorAllFieldsStringMap[field]
+			diffFieldStrs += str + ", "
+		}
+		require.Equal(t, *obj, check, "Flavor differ in fields %v", diffFieldStrs)
 	}
 	if found {
 		// remove in case there are dups in the list, so the

@@ -132,13 +132,29 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	}
 	// set up ingress
 	if features.UsesIngress && appInst.UsesHTTP() {
-		ingress, err := k8smgmt.CreateIngress(ctx, client, names, appInst)
+		ingressClass := ""
+		ingressControllerPresent, _ := m.commonPf.Properties.GetValue(cloudcommon.IngressControllerPresent)
+		if ingressControllerPresent != "" || clusterInst.SingleKubernetesNamespace != "" {
+			// operator managed ingress. use the user-specified class
+			// or leave empty.
+			ingressClass, _ = m.commonPf.Properties.GetValue(cloudcommon.IngressClass)
+		} else {
+			// we manage the ingress controller, set to nginx
+			ingressClass = k8smgmt.IngressClassNginx
+		}
+		ingress, err := k8smgmt.CreateIngress(ctx, client, names, appInst, ingressClass)
 		if err != nil {
 			return err
 		}
-		ip, err := k8smgmt.GetIngressExternalIP(ctx, client, names, ingress.ObjectMeta.Name)
-		if err != nil {
-			return err
+		// Some ingress controllers like HAproxy in HA mode may not
+		// set the IP address on the ingress object, so the operator
+		// will need to specify the IP address for the ingress.
+		ip, found := m.commonPf.Properties.GetValue(cloudcommon.IngressIPV4)
+		if !found {
+			ip, err = k8smgmt.GetIngressExternalIP(ctx, client, names, ingress.ObjectMeta.Name)
+			if err != nil {
+				return err
+			}
 		}
 		fqdn := names.AppURI
 		fqdn = strings.TrimPrefix(fqdn, "https://")

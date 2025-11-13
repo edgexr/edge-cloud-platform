@@ -22,6 +22,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
 	"go.etcd.io/etcd/client/v3/concurrency"
@@ -194,6 +195,18 @@ func (s *AppInstApi) validatePotentialCloudlet(ctx context.Context, cctx *CallCo
 				return nil, NoSkipReason, err
 			}
 		}
+		if clusterOwner == "" && in.Namespace != "" {
+			// TODO: We currently do not allow users to specify the namespace
+			// for a multi-tenant cluster, to avoid namespace conflicts.
+			// We should allow it at some point but we'd need to determine
+			// a scheme to avoid conflicts with other tenants and
+			// potentially other instances from the same tenant, perhaps
+			// requiring the namespace is prefixed by the org name.
+			return nil, MTNamespaceInvalid, fmt.Errorf("cannot specify instance namespace %s for a multi-tenant cluster", in.Namespace)
+		}
+		if pc.cloudlet.SingleKubernetesNamespace != "" && in.Namespace != "" && pc.cloudlet.SingleKubernetesNamespace != in.Namespace {
+			return nil, NamespaceConflict, fmt.Errorf("specified instance namespace %s not allowed, cloudlet limits to %s", in.Namespace, pc.cloudlet.SingleKubernetesNamespace)
+		}
 	}
 	if features.SupportsKubernetesOnly && !cloudcommon.AppDeploysToKubernetes(app.Deployment) {
 		return nil, KubernetesOnly, fmt.Errorf("app deployment %s but cloudlet only supports kubernetes", app.Deployment)
@@ -285,6 +298,9 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 	if clusterInst.MultiTenant && app.ManagesOwnNamespaces {
 		return nil, AppManagesOwnNamespace, true, fmt.Errorf("cannot deploy app that manages its own namespaces to a multi-tenant cluster")
 	}
+	if clusterInst.MultiTenant && in.Namespace != "" {
+		return nil, NamespaceConflict, true, fmt.Errorf("cannot specify instance namespace %q for a multi-tenant cluster", in.Namespace)
+	}
 	clusterType := ClusterTypeUnknown
 	if clusterInst.MultiTenant {
 		clusterType = ClusterTypeMultiTenant
@@ -332,6 +348,7 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 	// this does not apply to multi-tenant clusters, as each
 	// instance will get their own namespace.
 	if !clusterInst.MultiTenant {
+		targetNamespace := k8smgmt.GetNamespace(clusterInst, app, in)
 		for _, aiKey := range refs.Apps {
 			log.SpanLog(ctx, log.DebugLevelApi, "check instances already on cluster", "cluster", key, "appinst", aiKey)
 			if aiKey.Matches(&in.Key) {
@@ -346,10 +363,8 @@ func (s *AppInstApi) validatePotentialCluster(ctx context.Context, cctx *CallCon
 			if !s.all.appApi.cache.Get(&refAi.AppKey, refApp) {
 				continue
 			}
-			if refAi.AppKey.Matches(&app.Key) {
-				// we don't support multiple instances of the same app in the
-				// same cluster
-				return nil, NoAppDuplicates, true, fmt.Errorf("cannot deploy another instance of App %s in the cluster", app.Key.GetKeyString())
+			if err := checkAppDuplicateConflict(clusterInst, app, in, targetNamespace, refApp, refAi); err != nil {
+				return nil, NoAppDuplicates, true, err
 			}
 			if cloudcommon.IsSideCarApp(app) || cloudcommon.IsSideCarApp(refApp) {
 				// ignore standalone requirements for sidecar apps

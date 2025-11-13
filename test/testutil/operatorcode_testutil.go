@@ -75,7 +75,7 @@ func (x *ShowOperatorCode) AssertFound(t *testing.T, obj *edgeproto.OperatorCode
 	check, found := x.Data[obj.GetKey().GetKeyString()]
 	require.True(t, found, "find OperatorCode %s", obj.GetKey().GetKeyString())
 	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
-		require.Equal(t, *obj, check, "OperatorCode are equal")
+		require.Equal(t, *obj, check, "OperatorCode differ")
 	}
 	if found {
 		// remove in case there are dups in the list, so the

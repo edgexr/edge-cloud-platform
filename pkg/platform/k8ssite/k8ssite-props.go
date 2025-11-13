@@ -36,6 +36,8 @@ var Props = map[string]*edgeproto.PropertyInfo{
 	cloudcommon.IngressHTTPPort:          cloudcommon.IngressHTTPPortProp,
 	cloudcommon.IngressHTTPSPort:         cloudcommon.IngressHTTPSPortProp,
 	cloudcommon.IngressControllerPresent: cloudcommon.IngressControllerPresentProp,
+	cloudcommon.IngressClass:             cloudcommon.IngressClassProp,
+	cloudcommon.IngressIPV4:              cloudcommon.IngressIPV4Prop,
 	cloudcommon.NamespaceLabels:          cloudcommon.NamespaceLabelsProp,
 }
 

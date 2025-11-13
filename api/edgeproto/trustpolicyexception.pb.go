@@ -1047,47 +1047,63 @@ var TrustPolicyExceptionAllFields = []string{
 	TrustPolicyExceptionFieldKeyAppKeyOrganization,
 	TrustPolicyExceptionFieldKeyAppKeyName,
 	TrustPolicyExceptionFieldKeyAppKeyVersion,
+	TrustPolicyExceptionFieldKeyAppKey,
 	TrustPolicyExceptionFieldKeyZonePoolKeyOrganization,
 	TrustPolicyExceptionFieldKeyZonePoolKeyName,
+	TrustPolicyExceptionFieldKeyZonePoolKey,
 	TrustPolicyExceptionFieldKeyName,
+	TrustPolicyExceptionFieldKey,
 	TrustPolicyExceptionFieldState,
 	TrustPolicyExceptionFieldOutboundSecurityRulesProtocol,
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMin,
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMax,
 	TrustPolicyExceptionFieldOutboundSecurityRulesRemoteCidr,
+	TrustPolicyExceptionFieldOutboundSecurityRules,
 }
 
 var TrustPolicyExceptionAllFieldsMap = NewFieldMap(map[string]struct{}{
 	TrustPolicyExceptionFieldKeyAppKeyOrganization:             struct{}{},
 	TrustPolicyExceptionFieldKeyAppKeyName:                     struct{}{},
 	TrustPolicyExceptionFieldKeyAppKeyVersion:                  struct{}{},
+	TrustPolicyExceptionFieldKeyAppKey:                         struct{}{},
 	TrustPolicyExceptionFieldKeyZonePoolKeyOrganization:        struct{}{},
 	TrustPolicyExceptionFieldKeyZonePoolKeyName:                struct{}{},
+	TrustPolicyExceptionFieldKeyZonePoolKey:                    struct{}{},
 	TrustPolicyExceptionFieldKeyName:                           struct{}{},
+	TrustPolicyExceptionFieldKey:                               struct{}{},
 	TrustPolicyExceptionFieldState:                             struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesProtocol:     struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMin: struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMax: struct{}{},
 	TrustPolicyExceptionFieldOutboundSecurityRulesRemoteCidr:   struct{}{},
+	TrustPolicyExceptionFieldOutboundSecurityRules:             struct{}{},
 })
 
 var TrustPolicyExceptionAllFieldsStringMap = map[string]string{
 	TrustPolicyExceptionFieldKeyAppKeyOrganization:             "Key App Key Organization",
 	TrustPolicyExceptionFieldKeyAppKeyName:                     "Key App Key Name",
 	TrustPolicyExceptionFieldKeyAppKeyVersion:                  "Key App Key Version",
+	TrustPolicyExceptionFieldKeyAppKey:                         "Key App Key",
 	TrustPolicyExceptionFieldKeyZonePoolKeyOrganization:        "Key Zone Pool Key Organization",
 	TrustPolicyExceptionFieldKeyZonePoolKeyName:                "Key Zone Pool Key Name",
+	TrustPolicyExceptionFieldKeyZonePoolKey:                    "Key Zone Pool Key",
 	TrustPolicyExceptionFieldKeyName:                           "Key Name",
+	TrustPolicyExceptionFieldKey:                               "Key",
 	TrustPolicyExceptionFieldState:                             "State",
 	TrustPolicyExceptionFieldOutboundSecurityRulesProtocol:     "Outbound Security Rules Protocol",
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMin: "Outbound Security Rules Port Range Min",
 	TrustPolicyExceptionFieldOutboundSecurityRulesPortRangeMax: "Outbound Security Rules Port Range Max",
 	TrustPolicyExceptionFieldOutboundSecurityRulesRemoteCidr:   "Outbound Security Rules Remote Cidr",
+	TrustPolicyExceptionFieldOutboundSecurityRules:             "Outbound Security Rules",
 }
 
 func (m *TrustPolicyException) IsKeyField(s string) bool {
 	return strings.HasPrefix(s, TrustPolicyExceptionFieldKey+".") || s == TrustPolicyExceptionFieldKey
 }
+
+var TrustPolicyExceptionBackendFieldsMap = map[string]struct{}{}
+
+var TrustPolicyExceptionNoConfigFieldsMap = map[string]struct{}{}
 
 func (m *TrustPolicyException) DiffFields(o *TrustPolicyException, fields *FieldMap) {
 	if m.Key.AppKey.Organization != o.Key.AppKey.Organization {

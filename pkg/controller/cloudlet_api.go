@@ -33,6 +33,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
 	"github.com/edgexr/edge-cloud-platform/pkg/resspec"
+	"github.com/edgexr/edge-cloud-platform/pkg/util"
 	"github.com/edgexr/edge-cloud-platform/pkg/util/tasks"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
 	"github.com/gogo/protobuf/types"
@@ -672,6 +673,14 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 			if in.EnableDefaultServerlessCluster {
 				return errors.New("cannot enable default serverless cluster for single kubernetes cluster platform")
 			}
+			if in.SingleKubernetesNamespace != "" {
+				if in.SingleKubernetesClusterOwner == "" {
+					return errors.New("single kubernetes namespace requires specifying the single kubernetes cluster owner")
+				}
+				if err := util.ValidDNSName(in.SingleKubernetesNamespace); err != nil {
+					return fmt.Errorf("invalid single kubernetes namespace: %s", err.Error())
+				}
+			}
 			// create ClusterInst representation of Cloudlet
 			err := s.all.clusterInstApi.createCloudletSingularCluster(stm, in, in.SingleKubernetesClusterOwner)
 			if err != nil {
@@ -680,6 +689,9 @@ func (s *CloudletApi) createCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		} else {
 			if in.SingleKubernetesClusterOwner != "" {
 				return fmt.Errorf("Single kubernetes cluster owner can only be set on a single cluster platform")
+			}
+			if in.SingleKubernetesNamespace != "" {
+				return fmt.Errorf("Single kubernetes namespace can only be set on a single cluster platform")
 			}
 		}
 
@@ -1208,6 +1220,33 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 		old.DeepCopyIn(cur)
 		cur.CopyInFields(in)
 		diffFields = old.GetDiffFields(cur)
+
+		if fmap.Has(edgeproto.CloudletFieldSingleKubernetesNamespace) {
+			if !features.IsSingleKubernetesCluster {
+				return fmt.Errorf("Single kubernetes namespace can only be set on a single cluster platform")
+			}
+			if cur.SingleKubernetesClusterOwner == "" {
+				return errors.New("single kubernetes namespace requires specifying the single kubernetes cluster owner")
+			}
+			if cur.SingleKubernetesNamespace != "" {
+				if err := util.ValidDNSName(in.SingleKubernetesNamespace); err != nil {
+					return fmt.Errorf("invalid single kubernetes namespace %q: %s", in.SingleKubernetesNamespace, err.Error())
+				}
+			}
+			defaultClustKey := cloudcommon.GetDefaultClustKey(in.Key, in.SingleKubernetesClusterOwner)
+			clusterRefs := edgeproto.ClusterRefs{}
+			if s.all.clusterRefsApi.store.STMGet(stm, defaultClustKey, &clusterRefs) {
+				if len(clusterRefs.Apps) > 0 {
+					return fmt.Errorf("cannot change single kubernetes namespace when app instances exist")
+				}
+			}
+			// namespace is also copied onto default cluster
+			clusterInst := edgeproto.ClusterInst{}
+			if s.all.clusterInstApi.store.STMGet(stm, defaultClustKey, &clusterInst) {
+				clusterInst.SingleKubernetesNamespace = in.SingleKubernetesNamespace
+				s.all.clusterInstApi.store.STMPut(stm, &clusterInst)
+			}
+		}
 
 		newMaintenanceState = cur.MaintenanceState
 		if newMaintenanceState != old.MaintenanceState {
