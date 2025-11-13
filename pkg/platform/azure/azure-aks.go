@@ -27,6 +27,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 )
 
@@ -196,4 +197,8 @@ func (v *AzurePlatform) GetAllClusters(ctx context.Context) ([]*edgeproto.Cloudl
 
 func (v *AzurePlatform) RegisterCluster(ctx context.Context, clusterName string, in *edgeproto.ClusterInst) (map[string]string, error) {
 	return nil, errors.New("not supported")
+}
+
+func (s *AzurePlatform) GetLoadBalancerAPI() platform.LoadBalancerApi {
+	return nil
 }

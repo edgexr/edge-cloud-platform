@@ -287,3 +287,34 @@ func WaitForAppServices(ctx context.Context, client ssh.Client, names *KubeNames
 		time.Sleep(3 * time.Second)
 	}
 }
+
+// LoadbalancerIPsAnnotation is for specifying IPs for a loadbalancer
+// use plural for dual stack support in the future
+// Example: kube-vip.io/loadbalancerIPs: 10.1.2.3,fd00::100
+// See https://github.com/kube-vip/kube-vip-cloud-provider/blob/main/pkg/provider/loadBalancer.go
+const LoadbalancerIPsAnnotation = "kube-vip.io/loadbalancerIPs"
+
+func SetLoadBalancerKubeVipIP(ctx context.Context, client ssh.Client, names *KconfNames, lb *edgeproto.LoadBalancer) error {
+	cmd := fmt.Sprintf("kubectl %s annotate -n %s svc %s %s=%s", names.KconfArg, lb.Key.Namespace, lb.Key.Name, LoadbalancerIPsAnnotation, lb.Ipv4)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to set loadbalancer IP cmd %s: %s, %s", cmd, out, err)
+	}
+	return nil
+}
+
+// PatchServiceIP updates the service to have the given external ips.
+func PatchServiceIP(ctx context.Context, client ssh.Client, names *KconfNames, servicename, ipaddr, ipv6Addr, namespace string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "patch service IP", "servicename", servicename, "ipaddr", ipaddr, "ipv6Addr", ipv6Addr, "namespace", namespace)
+
+	// TODO: handle ipv6Addr, requires ipv6 enabled on kubernetes
+	cmd := fmt.Sprintf(`kubectl %s patch svc %s -n %s -p '{"spec":{"externalIPs":["%s"]}}'`, names.KconfArg, servicename, namespace, ipaddr)
+	out, err := client.Output(cmd)
+	if err != nil {
+		log.SpanLog(ctx, log.DebugLevelInfra, "patch svc failed",
+			"servicename", servicename, "out", out, "err", err)
+		return fmt.Errorf("error patching for kubernetes service, %s, %s, %v", cmd, out, err)
+	}
+	log.SpanLog(ctx, log.DebugLevelInfra, "patched externalIPs on service", "service", servicename, "externalIPs", ipaddr)
+	return nil
+}

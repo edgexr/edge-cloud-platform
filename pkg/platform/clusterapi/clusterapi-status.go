@@ -148,20 +148,12 @@ func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, 
 	// check if we can get kubeconfig
 	status.KconfNames = lastStatus.KconfNames
 	if status.KconfNames.KconfName == "" {
-		kc, err := s.getCredentials(ctx, client, names, clusterName)
+		clusterNames, err := s.ensureClusterKubeconfig(ctx, client, names, clusterInst, clusterName)
 		if err == nil {
-			kconfName := k8smgmt.GetKconfName(clusterInst)
-			err = k8smgmt.EnsureKubeconfig(ctx, client, kconfName, kc)
-			if err != nil {
-				log.SpanLog(ctx, log.DebugLevelInfra, "failed to ensure kubeconfig", "name", kconfName, "err", err)
-			} else {
-				// successfully wrote kubeconfig
-				log.SpanLog(ctx, log.DebugLevelInfra, "got cluster kubeconfig", "clusterName", clusterName, "kconfName", kconfName)
-				status.KconfNames = k8smgmt.KconfNames{
-					KconfName: kconfName,
-					KconfArg:  "--kubeconfig=" + kconfName,
-				}
-			}
+			status.KconfNames = *clusterNames
+		} else {
+			// just log error and retry
+			log.SpanLog(ctx, log.DebugLevelInfra, "check cluster status failed to ensure cluster kubeconfig", "clusterName", clusterName, "err", err)
 		}
 	}
 	// check if we can contact the kube API

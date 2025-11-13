@@ -16,6 +16,7 @@ package util
 
 import (
 	"fmt"
+	"iter"
 	"net"
 	"net/netip"
 	"os"
@@ -65,12 +66,10 @@ func TrimScheme(addr string) string {
 	return addr[idx+3:]
 }
 
-// MapIPs turns an IPs comma separated list of ips or
-// ip ranges into a lookup map of the ip strings.
+// ValidateIPRanges checks that the passed in string is
+// comma-separated list of ips or ip ranges.
 // See the unit test for example strings.
-func MapIPs(ips string) (map[string]struct{}, error) {
-	mappedIPs := map[string]struct{}{}
-
+func ValidateIPRanges(ips string) error {
 	parts := strings.SplitSeq(ips, ",")
 	for part := range parts {
 		part = strings.TrimSpace(part)
@@ -78,29 +77,69 @@ func MapIPs(ips string) (map[string]struct{}, error) {
 		if len(iprange) == 2 {
 			start, err := netip.ParseAddr(iprange[0])
 			if err != nil {
-				return nil, fmt.Errorf("invalid IP range start %s, %s", part, err)
+				return fmt.Errorf("invalid IP range start %s, %s", part, err)
 			}
 			end, err := netip.ParseAddr(iprange[1])
 			if err != nil {
-				return nil, fmt.Errorf("invalid IP range end %s, %s", part, err)
+				return fmt.Errorf("invalid IP range end %s, %s", part, err)
 			}
 			cmp := start.Compare(end)
-			if cmp == 0 {
-				mappedIPs[start.String()] = struct{}{}
-			} else if cmp < 0 {
-				for ip := start; ip.Compare(end) <= 0; ip = ip.Next() {
-					mappedIPs[ip.String()] = struct{}{}
-				}
-			} else {
-				return nil, fmt.Errorf("invalid IP range %s, end must be greater than start", part)
+			if cmp > 0 {
+				return fmt.Errorf("invalid IP range %s, end must be greater than start", part)
 			}
 		} else {
-			ip, err := netip.ParseAddr(part)
+			_, err := netip.ParseAddr(part)
 			if err != nil {
-				return nil, fmt.Errorf("invalid IP %s, %s", part, err)
+				return fmt.Errorf("invalid IP %s, %s", part, err)
 			}
-			mappedIPs[ip.String()] = struct{}{}
 		}
 	}
-	return mappedIPs, nil
+	return nil
+}
+
+// IPRangesIter iterates in order over the specified IP ranges.
+// It avoids duplicate IPs.
+func IPRangesIter(ips string) iter.Seq[string] {
+	return func(yield func(string) bool) {
+		found := map[string]struct{}{}
+		// doYield avoids duplicate IPs
+		doYield := func(ip string) bool {
+			if _, ok := found[ip]; ok {
+				return true
+			}
+			found[ip] = struct{}{}
+			return yield(ip)
+		}
+
+		for arange := range strings.SplitSeq(ips, ",") {
+			arange = strings.TrimSpace(arange)
+			iprange := strings.Split(arange, "-")
+			if len(iprange) == 2 {
+				start, err := netip.ParseAddr(iprange[0])
+				if err != nil {
+					continue
+				}
+				end, err := netip.ParseAddr(iprange[1])
+				if err != nil {
+					continue
+				}
+				cmp := start.Compare(end)
+				if cmp == 0 {
+					if !doYield(start.String()) {
+						return
+					}
+				} else if cmp < 0 {
+					for ip := start; ip.Compare(end) <= 0; ip = ip.Next() {
+						if !doYield(ip.String()) {
+							return
+						}
+					}
+				}
+			} else {
+				if !doYield(arange) {
+					return
+				}
+			}
+		}
+	}
 }

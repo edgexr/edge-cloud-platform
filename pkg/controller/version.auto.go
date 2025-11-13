@@ -34,6 +34,7 @@ var VersionHash_UpgradeFuncs = []VersionUpgrade{
 	{58, "b25b4e18e9a1dadfd3006e23fabfbf95", AppObjID, "AppObjID"},
 	{59, "abec45b13db5cd29e3bcf63d3b80be29", nil, ""},
 	{60, "2d0b51b0cb6eaff42225cd1795e168e7", nil, ""},
+	{61, "a757190c1d56f9c8cd3ad43f02d6aa56", nil, ""},
 }
 
 // Auto-generated code: DO NOT EDIT

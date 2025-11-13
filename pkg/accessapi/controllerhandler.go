@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudletips"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 )
@@ -30,12 +31,14 @@ import (
 type ControllerHandler struct {
 	cloudletVerified *edgeproto.Cloudlet
 	vaultClient      *VaultClient
+	cloudletIPs      *cloudletips.CloudletIPs
 }
 
-func NewControllerHandler(cloudletVerified *edgeproto.Cloudlet, vaultClient *VaultClient) *ControllerHandler {
+func NewControllerHandler(cloudletVerified *edgeproto.Cloudlet, vaultClient *VaultClient, cloudletIPs *cloudletips.CloudletIPs) *ControllerHandler {
 	return &ControllerHandler{
 		cloudletVerified: cloudletVerified,
 		vaultClient:      vaultClient,
+		cloudletIPs:      cloudletIPs,
 	}
 }
 
@@ -190,6 +193,27 @@ func (s *ControllerHandler) GetAccessData(ctx context.Context, req *edgeproto.Ac
 			return nil, err
 		}
 		out, merr = json.Marshal(vars)
+	case platform.ReserveLoadBalancerIP:
+		lbReq := platform.LoadBalancerIPRequest{}
+		err := json.Unmarshal(req.Data, &lbReq)
+		if err != nil {
+			return nil, err
+		}
+		lb, err := s.cloudletIPs.ReserveLoadBalancerIP(ctx, lbReq.CloudletKey, lbReq.ClusterKey, lbReq.LBKey)
+		if err != nil {
+			return nil, err
+		}
+		out, merr = json.Marshal(lb)
+	case platform.FreeLoadBalancerIP:
+		lbReq := platform.LoadBalancerIPRequest{}
+		err := json.Unmarshal(req.Data, &lbReq)
+		if err != nil {
+			return nil, err
+		}
+		err = s.cloudletIPs.FreeLoadBalancerIP(ctx, lbReq.CloudletKey, lbReq.ClusterKey, lbReq.LBKey)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("Unexpected request data type %s", req.Type)
 	}

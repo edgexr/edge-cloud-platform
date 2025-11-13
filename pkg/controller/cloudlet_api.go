@@ -1816,6 +1816,7 @@ func (s *CloudletApi) deleteCloudletInternal(cctx *CallContext, in *edgeproto.Cl
 		s.store.STMDel(stm, &in.Key)
 		s.dnsLabelStore.STMDel(stm, updateCloudlet.DnsLabel)
 		s.all.cloudletRefsApi.store.STMDel(stm, &in.Key)
+		s.all.cloudletIPsApi.cache.Store.STMDel(stm, &in.Key)
 		if features.IsSingleKubernetesCluster {
 			s.all.clusterInstApi.deleteCloudletSingularCluster(stm, &in.Key, updateCloudlet.SingleKubernetesClusterOwner)
 		}

@@ -24,6 +24,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	certscache "github.com/edgexr/edge-cloud-platform/pkg/proxy/certs-cache"
 	ssh "github.com/edgexr/golang-ssh"
@@ -38,6 +39,7 @@ const (
 	IngressNginxExternalIPRetry   = 2 * time.Second
 	IngressNginxExternalIPRetries = 30
 	IngressDefaultCertSecret      = "default-cert"
+	IngressNginxLoadBalancerName  = "ingress-nginx-controller"
 )
 
 type RefreshCertsOpts struct {
@@ -93,7 +95,7 @@ func RefreshCert(ctx context.Context, client ssh.Client, names *KconfNames, clou
 
 // InstallIngressNginx installs the ingress-nginx controller
 // in the cluster.
-func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, ops ...IngressNginxOp) error {
+func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames, cloudletKey *edgeproto.CloudletKey, updateCallback edgeproto.CacheUpdateCallback, ops ...IngressNginxOp) error {
 	opts := &IngressNginxOptions{}
 	for _, op := range ops {
 		op(opts)
@@ -122,8 +124,22 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 		return err
 	}
 
+	if opts.ensureLB != nil {
+		updateCallback(edgeproto.UpdateTask, "Ensuring ingress nginx load balancer")
+		lbKey := edgeproto.LoadBalancerKey{
+			Name:      IngressNginxLoadBalancerName,
+			Namespace: IngressNginxNamespace,
+		}
+		log.SpanLog(ctx, log.DebugLevelInfra, "ingress nginx ensuring load balancer")
+		_, err := opts.ensureLB.lbAPI.EnsureLoadBalancer(ctx, *cloudletKey, opts.ensureLB.clusterKey, lbKey)
+		if err != nil {
+			return fmt.Errorf("failed to ensure ingress nginx load balancer: %s", err)
+		}
+	}
+
 	if opts.waitForExternalIP {
 		externalIP := ""
+		updateCallback(edgeproto.UpdateTask, "Waiting for ingress nginx external IP")
 		log.SpanLog(ctx, log.DebugLevelInfra, "install ingress nginx waiting for external IP")
 		for ii := 0; ii < IngressNginxExternalIPRetries; ii++ {
 			svcs, err := GetKubeServices(ctx, client, names, WithObjectNamespace(IngressNginxNamespace))
@@ -167,7 +183,7 @@ func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames
 
 	// install ingress-nginx
 	updateCallback(edgeproto.UpdateTask, "Installing ingress controller")
-	err = InstallIngressNginx(ctx, client, names, ops...)
+	err = InstallIngressNginx(ctx, client, names, cloudletKey, updateCallback, ops...)
 	if err != nil {
 		return err
 	}
@@ -177,6 +193,12 @@ func SetupIngressNginx(ctx context.Context, client ssh.Client, names *KconfNames
 type IngressNginxOptions struct {
 	waitForExternalIP bool
 	helmSetCmds       []string
+	ensureLB          *EnsureLBOptions
+}
+
+type EnsureLBOptions struct {
+	lbAPI      platform.LoadBalancerApi
+	clusterKey edgeproto.ClusterKey
 }
 
 type IngressNginxOp func(*IngressNginxOptions)
@@ -190,5 +212,14 @@ func WithIngressNginxWaitForExternalIP() IngressNginxOp {
 func WithIngressNginxHelmSetCmd(cmd string) IngressNginxOp {
 	return func(opts *IngressNginxOptions) {
 		opts.helmSetCmds = append(opts.helmSetCmds, cmd)
+	}
+}
+
+func WithIngressNginxEnsureLB(lbAPI platform.LoadBalancerApi, clusterKey edgeproto.ClusterKey) IngressNginxOp {
+	return func(opts *IngressNginxOptions) {
+		opts.ensureLB = &EnsureLBOptions{
+			lbAPI:      lbAPI,
+			clusterKey: clusterKey,
+		}
 	}
 }

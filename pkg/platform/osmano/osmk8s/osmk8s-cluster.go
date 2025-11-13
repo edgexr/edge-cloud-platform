@@ -21,6 +21,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/osmano/osmclient"
 )
 
@@ -125,4 +126,8 @@ func (s *Platform) RegisterCluster(ctx context.Context, clusterName string, in *
 		osmclient.ClusterIDAnnotation: clusterInfo.ID,
 	}
 	return infraAnnotations, nil
+}
+
+func (s *Platform) GetLoadBalancerAPI() platform.LoadBalancerApi {
+	return nil
 }

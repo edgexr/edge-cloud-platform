@@ -260,7 +260,6 @@ resources:
                           else
                               echo "No update needed"
                           fi
-                          
                   - path: /etc/cron.d/configure-node
                     owner: root:root
                     permissions: '0644'
@@ -422,7 +421,6 @@ resources:
                           else
                               echo "No update needed"
                           fi
-                          
                   - path: /etc/cron.d/configure-node
                     owner: root:root
                     permissions: '0644'
@@ -586,7 +584,6 @@ resources:
                           else
                               echo "No update needed"
                           fi
-                          
                   - path: /etc/cron.d/configure-node
                     owner: root:root
                     permissions: '0644'
@@ -728,7 +725,6 @@ resources:
                           else
                               echo "No update needed"
                           fi
-                          
                   - path: /etc/cron.d/configure-node
                     owner: root:root
                     permissions: '0644'
@@ -870,7 +866,6 @@ resources:
                           else
                               echo "No update needed"
                           fi
-                          
                   - path: /etc/cron.d/configure-node
                     owner: root:root
                     permissions: '0644'

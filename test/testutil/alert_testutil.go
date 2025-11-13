@@ -351,6 +351,8 @@ type DummyServer struct {
 	CloudletRefsCache             edgeproto.CloudletRefsCache
 	ClusterRefsCache              edgeproto.ClusterRefsCache
 	AppInstRefsCache              edgeproto.AppInstRefsCache
+	CloudletIPsCache              edgeproto.CloudletIPsCache
+	LoadBalancerCache             edgeproto.LoadBalancerCache
 	FlowRateLimitSettingsCache    edgeproto.FlowRateLimitSettingsCache
 	MaxReqsRateLimitSettingsCache edgeproto.MaxReqsRateLimitSettingsCache
 	AppInstClientKeyCache         edgeproto.AppInstClientKeyCache
@@ -397,6 +399,8 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.InitCloudletRefsCache(&d.CloudletRefsCache)
 	edgeproto.InitClusterRefsCache(&d.ClusterRefsCache)
 	edgeproto.InitAppInstRefsCache(&d.AppInstRefsCache)
+	edgeproto.InitCloudletIPsCache(&d.CloudletIPsCache)
+	edgeproto.InitLoadBalancerCache(&d.LoadBalancerCache)
 	edgeproto.InitFlowRateLimitSettingsCache(&d.FlowRateLimitSettingsCache)
 	edgeproto.InitMaxReqsRateLimitSettingsCache(&d.MaxReqsRateLimitSettingsCache)
 	edgeproto.InitAppInstClientKeyCache(&d.AppInstClientKeyCache)
@@ -430,6 +434,7 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterCloudletRefsApiServer(server, d)
 	edgeproto.RegisterClusterRefsApiServer(server, d)
 	edgeproto.RegisterAppInstRefsApiServer(server, d)
+	edgeproto.RegisterCloudletIPsApiServer(server, d)
 	edgeproto.RegisterRateLimitSettingsApiServer(server, d)
 	edgeproto.RegisterAppInstClientApiServer(server, d)
 	edgeproto.RegisterCloudletNodeApiServer(server, d)
@@ -488,6 +493,7 @@ type Client interface {
 	CloudletRefsApiClient
 	ClusterRefsApiClient
 	AppInstRefsApiClient
+	CloudletIPsApiClient
 	RateLimitSettingsApiClient
 	AppInstClientApiClient
 	ExecApiClient

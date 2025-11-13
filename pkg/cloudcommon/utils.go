@@ -189,3 +189,20 @@ func CidrContainsCidr(n1, n2 *net.IPNet) bool {
 	}
 	return true
 }
+
+// TemplateIndent is used to indent multi line strings in a yaml template.
+// Use via: template.New().Funcs(template.FuncMap{"Indent": TemplateIndent})
+func TemplateIndent(values ...any) string {
+	s := values[0].(string)
+	l := 4
+	if len(values) > 1 {
+		l = values[1].(int)
+	}
+	s = strings.TrimSuffix(s, "\n")
+	var newStr []string
+	indent := strings.Repeat(" ", l)
+	for v := range strings.SplitSeq(string(s), "\n") {
+		newStr = append(newStr, indent+v)
+	}
+	return strings.Join(newStr, "\n")
+}

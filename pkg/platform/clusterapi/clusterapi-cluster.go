@@ -26,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
 	infrav1 "github.com/metal3-io/cluster-api-provider-metal3/api/v1beta1"
@@ -69,6 +70,22 @@ func (s *ClusterAPI) getCredentials(ctx context.Context, client ssh.Client, name
 		return nil, fmt.Errorf("CAPI get credentials failed, %s, %s, %s, %s", cmd, out, outerr, err)
 	}
 	return []byte(out), nil
+}
+
+func (s *ClusterAPI) ensureClusterKubeconfig(ctx context.Context, client ssh.Client, capiNames *k8smgmt.KconfNames, clusterInst *edgeproto.ClusterInst, clusterName string) (*k8smgmt.KconfNames, error) {
+	kc, err := s.getCredentials(ctx, client, capiNames, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	kconfName := k8smgmt.GetKconfName(clusterInst)
+	err = k8smgmt.EnsureKubeconfig(ctx, client, kconfName, kc)
+	if err != nil {
+		return nil, err
+	}
+	return &k8smgmt.KconfNames{
+		KconfName: kconfName,
+		KconfArg:  "--kubeconfig=" + kconfName,
+	}, nil
 }
 
 func (s *ClusterAPI) CreateClusterPrerequisites(ctx context.Context, clusterName string) error {
@@ -117,7 +134,7 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	if clusterInst.Annotations == nil {
 		return "", fmt.Errorf("no floating VIP allocated for cluster %s", clusterName)
 	}
-	vip, ok := clusterInst.Annotations[cloudcommon.AnnotationFloatingVIP]
+	vip, ok := clusterInst.Annotations[cloudcommon.AnnotationControlVIP]
 	if !ok {
 		return "", fmt.Errorf("no floating VIP allocated for cluster %s", clusterName)
 	}
@@ -409,7 +426,13 @@ func (s *ClusterAPI) RunClusterDeleteCommand(ctx context.Context, clusterName st
 }
 
 func (s *ClusterAPI) GetClusterAddonInfo(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (*k8smgmt.ClusterAddonInfo, error) {
-	info := k8smgmt.ClusterAddonInfo{}
+	info := k8smgmt.ClusterAddonInfo{
+		IngressNginxOps: []k8smgmt.IngressNginxOp{
+			k8smgmt.WithIngressNginxEnsureLB(s, clusterInst.Key),
+			k8smgmt.WithIngressNginxWaitForExternalIP(),
+		},
+	}
+
 	return &info, nil
 }
 
@@ -447,4 +470,50 @@ func (s *ClusterAPI) GetAllClusters(ctx context.Context) ([]*edgeproto.CloudletM
 
 func (s *ClusterAPI) RegisterCluster(ctx context.Context, clusterName string, in *edgeproto.ClusterInst) (map[string]string, error) {
 	return nil, errors.New("not supported")
+}
+
+func (s *ClusterAPI) GetLoadBalancerAPI() platform.LoadBalancerApi {
+	return s
+}
+
+func (s *ClusterAPI) EnsureLoadBalancer(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) (*edgeproto.LoadBalancer, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ensure load balancer", "cloudletKey", cloudletKey, "clusterKey", clusterKey, "lbKey", lbKey)
+	lb, err := s.accessApi.ReserveLoadBalancerIP(ctx, cloudletKey, clusterKey, lbKey)
+	if err != nil {
+		return nil, err
+	}
+	clusterInst := &edgeproto.ClusterInst{}
+	if !s.caches.ClusterInstCache.Get(&clusterKey, clusterInst) {
+		return nil, clusterKey.NotFoundError()
+	}
+	clusterName := s.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
+	client := s.getClient()
+	names, err := s.ensureCAPIKubeconfig(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	clusterNames, err := s.ensureClusterKubeconfig(ctx, client, names, clusterInst, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	// clusterapi uses kube-vip to advertise load balancer IPs.
+	// We do not create external LBs, instead traffic flows
+	// directly to the node with the VIP and is distributed by
+	// kubeproxy/cilium.
+	err = k8smgmt.SetLoadBalancerKubeVipIP(ctx, s.getClient(), clusterNames, lb)
+	if err != nil {
+		return nil, err
+	}
+	/*
+		err = k8smgmt.PatchServiceIP(ctx, client, clusterNames, lbKey.Name, lb.Ipv4, "", lbKey.Namespace)
+		if err != nil {
+			return nil, err
+		}
+	*/
+	return lb, nil
+}
+
+func (s *ClusterAPI) DeleteLoadBalancer(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "delete load balancer", "cloudletKey", cloudletKey, "clusterKey", clusterKey, "lbKey", lbKey)
+	return s.accessApi.FreeLoadBalancerIP(ctx, cloudletKey, clusterKey, lbKey)
 }

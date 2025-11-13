@@ -54,6 +54,7 @@ type ClusterAPI struct {
 	infra       string
 	cloudletKey edgeproto.CloudletKey
 	accessApi   platform.AccessApi
+	caches      *platform.Caches
 }
 
 func NewPlatform() platform.Platform {
@@ -82,7 +83,7 @@ func (s *ClusterAPI) getClient() ssh.Client {
 	return &pc.LocalClient{}
 }
 
-func (s *ClusterAPI) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform) error {
+func (s *ClusterAPI) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform, caches *platform.Caches) error {
 	s.accessVars = accessVars
 	s.properties = properties
 	s.namespace, _ = properties.GetValue(ManagementNamespace)
@@ -96,6 +97,7 @@ func (s *ClusterAPI) Init(accessVars map[string]string, properties *infracommon.
 	}
 	s.cloudletKey = *commonPf.PlatformConfig.CloudletKey
 	s.accessApi = commonPf.PlatformConfig.AccessApi
+	s.caches = caches
 	return nil
 }
 

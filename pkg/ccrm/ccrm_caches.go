@@ -38,3 +38,9 @@ func (s *CCRMCaches) Init(ctx context.Context) {
 	edgeproto.InitClusterInstInfoCache(&s.ClusterInstInfoCache)
 	edgeproto.InitCloudletInfoCache(&s.CloudletInfoCache)
 }
+
+// CCRMStores are caches initialized with stores, primarily
+// for reading from the store in a STM transaction.
+type CCRMStores struct {
+	CloudletIPsCache edgeproto.CloudletIPsCache
+}

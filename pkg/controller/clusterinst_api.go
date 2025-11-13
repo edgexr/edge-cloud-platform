@@ -784,7 +784,6 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if !s.all.cloudletInfoApi.store.STMGet(stm, &in.CloudletKey, &info) {
 			return fmt.Errorf("No resource information found for Cloudlet %s", in.CloudletKey)
 		}
-
 		refs := edgeproto.CloudletRefs{}
 		if !s.all.cloudletRefsApi.store.STMGet(stm, &in.CloudletKey, &refs) {
 			initCloudletRefs(&refs, &in.CloudletKey)
@@ -910,6 +909,15 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		}
 		err = allocateIP(ctx, in, &cloudlet, cloudlet.PlatformType, features, &refs)
 		if err != nil {
+			return err
+		}
+		// Some platforms like ClusterAPI require an IP to assign
+		// to the cluster. This IP must be allocated before creating
+		// the cluster. To avoid race conditions, we allocate the IP
+		// here transactionally in the controller instead of in the
+		// CCRM in the platform specific code which may have race
+		// conditions.
+		if err := s.all.cloudletIPsApi.cloudletIPs.ReserveControlPlaneIP(stm, &cloudlet, in); err != nil {
 			return err
 		}
 		refs.ClusterInsts = append(refs.ClusterInsts, in.Key)
@@ -1533,6 +1541,7 @@ func (s *ClusterInstApi) deleteClusterInstInternal(cctx *CallContext, in *edgepr
 			s.store.STMDel(stm, &in.Key)
 			s.dnsLabelStore.STMDel(stm, &in.CloudletKey, in.DnsLabel)
 			s.all.clusterRefsApi.deleteRef(stm, &in.Key)
+			s.all.cloudletIPsApi.cloudletIPs.FreeControlPlaneIP(stm, in.CloudletKey, in.Key)
 		} else {
 			in.State = edgeproto.TrackedState_DELETE_REQUESTED
 			s.store.STMPut(stm, in)
@@ -1752,6 +1761,7 @@ func (s *ClusterInstApi) DeleteFromInfo(ctx context.Context, in *edgeproto.Clust
 		s.store.STMDel(stm, &in.Key)
 		s.dnsLabelStore.STMDel(stm, &inst.CloudletKey, inst.DnsLabel)
 		s.all.clusterRefsApi.deleteRef(stm, &in.Key)
+		s.all.cloudletIPsApi.cloudletIPs.FreeControlPlaneIP(stm, inst.CloudletKey, in.Key)
 
 		return nil
 	})
@@ -1774,6 +1784,7 @@ func (s *ClusterInstApi) ReplaceErrorState(ctx context.Context, in *edgeproto.Cl
 			s.store.STMDel(stm, &in.Key)
 			s.dnsLabelStore.STMDel(stm, &in.CloudletKey, inst.DnsLabel)
 			s.all.clusterRefsApi.deleteRef(stm, &in.Key)
+			s.all.cloudletIPsApi.cloudletIPs.FreeControlPlaneIP(stm, in.CloudletKey, in.Key)
 		} else {
 			inst.State = newState
 			inst.Errors = nil
@@ -2073,6 +2084,7 @@ func (s *ClusterInstApi) deleteCloudletSingularCluster(stm concurrency.STM, key 
 	s.dnsLabelStore.STMDel(stm, key, clusterInst.DnsLabel)
 	s.all.cloudletRefsApi.store.STMDel(stm, key)
 	s.all.clusterRefsApi.deleteRef(stm, clusterKey)
+	s.all.cloudletIPsApi.cloudletIPs.FreeControlPlaneIP(stm, *key, *clusterKey)
 }
 
 func (s *ClusterInstApi) updateCloudletSingleClusterResources(ctx context.Context, key *edgeproto.CloudletKey, ownerOrg string, nodePools []*edgeproto.NodePool, props map[string]string) {

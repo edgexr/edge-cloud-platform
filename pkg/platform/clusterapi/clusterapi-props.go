@@ -24,7 +24,6 @@ import (
 
 const ManagementNamespace = "ManagementNamespace"
 const InfrastructureProvider = "InfrastructureProvider"
-const FloatingVIPs = "FloatingVIPs"
 const FloatingVIPsSubnet = "FloatingVIPsSubnet"
 const ImageURL = "ImageURL"
 const ImageFormat = "ImageFormat"
@@ -51,7 +50,7 @@ var Props = map[string]*edgeproto.PropertyInfo{
 		Description: "The infrastructure provider that is installed, see https://cluster-api.sigs.k8s.io/reference/providers#infrastructure, defaults to metal3",
 		Value:       "metal3",
 	},
-	FloatingVIPs: {
+	cloudcommon.FloatingVIPs: {
 		Name:        "Floating VIPs",
 		Description: "List of available virtual IPs, one is required per workload cluster. Format is a comma separated list of a mix of single IPs or startIP-endIP ranges, i.e. \"192.168.0.150-192.168.0.200\"",
 		Value:       "",

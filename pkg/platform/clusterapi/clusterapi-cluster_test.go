@@ -89,18 +89,16 @@ func createTestPlatform(t *testing.T) *ClusterAPI {
 		},
 	}
 	capi := ClusterAPI{}
-	err = capi.Init(accessVars, properties, commonPf)
+	err = capi.Init(accessVars, properties, commonPf, nil)
 	require.Nil(t, err)
 	return &capi
 }
 
 func getTestVip(t *testing.T, capi *ClusterAPI) string {
-	vipsStr, ok := capi.properties.GetValue(FloatingVIPs)
+	vipsStr, ok := capi.properties.GetValue(cloudcommon.FloatingVIPs)
 	require.True(t, ok)
-	vips, err := util.MapIPs(vipsStr)
-	require.Nil(t, err)
-	for key := range vips {
-		return key
+	for ip := range util.IPRangesIter(vipsStr) {
+		return ip
 	}
 	require.False(t, true, "no vips found")
 	return ""
@@ -123,7 +121,7 @@ func createTestCluster(t *testing.T, capi *ClusterAPI) (*edgeproto.ClusterInst, 
 		}},
 		KubernetesVersion: "v1.34.1",
 		Annotations: map[string]string{
-			cloudcommon.AnnotationFloatingVIP: getTestVip(t, capi),
+			cloudcommon.AnnotationControlVIP: getTestVip(t, capi),
 		},
 	}
 	clusterName := capi.NameSanitize(k8smgmt.GetCloudletClusterName(ci))

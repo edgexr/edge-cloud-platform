@@ -114,7 +114,7 @@ func TestAlertApi(t *testing.T) {
 }
 
 func TestAppInstDownAlert(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi)
+	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelInfra)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())

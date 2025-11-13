@@ -25,6 +25,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	ssh "github.com/edgexr/golang-ssh"
 	v1 "k8s.io/api/core/v1"
@@ -46,13 +47,15 @@ type K8sPlatformMgr struct {
 	features      *edgeproto.PlatformFeatures
 	commonPf      *infracommon.CommonPlatform
 	wm            k8smgmt.WorkloadMgr
+	lbAPI         platform.LoadBalancerApi
 }
 
-func (m *K8sPlatformMgr) Init(clusterAccess ClusterAccess, features *edgeproto.PlatformFeatures, commonPf *infracommon.CommonPlatform, wm k8smgmt.WorkloadMgr) {
+func (m *K8sPlatformMgr) Init(clusterAccess ClusterAccess, features *edgeproto.PlatformFeatures, commonPf *infracommon.CommonPlatform, wm k8smgmt.WorkloadMgr, lbAPI platform.LoadBalancerApi) {
 	m.clusterAccess = clusterAccess
 	m.features = features
 	m.commonPf = commonPf
 	m.wm = wm
+	m.lbAPI = lbAPI
 }
 
 func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error {
@@ -112,6 +115,7 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 	// set up dns
 	getDnsAction := func(svc v1.Service) (*infracommon.DnsSvcAction, error) {
 		action := infracommon.DnsSvcAction{}
+		// poll until we get the external IP
 		externalIP, hostName, err := infracommon.GetSvcExternalIpOrHost(ctx, client, names, svc.ObjectMeta.Name)
 		if err != nil {
 			return nil, err
@@ -126,7 +130,7 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 		action.AddDNS = !app.InternalPorts && features.IpAllocatedPerService
 		return &action, nil
 	}
-	err = m.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, appInst, infracommon.NoDnsOverride, getDnsAction)
+	err = m.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, appInst, infracommon.NoDnsOverride, m.lbAPI, getDnsAction)
 	if err != nil {
 		return err
 	}
@@ -191,7 +195,7 @@ func (m *K8sPlatformMgr) DeleteAppInst(ctx context.Context, clusterInst *edgepro
 		return err
 	}
 	if !app.InternalPorts {
-		if err = m.commonPf.DeleteAppDNS(ctx, client, names, appInst, infracommon.NoDnsOverride); err != nil {
+		if err = m.commonPf.DeleteAppDNS(ctx, client, names, appInst, infracommon.NoDnsOverride, m.lbAPI); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete DNS record", "error", err)
 		}
 	}

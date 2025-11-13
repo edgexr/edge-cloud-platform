@@ -87,7 +87,7 @@ func (s *AccessKeyClient) init(ctx context.Context, nodeType, tlsClientIssuer st
 		log.SpanLog(ctx, log.DebugLevelInfo, "not cloudlet service, no access key required")
 		return nil
 	}
-	if s.AccessKeyFile == "" {
+	if s.AccessKeyFile == "" && os.Getenv(cloudcommon.AccessKeyEnvVar) == "" {
 		return fmt.Errorf("access key not specified for cloudlet service")
 	}
 	if s.AccessApiAddr == "" {
@@ -193,10 +193,16 @@ func (s *AccessKeyClient) backupKeyFile() string {
 
 func (s *AccessKeyClient) loadAccessKey(ctx context.Context, keyFile string) error {
 	log.SpanLog(ctx, log.DebugLevelInfo, "load access private key", "file", keyFile)
-	// read access private key
-	dat, err := ioutil.ReadFile(keyFile)
-	if err != nil {
-		return err
+	var dat []byte
+	var err error
+	if key, found := os.LookupEnv(cloudcommon.AccessKeyEnvVar); found {
+		dat = []byte(key)
+	} else {
+		// read access private key
+		dat, err = os.ReadFile(keyFile)
+		if err != nil {
+			return err
+		}
 	}
 	s.accessPrivKey, err = LoadPrivPEM(dat)
 	if err != nil {

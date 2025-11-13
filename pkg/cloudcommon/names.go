@@ -270,8 +270,12 @@ const (
 	AnnotationPreviousDNSName         = "previous-dns-name"
 	AnnotationFedPartnerAppProviderID = "fed-partner-app-provider-id"
 	AnnotationKubernetesVersion       = "kubernetes-version"
-	AnnotationFloatingVIP             = "floating-vip"
 	AnnotationKeepNamespaceOnDelete   = "keep-namespace-on-delete"
+	AnnotationControlVIP              = "control-vip"
+)
+
+const (
+	AccessKeyEnvVar = "ACCESS_KEY"
 )
 
 var InstanceUp = "UP"

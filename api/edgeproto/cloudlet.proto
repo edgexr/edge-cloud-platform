@@ -207,6 +207,8 @@ message PlatformFeatures {
   bool uses_root_lb = 35;
   // Platform supports cloudlet managed clusters
   bool supports_cloudlet_managed_clusters = 36;
+  // Platform uses requires load balancer IP allocation, typically for bare-metal with reservable floating IPs. Supported values are "kube-vip".
+  string requires_lb_ip_allocation = 37;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties

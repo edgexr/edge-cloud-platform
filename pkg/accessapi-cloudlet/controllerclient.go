@@ -292,3 +292,44 @@ func (s *ControllerClient) GetAppSecretVars(ctx context.Context, appKey *edgepro
 	err = json.Unmarshal(reply.Data, &vars)
 	return vars, err
 }
+
+func (s *ControllerClient) ReserveLoadBalancerIP(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) (*edgeproto.LoadBalancer, error) {
+	lbReq := platform.LoadBalancerIPRequest{
+		CloudletKey: cloudletKey,
+		ClusterKey:  clusterKey,
+		LBKey:       lbKey,
+	}
+	data, err := json.Marshal(lbReq)
+	if err != nil {
+		return nil, err
+	}
+	req := &edgeproto.AccessDataRequest{
+		Type: platform.ReserveLoadBalancerIP,
+		Data: data,
+	}
+	reply, err := s.client.GetAccessData(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	lb := &edgeproto.LoadBalancer{}
+	err = json.Unmarshal(reply.Data, lb)
+	return lb, err
+}
+
+func (s *ControllerClient) FreeLoadBalancerIP(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) error {
+	lbReq := platform.LoadBalancerIPRequest{
+		CloudletKey: cloudletKey,
+		ClusterKey:  clusterKey,
+		LBKey:       lbKey,
+	}
+	data, err := json.Marshal(lbReq)
+	if err != nil {
+		return err
+	}
+	req := &edgeproto.AccessDataRequest{
+		Type: platform.FreeLoadBalancerIP,
+		Data: data,
+	}
+	_, err = s.client.GetAccessData(ctx, req)
+	return err
+}

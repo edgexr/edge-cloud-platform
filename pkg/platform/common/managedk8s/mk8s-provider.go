@@ -38,7 +38,7 @@ import (
 type ManagedK8sProvider interface {
 	GetFeatures() *edgeproto.PlatformFeatures
 	GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error
-	Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform) error
+	Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform, caches *platform.Caches) error
 	Login(ctx context.Context) error
 	// GetCredentials retrieves kubeconfig credentials from the cluster
 	GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error)
@@ -60,6 +60,8 @@ type ManagedK8sProvider interface {
 	// It should check that the cluster exists, and return the same types of
 	// annotations as RunClusterCreateCommand.
 	RegisterCluster(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
+	// Get the load balancer API if implemented, return nil if not.
+	GetLoadBalancerAPI() platform.LoadBalancerApi
 }
 
 const KconfPerms fs.FileMode = 0644
@@ -72,6 +74,7 @@ type ManagedK8sPlatform struct {
 	infracommon.CommonEmbedded
 	k8spm.K8sPlatformMgr
 	caches *platform.Caches
+	lbAPI  platform.LoadBalancerApi
 }
 
 func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *platform.PlatformConfig, caches *platform.Caches, haMgr *redundancy.HighAvailabilityManager, updateCallback edgeproto.CacheUpdateCallback) error {
@@ -90,7 +93,7 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 		log.SpanLog(ctx, log.DebugLevelInfra, "InitInfraCommon failed", "err", err)
 		return err
 	}
-	err = m.Provider.Init(accessVars, &m.CommonPf.Properties, &m.CommonPf)
+	err = m.Provider.Init(accessVars, &m.CommonPf.Properties, &m.CommonPf, m.caches)
 	if err != nil {
 		return err
 	}
@@ -105,7 +108,10 @@ func (m *ManagedK8sPlatform) InitCommon(ctx context.Context, platformConfig *pla
 	} else {
 		workloadMgr = &k8smgmt.K8SWorkloadMgr{}
 	}
-	m.K8sPlatformMgr.Init(m, features, &m.CommonPf, workloadMgr)
+	if lbApi := m.Provider.GetLoadBalancerAPI(); lbApi != nil {
+		m.lbAPI = lbApi
+	}
+	m.K8sPlatformMgr.Init(m, features, &m.CommonPf, workloadMgr, m.lbAPI)
 	return m.Provider.Login(ctx)
 }
 
