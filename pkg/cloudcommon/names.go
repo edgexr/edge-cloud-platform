@@ -274,10 +274,6 @@ const (
 	AnnotationControlVIP              = "control-vip"
 )
 
-const (
-	AccessKeyEnvVar = "ACCESS_KEY"
-)
-
 var InstanceUp = "UP"
 var InstanceDown = "DOWN"
 
