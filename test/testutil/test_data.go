@@ -466,6 +466,7 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 			"LOAD_MANAGED_CLUSTERS": {
 				Name: "Load fake managed clusters",
 			},
+			"FloatingVIPs": {},
 		}
 	}
 	return features

@@ -205,7 +205,7 @@ func (s *CCRM) Start() error {
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(cloudcommon.AuditStreamInterceptor)),
 		grpc.ForceServerCodec(&cloudcommon.ProtoCodec{}))
 
-	s.handler.InitConnectivity(notifyClient, objStore, &s.nodeMgr, grpcServer, sync)
+	s.handler.InitConnectivity(ctx, notifyClient, objStore, &s.nodeMgr, &s.flags, grpcServer, sync)
 
 	echoServ := s.initAnsibleServer(ctx)
 

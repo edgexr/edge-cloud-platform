@@ -45,7 +45,7 @@ func NewPlatform() platform.Platform {
 	}
 }
 
-func (s *Platform) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform) error {
+func (s *Platform) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform, caches *platform.Caches) error {
 	s.accessVars = accessVars
 	s.properties = properties
 	if err := s.osmClient.Init(accessVars, properties); err != nil {

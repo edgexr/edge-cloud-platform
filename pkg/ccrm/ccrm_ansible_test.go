@@ -196,7 +196,7 @@ func TestAnsibleServer(t *testing.T) {
 
 	ccrm.caches.Init(ctx)
 	ccrm.handler.Init(ctx, &ccrm.nodeMgr, &ccrm.caches, nil, &ccrm.flags, &cloudcommon.DummyRegistryAuthApi{})
-	ccrm.handler.InitConnectivity(nil, &store, &ccrm.nodeMgr, nil, sync)
+	ccrm.handler.InitConnectivity(ctx, nil, &store, &ccrm.nodeMgr, &ccrm.flags, nil, sync)
 	ccrm.echoServ = ccrm.initAnsibleServer(ctx)
 
 	// test cloudlet

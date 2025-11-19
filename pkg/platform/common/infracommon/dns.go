@@ -24,6 +24,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	ssh "github.com/edgexr/golang-ssh"
 	v1 "k8s.io/api/core/v1"
 )
@@ -59,7 +60,7 @@ var NoDnsOverride = ""
 // The passed in GetDnsSvcActionFunc function should provide this function
 // with the actions to perform for each service, since different platforms
 // will use different IPs and patching.
-func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, overrideDns string, getSvcAction GetDnsSvcActionFunc) error {
+func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, overrideDns string, lbAPI platform.LoadBalancerApi, getSvcAction GetDnsSvcActionFunc) error {
 
 	log.SpanLog(ctx, log.DebugLevelInfra, "CreateAppDNSAndPatchKubeSvc")
 
@@ -84,6 +85,19 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			namespace = k8smgmt.DefaultNamespace
 		}
 
+		if lbAPI != nil {
+			lbKey := edgeproto.LoadBalancerKey{
+				Name:      sn,
+				Namespace: namespace,
+			}
+			// take action to ensure platform-specific load balancer
+			// is allocated, this will assign IP to load balancer service
+			_, err := lbAPI.EnsureLoadBalancer(ctx, appInst.CloudletKey, appInst.ClusterKey, lbKey)
+			if err != nil {
+				return err
+			}
+		}
+
 		action, err := getSvcAction(*svc)
 		if err != nil {
 			return err
@@ -100,7 +114,7 @@ func (c *CommonPlatform) CreateAppDNSAndPatchKubeSvc(ctx context.Context, client
 			if patchIPV6 == "" {
 				patchIPV6 = action.ExternalIPV6
 			}
-			err = KubePatchServiceIP(ctx, client, kubeNames, sn, patchIP, patchIPV6, namespace)
+			err = k8smgmt.PatchServiceIP(ctx, client, kubeNames.GetKConfNames(), sn, patchIP, patchIPV6, namespace)
 			if err != nil {
 				return err
 			}
@@ -149,7 +163,7 @@ func (c *CommonPlatform) AddDNS(ctx context.Context, fqdn string, action *DnsSvc
 	return nil
 }
 
-func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, overrideDns string) error {
+func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, overrideDns string, lbAPI platform.LoadBalancerApi, errorAction cloudcommon.ErrorAction) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppDNS", "kubeNames", kubeNames)
 	if kubeNames.AppURI == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "URI not specified, no DNS entry to delete")
@@ -169,13 +183,35 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 			continue
 		}
 		sn := svc.ObjectMeta.Name
+		namespace := svc.ObjectMeta.Namespace
+		if namespace == "" {
+			namespace = k8smgmt.DefaultNamespace
+		}
 		fqdn := cloudcommon.ServiceFQDN(sn, fqdnBase)
 		if overrideDns != "" {
 			fqdn = overrideDns
 		}
 		err := c.DeleteDNSRecords(ctx, fqdn)
 		if err != nil {
-			return err
+			if errorAction == cloudcommon.ContinueOnError {
+				log.SpanLog(ctx, log.DebugLevelInfra, "delete dns record failed, continuing anyway", "fqdn", fqdn, "err", err)
+			} else {
+				return err
+			}
+		}
+		if lbAPI != nil {
+			lbKey := edgeproto.LoadBalancerKey{
+				Name:      sn,
+				Namespace: namespace,
+			}
+			err := lbAPI.DeleteLoadBalancer(ctx, appInst.CloudletKey, appInst.ClusterKey, lbKey)
+			if err != nil {
+				if errorAction == cloudcommon.ContinueOnError {
+					log.SpanLog(ctx, log.DebugLevelInfra, "delete load balancer failed, continuing anyway", "lbKey", lbKey, "err", err)
+				} else {
+					return err
+				}
+			}
 		}
 	}
 	return nil
@@ -187,22 +223,5 @@ func (c *CommonPlatform) DeleteDNSRecords(ctx context.Context, fqdn string) erro
 		return fmt.Errorf("cannot delete DNS record %v, %v", fqdn, err)
 	}
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleted DNS record", "name", fqdn)
-	return nil
-}
-
-// KubePatchServiceIP updates the service to have the given external ip.  This is done locally and not thru
-// an ssh client
-func KubePatchServiceIP(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, servicename, ipaddr, ipv6Addr, namespace string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "patch service IP", "servicename", servicename, "ipaddr", ipaddr, "ipv6Addr", ipv6Addr, "namespace", namespace)
-
-	// TODO: handle ipv6Addr, requires ipv6 enabled on kubernetes
-	cmd := fmt.Sprintf(`kubectl %s patch svc %s -n %s -p '{"spec":{"externalIPs":["%s"]}}'`, kubeNames.KconfArg, servicename, namespace, ipaddr)
-	out, err := client.Output(cmd)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "patch svc failed",
-			"servicename", servicename, "out", out, "err", err)
-		return fmt.Errorf("error patching for kubernetes service, %s, %s, %v", cmd, out, err)
-	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "patched externalIPs on service", "service", servicename, "externalIPs", ipaddr)
 	return nil
 }

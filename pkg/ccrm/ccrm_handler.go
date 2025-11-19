@@ -26,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/accessapi"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudletips"
 	"github.com/edgexr/edge-cloud-platform/pkg/crmutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/notify"
@@ -45,6 +46,7 @@ import (
 
 type CCRMHandler struct {
 	caches              *CCRMCaches
+	stores              CCRMStores
 	nodeMgr             *svcnode.SvcNodeMgr
 	nodeType            string
 	flags               *Flags
@@ -59,6 +61,7 @@ type CCRMHandler struct {
 	cloudletSSHKey      *cloudletssh.SSHKey
 	sync                edgeproto.DataSync
 	proxyCertsCache     *certscache.ProxyCertsCache
+	cloudletIPs         *cloudletips.CloudletIPs
 }
 
 type CRMPlatformCache struct {
@@ -92,7 +95,6 @@ func (s *CCRMHandler) Init(ctx context.Context, nodeMgr *svcnode.SvcNodeMgr, cac
 	s.nodeAttributesCache.Init()
 	s.crmPlatforms.Init()
 	s.platformBuilders = platformBuilders
-	s.vaultClient = accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, s, flags.Region, flags.DnsZone, nodeMgr.ValidDomains)
 	s.cloudletSSHKey = cloudletssh.NewSSHKey(s.vaultClient)
 	s.crmHandler = crmutil.NewCRMHandler(s.getCRMCloudletPlatform, s.nodeMgr)
 	s.proxyCertsCache = certscache.NewProxyCertsCache(s.vaultClient)
@@ -101,7 +103,7 @@ func (s *CCRMHandler) Init(ctx context.Context, nodeMgr *svcnode.SvcNodeMgr, cac
 	s.crmHandler.SettingsCache.AddUpdatedCb(s.crmHandler.SettingsChanged)
 }
 
-func (s *CCRMHandler) InitConnectivity(client *notify.Client, kvstore objstore.KVStore, nodeMgr *svcnode.SvcNodeMgr, grpcServer *grpc.Server, sync edgeproto.DataSync) {
+func (s *CCRMHandler) InitConnectivity(ctx context.Context, client *notify.Client, kvstore objstore.KVStore, nodeMgr *svcnode.SvcNodeMgr, flags *Flags, grpcServer *grpc.Server, sync edgeproto.DataSync) {
 	// Caches are updated via etcd watches.
 	// In general most data sent from here to the Controller is
 	// via return values from GRPC API calls the Controller makes to here.
@@ -127,6 +129,9 @@ func (s *CCRMHandler) InitConnectivity(client *notify.Client, kvstore objstore.K
 	s.caches.CloudletInfoCache.InitSync(sync)
 	s.caches.ClusterInstInfoCache.InitSync(sync)
 	s.caches.AppInstInfoCache.InitSync(sync)
+	s.stores.CloudletIPsCache.InitCacheWithSync(sync)
+	s.cloudletIPs = cloudletips.NewCloudletIPs(sync.GetKVStore(), s.stores.CloudletIPsCache.Store, s.crmHandler.CloudletCache.Store, s.crmHandler.ClusterInstCache.Store)
+	s.vaultClient = accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, s, s.cloudletIPs, flags.Region, flags.DnsZone, nodeMgr.ValidDomains)
 	nodeMgr.CloudletLookup.GetCloudletCache(nodeMgr.Region).InitSync(sync)
 	nodeMgr.ZonePoolLookup.GetZonePoolCache(nodeMgr.Region).InitSync(sync)
 

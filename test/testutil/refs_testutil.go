@@ -603,6 +603,198 @@ func FindAppInstRefsData(key *edgeproto.AppKey, testData []edgeproto.AppInstRefs
 	return nil, false
 }
 
+type ShowCloudletIPs struct {
+	Data map[string]edgeproto.CloudletIPs
+	grpc.ServerStream
+	Ctx context.Context
+}
+
+func (x *ShowCloudletIPs) Init() {
+	x.Data = make(map[string]edgeproto.CloudletIPs)
+}
+
+func (x *ShowCloudletIPs) Send(m *edgeproto.CloudletIPs) error {
+	x.Data[m.GetKey().GetKeyString()] = *m
+	return nil
+}
+
+func (x *ShowCloudletIPs) Context() context.Context {
+	return x.Ctx
+}
+
+var CloudletIPsShowExtraCount = 0
+
+func (x *ShowCloudletIPs) ReadStream(stream edgeproto.CloudletIPsApi_ShowCloudletIPsClient, err error) {
+	x.Data = make(map[string]edgeproto.CloudletIPs)
+	if err != nil {
+		return
+	}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			break
+		}
+		x.Data[obj.GetKey().GetKeyString()] = *obj
+	}
+}
+
+func (x *ShowCloudletIPs) CheckFound(obj *edgeproto.CloudletIPs) bool {
+	_, found := x.Data[obj.GetKey().GetKeyString()]
+	return found
+}
+
+func (x *ShowCloudletIPs) AssertFound(t *testing.T, obj *edgeproto.CloudletIPs) {
+	check, found := x.Data[obj.GetKey().GetKeyString()]
+	require.True(t, found, "find CloudletIPs %s", obj.GetKey().GetKeyString())
+	if found && !check.Matches(obj, edgeproto.MatchIgnoreBackend(), edgeproto.MatchSortArrayedKeys()) {
+		require.Equal(t, *obj, check, "CloudletIPs differ")
+	}
+	if found {
+		// remove in case there are dups in the list, so the
+		// same object cannot be used again
+		delete(x.Data, obj.GetKey().GetKeyString())
+	}
+}
+
+func (x *ShowCloudletIPs) AssertNotFound(t *testing.T, obj *edgeproto.CloudletIPs) {
+	_, found := x.Data[obj.GetKey().GetKeyString()]
+	require.False(t, found, "do not find CloudletIPs %s", obj.GetKey().GetKeyString())
+}
+
+func WaitAssertFoundCloudletIPs(t *testing.T, api edgeproto.CloudletIPsApiClient, obj *edgeproto.CloudletIPs, count int, retry time.Duration) {
+	show := ShowCloudletIPs{}
+	for ii := 0; ii < count; ii++ {
+		ctx, cancel := context.WithTimeout(context.Background(), retry)
+		stream, err := api.ShowCloudletIPs(ctx, obj)
+		show.ReadStream(stream, err)
+		cancel()
+		if show.CheckFound(obj) {
+			break
+		}
+		time.Sleep(retry)
+	}
+	show.AssertFound(t, obj)
+}
+
+func WaitAssertNotFoundCloudletIPs(t *testing.T, api edgeproto.CloudletIPsApiClient, obj *edgeproto.CloudletIPs, count int, retry time.Duration) {
+	show := ShowCloudletIPs{}
+	filterNone := edgeproto.CloudletIPs{}
+	for ii := 0; ii < count; ii++ {
+		ctx, cancel := context.WithTimeout(context.Background(), retry)
+		stream, err := api.ShowCloudletIPs(ctx, &filterNone)
+		show.ReadStream(stream, err)
+		cancel()
+		if !show.CheckFound(obj) {
+			break
+		}
+		time.Sleep(retry)
+	}
+	show.AssertNotFound(t, obj)
+}
+
+// Wrap the api with a common interface
+type CloudletIPsCommonApi struct {
+	internal_api edgeproto.CloudletIPsApiServer
+	client_api   edgeproto.CloudletIPsApiClient
+}
+
+func (x *CloudletIPsCommonApi) ShowCloudletIPs(ctx context.Context, filter *edgeproto.CloudletIPs, showData *ShowCloudletIPs) error {
+	if x.internal_api != nil {
+		showData.Ctx = ctx
+		return x.internal_api.ShowCloudletIPs(filter, showData)
+	} else {
+		stream, err := x.client_api.ShowCloudletIPs(ctx, filter)
+		showData.ReadStream(stream, err)
+		return unwrapGrpcError(err)
+	}
+}
+
+func NewInternalCloudletIPsApi(api edgeproto.CloudletIPsApiServer) *CloudletIPsCommonApi {
+	apiWrap := CloudletIPsCommonApi{}
+	apiWrap.internal_api = api
+	return &apiWrap
+}
+
+func NewClientCloudletIPsApi(api edgeproto.CloudletIPsApiClient) *CloudletIPsCommonApi {
+	apiWrap := CloudletIPsCommonApi{}
+	apiWrap.client_api = api
+	return &apiWrap
+}
+
+type CloudletIPsTestOptions struct {
+	createdData []edgeproto.CloudletIPs
+}
+
+type CloudletIPsTestOp func(opts *CloudletIPsTestOptions)
+
+func WithCreatedCloudletIPsTestData(createdData []edgeproto.CloudletIPs) CloudletIPsTestOp {
+	return func(opts *CloudletIPsTestOptions) { opts.createdData = createdData }
+}
+
+func InternalCloudletIPsTest(t *testing.T, test string, api edgeproto.CloudletIPsApiServer, testData []edgeproto.CloudletIPs, ops ...CloudletIPsTestOp) {
+	span := log.StartSpan(log.DebugLevelApi, "InternalCloudletIPsTest")
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
+
+	switch test {
+	case "show":
+		basicCloudletIPsShowTest(t, ctx, NewInternalCloudletIPsApi(api), testData)
+	}
+}
+
+func ClientCloudletIPsTest(t *testing.T, test string, api edgeproto.CloudletIPsApiClient, testData []edgeproto.CloudletIPs, ops ...CloudletIPsTestOp) {
+	span := log.StartSpan(log.DebugLevelApi, "ClientCloudletIPsTest")
+	defer span.Finish()
+	ctx := log.ContextWithSpan(context.Background(), span)
+
+	switch test {
+	case "show":
+		basicCloudletIPsShowTest(t, ctx, NewClientCloudletIPsApi(api), testData)
+	}
+}
+
+func basicCloudletIPsShowTest(t *testing.T, ctx context.Context, api *CloudletIPsCommonApi, testData []edgeproto.CloudletIPs) {
+	var err error
+
+	show := ShowCloudletIPs{}
+	show.Init()
+	filterNone := edgeproto.CloudletIPs{}
+	err = api.ShowCloudletIPs(ctx, &filterNone, &show)
+	require.Nil(t, err, "show data")
+	require.Equal(t, len(testData)+CloudletIPsShowExtraCount, len(show.Data), "Show count")
+	for _, obj := range testData {
+		show.AssertFound(t, &obj)
+	}
+}
+
+func GetCloudletIPs(t *testing.T, ctx context.Context, api *CloudletIPsCommonApi, key *edgeproto.CloudletKey, out *edgeproto.CloudletIPs) bool {
+	var err error
+
+	show := ShowCloudletIPs{}
+	show.Init()
+	filter := edgeproto.CloudletIPs{}
+	filter.SetKey(key)
+	err = api.ShowCloudletIPs(ctx, &filter, &show)
+	require.Nil(t, err, "show data")
+	obj, found := show.Data[key.GetKeyString()]
+	if found {
+		*out = obj
+	}
+	return found
+}
+
+func FindCloudletIPsData(key *edgeproto.CloudletKey, testData []edgeproto.CloudletIPs) (*edgeproto.CloudletIPs, bool) {
+	for ii, _ := range testData {
+		if testData[ii].GetKey().Matches(key) {
+			return &testData[ii], true
+		}
+	}
+	return nil, false
+}
+
 func (r *Run) CloudletRefsApi(data *[]edgeproto.CloudletRefs, dataMap interface{}, dataOut interface{}) {
 	log.DebugLog(log.DebugLevelApi, "API for CloudletRefs", "mode", r.Mode)
 	if r.Mode == "show" {
@@ -777,6 +969,64 @@ func (s *DummyServer) ShowAppInstRefs(in *edgeproto.AppInstRefs, server edgeprot
 	return err
 }
 
+func (r *Run) CloudletIPsApi(data *[]edgeproto.CloudletIPs, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for CloudletIPs", "mode", r.Mode)
+	if r.Mode == "show" {
+		obj := &edgeproto.CloudletIPs{}
+		out, err := r.client.ShowCloudletIPs(r.ctx, obj)
+		if err != nil {
+			r.logErr("CloudletIPsApi", err)
+		} else {
+			outp, ok := dataOut.(*[]edgeproto.CloudletIPs)
+			if !ok {
+				panic(fmt.Sprintf("RunCloudletIPsApi expected dataOut type *[]edgeproto.CloudletIPs, but was %T", dataOut))
+			}
+			*outp = append(*outp, out...)
+		}
+		return
+	}
+	for ii, objD := range *data {
+		obj := &objD
+		switch r.Mode {
+		case "showfiltered":
+			out, err := r.client.ShowCloudletIPs(r.ctx, obj)
+			if err != nil {
+				r.logErr(fmt.Sprintf("CloudletIPsApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.CloudletIPs)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletIPsApi expected dataOut type *[]edgeproto.CloudletIPs, but was %T", dataOut))
+				}
+				*outp = append(*outp, out...)
+			}
+		}
+	}
+}
+
+func (s *DummyServer) ShowCloudletIPs(in *edgeproto.CloudletIPs, server edgeproto.CloudletIPsApi_ShowCloudletIPsServer) error {
+	var err error
+	obj := &edgeproto.CloudletIPs{}
+	if obj.Matches(in, edgeproto.MatchFilter()) {
+		for ii := 0; ii < s.ShowDummyCount; ii++ {
+			server.Send(&edgeproto.CloudletIPs{})
+		}
+		if ch, ok := s.MidstreamFailChs["ShowCloudletIPs"]; ok {
+			// Wait until client receives the SendMsg, since they
+			// are buffered and dropped once we return err here.
+			select {
+			case <-ch:
+			case <-time.After(5 * time.Second):
+			}
+			return fmt.Errorf("midstream failure!")
+		}
+	}
+	err = s.CloudletIPsCache.Show(in, func(obj *edgeproto.CloudletIPs) error {
+		err := server.Send(obj)
+		return err
+	})
+	return err
+}
+
 type CloudletRefsStream interface {
 	Recv() (*edgeproto.CloudletRefs, error)
 }
@@ -892,4 +1142,43 @@ func (s *CliClient) ShowAppInstRefs(ctx context.Context, in *edgeproto.AppInstRe
 
 type AppInstRefsApiClient interface {
 	ShowAppInstRefs(ctx context.Context, in *edgeproto.AppInstRefs) ([]edgeproto.AppInstRefs, error)
+}
+
+type CloudletIPsStream interface {
+	Recv() (*edgeproto.CloudletIPs, error)
+}
+
+func CloudletIPsReadStream(stream CloudletIPsStream) ([]edgeproto.CloudletIPs, error) {
+	output := []edgeproto.CloudletIPs{}
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return output, fmt.Errorf("read CloudletIPs stream failed, %v", err)
+		}
+		output = append(output, *obj)
+	}
+	return output, nil
+}
+
+func (s *ApiClient) ShowCloudletIPs(ctx context.Context, in *edgeproto.CloudletIPs) ([]edgeproto.CloudletIPs, error) {
+	api := edgeproto.NewCloudletIPsApiClient(s.Conn)
+	stream, err := api.ShowCloudletIPs(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	return CloudletIPsReadStream(stream)
+}
+
+func (s *CliClient) ShowCloudletIPs(ctx context.Context, in *edgeproto.CloudletIPs) ([]edgeproto.CloudletIPs, error) {
+	output := []edgeproto.CloudletIPs{}
+	args := append(s.BaseArgs, "controller", "ShowCloudletIPs")
+	err := wrapper.RunEdgectlObjs(args, in, &output, s.RunOps...)
+	return output, err
+}
+
+type CloudletIPsApiClient interface {
+	ShowCloudletIPs(ctx context.Context, in *edgeproto.CloudletIPs) ([]edgeproto.CloudletIPs, error)
 }

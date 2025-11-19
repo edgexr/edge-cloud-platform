@@ -125,3 +125,11 @@ func (s *TestHandler) DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto
 func (s *TestHandler) GetAppSecretVars(ctx context.Context, appKey *edgeproto.AppKey) (map[string]string, error) {
 	return map[string]string{}, nil
 }
+
+func (s *TestHandler) ReserveLoadBalancerIP(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) (*edgeproto.LoadBalancer, error) {
+	return &edgeproto.LoadBalancer{}, nil
+}
+
+func (s *TestHandler) FreeLoadBalancerIP(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) error {
+	return nil
+}

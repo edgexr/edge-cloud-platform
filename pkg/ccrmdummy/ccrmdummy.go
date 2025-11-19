@@ -94,7 +94,7 @@ func StartDummyCCRM(ctx context.Context, vaultConfig *vault.Config, kvstore objs
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(cloudcommon.AuditUnaryInterceptor)),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(cloudcommon.AuditStreamInterceptor)),
 	)
-	dummy.CCRMHandler.InitConnectivity(nil, kvstore, &nodeMgr, serv, dummy.sync)
+	dummy.CCRMHandler.InitConnectivity(ctx, nil, kvstore, &nodeMgr, &dummy.flags, serv, dummy.sync)
 
 	dummy.sync.Start()
 

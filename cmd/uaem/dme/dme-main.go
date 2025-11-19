@@ -745,7 +745,7 @@ func main() {
 		cloudlet := &edgeproto.Cloudlet{
 			Key: uaemcommon.MyCloudletKey,
 		}
-		aa := accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, nil, *region, "", nodeMgr.ValidDomains)
+		aa := accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, nil, nil, *region, "", nodeMgr.ValidDomains)
 		accessApi = aa.CloudletContext(cloudlet)
 	}
 

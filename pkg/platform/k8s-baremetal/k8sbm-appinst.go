@@ -21,6 +21,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/access"
 	"github.com/edgexr/edge-cloud-platform/pkg/dockermgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	ssh "github.com/edgexr/golang-ssh"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -144,7 +145,7 @@ func (k *K8sBareMetalPlatform) CreateAppInst(ctx context.Context, clusterInst *e
 			}
 			// If this is all internal ports, all we need is patch of kube service
 			if app.InternalPorts {
-				err = k.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, appInst, infracommon.NoDnsOverride, getDnsAction)
+				err = k.commonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, appInst, infracommon.NoDnsOverride, platform.NoLBAPI, getDnsAction)
 			} else {
 				updateCallback(edgeproto.UpdateTask, "Configuring Service: LB, Firewall Rules add DNS")
 				wlParams := infracommon.WhiteListParams{
@@ -227,7 +228,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 			if err != nil {
 				return err
 			}
-			if err := k.commonPf.DeleteAppDNS(ctx, client, names, appInst, aac.DnsOverride); err != nil {
+			if err := k.commonPf.DeleteAppDNS(ctx, client, names, appInst, aac.DnsOverride, platform.NoLBAPI, cloudcommon.ContinueOnError); err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}

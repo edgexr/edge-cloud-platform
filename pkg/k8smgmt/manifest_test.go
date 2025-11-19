@@ -87,7 +87,6 @@ func TestGenerateAppInstManifest(t *testing.T) {
 var expectedFullManifest = `apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
   labels:
     app.edgexr.org/appinst-name: PillimoGo1
     app.edgexr.org/appinst-org: AtlanticInc
@@ -109,7 +108,6 @@ status:
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
   labels:
     app.edgexr.org/appinst-name: PillimoGo1
     app.edgexr.org/appinst-org: AtlanticInc
@@ -131,7 +129,6 @@ status:
 apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
   labels:
     app.edgexr.org/appinst-name: PillimoGo1
     app.edgexr.org/appinst-org: AtlanticInc
@@ -153,7 +150,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     app.edgexr.org/appinst-name: PillimoGo1
     app.edgexr.org/appinst-org: AtlanticInc
@@ -167,7 +163,6 @@ spec:
   strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app.edgexr.org/appinst-name: PillimoGo1
         app.edgexr.org/appinst-org: AtlanticInc
@@ -206,7 +201,6 @@ data:
   SOME_ENV2: value2
 kind: ConfigMap
 metadata:
-  creationTimestamp: null
   labels:
     app.edgexr.org/appinst-name: PillimoGo1
     app.edgexr.org/appinst-org: AtlanticInc
@@ -355,7 +349,6 @@ spec:
 var expectedDeploymentManifest = `apiVersion: v1
 kind: Service
 metadata:
-  creationTimestamp: null
   labels:
     app.edgexr.org/appinst-name: PillimoGo1
     app.edgexr.org/appinst-org: AtlanticInc
@@ -377,7 +370,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     app.edgexr.org/appinst-name: PillimoGo1
     app.edgexr.org/appinst-org: AtlanticInc
@@ -391,7 +383,6 @@ spec:
   strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: pillimogo
         app.edgexr.org/appinst-name: PillimoGo1
@@ -434,7 +425,6 @@ status: {}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  creationTimestamp: null
   labels:
     app.edgexr.org/appinst-name: PillimoGo1
     app.edgexr.org/appinst-org: AtlanticInc
@@ -446,7 +436,6 @@ spec:
       run: pillimogo2
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app.edgexr.org/appinst-name: PillimoGo1
         app.edgexr.org/appinst-org: AtlanticInc
@@ -477,7 +466,6 @@ status:
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  creationTimestamp: null
   labels:
     app.edgexr.org/appinst-name: PillimoGo1
     app.edgexr.org/appinst-org: AtlanticInc
@@ -492,7 +480,6 @@ spec:
   serviceName: influxdb
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app.edgexr.org/appinst-name: PillimoGo1
         app.edgexr.org/appinst-org: AtlanticInc

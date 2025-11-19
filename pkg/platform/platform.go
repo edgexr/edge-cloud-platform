@@ -236,7 +236,30 @@ type AccessApi interface {
 	CreateCloudletNode(ctx context.Context, node *edgeproto.CloudletNode) (string, error)
 	DeleteCloudletNode(ctx context.Context, nodeKey *edgeproto.CloudletNodeKey) error
 	GetAppSecretVars(ctx context.Context, appKey *edgeproto.AppKey) (map[string]string, error)
+	ReserveLoadBalancerIP(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) (*edgeproto.LoadBalancer, error)
+	FreeLoadBalancerIP(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) error
 }
+
+// LoadBalancerApi is called when Kubernetes load balancers
+// are created or deleted. This is called when AppInsts are
+// create and deleted, during the process of walkign the k8s
+// load balancer objects and updating DNS entries. A more
+// general purpose solution would put a cloud-provider service
+// on each kubernetes cluster, and call these functions when
+// triggered by kubernetes.
+// See https://github.com/kubernetes/cloud-provider.
+// However, that requires us to build, deploy, and handle
+// upgrades for an on-cluster mini-CRM service to implement
+// the cloud-provider service. We may consider that approach
+// in the future but it is overkill for what we need now.
+// The load balancer API functions are intended to be implemented
+// by infra-specific providers like k8ssite.
+type LoadBalancerApi interface {
+	EnsureLoadBalancer(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) (*edgeproto.LoadBalancer, error)
+	DeleteLoadBalancer(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) error
+}
+
+var NoLBAPI = LoadBalancerApi(nil)
 
 // AccessData types
 const (
@@ -257,6 +280,8 @@ const (
 	GetFederationAPIKey     = "get-federation-apikey"
 	CreateCloudletNode      = "create-cloudlet-node"
 	DeleteCloudletNode      = "delete-cloudlet-node"
+	ReserveLoadBalancerIP   = "reserve-load-balancer-ip"
+	FreeLoadBalancerIP      = "free-load-balancer-ip"
 )
 
 type DNSRequest struct {
@@ -265,6 +290,12 @@ type DNSRequest struct {
 	Content string
 	TTL     int
 	Proxy   bool
+}
+
+type LoadBalancerIPRequest struct {
+	CloudletKey edgeproto.CloudletKey
+	ClusterKey  edgeproto.ClusterKey
+	LBKey       edgeproto.LoadBalancerKey
 }
 
 type RootLBClient struct {

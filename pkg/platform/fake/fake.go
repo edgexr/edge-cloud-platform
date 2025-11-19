@@ -136,6 +136,9 @@ var fakeProps = map[string]*edgeproto.PropertyInfo{
 	"LOAD_MANAGED_CLUSTERS": {
 		Name: "Load fake managed clusters",
 	},
+	cloudcommon.FloatingVIPs: {
+		Name: "Floating VIPs",
+	},
 }
 
 var AccessVarProps = map[string]*edgeproto.PropertyInfo{

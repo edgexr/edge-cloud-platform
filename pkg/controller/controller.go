@@ -479,6 +479,7 @@ func startServices() error {
 	edgeproto.RegisterCloudletRefsApiServer(server, allApis.cloudletRefsApi)
 	edgeproto.RegisterClusterRefsApiServer(server, allApis.clusterRefsApi)
 	edgeproto.RegisterAppInstRefsApiServer(server, allApis.appInstRefsApi)
+	edgeproto.RegisterCloudletIPsApiServer(server, allApis.cloudletIPsApi)
 	edgeproto.RegisterStreamObjApiServer(server, allApis.streamObjApi)
 	edgeproto.RegisterControllerApiServer(server, allApis.controllerApi)
 	edgeproto.RegisterSvcNodeApiServer(server, &svcNodeApi)
@@ -729,6 +730,7 @@ type AllApis struct {
 	cloudletRefsApi             *CloudletRefsApi
 	clusterRefsApi              *ClusterRefsApi
 	appInstRefsApi              *AppInstRefsApi
+	cloudletIPsApi              *CloudletIPsApi
 	controllerApi               *ControllerApi
 	zonePoolApi                 *ZonePoolApi
 	execApi                     *ExecApi
@@ -772,6 +774,7 @@ func NewAllApis(sync *regiondata.Sync) *AllApis {
 	all.clusterInstInfoApi = NewClusterInstInfoApi(sync, all)
 	all.cloudletRefsApi = NewCloudletRefsApi(sync, all)
 	all.clusterRefsApi = NewClusterRefsApi(sync, all)
+	all.cloudletIPsApi = NewCloudletIPsApi(sync, all)
 	all.appInstRefsApi = NewAppInstRefsApi(sync, all)
 	all.controllerApi = NewControllerApi(sync, all)
 	all.zonePoolApi = NewZonePoolApi(sync, all)

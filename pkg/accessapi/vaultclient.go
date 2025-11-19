@@ -27,6 +27,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/chefauth"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon/svcnode"
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudletips"
 	"github.com/edgexr/edge-cloud-platform/pkg/dnsmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/federationmgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
@@ -43,6 +44,7 @@ type VaultClient struct {
 	dnsMgr              *dnsmgmt.DNSMgr
 	cloudletNodeHandler CloudletNodeHandler
 	regAuthMgr          *cloudcommon.RegistryAuthMgr
+	cloudletIPs         *cloudletips.CloudletIPs
 }
 
 type CloudletNodeHandler interface {
@@ -50,7 +52,7 @@ type CloudletNodeHandler interface {
 	DeleteCloudletNodeReq(ctx context.Context, key *edgeproto.CloudletNodeKey) error
 }
 
-func NewVaultClient(ctx context.Context, vaultConfig *vault.Config, cloudletNodeHandler CloudletNodeHandler, region string, dnsZones string, validDomains string) *VaultClient {
+func NewVaultClient(ctx context.Context, vaultConfig *vault.Config, cloudletNodeHandler CloudletNodeHandler, cloudletIPs *cloudletips.CloudletIPs, region string, dnsZones string, validDomains string) *VaultClient {
 	dnsMgr := dnsmgmt.NewDNSMgr(vaultConfig, strings.Split(dnsZones, ","))
 	regAuthMgr := cloudcommon.NewRegistryAuthMgr(vaultConfig, validDomains)
 	return &VaultClient{
@@ -59,6 +61,7 @@ func NewVaultClient(ctx context.Context, vaultConfig *vault.Config, cloudletNode
 		dnsMgr:              dnsMgr,
 		cloudletNodeHandler: cloudletNodeHandler,
 		regAuthMgr:          regAuthMgr,
+		cloudletIPs:         cloudletIPs,
 	}
 }
 
@@ -209,4 +212,12 @@ func (s *VaultClient) GetAppSecretVars(ctx context.Context, appKey *edgeproto.Ap
 		err = nil
 	}
 	return vars, err
+}
+
+func (s *VaultClient) ReserveLoadBalancerIP(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) (*edgeproto.LoadBalancer, error) {
+	return s.cloudletIPs.ReserveLoadBalancerIP(ctx, cloudletKey, clusterKey, lbKey)
+}
+
+func (s *VaultClient) FreeLoadBalancerIP(ctx context.Context, cloudletKey edgeproto.CloudletKey, clusterKey edgeproto.ClusterKey, lbKey edgeproto.LoadBalancerKey) error {
+	return s.cloudletIPs.FreeLoadBalancerIP(ctx, cloudletKey, clusterKey, lbKey)
 }

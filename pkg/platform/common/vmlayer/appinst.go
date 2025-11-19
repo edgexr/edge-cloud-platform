@@ -388,7 +388,7 @@ func (v *VMPlatform) setupDnsForAppInst(ctx context.Context, clusterInst *edgepr
 		}
 		// If this is an internal ports, all we need is patch of kube service
 		if app.InternalPorts {
-			return v.VMProperties.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, appInst, infracommon.NoDnsOverride, getDnsAction)
+			return v.VMProperties.CommonPf.CreateAppDNSAndPatchKubeSvc(ctx, client, names, appInst, infracommon.NoDnsOverride, platform.NoLBAPI, getDnsAction)
 		}
 
 	case cloudcommon.DeploymentTypeDocker:
@@ -708,7 +708,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 			if err != nil {
 				return err
 			}
-			if err := v.VMProperties.CommonPf.DeleteAppDNS(ctx, client, names, appInst, aac.DnsOverride); err != nil {
+			if err := v.VMProperties.CommonPf.DeleteAppDNS(ctx, client, names, appInst, aac.DnsOverride, platform.NoLBAPI, cloudcommon.ContinueOnError); err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}

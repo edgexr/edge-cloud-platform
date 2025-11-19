@@ -2380,34 +2380,6 @@ func validateImageTypeForPlatform(ctx context.Context, imageType edgeproto.Image
 }
 
 func allocateIP(ctx context.Context, inst *edgeproto.ClusterInst, cloudlet *edgeproto.Cloudlet, platformType string, features *edgeproto.PlatformFeatures, refs *edgeproto.CloudletRefs) error {
-	// Some platforms like ClusterAPI require an IP to assign
-	// to the cluster. This IP must be allocated before creating
-	// the cluster. To avoid race conditions, we allocate the IP
-	// here in the controller instead of in the CCRM in the
-	// platform specific code.
-	if vips, ok := cloudlet.EnvVar[cloudcommon.FloatingVIPs]; ok && vips != "" {
-		// allocate a floating VIP to the cluster
-		vips, err := util.MapIPs(vips)
-		if err != nil {
-			return err
-		}
-		foundVIP := false
-		if refs.UsedVips == nil {
-			refs.UsedVips = make(map[string]int32)
-		}
-		for ip, _ := range vips {
-			if _, found := refs.UsedVips[ip]; !found {
-				refs.UsedVips[ip] = 1
-				inst.AddAnnotation(cloudcommon.AnnotationFloatingVIP, ip)
-				foundVIP = true
-				break
-			}
-		}
-		if !foundVIP {
-			return errors.New("no floating VIP available")
-		}
-	}
-
 	if isIPAllocatedPerService(ctx, platformType, features, cloudlet.Key.Organization) {
 		// we don't track IPs in managed k8s clouds
 		return nil
@@ -2440,12 +2412,6 @@ func allocateIP(ctx context.Context, inst *edgeproto.ClusterInst, cloudlet *edge
 }
 
 func freeIP(inst *edgeproto.ClusterInst, cloudlet *edgeproto.Cloudlet, refs *edgeproto.CloudletRefs) {
-	if inst.Annotations != nil {
-		if vip, ok := inst.Annotations[cloudcommon.AnnotationFloatingVIP]; ok && vip != "" {
-			delete(refs.UsedVips, vip)
-		}
-	}
-
 	if inst.IpAccess == edgeproto.IpAccess_IP_ACCESS_SHARED {
 		return
 	}

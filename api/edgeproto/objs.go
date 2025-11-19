@@ -719,6 +719,61 @@ func (s *AppInstRefs) Validate(fmap objstore.FieldMap) error {
 	return nil
 }
 
+func (s *CloudletIPs) Validate(fmap objstore.FieldMap) error {
+	return nil
+}
+
+func (s *ClusterIPs) Validate(fmap objstore.FieldMap) error {
+	return nil
+}
+
+func (s *LoadBalancer) Validate(fmap objstore.FieldMap) error {
+	return nil
+}
+
+func (s *LoadBalancerKey) ValidateKey() error {
+	if s.Name == "" {
+		return errors.New("no load balancer name")
+	}
+	if s.Namespace == "" {
+		return errors.New("no load balancer namespace")
+	}
+	return nil
+}
+
+func (s *CloudletIPs) EnsureClusterIPs(clusterKey *ClusterKey) (*ClusterIPs, bool) {
+	cips, ok := s.ClusterIps[clusterKey.GetKeyString()]
+	changed := false
+	if !ok {
+		cips = &ClusterIPs{
+			Key:           *clusterKey,
+			LoadBalancers: map[string]*LoadBalancer{},
+		}
+		if s.ClusterIps == nil {
+			s.ClusterIps = map[string]*ClusterIPs{}
+		}
+		s.ClusterIps[clusterKey.GetKeyString()] = cips
+		changed = true
+	}
+	return cips, changed
+}
+
+func (s *ClusterIPs) EnsureLoadBalancer(lbKey *LoadBalancerKey) (*LoadBalancer, bool) {
+	lb, ok := s.LoadBalancers[lbKey.GetKeyString()]
+	changed := false
+	if !ok {
+		lb = &LoadBalancer{
+			Key: *lbKey,
+		}
+		if s.LoadBalancers == nil {
+			s.LoadBalancers = map[string]*LoadBalancer{}
+		}
+		s.LoadBalancers[lbKey.GetKeyString()] = lb
+		changed = true
+	}
+	return lb, changed
+}
+
 func (key *PolicyKey) ValidateKey() error {
 	if err := util.ValidObjName(key.Organization); err != nil {
 		errstring := err.Error()

@@ -68,7 +68,7 @@ func NewPlatform() platform.Platform {
 	}
 }
 
-func (o *AzurePlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform) error {
+func (o *AzurePlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform, caches *platform.Caches) error {
 	o.accessVars = accessVars
 	o.properties = properties
 	return nil

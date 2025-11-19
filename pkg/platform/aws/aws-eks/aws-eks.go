@@ -55,7 +55,7 @@ func NewPlatform() platform.Platform {
 	}
 }
 
-func (a *AwsEksPlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform) error {
+func (a *AwsEksPlatform) Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform, caches *platform.Caches) error {
 	a.awsGenPf = &awsgen.AwsGenericPlatform{Properties: properties}
 	return nil
 }
@@ -359,4 +359,8 @@ func (v *AwsEksPlatform) GetAllClusters(ctx context.Context) ([]*edgeproto.Cloud
 
 func (v *AwsEksPlatform) RegisterCluster(ctx context.Context, clusterName string, in *edgeproto.ClusterInst) (map[string]string, error) {
 	return nil, errors.New("not supported")
+}
+
+func (s *AwsEksPlatform) GetLoadBalancerAPI() platform.LoadBalancerApi {
+	return nil
 }

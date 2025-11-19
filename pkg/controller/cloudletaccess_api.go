@@ -27,7 +27,7 @@ import (
 )
 
 func (s *CloudletApi) InitVaultClient(ctx context.Context) error {
-	s.vaultClient = accessapi.NewVaultClient(ctx, vaultConfig, s.all.cloudletNodeApi, *region, *dnsZone, nodeMgr.ValidDomains)
+	s.vaultClient = accessapi.NewVaultClient(ctx, vaultConfig, s.all.cloudletNodeApi, s.all.cloudletIPsApi.cloudletIPs, *region, *dnsZone, nodeMgr.ValidDomains)
 	return nil
 }
 
@@ -105,6 +105,6 @@ func (s *CloudletApi) GetAccessData(ctx context.Context, req *edgeproto.AccessDa
 		return nil, verified.Key.NotFoundError()
 	}
 	vaultClient := s.vaultClient.CloudletContext(cloudlet)
-	handler := accessapi.NewControllerHandler(cloudlet, vaultClient)
+	handler := accessapi.NewControllerHandler(cloudlet, vaultClient, s.all.cloudletIPsApi.cloudletIPs)
 	return handler.GetAccessData(ctx, req)
 }

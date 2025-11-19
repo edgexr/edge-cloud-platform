@@ -270,6 +270,88 @@ var AppInstRefsApiCmds = []*cobra.Command{
 	ShowAppInstRefsCmd.GenCmd(),
 }
 
+var CloudletIPsApiCmd edgeproto.CloudletIPsApiClient
+
+var ShowCloudletIPsCmd = &cli.Command{
+	Use:          "ShowCloudletIPs",
+	OptionalArgs: strings.Join(append(CloudletIPsRequiredArgs, CloudletIPsOptionalArgs...), " "),
+	AliasArgs:    strings.Join(CloudletIPsAliasArgs, " "),
+	SpecialArgs:  &CloudletIPsSpecialArgs,
+	Comments:     CloudletIPsComments,
+	ReqData:      &edgeproto.CloudletIPs{},
+	ReplyData:    &edgeproto.CloudletIPs{},
+	Run:          runShowCloudletIPs,
+}
+
+func runShowCloudletIPs(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.CloudletIPs)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return ShowCloudletIPs(c, obj)
+}
+
+func ShowCloudletIPs(c *cli.Command, in *edgeproto.CloudletIPs) error {
+	if CloudletIPsApiCmd == nil {
+		return fmt.Errorf("CloudletIPsApi client not initialized")
+	}
+	ctx := context.Background()
+	stream, err := CloudletIPsApiCmd.ShowCloudletIPs(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("ShowCloudletIPs failed: %s", errstr)
+	}
+
+	objs := make([]*edgeproto.CloudletIPs, 0)
+	for {
+		obj, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			errstr := err.Error()
+			st, ok := status.FromError(err)
+			if ok {
+				errstr = st.Message()
+			}
+			return fmt.Errorf("ShowCloudletIPs recv failed: %s", errstr)
+		}
+		objs = append(objs, obj)
+	}
+	if len(objs) == 0 {
+		return nil
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), objs, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func ShowCloudletIPss(c *cli.Command, data []edgeproto.CloudletIPs, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("ShowCloudletIPs %v\n", data[ii])
+		myerr := ShowCloudletIPs(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
+var CloudletIPsApiCmds = []*cobra.Command{
+	ShowCloudletIPsCmd.GenCmd(),
+}
+
 var VMResourceRequiredArgs = []string{
 	"key.name",
 	"key.organization",
@@ -349,3 +431,55 @@ var AppInstRefsComments = map[string]string{
 	"key.version":      "App version",
 }
 var AppInstRefsSpecialArgs = map[string]string{}
+var CloudletIPsRequiredArgs = []string{
+	"key.organization",
+	"key.name",
+	"key.federatedorganization",
+}
+var CloudletIPsOptionalArgs = []string{}
+var CloudletIPsAliasArgs = []string{}
+var CloudletIPsComments = map[string]string{
+	"key.organization":          "Organization of the cloudlet site",
+	"key.name":                  "Name of the cloudlet",
+	"key.federatedorganization": "Federated operator organization who shared this cloudlet",
+}
+var CloudletIPsSpecialArgs = map[string]string{}
+var ClusterIPsRequiredArgs = []string{
+	"key.name",
+	"key.organization",
+}
+var ClusterIPsOptionalArgs = []string{
+	"controlplaneipv4",
+}
+var ClusterIPsAliasArgs = []string{}
+var ClusterIPsComments = map[string]string{
+	"key.name":         "Cluster name",
+	"key.organization": "Name of the organization that this cluster belongs to",
+	"controlplaneipv4": "Control plane IPV4",
+}
+var ClusterIPsSpecialArgs = map[string]string{}
+var LoadBalancerKeyRequiredArgs = []string{}
+var LoadBalancerKeyOptionalArgs = []string{
+	"name",
+	"namespace",
+}
+var LoadBalancerKeyAliasArgs = []string{}
+var LoadBalancerKeyComments = map[string]string{
+	"name":      "Load balancer name",
+	"namespace": "Namespace",
+}
+var LoadBalancerKeySpecialArgs = map[string]string{}
+var LoadBalancerRequiredArgs = []string{
+	"key.name",
+	"key.namespace",
+}
+var LoadBalancerOptionalArgs = []string{
+	"ipv4",
+}
+var LoadBalancerAliasArgs = []string{}
+var LoadBalancerComments = map[string]string{
+	"key.name":      "Load balancer name",
+	"key.namespace": "Namespace",
+	"ipv4":          "Load balancer IPV4",
+}
+var LoadBalancerSpecialArgs = map[string]string{}

@@ -28,6 +28,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	influxq "github.com/edgexr/edge-cloud-platform/pkg/influxq_client"
 	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
+	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
@@ -38,7 +39,7 @@ import (
 )
 
 func TestClusterInstApi(t *testing.T) {
-	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify)
+	log.SetDebugLevel(log.DebugLevelEtcd | log.DebugLevelApi | log.DebugLevelNotify | log.DebugLevelInfra)
 	log.InitTracer(nil)
 	defer log.FinishTracer()
 	ctx := log.StartTestSpan(context.Background())
@@ -247,6 +248,7 @@ func TestClusterInstApi(t *testing.T) {
 	testClusterInstGPUFlavor(t, ctx, apis)
 	testClusterPotentialCloudlets(t, ctx, apis)
 	testClusterResourceUsage(t, ctx, apis)
+	testCloudletIPs(t, ctx, apis)
 
 	dummy.Stop()
 }
@@ -1658,4 +1660,64 @@ func testClusterResourceUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 			require.Equal(t, &test.usage, usage, test.desc)
 		}
 	}
+}
+
+func testCloudletIPs(t *testing.T, ctx context.Context, apis *AllApis) {
+	// This tests that the cluster is annotated correctly with
+	// the allocated VIP.
+	// Tests for IP allocation are in pkg/cloudletips
+	cloudlet := testutil.CloudletData()[5]
+	cloudlet.Key.Name = "testCloudletIPs"
+	cloudlet.EnvVar = map[string]string{
+		cloudcommon.FloatingVIPs: "10.10.10.150-10.10.10.154",
+	}
+
+	// create cloudlet
+	err := apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+
+	// create cluster
+	cluster := testutil.ClusterInstData()[0]
+	cluster.CloudletKey = cloudlet.Key
+	err = apis.clusterInstApi.CreateClusterInst(&cluster, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err)
+
+	// check that cluster has control plane VIP annotation
+	clusterObj := edgeproto.ClusterInst{}
+	ok := apis.clusterInstApi.cache.Get(&cluster.Key, &clusterObj)
+	require.True(t, ok)
+	require.NotNil(t, clusterObj.Annotations)
+	ip, ok := clusterObj.Annotations[cloudcommon.AnnotationControlVIP]
+	require.True(t, ok)
+	require.Equal(t, "10.10.10.150", ip)
+
+	// check that cloudletIPs are set.
+	// the "fakebaremetal" platform will allocate an IP for the
+	// ingress-nginx load balancer.
+	ips := edgeproto.CloudletIPs{}
+	ok = apis.cloudletIPsApi.cache.Get(&cloudlet.Key, &ips)
+	require.True(t, ok)
+	require.Equal(t, 1, len(ips.ClusterIps), ips.ClusterIps)
+	cips, ok := ips.ClusterIps[cluster.Key.GetKeyString()]
+	require.True(t, ok, ips.ClusterIps)
+	require.Equal(t, "10.10.10.150", cips.ControlPlaneIpv4)
+	require.Equal(t, 1, len(cips.LoadBalancers), cips.LoadBalancers)
+	lbKey := edgeproto.LoadBalancerKey{
+		Namespace: k8smgmt.IngressNginxNamespace,
+		Name:      k8smgmt.IngressNginxLoadBalancerName,
+	}
+	lb, ok := cips.LoadBalancers[lbKey.GetKeyString()]
+	require.True(t, ok, cips.LoadBalancers)
+	require.Equal(t, "10.10.10.151", lb.Ipv4)
+
+	// delete cluster
+	err = apis.clusterInstApi.DeleteClusterInst(&cluster, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err)
+
+	// delete cloudlet
+	err = apis.cloudletApi.DeleteCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+
+	ok = apis.cloudletIPsApi.cache.Get(&cloudlet.Key, &ips)
+	require.False(t, ok)
 }

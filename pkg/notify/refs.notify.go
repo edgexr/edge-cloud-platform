@@ -711,3 +711,691 @@ func (s *Client) RegisterRecvAppInstRefsCache(cache AppInstRefsCacheHandler) {
 	recv := NewAppInstRefsRecv(cache)
 	s.RegisterRecv(recv)
 }
+
+type SendCloudletIPsHandler interface {
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.CloudletIPs, modRev int64))
+	GetWithRev(key *edgeproto.CloudletKey, buf *edgeproto.CloudletIPs, modRev *int64) bool
+}
+
+type RecvCloudletIPsHandler interface {
+	Update(ctx context.Context, in *edgeproto.CloudletIPs, rev int64)
+	Delete(ctx context.Context, in *edgeproto.CloudletIPs, rev int64)
+	Prune(ctx context.Context, keys map[edgeproto.CloudletKey]struct{})
+	Flush(ctx context.Context, notifyId int64)
+}
+
+type CloudletIPsCacheHandler interface {
+	SendCloudletIPsHandler
+	RecvCloudletIPsHandler
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.CloudletIPs, modRev int64))
+}
+
+type CloudletIPsSend struct {
+	Name        string
+	MessageName string
+	handler     SendCloudletIPsHandler
+	Keys        map[edgeproto.CloudletKey]CloudletIPsSendContext
+	keysToSend  map[edgeproto.CloudletKey]CloudletIPsSendContext
+	notifyId    int64
+	Mux         sync.Mutex
+	buf         edgeproto.CloudletIPs
+	SendCount   uint64
+	sendrecv    *SendRecv
+}
+
+type CloudletIPsSendContext struct {
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
+}
+
+func NewCloudletIPsSend(handler SendCloudletIPsHandler) *CloudletIPsSend {
+	send := &CloudletIPsSend{}
+	send.Name = "CloudletIPs"
+	send.MessageName = proto.MessageName((*edgeproto.CloudletIPs)(nil))
+	send.handler = handler
+	send.Keys = make(map[edgeproto.CloudletKey]CloudletIPsSendContext)
+	return send
+}
+
+func (s *CloudletIPsSend) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *CloudletIPsSend) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *CloudletIPsSend) GetName() string {
+	return s.Name
+}
+
+func (s *CloudletIPsSend) GetSendCount() uint64 {
+	return s.SendCount
+}
+
+func (s *CloudletIPsSend) GetNotifyId() int64 {
+	return s.notifyId
+}
+func (s *CloudletIPsSend) UpdateAll(ctx context.Context) {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return
+	}
+	s.Mux.Lock()
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.CloudletIPs, modRev int64) {
+		s.Keys[*obj.GetKey()] = CloudletIPsSendContext{
+			ctx:    ctx,
+			modRev: modRev,
+		}
+	})
+	s.Mux.Unlock()
+}
+
+func (s *CloudletIPsSend) Update(ctx context.Context, obj *edgeproto.CloudletIPs, modRev int64) {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return
+	}
+	forceDelete := false
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
+}
+
+func (s *CloudletIPsSend) ForceDelete(ctx context.Context, key *edgeproto.CloudletKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *CloudletIPsSend) updateInternal(ctx context.Context, key *edgeproto.CloudletKey, modRev int64, forceDelete bool) {
+	s.Mux.Lock()
+	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal CloudletIPs", "key", key, "modRev", modRev)
+	s.Keys[*key] = CloudletIPsSendContext{
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
+	}
+	s.Mux.Unlock()
+	s.sendrecv.wakeup()
+}
+
+func (s *CloudletIPsSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+}
+
+func (s *CloudletIPsSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
+	s.Mux.Lock()
+	keys := s.keysToSend
+	s.keysToSend = nil
+	s.Mux.Unlock()
+	for key, sendContext := range keys {
+		ctx := sendContext.ctx
+		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
+		if found && !sendContext.forceDelete {
+			notice.Action = edgeproto.NoticeAction_UPDATE
+		} else {
+			notice.Action = edgeproto.NoticeAction_DELETE
+			notice.ModRev = sendContext.modRev
+			s.buf.Reset()
+			s.buf.SetKey(&key)
+		}
+		any, err := types.MarshalAny(&s.buf)
+		if err != nil {
+			s.sendrecv.stats.MarshalErrors++
+			err = nil
+			continue
+		}
+		notice.Any = *any
+		notice.Span = log.SpanToString(ctx)
+		log.SpanLog(ctx, log.DebugLevelNotify,
+			fmt.Sprintf("%s send CloudletIPs", s.sendrecv.cliserv),
+			"peerAddr", peer,
+			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
+			"action", notice.Action,
+			"key", key,
+			"modRev", notice.ModRev)
+		err = stream.Send(notice)
+		if err != nil {
+			s.sendrecv.stats.SendErrors++
+			return err
+		}
+		s.sendrecv.stats.Send++
+		// object specific counter
+		s.SendCount++
+	}
+	return nil
+}
+
+func (s *CloudletIPsSend) PrepData() bool {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	if len(s.Keys) > 0 {
+		s.keysToSend = s.Keys
+		s.Keys = make(map[edgeproto.CloudletKey]CloudletIPsSendContext)
+		return true
+	}
+	return false
+}
+
+// Server accepts multiple clients so needs to track multiple
+// peers to send to.
+type CloudletIPsSendMany struct {
+	handler SendCloudletIPsHandler
+	Mux     sync.Mutex
+	sends   map[string]*CloudletIPsSend
+}
+
+func NewCloudletIPsSendMany(handler SendCloudletIPsHandler) *CloudletIPsSendMany {
+	s := &CloudletIPsSendMany{}
+	s.handler = handler
+	s.sends = make(map[string]*CloudletIPsSend)
+	return s
+}
+
+func (s *CloudletIPsSendMany) NewSend(peerAddr string, notifyId int64) NotifySend {
+	send := NewCloudletIPsSend(s.handler)
+	send.notifyId = notifyId
+	s.Mux.Lock()
+	s.sends[peerAddr] = send
+	s.Mux.Unlock()
+	return send
+}
+
+func (s *CloudletIPsSendMany) DoneSend(peerAddr string, send NotifySend) {
+	asend, ok := send.(*CloudletIPsSend)
+	if !ok {
+		return
+	}
+	// another connection may come from the same client so remove
+	// only if it matches
+	s.Mux.Lock()
+	if remove, _ := s.sends[peerAddr]; remove == asend {
+		delete(s.sends, peerAddr)
+	}
+	s.Mux.Unlock()
+}
+func (s *CloudletIPsSendMany) Update(ctx context.Context, obj *edgeproto.CloudletIPs, modRev int64) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for _, send := range s.sends {
+		send.Update(ctx, obj, modRev)
+	}
+}
+
+func (s *CloudletIPsSendMany) GetTypeString() string {
+	return "CloudletIPs"
+}
+
+type CloudletIPsRecv struct {
+	Name        string
+	MessageName string
+	handler     RecvCloudletIPsHandler
+	sendAllKeys map[edgeproto.CloudletKey]struct{}
+	Mux         sync.Mutex
+	buf         edgeproto.CloudletIPs
+	RecvCount   uint64
+	sendrecv    *SendRecv
+}
+
+func NewCloudletIPsRecv(handler RecvCloudletIPsHandler) *CloudletIPsRecv {
+	recv := &CloudletIPsRecv{}
+	recv.Name = "CloudletIPs"
+	recv.MessageName = proto.MessageName((*edgeproto.CloudletIPs)(nil))
+	recv.handler = handler
+	return recv
+}
+
+func (s *CloudletIPsRecv) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *CloudletIPsRecv) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *CloudletIPsRecv) GetName() string {
+	return s.Name
+}
+
+func (s *CloudletIPsRecv) GetRecvCount() uint64 {
+	return s.RecvCount
+}
+
+func (s *CloudletIPsRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyId int64, peerAddr string) {
+	span := opentracing.SpanFromContext(ctx)
+	if span != nil {
+		span.SetTag("objtype", "CloudletIPs")
+	}
+
+	buf := &edgeproto.CloudletIPs{}
+	err := types.UnmarshalAny(&notice.Any, buf)
+	if err != nil {
+		s.sendrecv.stats.UnmarshalErrors++
+		log.SpanLog(ctx, log.DebugLevelNotify, "Unmarshal Error", "err", err)
+		return
+	}
+	if span != nil {
+		log.SetTags(span, buf.GetKey().GetTags())
+	}
+	log.SpanLog(ctx, log.DebugLevelNotify,
+		fmt.Sprintf("%s recv CloudletIPs", s.sendrecv.cliserv),
+		"peerAddr", peerAddr,
+		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
+		"action", notice.Action,
+		"key", buf.GetKeyVal(),
+		"modRev", notice.ModRev)
+	if notice.Action == edgeproto.NoticeAction_UPDATE {
+		s.handler.Update(ctx, buf, notice.ModRev)
+		s.Mux.Lock()
+		if s.sendAllKeys != nil {
+			s.sendAllKeys[buf.GetKeyVal()] = struct{}{}
+		}
+		s.Mux.Unlock()
+	} else if notice.Action == edgeproto.NoticeAction_DELETE {
+		s.handler.Delete(ctx, buf, notice.ModRev)
+	}
+	s.sendrecv.stats.Recv++
+	// object specific counter
+	s.RecvCount++
+}
+
+func (s *CloudletIPsRecv) RecvAllStart() {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	s.sendAllKeys = make(map[edgeproto.CloudletKey]struct{})
+}
+
+func (s *CloudletIPsRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {
+	s.Mux.Lock()
+	validKeys := s.sendAllKeys
+	s.sendAllKeys = nil
+	s.Mux.Unlock()
+	if cleanup == CleanupPrune {
+		s.handler.Prune(ctx, validKeys)
+	}
+}
+func (s *CloudletIPsRecv) Flush(ctx context.Context, notifyId int64) {
+	s.handler.Flush(ctx, notifyId)
+}
+
+type CloudletIPsRecvMany struct {
+	handler RecvCloudletIPsHandler
+}
+
+func NewCloudletIPsRecvMany(handler RecvCloudletIPsHandler) *CloudletIPsRecvMany {
+	s := &CloudletIPsRecvMany{}
+	s.handler = handler
+	return s
+}
+
+func (s *CloudletIPsRecvMany) NewRecv() NotifyRecv {
+	recv := NewCloudletIPsRecv(s.handler)
+	return recv
+}
+
+func (s *CloudletIPsRecvMany) Flush(ctx context.Context, notifyId int64) {
+	s.handler.Flush(ctx, notifyId)
+}
+func (mgr *ServerMgr) RegisterSendCloudletIPsCache(cache CloudletIPsCacheHandler) {
+	send := NewCloudletIPsSendMany(cache)
+	mgr.RegisterSend(send)
+	cache.AddNotifyCb(send.Update)
+}
+
+func (mgr *ServerMgr) RegisterRecvCloudletIPsCache(cache CloudletIPsCacheHandler) {
+	recv := NewCloudletIPsRecvMany(cache)
+	mgr.RegisterRecv(recv)
+}
+
+func (s *Client) RegisterSendCloudletIPsCache(cache CloudletIPsCacheHandler) {
+	send := NewCloudletIPsSend(cache)
+	s.RegisterSend(send)
+	cache.AddNotifyCb(send.Update)
+}
+
+func (s *Client) RegisterRecvCloudletIPsCache(cache CloudletIPsCacheHandler) {
+	recv := NewCloudletIPsRecv(cache)
+	s.RegisterRecv(recv)
+}
+
+type SendLoadBalancerHandler interface {
+	GetAllLocked(ctx context.Context, cb func(key *edgeproto.LoadBalancer, modRev int64))
+	GetWithRev(key *edgeproto.LoadBalancerKey, buf *edgeproto.LoadBalancer, modRev *int64) bool
+}
+
+type RecvLoadBalancerHandler interface {
+	Update(ctx context.Context, in *edgeproto.LoadBalancer, rev int64)
+	Delete(ctx context.Context, in *edgeproto.LoadBalancer, rev int64)
+	Prune(ctx context.Context, keys map[edgeproto.LoadBalancerKey]struct{})
+	Flush(ctx context.Context, notifyId int64)
+}
+
+type LoadBalancerCacheHandler interface {
+	SendLoadBalancerHandler
+	RecvLoadBalancerHandler
+	AddNotifyCb(fn func(ctx context.Context, obj *edgeproto.LoadBalancer, modRev int64))
+}
+
+type LoadBalancerSend struct {
+	Name        string
+	MessageName string
+	handler     SendLoadBalancerHandler
+	Keys        map[edgeproto.LoadBalancerKey]LoadBalancerSendContext
+	keysToSend  map[edgeproto.LoadBalancerKey]LoadBalancerSendContext
+	notifyId    int64
+	Mux         sync.Mutex
+	buf         edgeproto.LoadBalancer
+	SendCount   uint64
+	sendrecv    *SendRecv
+}
+
+type LoadBalancerSendContext struct {
+	ctx         context.Context
+	modRev      int64
+	forceDelete bool
+}
+
+func NewLoadBalancerSend(handler SendLoadBalancerHandler) *LoadBalancerSend {
+	send := &LoadBalancerSend{}
+	send.Name = "LoadBalancer"
+	send.MessageName = proto.MessageName((*edgeproto.LoadBalancer)(nil))
+	send.handler = handler
+	send.Keys = make(map[edgeproto.LoadBalancerKey]LoadBalancerSendContext)
+	return send
+}
+
+func (s *LoadBalancerSend) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *LoadBalancerSend) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *LoadBalancerSend) GetName() string {
+	return s.Name
+}
+
+func (s *LoadBalancerSend) GetSendCount() uint64 {
+	return s.SendCount
+}
+
+func (s *LoadBalancerSend) GetNotifyId() int64 {
+	return s.notifyId
+}
+func (s *LoadBalancerSend) UpdateAll(ctx context.Context) {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return
+	}
+	s.Mux.Lock()
+	s.handler.GetAllLocked(ctx, func(obj *edgeproto.LoadBalancer, modRev int64) {
+		s.Keys[*obj.GetKey()] = LoadBalancerSendContext{
+			ctx:    ctx,
+			modRev: modRev,
+		}
+	})
+	s.Mux.Unlock()
+}
+
+func (s *LoadBalancerSend) Update(ctx context.Context, obj *edgeproto.LoadBalancer, modRev int64) {
+	if !s.sendrecv.isRemoteWanted(s.MessageName) {
+		return
+	}
+	forceDelete := false
+	s.updateInternal(ctx, obj.GetKey(), modRev, forceDelete)
+}
+
+func (s *LoadBalancerSend) ForceDelete(ctx context.Context, key *edgeproto.LoadBalancerKey, modRev int64) {
+	forceDelete := true
+	s.updateInternal(ctx, key, modRev, forceDelete)
+}
+
+func (s *LoadBalancerSend) updateInternal(ctx context.Context, key *edgeproto.LoadBalancerKey, modRev int64, forceDelete bool) {
+	s.Mux.Lock()
+	log.SpanLog(ctx, log.DebugLevelNotify, "updateInternal LoadBalancer", "key", key, "modRev", modRev)
+	s.Keys[*key] = LoadBalancerSendContext{
+		ctx:         ctx,
+		modRev:      modRev,
+		forceDelete: forceDelete,
+	}
+	s.Mux.Unlock()
+	s.sendrecv.wakeup()
+}
+
+func (s *LoadBalancerSend) SendForCloudlet(ctx context.Context, action edgeproto.NoticeAction, cloudlet *edgeproto.Cloudlet) {
+}
+
+func (s *LoadBalancerSend) Send(stream StreamNotify, notice *edgeproto.Notice, peer string) error {
+	s.Mux.Lock()
+	keys := s.keysToSend
+	s.keysToSend = nil
+	s.Mux.Unlock()
+	for key, sendContext := range keys {
+		ctx := sendContext.ctx
+		found := s.handler.GetWithRev(&key, &s.buf, &notice.ModRev)
+		if found && !sendContext.forceDelete {
+			notice.Action = edgeproto.NoticeAction_UPDATE
+		} else {
+			notice.Action = edgeproto.NoticeAction_DELETE
+			notice.ModRev = sendContext.modRev
+			s.buf.Reset()
+			s.buf.SetKey(&key)
+		}
+		any, err := types.MarshalAny(&s.buf)
+		if err != nil {
+			s.sendrecv.stats.MarshalErrors++
+			err = nil
+			continue
+		}
+		notice.Any = *any
+		notice.Span = log.SpanToString(ctx)
+		log.SpanLog(ctx, log.DebugLevelNotify,
+			fmt.Sprintf("%s send LoadBalancer", s.sendrecv.cliserv),
+			"peerAddr", peer,
+			"peer", s.sendrecv.peer,
+			"local", s.sendrecv.name,
+			"action", notice.Action,
+			"key", key,
+			"modRev", notice.ModRev)
+		err = stream.Send(notice)
+		if err != nil {
+			s.sendrecv.stats.SendErrors++
+			return err
+		}
+		s.sendrecv.stats.Send++
+		// object specific counter
+		s.SendCount++
+	}
+	return nil
+}
+
+func (s *LoadBalancerSend) PrepData() bool {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	if len(s.Keys) > 0 {
+		s.keysToSend = s.Keys
+		s.Keys = make(map[edgeproto.LoadBalancerKey]LoadBalancerSendContext)
+		return true
+	}
+	return false
+}
+
+// Server accepts multiple clients so needs to track multiple
+// peers to send to.
+type LoadBalancerSendMany struct {
+	handler SendLoadBalancerHandler
+	Mux     sync.Mutex
+	sends   map[string]*LoadBalancerSend
+}
+
+func NewLoadBalancerSendMany(handler SendLoadBalancerHandler) *LoadBalancerSendMany {
+	s := &LoadBalancerSendMany{}
+	s.handler = handler
+	s.sends = make(map[string]*LoadBalancerSend)
+	return s
+}
+
+func (s *LoadBalancerSendMany) NewSend(peerAddr string, notifyId int64) NotifySend {
+	send := NewLoadBalancerSend(s.handler)
+	send.notifyId = notifyId
+	s.Mux.Lock()
+	s.sends[peerAddr] = send
+	s.Mux.Unlock()
+	return send
+}
+
+func (s *LoadBalancerSendMany) DoneSend(peerAddr string, send NotifySend) {
+	asend, ok := send.(*LoadBalancerSend)
+	if !ok {
+		return
+	}
+	// another connection may come from the same client so remove
+	// only if it matches
+	s.Mux.Lock()
+	if remove, _ := s.sends[peerAddr]; remove == asend {
+		delete(s.sends, peerAddr)
+	}
+	s.Mux.Unlock()
+}
+func (s *LoadBalancerSendMany) Update(ctx context.Context, obj *edgeproto.LoadBalancer, modRev int64) {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	for _, send := range s.sends {
+		send.Update(ctx, obj, modRev)
+	}
+}
+
+func (s *LoadBalancerSendMany) GetTypeString() string {
+	return "LoadBalancer"
+}
+
+type LoadBalancerRecv struct {
+	Name        string
+	MessageName string
+	handler     RecvLoadBalancerHandler
+	sendAllKeys map[edgeproto.LoadBalancerKey]struct{}
+	Mux         sync.Mutex
+	buf         edgeproto.LoadBalancer
+	RecvCount   uint64
+	sendrecv    *SendRecv
+}
+
+func NewLoadBalancerRecv(handler RecvLoadBalancerHandler) *LoadBalancerRecv {
+	recv := &LoadBalancerRecv{}
+	recv.Name = "LoadBalancer"
+	recv.MessageName = proto.MessageName((*edgeproto.LoadBalancer)(nil))
+	recv.handler = handler
+	return recv
+}
+
+func (s *LoadBalancerRecv) SetSendRecv(sendrecv *SendRecv) {
+	s.sendrecv = sendrecv
+}
+
+func (s *LoadBalancerRecv) GetMessageName() string {
+	return s.MessageName
+}
+
+func (s *LoadBalancerRecv) GetName() string {
+	return s.Name
+}
+
+func (s *LoadBalancerRecv) GetRecvCount() uint64 {
+	return s.RecvCount
+}
+
+func (s *LoadBalancerRecv) Recv(ctx context.Context, notice *edgeproto.Notice, notifyId int64, peerAddr string) {
+	span := opentracing.SpanFromContext(ctx)
+	if span != nil {
+		span.SetTag("objtype", "LoadBalancer")
+	}
+
+	buf := &edgeproto.LoadBalancer{}
+	err := types.UnmarshalAny(&notice.Any, buf)
+	if err != nil {
+		s.sendrecv.stats.UnmarshalErrors++
+		log.SpanLog(ctx, log.DebugLevelNotify, "Unmarshal Error", "err", err)
+		return
+	}
+	if span != nil {
+		log.SetTags(span, buf.GetKey().GetTags())
+	}
+	log.SpanLog(ctx, log.DebugLevelNotify,
+		fmt.Sprintf("%s recv LoadBalancer", s.sendrecv.cliserv),
+		"peerAddr", peerAddr,
+		"peer", s.sendrecv.peer,
+		"local", s.sendrecv.name,
+		"action", notice.Action,
+		"key", buf.GetKeyVal(),
+		"modRev", notice.ModRev)
+	if notice.Action == edgeproto.NoticeAction_UPDATE {
+		s.handler.Update(ctx, buf, notice.ModRev)
+		s.Mux.Lock()
+		if s.sendAllKeys != nil {
+			s.sendAllKeys[buf.GetKeyVal()] = struct{}{}
+		}
+		s.Mux.Unlock()
+	} else if notice.Action == edgeproto.NoticeAction_DELETE {
+		s.handler.Delete(ctx, buf, notice.ModRev)
+	}
+	s.sendrecv.stats.Recv++
+	// object specific counter
+	s.RecvCount++
+}
+
+func (s *LoadBalancerRecv) RecvAllStart() {
+	s.Mux.Lock()
+	defer s.Mux.Unlock()
+	s.sendAllKeys = make(map[edgeproto.LoadBalancerKey]struct{})
+}
+
+func (s *LoadBalancerRecv) RecvAllEnd(ctx context.Context, cleanup Cleanup) {
+	s.Mux.Lock()
+	validKeys := s.sendAllKeys
+	s.sendAllKeys = nil
+	s.Mux.Unlock()
+	if cleanup == CleanupPrune {
+		s.handler.Prune(ctx, validKeys)
+	}
+}
+func (s *LoadBalancerRecv) Flush(ctx context.Context, notifyId int64) {
+	s.handler.Flush(ctx, notifyId)
+}
+
+type LoadBalancerRecvMany struct {
+	handler RecvLoadBalancerHandler
+}
+
+func NewLoadBalancerRecvMany(handler RecvLoadBalancerHandler) *LoadBalancerRecvMany {
+	s := &LoadBalancerRecvMany{}
+	s.handler = handler
+	return s
+}
+
+func (s *LoadBalancerRecvMany) NewRecv() NotifyRecv {
+	recv := NewLoadBalancerRecv(s.handler)
+	return recv
+}
+
+func (s *LoadBalancerRecvMany) Flush(ctx context.Context, notifyId int64) {
+	s.handler.Flush(ctx, notifyId)
+}
+func (mgr *ServerMgr) RegisterSendLoadBalancerCache(cache LoadBalancerCacheHandler) {
+	send := NewLoadBalancerSendMany(cache)
+	mgr.RegisterSend(send)
+	cache.AddNotifyCb(send.Update)
+}
+
+func (mgr *ServerMgr) RegisterRecvLoadBalancerCache(cache LoadBalancerCacheHandler) {
+	recv := NewLoadBalancerRecvMany(cache)
+	mgr.RegisterRecv(recv)
+}
+
+func (s *Client) RegisterSendLoadBalancerCache(cache LoadBalancerCacheHandler) {
+	send := NewLoadBalancerSend(cache)
+	s.RegisterSend(send)
+	cache.AddNotifyCb(send.Update)
+}
+
+func (s *Client) RegisterRecvLoadBalancerCache(cache LoadBalancerCacheHandler) {
+	recv := NewLoadBalancerRecv(cache)
+	s.RegisterRecv(recv)
+}

@@ -17,28 +17,16 @@ package infracommon
 import (
 	"bytes"
 	"fmt"
-	"strings"
 	"text/template"
 
+	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 )
 
 func ExecTemplate(templateName, templateString string, templateData interface{}) (*bytes.Buffer, error) {
 	var buf bytes.Buffer
 	funcMap := template.FuncMap{
-		"Indent": func(values ...interface{}) string {
-			s := values[0].(string)
-			l := 4
-			if len(values) > 1 {
-				l = values[1].(int)
-			}
-			var newStr []string
-			indent := strings.Repeat(" ", l)
-			for _, v := range strings.Split(string(s), "\n") {
-				newStr = append(newStr, indent+v)
-			}
-			return strings.Join(newStr, "\n")
-		},
+		"Indent": cloudcommon.TemplateIndent,
 	}
 
 	tmpl, err := template.New(templateName).Funcs(funcMap).Parse(templateString)

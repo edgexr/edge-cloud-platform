@@ -26,7 +26,6 @@ import (
 )
 
 func InstallCilium(ctx context.Context, client ssh.Client, names *KconfNames, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) error {
-	kubeNames := &KubeNames{}
 	chartSpec := HelmChartSpec{
 		ImagePath: "https://helm.cilium.io/:cilium/cilium",
 		URLPath:   "https://helm.cilium.io/",
@@ -34,15 +33,7 @@ func InstallCilium(ctx context.Context, client ssh.Client, names *KconfNames, cl
 		RepoName:  "cilium",
 		ChartRef:  "cilium/cilium",
 	}
-	err := helmRepoAdd(ctx, client, kubeNames, &chartSpec)
-	if err != nil {
-		return err
-	}
-	err = helmRepoUpdate(ctx, client, kubeNames, &chartSpec)
-	if err != nil {
-		return err
-	}
-	cmd := fmt.Sprintf("helm %s install cilium %s --version 1.18.3 --namespace kube-system --wait", names.KconfArg, chartSpec.ChartRef)
+	cmd := fmt.Sprintf("helm %s upgrade --install cilium %s --repo %s --version 1.18.3 --namespace kube-system --wait", names.KconfArg, chartSpec.ChartName, chartSpec.URLPath)
 	log.SpanLog(ctx, log.DebugLevelInfra, "installing cilium", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {

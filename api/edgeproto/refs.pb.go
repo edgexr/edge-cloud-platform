@@ -21,7 +21,9 @@ import (
 	io "io"
 	math "math"
 	math_bits "math/bits"
+	reflect "reflect"
 	"sort"
+	strings "strings"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -103,8 +105,6 @@ type CloudletRefs struct {
 	VmAppInsts []AppInstKey `protobuf:"bytes,14,rep,name=vm_app_insts,json=vmAppInsts,proto3" json:"vm_app_insts"`
 	// (_deprecated_) Track k8s appinsts on clusterRefs instead. Previously K8s apps instantiated on the Cloudlet
 	K8SAppInsts []AppInstKey `protobuf:"bytes,15,rep,name=k8s_app_insts,json=k8sAppInsts,proto3" json:"k8s_app_insts"`
-	// Used VIPs
-	UsedVips map[string]int32 `protobuf:"bytes,16,rep,name=used_vips,json=usedVips,proto3" json:"used_vips,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
 }
 
 func (m *CloudletRefs) Reset()         { *m = CloudletRefs{} }
@@ -223,80 +223,286 @@ func (m *AppInstRefs) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_AppInstRefs proto.InternalMessageInfo
 
+// CloudletIPs track IP allocation for a cloudlet
+type CloudletIPs struct {
+	// Cloudlet key
+	Key CloudletKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
+	// Cluster IPs, key is cluster key json
+	ClusterIps map[string]*ClusterIPs `protobuf:"bytes,3,rep,name=cluster_ips,json=clusterIps,proto3" json:"cluster_ips,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+}
+
+func (m *CloudletIPs) Reset()         { *m = CloudletIPs{} }
+func (m *CloudletIPs) String() string { return proto.CompactTextString(m) }
+func (*CloudletIPs) ProtoMessage()    {}
+func (*CloudletIPs) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6435a763ece979c6, []int{4}
+}
+func (m *CloudletIPs) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *CloudletIPs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_CloudletIPs.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *CloudletIPs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CloudletIPs.Merge(m, src)
+}
+func (m *CloudletIPs) XXX_Size() int {
+	return m.Size()
+}
+func (m *CloudletIPs) XXX_DiscardUnknown() {
+	xxx_messageInfo_CloudletIPs.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CloudletIPs proto.InternalMessageInfo
+
+type ClusterIPs struct {
+	// Cluster key
+	Key ClusterKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
+	// Control plane IPV4
+	ControlPlaneIpv4 string `protobuf:"bytes,2,opt,name=control_plane_ipv4,json=controlPlaneIpv4,proto3" json:"control_plane_ipv4,omitempty"`
+	// Load balancers, key is load balancer key json
+	LoadBalancers map[string]*LoadBalancer `protobuf:"bytes,4,rep,name=load_balancers,json=loadBalancers,proto3" json:"load_balancers,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+}
+
+func (m *ClusterIPs) Reset()         { *m = ClusterIPs{} }
+func (m *ClusterIPs) String() string { return proto.CompactTextString(m) }
+func (*ClusterIPs) ProtoMessage()    {}
+func (*ClusterIPs) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6435a763ece979c6, []int{5}
+}
+func (m *ClusterIPs) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ClusterIPs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ClusterIPs.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ClusterIPs) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ClusterIPs.Merge(m, src)
+}
+func (m *ClusterIPs) XXX_Size() int {
+	return m.Size()
+}
+func (m *ClusterIPs) XXX_DiscardUnknown() {
+	xxx_messageInfo_ClusterIPs.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ClusterIPs proto.InternalMessageInfo
+
+// LoadBalancerKey uniquely identifies a Kubernetes load balancer
+type LoadBalancerKey struct {
+	// Load balancer name
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Namespace
+	Namespace string `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"`
+}
+
+func (m *LoadBalancerKey) Reset()         { *m = LoadBalancerKey{} }
+func (m *LoadBalancerKey) String() string { return proto.CompactTextString(m) }
+func (*LoadBalancerKey) ProtoMessage()    {}
+func (*LoadBalancerKey) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6435a763ece979c6, []int{6}
+}
+func (m *LoadBalancerKey) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LoadBalancerKey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LoadBalancerKey.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LoadBalancerKey) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoadBalancerKey.Merge(m, src)
+}
+func (m *LoadBalancerKey) XXX_Size() int {
+	return m.Size()
+}
+func (m *LoadBalancerKey) XXX_DiscardUnknown() {
+	xxx_messageInfo_LoadBalancerKey.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LoadBalancerKey proto.InternalMessageInfo
+
+// ClusterLB tracks a Kubernetes load balancer.
+type LoadBalancer struct {
+	// Load balancer key
+	Key LoadBalancerKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key"`
+	// Load balancer IPV4
+	Ipv4 string `protobuf:"bytes,2,opt,name=ipv4,proto3" json:"ipv4,omitempty"`
+}
+
+func (m *LoadBalancer) Reset()         { *m = LoadBalancer{} }
+func (m *LoadBalancer) String() string { return proto.CompactTextString(m) }
+func (*LoadBalancer) ProtoMessage()    {}
+func (*LoadBalancer) Descriptor() ([]byte, []int) {
+	return fileDescriptor_6435a763ece979c6, []int{7}
+}
+func (m *LoadBalancer) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *LoadBalancer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_LoadBalancer.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *LoadBalancer) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoadBalancer.Merge(m, src)
+}
+func (m *LoadBalancer) XXX_Size() int {
+	return m.Size()
+}
+func (m *LoadBalancer) XXX_DiscardUnknown() {
+	xxx_messageInfo_LoadBalancer.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LoadBalancer proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*VMResource)(nil), "edgeproto.VMResource")
 	proto.RegisterType((*CloudletRefs)(nil), "edgeproto.CloudletRefs")
 	proto.RegisterMapType((map[string]uint32)(nil), "edgeproto.CloudletRefs.OptResUsedMapEntry")
 	proto.RegisterMapType((map[int32]int32)(nil), "edgeproto.CloudletRefs.RootLbPortsEntry")
-	proto.RegisterMapType((map[string]int32)(nil), "edgeproto.CloudletRefs.UsedVipsEntry")
 	proto.RegisterType((*ClusterRefs)(nil), "edgeproto.ClusterRefs")
 	proto.RegisterType((*AppInstRefs)(nil), "edgeproto.AppInstRefs")
 	proto.RegisterMapType((map[string]uint32)(nil), "edgeproto.AppInstRefs.DeleteRequestedInstsEntry")
 	proto.RegisterMapType((map[string]uint32)(nil), "edgeproto.AppInstRefs.InstsEntry")
+	proto.RegisterType((*CloudletIPs)(nil), "edgeproto.CloudletIPs")
+	proto.RegisterMapType((map[string]*ClusterIPs)(nil), "edgeproto.CloudletIPs.ClusterIpsEntry")
+	proto.RegisterType((*ClusterIPs)(nil), "edgeproto.ClusterIPs")
+	proto.RegisterMapType((map[string]*LoadBalancer)(nil), "edgeproto.ClusterIPs.LoadBalancersEntry")
+	proto.RegisterType((*LoadBalancerKey)(nil), "edgeproto.LoadBalancerKey")
+	proto.RegisterType((*LoadBalancer)(nil), "edgeproto.LoadBalancer")
 }
 
 func init() { proto.RegisterFile("refs.proto", fileDescriptor_6435a763ece979c6) }
 
 var fileDescriptor_6435a763ece979c6 = []byte{
-	// 924 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x95, 0x41, 0x6f, 0x1b, 0xc5,
-	0x1b, 0xc6, 0x3d, 0xb1, 0x9d, 0xbf, 0xfd, 0x3a, 0x1b, 0xbb, 0xdb, 0xfc, 0xcd, 0xd4, 0x14, 0x63,
-	0x2c, 0x81, 0x2c, 0x94, 0xba, 0x26, 0x70, 0x08, 0x06, 0x01, 0x4e, 0x0b, 0xb4, 0xb4, 0x55, 0xd0,
-	0x46, 0xe4, 0xba, 0xda, 0x78, 0x27, 0xc6, 0xca, 0x7a, 0x67, 0xd8, 0x99, 0x75, 0x65, 0x4e, 0xdc,
-	0x40, 0x85, 0x43, 0x3f, 0x00, 0x07, 0xae, 0x5c, 0xf9, 0x14, 0x39, 0xf6, 0xc8, 0x09, 0x41, 0x72,
-	0x41, 0x3e, 0x21, 0xd5, 0x72, 0x38, 0xa2, 0x9d, 0xd9, 0xcd, 0x6e, 0xb0, 0xb7, 0x21, 0xb7, 0x79,
-	0x9f, 0x7d, 0xe7, 0x99, 0x9f, 0x67, 0x9e, 0x19, 0x03, 0x78, 0xe4, 0x90, 0xb7, 0x99, 0x47, 0x05,
-	0xd5, 0x8b, 0xc4, 0x1e, 0x10, 0x39, 0xac, 0xbd, 0x22, 0x28, 0x75, 0xf8, 0x6d, 0x59, 0x0c, 0x88,
-	0x7b, 0x3e, 0x50, 0x9d, 0xb5, 0x8d, 0x01, 0x1d, 0x50, 0x39, 0xbc, 0x1d, 0x8c, 0x42, 0xf5, 0x5a,
-	0xdf, 0xa1, 0xbe, 0xed, 0x10, 0x71, 0x44, 0x26, 0xa1, 0xa4, 0xf5, 0x1d, 0x9f, 0x0b, 0xe2, 0x85,
-	0x65, 0xd1, 0x62, 0x2c, 0xfa, 0x62, 0x31, 0x36, 0x74, 0xb9, 0x50, 0x65, 0xf3, 0x3b, 0x04, 0xb0,
-	0xff, 0xc8, 0x20, 0x9c, 0xfa, 0x5e, 0x9f, 0xe8, 0xb7, 0x20, 0x7b, 0x44, 0x26, 0x18, 0x35, 0x50,
-	0xab, 0xb4, 0xf5, 0xff, 0xf6, 0x39, 0x58, 0xfb, 0x8e, 0xf2, 0x7b, 0x40, 0x26, 0x3b, 0xb9, 0xe3,
-	0xdf, 0x5e, 0xcd, 0x18, 0x41, 0x9f, 0xfe, 0x32, 0x14, 0xc7, 0x23, 0xf3, 0xd0, 0xb1, 0xc6, 0xd4,
-	0xc3, 0x2b, 0x0d, 0xd4, 0x2a, 0x1a, 0x85, 0xf1, 0xe8, 0x13, 0x59, 0xeb, 0x3a, 0xe4, 0xc4, 0x84,
-	0x11, 0x9c, 0x95, 0xba, 0x1c, 0xeb, 0x1b, 0x90, 0xef, 0x53, 0xdf, 0x15, 0x38, 0xdf, 0x40, 0x2d,
-	0xcd, 0x50, 0xc5, 0x67, 0xb9, 0x42, 0xae, 0x92, 0x6f, 0x9e, 0xad, 0xc2, 0xda, 0x9d, 0xf0, 0x97,
-	0x18, 0xe4, 0x90, 0xeb, 0xdd, 0x24, 0x4c, 0xf5, 0x02, 0x8c, 0xea, 0x0a, 0x68, 0x2a, 0xd3, 0x39,
-	0x2e, 0x44, 0x42, 0x4c, 0xf6, 0x10, 0x34, 0x8f, 0x52, 0x61, 0x3a, 0x07, 0x26, 0xa3, 0x9e, 0xe0,
-	0xb8, 0xd0, 0xc8, 0xb6, 0x4a, 0x5b, 0xad, 0x25, 0x2e, 0xc1, 0x5a, 0x6d, 0x83, 0x52, 0xf1, 0xf0,
-	0xe0, 0xf3, 0xa0, 0xf5, 0x63, 0x57, 0x78, 0x13, 0xa3, 0xe4, 0xc5, 0x8a, 0xde, 0x82, 0x8a, 0xcf,
-	0x89, 0x6d, 0xda, 0x13, 0xd7, 0x1a, 0x0d, 0xfb, 0xe6, 0x90, 0x71, 0x5c, 0x6c, 0xa0, 0x56, 0xde,
-	0x58, 0x0f, 0xf4, 0xbb, 0x4a, 0xbe, 0xcf, 0xb8, 0xfe, 0x06, 0x94, 0x65, 0x27, 0x17, 0x96, 0x08,
-	0x1b, 0x41, 0xfe, 0x7e, 0x2d, 0x90, 0xf7, 0xa4, 0x1a, 0xf4, 0xed, 0x41, 0x85, 0x32, 0x61, 0x7a,
-	0x84, 0x9b, 0xb2, 0x7f, 0x64, 0x31, 0x5c, 0x92, 0x88, 0x6f, 0xa6, 0x21, 0xee, 0x32, 0x61, 0x10,
-	0xfe, 0x05, 0x27, 0xf6, 0x23, 0x8b, 0x29, 0x48, 0x8d, 0x26, 0x35, 0xfd, 0x5d, 0xb8, 0xe1, 0x11,
-	0x4e, 0xbc, 0x31, 0xb1, 0x4d, 0xcb, 0x17, 0xd4, 0x0c, 0x53, 0x60, 0x0e, 0x6d, 0x8e, 0xd7, 0x1a,
-	0xa8, 0xb5, 0x6a, 0x54, 0xa3, 0x86, 0x9e, 0x2f, 0x68, 0x78, 0xa8, 0xf7, 0x6d, 0xae, 0xef, 0x82,
-	0x76, 0xde, 0xec, 0x72, 0xc1, 0xb1, 0x26, 0x61, 0x52, 0x22, 0x70, 0xfd, 0xc9, 0x19, 0x2e, 0x45,
-	0xb3, 0x5d, 0xae, 0xf6, 0x7d, 0xad, 0x1f, 0x0b, 0x5c, 0xbf, 0x07, 0x6b, 0xe3, 0x91, 0x69, 0x31,
-	0x16, 0xfa, 0xad, 0x2f, 0xf8, 0xf5, 0x18, 0x0b, 0x5a, 0x03, 0xbf, 0xf2, 0x93, 0x33, 0xfc, 0xbf,
-	0xb0, 0x96, 0x5e, 0x30, 0x1e, 0x85, 0x25, 0xd7, 0x3f, 0x04, 0xed, 0x68, 0x9b, 0x27, 0xac, 0xca,
-	0x2f, 0xb2, 0x52, 0xe9, 0x2c, 0x1d, 0x6d, 0xf3, 0x73, 0x83, 0x1d, 0x28, 0xca, 0x3d, 0x1e, 0x07,
-	0xa7, 0x51, 0x91, 0x93, 0x5f, 0x4f, 0xdb, 0xe4, 0x60, 0x2b, 0xf7, 0x87, 0x2c, 0x0c, 0x41, 0xc1,
-	0x0f, 0xcb, 0xda, 0x07, 0x50, 0xf9, 0x77, 0x44, 0xf4, 0x4a, 0x9c, 0xcf, 0xbc, 0x4a, 0xdd, 0x06,
-	0xe4, 0xc7, 0x96, 0xe3, 0x13, 0x79, 0x17, 0xf2, 0x86, 0x2a, 0xba, 0x2b, 0xdb, 0xa8, 0xf6, 0x11,
-	0xe8, 0x8b, 0xe7, 0x97, 0x74, 0x28, 0x2e, 0x71, 0xd0, 0x92, 0x0e, 0xef, 0x81, 0x76, 0x01, 0xee,
-	0xb2, 0xc9, 0xc9, 0xe5, 0xbb, 0x37, 0xff, 0x7c, 0x8e, 0xd1, 0x5f, 0xcf, 0x31, 0xfa, 0x66, 0x86,
-	0xd1, 0x4f, 0x33, 0x8c, 0x7e, 0x99, 0xe3, 0x9c, 0x4b, 0x5d, 0xf2, 0xf7, 0x1c, 0xa3, 0xe6, 0xcf,
-	0x08, 0xa2, 0xd3, 0x94, 0x17, 0xef, 0xfd, 0xff, 0xf0, 0x0a, 0x5c, 0x9f, 0xce, 0x17, 0x23, 0x20,
-	0x29, 0xba, 0x90, 0xb3, 0x18, 0xe3, 0x78, 0xe5, 0x4a, 0x27, 0x2e, 0xe7, 0x74, 0x1b, 0x49, 0xce,
-	0xa7, 0xcb, 0x58, 0x7f, 0xcc, 0x42, 0x29, 0x9c, 0x27, 0x59, 0x3b, 0x49, 0xd6, 0x6b, 0x17, 0x17,
-	0x0b, 0x16, 0x2a, 0x4d, 0xe7, 0x38, 0xdb, 0x63, 0x2c, 0xe6, 0xbb, 0x07, 0x79, 0x95, 0x23, 0x05,
-	0xf8, 0xda, 0x22, 0xa0, 0x4c, 0x82, 0xcc, 0x8e, 0xdc, 0xe9, 0x45, 0x58, 0x65, 0xa0, 0x3b, 0x50,
-	0xb5, 0x89, 0x43, 0x04, 0x31, 0x3d, 0xf2, 0x95, 0x4f, 0xb8, 0x20, 0x76, 0x18, 0xd1, 0xac, 0xb4,
-	0xee, 0xa4, 0x58, 0xdf, 0x95, 0x93, 0x8c, 0x68, 0x4e, 0x62, 0x25, 0x95, 0xde, 0x0d, 0x7b, 0x49,
-	0x43, 0x6d, 0x1b, 0x20, 0xee, 0xbc, 0x52, 0x74, 0x3e, 0x85, 0x1b, 0xa9, 0x4b, 0x5e, 0xc5, 0xe8,
-	0xf2, 0xe3, 0xd9, 0xfa, 0x01, 0x41, 0x39, 0x79, 0xa1, 0x7a, 0x6c, 0xa8, 0x4f, 0xa0, 0xb2, 0xf7,
-	0x25, 0x7d, 0x7c, 0xe1, 0x6d, 0x7f, 0x29, 0xe5, 0x02, 0xd6, 0xd2, 0x3e, 0x34, 0xdf, 0x9a, 0xce,
-	0xf0, 0xad, 0xe8, 0x8f, 0x2a, 0xfa, 0xc2, 0x37, 0x7b, 0x7d, 0x31, 0xa4, 0xee, 0xfe, 0x90, 0x3c,
-	0xde, 0x7c, 0x40, 0x26, 0xed, 0x5d, 0x6f, 0x60, 0xb9, 0xc3, 0xaf, 0xad, 0x40, 0xec, 0xa0, 0xad,
-	0xef, 0x11, 0xac, 0x27, 0x92, 0xad, 0x68, 0xca, 0x8a, 0x26, 0xce, 0x7b, 0x75, 0x31, 0xe2, 0x92,
-	0x25, 0x45, 0x6f, 0xbe, 0x33, 0x9d, 0xe1, 0x4e, 0x8c, 0x12, 0xbf, 0x7a, 0x97, 0xd0, 0x7c, 0x8b,
-	0x60, 0x3d, 0x91, 0x83, 0x80, 0xc6, 0x57, 0x34, 0xc9, 0x44, 0x57, 0x97, 0xa7, 0xa6, 0x96, 0xa2,
-	0x37, 0x3b, 0xd3, 0x19, 0xde, 0x8c, 0x68, 0xa2, 0x47, 0xef, 0xc5, 0x24, 0x3b, 0x37, 0x8f, 0xff,
-	0xa8, 0x67, 0x8e, 0x4f, 0xea, 0xe8, 0xd9, 0x49, 0x1d, 0xfd, 0x7e, 0x52, 0x47, 0x4f, 0x4f, 0xeb,
-	0x99, 0x67, 0xa7, 0xf5, 0xcc, 0xaf, 0xa7, 0xf5, 0xcc, 0xc1, 0xaa, 0x5c, 0xe4, 0xed, 0x7f, 0x02,
-	0x00, 0x00, 0xff, 0xff, 0xe7, 0xcb, 0x52, 0x84, 0xa5, 0x08, 0x00, 0x00,
+	// 1169 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x56, 0xbf, 0x73, 0x1b, 0xc5,
+	0x17, 0xf7, 0x5a, 0x52, 0xbe, 0xd6, 0x93, 0x64, 0x29, 0x1b, 0x7f, 0x95, 0xcd, 0x11, 0x14, 0xa1,
+	0x22, 0xa3, 0x01, 0x47, 0x31, 0xc6, 0x85, 0xd1, 0xf0, 0xcb, 0x4e, 0x80, 0x08, 0x3b, 0x63, 0xcf,
+	0x19, 0x32, 0x50, 0xdd, 0x9c, 0x75, 0x6b, 0xa3, 0xf1, 0xe9, 0x76, 0xb9, 0x3d, 0x29, 0x23, 0x2a,
+	0x3a, 0x32, 0x81, 0x22, 0x0d, 0x43, 0x43, 0x91, 0x96, 0x8e, 0xa1, 0xcc, 0x5f, 0xe0, 0xd2, 0x25,
+	0x15, 0x03, 0x76, 0xc3, 0xa8, 0x62, 0xc6, 0x1e, 0x25, 0x25, 0x73, 0x7b, 0x77, 0xba, 0xb5, 0x25,
+	0xe1, 0x98, 0x4a, 0xfb, 0xde, 0x7e, 0xf6, 0xbd, 0xcf, 0xbe, 0xf7, 0xd1, 0xdb, 0x03, 0x70, 0xe9,
+	0x8e, 0xa8, 0x71, 0x97, 0x79, 0x0c, 0xa7, 0xa9, 0xb5, 0x4b, 0xe5, 0x52, 0x7b, 0xd5, 0x63, 0xcc,
+	0x16, 0xb7, 0xa5, 0xb1, 0x4b, 0x9d, 0xe1, 0x22, 0x40, 0x6a, 0x73, 0xbb, 0x6c, 0x97, 0xc9, 0xe5,
+	0x6d, 0x7f, 0x15, 0x7a, 0x2f, 0x37, 0x6d, 0xd6, 0xb1, 0x6c, 0xea, 0xed, 0xd1, 0x5e, 0xe8, 0xca,
+	0x35, 0xed, 0x8e, 0xf0, 0xa8, 0x1b, 0x9a, 0x69, 0x93, 0xf3, 0x68, 0xc7, 0xe4, 0xbc, 0xe5, 0x08,
+	0x2f, 0x30, 0x2b, 0x8f, 0x10, 0xc0, 0x83, 0xfb, 0x3a, 0x15, 0xac, 0xe3, 0x36, 0x29, 0xbe, 0x05,
+	0x89, 0x3d, 0xda, 0x23, 0xa8, 0x8c, 0xaa, 0x99, 0xc5, 0xff, 0xd7, 0x86, 0xc4, 0x6a, 0x77, 0x82,
+	0x78, 0x6b, 0xb4, 0xb7, 0x9a, 0xdc, 0xff, 0xfd, 0xc6, 0x94, 0xee, 0xe3, 0xf0, 0x2b, 0x90, 0xee,
+	0xb6, 0x8d, 0x1d, 0xdb, 0xec, 0x32, 0x97, 0x4c, 0x97, 0x51, 0x35, 0xad, 0xcf, 0x74, 0xdb, 0x1f,
+	0x49, 0x1b, 0x63, 0x48, 0x7a, 0x3d, 0x4e, 0x49, 0x42, 0xfa, 0xe5, 0x1a, 0xcf, 0x41, 0xaa, 0xc9,
+	0x3a, 0x8e, 0x47, 0x52, 0x65, 0x54, 0xcd, 0xe9, 0x81, 0xf1, 0x49, 0x72, 0x26, 0x59, 0x48, 0x55,
+	0x06, 0x29, 0xc8, 0xde, 0x09, 0x6f, 0xa2, 0xd3, 0x1d, 0x81, 0xeb, 0x2a, 0x99, 0xe2, 0x29, 0x32,
+	0x01, 0xca, 0x67, 0x53, 0xe8, 0x0f, 0xc8, 0x4c, 0xe4, 0x88, 0x99, 0xad, 0x43, 0xce, 0x65, 0xcc,
+	0x33, 0xec, 0x6d, 0x83, 0x33, 0xd7, 0x13, 0x64, 0xa6, 0x9c, 0xa8, 0x66, 0x16, 0xab, 0x63, 0xa2,
+	0xf8, 0xb9, 0x6a, 0x3a, 0x63, 0xde, 0xfa, 0xf6, 0xa6, 0x0f, 0xfd, 0xd0, 0xf1, 0xdc, 0x9e, 0x9e,
+	0x71, 0x63, 0x0f, 0xae, 0x42, 0xa1, 0x23, 0xa8, 0x65, 0x58, 0x3d, 0xc7, 0x6c, 0xb7, 0x9a, 0x46,
+	0x8b, 0x0b, 0x92, 0x2e, 0xa3, 0x6a, 0x4a, 0x9f, 0xf5, 0xfd, 0x77, 0x03, 0x77, 0x83, 0x0b, 0x7c,
+	0x13, 0xf2, 0x12, 0x29, 0x3c, 0xd3, 0x0b, 0x81, 0x20, 0xef, 0x9f, 0xf3, 0xdd, 0x5b, 0xd2, 0xeb,
+	0xe3, 0xb6, 0xa0, 0xc0, 0xb8, 0x67, 0xb8, 0x54, 0x18, 0x12, 0xdf, 0x36, 0x39, 0xc9, 0x48, 0x8a,
+	0xaf, 0x4f, 0xa2, 0xb8, 0xc1, 0x3d, 0x9d, 0x8a, 0xcf, 0x04, 0xb5, 0xee, 0x9b, 0x3c, 0x20, 0x99,
+	0x63, 0xaa, 0x0f, 0xbf, 0x0d, 0xd7, 0x5c, 0x2a, 0xa8, 0xdb, 0xa5, 0x96, 0x61, 0x76, 0x3c, 0x66,
+	0x84, 0x2a, 0x30, 0x5a, 0x96, 0x20, 0xd9, 0x32, 0xaa, 0x5e, 0xd2, 0x8b, 0x11, 0x60, 0xa5, 0xe3,
+	0xb1, 0xb0, 0xa9, 0x0d, 0x4b, 0xe0, 0x0d, 0xc8, 0x0d, 0xc1, 0x8e, 0xf0, 0x04, 0xc9, 0x49, 0x32,
+	0x13, 0x24, 0x70, 0xe5, 0xf1, 0x73, 0x92, 0x89, 0x4e, 0x3b, 0x22, 0xa8, 0x7b, 0xb6, 0x19, 0x3b,
+	0x04, 0xbe, 0x07, 0xd9, 0x6e, 0xdb, 0x30, 0x39, 0x0f, 0xe3, 0xcd, 0x8e, 0xc4, 0x5b, 0xe1, 0xdc,
+	0x87, 0xfa, 0xf1, 0xf2, 0x8f, 0x9f, 0x93, 0xff, 0x85, 0xb6, 0x8c, 0x05, 0xdd, 0x76, 0x68, 0x0a,
+	0xfc, 0x3e, 0xe4, 0xf6, 0x96, 0x85, 0x12, 0x2a, 0xff, 0x6f, 0xa1, 0x02, 0x75, 0x66, 0xf6, 0x96,
+	0x45, 0x14, 0x40, 0x7b, 0x0f, 0x0a, 0x67, 0xdb, 0x8b, 0x0b, 0xb1, 0xb6, 0x52, 0x81, 0x62, 0xe6,
+	0x20, 0xd5, 0x35, 0xed, 0x0e, 0x95, 0x3a, 0x4e, 0xe9, 0x81, 0x51, 0x9f, 0x5e, 0x46, 0xda, 0x07,
+	0x80, 0x47, 0x6b, 0xaf, 0x46, 0x48, 0x8f, 0x89, 0x90, 0x53, 0x22, 0xd4, 0xaf, 0xff, 0x75, 0x4c,
+	0xd0, 0xdf, 0xc7, 0x04, 0x7d, 0x73, 0x42, 0xd0, 0xd3, 0x13, 0x82, 0x7e, 0x1d, 0x90, 0xa4, 0xc3,
+	0x1c, 0xfa, 0x62, 0x40, 0x50, 0xe5, 0x67, 0x04, 0x51, 0x31, 0xa5, 0xee, 0xdf, 0x79, 0x89, 0x3f,
+	0xe1, 0x95, 0xfe, 0x60, 0xb4, 0x03, 0x92, 0x45, 0x1d, 0x92, 0x26, 0xe7, 0x82, 0x4c, 0x5f, 0xa8,
+	0xe0, 0xf2, 0x4c, 0xbd, 0xac, 0xf2, 0x7c, 0x32, 0x8e, 0xeb, 0x4f, 0x09, 0xc8, 0x84, 0xe7, 0x24,
+	0xd7, 0x05, 0x95, 0xeb, 0xe5, 0xd3, 0xc9, 0xfc, 0x44, 0x99, 0xfe, 0x80, 0x24, 0x56, 0x38, 0x8f,
+	0xf9, 0xdd, 0x83, 0x54, 0xd0, 0xc6, 0x80, 0xe0, 0x6b, 0xa3, 0x04, 0xa5, 0xda, 0x65, 0xeb, 0x64,
+	0xa5, 0x47, 0xc9, 0x06, 0x01, 0xb0, 0x0d, 0x45, 0x8b, 0xda, 0xd4, 0xa3, 0x86, 0x4b, 0xbf, 0xea,
+	0x50, 0xe1, 0x51, 0x2b, 0x54, 0x48, 0x42, 0x86, 0x5e, 0x98, 0x10, 0xfa, 0xae, 0x3c, 0xa4, 0x47,
+	0x67, 0x94, 0x4c, 0x81, 0x78, 0xe6, 0xac, 0x31, 0x00, 0x6d, 0x19, 0x20, 0x46, 0x5e, 0xa4, 0xfb,
+	0xda, 0xc7, 0x70, 0x6d, 0x62, 0xca, 0x0b, 0xc9, 0xe8, 0xfc, 0xf6, 0xfc, 0x38, 0xed, 0x4b, 0x29,
+	0x18, 0x1a, 0x8d, 0x4d, 0x81, 0x6b, 0x2f, 0x33, 0x42, 0x95, 0x81, 0xfe, 0x39, 0x64, 0x86, 0x63,
+	0x80, 0x47, 0x75, 0xbc, 0x39, 0xe6, 0x5c, 0x63, 0x53, 0x44, 0x72, 0x6c, 0x70, 0xa5, 0x4f, 0xaa,
+	0x26, 0x75, 0x68, 0x0e, 0x11, 0xda, 0xa7, 0x90, 0x3f, 0x83, 0x1f, 0x73, 0xf5, 0x37, 0xd4, 0xab,
+	0x8f, 0xd5, 0x7e, 0x63, 0x53, 0xa8, 0x15, 0xa9, 0x4e, 0xa8, 0x48, 0x61, 0x8f, 0xf6, 0xde, 0xdd,
+	0x70, 0x77, 0x4d, 0xa7, 0xf5, 0xb5, 0xe9, 0xb5, 0x98, 0x53, 0xf9, 0x61, 0x1a, 0x20, 0x8e, 0x71,
+	0xd1, 0x87, 0x6e, 0x1e, 0x70, 0x93, 0x39, 0x9e, 0xcb, 0x6c, 0x83, 0xdb, 0xa6, 0x43, 0x8d, 0x16,
+	0xef, 0x2e, 0x85, 0x2f, 0x5e, 0x21, 0xdc, 0xd9, 0xf4, 0x37, 0x1a, 0xbc, 0xbb, 0x84, 0x37, 0x60,
+	0xd6, 0x66, 0xa6, 0x65, 0x6c, 0x9b, 0xb6, 0xe9, 0x34, 0xa9, 0x2b, 0x48, 0x72, 0xcc, 0xeb, 0x13,
+	0x71, 0xa9, 0xad, 0x33, 0xd3, 0x5a, 0x8d, 0xa0, 0xe1, 0x60, 0xb7, 0x55, 0x9f, 0xf6, 0x05, 0xe0,
+	0x51, 0xd0, 0x98, 0xfa, 0xdd, 0x3a, 0x5d, 0xbf, 0xab, 0x4a, 0x3e, 0xf5, 0xbc, 0x52, 0xc1, 0x8a,
+	0x0b, 0x79, 0x75, 0x6b, 0x8d, 0xf6, 0x70, 0x19, 0x92, 0x8e, 0xd9, 0xa6, 0x41, 0xe0, 0xd5, 0xec,
+	0x33, 0x5f, 0x60, 0x66, 0x9b, 0x1e, 0x0c, 0x08, 0xd2, 0xe5, 0x0a, 0xdf, 0x86, 0xb4, 0xff, 0x2b,
+	0xb8, 0xd9, 0x0c, 0x72, 0xa5, 0x57, 0x2f, 0x3f, 0x1b, 0x90, 0xd8, 0x29, 0xb1, 0xb1, 0x59, 0xcf,
+	0xfa, 0x7d, 0x7a, 0x71, 0x4c, 0xd0, 0x2f, 0x4f, 0x6f, 0xa0, 0x0a, 0x87, 0xac, 0x9a, 0x13, 0x2f,
+	0xaa, 0xcd, 0xd0, 0x26, 0x90, 0x3e, 0xd3, 0x11, 0x0c, 0x49, 0xa5, 0x07, 0x72, 0x5d, 0x27, 0x67,
+	0xd5, 0x10, 0xfd, 0x37, 0x16, 0xbf, 0x47, 0xbe, 0xfc, 0xe2, 0xc7, 0x74, 0x85, 0xb7, 0x70, 0x0f,
+	0x0a, 0x5b, 0x5f, 0xb2, 0x87, 0xa7, 0x3e, 0x39, 0xae, 0x4e, 0x78, 0x7c, 0xb5, 0x49, 0x1b, 0x95,
+	0x37, 0xfb, 0x27, 0xe4, 0x56, 0xf4, 0xfd, 0x14, 0xed, 0x88, 0xf9, 0x95, 0xa6, 0xaf, 0xba, 0x07,
+	0x2d, 0xfa, 0x70, 0x7e, 0x8d, 0xf6, 0x6a, 0xaa, 0x14, 0x17, 0xd0, 0xe2, 0x77, 0x08, 0x66, 0x95,
+	0x89, 0x1f, 0xb0, 0xc9, 0x07, 0x6c, 0xe2, 0x77, 0xa0, 0x38, 0x2a, 0x17, 0xc9, 0x65, 0x82, 0xbf,
+	0xb2, 0xd4, 0x3f, 0x21, 0x0b, 0x31, 0x95, 0xf8, 0x31, 0x3e, 0x87, 0xcd, 0xb7, 0x08, 0x66, 0x95,
+	0xf9, 0xe8, 0xb3, 0xe9, 0x04, 0x6c, 0xd4, 0x49, 0x5f, 0x1c, 0x3f, 0x4d, 0xb5, 0x09, 0xfe, 0xca,
+	0x42, 0xff, 0x84, 0xcc, 0x47, 0x6c, 0xa2, 0xb7, 0xf8, 0x1c, 0x26, 0x8f, 0x64, 0x5d, 0x86, 0x13,
+	0xc6, 0x67, 0xd2, 0x8d, 0xea, 0x12, 0x0f, 0xb5, 0xe2, 0xf8, 0x79, 0xa4, 0x4d, 0xf0, 0xff, 0xa7,
+	0x16, 0xad, 0x5e, 0xdf, 0xff, 0xb3, 0x34, 0xb5, 0x7f, 0x58, 0x42, 0x07, 0x87, 0x25, 0xf4, 0xc7,
+	0x61, 0x09, 0x3d, 0x39, 0x2a, 0x4d, 0x1d, 0x1c, 0x95, 0xa6, 0x7e, 0x3b, 0x2a, 0x4d, 0x6d, 0x5f,
+	0x92, 0x59, 0xde, 0xfa, 0x27, 0x00, 0x00, 0xff, 0xff, 0x7b, 0xa3, 0xcf, 0x8d, 0xc7, 0x0b, 0x00,
+	0x00,
+}
+
+func (this *LoadBalancerKey) GoString() string {
+	if this == nil {
+		return "nil"
+	}
+	s := make([]string, 0, 6)
+	s = append(s, "&edgeproto.LoadBalancerKey{")
+	s = append(s, "Name: "+fmt.Sprintf("%#v", this.Name)+",\n")
+	s = append(s, "Namespace: "+fmt.Sprintf("%#v", this.Namespace)+",\n")
+	s = append(s, "}")
+	return strings.Join(s, "")
+}
+func valueToGoStringRefs(v interface{}, typ string) string {
+	rv := reflect.ValueOf(v)
+	if rv.IsNil() {
+		return "nil"
+	}
+	pv := reflect.Indirect(rv).Interface()
+	return fmt.Sprintf("func(v %v) *%v { return &v } ( %#v )", typ, typ, pv)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -610,6 +816,107 @@ var _AppInstRefsApi_serviceDesc = grpc.ServiceDesc{
 	Metadata: "refs.proto",
 }
 
+// CloudletIPsApiClient is the client API for CloudletIPsApi service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
+type CloudletIPsApiClient interface {
+	// Show CloudletIPs
+	ShowCloudletIPs(ctx context.Context, in *CloudletIPs, opts ...grpc.CallOption) (CloudletIPsApi_ShowCloudletIPsClient, error)
+}
+
+type cloudletIPsApiClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewCloudletIPsApiClient(cc *grpc.ClientConn) CloudletIPsApiClient {
+	return &cloudletIPsApiClient{cc}
+}
+
+func (c *cloudletIPsApiClient) ShowCloudletIPs(ctx context.Context, in *CloudletIPs, opts ...grpc.CallOption) (CloudletIPsApi_ShowCloudletIPsClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_CloudletIPsApi_serviceDesc.Streams[0], "/edgeproto.CloudletIPsApi/ShowCloudletIPs", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &cloudletIPsApiShowCloudletIPsClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type CloudletIPsApi_ShowCloudletIPsClient interface {
+	Recv() (*CloudletIPs, error)
+	grpc.ClientStream
+}
+
+type cloudletIPsApiShowCloudletIPsClient struct {
+	grpc.ClientStream
+}
+
+func (x *cloudletIPsApiShowCloudletIPsClient) Recv() (*CloudletIPs, error) {
+	m := new(CloudletIPs)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// CloudletIPsApiServer is the server API for CloudletIPsApi service.
+type CloudletIPsApiServer interface {
+	// Show CloudletIPs
+	ShowCloudletIPs(*CloudletIPs, CloudletIPsApi_ShowCloudletIPsServer) error
+}
+
+// UnimplementedCloudletIPsApiServer can be embedded to have forward compatible implementations.
+type UnimplementedCloudletIPsApiServer struct {
+}
+
+func (*UnimplementedCloudletIPsApiServer) ShowCloudletIPs(req *CloudletIPs, srv CloudletIPsApi_ShowCloudletIPsServer) error {
+	return status.Errorf(codes.Unimplemented, "method ShowCloudletIPs not implemented")
+}
+
+func RegisterCloudletIPsApiServer(s *grpc.Server, srv CloudletIPsApiServer) {
+	s.RegisterService(&_CloudletIPsApi_serviceDesc, srv)
+}
+
+func _CloudletIPsApi_ShowCloudletIPs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(CloudletIPs)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CloudletIPsApiServer).ShowCloudletIPs(m, &cloudletIPsApiShowCloudletIPsServer{stream})
+}
+
+type CloudletIPsApi_ShowCloudletIPsServer interface {
+	Send(*CloudletIPs) error
+	grpc.ServerStream
+}
+
+type cloudletIPsApiShowCloudletIPsServer struct {
+	grpc.ServerStream
+}
+
+func (x *cloudletIPsApiShowCloudletIPsServer) Send(m *CloudletIPs) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+var _CloudletIPsApi_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "edgeproto.CloudletIPsApi",
+	HandlerType: (*CloudletIPsApiServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ShowCloudletIPs",
+			Handler:       _CloudletIPsApi_ShowCloudletIPs_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "refs.proto",
+}
+
 func (m *VMResource) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
@@ -682,25 +989,6 @@ func (m *CloudletRefs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.UsedVips) > 0 {
-		for k := range m.UsedVips {
-			v := m.UsedVips[k]
-			baseI := i
-			i = encodeVarintRefs(dAtA, i, uint64(v))
-			i--
-			dAtA[i] = 0x10
-			i -= len(k)
-			copy(dAtA[i:], k)
-			i = encodeVarintRefs(dAtA, i, uint64(len(k)))
-			i--
-			dAtA[i] = 0xa
-			i = encodeVarintRefs(dAtA, i, uint64(baseI-i))
-			i--
-			dAtA[i] = 0x1
-			i--
-			dAtA[i] = 0x82
-		}
-	}
 	if len(m.K8SAppInsts) > 0 {
 		for iNdEx := len(m.K8SAppInsts) - 1; iNdEx >= 0; iNdEx-- {
 			{
@@ -906,6 +1194,208 @@ func (m *AppInstRefs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			i--
 			dAtA[i] = 0x12
 		}
+	}
+	{
+		size, err := m.Key.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintRefs(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *CloudletIPs) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *CloudletIPs) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *CloudletIPs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ClusterIps) > 0 {
+		for k := range m.ClusterIps {
+			v := m.ClusterIps[k]
+			baseI := i
+			if v != nil {
+				{
+					size, err := v.MarshalToSizedBuffer(dAtA[:i])
+					if err != nil {
+						return 0, err
+					}
+					i -= size
+					i = encodeVarintRefs(dAtA, i, uint64(size))
+				}
+				i--
+				dAtA[i] = 0x12
+			}
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintRefs(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintRefs(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	{
+		size, err := m.Key.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintRefs(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *ClusterIPs) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ClusterIPs) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ClusterIPs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.LoadBalancers) > 0 {
+		for k := range m.LoadBalancers {
+			v := m.LoadBalancers[k]
+			baseI := i
+			if v != nil {
+				{
+					size, err := v.MarshalToSizedBuffer(dAtA[:i])
+					if err != nil {
+						return 0, err
+					}
+					i -= size
+					i = encodeVarintRefs(dAtA, i, uint64(size))
+				}
+				i--
+				dAtA[i] = 0x12
+			}
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintRefs(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintRefs(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.ControlPlaneIpv4) > 0 {
+		i -= len(m.ControlPlaneIpv4)
+		copy(dAtA[i:], m.ControlPlaneIpv4)
+		i = encodeVarintRefs(dAtA, i, uint64(len(m.ControlPlaneIpv4)))
+		i--
+		dAtA[i] = 0x12
+	}
+	{
+		size, err := m.Key.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintRefs(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *LoadBalancerKey) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LoadBalancerKey) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LoadBalancerKey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Namespace) > 0 {
+		i -= len(m.Namespace)
+		copy(dAtA[i:], m.Namespace)
+		i = encodeVarintRefs(dAtA, i, uint64(len(m.Namespace)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Name) > 0 {
+		i -= len(m.Name)
+		copy(dAtA[i:], m.Name)
+		i = encodeVarintRefs(dAtA, i, uint64(len(m.Name)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *LoadBalancer) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *LoadBalancer) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *LoadBalancer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Ipv4) > 0 {
+		i -= len(m.Ipv4)
+		copy(dAtA[i:], m.Ipv4)
+		i = encodeVarintRefs(dAtA, i, uint64(len(m.Ipv4)))
+		i--
+		dAtA[i] = 0x12
 	}
 	{
 		size, err := m.Key.MarshalToSizedBuffer(dAtA[:i])
@@ -1151,24 +1641,6 @@ func (m *CloudletRefs) Matches(o *CloudletRefs, fopts ...MatchOpt) bool {
 			}
 		}
 	}
-	if !opts.Filter || o.UsedVips != nil {
-		if len(m.UsedVips) == 0 && len(o.UsedVips) > 0 || len(m.UsedVips) > 0 && len(o.UsedVips) == 0 {
-			return false
-		} else if m.UsedVips != nil && o.UsedVips != nil {
-			if !opts.Filter && len(m.UsedVips) != len(o.UsedVips) {
-				return false
-			}
-			for k, _ := range o.UsedVips {
-				_, ok := m.UsedVips[k]
-				if !ok {
-					return false
-				}
-				if o.UsedVips[k] != m.UsedVips[k] {
-					return false
-				}
-			}
-		}
-	}
 	return true
 }
 
@@ -1394,30 +1866,6 @@ func (m *CloudletRefs) CopyInFields(src *CloudletRefs) int {
 		m.K8SAppInsts = nil
 		changed++
 	}
-	if src.UsedVips != nil {
-		if updateListAction == "add" {
-			for k0, v := range src.UsedVips {
-				m.UsedVips[k0] = v
-				changed++
-			}
-		} else if updateListAction == "remove" {
-			for k0, _ := range src.UsedVips {
-				if _, ok := m.UsedVips[k0]; ok {
-					delete(m.UsedVips, k0)
-					changed++
-				}
-			}
-		} else {
-			m.UsedVips = make(map[string]int32)
-			for k0, v := range src.UsedVips {
-				m.UsedVips[k0] = v
-			}
-			changed++
-		}
-	} else if m.UsedVips != nil {
-		m.UsedVips = nil
-		changed++
-	}
 	return changed
 }
 
@@ -1465,14 +1913,6 @@ func (m *CloudletRefs) DeepCopyIn(src *CloudletRefs) {
 		}
 	} else {
 		m.K8SAppInsts = nil
-	}
-	if src.UsedVips != nil {
-		m.UsedVips = make(map[string]int32)
-		for k, v := range src.UsedVips {
-			m.UsedVips[k] = v
-		}
-	} else {
-		m.UsedVips = nil
 	}
 }
 
@@ -3732,6 +4172,1650 @@ func (s *AppInstRefs) ClearTagged(tags map[string]struct{}) {
 	s.Key.ClearTagged(tags)
 }
 
+func (m *CloudletIPs) Matches(o *CloudletIPs, fopts ...MatchOpt) bool {
+	opts := MatchOptions{}
+	applyMatchOptions(&opts, fopts...)
+	if o == nil {
+		if opts.Filter {
+			return true
+		}
+		return false
+	}
+	if !m.Key.Matches(&o.Key, fopts...) {
+		return false
+	}
+	if !opts.Filter || o.ClusterIps != nil {
+		if len(m.ClusterIps) == 0 && len(o.ClusterIps) > 0 || len(m.ClusterIps) > 0 && len(o.ClusterIps) == 0 {
+			return false
+		} else if m.ClusterIps != nil && o.ClusterIps != nil {
+			if !opts.Filter && len(m.ClusterIps) != len(o.ClusterIps) {
+				return false
+			}
+			for k, _ := range o.ClusterIps {
+				_, ok := m.ClusterIps[k]
+				if !ok {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
+func (m *CloudletIPs) Clone() *CloudletIPs {
+	cp := &CloudletIPs{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *CloudletIPs) CopyInFields(src *CloudletIPs) int {
+	updateListAction := "replace"
+	changed := 0
+	if m.Key.Organization != src.Key.Organization {
+		m.Key.Organization = src.Key.Organization
+		changed++
+	}
+	if m.Key.Name != src.Key.Name {
+		m.Key.Name = src.Key.Name
+		changed++
+	}
+	if m.Key.FederatedOrganization != src.Key.FederatedOrganization {
+		m.Key.FederatedOrganization = src.Key.FederatedOrganization
+		changed++
+	}
+	if src.ClusterIps != nil {
+		if updateListAction == "add" {
+			for k0, v := range src.ClusterIps {
+				v = v.Clone()
+				m.ClusterIps[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.ClusterIps {
+				if _, ok := m.ClusterIps[k0]; ok {
+					delete(m.ClusterIps, k0)
+					changed++
+				}
+			}
+		} else {
+			m.ClusterIps = make(map[string]*ClusterIPs)
+			for k0, v := range src.ClusterIps {
+				m.ClusterIps[k0] = v.Clone()
+			}
+			changed++
+		}
+	} else if m.ClusterIps != nil {
+		m.ClusterIps = nil
+		changed++
+	}
+	return changed
+}
+
+func (m *CloudletIPs) DeepCopyIn(src *CloudletIPs) {
+	m.Key.DeepCopyIn(&src.Key)
+	if src.ClusterIps != nil {
+		m.ClusterIps = make(map[string]*ClusterIPs)
+		for k, v := range src.ClusterIps {
+			var tmp_v ClusterIPs
+			tmp_v.DeepCopyIn(v)
+			m.ClusterIps[k] = &tmp_v
+		}
+	} else {
+		m.ClusterIps = nil
+	}
+}
+
+func (s *CloudletIPs) HasFields() bool {
+	return false
+}
+
+type CloudletIPsStore interface {
+	Create(ctx context.Context, m *CloudletIPs, wait func(int64)) (*Result, error)
+	Update(ctx context.Context, m *CloudletIPs, wait func(int64)) (*Result, error)
+	Delete(ctx context.Context, m *CloudletIPs, wait func(int64)) (*Result, error)
+	Put(ctx context.Context, m *CloudletIPs, wait func(int64), ops ...objstore.KVOp) (*Result, error)
+	LoadOne(key string) (*CloudletIPs, int64, error)
+	Get(ctx context.Context, key *CloudletKey, buf *CloudletIPs) bool
+	STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletIPs) bool
+	STMPut(stm concurrency.STM, obj *CloudletIPs, ops ...objstore.KVOp)
+	STMDel(stm concurrency.STM, key *CloudletKey)
+	STMHas(stm concurrency.STM, key *CloudletKey) bool
+}
+
+type CloudletIPsStoreImpl struct {
+	kvstore objstore.KVStore
+}
+
+func NewCloudletIPsStore(kvstore objstore.KVStore) *CloudletIPsStoreImpl {
+	return &CloudletIPsStoreImpl{kvstore: kvstore}
+}
+
+func (s *CloudletIPsStoreImpl) Create(ctx context.Context, m *CloudletIPs, wait func(int64)) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("CloudletIPs", m.GetKey())
+	val, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Create(ctx, key, string(val))
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *CloudletIPsStoreImpl) Update(ctx context.Context, m *CloudletIPs, wait func(int64)) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("CloudletIPs", m.GetKey())
+	var vers int64 = 0
+	val, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Update(ctx, key, string(val), vers)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *CloudletIPsStoreImpl) Put(ctx context.Context, m *CloudletIPs, wait func(int64), ops ...objstore.KVOp) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("CloudletIPs", m.GetKey())
+	var val []byte
+	val, err = json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Put(ctx, key, string(val), ops...)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *CloudletIPsStoreImpl) Delete(ctx context.Context, m *CloudletIPs, wait func(int64)) (*Result, error) {
+	err := m.GetKey().ValidateKey()
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("CloudletIPs", m.GetKey())
+	rev, err := s.kvstore.Delete(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *CloudletIPsStoreImpl) LoadOne(key string) (*CloudletIPs, int64, error) {
+	val, rev, _, err := s.kvstore.Get(key)
+	if err != nil {
+		return nil, 0, err
+	}
+	var obj CloudletIPs
+	err = json.Unmarshal(val, &obj)
+	if err != nil {
+		log.DebugLog(log.DebugLevelApi, "Failed to parse CloudletIPs data", "val", string(val), "err", err)
+		return nil, 0, err
+	}
+	return &obj, rev, nil
+}
+
+func (s *CloudletIPsStoreImpl) Get(ctx context.Context, key *CloudletKey, buf *CloudletIPs) bool {
+	keystr := objstore.DbKeyString("CloudletIPs", key)
+	val, _, _, err := s.kvstore.Get(keystr)
+	if err != nil {
+		return false
+	}
+	return s.parseGetData(val, buf)
+}
+
+func (s *CloudletIPsStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletIPs) bool {
+	keystr := objstore.DbKeyString("CloudletIPs", key)
+	valstr := stm.Get(keystr)
+	return s.parseGetData([]byte(valstr), buf)
+}
+
+func (s *CloudletIPsStoreImpl) STMHas(stm concurrency.STM, key *CloudletKey) bool {
+	keystr := objstore.DbKeyString("CloudletIPs", key)
+	return stm.Get(keystr) != ""
+}
+
+func (s *CloudletIPsStoreImpl) parseGetData(val []byte, buf *CloudletIPs) bool {
+	if len(val) == 0 {
+		return false
+	}
+	if buf != nil {
+		// clear buf, because empty values in val won't
+		// overwrite non-empty values in buf.
+		*buf = CloudletIPs{}
+		err := json.Unmarshal(val, buf)
+		if err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *CloudletIPsStoreImpl) STMPut(stm concurrency.STM, obj *CloudletIPs, ops ...objstore.KVOp) {
+	keystr := objstore.DbKeyString("CloudletIPs", obj.GetKey())
+
+	val, err := json.Marshal(obj)
+	if err != nil {
+		log.InfoLog("CloudletIPs json marshal failed", "obj", obj, "err", err)
+	}
+	v3opts := GetSTMOpts(ops...)
+	stm.Put(keystr, string(val), v3opts...)
+}
+
+func (s *CloudletIPsStoreImpl) STMDel(stm concurrency.STM, key *CloudletKey) {
+	keystr := objstore.DbKeyString("CloudletIPs", key)
+	stm.Del(keystr)
+}
+
+func StoreListCloudletIPs(ctx context.Context, kvstore objstore.KVStore) ([]CloudletIPs, error) {
+	keyPrefix := objstore.DbKeyPrefixString("CloudletIPs") + "/"
+	objs := []CloudletIPs{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := CloudletIPs{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal CloudletIPs json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
+type CloudletIPsKeyWatcher struct {
+	cb func(ctx context.Context)
+}
+
+type CloudletIPsCacheData struct {
+	Obj    *CloudletIPs
+	ModRev int64
+}
+
+func (s *CloudletIPsCacheData) Clone() *CloudletIPsCacheData {
+	cp := CloudletIPsCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &CloudletIPs{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
+// CloudletIPsCache caches CloudletIPs objects in memory in a hash table
+// and keeps them in sync with the database.
+type CloudletIPsCache struct {
+	Objs          map[CloudletKey]*CloudletIPsCacheData
+	Mux           util.Mutex
+	List          map[CloudletKey]struct{}
+	FlushAll      bool
+	NotifyCbs     []func(ctx context.Context, obj *CloudletIPs, modRev int64)
+	UpdatedCbs    []func(ctx context.Context, old *CloudletIPs, new *CloudletIPs)
+	DeletedCbs    []func(ctx context.Context, old *CloudletIPs)
+	KeyWatchers   map[CloudletKey][]*CloudletIPsKeyWatcher
+	UpdatedKeyCbs []func(ctx context.Context, key *CloudletKey)
+	DeletedKeyCbs []func(ctx context.Context, key *CloudletKey)
+	Store         CloudletIPsStore
+}
+
+func NewCloudletIPsCache() *CloudletIPsCache {
+	cache := CloudletIPsCache{}
+	InitCloudletIPsCache(&cache)
+	return &cache
+}
+
+func InitCloudletIPsCache(cache *CloudletIPsCache) {
+	cache.Objs = make(map[CloudletKey]*CloudletIPsCacheData)
+	cache.KeyWatchers = make(map[CloudletKey][]*CloudletIPsKeyWatcher)
+	cache.NotifyCbs = nil
+	cache.UpdatedCbs = nil
+	cache.DeletedCbs = nil
+	cache.UpdatedKeyCbs = nil
+	cache.DeletedKeyCbs = nil
+}
+
+func (c *CloudletIPsCache) GetTypeString() string {
+	return "CloudletIPs"
+}
+
+func (c *CloudletIPsCache) Get(key *CloudletKey, valbuf *CloudletIPs) bool {
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *CloudletIPsCache) STMGet(ostm *OptionalSTM, key *CloudletKey, valbuf *CloudletIPs) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("CloudletIPsCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
+func (c *CloudletIPsCache) GetWithRev(key *CloudletKey, valbuf *CloudletIPs, modRev *int64) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	inst, found := c.Objs[*key]
+	if found {
+		valbuf.DeepCopyIn(inst.Obj)
+		*modRev = inst.ModRev
+	}
+	return found
+}
+
+func (c *CloudletIPsCache) HasKey(key *CloudletKey) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	_, found := c.Objs[*key]
+	return found
+}
+
+func (c *CloudletIPsCache) GetAllKeys(ctx context.Context, cb func(key *CloudletKey, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for key, data := range c.Objs {
+		cb(&key, data.ModRev)
+	}
+}
+
+func (c *CloudletIPsCache) GetAllLocked(ctx context.Context, cb func(obj *CloudletIPs, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
+func (c *CloudletIPsCache) Update(ctx context.Context, in *CloudletIPs, modRev int64) {
+	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *CloudletIPs) (*CloudletIPs, bool) {
+		return in, true
+	})
+}
+
+func (c *CloudletIPsCache) UpdateModFunc(ctx context.Context, key *CloudletKey, modRev int64, modFunc func(old *CloudletIPs) (new *CloudletIPs, changed bool)) {
+	c.Mux.Lock()
+	var old *CloudletIPs
+	if oldData, found := c.Objs[*key]; found {
+		old = oldData.Obj
+	}
+	new, changed := modFunc(old)
+	if !changed {
+		c.Mux.Unlock()
+		return
+	}
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
+		newCopy := &CloudletIPs{}
+		newCopy.DeepCopyIn(new)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
+		}
+	}
+	for _, cb := range c.UpdatedKeyCbs {
+		defer cb(ctx, key)
+	}
+	store := &CloudletIPs{}
+	store.DeepCopyIn(new)
+	c.Objs[new.GetKeyVal()] = &CloudletIPsCacheData{
+		Obj:    store,
+		ModRev: modRev,
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "cache update", "new", store)
+	c.Mux.Unlock()
+	c.TriggerKeyWatchers(ctx, new.GetKey())
+}
+
+func (c *CloudletIPsCache) Delete(ctx context.Context, in *CloudletIPs, modRev int64) {
+	c.DeleteCondFunc(ctx, in, modRev, func(old *CloudletIPs) bool {
+		return true
+	})
+}
+
+func (c *CloudletIPsCache) DeleteCondFunc(ctx context.Context, in *CloudletIPs, modRev int64, condFunc func(old *CloudletIPs) bool) {
+	c.Mux.Lock()
+	var old *CloudletIPs
+	oldData, found := c.Objs[in.GetKeyVal()]
+	if found {
+		old = oldData.Obj
+		if !condFunc(old) {
+			c.Mux.Unlock()
+			return
+		}
+	}
+	delete(c.Objs, in.GetKeyVal())
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
+	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
+	for _, cb := range c.NotifyCbs {
+		if cb != nil {
+			cb(ctx, obj, modRev)
+		}
+	}
+	if old != nil {
+		for _, cb := range c.DeletedCbs {
+			cb(ctx, old)
+		}
+	}
+	for _, cb := range c.DeletedKeyCbs {
+		cb(ctx, in.GetKey())
+	}
+	c.TriggerKeyWatchers(ctx, in.GetKey())
+}
+
+func (c *CloudletIPsCache) Prune(ctx context.Context, validKeys map[CloudletKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune CloudletIPs", "numValidKeys", len(validKeys))
+	notify := make(map[CloudletKey]*CloudletIPsCacheData)
+	c.Mux.Lock()
+	for key, _ := range c.Objs {
+		if _, ok := validKeys[key]; !ok {
+			if len(c.NotifyCbs) > 0 || len(c.DeletedKeyCbs) > 0 || len(c.DeletedCbs) > 0 {
+				notify[key] = c.Objs[key]
+			}
+			delete(c.Objs, key)
+		}
+	}
+	c.Mux.Unlock()
+	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &CloudletIPs{}
+			obj.SetKey(&key)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				cb(ctx, obj, old.ModRev)
+			}
+		}
+		for _, cb := range c.DeletedKeyCbs {
+			cb(ctx, &key)
+		}
+		if old.Obj != nil {
+			for _, cb := range c.DeletedCbs {
+				cb(ctx, old.Obj)
+			}
+		}
+		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (c *CloudletIPsCache) GetCount() int {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	return len(c.Objs)
+}
+
+func (c *CloudletIPsCache) Flush(ctx context.Context, notifyId int64) {
+}
+
+func (c *CloudletIPsCache) Show(filter *CloudletIPs, cb func(ret *CloudletIPs) error) error {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		if !data.Obj.Matches(filter, MatchFilter()) {
+			continue
+		}
+		err := cb(data.Obj)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func CloudletIPsGenericNotifyCb(fn func(key *CloudletKey, old *CloudletIPs)) func(objstore.ObjKey, objstore.Obj) {
+	return func(objkey objstore.ObjKey, obj objstore.Obj) {
+		fn(objkey.(*CloudletKey), obj.(*CloudletIPs))
+	}
+}
+
+func (c *CloudletIPsCache) SetNotifyCb(fn func(ctx context.Context, obj *CloudletIPs, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *CloudletIPs, modRev int64){fn}
+}
+
+func (c *CloudletIPsCache) SetUpdatedCb(fn func(ctx context.Context, old *CloudletIPs, new *CloudletIPs)) {
+	c.UpdatedCbs = []func(ctx context.Context, old *CloudletIPs, new *CloudletIPs){fn}
+}
+
+func (c *CloudletIPsCache) SetDeletedCb(fn func(ctx context.Context, old *CloudletIPs)) {
+	c.DeletedCbs = []func(ctx context.Context, old *CloudletIPs){fn}
+}
+
+func (c *CloudletIPsCache) SetUpdatedKeyCb(fn func(ctx context.Context, key *CloudletKey)) {
+	c.UpdatedKeyCbs = []func(ctx context.Context, key *CloudletKey){fn}
+}
+
+func (c *CloudletIPsCache) SetDeletedKeyCb(fn func(ctx context.Context, key *CloudletKey)) {
+	c.DeletedKeyCbs = []func(ctx context.Context, key *CloudletKey){fn}
+}
+
+func (c *CloudletIPsCache) AddUpdatedCb(fn func(ctx context.Context, old *CloudletIPs, new *CloudletIPs)) {
+	c.UpdatedCbs = append(c.UpdatedCbs, fn)
+}
+
+func (c *CloudletIPsCache) AddDeletedCb(fn func(ctx context.Context, old *CloudletIPs)) {
+	c.DeletedCbs = append(c.DeletedCbs, fn)
+}
+
+func (c *CloudletIPsCache) AddNotifyCb(fn func(ctx context.Context, obj *CloudletIPs, modRev int64)) {
+	c.NotifyCbs = append(c.NotifyCbs, fn)
+}
+
+func (c *CloudletIPsCache) AddUpdatedKeyCb(fn func(ctx context.Context, key *CloudletKey)) {
+	c.UpdatedKeyCbs = append(c.UpdatedKeyCbs, fn)
+}
+
+func (c *CloudletIPsCache) AddDeletedKeyCb(fn func(ctx context.Context, key *CloudletKey)) {
+	c.DeletedKeyCbs = append(c.DeletedKeyCbs, fn)
+}
+
+func (c *CloudletIPsCache) SetFlushAll() {
+	c.FlushAll = true
+}
+
+func (c *CloudletIPsCache) WatchKey(key *CloudletKey, cb func(ctx context.Context)) context.CancelFunc {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	list, ok := c.KeyWatchers[*key]
+	if !ok {
+		list = make([]*CloudletIPsKeyWatcher, 0)
+	}
+	watcher := CloudletIPsKeyWatcher{cb: cb}
+	c.KeyWatchers[*key] = append(list, &watcher)
+	log.DebugLog(log.DebugLevelApi, "Watching CloudletIPs", "key", key)
+	return func() {
+		c.Mux.Lock()
+		defer c.Mux.Unlock()
+		list, ok := c.KeyWatchers[*key]
+		if !ok {
+			return
+		}
+		for ii, _ := range list {
+			if list[ii] != &watcher {
+				continue
+			}
+			if len(list) == 1 {
+				delete(c.KeyWatchers, *key)
+				return
+			}
+			list[ii] = list[len(list)-1]
+			list[len(list)-1] = nil
+			c.KeyWatchers[*key] = list[:len(list)-1]
+			return
+		}
+	}
+}
+
+func (c *CloudletIPsCache) TriggerKeyWatchers(ctx context.Context, key *CloudletKey) {
+	watchers := make([]*CloudletIPsKeyWatcher, 0)
+	c.Mux.Lock()
+	if list, ok := c.KeyWatchers[*key]; ok {
+		watchers = append(watchers, list...)
+	}
+	c.Mux.Unlock()
+	for ii, _ := range watchers {
+		watchers[ii].cb(ctx)
+	}
+}
+
+// Note that we explicitly ignore the global revision number, because of the way
+// the notify framework sends updates (by hashing keys and doing lookups, instead
+// of sequentially through a history buffer), updates may be done out-of-order
+// or multiple updates compressed into one update, so the state of the cache at
+// any point in time may not by in sync with a particular database revision number.
+
+func (c *CloudletIPsCache) SyncUpdate(ctx context.Context, key, val []byte, rev, modRev int64) {
+	obj := CloudletIPs{}
+	err := json.Unmarshal(val, &obj)
+	if err != nil {
+		log.WarnLog("Failed to parse CloudletIPs data", "val", string(val), "err", err)
+		return
+	}
+	c.Update(ctx, &obj, modRev)
+	c.Mux.Lock()
+	if c.List != nil {
+		c.List[obj.GetKeyVal()] = struct{}{}
+	}
+	c.Mux.Unlock()
+}
+
+func (c *CloudletIPsCache) SyncDelete(ctx context.Context, key []byte, rev, modRev int64) {
+	obj := CloudletIPs{}
+	keystr := objstore.DbKeyPrefixRemove(string(key))
+	CloudletKeyStringParse(keystr, obj.GetKey())
+	c.Delete(ctx, &obj, modRev)
+}
+
+func (c *CloudletIPsCache) SyncListStart(ctx context.Context) {
+	c.List = make(map[CloudletKey]struct{})
+}
+
+func (c *CloudletIPsCache) SyncListEnd(ctx context.Context) {
+	deleted := make(map[CloudletKey]*CloudletIPsCacheData)
+	c.Mux.Lock()
+	for key, val := range c.Objs {
+		if _, found := c.List[key]; !found {
+			deleted[key] = val
+			delete(c.Objs, key)
+		}
+	}
+	c.List = nil
+	c.Mux.Unlock()
+	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &CloudletIPs{}
+			obj.SetKey(&key)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				cb(ctx, obj, val.ModRev)
+			}
+		}
+		for _, cb := range c.DeletedKeyCbs {
+			cb(ctx, &key)
+		}
+		if val.Obj != nil {
+			for _, cb := range c.DeletedCbs {
+				cb(ctx, val.Obj)
+			}
+		}
+		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *CloudletIPsCache) InitCacheWithSync(sync DataSync) {
+	InitCloudletIPsCache(s)
+	s.InitSync(sync)
+}
+
+func (s *CloudletIPsCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewCloudletIPsStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
+func InitCloudletIPsCacheWithStore(cache *CloudletIPsCache, store CloudletIPsStore) {
+	InitCloudletIPsCache(cache)
+	cache.Store = store
+}
+
+func (c *CloudletIPsCache) UsesOrg(org string) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for key, _ := range c.Objs {
+		if key.Organization == org {
+			return true
+		}
+	}
+	return false
+}
+
+func (m *CloudletIPs) GetObjKey() objstore.ObjKey {
+	return m.GetKey()
+}
+
+func (m *CloudletIPs) GetKey() *CloudletKey {
+	return &m.Key
+}
+
+func (m *CloudletIPs) GetKeyVal() CloudletKey {
+	return m.Key
+}
+
+func (m *CloudletIPs) SetKey(key *CloudletKey) {
+	m.Key = *key
+}
+
+func CmpSortCloudletIPs(a CloudletIPs, b CloudletIPs) bool {
+	return a.Key.GetKeyString() < b.Key.GetKeyString()
+}
+
+// Helper method to check that enums have valid values
+func (m *CloudletIPs) ValidateEnums() error {
+	if err := m.Key.ValidateEnums(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *CloudletIPs) ClearTagged(tags map[string]struct{}) {
+	s.Key.ClearTagged(tags)
+}
+
+func (m *ClusterIPs) Clone() *ClusterIPs {
+	cp := &ClusterIPs{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *ClusterIPs) CopyInFields(src *ClusterIPs) int {
+	updateListAction := "replace"
+	changed := 0
+	if m.Key.Name != src.Key.Name {
+		m.Key.Name = src.Key.Name
+		changed++
+	}
+	if m.Key.Organization != src.Key.Organization {
+		m.Key.Organization = src.Key.Organization
+		changed++
+	}
+	if m.ControlPlaneIpv4 != src.ControlPlaneIpv4 {
+		m.ControlPlaneIpv4 = src.ControlPlaneIpv4
+		changed++
+	}
+	if src.LoadBalancers != nil {
+		if updateListAction == "add" {
+			for k0, v := range src.LoadBalancers {
+				v = v.Clone()
+				m.LoadBalancers[k0] = v
+				changed++
+			}
+		} else if updateListAction == "remove" {
+			for k0, _ := range src.LoadBalancers {
+				if _, ok := m.LoadBalancers[k0]; ok {
+					delete(m.LoadBalancers, k0)
+					changed++
+				}
+			}
+		} else {
+			m.LoadBalancers = make(map[string]*LoadBalancer)
+			for k0, v := range src.LoadBalancers {
+				m.LoadBalancers[k0] = v.Clone()
+			}
+			changed++
+		}
+	} else if m.LoadBalancers != nil {
+		m.LoadBalancers = nil
+		changed++
+	}
+	return changed
+}
+
+func (m *ClusterIPs) DeepCopyIn(src *ClusterIPs) {
+	m.Key.DeepCopyIn(&src.Key)
+	m.ControlPlaneIpv4 = src.ControlPlaneIpv4
+	if src.LoadBalancers != nil {
+		m.LoadBalancers = make(map[string]*LoadBalancer)
+		for k, v := range src.LoadBalancers {
+			var tmp_v LoadBalancer
+			tmp_v.DeepCopyIn(v)
+			m.LoadBalancers[k] = &tmp_v
+		}
+	} else {
+		m.LoadBalancers = nil
+	}
+}
+
+func (m *ClusterIPs) GetObjKey() objstore.ObjKey {
+	return m.GetKey()
+}
+
+func (m *ClusterIPs) GetKey() *ClusterKey {
+	return &m.Key
+}
+
+func (m *ClusterIPs) GetKeyVal() ClusterKey {
+	return m.Key
+}
+
+func (m *ClusterIPs) SetKey(key *ClusterKey) {
+	m.Key = *key
+}
+
+func CmpSortClusterIPs(a ClusterIPs, b ClusterIPs) bool {
+	return a.Key.GetKeyString() < b.Key.GetKeyString()
+}
+
+// Helper method to check that enums have valid values
+func (m *ClusterIPs) ValidateEnums() error {
+	if err := m.Key.ValidateEnums(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *ClusterIPs) ClearTagged(tags map[string]struct{}) {
+	s.Key.ClearTagged(tags)
+}
+
+func (m *LoadBalancerKey) Matches(o *LoadBalancerKey, fopts ...MatchOpt) bool {
+	opts := MatchOptions{}
+	applyMatchOptions(&opts, fopts...)
+	if o == nil {
+		if opts.Filter {
+			return true
+		}
+		return false
+	}
+	if !opts.Filter || o.Name != "" {
+		if o.Name != m.Name {
+			return false
+		}
+	}
+	if !opts.Filter || o.Namespace != "" {
+		if o.Namespace != m.Namespace {
+			return false
+		}
+	}
+	return true
+}
+
+func (m *LoadBalancerKey) Clone() *LoadBalancerKey {
+	cp := &LoadBalancerKey{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *LoadBalancerKey) CopyInFields(src *LoadBalancerKey) int {
+	changed := 0
+	if m.Name != src.Name {
+		m.Name = src.Name
+		changed++
+	}
+	if m.Namespace != src.Namespace {
+		m.Namespace = src.Namespace
+		changed++
+	}
+	return changed
+}
+
+func (m *LoadBalancerKey) DeepCopyIn(src *LoadBalancerKey) {
+	m.Name = src.Name
+	m.Namespace = src.Namespace
+}
+
+func (m *LoadBalancerKey) GetKeyString() string {
+	key, err := json.Marshal(m)
+	if err != nil {
+		log.FatalLog("Failed to marshal LoadBalancerKey key string", "obj", m)
+	}
+	return string(key)
+}
+
+func LoadBalancerKeyStringParse(str string, key *LoadBalancerKey) {
+	err := json.Unmarshal([]byte(str), key)
+	if err != nil {
+		log.FatalLog("Failed to unmarshal LoadBalancerKey key string", "str", str)
+	}
+}
+
+func (m *LoadBalancerKey) NotFoundError() error {
+	return fmt.Errorf("LoadBalancer key %s not found", m.GetKeyString())
+}
+
+func (m *LoadBalancerKey) ExistsError() error {
+	return fmt.Errorf("LoadBalancer key %s already exists", m.GetKeyString())
+}
+
+func (m *LoadBalancerKey) BeingDeletedError() error {
+	return fmt.Errorf("LoadBalancer %s is being deleted", m.GetKeyString())
+}
+
+var LoadBalancerKeyTagName = "name"
+var LoadBalancerKeyTagNamespace = "namespace"
+
+func (m *LoadBalancerKey) GetTags() map[string]string {
+	tags := make(map[string]string)
+	m.AddTags(tags)
+	return tags
+}
+
+func (m *LoadBalancerKey) AddTagsByFunc(addTag AddTagFunc) {
+	addTag("name", m.Name)
+	addTag("namespace", m.Namespace)
+}
+
+func (m *LoadBalancerKey) AddTags(tags map[string]string) {
+	tagMap := TagMap(tags)
+	m.AddTagsByFunc(tagMap.AddTag)
+}
+
+// Helper method to check that enums have valid values
+func (m *LoadBalancerKey) ValidateEnums() error {
+	return nil
+}
+
+func (s *LoadBalancerKey) ClearTagged(tags map[string]struct{}) {
+}
+
+func (m *LoadBalancer) Matches(o *LoadBalancer, fopts ...MatchOpt) bool {
+	opts := MatchOptions{}
+	applyMatchOptions(&opts, fopts...)
+	if o == nil {
+		if opts.Filter {
+			return true
+		}
+		return false
+	}
+	if !m.Key.Matches(&o.Key, fopts...) {
+		return false
+	}
+	if !opts.Filter || o.Ipv4 != "" {
+		if o.Ipv4 != m.Ipv4 {
+			return false
+		}
+	}
+	return true
+}
+
+func (m *LoadBalancer) Clone() *LoadBalancer {
+	cp := &LoadBalancer{}
+	cp.DeepCopyIn(m)
+	return cp
+}
+
+func (m *LoadBalancer) CopyInFields(src *LoadBalancer) int {
+	changed := 0
+	if m.Key.Name != src.Key.Name {
+		m.Key.Name = src.Key.Name
+		changed++
+	}
+	if m.Key.Namespace != src.Key.Namespace {
+		m.Key.Namespace = src.Key.Namespace
+		changed++
+	}
+	if m.Ipv4 != src.Ipv4 {
+		m.Ipv4 = src.Ipv4
+		changed++
+	}
+	return changed
+}
+
+func (m *LoadBalancer) DeepCopyIn(src *LoadBalancer) {
+	m.Key.DeepCopyIn(&src.Key)
+	m.Ipv4 = src.Ipv4
+}
+
+func (s *LoadBalancer) HasFields() bool {
+	return false
+}
+
+type LoadBalancerStore interface {
+	Create(ctx context.Context, m *LoadBalancer, wait func(int64)) (*Result, error)
+	Update(ctx context.Context, m *LoadBalancer, wait func(int64)) (*Result, error)
+	Delete(ctx context.Context, m *LoadBalancer, wait func(int64)) (*Result, error)
+	Put(ctx context.Context, m *LoadBalancer, wait func(int64), ops ...objstore.KVOp) (*Result, error)
+	LoadOne(key string) (*LoadBalancer, int64, error)
+	Get(ctx context.Context, key *LoadBalancerKey, buf *LoadBalancer) bool
+	STMGet(stm concurrency.STM, key *LoadBalancerKey, buf *LoadBalancer) bool
+	STMPut(stm concurrency.STM, obj *LoadBalancer, ops ...objstore.KVOp)
+	STMDel(stm concurrency.STM, key *LoadBalancerKey)
+	STMHas(stm concurrency.STM, key *LoadBalancerKey) bool
+}
+
+type LoadBalancerStoreImpl struct {
+	kvstore objstore.KVStore
+}
+
+func NewLoadBalancerStore(kvstore objstore.KVStore) *LoadBalancerStoreImpl {
+	return &LoadBalancerStoreImpl{kvstore: kvstore}
+}
+
+func (s *LoadBalancerStoreImpl) Create(ctx context.Context, m *LoadBalancer, wait func(int64)) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("LoadBalancer", m.GetKey())
+	val, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Create(ctx, key, string(val))
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *LoadBalancerStoreImpl) Update(ctx context.Context, m *LoadBalancer, wait func(int64)) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("LoadBalancer", m.GetKey())
+	var vers int64 = 0
+	val, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Update(ctx, key, string(val), vers)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *LoadBalancerStoreImpl) Put(ctx context.Context, m *LoadBalancer, wait func(int64), ops ...objstore.KVOp) (*Result, error) {
+	err := m.Validate(nil)
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("LoadBalancer", m.GetKey())
+	var val []byte
+	val, err = json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	rev, err := s.kvstore.Put(ctx, key, string(val), ops...)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *LoadBalancerStoreImpl) Delete(ctx context.Context, m *LoadBalancer, wait func(int64)) (*Result, error) {
+	err := m.GetKey().ValidateKey()
+	if err != nil {
+		return nil, err
+	}
+	key := objstore.DbKeyString("LoadBalancer", m.GetKey())
+	rev, err := s.kvstore.Delete(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+	if wait != nil {
+		wait(rev)
+	}
+	return &Result{}, err
+}
+
+func (s *LoadBalancerStoreImpl) LoadOne(key string) (*LoadBalancer, int64, error) {
+	val, rev, _, err := s.kvstore.Get(key)
+	if err != nil {
+		return nil, 0, err
+	}
+	var obj LoadBalancer
+	err = json.Unmarshal(val, &obj)
+	if err != nil {
+		log.DebugLog(log.DebugLevelApi, "Failed to parse LoadBalancer data", "val", string(val), "err", err)
+		return nil, 0, err
+	}
+	return &obj, rev, nil
+}
+
+func (s *LoadBalancerStoreImpl) Get(ctx context.Context, key *LoadBalancerKey, buf *LoadBalancer) bool {
+	keystr := objstore.DbKeyString("LoadBalancer", key)
+	val, _, _, err := s.kvstore.Get(keystr)
+	if err != nil {
+		return false
+	}
+	return s.parseGetData(val, buf)
+}
+
+func (s *LoadBalancerStoreImpl) STMGet(stm concurrency.STM, key *LoadBalancerKey, buf *LoadBalancer) bool {
+	keystr := objstore.DbKeyString("LoadBalancer", key)
+	valstr := stm.Get(keystr)
+	return s.parseGetData([]byte(valstr), buf)
+}
+
+func (s *LoadBalancerStoreImpl) STMHas(stm concurrency.STM, key *LoadBalancerKey) bool {
+	keystr := objstore.DbKeyString("LoadBalancer", key)
+	return stm.Get(keystr) != ""
+}
+
+func (s *LoadBalancerStoreImpl) parseGetData(val []byte, buf *LoadBalancer) bool {
+	if len(val) == 0 {
+		return false
+	}
+	if buf != nil {
+		// clear buf, because empty values in val won't
+		// overwrite non-empty values in buf.
+		*buf = LoadBalancer{}
+		err := json.Unmarshal(val, buf)
+		if err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *LoadBalancerStoreImpl) STMPut(stm concurrency.STM, obj *LoadBalancer, ops ...objstore.KVOp) {
+	keystr := objstore.DbKeyString("LoadBalancer", obj.GetKey())
+
+	val, err := json.Marshal(obj)
+	if err != nil {
+		log.InfoLog("LoadBalancer json marshal failed", "obj", obj, "err", err)
+	}
+	v3opts := GetSTMOpts(ops...)
+	stm.Put(keystr, string(val), v3opts...)
+}
+
+func (s *LoadBalancerStoreImpl) STMDel(stm concurrency.STM, key *LoadBalancerKey) {
+	keystr := objstore.DbKeyString("LoadBalancer", key)
+	stm.Del(keystr)
+}
+
+func StoreListLoadBalancer(ctx context.Context, kvstore objstore.KVStore) ([]LoadBalancer, error) {
+	keyPrefix := objstore.DbKeyPrefixString("LoadBalancer") + "/"
+	objs := []LoadBalancer{}
+	err := kvstore.List(keyPrefix, func(key, val []byte, rev, modRev int64) error {
+		obj := LoadBalancer{}
+		err := json.Unmarshal(val, &obj)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal LoadBalancer json %s, %s", string(val), err)
+		}
+		objs = append(objs, obj)
+		return nil
+	})
+	return objs, err
+}
+
+type LoadBalancerKeyWatcher struct {
+	cb func(ctx context.Context)
+}
+
+type LoadBalancerCacheData struct {
+	Obj    *LoadBalancer
+	ModRev int64
+}
+
+func (s *LoadBalancerCacheData) Clone() *LoadBalancerCacheData {
+	cp := LoadBalancerCacheData{}
+	if s.Obj != nil {
+		cp.Obj = &LoadBalancer{}
+		cp.Obj.DeepCopyIn(s.Obj)
+	}
+	cp.ModRev = s.ModRev
+	return &cp
+}
+
+// LoadBalancerCache caches LoadBalancer objects in memory in a hash table
+// and keeps them in sync with the database.
+type LoadBalancerCache struct {
+	Objs          map[LoadBalancerKey]*LoadBalancerCacheData
+	Mux           util.Mutex
+	List          map[LoadBalancerKey]struct{}
+	FlushAll      bool
+	NotifyCbs     []func(ctx context.Context, obj *LoadBalancer, modRev int64)
+	UpdatedCbs    []func(ctx context.Context, old *LoadBalancer, new *LoadBalancer)
+	DeletedCbs    []func(ctx context.Context, old *LoadBalancer)
+	KeyWatchers   map[LoadBalancerKey][]*LoadBalancerKeyWatcher
+	UpdatedKeyCbs []func(ctx context.Context, key *LoadBalancerKey)
+	DeletedKeyCbs []func(ctx context.Context, key *LoadBalancerKey)
+	Store         LoadBalancerStore
+}
+
+func NewLoadBalancerCache() *LoadBalancerCache {
+	cache := LoadBalancerCache{}
+	InitLoadBalancerCache(&cache)
+	return &cache
+}
+
+func InitLoadBalancerCache(cache *LoadBalancerCache) {
+	cache.Objs = make(map[LoadBalancerKey]*LoadBalancerCacheData)
+	cache.KeyWatchers = make(map[LoadBalancerKey][]*LoadBalancerKeyWatcher)
+	cache.NotifyCbs = nil
+	cache.UpdatedCbs = nil
+	cache.DeletedCbs = nil
+	cache.UpdatedKeyCbs = nil
+	cache.DeletedKeyCbs = nil
+}
+
+func (c *LoadBalancerCache) GetTypeString() string {
+	return "LoadBalancer"
+}
+
+func (c *LoadBalancerCache) Get(key *LoadBalancerKey, valbuf *LoadBalancer) bool {
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
+// STMGet gets from the store if STM is set, otherwise gets from cache
+func (c *LoadBalancerCache) STMGet(ostm *OptionalSTM, key *LoadBalancerKey, valbuf *LoadBalancer) bool {
+	if ostm.stm != nil {
+		if c.Store == nil {
+			// panic, otherwise if we fallback to cache, we may silently
+			// introduce race conditions and intermittent failures due to
+			// reading from cache during a transaction.
+			panic("LoadBalancerCache store not set, cannot read via STM")
+		}
+		return c.Store.STMGet(ostm.stm, key, valbuf)
+	}
+	var modRev int64
+	return c.GetWithRev(key, valbuf, &modRev)
+}
+
+func (c *LoadBalancerCache) GetWithRev(key *LoadBalancerKey, valbuf *LoadBalancer, modRev *int64) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	inst, found := c.Objs[*key]
+	if found {
+		valbuf.DeepCopyIn(inst.Obj)
+		*modRev = inst.ModRev
+	}
+	return found
+}
+
+func (c *LoadBalancerCache) HasKey(key *LoadBalancerKey) bool {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	_, found := c.Objs[*key]
+	return found
+}
+
+func (c *LoadBalancerCache) GetAllKeys(ctx context.Context, cb func(key *LoadBalancerKey, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for key, data := range c.Objs {
+		cb(&key, data.ModRev)
+	}
+}
+
+func (c *LoadBalancerCache) GetAllLocked(ctx context.Context, cb func(obj *LoadBalancer, modRev int64)) {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		cb(data.Obj, data.ModRev)
+	}
+}
+
+func (c *LoadBalancerCache) Update(ctx context.Context, in *LoadBalancer, modRev int64) {
+	c.UpdateModFunc(ctx, in.GetKey(), modRev, func(old *LoadBalancer) (*LoadBalancer, bool) {
+		return in, true
+	})
+}
+
+func (c *LoadBalancerCache) UpdateModFunc(ctx context.Context, key *LoadBalancerKey, modRev int64, modFunc func(old *LoadBalancer) (new *LoadBalancer, changed bool)) {
+	c.Mux.Lock()
+	var old *LoadBalancer
+	if oldData, found := c.Objs[*key]; found {
+		old = oldData.Obj
+	}
+	new, changed := modFunc(old)
+	if !changed {
+		c.Mux.Unlock()
+		return
+	}
+	if len(c.UpdatedCbs) > 0 || len(c.NotifyCbs) > 0 {
+		newCopy := &LoadBalancer{}
+		newCopy.DeepCopyIn(new)
+		for _, cb := range c.UpdatedCbs {
+			defer cb(ctx, old, newCopy)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				defer cb(ctx, newCopy, modRev)
+			}
+		}
+	}
+	for _, cb := range c.UpdatedKeyCbs {
+		defer cb(ctx, key)
+	}
+	store := &LoadBalancer{}
+	store.DeepCopyIn(new)
+	c.Objs[new.GetKeyVal()] = &LoadBalancerCacheData{
+		Obj:    store,
+		ModRev: modRev,
+	}
+	log.SpanLog(ctx, log.DebugLevelApi, "cache update", "new", store)
+	c.Mux.Unlock()
+	c.TriggerKeyWatchers(ctx, new.GetKey())
+}
+
+func (c *LoadBalancerCache) Delete(ctx context.Context, in *LoadBalancer, modRev int64) {
+	c.DeleteCondFunc(ctx, in, modRev, func(old *LoadBalancer) bool {
+		return true
+	})
+}
+
+func (c *LoadBalancerCache) DeleteCondFunc(ctx context.Context, in *LoadBalancer, modRev int64, condFunc func(old *LoadBalancer) bool) {
+	c.Mux.Lock()
+	var old *LoadBalancer
+	oldData, found := c.Objs[in.GetKeyVal()]
+	if found {
+		old = oldData.Obj
+		if !condFunc(old) {
+			c.Mux.Unlock()
+			return
+		}
+	}
+	delete(c.Objs, in.GetKeyVal())
+	log.SpanLog(ctx, log.DebugLevelApi, "cache delete", "key", in.GetKeyVal())
+	c.Mux.Unlock()
+	obj := old
+	if obj == nil {
+		obj = in
+	}
+	for _, cb := range c.NotifyCbs {
+		if cb != nil {
+			cb(ctx, obj, modRev)
+		}
+	}
+	if old != nil {
+		for _, cb := range c.DeletedCbs {
+			cb(ctx, old)
+		}
+	}
+	for _, cb := range c.DeletedKeyCbs {
+		cb(ctx, in.GetKey())
+	}
+	c.TriggerKeyWatchers(ctx, in.GetKey())
+}
+
+func (c *LoadBalancerCache) Prune(ctx context.Context, validKeys map[LoadBalancerKey]struct{}) {
+	log.SpanLog(ctx, log.DebugLevelApi, "Prune LoadBalancer", "numValidKeys", len(validKeys))
+	notify := make(map[LoadBalancerKey]*LoadBalancerCacheData)
+	c.Mux.Lock()
+	for key, _ := range c.Objs {
+		if _, ok := validKeys[key]; !ok {
+			if len(c.NotifyCbs) > 0 || len(c.DeletedKeyCbs) > 0 || len(c.DeletedCbs) > 0 {
+				notify[key] = c.Objs[key]
+			}
+			delete(c.Objs, key)
+		}
+	}
+	c.Mux.Unlock()
+	for key, old := range notify {
+		obj := old.Obj
+		if obj == nil {
+			obj = &LoadBalancer{}
+			obj.SetKey(&key)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				cb(ctx, obj, old.ModRev)
+			}
+		}
+		for _, cb := range c.DeletedKeyCbs {
+			cb(ctx, &key)
+		}
+		if old.Obj != nil {
+			for _, cb := range c.DeletedCbs {
+				cb(ctx, old.Obj)
+			}
+		}
+		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (c *LoadBalancerCache) GetCount() int {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	return len(c.Objs)
+}
+
+func (c *LoadBalancerCache) Flush(ctx context.Context, notifyId int64) {
+}
+
+func (c *LoadBalancerCache) Show(filter *LoadBalancer, cb func(ret *LoadBalancer) error) error {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	for _, data := range c.Objs {
+		if !data.Obj.Matches(filter, MatchFilter()) {
+			continue
+		}
+		err := cb(data.Obj)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func LoadBalancerGenericNotifyCb(fn func(key *LoadBalancerKey, old *LoadBalancer)) func(objstore.ObjKey, objstore.Obj) {
+	return func(objkey objstore.ObjKey, obj objstore.Obj) {
+		fn(objkey.(*LoadBalancerKey), obj.(*LoadBalancer))
+	}
+}
+
+func (c *LoadBalancerCache) SetNotifyCb(fn func(ctx context.Context, obj *LoadBalancer, modRev int64)) {
+	c.NotifyCbs = []func(ctx context.Context, obj *LoadBalancer, modRev int64){fn}
+}
+
+func (c *LoadBalancerCache) SetUpdatedCb(fn func(ctx context.Context, old *LoadBalancer, new *LoadBalancer)) {
+	c.UpdatedCbs = []func(ctx context.Context, old *LoadBalancer, new *LoadBalancer){fn}
+}
+
+func (c *LoadBalancerCache) SetDeletedCb(fn func(ctx context.Context, old *LoadBalancer)) {
+	c.DeletedCbs = []func(ctx context.Context, old *LoadBalancer){fn}
+}
+
+func (c *LoadBalancerCache) SetUpdatedKeyCb(fn func(ctx context.Context, key *LoadBalancerKey)) {
+	c.UpdatedKeyCbs = []func(ctx context.Context, key *LoadBalancerKey){fn}
+}
+
+func (c *LoadBalancerCache) SetDeletedKeyCb(fn func(ctx context.Context, key *LoadBalancerKey)) {
+	c.DeletedKeyCbs = []func(ctx context.Context, key *LoadBalancerKey){fn}
+}
+
+func (c *LoadBalancerCache) AddUpdatedCb(fn func(ctx context.Context, old *LoadBalancer, new *LoadBalancer)) {
+	c.UpdatedCbs = append(c.UpdatedCbs, fn)
+}
+
+func (c *LoadBalancerCache) AddDeletedCb(fn func(ctx context.Context, old *LoadBalancer)) {
+	c.DeletedCbs = append(c.DeletedCbs, fn)
+}
+
+func (c *LoadBalancerCache) AddNotifyCb(fn func(ctx context.Context, obj *LoadBalancer, modRev int64)) {
+	c.NotifyCbs = append(c.NotifyCbs, fn)
+}
+
+func (c *LoadBalancerCache) AddUpdatedKeyCb(fn func(ctx context.Context, key *LoadBalancerKey)) {
+	c.UpdatedKeyCbs = append(c.UpdatedKeyCbs, fn)
+}
+
+func (c *LoadBalancerCache) AddDeletedKeyCb(fn func(ctx context.Context, key *LoadBalancerKey)) {
+	c.DeletedKeyCbs = append(c.DeletedKeyCbs, fn)
+}
+
+func (c *LoadBalancerCache) SetFlushAll() {
+	c.FlushAll = true
+}
+
+func (c *LoadBalancerCache) WatchKey(key *LoadBalancerKey, cb func(ctx context.Context)) context.CancelFunc {
+	c.Mux.Lock()
+	defer c.Mux.Unlock()
+	list, ok := c.KeyWatchers[*key]
+	if !ok {
+		list = make([]*LoadBalancerKeyWatcher, 0)
+	}
+	watcher := LoadBalancerKeyWatcher{cb: cb}
+	c.KeyWatchers[*key] = append(list, &watcher)
+	log.DebugLog(log.DebugLevelApi, "Watching LoadBalancer", "key", key)
+	return func() {
+		c.Mux.Lock()
+		defer c.Mux.Unlock()
+		list, ok := c.KeyWatchers[*key]
+		if !ok {
+			return
+		}
+		for ii, _ := range list {
+			if list[ii] != &watcher {
+				continue
+			}
+			if len(list) == 1 {
+				delete(c.KeyWatchers, *key)
+				return
+			}
+			list[ii] = list[len(list)-1]
+			list[len(list)-1] = nil
+			c.KeyWatchers[*key] = list[:len(list)-1]
+			return
+		}
+	}
+}
+
+func (c *LoadBalancerCache) TriggerKeyWatchers(ctx context.Context, key *LoadBalancerKey) {
+	watchers := make([]*LoadBalancerKeyWatcher, 0)
+	c.Mux.Lock()
+	if list, ok := c.KeyWatchers[*key]; ok {
+		watchers = append(watchers, list...)
+	}
+	c.Mux.Unlock()
+	for ii, _ := range watchers {
+		watchers[ii].cb(ctx)
+	}
+}
+
+// Note that we explicitly ignore the global revision number, because of the way
+// the notify framework sends updates (by hashing keys and doing lookups, instead
+// of sequentially through a history buffer), updates may be done out-of-order
+// or multiple updates compressed into one update, so the state of the cache at
+// any point in time may not by in sync with a particular database revision number.
+
+func (c *LoadBalancerCache) SyncUpdate(ctx context.Context, key, val []byte, rev, modRev int64) {
+	obj := LoadBalancer{}
+	err := json.Unmarshal(val, &obj)
+	if err != nil {
+		log.WarnLog("Failed to parse LoadBalancer data", "val", string(val), "err", err)
+		return
+	}
+	c.Update(ctx, &obj, modRev)
+	c.Mux.Lock()
+	if c.List != nil {
+		c.List[obj.GetKeyVal()] = struct{}{}
+	}
+	c.Mux.Unlock()
+}
+
+func (c *LoadBalancerCache) SyncDelete(ctx context.Context, key []byte, rev, modRev int64) {
+	obj := LoadBalancer{}
+	keystr := objstore.DbKeyPrefixRemove(string(key))
+	LoadBalancerKeyStringParse(keystr, obj.GetKey())
+	c.Delete(ctx, &obj, modRev)
+}
+
+func (c *LoadBalancerCache) SyncListStart(ctx context.Context) {
+	c.List = make(map[LoadBalancerKey]struct{})
+}
+
+func (c *LoadBalancerCache) SyncListEnd(ctx context.Context) {
+	deleted := make(map[LoadBalancerKey]*LoadBalancerCacheData)
+	c.Mux.Lock()
+	for key, val := range c.Objs {
+		if _, found := c.List[key]; !found {
+			deleted[key] = val
+			delete(c.Objs, key)
+		}
+	}
+	c.List = nil
+	c.Mux.Unlock()
+	for key, val := range deleted {
+		obj := val.Obj
+		if obj == nil {
+			obj = &LoadBalancer{}
+			obj.SetKey(&key)
+		}
+		for _, cb := range c.NotifyCbs {
+			if cb != nil {
+				cb(ctx, obj, val.ModRev)
+			}
+		}
+		for _, cb := range c.DeletedKeyCbs {
+			cb(ctx, &key)
+		}
+		if val.Obj != nil {
+			for _, cb := range c.DeletedCbs {
+				cb(ctx, val.Obj)
+			}
+		}
+		c.TriggerKeyWatchers(ctx, &key)
+	}
+}
+
+func (s *LoadBalancerCache) InitCacheWithSync(sync DataSync) {
+	InitLoadBalancerCache(s)
+	s.InitSync(sync)
+}
+
+func (s *LoadBalancerCache) InitSync(sync DataSync) {
+	if sync != nil {
+		s.Store = NewLoadBalancerStore(sync.GetKVStore())
+		sync.RegisterCache(s)
+	}
+}
+
+func InitLoadBalancerCacheWithStore(cache *LoadBalancerCache, store LoadBalancerStore) {
+	InitLoadBalancerCache(cache)
+	cache.Store = store
+}
+
+func (c *LoadBalancerCache) UsesOrg(org string) bool {
+	return false
+}
+
+func (m *LoadBalancer) GetObjKey() objstore.ObjKey {
+	return m.GetKey()
+}
+
+func (m *LoadBalancer) GetKey() *LoadBalancerKey {
+	return &m.Key
+}
+
+func (m *LoadBalancer) GetKeyVal() LoadBalancerKey {
+	return m.Key
+}
+
+func (m *LoadBalancer) SetKey(key *LoadBalancerKey) {
+	m.Key = *key
+}
+
+func CmpSortLoadBalancer(a LoadBalancer, b LoadBalancer) bool {
+	return a.Key.GetKeyString() < b.Key.GetKeyString()
+}
+
+// Helper method to check that enums have valid values
+func (m *LoadBalancer) ValidateEnums() error {
+	if err := m.Key.ValidateEnums(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *LoadBalancer) ClearTagged(tags map[string]struct{}) {
+	s.Key.ClearTagged(tags)
+}
+
 func (m *VMResource) Size() (n int) {
 	if m == nil {
 		return 0
@@ -3806,14 +5890,6 @@ func (m *CloudletRefs) Size() (n int) {
 			n += 1 + l + sovRefs(uint64(l))
 		}
 	}
-	if len(m.UsedVips) > 0 {
-		for k, v := range m.UsedVips {
-			_ = k
-			_ = v
-			mapEntrySize := 1 + len(k) + sovRefs(uint64(len(k))) + 1 + sovRefs(uint64(v))
-			n += mapEntrySize + 2 + sovRefs(uint64(mapEntrySize))
-		}
-	}
 	return n
 }
 
@@ -3857,6 +5933,90 @@ func (m *AppInstRefs) Size() (n int) {
 			mapEntrySize := 1 + len(k) + sovRefs(uint64(len(k))) + 1 + sovRefs(uint64(v))
 			n += mapEntrySize + 1 + sovRefs(uint64(mapEntrySize))
 		}
+	}
+	return n
+}
+
+func (m *CloudletIPs) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Key.Size()
+	n += 1 + l + sovRefs(uint64(l))
+	if len(m.ClusterIps) > 0 {
+		for k, v := range m.ClusterIps {
+			_ = k
+			_ = v
+			l = 0
+			if v != nil {
+				l = v.Size()
+				l += 1 + sovRefs(uint64(l))
+			}
+			mapEntrySize := 1 + len(k) + sovRefs(uint64(len(k))) + l
+			n += mapEntrySize + 1 + sovRefs(uint64(mapEntrySize))
+		}
+	}
+	return n
+}
+
+func (m *ClusterIPs) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Key.Size()
+	n += 1 + l + sovRefs(uint64(l))
+	l = len(m.ControlPlaneIpv4)
+	if l > 0 {
+		n += 1 + l + sovRefs(uint64(l))
+	}
+	if len(m.LoadBalancers) > 0 {
+		for k, v := range m.LoadBalancers {
+			_ = k
+			_ = v
+			l = 0
+			if v != nil {
+				l = v.Size()
+				l += 1 + sovRefs(uint64(l))
+			}
+			mapEntrySize := 1 + len(k) + sovRefs(uint64(len(k))) + l
+			n += mapEntrySize + 1 + sovRefs(uint64(mapEntrySize))
+		}
+	}
+	return n
+}
+
+func (m *LoadBalancerKey) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Name)
+	if l > 0 {
+		n += 1 + l + sovRefs(uint64(l))
+	}
+	l = len(m.Namespace)
+	if l > 0 {
+		n += 1 + l + sovRefs(uint64(l))
+	}
+	return n
+}
+
+func (m *LoadBalancer) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.Key.Size()
+	n += 1 + l + sovRefs(uint64(l))
+	l = len(m.Ipv4)
+	if l > 0 {
+		n += 1 + l + sovRefs(uint64(l))
 	}
 	return n
 }
@@ -4470,119 +6630,6 @@ func (m *CloudletRefs) Unmarshal(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 16:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field UsedVips", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowRefs
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return ErrInvalidLengthRefs
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return ErrInvalidLengthRefs
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if m.UsedVips == nil {
-				m.UsedVips = make(map[string]int32)
-			}
-			var mapkey string
-			var mapvalue int32
-			for iNdEx < postIndex {
-				entryPreIndex := iNdEx
-				var wire uint64
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return ErrIntOverflowRefs
-					}
-					if iNdEx >= l {
-						return io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					wire |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-				fieldNum := int32(wire >> 3)
-				if fieldNum == 1 {
-					var stringLenmapkey uint64
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowRefs
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						stringLenmapkey |= uint64(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-					intStringLenmapkey := int(stringLenmapkey)
-					if intStringLenmapkey < 0 {
-						return ErrInvalidLengthRefs
-					}
-					postStringIndexmapkey := iNdEx + intStringLenmapkey
-					if postStringIndexmapkey < 0 {
-						return ErrInvalidLengthRefs
-					}
-					if postStringIndexmapkey > l {
-						return io.ErrUnexpectedEOF
-					}
-					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
-					iNdEx = postStringIndexmapkey
-				} else if fieldNum == 2 {
-					for shift := uint(0); ; shift += 7 {
-						if shift >= 64 {
-							return ErrIntOverflowRefs
-						}
-						if iNdEx >= l {
-							return io.ErrUnexpectedEOF
-						}
-						b := dAtA[iNdEx]
-						iNdEx++
-						mapvalue |= int32(b&0x7F) << shift
-						if b < 0x80 {
-							break
-						}
-					}
-				} else {
-					iNdEx = entryPreIndex
-					skippy, err := skipRefs(dAtA[iNdEx:])
-					if err != nil {
-						return err
-					}
-					if (skippy < 0) || (iNdEx+skippy) < 0 {
-						return ErrInvalidLengthRefs
-					}
-					if (iNdEx + skippy) > postIndex {
-						return io.ErrUnexpectedEOF
-					}
-					iNdEx += skippy
-				}
-			}
-			m.UsedVips[mapkey] = mapvalue
-			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipRefs(dAtA[iNdEx:])
@@ -5008,6 +7055,691 @@ func (m *AppInstRefs) Unmarshal(dAtA []byte) error {
 				}
 			}
 			m.DeleteRequestedInsts[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRefs(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *CloudletIPs) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRefs
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: CloudletIPs: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: CloudletIPs: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Key.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ClusterIps", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.ClusterIps == nil {
+				m.ClusterIps = make(map[string]*ClusterIPs)
+			}
+			var mapkey string
+			var mapvalue *ClusterIPs
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowRefs
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowRefs
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthRefs
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthRefs
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapmsglen int
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowRefs
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapmsglen |= int(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					if mapmsglen < 0 {
+						return ErrInvalidLengthRefs
+					}
+					postmsgIndex := iNdEx + mapmsglen
+					if postmsgIndex < 0 {
+						return ErrInvalidLengthRefs
+					}
+					if postmsgIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = &ClusterIPs{}
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
+						return err
+					}
+					iNdEx = postmsgIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipRefs(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthRefs
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.ClusterIps[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRefs(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ClusterIPs) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRefs
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ClusterIPs: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ClusterIPs: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Key.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ControlPlaneIpv4", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ControlPlaneIpv4 = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LoadBalancers", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LoadBalancers == nil {
+				m.LoadBalancers = make(map[string]*LoadBalancer)
+			}
+			var mapkey string
+			var mapvalue *LoadBalancer
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowRefs
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowRefs
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthRefs
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthRefs
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapmsglen int
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowRefs
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapmsglen |= int(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					if mapmsglen < 0 {
+						return ErrInvalidLengthRefs
+					}
+					postmsgIndex := iNdEx + mapmsglen
+					if postmsgIndex < 0 {
+						return ErrInvalidLengthRefs
+					}
+					if postmsgIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = &LoadBalancer{}
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
+						return err
+					}
+					iNdEx = postmsgIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipRefs(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthRefs
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.LoadBalancers[mapkey] = mapvalue
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRefs(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *LoadBalancerKey) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRefs
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LoadBalancerKey: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LoadBalancerKey: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Name = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Namespace", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Namespace = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipRefs(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *LoadBalancer) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowRefs
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: LoadBalancer: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: LoadBalancer: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.Key.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Ipv4", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowRefs
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthRefs
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthRefs
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Ipv4 = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
