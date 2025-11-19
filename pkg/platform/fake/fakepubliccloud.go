@@ -33,7 +33,7 @@ func (s *PlatformPublicCloud) GetFeatures() *edgeproto.PlatformFeatures {
 	// features mirror a public cloud platform like AWS/AzureAKS
 	features := s.Platform.GetFeatures()
 	features.PlatformType = platform.PlatformTypeFakePublicCloud
-	features.KubernetesRequiresWorkerNodes = true
+	features.KubernetesManagedControlPlane = true
 	features.IpAllocatedPerService = true
 	features.ManagesK8SControlNodes = true
 	features.RequiresCrmOffEdge = true

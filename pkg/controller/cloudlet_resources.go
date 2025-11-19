@@ -96,6 +96,7 @@ func (s *CloudletResources) AddPlatformVMs(ctx context.Context, cloudletInfo *ed
 // Optionally the oldClusterInst can be specified if we are
 // calculating resources for an update.
 func (s *CloudletResources) AddClusterInstResources(ctx context.Context, clusterInst *edgeproto.ClusterInst, rootLBFlavor *edgeproto.FlavorInfo, isManagedK8s bool) error {
+	s.debug = true
 	if s.debug {
 		log.SpanLog(ctx, log.DebugLevelApi, "AddClusterInstResources", "clusterinst key", clusterInst.Key, "root lb flavor", rootLBFlavor, "managed k8s", isManagedK8s, "nodeRes", clusterInst.NodeResources, "nodepools", clusterInst.NodePools)
 	}
@@ -103,6 +104,7 @@ func (s *CloudletResources) AddClusterInstResources(ctx context.Context, cluster
 	if clusterInst.Deployment == cloudcommon.DeploymentTypeDocker {
 		s.AddRes(&clusterInst.Key, clusterInst.NodeResources, cloudcommon.NodeTypeDockerClusterNode.String(), 1)
 	} else {
+		log.SpanLog(ctx, log.DebugLevelApi, "add master node flavor", "cluster", clusterInst.Key, "master flavor", clusterInst.MasterNodeFlavor, "numMasters", clusterInst.NumMasters)
 		s.AddFlavor(&clusterInst.Key, clusterInst.MasterNodeFlavor, cloudcommon.NodeTypeK8sClusterMaster.String(), clusterInst.NumMasters)
 		for _, pool := range clusterInst.NodePools {
 			s.AddRes(&clusterInst.Key, pool.NodeResources, cloudcommon.NodeTypeK8sClusterNode.String(), pool.NumNodes)

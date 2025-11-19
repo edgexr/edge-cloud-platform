@@ -62,6 +62,7 @@ const (
 	// Resource types
 	ResourceTypeGeneric = "" // default resource type for vcpu, ram, etc
 	ResourceTypeGPU     = "gpu"
+	ResourceTypeFlavor  = "flavor"
 
 	// GPU vendors
 	GPUVendorAMD    = "amd"

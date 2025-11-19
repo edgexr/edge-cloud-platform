@@ -1994,8 +1994,8 @@ func testShowCloudletGPUUsage(t *testing.T, ctx context.Context, apis *AllApis) 
 			},
 			Usage: &edgeproto.InfraResource{
 				Name:          "nvidia-t4",
-				Value:         0,
-				InfraMaxValue: 8,
+				Value:         3,
+				InfraMaxValue: 4,
 				Type:          "gpu",
 			},
 		}, {

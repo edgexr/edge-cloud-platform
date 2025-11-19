@@ -153,8 +153,8 @@ message PlatformFeatures {
   bool supports_trust_policy = 4;
   // Platform only supports kubernetes deployments
   bool supports_kubernetes_only = 5;
-  // Kubernetes clusters requires worker nodes and cannot be master only
-  bool kubernetes_requires_worker_nodes = 6;
+  // Platform manages the control plane for the cluster, user has no control or access, and cannot run workloads on the control plane.
+  bool kubernetes_managed_control_plane = 6;
   // Cloudlet servicess run local to the controller
   bool cloudlet_services_local = 7;
   // Every kubernetes services gets a public IP (public cloud)
@@ -207,6 +207,8 @@ message PlatformFeatures {
   bool uses_root_lb = 35;
   // Platform supports cloudlet managed clusters
   bool supports_cloudlet_managed_clusters = 36;
+  // Resource calculation done in terms of flavor counts instead of individual vcpus, ram, etc
+  bool resource_calc_by_flavor_counts = 37;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties

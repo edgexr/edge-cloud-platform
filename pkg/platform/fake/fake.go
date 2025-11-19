@@ -57,6 +57,7 @@ type Platform struct {
 	simulateClusterDeleteFailure bool
 	pause                        sync.WaitGroup
 	CustomFlavorList             []*edgeproto.FlavorInfo
+	CustomResourcesSnapshot      *edgeproto.InfraResourcesSnapshot
 	simPublicCloud               bool
 	cloudletManagedClusters      []*edgeproto.CloudletManagedCluster
 }
@@ -98,6 +99,8 @@ var DefaultFlavorList = []*edgeproto.FlavorInfo{{
 	}},
 },
 }
+
+var FakeResourceSnapshots = map[edgeproto.CloudletKey]*edgeproto.InfraResourcesSnapshot{}
 
 var fakeProps = map[string]*edgeproto.PropertyInfo{
 	// Property: Default-Value
@@ -387,6 +390,9 @@ func (s *Platform) DeleteClusterInst(ctx context.Context, clusterInst *edgeproto
 }
 
 func (s *Platform) GetCloudletInfraResources(ctx context.Context) (*edgeproto.InfraResourcesSnapshot, error) {
+	if ss, ok := FakeResourceSnapshots[*s.cloudletKey]; ok {
+		return ss, nil
+	}
 	return s.resources.GetSnapshot(), nil
 }
 

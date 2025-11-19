@@ -1707,7 +1707,7 @@ func (s *ClusterInst) IsCloudletManaged() bool {
 }
 
 func (s FlavorInfo) ResBasedName() string {
-	name := fmt.Sprintf("f%dvcpu-%dMbram", s.Vcpus, s.Ram)
+	name := fmt.Sprintf("vcpu%d-ram%dMb", s.Vcpus, s.Ram)
 	for _, gpu := range s.Gpus {
 		name += fmt.Sprintf("-%sx%d", gpu.ModelId, gpu.Count)
 	}

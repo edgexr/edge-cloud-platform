@@ -72,6 +72,10 @@ func NewGPURes(name string, count uint32) *ResVal {
 	return NewWholeResTypeVal(cloudcommon.ResourceTypeGPU, name, "", uint64(count))
 }
 
+func NewFlavorRes(name string, count uint64) *ResVal {
+	return NewWholeResTypeVal(cloudcommon.ResourceTypeFlavor, name, "", count)
+}
+
 func (s *ResVal) Key() string {
 	return edgeproto.BuildResKey(s.ResourceType, s.Name)
 }
@@ -138,6 +142,10 @@ func (s ResValMap) AddDisk(val uint64) {
 
 func (s ResValMap) AddGPU(name string, count uint32) {
 	s.Add(NewGPURes(name, count))
+}
+
+func (s ResValMap) AddFlavor(name string, count uint64) {
+	s.Add(NewFlavorRes(name, count))
 }
 
 func (s ResValMap) AddGPUs(gpus []*edgeproto.GPUResource, factor uint32) {

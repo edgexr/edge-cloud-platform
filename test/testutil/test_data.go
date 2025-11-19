@@ -429,10 +429,11 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 	}, {
 		PlatformType:                  "fakebaremetal",
 		SupportsKubernetesOnly:        true,
-		KubernetesRequiresWorkerNodes: true,
+		KubernetesManagedControlPlane: true,
 		IpAllocatedPerService:         true,
 		RequiresCrmOffEdge:            true,
 		UsesIngress:                   true,
+		ResourceCalcByFlavorCounts:    true,
 	}}
 	// common to all fake platforms
 	for ii := range features {
@@ -901,6 +902,10 @@ func ClusterInstData() []edgeproto.ClusterInst {
 				Vcpus: 4,
 				Ram:   4096,
 				Disk:  4,
+				Gpus: []*edgeproto.GPUResource{{
+					ModelId: "nvidia-t4",
+					Count:   1,
+				}},
 			},
 		}},
 		DisableDynamicAppinstPlacement: true,
@@ -1632,11 +1637,8 @@ func CloudletInfoData() []edgeproto.CloudletInfo {
 			},
 		}},
 	}, { // 5 - bare metal cloudlet
-		Key:         cloudletData[5].Key,
-		State:       dme.CloudletState_CLOUDLET_STATE_READY,
-		OsMaxRam:    65536,
-		OsMaxVcores: 16,
-		OsMaxVolGb:  500,
+		Key:   cloudletData[5].Key,
+		State: dme.CloudletState_CLOUDLET_STATE_READY,
 		Flavors: []*edgeproto.FlavorInfo{{
 			Name:  "flavor.lg-master",
 			Vcpus: uint64(4),
@@ -1668,33 +1670,17 @@ func CloudletInfoData() []edgeproto.CloudletInfo {
 		}},
 		ResourcesSnapshot: edgeproto.InfraResourcesSnapshot{
 			Info: []edgeproto.InfraResource{{
-				Name:          "RAM",
-				Value:         uint64(1024),
-				InfraMaxValue: uint64(102400),
-			}, {
-				Name:          "vCPUs",
-				Value:         uint64(10),
-				InfraMaxValue: uint64(109),
-			}, {
-				Name:          "Disk",
-				Value:         uint64(20),
-				InfraMaxValue: uint64(5000),
-			}, {
-				Name:          "GPUs",
-				Value:         uint64(6),
-				InfraMaxValue: uint64(20),
-			}, {
-				Name:          "External IPs",
-				Value:         uint64(2),
-				InfraMaxValue: uint64(10),
-			}, {
-				Name:          "nvidia-t4",
+				Name:          "flavor.lg-master",
 				InfraMaxValue: uint64(8),
-				Type:          "gpu",
+				Type:          "flavor",
 			}, {
-				Name:          "nvidia-v1",
+				Name:          "flavor.large",
+				InfraMaxValue: uint64(4),
+				Type:          "flavor",
+			}, {
+				Name:          "flavor.m4.large-vgpu",
 				InfraMaxValue: uint64(16),
-				Type:          "gpu",
+				Type:          "flavor",
 			}},
 		},
 		CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),

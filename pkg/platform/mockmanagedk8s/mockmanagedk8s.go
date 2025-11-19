@@ -73,7 +73,7 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		PlatformType:                  platform.PlatformTypeMockManagedK8S,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
-		KubernetesRequiresWorkerNodes: true,
+		KubernetesManagedControlPlane: true,
 		IpAllocatedPerService:         true,
 		ManagesK8SControlNodes:        true,
 		RequiresCrmOffEdge:            true,
