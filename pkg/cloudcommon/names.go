@@ -274,6 +274,13 @@ const (
 	AnnotationControlVIP              = "control-vip"
 )
 
+type ErrorAction string
+
+const (
+	AbortOnError    ErrorAction = "abort"
+	ContinueOnError ErrorAction = "continue"
+)
+
 var InstanceUp = "UP"
 var InstanceDown = "DOWN"
 

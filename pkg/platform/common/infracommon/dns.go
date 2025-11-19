@@ -163,7 +163,7 @@ func (c *CommonPlatform) AddDNS(ctx context.Context, fqdn string, action *DnsSvc
 	return nil
 }
 
-func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, overrideDns string, lbAPI platform.LoadBalancerApi) error {
+func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, kubeNames *k8smgmt.KubeNames, appInst *edgeproto.AppInst, overrideDns string, lbAPI platform.LoadBalancerApi, errorAction cloudcommon.ErrorAction) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "DeleteAppDNS", "kubeNames", kubeNames)
 	if kubeNames.AppURI == "" {
 		log.SpanLog(ctx, log.DebugLevelInfra, "URI not specified, no DNS entry to delete")
@@ -193,7 +193,11 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 		}
 		err := c.DeleteDNSRecords(ctx, fqdn)
 		if err != nil {
-			return err
+			if errorAction == cloudcommon.ContinueOnError {
+				log.SpanLog(ctx, log.DebugLevelInfra, "delete dns record failed, continuing anyway", "fqdn", fqdn, "err", err)
+			} else {
+				return err
+			}
 		}
 		if lbAPI != nil {
 			lbKey := edgeproto.LoadBalancerKey{
@@ -202,7 +206,11 @@ func (c *CommonPlatform) DeleteAppDNS(ctx context.Context, client ssh.Client, ku
 			}
 			err := lbAPI.DeleteLoadBalancer(ctx, appInst.CloudletKey, appInst.ClusterKey, lbKey)
 			if err != nil {
-				return err
+				if errorAction == cloudcommon.ContinueOnError {
+					log.SpanLog(ctx, log.DebugLevelInfra, "delete load balancer failed, continuing anyway", "lbKey", lbKey, "err", err)
+				} else {
+					return err
+				}
 			}
 		}
 	}

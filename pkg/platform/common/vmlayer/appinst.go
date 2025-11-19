@@ -708,7 +708,7 @@ func (v *VMPlatform) cleanupAppInstInternal(ctx context.Context, clusterInst *ed
 			if err != nil {
 				return err
 			}
-			if err := v.VMProperties.CommonPf.DeleteAppDNS(ctx, client, names, appInst, aac.DnsOverride, platform.NoLBAPI); err != nil {
+			if err := v.VMProperties.CommonPf.DeleteAppDNS(ctx, client, names, appInst, aac.DnsOverride, platform.NoLBAPI, cloudcommon.ContinueOnError); err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}

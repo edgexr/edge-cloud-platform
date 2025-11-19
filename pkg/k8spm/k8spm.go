@@ -195,8 +195,8 @@ func (m *K8sPlatformMgr) DeleteAppInst(ctx context.Context, clusterInst *edgepro
 		return err
 	}
 	if !app.InternalPorts {
-		if err = m.commonPf.DeleteAppDNS(ctx, client, names, appInst, infracommon.NoDnsOverride, m.lbAPI); err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete DNS record", "error", err)
+		if err = m.commonPf.DeleteAppDNS(ctx, client, names, appInst, infracommon.NoDnsOverride, m.lbAPI, cloudcommon.ContinueOnError); err != nil {
+			log.SpanLog(ctx, log.DebugLevelInfra, "warning, delete app dns failed", "error", err)
 		}
 	}
 	if m.features.UsesIngress && appInst.UsesHTTP() {

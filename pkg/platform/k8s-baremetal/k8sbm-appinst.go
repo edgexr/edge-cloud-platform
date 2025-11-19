@@ -228,7 +228,7 @@ func (k *K8sBareMetalPlatform) DeleteAppInst(ctx context.Context, clusterInst *e
 			if err != nil {
 				return err
 			}
-			if err := k.commonPf.DeleteAppDNS(ctx, client, names, appInst, aac.DnsOverride, platform.NoLBAPI); err != nil {
+			if err := k.commonPf.DeleteAppDNS(ctx, client, names, appInst, aac.DnsOverride, platform.NoLBAPI, cloudcommon.ContinueOnError); err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "cannot clean up DNS entries", "name", names.AppName, "rootlb", rootLBName, "error", err)
 			}
 		}
