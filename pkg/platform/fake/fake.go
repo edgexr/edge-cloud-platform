@@ -286,7 +286,7 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsMultipleNodePools:                true,
 		UsesRootLb:                               true,
 		SupportsCloudletManagedClusters:          true,
-		ManagesK8SControlNodes:                   s.simPublicCloud,
+		KubernetesManagedControlPlane:            s.simPublicCloud,
 		Properties:                               fakeProps,
 		ResourceQuotaProperties:                  quotaProps,
 		AccessVars:                               AccessVarProps,

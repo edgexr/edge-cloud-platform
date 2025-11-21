@@ -81,7 +81,6 @@ func (o *AzurePlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		SupportsKubernetesOnly:        true,
 		KubernetesManagedControlPlane: true,
 		IpAllocatedPerService:         true,
-		ManagesK8SControlNodes:        true,
 		AccessVars:                    AccessVarProps,
 		Properties:                    azureProps,
 		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,

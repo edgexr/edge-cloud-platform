@@ -35,7 +35,7 @@ func (s *PlatformPublicCloud) GetFeatures() *edgeproto.PlatformFeatures {
 	features.PlatformType = platform.PlatformTypeFakePublicCloud
 	features.KubernetesManagedControlPlane = true
 	features.IpAllocatedPerService = true
-	features.ManagesK8SControlNodes = true
+	features.KubernetesManagedControlPlane = true
 	features.RequiresCrmOffEdge = true
 	return features
 }

@@ -831,7 +831,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 			// Note for platforms that manage the control nodes themselves
 			// like Azure AKS, etc, we don't need to configure any master
 			// node resources.
-			if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.ManagesK8SControlNodes && !features.NoClusterSupport {
+			if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.KubernetesManagedControlPlane && !features.NoClusterSupport {
 				// For platforms that do not manage the master nodes,
 				// we need to set the master node flavor so we can create
 				// the master nodes.
