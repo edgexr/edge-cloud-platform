@@ -80,7 +80,7 @@ func (g *GCPPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		PlatformType:                  platform.PlatformTypeGCP,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
-		KubernetesRequiresWorkerNodes: true,
+		KubernetesManagedControlPlane: true,
 		IpAllocatedPerService:         true,
 		Properties:                    gcpProps,
 		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,

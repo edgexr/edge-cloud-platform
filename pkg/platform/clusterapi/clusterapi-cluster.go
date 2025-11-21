@@ -26,6 +26,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/metal3"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
 	ssh "github.com/edgexr/golang-ssh"
@@ -453,7 +454,24 @@ func (s *ClusterAPI) GetCluster(ctx context.Context, clusterInst *edgeproto.Clus
 }
 
 func (s *ClusterAPI) GetCloudletInfraResourcesInfo(ctx context.Context) ([]edgeproto.InfraResource, error) {
-	return []edgeproto.InfraResource{}, nil
+	client := s.getClient()
+	names, err := s.ensureCAPIKubeconfig(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	namespace, _ := s.properties.GetValue(ManagementNamespace)
+
+	flavorData, err := metal3.UpdateBareMetalHostFlavors(ctx, client, names, namespace)
+	ir := []edgeproto.InfraResource{}
+	for _, flavor := range flavorData.Flavors {
+		count := flavorData.Counts[flavor.Name]
+		ir = append(ir, edgeproto.InfraResource{
+			Name:          flavor.Name,
+			InfraMaxValue: uint64(count),
+			Type:          cloudcommon.ResourceTypeFlavor,
+		})
+	}
+	return ir, nil
 }
 
 func (s *ClusterAPI) GetClusterAdditionalResources(ctx context.Context, cloudlet *edgeproto.Cloudlet, vmResources []edgeproto.VMResource) map[string]edgeproto.InfraResource {

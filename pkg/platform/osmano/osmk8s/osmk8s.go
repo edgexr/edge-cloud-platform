@@ -66,7 +66,7 @@ func (s *Platform) GetFeatures() *edgeproto.PlatformFeatures {
 		PlatformType:                    platform.PlatformTypeOSMK8S,
 		SupportsMultiTenantCluster:      true,
 		SupportsKubernetesOnly:          true,
-		KubernetesRequiresWorkerNodes:   true,
+		KubernetesManagedControlPlane:   true,
 		IpAllocatedPerService:           true,
 		AccessVars:                      osmclient.AccessVarProps,
 		Properties:                      props,

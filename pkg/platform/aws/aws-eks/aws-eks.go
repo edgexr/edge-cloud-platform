@@ -65,7 +65,7 @@ func (o *AwsEksPlatform) GetFeatures() *edgeproto.PlatformFeatures {
 		PlatformType:                  platform.PlatformTypeAWSEKS,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
-		KubernetesRequiresWorkerNodes: true,
+		KubernetesManagedControlPlane: true,
 		IpAllocatedPerService:         true,
 		Properties:                    awsgen.AWSProps,
 		ResourceQuotaProperties:       quotaProps,

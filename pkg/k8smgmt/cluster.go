@@ -471,6 +471,9 @@ func GetNodeGPUInfo(labels map[string]string) ([]*edgeproto.GPUResource, *edgepr
 	}
 	gpus := []*edgeproto.GPUResource{}
 	if gpuFound {
+		if gpu.Count == 0 {
+			gpu.Count = 1
+		}
 		gpus = append(gpus, gpu)
 	}
 	return gpus, sw, nil

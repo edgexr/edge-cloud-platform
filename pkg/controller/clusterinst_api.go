@@ -386,7 +386,7 @@ func (s *CloudletResCalc) getCloudletUsedResources(ctx context.Context) (*Cloudl
 		// assume it's taking up resources, or going to take up resources (CreateRequested),
 		// or may not actually be able to free up resources yet (DeleteRequested, etc)
 		isManagedK8s := false
-		if features.KubernetesRequiresWorkerNodes {
+		if features.KubernetesManagedControlPlane {
 			isManagedK8s = true
 		}
 		err := cloudletRes.AddClusterInstResources(ctx, &ci, lbFlavor, isManagedK8s)
@@ -461,7 +461,7 @@ func (s *ClusterInstApi) getCloudletResourceMetric(ctx context.Context, stm conc
 	if err != nil {
 		return nil, err
 	}
-	resInfo := s.all.cloudletApi.sumCloudletResources(ctx, resCalc.stm, resCalc.deps.cloudlet, resCalc.deps.cloudletInfo, usedResources)
+	resInfo := s.all.cloudletApi.sumCloudletResources(ctx, resCalc.stm, resCalc.deps.cloudlet, resCalc.deps.cloudletInfo, resCalc.deps.features, usedResources)
 
 	ramUsed := resInfo.GetInt(cloudcommon.ResourceRamMb)
 	vcpusUsed := resInfo.GetInt(cloudcommon.ResourceVcpus)
@@ -770,7 +770,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 			// enable by default if supported
 			in.EnableIpv6 = features.SupportsIpv6
 		}
-		if features.KubernetesRequiresWorkerNodes {
+		if features.KubernetesManagedControlPlane {
 			// For managed k8s, master nodes are managed by the
 			// infrastructure, so set them to 0 for resource
 			// calculations.
@@ -831,7 +831,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 			// Note for platforms that manage the control nodes themselves
 			// like Azure AKS, etc, we don't need to configure any master
 			// node resources.
-			if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.ManagesK8SControlNodes && !features.NoClusterSupport {
+			if in.Deployment == cloudcommon.DeploymentTypeKubernetes && !features.KubernetesManagedControlPlane && !features.NoClusterSupport {
 				// For platforms that do not manage the master nodes,
 				// we need to set the master node flavor so we can create
 				// the master nodes.
@@ -950,6 +950,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	}
 	sort.Sort(PotentialInstCloudletsByResource(potentialCloudlets))
 	// walk each potential cloudlet to see if we can deploy
+	resErrs := []error{}
 	for _, pc = range potentialCloudlets {
 		nodeType = ""
 		crmOnEdge = false
@@ -958,6 +959,7 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		if err != nil {
 			if resourceFailure {
 				log.SpanLog(ctx, log.DebugLevelApi, "createCluster failed with resource error, will try next potential cloudlet", "targetCloudlet", pc.cloudlet.Key.GetKeyString(), "err", err)
+				resErrs = append(resErrs, err)
 				continue // try the next cloudlet
 			}
 			return err
@@ -966,7 +968,19 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 	}
 	if err != nil {
 		// if we get here, then all sites had resourceFailures.
-		return fmt.Errorf("not enough resources available to create the cluster")
+		if len(potentialCloudlets) == 1 {
+			return fmt.Errorf("not enough resources available: %w", err)
+		} else {
+			// To help the user understand how to adjust their resource
+			// requirements to be able to deploy, we want to let them
+			// know what resources were insufficient. However if we did
+			// that all in one error message, it would be really long.
+			// Instead send each back via status update.
+			for ii, e := range resErrs {
+				cb.Send(&edgeproto.Result{Message: fmt.Sprintf("potential cloudlet %d not enough resources available: %v", ii, e)})
+			}
+			return fmt.Errorf("not enough resources available to create the cluster")
+		}
 	}
 
 	sendObj, err := s.startClusterInstStream(ctx, cctx, streamCb, modRev)

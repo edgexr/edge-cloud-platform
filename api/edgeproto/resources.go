@@ -25,11 +25,13 @@ func (s *NodeResources) Validate() error {
 	if s == nil {
 		return errors.New("missing node resources")
 	}
-	if s.Vcpus == 0 {
-		return errors.New("vcpus must be greater than 0")
-	}
-	if s.Ram == 0 {
-		return errors.New("memory must be greater than 0")
+	if s.InfraNodeFlavor == "" {
+		if s.Vcpus == 0 {
+			return errors.New("vcpus must be greater than 0, or infra node flavor must be specified")
+		}
+		if s.Ram == 0 {
+			return errors.New("memory must be greater than 0, or infra node flavor must be specified")
+		}
 	}
 	return nil
 }

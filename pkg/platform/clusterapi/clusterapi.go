@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"sort"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -68,10 +67,11 @@ func (s *ClusterAPI) GetFeatures() *edgeproto.PlatformFeatures {
 		PlatformType:                  platform.PlatformTypeClusterAPI,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
-		KubernetesRequiresWorkerNodes: true,
+		KubernetesManagedControlPlane: true,
 		IpAllocatedPerService:         true,
 		RequiresCrmOffEdge:            true,
 		UsesIngress:                   true,
+		ResourceCalcByFlavorCounts:    true,
 		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,
 		AccessVars:                    AccessVarProps,
 		Properties:                    Props,
@@ -141,69 +141,21 @@ func (s *ClusterAPI) GatherCloudletInfo(ctx context.Context, info *edgeproto.Clo
 		return fmt.Errorf("infra provider %s not found in Cluster API management cluster", s.infra)
 	}
 
-	// XXX Treat BareMetalHosts as flavors?
-	hosts, err := metal3.GetBareMetalHosts(ctx, client, names, namespace)
+	// gather hardware resources from
+	flavorData, err := metal3.UpdateBareMetalHostFlavors(ctx, client, names, namespace)
 	if err != nil {
 		return err
 	}
-	// gather hardware resources from baremetalhosts.
-	// TODO: we need a way to add a limited count of flavors available
-	// for resource management.
-	vcpus := edgeproto.Udec64{}
-	ram := edgeproto.Udec64{}
-	disk := edgeproto.Udec64{}
-	flavors := map[string]*edgeproto.FlavorInfo{}
-	for _, host := range hosts {
-		if host.Status.HardwareDetails != nil {
-			hw := host.Status.HardwareDetails
-			vcpus.AddUint64(uint64(hw.CPU.Count))
-			ram.AddUint64(uint64(hw.RAMMebibytes))
-			diskTotalGb := uint64(0)
-			for _, st := range hw.Storage {
-				diskTotalGb += uint64(st.SizeBytes / 1024 / 1024 / 1024)
-			}
-			// We require that the operator adds GPU labels to the
-			// BareMetalHosts when they are creating them. These labels
-			// should follow the standard labels that an Nvidia/AMD GPU
-			// operator would apply to kubernetes nodes. This will be
-			// used for resource tracking and allocation.
-			gpus, _, err := k8smgmt.GetNodeGPUInfo(host.Labels)
-			if err != nil {
-				return fmt.Errorf("failed to get GPU info from labels on bare metal host %s, %s", host.Name, err)
-			}
-			// generate flavor for the node
-			flavor := edgeproto.FlavorInfo{
-				Vcpus: uint64(hw.CPU.Count),
-				Ram:   uint64(hw.RAMMebibytes),
-				Disk:  diskTotalGb,
-				Gpus:  gpus,
-			}
-			flavor.Name = flavor.ResBasedName()
-			if _, found := flavors[flavor.Name]; !found {
-				flavors[flavor.Name] = &flavor
-			}
-		}
-	}
-	for _, flavor := range flavors {
-		info.Flavors = append(info.Flavors, flavor)
-	}
-	sort.Slice(info.Flavors, func(i, j int) bool {
-		fi := info.Flavors[i]
-		fj := info.Flavors[j]
-		if fi.Vcpus == fj.Vcpus {
-			return fi.Ram < fj.Ram
-		}
-		return fi.Vcpus < fj.Vcpus
-	})
+	info.Flavors = flavorData.Flavors
 	// TODO: metal3 machine templates use HostSelector labels to determine
 	// which hosts to use. Therefore resources on a BareMetalHost must be
 	// converted to labels, which can then be set on the Metal3MachineTemplate
 	// during cluster create to limit which hosts the cluster API will use.
 
 	// set total resource limits based on sum of all nodes
-	info.OsMaxVcores = vcpus.Whole
-	info.OsMaxRam = ram.Whole
-	info.OsMaxVolGb = disk.Whole
+	info.OsMaxVcores = flavorData.Vcpus.Whole
+	info.OsMaxRam = flavorData.Ram.Whole
+	info.OsMaxVolGb = flavorData.Disk.Whole
 	return err
 }
 

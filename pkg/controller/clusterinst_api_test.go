@@ -30,6 +30,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/influxq_client/influxq_testutil"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/fake"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/regiondata"
@@ -249,6 +250,7 @@ func TestClusterInstApi(t *testing.T) {
 	testClusterPotentialCloudlets(t, ctx, apis)
 	testClusterResourceUsage(t, ctx, apis)
 	testCloudletIPs(t, ctx, apis)
+	testClusterInstFlavorResourceUsage(t, ctx, apis, ccrm)
 
 	dummy.Stop()
 }
@@ -1720,4 +1722,296 @@ func testCloudletIPs(t *testing.T, ctx context.Context, apis *AllApis) {
 
 	ok = apis.cloudletIPsApi.cache.Get(&cloudlet.Key, &ips)
 	require.False(t, ok)
+}
+
+func testClusterInstFlavorResourceUsage(t *testing.T, ctx context.Context, apis *AllApis, ccrm *ccrmdummy.CCRMDummy) {
+	// This tests bare metal cloudlet resource usage which tracks
+	// resources in numbers of flavors (nodes) used.
+	// Create test bare metal cloudlet
+	cloudlet := testutil.CloudletData()[5]
+	require.Equal(t, platform.PlatformTypeFakeBareMetal, cloudlet.PlatformType)
+	cloudlet.Key.Name = "testFlavorCounts"
+	cloudletInfo := &edgeproto.CloudletInfo{
+		Key:   cloudlet.Key,
+		State: dme.CloudletState_CLOUDLET_STATE_READY,
+		Flavors: []*edgeproto.FlavorInfo{{
+			Name:  "flavor.lg-master",
+			Vcpus: uint64(4),
+			Ram:   uint64(8192),
+			Disk:  uint64(60),
+		}, {
+			Name:  "flavor.large-vgpu",
+			Vcpus: uint64(4),
+			Ram:   uint64(16384),
+			Disk:  uint64(80),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-v1",
+				Vendor:  "nvidia",
+				Memory:  12,
+				Count:   1,
+			}},
+		}, {
+			Name:  "flavor.large-gpu",
+			Vcpus: uint64(12),
+			Ram:   uint64(65536),
+			Disk:  uint64(120),
+			Gpus: []*edgeproto.GPUResource{{
+				ModelId: "nvidia-t4",
+				Vendor:  "nvidia",
+				Memory:  80,
+				Count:   1,
+			}},
+		}},
+		ResourcesSnapshot: edgeproto.InfraResourcesSnapshot{
+			Info: []edgeproto.InfraResource{{
+				Name:          "flavor.lg-master",
+				InfraMaxValue: uint64(8),
+				Type:          "flavor",
+			}, {
+				Name:          "flavor.large-vgpu",
+				InfraMaxValue: uint64(16),
+				Type:          "flavor",
+			}, {
+				Name:          "flavor.large-gpu",
+				InfraMaxValue: uint64(4),
+				Type:          "flavor",
+			}},
+		},
+		CompatibilityVersion: cloudcommon.GetCRMCompatibilityVersion(),
+	}
+
+	// ensure correct resource max values are returned in
+	// resource snapshot as part of cloudletinfo.
+	fake.FakeResourceSnapshots[cloudlet.Key] = &cloudletInfo.ResourcesSnapshot
+	defer delete(fake.FakeResourceSnapshots, cloudlet.Key)
+
+	// create cloudlet
+	err := apis.cloudletApi.CreateCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	defer apis.cloudletApi.DeleteCloudlet(&cloudlet, testutil.NewCudStreamoutCloudlet(ctx))
+	// put cloudlet info
+	apis.cloudletInfoApi.Update(ctx, cloudletInfo, 0)
+
+	// For bare metal cloudlet, we do not allow workloads on
+	// control plane.
+
+	createClusterInst := func(name string, infraFlavor string, numNodes int) error {
+		ci := &edgeproto.ClusterInst{
+			Key: edgeproto.ClusterKey{
+				Name:         name,
+				Organization: "dev1",
+			},
+			CloudletKey: cloudlet.Key,
+			NodePools: []*edgeproto.NodePool{{
+				Name:     "pool1",
+				NumNodes: uint32(numNodes),
+				NodeResources: &edgeproto.NodeResources{
+					InfraNodeFlavor: infraFlavor,
+				},
+			}},
+		}
+		return apis.clusterInstApi.CreateClusterInst(ci, testutil.NewCudStreamoutClusterInst(ctx))
+	}
+	deleteClusterInst := func(name string) {
+		err := apis.clusterInstApi.DeleteClusterInst(&edgeproto.ClusterInst{
+			Key: edgeproto.ClusterKey{
+				Name:         name,
+				Organization: "dev1",
+			},
+		}, testutil.NewCudStreamoutClusterInst(ctx))
+		require.Nil(t, err)
+	}
+
+	verifyResourceUsage := func(filter string, expUsage map[string]int) {
+		out, err := apis.cloudletApi.GetCloudletResourceUsage(ctx, &edgeproto.CloudletResourceUsage{
+			Key: cloudlet.Key,
+		})
+		require.Nil(t, err)
+		outUsage := map[string]int{}
+		for _, info := range out.Info {
+			if filter != "" && info.Type != filter {
+				continue
+			}
+			outUsage[info.Name] = int(info.Value)
+		}
+		require.Equal(t, expUsage, outUsage)
+	}
+
+	// we're going to create cluster insts, check resource usage,
+	// and verify that create fails if no resources are available.
+	verifyResourceUsage("flavor", map[string]int{
+		"flavor.lg-master":  0,
+		"flavor.large-vgpu": 0,
+		"flavor.large-gpu":  0,
+	})
+
+	err = createClusterInst("cpu", "flavor.lg-master", 3)
+	require.Nil(t, err)
+	verifyResourceUsage("flavor", map[string]int{
+		"flavor.lg-master":  3,
+		"flavor.large-vgpu": 0,
+		"flavor.large-gpu":  0,
+	})
+
+	err = createClusterInst("gpu", "flavor.large-gpu", 3)
+	require.Nil(t, err)
+	verifyResourceUsage("flavor", map[string]int{
+		"flavor.lg-master":  3,
+		"flavor.large-vgpu": 0,
+		"flavor.large-gpu":  3,
+	})
+
+	err = createClusterInst("gpu2", "flavor.large-gpu", 3)
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "not enough resources available: required flavor/flavor.large-gpu is 3 but only 1 out of 4 is available")
+	verifyResourceUsage("flavor", map[string]int{
+		"flavor.lg-master":  3,
+		"flavor.large-vgpu": 0,
+		"flavor.large-gpu":  3,
+	})
+
+	// create clusterInst based on separate resources
+	ci := &edgeproto.ClusterInst{
+		Key: edgeproto.ClusterKey{
+			Name:         "gpu3",
+			Organization: "dev1",
+		},
+		CloudletKey: cloudlet.Key,
+		NodePools: []*edgeproto.NodePool{{
+			Name:     "pool1",
+			NumNodes: uint32(5),
+			NodeResources: &edgeproto.NodeResources{
+				Vcpus: 4,
+				Ram:   4096,
+				Gpus: []*edgeproto.GPUResource{{
+					ModelId: "nvidia-v1",
+					Count:   1,
+				}},
+			},
+		}},
+	}
+	err = apis.clusterInstApi.CreateClusterInst(ci, testutil.NewCudStreamoutClusterInst(ctx))
+	require.Nil(t, err)
+	verifyResourceUsage("flavor", map[string]int{
+		"flavor.lg-master":  3,
+		"flavor.large-vgpu": 5,
+		"flavor.large-gpu":  3,
+	})
+
+	// verify ShowCloudletResourceUsage
+	// this checks that content of flavors gets converted to
+	// separate resources correctly for UI display.
+	expUsage := []edgeproto.InfraResource{{
+		Name:          cloudcommon.ResourceDiskGb,
+		Value:         3*60 + 5*80 + 3*120,
+		Units:         cloudcommon.ResourceDiskUnits,
+		InfraMaxValue: 8*60 + 16*80 + 4*120,
+	}, {
+		Name:  cloudcommon.ResourceInstances,
+		Value: 3 + 5 + 3,
+	}, {
+		Name:          cloudcommon.ResourceRamMb,
+		Value:         3*8192 + 5*16384 + 3*65536,
+		Units:         cloudcommon.ResourceRamUnits,
+		InfraMaxValue: 8*8192 + 16*16384 + 4*65536,
+	}, {
+		Name:          "flavor.large-gpu",
+		Value:         3,
+		InfraMaxValue: 4,
+		Type:          cloudcommon.ResourceTypeFlavor,
+	}, {
+		Name:          "flavor.large-vgpu",
+		Value:         5,
+		InfraMaxValue: 16,
+		Type:          cloudcommon.ResourceTypeFlavor,
+	}, {
+		Name:          "flavor.lg-master",
+		Value:         3,
+		InfraMaxValue: 8,
+		Type:          cloudcommon.ResourceTypeFlavor,
+	}, {
+		Name:          "nvidia-t4",
+		Value:         3,
+		InfraMaxValue: 4,
+		Type:          cloudcommon.ResourceTypeGPU,
+	}, {
+		Name:          "nvidia-v1",
+		Value:         5,
+		InfraMaxValue: 16,
+		Type:          cloudcommon.ResourceTypeGPU,
+	}, {
+		Name:          cloudcommon.ResourceVcpus,
+		Value:         3*4 + 5*4 + 3*12,
+		InfraMaxValue: 8*4 + 16*4 + 4*12,
+	}}
+	usage, err := apis.cloudletApi.GetCloudletResourceUsage(ctx, &edgeproto.CloudletResourceUsage{
+		Key: cloudlet.Key,
+	})
+	require.Nil(t, err)
+	require.Equal(t, expUsage, usage.Info)
+
+	// verify ShowCloudletGPUUsage
+	expGPUUsage := []*edgeproto.GPUUsage{{
+		Gpu: &edgeproto.GPUResource{
+			ModelId: "nvidia-t4",
+			Vendor:  "nvidia",
+			Memory:  80,
+		},
+		Usage: &edgeproto.InfraResource{
+			Name:          "nvidia-t4",
+			Value:         3,
+			InfraMaxValue: 4,
+			Type:          "gpu",
+		},
+	}, {
+		Gpu: &edgeproto.GPUResource{
+			ModelId: "nvidia-v1",
+			Vendor:  "nvidia",
+			Memory:  12,
+		},
+		Usage: &edgeproto.InfraResource{
+			Name:          "nvidia-v1",
+			Value:         5,
+			InfraMaxValue: 16,
+			Type:          "gpu",
+		},
+	}}
+	gpuUsage := ShowCloudletGPUUsageData{
+		ctx: ctx,
+	}
+	filter := &edgeproto.Cloudlet{
+		Key: cloudlet.Key,
+	}
+	err = apis.cloudletApi.ShowCloudletGPUUsage(filter, &gpuUsage)
+	require.Nil(t, err)
+	require.Equal(t, 1, len(gpuUsage.data))
+	require.Equal(t, expGPUUsage, gpuUsage.data[0].Gpus)
+
+	deleteClusterInst("cpu")
+	verifyResourceUsage("flavor", map[string]int{
+		"flavor.lg-master":  0,
+		"flavor.large-vgpu": 5,
+		"flavor.large-gpu":  3,
+	})
+
+	deleteClusterInst("gpu")
+	verifyResourceUsage("flavor", map[string]int{
+		"flavor.lg-master":  0,
+		"flavor.large-vgpu": 5,
+		"flavor.large-gpu":  0,
+	})
+
+	deleteClusterInst("gpu3")
+	verifyResourceUsage("flavor", map[string]int{
+		"flavor.lg-master":  0,
+		"flavor.large-vgpu": 0,
+		"flavor.large-gpu":  0,
+	})
+
+	// test ShowFlavorsForZone
+	show := testutil.ShowFlavorsForZone{}
+	show.Init()
+	show.Ctx = ctx
+	err = apis.cloudletApi.ShowFlavorsForZone(cloudlet.GetZone(), &show)
+	require.Nil(t, err)
 }
