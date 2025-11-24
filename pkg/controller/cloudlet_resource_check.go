@@ -128,7 +128,7 @@ func (s *CloudletResCalc) CloudletFitsCluster(ctx context.Context, clusterInst, 
 		return nil, err
 	}
 	isManagedK8s := false
-	if s.deps.features.KubernetesRequiresWorkerNodes {
+	if s.deps.features.KubernetesManagedControlPlane {
 		isManagedK8s = true
 	}
 	reqd := NewCloudletResources()

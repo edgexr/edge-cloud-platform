@@ -41,7 +41,7 @@ func (s *PlatformBareMetal) GetFeatures() *edgeproto.PlatformFeatures {
 	features.PlatformType = platform.PlatformTypeFakeBareMetal
 	features.SupportsMultiTenantCluster = true
 	features.SupportsKubernetesOnly = true
-	features.KubernetesRequiresWorkerNodes = true
+	features.KubernetesManagedControlPlane = true
 	features.IpAllocatedPerService = true
 	features.RequiresCrmOffEdge = true
 	features.UsesIngress = true
@@ -50,7 +50,7 @@ func (s *PlatformBareMetal) GetFeatures() *edgeproto.PlatformFeatures {
 
 func (s *PlatformBareMetal) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
 	s.Platform.GatherCloudletInfo(ctx, info)
-	info.NodePools = testutil.CloudletInfoData()[4].NodePools
+	info.NodePools = testutil.CloudletInfoData()[5].NodePools
 	return nil
 }
 

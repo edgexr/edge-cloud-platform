@@ -55,7 +55,7 @@ func (s *K8sSite) GetFeatures() *edgeproto.PlatformFeatures {
 		PlatformType:                  platform.PlatformTypeK8SSite,
 		SupportsMultiTenantCluster:    true,
 		SupportsKubernetesOnly:        true,
-		KubernetesRequiresWorkerNodes: true,
+		KubernetesManagedControlPlane: true,
 		IpAllocatedPerService:         true,
 		IsSingleKubernetesCluster:     true,
 		IsPrebuiltKubernetesCluster:   true,

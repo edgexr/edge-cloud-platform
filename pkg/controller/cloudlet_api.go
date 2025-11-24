@@ -2388,7 +2388,7 @@ func (s *CloudletApi) WaitForTrustPolicyState(ctx context.Context, key *edgeprot
 }
 
 // sumCloudletResources adds up resources from CloudletResources
-func (s *CloudletApi) sumCloudletResources(ctx context.Context, stm *edgeproto.OptionalSTM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, cloudletResources *CloudletResources) resspec.ResValMap {
+func (s *CloudletApi) sumCloudletResources(ctx context.Context, stm *edgeproto.OptionalSTM, cloudlet *edgeproto.Cloudlet, cloudletInfo *edgeproto.CloudletInfo, features *edgeproto.PlatformFeatures, cloudletResources *CloudletResources) resspec.ResValMap {
 	resVals := resspec.ResValMap{}
 	// add in non-flavor resource values
 	resVals.AddAllMult(cloudletResources.nonFlavorVals, 1)
@@ -2400,6 +2400,10 @@ func (s *CloudletApi) sumCloudletResources(ctx context.Context, stm *edgeproto.O
 				continue
 			}
 			num := uint64(count)
+			if features.ResourceCalcByFlavorCounts {
+				resVals.AddFlavor(flavor.Name, num)
+				continue
+			}
 			resVals.AddVcpus(flavor.Vcpus*num, 0)
 			resVals.AddRam(flavor.Ram * num)
 			resVals.AddDisk(flavor.Disk * num)
@@ -2431,7 +2435,7 @@ func (s *CloudletApi) totalCloudletResources(ctx context.Context, stm *edgeproto
 	}
 
 	// sum and convert cloudlet resources to infra resources
-	resVals := s.sumCloudletResources(ctx, stm, cloudlet, cloudletInfo, cloudletResources)
+	resVals := s.sumCloudletResources(ctx, stm, cloudlet, cloudletInfo, features, cloudletResources)
 
 	// add in additional cluster resources
 	reqCtx, cancel := context.WithTimeout(ctx, s.all.settingsApi.Get().CcrmApiTimeout.TimeDuration())
@@ -2479,9 +2483,51 @@ func (s *CloudletApi) GetCloudletResourceUsage(ctx context.Context, usage *edgep
 			return nil, err
 		}
 	}
+	// get max value limits
+	limits := resCalc.getResourceLimits(ctx)
+
+	if resCalc.deps.features.ResourceCalcByFlavorCounts {
+		// calculate vcpus/mem/gpus from flavors, for display in UI
+		flavors := map[string]*edgeproto.FlavorInfo{}
+		for _, flavor := range resCalc.deps.cloudletInfo.Flavors {
+			flavors[flavor.Name] = flavor
+		}
+		// convert used values
+		for _, used := range usedVals {
+			if used.ResourceType != cloudcommon.ResourceTypeFlavor {
+				continue
+			}
+			flavor, ok := flavors[used.Name]
+			if !ok {
+				log.SpanLog(ctx, log.DebugLevelApi, "GetCloudletResourceUsage", "flavor not found for used", "name", used.Name)
+				continue
+			}
+			usedVals.AddVcpus(flavor.Vcpus*used.Value.Whole, 0)
+			usedVals.AddRam(flavor.Ram * used.Value.Whole)
+			usedVals.AddDisk(flavor.Disk * used.Value.Whole)
+			usedVals.AddGPUs(flavor.Gpus, uint32(used.Value.Whole))
+		}
+		// convert limits
+		for _, limit := range limits {
+			if limit.ResourceType != cloudcommon.ResourceTypeFlavor {
+				continue
+			}
+			flavor, ok := flavors[limit.Name]
+			if !ok {
+				log.SpanLog(ctx, log.DebugLevelApi, "GetCloudletResourceUsage", "flavor not found for limit", "name", limit.Name)
+				continue
+			}
+			limits.AddMax(cloudcommon.ResourceVcpus, "", "", flavor.Vcpus*limit.InfraMaxValue)
+			limits.AddMax(cloudcommon.ResourceRamMb, "", cloudcommon.ResourceRamUnits, flavor.Ram*limit.InfraMaxValue)
+			limits.AddMax(cloudcommon.ResourceDiskGb, "", cloudcommon.ResourceDiskUnits, flavor.Disk*limit.InfraMaxValue)
+			for _, gpu := range flavor.Gpus {
+				limits.AddMax(gpu.ModelId, cloudcommon.ResourceTypeGPU, "", uint64(limit.InfraMaxValue*uint64(gpu.Count)))
+			}
+		}
+	}
+
 	// convert usedVals and add in limits
 	resInfo := []edgeproto.InfraResource{}
-	limits := resCalc.getResourceLimits(ctx)
 	for resName, resVal := range usedVals {
 		infraRes := resVal.AsInfraRes()
 		// add in limits
@@ -3082,6 +3128,23 @@ func (s *CloudletApi) addGPUsUsage(ctx context.Context, ckey *edgeproto.Cloudlet
 	usedVals, err := resCalc.getUsedResVals(ctx)
 	if err != nil {
 		return err
+	}
+	if resCalc.deps.features.ResourceCalcByFlavorCounts {
+		// gpus are not tracked individually, they are part of flavors.
+		for _, flavor := range resCalc.deps.cloudletInfo.Flavors {
+			resKey := edgeproto.BuildResKey(cloudcommon.ResourceTypeFlavor, flavor.Name)
+			// extract used values
+			flavorCount := usedVals.GetInt(resKey)
+			if flavorCount > 0 {
+				usedVals.AddGPUs(flavor.Gpus, uint32(flavorCount))
+			}
+			// extract limits
+			if resLimit, ok := limits[resKey]; ok {
+				for _, gpu := range flavor.Gpus {
+					limits.AddMax(gpu.ModelId, cloudcommon.ResourceTypeGPU, "", uint64(resLimit.InfraMaxValue*uint64(gpu.Count)))
+				}
+			}
+		}
 	}
 	used.AddAllMult(usedVals, 1)
 	addCloudletGPUInfo(resCalc.deps.cloudletInfo, gpuInfos)
