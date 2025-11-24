@@ -383,8 +383,9 @@ func (v *VMPlatform) manageGPUOperator(ctx context.Context, rootLBClient ssh.Cli
 		return nil
 	}
 	start := time.Now()
+	podStatus := k8smgmt.PodStatus{}
 	for {
-		done, _, err := k8smgmt.CheckPodsStatus(ctx, rootLBClient, kubeNames.KconfArg, GPUOperatorNamespace, GPUOperatorSelector, waitFor, start)
+		done, err := podStatus.Check(ctx, rootLBClient, kubeNames.KconfArg, GPUOperatorNamespace, GPUOperatorSelector, waitFor, start, 0)
 		if err != nil {
 			return err
 		}

@@ -17,6 +17,7 @@ package clusterapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -25,28 +26,59 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/metal3"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
 	ssh "github.com/edgexr/golang-ssh"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
+
+	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
 type ClusterStatus struct {
-	Phase               string
-	ConditionMessage    string
-	ControlNodesReady   int
-	ControlNodesDesired int
-	WorkerNodesReady    int
-	WorkerNodesDesired  int
-	ControlNodes        string
-	WorkerReplicas      string
-	KconfNames          k8smgmt.KconfNames
-	KubeAPIReady        bool
+	Phase                string
+	Conditions           map[string]string
+	ControlNodesReady    int
+	ControlNodesDesired  int
+	WorkerNodesReady     int
+	WorkerNodesDesired   int
+	NodesJoined          int
+	ControlNodes         string
+	WorkerReplicas       string
+	KconfNames           k8smgmt.KconfNames
+	KconfNamesErr        string
+	LBReady              bool
+	KubeAPIReady         bool
+	BareMetalHostsStatus map[string]string
 }
 
-func (s *ClusterAPI) waitForCluster(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, clusterInst *edgeproto.ClusterInst, action cloudcommon.Action, updateCallback edgeproto.CacheUpdateCallback) error {
+func NewClusterStatus() *ClusterStatus {
+	return &ClusterStatus{
+		BareMetalHostsStatus: make(map[string]string),
+		Conditions:           make(map[string]string),
+	}
+}
+
+// in general the condition changes are not super useful for users,
+// but maybe for debug they may help.
+var debugConditions = false
+
+func (s *ClusterAPI) waitForCluster(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, clusterInst *edgeproto.ClusterInst, action cloudcommon.Action, initialStatus *ClusterStatus, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "waiting for capi cluster", "clusterName", clusterName, "action", action.String())
 
-	lastStatus := ClusterStatus{}
+	lastStatus := initialStatus
+	if lastStatus == nil {
+		lastStatus = NewClusterStatus()
+	}
+
+	numNodes := 0
+	for _, pool := range clusterInst.NodePools {
+		if pool.ControlPlane {
+			// Kamaji control plane does not create nodes
+			continue
+		}
+		numNodes += int(pool.NumNodes)
+	}
 
 	for {
 		status, err := s.checkClusterStatus(ctx, client, names, clusterName, clusterInst, lastStatus, action)
@@ -55,7 +87,7 @@ func (s *ClusterAPI) waitForCluster(ctx context.Context, client ssh.Client, name
 				str := strings.ToLower(err.Error())
 				if strings.Contains(str, "not found") || strings.Contains(str, "notfound") {
 					updateCallback(edgeproto.UpdateTask, "Cluster deleted")
-					break
+					return nil
 				}
 			}
 			return err
@@ -63,8 +95,13 @@ func (s *ClusterAPI) waitForCluster(ctx context.Context, client ssh.Client, name
 		if status.Phase != "" && lastStatus.Phase != status.Phase {
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Cluster Phase: %s", status.Phase))
 		}
-		if status.ConditionMessage != "" && lastStatus.ConditionMessage != status.ConditionMessage {
-			updateCallback(edgeproto.UpdateTask, status.ConditionMessage)
+		if debugConditions {
+			for typ, cond := range status.Conditions {
+				lastCond, ok := lastStatus.Conditions[typ]
+				if !ok || lastCond != cond {
+					updateCallback(edgeproto.UpdateTask, cond)
+				}
+			}
 		}
 		if status.ControlNodes != "" && lastStatus.ControlNodes != status.ControlNodes {
 			updateCallback(edgeproto.UpdateTask, status.ControlNodes)
@@ -72,13 +109,69 @@ func (s *ClusterAPI) waitForCluster(ctx context.Context, client ssh.Client, name
 		if status.WorkerReplicas != "" && lastStatus.WorkerReplicas != status.WorkerReplicas {
 			updateCallback(edgeproto.UpdateTask, status.WorkerReplicas)
 		}
+		for name, hostStatus := range status.BareMetalHostsStatus {
+			lastHostStatus, ok := lastStatus.BareMetalHostsStatus[name]
+			if !ok || lastHostStatus != hostStatus {
+				updateCallback(edgeproto.UpdateTask, hostStatus)
+			}
+			delete(lastStatus.BareMetalHostsStatus, name)
+		}
+		for name := range lastStatus.BareMetalHostsStatus {
+			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Node %s removed", name))
+		}
 		if action == cloudcommon.Create {
+			if status.KconfNames.KconfName == "" {
+				// check for unsupported version in KamajiControlPlane.
+				if err := s.checkKamajiControlPlaneStatus(ctx, client, names, clusterName); err != nil {
+					return err
+				}
+			}
+			if !lastStatus.LBReady {
+				ok, err := s.assignControlPlaneVIP(ctx, client, names, clusterName, clusterInst, updateCallback)
+				if err != nil {
+					return err
+				}
+				status.LBReady = ok
+			}
 			if status.KconfNames.KconfName != "" && lastStatus.KconfNames.KconfName == "" {
 				updateCallback(edgeproto.UpdateTask, "Kubeconfig available, waiting for Kube API...")
 			}
 			if status.KubeAPIReady && !lastStatus.KubeAPIReady {
-				updateCallback(edgeproto.UpdateTask, "Kube API ready, installing CNI...")
+				updateCallback(edgeproto.UpdateTask, "Kube API ready, waiting for nodes to be provisioned and joined...")
+			}
+			if status.KubeAPIReady {
+				nodes, err := k8smgmt.GetNodes(ctx, client, status.KconfNames.KconfArg)
+				if err != nil {
+					return err
+				}
+				status.NodesJoined = len(nodes)
+				if status.NodesJoined != lastStatus.NodesJoined {
+					updateCallback(edgeproto.UpdateTask, fmt.Sprintf("nodes joined %d/%d", status.NodesJoined, numNodes))
+				}
+			}
+			// Note: it takes a while between the control plane coming
+			// up (which is fast because it's hosted in the managed cluster)
+			// and the worker nodes coming up, as they need the OS to be
+			// installed and then joined to the cluster.
+			// Don't install the CNI until the nodes are joined, otherwise
+			// we wait a long time for the nodes to join which can cause
+			// the CNI install to timeout.
+			if status.NodesJoined == numNodes && lastStatus.NodesJoined != numNodes {
+				updateCallback(edgeproto.UpdateTask, "all nodes joined, installing CNI...")
 				err = k8smgmt.InstallCilium(ctx, client, &status.KconfNames, clusterName, clusterInst, updateCallback)
+				if err != nil {
+					return err
+				}
+				// Note: we assign load balancer IPs statically from a
+				// cloudlet pool, so we don't want metalLB deciding which
+				// IP to use. However, metalLB will not use an IP that is
+				// not part of its pool. So we just create a pool with all
+				// IPs but non-assignable.
+				params := &infracommon.MetalConfigmapParams{
+					AddressRanges:     []string{"0.0.0.0/0"},
+					DisableAutoAssign: true,
+				}
+				err = infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, &status.KconfNames, clusterName, clusterInst, params, updateCallback)
 				if err != nil {
 					return err
 				}
@@ -100,8 +193,8 @@ func (s *ClusterAPI) waitForCluster(ctx context.Context, client ssh.Client, name
 	return nil
 }
 
-func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, clusterInst *edgeproto.ClusterInst, lastStatus ClusterStatus, action cloudcommon.Action) (ClusterStatus, error) {
-	status := ClusterStatus{}
+func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, clusterInst *edgeproto.ClusterInst, lastStatus *ClusterStatus, action cloudcommon.Action) (*ClusterStatus, error) {
+	status := NewClusterStatus()
 	cluster := clusterv1.Cluster{}
 	err := s.getKubeObject(ctx, client, names, "cluster", s.namespace, clusterName, &cluster)
 	if err != nil {
@@ -109,13 +202,24 @@ func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, 
 	}
 
 	status.Phase = string(cluster.Status.Phase)
-	// last condition message
-	var lastCondition v1.Condition
 	for _, condition := range cluster.Status.Conditions {
-		if lastCondition.LastTransitionTime.Before(&condition.LastTransitionTime) && condition.Message != "" {
-			lastCondition = condition
-			status.ConditionMessage = "Status: " + condition.Message
+		if condition.Status != "True" {
+			continue
 		}
+		reason := condition.Reason
+		// sometimes the reason is the same as the condition.Type,
+		// which generates a confusing message like:
+		// Condition Ready: Ready
+		// So if replace it with "true" to make a better message.
+		if reason == condition.Type {
+			reason = "True"
+		}
+		condStr := fmt.Sprintf("Condition %s: %s", condition.Type, reason)
+		if condition.Message != "" {
+			msg := strings.TrimPrefix(condition.Message, "* ")
+			condStr += ", " + msg
+		}
+		status.Conditions[condition.Type] = condStr
 	}
 	// control replicas
 	if cluster.Status.ControlPlane != nil {
@@ -137,6 +241,10 @@ func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, 
 		}
 		status.WorkerReplicas = fmt.Sprintf("Worker nodes ready: %d/%d", status.WorkerNodesReady, status.WorkerNodesDesired)
 	}
+	hosts, err := metal3.GetBareMetalHosts(ctx, client, names, s.namespace, fmt.Sprintf("%s=%s", "cluster.x-k8s.io/cluster-name", clusterName))
+	for _, host := range hosts {
+		status.BareMetalHostsStatus[host.Name] = getBareMetalHostStatus(&host)
+	}
 	if status.ControlNodesDesired == 0 {
 		// don't bother checking kubeconfig/kubectl
 		return status, nil
@@ -147,13 +255,15 @@ func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, 
 	}
 	// check if we can get kubeconfig
 	status.KconfNames = lastStatus.KconfNames
+	status.KconfNamesErr = lastStatus.KconfNamesErr
 	if status.KconfNames.KconfName == "" {
 		clusterNames, err := s.ensureClusterKubeconfig(ctx, client, names, clusterInst, clusterName)
 		if err == nil {
 			status.KconfNames = *clusterNames
-		} else {
-			// just log error and retry
+		} else if status.KconfNamesErr != err.Error() {
+			// just log error once and retry
 			log.SpanLog(ctx, log.DebugLevelInfra, "check cluster status failed to ensure cluster kubeconfig", "clusterName", clusterName, "err", err)
+			status.KconfNamesErr = err.Error()
 		}
 	}
 	// check if we can contact the kube API
@@ -169,6 +279,22 @@ func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, 
 	return status, nil
 }
 
+func getBareMetalHostStatus(bmh *metal3v1.BareMetalHost) string {
+	status := bmh.Status
+	switch status.OperationalStatus {
+	case metal3v1.OperationalStatusError:
+		return fmt.Sprintf("Node %s: %s: %s", bmh.Name, status.ErrorType, status.ErrorMessage)
+	case metal3v1.OperationalStatusOK:
+		powerState := "offline"
+		if bmh.Status.PoweredOn {
+			powerState = "online"
+		}
+		return fmt.Sprintf("Node %s: %s, %s", bmh.Name, status.Provisioning.State, powerState)
+	default:
+		return fmt.Sprintf("Node %s: %s", bmh.Name, status.OperationalStatus)
+	}
+}
+
 func (s *ClusterAPI) getKubeObject(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, kind string, namespace string, name string, obj any) error {
 	cmd := fmt.Sprintf("kubectl %s get -n %s %s %s -o json", names.KconfArg, namespace, kind, name)
 	out, err := client.Output(cmd)
@@ -180,4 +306,84 @@ func (s *ClusterAPI) getKubeObject(ctx context.Context, client ssh.Client, names
 		return fmt.Errorf("failed to unmarshal kube object data, %s", err)
 	}
 	return nil
+}
+
+func (s *ClusterAPI) checkKamajiControlPlaneStatus(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string) error {
+	cmd := fmt.Sprintf("kubectl %s -n %s get kamajicontrolplane %s -o json", names.KconfArg, s.namespace, clusterName)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("CAPI get kamaji control plane failed, %s, %s, %s", cmd, out, err)
+	}
+	// unfortunately we hit import hell trying to import the kamaji
+	// golang types, so we use a generic map here.
+	data := map[string]any{}
+	err = json.Unmarshal([]byte(out), &data)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal kamaji control plane data, %s", err)
+	}
+	status, ok := data["status"].(map[string]any)
+	if !ok {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get status from kamaji control plane data", "data", data)
+		return nil
+	}
+	conditions, ok := status["conditions"].([]any)
+	if !ok {
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get conditions from kamaji control plane status", "status", status)
+		return nil
+	}
+	if len(conditions) == 0 {
+		log.SpanLog(ctx, log.DebugLevelInfra, "no conditions from kamaji control plane status", "status", status)
+		return nil
+	}
+	for _, conditionObj := range conditions {
+		condition, ok := conditionObj.(map[string]any)
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to get condition from kamaji control plane conditions", "conditions", conditions)
+			return nil
+		}
+		message, ok := condition["message"].(string)
+		if !ok {
+			log.SpanLog(ctx, log.DebugLevelInfra, "failed to get message from kamaji control plane condition", "condition", condition)
+			return nil
+		}
+		if strings.Contains(message, "unable to create a TenantControlPlane with a Kubernetes version greater than the supported one") {
+			return errors.New(message)
+		}
+	}
+	return nil
+}
+
+func (s *ClusterAPI) assignControlPlaneVIP(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (bool, error) {
+	vip, ok := clusterInst.Annotations[cloudcommon.AnnotationControlVIP]
+	if !ok {
+		return false, fmt.Errorf("no floating VIP allocated for cluster %s", clusterName)
+	}
+	svc := v1.Service{}
+	err := s.getKubeObject(ctx, client, names, "svc", s.namespace, clusterName, &svc)
+	if err != nil {
+		if strings.Contains(err.Error(), "NotFound") {
+			return false, nil
+		}
+		return false, err
+	}
+	// How we apply the VIP depends on how the management cluster
+	// is set up. We currently assume it's a k3s cluster with
+	// metalLB.
+	key := k8smgmt.MetalLBLoadbalancerIPsAnnotation
+	if val, ok := svc.Annotations[key]; ok && val == vip {
+		return true, nil
+	}
+	updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Assigning control plane LB VIP %s", vip))
+	lb := edgeproto.LoadBalancer{
+		Key: edgeproto.LoadBalancerKey{
+			Name:      clusterName,
+			Namespace: s.namespace,
+		},
+		Ipv4: vip,
+	}
+	err = k8smgmt.AnnotateLoadBalancerIP(ctx, client, names, &lb, key)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }

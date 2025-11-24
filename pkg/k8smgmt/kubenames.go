@@ -367,6 +367,13 @@ func GetCloudletKConfNames(key *edgeproto.CloudletKey) *KconfNames {
 	return &names
 }
 
+func GetClusterKConfNames(clusterInst *edgeproto.ClusterInst) *KconfNames {
+	names := KconfNames{}
+	names.KconfName = GetKconfName(clusterInst)
+	names.KconfArg = "--kubeconfig=" + names.KconfName
+	return &names
+}
+
 func EnsureNamespace(ctx context.Context, client ssh.Client, names *KconfNames, namespace string, labels map[string]string) error {
 	// this creates the yaml and applies it so there is no
 	// failure if the namespace already exists.

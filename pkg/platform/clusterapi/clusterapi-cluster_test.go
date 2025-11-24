@@ -95,7 +95,10 @@ func createTestPlatform(t *testing.T) *ClusterAPI {
 }
 
 func getTestVip(t *testing.T, capi *ClusterAPI) string {
-	vipsStr, ok := capi.properties.GetValue(cloudcommon.FloatingVIPs)
+	vipsStr, ok := capi.properties.GetValue(cloudcommon.FloatingControlVIPs)
+	if !ok {
+		vipsStr, ok = capi.properties.GetValue(cloudcommon.FloatingVIPs)
+	}
 	require.True(t, ok)
 	for ip := range util.IPRangesIter(vipsStr) {
 		return ip
@@ -117,9 +120,9 @@ func createTestCluster(t *testing.T, capi *ClusterAPI) (*edgeproto.ClusterInst, 
 			ControlPlane: true,
 		}, {
 			Name:     "workerpool",
-			NumNodes: 1,
+			NumNodes: 2,
 		}},
-		KubernetesVersion: "v1.34.1",
+		KubernetesVersion: "v1.34.0",
 		Annotations: map[string]string{
 			cloudcommon.AnnotationControlVIP: getTestVip(t, capi),
 		},

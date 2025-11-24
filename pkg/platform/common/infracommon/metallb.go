@@ -33,7 +33,8 @@ var DefaultMetalLbNamespace = "metallb-system"
 var maxMetalLbWaitTime = 5 * time.Minute
 
 type MetalConfigmapParams struct {
-	AddressRanges []string
+	AddressRanges     []string
+	DisableAutoAssign bool
 }
 
 var MetalLbAddressPool = `apiVersion: metallb.io/v1beta1
@@ -46,43 +47,60 @@ spec:
   {{- range .AddressRanges}}
   - {{.}}
   {{- end}}
+  {{- if .DisableAutoAssign}}
+  autoAssign: false
+  {{- end}}
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
 metadata:
-  name: example
+  name: default-l2
   namespace: metallb-system
 spec:
   ipAddressPools:
   - default-pool
 `
 
-func InstallAndConfigMetalLbIfNotInstalled(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, addressRanges []string) error {
+func InstallAndConfigMetalLbIfNotInstalled(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, clusterInst *edgeproto.ClusterInst, params *MetalConfigmapParams, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "InstallAndConfigMetalLbIfNotInstalled", "clusterInst", clusterInst)
-	installed, err := IsMetalLbInstalled(ctx, client, clusterInst, DefaultMetalLbNamespace)
+	installed, err := IsMetalLbInstalled(ctx, client, names, clusterName, clusterInst, DefaultMetalLbNamespace)
 	if err != nil {
 		return err
 	}
 	if !installed {
-		if err := InstallMetalLb(ctx, client, clusterInst); err != nil {
+		if updateCallback != nil {
+			updateCallback(edgeproto.UpdateTask, "Installing MetalLB")
+		}
+		if err := InstallMetalLb(ctx, client, names, clusterName, clusterInst); err != nil {
 			return err
 		}
-		if err := VerifyMetalLbRunning(ctx, client, clusterInst, DefaultMetalLbNamespace); err != nil {
+		if updateCallback != nil {
+			updateCallback(edgeproto.UpdateTask, "Waiting for MetalLB pods...")
+		}
+		if err := VerifyMetalLbRunning(ctx, client, names, clusterName, clusterInst, DefaultMetalLbNamespace); err != nil {
 			return err
 		}
-		if err := ConfigureMetalLb(ctx, client, clusterInst, addressRanges); err != nil {
+		if err := ConfigureMetalLb(ctx, client, names, clusterName, clusterInst, params); err != nil {
 			return err
 		}
+	}
+	if updateCallback != nil {
+		updateCallback(edgeproto.UpdateTask, "MetalLB ready")
 	}
 	return nil
 }
 
-func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, metalLbNameSpace string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "VerifyMetalLbRunning", "clusterInst", clusterInst, "metalLbNameSpace", metalLbNameSpace)
-	kconfArg := k8smgmt.GetKconfArg(clusterInst)
+func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, _ *edgeproto.ClusterInst, metalLbNameSpace string) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "VerifyMetalLbRunning", "clusterInst", clusterName, "metalLbNameSpace", metalLbNameSpace)
 	start := time.Now()
+	podStatus := k8smgmt.PodStatus{}
+	nodes, err := k8smgmt.GetNodes(ctx, client, names.KconfArg)
+	if err != nil {
+		return err
+	}
+	numPods := 1 + len(nodes) // controller and speaker per node
 	for {
-		done, statuses, err := k8smgmt.CheckPodsStatus(ctx, client, kconfArg, metalLbNameSpace, "app=metallb", k8smgmt.WaitRunning, start)
+		done, err := podStatus.Check(ctx, client, names.KconfArg, metalLbNameSpace, "app=metallb", k8smgmt.WaitRunning, start, numPods)
 		if err != nil {
 			return fmt.Errorf("MetalLB pod status error - %v", err)
 		}
@@ -96,15 +114,15 @@ func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, clusterInst *e
 			// field to reflect this and employ health checks to track these appinsts
 			log.SpanLog(ctx, log.DebugLevelInfra, "MetalLB startup wait timed out")
 			err := fmt.Errorf("MetalLB startup wait timed out")
-			if len(statuses) > 0 {
-				err = fmt.Errorf("%w: %s", err, strings.Join(statuses, "; "))
+			if len(podStatus.Statuses) > 0 {
+				err = fmt.Errorf("%w: %s", err, strings.Join(podStatus.Statuses, "; "))
 			}
 			return err
 		}
 		time.Sleep(1 * time.Second)
 	}
 
-	cmd := fmt.Sprintf("kubectl %s -n %s wait --for condition=ready pod --selector=component=controller --timeout=60s", kconfArg, metalLbNameSpace)
+	cmd := fmt.Sprintf("kubectl %s -n %s wait --for condition=ready pod --selector=component=controller --timeout=60s", names.KconfArg, metalLbNameSpace)
 	out, err := client.Output(cmd)
 	if err != nil {
 		log.InfoLog("error getting controller pod", "err", err, "out", out)
@@ -113,10 +131,9 @@ func VerifyMetalLbRunning(ctx context.Context, client ssh.Client, clusterInst *e
 	return nil
 }
 
-func IsMetalLbInstalled(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, metalLbNameSpace string) (bool, error) {
-	log.SpanLog(ctx, log.DebugLevelInfra, "IsMetalLbInstalled", "clusterInst", clusterInst, "metalLbNameSpace", metalLbNameSpace)
-	kconf := k8smgmt.GetKconfName(clusterInst)
-	cmd := fmt.Sprintf("kubectl get deployment -n %s controller --kubeconfig=%s", metalLbNameSpace, kconf)
+func IsMetalLbInstalled(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, _ *edgeproto.ClusterInst, metalLbNameSpace string) (bool, error) {
+	log.SpanLog(ctx, log.DebugLevelInfra, "IsMetalLbInstalled", "clusterInst", clusterName, "metalLbNameSpace", metalLbNameSpace)
+	cmd := fmt.Sprintf("kubectl %s get deployment -n %s controller", names.KconfArg, metalLbNameSpace)
 	out, err := client.Output(cmd)
 	if err != nil {
 		if strings.Contains(out, "NotFound") {
@@ -131,11 +148,10 @@ func IsMetalLbInstalled(ctx context.Context, client ssh.Client, clusterInst *edg
 	return true, nil
 }
 
-func InstallMetalLb(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "InstallMetalLb", "clusterInst", clusterInst)
-	kconf := k8smgmt.GetKconfName(clusterInst)
+func InstallMetalLb(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, _ *edgeproto.ClusterInst) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "InstallMetalLb", "clusterInst", clusterName)
 	cmds := []string{
-		fmt.Sprintf("kubectl create -f https://raw.githubusercontent.com/metallb/metallb/v0.13.10/config/manifests/metallb-native.yaml --kubeconfig=%s", kconf),
+		fmt.Sprintf("kubectl %s create -f https://raw.githubusercontent.com/metallb/metallb/v0.15.2/config/manifests/metallb-native.yaml", names.KconfArg),
 	}
 	for _, cmd := range cmds {
 		log.SpanLog(ctx, log.DebugLevelInfra, "installing metallb", "cmd", cmd)
@@ -148,31 +164,34 @@ func InstallMetalLb(ctx context.Context, client ssh.Client, clusterInst *edgepro
 	return nil
 }
 
-func ConfigureMetalLb(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, addressRanges []string) error {
-	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureMetalLb", "clusterInst", clusterInst, "addressRanges", addressRanges)
-	MetalConfigmapParams := MetalConfigmapParams{
-		AddressRanges: addressRanges,
-	}
-	configBuf, err := ExecTemplate("MetalLbAddressPool", MetalLbAddressPool, MetalConfigmapParams)
+func ConfigureMetalLb(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, _ *edgeproto.ClusterInst, params *MetalConfigmapParams) error {
+	log.SpanLog(ctx, log.DebugLevelInfra, "ConfigureMetalLb", "clusterInst", clusterName, "params", params)
+	configBuf, err := ExecTemplate("MetalLbAddressPool", MetalLbAddressPool, params)
 	if err != nil {
 		return err
 	}
-	dir := k8smgmt.GetNormalizedClusterName(clusterInst)
-	err = pc.CreateDir(ctx, client, dir, pc.NoOverwrite, pc.NoSudo)
-	if err != nil {
-		return err
-	}
-	fileName := dir + "/metalLbPoolConfig.yaml"
+	fileName := clusterName + "-metalLbPoolConfig.yaml"
 	err = pc.WriteFile(client, fileName, configBuf.String(), "configMap", pc.NoSudo)
 	if err != nil {
 		return fmt.Errorf("WriteTemplateFile failed for metal config map: %s", err)
 	}
-	kconf := k8smgmt.GetKconfName(clusterInst)
-	cmd := fmt.Sprintf("kubectl apply -f %s --kubeconfig=%s", fileName, kconf)
-	log.SpanLog(ctx, log.DebugLevelInfra, "installing metallb addr pool config", "cmd", cmd)
-	out, err := client.Output(cmd)
-	if err != nil {
-		return fmt.Errorf("can't add configure metallb %s, %s, %v", cmd, out, err)
+	// Sometimes the webhook is not ready even though the pods are
+	// running. Allow for one retry.
+	for ii := 0; ; ii++ {
+		cmd := fmt.Sprintf("kubectl %s apply -f %s", names.KconfArg, fileName)
+		log.SpanLog(ctx, log.DebugLevelInfra, "installing metallb addr pool config", "cmd", cmd)
+		out, err := client.Output(cmd)
+		if err != nil {
+			if ii < 2 && strings.Contains(out, "failed calling webhook") {
+				// give some time for webhook to be ready
+				log.SpanLog(ctx, log.DebugLevelInfra, "webhook not ready yet, will retry", "try", ii, "cmd", cmd, "out", out, "err", err)
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			return fmt.Errorf("can't configure metallb %s, %s, %v", cmd, out, err)
+		} else {
+			break
+		}
 	}
 	return nil
 }

@@ -581,7 +581,12 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 			if err != nil {
 				return err
 			}
-			if err := infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, clusterInst, lbIpRange); err != nil {
+			params := infracommon.MetalConfigmapParams{
+				AddressRanges: lbIpRange,
+			}
+			names := k8smgmt.GetClusterKConfNames(clusterInst)
+			clusterName := k8smgmt.GetNormalizedClusterName(clusterInst)
+			if err := infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, names, clusterName, clusterInst, &params, updateCallback); err != nil {
 				return err
 			}
 		}

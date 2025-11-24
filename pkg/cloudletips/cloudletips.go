@@ -50,8 +50,12 @@ func NewCloudletIPs(kvstore objstore.KVStore, cloudletIPsStore edgeproto.Cloudle
 // This is relevant to bare metal cloudlets where we manage IP
 // address assignment to the control plane.
 func (s *CloudletIPs) ReserveControlPlaneIP(stm concurrency.STM, cloudlet *edgeproto.Cloudlet, clusterInst *edgeproto.ClusterInst) error {
-	vipsStr, ok := cloudlet.EnvVar[cloudcommon.FloatingVIPs]
-	if !ok {
+	vipsStr := ""
+	if val, ok := cloudlet.EnvVar[cloudcommon.FloatingControlVIPs]; ok {
+		vipsStr = val
+	} else if val, ok := cloudlet.EnvVar[cloudcommon.FloatingVIPs]; ok {
+		vipsStr = val
+	} else {
 		// no need to reserve VIP
 		return nil
 	}

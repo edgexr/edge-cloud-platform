@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"strconv"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -38,11 +40,12 @@ import (
 	"sigs.k8s.io/cluster-api/api/core/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
 )
 
-var kubeVIPTemplate *template.Template
+var kamajiControlPlaneTemplate *template.Template
 
 const DebugUserPassword = "DebugUserPassword"
 
@@ -53,7 +56,7 @@ func init() {
 	_ = infrav1.AddToScheme(scheme.Scheme)
 	_ = controlplanev1.AddToScheme(scheme.Scheme)
 	_ = bootstrapv1.AddToScheme(scheme.Scheme)
-	kubeVIPTemplate = template.Must(template.New("kube-vip").Parse(kubeVIPTemplateString))
+	kamajiControlPlaneTemplate = template.Must(template.New("kcp").Parse(kamajiControlPlaneTemplateString))
 }
 
 func (s *ClusterAPI) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
@@ -146,8 +149,13 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	imageChecksum, _ := s.properties.GetValue(ImageChecksum)
 	imageChecksumType, _ := s.properties.GetValue(ImageChecksumType)
 	imageFormat, _ := s.properties.GetValue(ImageFormat)
-	vipSubnet, _ := s.properties.GetValue(FloatingVIPsSubnet)
 
+	// Set the kube API port to 6443 instead of 6444 because it's
+	// possible when the management cluster is running on k3s that
+	// the load balancer created for the kamaji control plane may
+	// be assigned the k3s node's IP, overlapping the cluster's
+	// kube API port and bricking the cluster.
+	apiPort := 6444
 	// Create a config file for cluster vars, which is easier than trying
 	// to set env vars for this remote clusterctl command.
 	// Note that we fill in the extra configs later directly into
@@ -159,7 +167,7 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	config := map[string]string{
 		// This is a VIP for the cluster control plane
 		"CLUSTER_APIENDPOINT_HOST":      vip,
-		"CLUSTER_APIENDPOINT_PORT":      "6443",
+		"CLUSTER_APIENDPOINT_PORT":      strconv.Itoa(apiPort),
 		"IMAGE_CHECKSUM":                imageChecksum,
 		"IMAGE_CHECKSUM_TYPE":           imageChecksumType,
 		"IMAGE_FORMAT":                  imageFormat,
@@ -188,20 +196,22 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	}
 	manifest := out
 
-	objs, _, err := cloudcommon.DecodeK8SYaml(manifest)
+	objs, gvks, err := cloudcommon.DecodeK8SYaml(manifest)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode cluster manifests, %s", err)
 	}
 
 	buf := bytes.Buffer{}
-	kubeVIPArgs := kubeVipTemplateArgs{
-		KubeVIPIP:      vip,
-		KubeVIPSubnet:  vipSubnet,
-		EnableServices: true,
+	kcpArgs := kamajiControlPlaneTemplateArgs{
+		Name:                     clusterName,
+		Namespace:                s.namespace,
+		ControlPlaneEndpointHost: vip,
+		ControlPlaneEndpointPort: apiPort,
+		Version:                  version,
 	}
-	err = kubeVIPTemplate.Execute(&buf, &kubeVIPArgs)
+	err = kamajiControlPlaneTemplate.Execute(&buf, &kcpArgs)
 	if err != nil {
-		return "", fmt.Errorf("failed to execute kube-vip template, %s", err)
+		return "", fmt.Errorf("failed to execute kamaji control plane  template, %s", err)
 	}
 
 	// We need to:
@@ -218,11 +228,6 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 		Path:    "/etc/ssh/trusted-user-ca-keys.pem",
 		Content: caCert,
 		Append:  &append,
-	}
-	kubeVIPTemplateFile := bootstrapv1.File{
-		Content: buf.String(),
-		Owner:   "root",
-		Path:    "/root/kube-vip.template",
 	}
 	user := bootstrapv1.User{
 		Name:  "ubuntu",
@@ -242,21 +247,14 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	}
 
 	for i := range objs {
-		if obj, ok := objs[i].(*controlplanev1.KubeadmControlPlane); ok {
-			obj.Spec.KubeadmConfigSpec.BootCommands = bootComands
-			obj.Spec.KubeadmConfigSpec.Files = []bootstrapv1.File{
-				trustUserCAKeysFile,
-				kubeVIPTemplateFile,
-			}
-			obj.Spec.KubeadmConfigSpec.PreKubeadmCommands = []string{
-				"mkdir -p /etc/kubernetes/manifests",
-				"export KUBEVIP_INTF=$(ip route | awk '/default/ {print $5}' | head -n 1)",
-				"echo generating kube-vip using interface $KUBEVIP_INTF",
-				"envsubst < /root/kube-vip.template > /etc/kubernetes/manifests/kube-vip.yaml",
-			}
-			obj.Spec.KubeadmConfigSpec.Users = []bootstrapv1.User{
-				user,
-			}
+		if _, ok := objs[i].(*controlplanev1.KubeadmControlPlane); ok {
+			// replace with KamajiControlPlane
+			objs[i] = nil
+		} else if obj, ok := objs[i].(*clusterv1.Cluster); ok {
+			// switch from Kubeadm to Kamaji control plane
+			obj.Spec.ControlPlaneRef.Kind = "KamajiControlPlane"
+			// enforce different kube API port
+			obj.Spec.ClusterNetwork.APIServerPort = int32(apiPort)
 		} else if obj, ok := objs[i].(*bootstrapv1.KubeadmConfigTemplate); ok {
 			obj.Spec.Template.Spec.BootCommands = bootComands
 			obj.Spec.Template.Spec.Files = []bootstrapv1.File{
@@ -265,73 +263,69 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 			obj.Spec.Template.Spec.Users = []bootstrapv1.User{
 				user,
 			}
+		} else if obj, ok := objs[i].(metav1.Object); ok {
+			gvk := gvks[i]
+			if gvk.Kind == "Metal3MachineTemplate" && strings.Contains(obj.GetName(), "controlplane") {
+				// kamaji control plane doesn't need physical nodes
+				objs[i] = nil
+			}
+			if gvk.Kind == "Metal3DataTemplate" && strings.Contains(obj.GetName(), "controlplane") {
+				// kamaji control plane doesn't need physical nodes
+				objs[i] = nil
+			}
 		}
 	}
 	manifest, err = cloudcommon.EncodeK8SYaml(objs)
 	if err != nil {
 		return "", fmt.Errorf("failed to encode cluster manifests, %s", err)
 	}
+	// add kamaji control plane template
+	manifest += "---\n" + buf.String()
+
 	return manifest, nil
 }
 
-type kubeVipTemplateArgs struct {
-	KubeVIPIP      string
-	KubeVIPSubnet  string
-	EnableServices bool // use VIP for load balancers
+// There were too many problems trying to import the kamaji CRD
+// golang definitions, primarily because their api dir was not
+// separated into its own go package, so adding the deps was importing
+// a lot of kubernetes operator packages. Instead, we'll use a
+// string template.
+type kamajiControlPlaneTemplateArgs struct {
+	Name                     string
+	Namespace                string
+	ControlPlaneEndpointHost string
+	ControlPlaneEndpointPort int
+	LBClass                  string
+	Version                  string
 }
 
-var kubeVIPTemplateString = `apiVersion: v1
-kind: Pod
+var kamajiControlPlaneTemplateString = `apiVersion: controlplane.cluster.x-k8s.io/v1alpha1
+kind: KamajiControlPlane
 metadata:
-  name: kube-vip
-  namespace: kube-system
+  name: {{ .Name }}
+  namespace: {{ .Namespace }}
 spec:
-  containers:
-  - args:
-    - manager
-    env:
-    - name: vip_arp
-      value: "true"
-    - name: port
-      value: "6443"
-    - name: vip_interface
-      value: $KUBEVIP_INTF
-    - name: vip_subnet
-      value: "{{ .KubeVIPSubnet }}"
-    - name: cp_enable
-      value: "true"
-    - name: cp_namespace
-      value: kube-system
-{{- if .EnableServices }}
-    - name: svc_enable
-      value: "true"
-{{- end }}
-    - name: vip_leaderelection
-      value: "true"
-    - name: address
-      value: {{ .KubeVIPIP }}
-    image: ghcr.io/kube-vip/kube-vip:v1.0.1
-    imagePullPolicy: Always
-    name: kube-vip
-    securityContext:
-      capabilities:
-        add:
-        - NET_ADMIN
-        - NET_RAW
-        drop:
-        - ALL
-    volumeMounts:
-    - mountPath: /etc/kubernetes/admin.conf
-      name: kubeconfig
-  hostAliases:
-  - hostnames:
-    - kubernetes
-    ip: 127.0.0.1
-  hostNetwork: true
-  volumes:
-  - hostPath:
-      path: /etc/kubernetes/super-admin.conf
-    name: kubeconfig
+  controlPlaneEndpoint:
+    host: {{ .ControlPlaneEndpointHost }}
+    port: {{ .ControlPlaneEndpointPort }}
+  dataStoreName: default
+  addons:
+    coreDNS: {}
+    kubeProxy: {}
+    konnectivity: {}
+  admissionControllers: [CertificateApproval, CertificateSigning, CertificateSubjectRestriction, DefaultIngressClass, DefaultStorageClass, DefaultTolerationSeconds, LimitRanger, MutatingAdmissionWebhook, NamespaceLifecycle, PersistentVolumeClaimResize, PodSecurity, Priority, ResourceQuota, RuntimeClass, ServiceAccount, StorageObjectInUseProtection, TaintNodesByCondition, ValidatingAdmissionWebhook]
+  kubelet:
+    cgroupfs: systemd
+    preferredAddressTypes:
+      - ExternalIP
+      - InternalIP
+      - Hostname
+  network:
+    certSANs:
+    - {{ .ControlPlaneEndpointHost }}
+    serviceType: LoadBalancer
+    serviceAddress: {{ .ControlPlaneEndpointHost }}
+  version: {{ .Version }}
 `
 
 func (s *ClusterAPI) RunClusterCreateCommand(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, updateCallback edgeproto.CacheUpdateCallback) (map[string]string, error) {
@@ -359,7 +353,7 @@ func (s *ClusterAPI) RunClusterCreateCommand(ctx context.Context, clusterName st
 	if err != nil {
 		return nil, fmt.Errorf("failed to apply capi cluster manifest %q: %s, %s", cmd, out, err)
 	}
-	err = s.waitForCluster(ctx, client, names, clusterName, clusterInst, cloudcommon.Create, updateCallback)
+	err = s.waitForCluster(ctx, client, names, clusterName, clusterInst, cloudcommon.Create, nil, updateCallback)
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +367,7 @@ func (s *ClusterAPI) RunClusterUpdateCommand(ctx context.Context, clusterName st
 	if err != nil {
 		return nil, err
 	}
-	status, err := s.checkClusterStatus(ctx, client, names, clusterName, clusterInst, ClusterStatus{}, cloudcommon.Update)
+	status, err := s.checkClusterStatus(ctx, client, names, clusterName, clusterInst, NewClusterStatus(), cloudcommon.Update)
 	if err != nil {
 		return nil, err
 	}
@@ -397,7 +391,7 @@ func (s *ClusterAPI) RunClusterUpdateCommand(ctx context.Context, clusterName st
 		if err != nil {
 			return nil, fmt.Errorf("failed to scale worker pool, %s, %s, %v", cmd, out, err)
 		}
-		err = s.waitForCluster(ctx, client, names, clusterName, clusterInst, cloudcommon.Update, updateCallback)
+		err = s.waitForCluster(ctx, client, names, clusterName, clusterInst, cloudcommon.Update, status, updateCallback)
 		if err != nil {
 			return nil, err
 		}
@@ -413,13 +407,27 @@ func (s *ClusterAPI) RunClusterDeleteCommand(ctx context.Context, clusterName st
 	if err != nil {
 		return err
 	}
+	// for delete, start wait with status before delete so that we don't
+	// print messages about state before delete.
+	initialStatus, err := s.checkClusterStatus(ctx, client, names, clusterName, clusterInst, NewClusterStatus(), cloudcommon.Delete)
+	if err != nil {
+		// fallback to empty initial status
+		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get initial status for cluster delete, ignoring initial status", "cluster", clusterName, "err", err)
+		initialStatus = NewClusterStatus()
+		err = nil
+	}
 	cmd := fmt.Sprintf("kubectl %s delete cluster %s -n %s --wait=false", names.KconfArg, clusterName, s.namespace)
 	log.SpanLog(ctx, log.DebugLevelInfra, "deleting capi cluster", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
+		if strings.Contains(out, "NotFound") {
+			log.SpanLog(ctx, log.DebugLevelInfra, "cluster already deleted", "cluster", clusterName, "out", out, "err", err)
+			return nil
+		}
 		return fmt.Errorf("failed to delete capi cluster %q: %s, %s", cmd, out, err)
 	}
-	err = s.waitForCluster(ctx, client, names, clusterName, clusterInst, cloudcommon.Delete, updateCallback)
+
+	err = s.waitForCluster(ctx, client, names, clusterName, clusterInst, cloudcommon.Delete, initialStatus, updateCallback)
 	if err != nil {
 		return err
 	}
@@ -514,11 +522,9 @@ func (s *ClusterAPI) EnsureLoadBalancer(ctx context.Context, cloudletKey edgepro
 	if err != nil {
 		return nil, err
 	}
-	// clusterapi uses kube-vip to advertise load balancer IPs.
-	// We do not create external LBs, instead traffic flows
-	// directly to the node with the VIP and is distributed by
-	// kubeproxy/cilium.
-	err = k8smgmt.SetLoadBalancerKubeVipIP(ctx, s.getClient(), clusterNames, lb)
+	// clusterapi uses metalLB to advertise load balancer IPs.
+	// We do not create external LBs.
+	err = k8smgmt.AnnotateLoadBalancerIP(ctx, s.getClient(), clusterNames, lb, k8smgmt.MetalLBLoadbalancerIPsAnnotation)
 	if err != nil {
 		return nil, err
 	}

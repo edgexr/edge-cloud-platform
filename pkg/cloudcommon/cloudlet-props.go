@@ -30,6 +30,7 @@ const (
 	NamespaceLabels          = "NAMESPACE_LABELS"
 	Kubeconfig               = "KUBECONFIG"
 	FloatingVIPs             = "FloatingVIPs"
+	FloatingControlVIPs      = "FloatingControlVIPs"
 	IngressClass             = "IngressClass"
 	IngressIPV4              = "IngressIPV4"
 )

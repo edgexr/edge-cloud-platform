@@ -31,9 +31,12 @@ import (
 
 const FlavorLabel = "app.edgexr.org/flavor"
 
-func GetBareMetalHosts(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, namespace string) ([]v1alpha1.BareMetalHost, error) {
-	cmd := fmt.Sprintf("kubectl %s get baremetalhosts -n %s -o json", names.KconfArg, namespace)
-	log.SpanLog(ctx, log.DebugLevelInfra, "get baremetalhosts", "cmd", cmd)
+func GetBareMetalHosts(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, namespace, label string) ([]v1alpha1.BareMetalHost, error) {
+	if label != "" {
+		label = "-l " + label
+	}
+	cmd := fmt.Sprintf("kubectl %s get baremetalhosts -n %s -o json %s", names.KconfArg, namespace, label)
+	// no logging as this is polled by clusterapi
 	out, err := client.Output(cmd)
 	if err != nil {
 		return nil, fmt.Errorf("get baremetalhosts failed, %s, %v", out, err)
@@ -56,7 +59,7 @@ type FlavorsData struct {
 
 func UpdateBareMetalHostFlavors(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, namespace string) (*FlavorsData, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "update baremetalhost flavor labels", "namespace", namespace)
-	hosts, err := GetBareMetalHosts(ctx, client, names, namespace)
+	hosts, err := GetBareMetalHosts(ctx, client, names, namespace, "")
 	if err != nil {
 		return nil, err
 	}
