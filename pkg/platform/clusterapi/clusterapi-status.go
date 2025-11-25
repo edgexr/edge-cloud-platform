@@ -215,7 +215,7 @@ func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, 
 		if reason == condition.Type {
 			reason = "True"
 		}
-		condStr := fmt.Sprintf("Condition %s %s: %s", condition.Type, condition.Status, reason)
+		condStr := fmt.Sprintf("Condition %s: %s", condition.Type, reason)
 		if condition.Message != "" {
 			msg := strings.TrimPrefix(condition.Message, "* ")
 			condStr += ", " + msg
