@@ -271,7 +271,8 @@ func ValidateGPUs(gpus []*edgeproto.GPUResource, ops ...ValidateGPUOp) error {
 			return errors.New("gpu model id cannot be empty")
 		}
 		if gpu.Count == 0 {
-			return errors.New("gpu count cannot be 0")
+			// just assume 1, as more than 1 is likely not supported
+			gpu.Count = 1
 		}
 		if gpu.Vendor == "" {
 			modelid := strings.ToLower(gpu.ModelId)

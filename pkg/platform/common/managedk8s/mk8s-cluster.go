@@ -68,7 +68,8 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 		if reterr == nil || clusterInst.SkipCrmCleanupOnFailure {
 			return
 		}
-		log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst)
+		log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst, "err", reterr)
+		updateCallback(edgeproto.UpdateTask, "Aborting create, deleting clusterInst due to failure: "+reterr.Error())
 		delerr := m.deleteClusterInstInternal(ctx, clusterName, clusterInst, updateCallback)
 		if delerr != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "failed to cleanup cluster", "delerr", delerr)

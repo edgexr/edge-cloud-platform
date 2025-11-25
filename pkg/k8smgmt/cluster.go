@@ -289,9 +289,9 @@ func GetClusterVersion(ctx context.Context, client ssh.Client, kconfArg string) 
 	return fmt.Sprintf("%s.%s", kv.ServerVersion.Major, kv.ServerVersion.Minor), nil
 }
 
-func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*edgeproto.NodeInfo, error) {
+func GetNodes(ctx context.Context, client ssh.Client, kconfArg string) ([]v1.Node, error) {
+	// no logging here please, this is polled by clusterapi waitForCluster.
 	cmd := fmt.Sprintf("kubectl %s get nodes --output=json", kconfArg)
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetNodeInfo", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return nil, fmt.Errorf("get nodes failed, %s, %v", out, err)
@@ -301,8 +301,16 @@ func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*e
 	if err != nil {
 		return nil, err
 	}
+	return nodes.Items, nil
+}
+
+func GetNodeInfos(ctx context.Context, client ssh.Client, kconfArg string) ([]*edgeproto.NodeInfo, error) {
+	nodes, err := GetNodes(ctx, client, kconfArg)
+	if err != nil {
+		return nil, err
+	}
 	info := []*edgeproto.NodeInfo{}
-	for _, item := range nodes.Items {
+	for _, item := range nodes {
 		nodeInfo := &edgeproto.NodeInfo{}
 		nodeInfo.Name = item.Name
 		nodeInfo.Allocatable = make(map[string]*edgeproto.Udec64)

@@ -58,6 +58,15 @@ func GetKubeServices(ctx context.Context, client ssh.Client, names *KconfNames, 
 	return svcs.Items, nil
 }
 
+func GetService(ctx context.Context, client ssh.Client, names *KconfNames, name, namespace string) (*v1.Service, error) {
+	svc := v1.Service{}
+	err := GetObject(ctx, client, names, "svc", name, &svc, WithObjectNamespace(namespace))
+	if err != nil {
+		return nil, err
+	}
+	return &svc, nil
+}
+
 type PortProto string
 
 func GetSvcPortProto(port int32, protocol string) PortProto {
@@ -292,10 +301,11 @@ func WaitForAppServices(ctx context.Context, client ssh.Client, names *KubeNames
 // use plural for dual stack support in the future
 // Example: kube-vip.io/loadbalancerIPs: 10.1.2.3,fd00::100
 // See https://github.com/kube-vip/kube-vip-cloud-provider/blob/main/pkg/provider/loadBalancer.go
-const LoadbalancerIPsAnnotation = "kube-vip.io/loadbalancerIPs"
+const KubeVipLoadbalancerIPsAnnotation = "kube-vip.io/loadbalancerIPs"
+const MetalLBLoadbalancerIPsAnnotation = "metallb.io/loadBalancerIPs"
 
-func SetLoadBalancerKubeVipIP(ctx context.Context, client ssh.Client, names *KconfNames, lb *edgeproto.LoadBalancer) error {
-	cmd := fmt.Sprintf("kubectl %s annotate -n %s svc %s %s=%s", names.KconfArg, lb.Key.Namespace, lb.Key.Name, LoadbalancerIPsAnnotation, lb.Ipv4)
+func AnnotateLoadBalancerIP(ctx context.Context, client ssh.Client, names *KconfNames, lb *edgeproto.LoadBalancer, annotation string) error {
+	cmd := fmt.Sprintf("kubectl %s annotate -n %s svc %s %s=%s", names.KconfArg, lb.Key.Namespace, lb.Key.Name, annotation, lb.Ipv4)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return fmt.Errorf("failed to set loadbalancer IP cmd %s: %s, %s", cmd, out, err)

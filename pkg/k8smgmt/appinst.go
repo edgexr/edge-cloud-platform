@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -122,19 +123,24 @@ func LbServicePortToString(p *v1.ServicePort) string {
 	return edgeproto.ProtoPortToString(string(proto), port)
 }
 
-func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace, selector, waitFor string, startTimer time.Time) (bool, []string, error) {
+type PodStatus struct {
+	Statuses []string
+	Updated  bool
+}
+
+func (s *PodStatus) Check(ctx context.Context, client ssh.Client, kConfArg, namespace, selector, waitFor string, startTimer time.Time, expNumPods int) (bool, error) {
+	s.Updated = false
 	done := false
 	statuses := []string{}
-	log.SpanLog(ctx, log.DebugLevelInfra, "check pods status", "namespace", namespace, "selector", selector)
 	cmd := fmt.Sprintf("kubectl %s get pods -n %s --selector=%s -o json", kConfArg, namespace, selector)
 	out, err := client.Output(cmd)
 	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelInfra, "error getting pods", "err", err, "out", out)
-		return done, statuses, fmt.Errorf("error getting pods: %v", err)
+		log.SpanLog(ctx, log.DebugLevelInfra, "error getting pods", "cmd", cmd, "err", err, "out", out)
+		return done, fmt.Errorf("error getting pods: %v", err)
 	}
 	podList := v1.PodList{}
 	if err := json.Unmarshal([]byte(out), &podList); err != nil {
-		return done, statuses, fmt.Errorf("failed to unmarshal pods info, %s", err)
+		return done, fmt.Errorf("failed to unmarshal pods info, %s", err)
 	}
 	podCount := len(podList.Items)
 
@@ -167,11 +173,26 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace
 				}
 			}
 			status := fmt.Sprintf("pod %s: %s (%d/%d), %s", pod.Name, phase, runningCount, len(pod.Status.ContainerStatuses), strings.Join(reasons, ", "))
-			phase += fmt.Sprintf("(%d/%d)", runningCount, len(pod.Status.ContainerStatuses))
 			statuses = append(statuses, status)
+			if len(pod.Spec.Containers) != len(pod.Status.ContainerStatuses) {
+				// containers may not have associated statuses if they are
+				// still in pending and have not deployed yet.
+				allPodsRunning = false
+			}
 		}
 	}
-	log.SpanLog(ctx, log.DebugLevelInfra, "wait for AppInst", "selector", selector, "status", statuses)
+	if expNumPods > 0 && expNumPods != podCount {
+		// some pods were missing
+		allPodsRunning = false
+	}
+	if podCount == 0 {
+		statuses = []string{"no pods found"}
+	}
+	if !slices.Equal(s.Statuses, statuses) {
+		log.SpanLog(ctx, log.DebugLevelInfra, "check pod status", "namespace", namespace, "selector", selector, "status", statuses)
+		s.Statuses = statuses
+		s.Updated = true
+	}
 
 	if waitFor == WaitDeleted {
 		if podCount == 0 {
@@ -189,23 +210,22 @@ func CheckPodsStatus(ctx context.Context, client ssh.Client, kConfArg, namespace
 				st, stErr := CheckReplicaSetStatus(ctx, client, kConfArg, namespace, selector)
 				if stErr != nil {
 					log.SpanLog(ctx, log.DebugLevelInfra, "no pods found and failed to check replicaset status, %s", err)
-					return false, statuses, fmt.Errorf("no pods found")
+					return false, fmt.Errorf("no pods found")
 				} else {
-					return false, statuses, fmt.Errorf("no pods found, replicaset statuses: %s", st)
+					return false, fmt.Errorf("no pods found, replicaset statuses: %s", st)
 				}
 			}
-			log.SpanLog(ctx, log.DebugLevelInfra, "not delete, but no pods found, assume command run before pods deployed", "selector", selector)
-			return false, statuses, nil
+			return false, nil
 		}
 		if failReason {
-			return false, []string{}, fmt.Errorf("invalid pod state, %s", strings.Join(statuses, "; "))
+			return false, fmt.Errorf("invalid pod state, %s", strings.Join(statuses, "; "))
 		}
 		if allPodsRunning {
 			log.SpanLog(ctx, log.DebugLevelInfra, "all pods up", "selector", selector)
 			done = true
 		}
 	}
-	return done, statuses, nil
+	return done, nil
 }
 
 func CheckReplicaSetStatus(ctx context.Context, client ssh.Client, kConfArg, namespace, selector string) (string, error) {
@@ -252,7 +272,7 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 		log.InfoLog("unable to decode k8s yaml", "err", err)
 		return err
 	}
-	lastStatus := ""
+	podStatus := PodStatus{}
 	var name string
 	for ii, _ := range objs {
 		for {
@@ -280,19 +300,16 @@ func WaitForAppInst(ctx context.Context, client ssh.Client, names *KubeNames, ap
 				}
 			}
 			selector := fmt.Sprintf("%s=%s", MexDeploymentLabel, name)
-			done, statuses, err := CheckPodsStatus(ctx, client, kconfArg, namespace, selector, waitFor, start)
+			done, err := podStatus.Check(ctx, client, kconfArg, namespace, selector, waitFor, start, 0)
 			if err != nil {
 				return err
 			}
 			if done {
 				break
 			}
-			if opts.UpdateSender != nil {
-				status := strings.Join(statuses, "; ")
-				if status != lastStatus {
-					opts.UpdateSender.SendStatus(edgeproto.UpdateTask, "Status: "+status)
-					lastStatus = status
-				}
+			if opts.UpdateSender != nil && podStatus.Updated {
+				status := strings.Join(podStatus.Statuses, "; ")
+				opts.UpdateSender.SendStatus(edgeproto.UpdateTask, "Status: "+status)
 			}
 			if err := ctx.Err(); err != nil {
 				log.SpanLog(ctx, log.DebugLevelInfra, "context error, aborting wait for appinst", "app", app.Key, "err", err)

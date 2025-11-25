@@ -76,6 +76,9 @@ func EncodeK8SYaml(objs []runtime.Object) (string, error) {
 	var files []string
 	printer := &printers.YAMLPrinter{}
 	for _, o := range objs {
+		if o == nil {
+			continue
+		}
 		buf := bytes.Buffer{}
 		err := printer.PrintObj(o, &buf)
 		if err != nil {

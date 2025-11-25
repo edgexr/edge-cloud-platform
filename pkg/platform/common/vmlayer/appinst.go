@@ -362,7 +362,10 @@ func (v *VMPlatform) setupDnsForAppInst(ctx context.Context, clusterInst *edgepr
 			if err != nil {
 				return err
 			}
-			if err := infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, clusterInst, lbIpRange); err != nil {
+			params := &infracommon.MetalConfigmapParams{
+				AddressRanges: lbIpRange,
+			}
+			if err := infracommon.InstallAndConfigMetalLbIfNotInstalled(ctx, client, names.GetKConfNames(), names.ClusterName, clusterInst, params, nil); err != nil {
 				return err
 			}
 			err = k8smgmt.PopulateAppInstLoadBalancerIps(ctx, client, names, appInst)

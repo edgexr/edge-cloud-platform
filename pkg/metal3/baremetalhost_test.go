@@ -48,7 +48,7 @@ func TestGetBareMetalHosts(t *testing.T) {
 		KconfArg:  "--kubeconfig=" + kubeconfig,
 	}
 
-	hosts, err := GetBareMetalHosts(ctx, client, &names, namespace)
+	hosts, err := GetBareMetalHosts(ctx, client, &names, namespace, "")
 	require.Nil(t, err)
 
 	for _, host := range hosts {

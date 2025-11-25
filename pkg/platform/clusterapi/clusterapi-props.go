@@ -25,6 +25,7 @@ import (
 const ManagementNamespace = "ManagementNamespace"
 const InfrastructureProvider = "InfrastructureProvider"
 const FloatingVIPsSubnet = "FloatingVIPsSubnet"
+const FloatingControlVIPsSubnet = "FloatingControlVIPsSubnet"
 const ImageURL = "ImageURL"
 const ImageFormat = "ImageFormat"
 const ImageChecksum = "ImageChecksum"
@@ -59,6 +60,18 @@ var Props = map[string]*edgeproto.PropertyInfo{
 	FloatingVIPsSubnet: {
 		Name:        "Floating VIPs Subnet",
 		Description: "Subnet for the Floating VIPs, i.e. 32 or 24",
+		Value:       "",
+		Mandatory:   true,
+	},
+	cloudcommon.FloatingControlVIPs: {
+		Name:        "Floating Control Plane VIPs",
+		Description: "List of available virtual IPs for control plane assignment. If not specified, IPs are taken from the Floating VIPs pool. Format is a comma separated list of a mix of single IPs or startIP-endIP ranges, i.e. \"192.168.0.150-192.168.0.200\"",
+		Value:       "",
+		Mandatory:   true,
+	},
+	FloatingControlVIPsSubnet: {
+		Name:        "Floating Control Plane VIPs Subnet",
+		Description: "Subnet for the Floating control plane VIPs, i.e. 32 or 24",
 		Value:       "",
 		Mandatory:   true,
 	},
