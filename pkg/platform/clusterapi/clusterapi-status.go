@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -32,6 +33,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 
 	metal3v1 "github.com/metal3-io/baremetal-operator/apis/metal3.io/v1alpha1"
+	metal3provv1 "github.com/metal3-io/cluster-api-provider-metal3/api/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 )
 
@@ -58,10 +60,6 @@ func NewClusterStatus() *ClusterStatus {
 		Conditions:           make(map[string]string),
 	}
 }
-
-// in general the condition changes are not super useful for users,
-// but maybe for debug they may help.
-var debugConditions = false
 
 func (s *ClusterAPI) waitForCluster(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string, clusterInst *edgeproto.ClusterInst, action cloudcommon.Action, initialStatus *ClusterStatus, updateCallback edgeproto.CacheUpdateCallback) error {
 	log.SpanLog(ctx, log.DebugLevelInfra, "waiting for capi cluster", "clusterName", clusterName, "action", action.String())
@@ -95,13 +93,16 @@ func (s *ClusterAPI) waitForCluster(ctx context.Context, client ssh.Client, name
 		if status.Phase != "" && lastStatus.Phase != status.Phase {
 			updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Cluster Phase: %s", status.Phase))
 		}
-		if debugConditions {
-			for typ, cond := range status.Conditions {
-				lastCond, ok := lastStatus.Conditions[typ]
-				if !ok || lastCond != cond {
-					updateCallback(edgeproto.UpdateTask, cond)
-				}
+		for typ, cond := range status.Conditions {
+			lastCond, ok := lastStatus.Conditions[typ]
+			// these are a little too low-level to show to the user,
+			// but they are useful for debug
+			if !ok || lastCond != cond {
+				log.SpanLog(ctx, log.DebugLevelInfra, "condition", "cluster", clusterName, "cond", cond)
 			}
+		}
+		if err := checkMetal3MachineStatus(ctx, client, names, s.namespace, clusterName); err != nil {
+			return err
 		}
 		if status.ControlNodes != "" && lastStatus.ControlNodes != status.ControlNodes {
 			updateCallback(edgeproto.UpdateTask, status.ControlNodes)
@@ -214,7 +215,7 @@ func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, 
 		if reason == condition.Type {
 			reason = "True"
 		}
-		condStr := fmt.Sprintf("Condition %s: %s", condition.Type, reason)
+		condStr := fmt.Sprintf("Condition %s %s: %s", condition.Type, condition.Status, reason)
 		if condition.Message != "" {
 			msg := strings.TrimPrefix(condition.Message, "* ")
 			condStr += ", " + msg
@@ -241,7 +242,7 @@ func (s *ClusterAPI) checkClusterStatus(ctx context.Context, client ssh.Client, 
 		}
 		status.WorkerReplicas = fmt.Sprintf("Worker nodes ready: %d/%d", status.WorkerNodesReady, status.WorkerNodesDesired)
 	}
-	hosts, err := metal3.GetBareMetalHosts(ctx, client, names, s.namespace, fmt.Sprintf("%s=%s", "cluster.x-k8s.io/cluster-name", clusterName))
+	hosts, err := metal3.GetBareMetalHosts(ctx, client, names, s.namespace, clusterName)
 	for _, host := range hosts {
 		status.BareMetalHostsStatus[host.Name] = getBareMetalHostStatus(&host)
 	}
@@ -323,7 +324,7 @@ func (s *ClusterAPI) checkKamajiControlPlaneStatus(ctx context.Context, client s
 	}
 	status, ok := data["status"].(map[string]any)
 	if !ok {
-		log.SpanLog(ctx, log.DebugLevelInfra, "failed to get status from kamaji control plane data", "data", data)
+		log.SpanLog(ctx, log.DebugLevelInfra, "no status yet from kamaji control plane data")
 		return nil
 	}
 	conditions, ok := status["conditions"].([]any)
@@ -386,4 +387,42 @@ func (s *ClusterAPI) assignControlPlaneVIP(ctx context.Context, client ssh.Clien
 		return false, err
 	}
 	return true, nil
+}
+
+func checkMetal3MachineStatus(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, namespace, clusterName string) error {
+	// check the status of the metal3machines. These associate between
+	// clusterapi machines and bare metal hosts. We are checking
+	// if there were not enough bare metal hosts available.
+	cmd := fmt.Sprintf("kubectl %s get metal3machine -n %s -o json %s", names.KconfArg, namespace, metal3.GetClusterLabel(clusterName))
+	// no logging as this is polled by clusterapi status
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("get metal3machines failed, %s, %v", out, err)
+	}
+	mlist := metal3provv1.Metal3MachineList{}
+	err = json.Unmarshal([]byte(out), &mlist)
+	if err != nil {
+		return fmt.Errorf("unmarshal metal3machines failed, %s, %v", out, err)
+	}
+	missing := map[string]int{}
+	for _, machine := range mlist.Items {
+		flavor, ok := machine.Spec.HostSelector.MatchLabels[metal3.FlavorLabel]
+		if !ok {
+			continue
+		}
+		for _, cond := range machine.Status.Conditions {
+			if cond.Type == metal3provv1.AssociateBMHCondition && cond.Reason == metal3provv1.AssociateBMHFailedReason {
+				missing[flavor]++
+			}
+		}
+	}
+	if len(missing) == 0 {
+		return nil
+	}
+	msgs := []string{}
+	for flavor, count := range missing {
+		msgs = append(msgs, fmt.Sprintf("%d more needed for flavor %s", count, flavor))
+	}
+	slices.Sort(msgs)
+	return fmt.Errorf("Not enough bare metal hosts available, %s", strings.Join(msgs, ", "))
 }
