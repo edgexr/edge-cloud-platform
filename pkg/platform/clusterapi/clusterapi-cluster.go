@@ -69,7 +69,11 @@ func (s *ClusterAPI) GetCredentials(ctx context.Context, clusterName string, clu
 }
 
 func (s *ClusterAPI) getCredentials(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, clusterName string) ([]byte, error) {
-	cmd := fmt.Sprintf("clusterctl %s -n %s get kubeconfig %s", names.KconfArg, s.namespace, clusterName)
+	clusterctl, err := s.ensureClusterCtl(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	cmd := fmt.Sprintf("%s %s -n %s get kubeconfig %s", clusterctl, names.KconfArg, s.namespace, clusterName)
 	out, outerr, err := pc.RunOutput(client, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("CAPI get credentials failed, %s, %s, %s, %s", cmd, out, outerr, err)
@@ -102,6 +106,7 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	if version == "" {
 		return "", fmt.Errorf("cluster must specify the kubernetes version")
 	}
+	client := s.getClient()
 	var controlNP *edgeproto.NodePool
 	var workerNPs []*edgeproto.NodePool
 	var infraFlavor string
@@ -191,15 +196,19 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 		return "", fmt.Errorf("failed to marshal cluster config, %s", err)
 	}
 	configFile := fmt.Sprintf("%s-capi-config.yaml", clusterName)
-	err = pc.WriteFile(s.getClient(), configFile, string(configContents), "cluster-capi-config", pc.NoSudo)
+	err = pc.WriteFile(client, configFile, string(configContents), "cluster-capi-config", pc.NoSudo)
 	if err != nil {
 		return "", err
 	}
 
-	cmd := fmt.Sprintf("clusterctl %s generate cluster %s --kubernetes-version %s --target-namespace %s --control-plane-machine-count=%d --worker-machine-count=%d --infrastructure %s --config %s", names.KconfArg, clusterName, version, s.namespace, controlNP.NumNodes, workerNPs[0].NumNodes, s.infra, configFile)
+	clusterctl, err := s.ensureClusterCtl(ctx, client)
+	if err != nil {
+		return "", err
+	}
+	cmd := fmt.Sprintf("%s %s generate cluster %s --kubernetes-version %s --target-namespace %s --control-plane-machine-count=%d --worker-machine-count=%d --infrastructure %s --config %s", clusterctl, names.KconfArg, clusterName, version, s.namespace, controlNP.NumNodes, workerNPs[0].NumNodes, s.infra, configFile)
 	log.SpanLog(ctx, log.DebugLevelInfra, "CAPI generate cluster manifests", "cmd", cmd)
 
-	out, outerr, err := pc.RunOutput(s.getClient(), cmd)
+	out, outerr, err := pc.RunOutput(client, cmd)
 	if err != nil {
 		return "", fmt.Errorf("CAPI generate cluster manifests failed, %s, %s, %s, %s", cmd, out, outerr, err)
 	}
