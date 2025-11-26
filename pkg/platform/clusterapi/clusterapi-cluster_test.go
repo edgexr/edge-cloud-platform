@@ -48,6 +48,10 @@ const CAPI_KUBECONFIG = "CAPI_KUBECONFIG"
 // export ImageChecksumType=sha256
 // export DebugUserPassword=changeme
 // export CAPI_KUBECONFIG=/home/user/go/src/github.com/edgexr/cluster-api-local/k3s.yaml
+// NOTE: node flavor depends on the hardware resource configuration
+// of the bare metal nodes and how our software will apply the
+// app.edgexr.org/flavor label.
+// export NodeFlavor=vcpu2-ram8192Mb
 
 func createTestPlatform(t *testing.T) *ClusterAPI {
 	kubeconfig := os.Getenv(CAPI_KUBECONFIG)
@@ -121,6 +125,9 @@ func createTestCluster(t *testing.T, capi *ClusterAPI) (*edgeproto.ClusterInst, 
 		}, {
 			Name:     "workerpool",
 			NumNodes: 2,
+			NodeResources: &edgeproto.NodeResources{
+				InfraNodeFlavor: os.Getenv("NodeFlavor"),
+			},
 		}},
 		KubernetesVersion: "v1.34.0",
 		Annotations: map[string]string{

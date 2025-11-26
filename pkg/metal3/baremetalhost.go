@@ -31,11 +31,15 @@ import (
 
 const FlavorLabel = "app.edgexr.org/flavor"
 
-func GetBareMetalHosts(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, namespace, label string) ([]v1alpha1.BareMetalHost, error) {
-	if label != "" {
-		label = "-l " + label
+func GetClusterLabel(clusterName string) string {
+	if clusterName == "" {
+		return ""
 	}
-	cmd := fmt.Sprintf("kubectl %s get baremetalhosts -n %s -o json %s", names.KconfArg, namespace, label)
+	return fmt.Sprintf("-l cluster.x-k8s.io/cluster-name=%s", clusterName)
+}
+
+func GetBareMetalHosts(ctx context.Context, client ssh.Client, names *k8smgmt.KconfNames, namespace, clusterName string) ([]v1alpha1.BareMetalHost, error) {
+	cmd := fmt.Sprintf("kubectl %s get baremetalhosts -n %s -o json %s", names.KconfArg, namespace, GetClusterLabel(clusterName))
 	// no logging as this is polled by clusterapi
 	out, err := client.Output(cmd)
 	if err != nil {

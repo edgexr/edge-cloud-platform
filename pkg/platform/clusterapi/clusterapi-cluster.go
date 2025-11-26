@@ -40,6 +40,7 @@ import (
 	"sigs.k8s.io/cluster-api/api/core/v1beta2"
 	clusterv1 "sigs.k8s.io/cluster-api/api/core/v1beta2"
 
+	metal3provv1 "github.com/metal3-io/cluster-api-provider-metal3/api/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	bootstrapv1 "sigs.k8s.io/cluster-api/api/bootstrap/kubeadm/v1beta2"
 	controlplanev1 "sigs.k8s.io/cluster-api/api/controlplane/kubeadm/v1beta2"
@@ -103,6 +104,7 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	}
 	var controlNP *edgeproto.NodePool
 	var workerNPs []*edgeproto.NodePool
+	var infraFlavor string
 	// currently we only support a single control pool and
 	// single worker pool. To add additional worker pools,
 	// we'd apparently need to manually copy and edit generated
@@ -115,6 +117,13 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 			controlNP = np
 		} else {
 			workerNPs = append(workerNPs, np)
+			if np.NodeResources == nil {
+				return "", fmt.Errorf("cluster %s node pool %s must specify node resources for the infra node flavor", clusterName, np.Name)
+			}
+			if np.NodeResources.InfraNodeFlavor == "" {
+				return "", fmt.Errorf("cluster %s node pool %s must specify an infra node flavor", clusterName, np.Name)
+			}
+			infraFlavor = np.NodeResources.InfraNodeFlavor
 		}
 	}
 	if controlNP != nil {
@@ -263,12 +272,18 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 			obj.Spec.Template.Spec.Users = []bootstrapv1.User{
 				user,
 			}
-		} else if obj, ok := objs[i].(metav1.Object); ok {
-			gvk := gvks[i]
-			if gvk.Kind == "Metal3MachineTemplate" && strings.Contains(obj.GetName(), "controlplane") {
+		} else if obj, ok := objs[i].(*metal3provv1.Metal3MachineTemplate); ok {
+			if strings.Contains(obj.GetName(), "controlplane") {
 				// kamaji control plane doesn't need physical nodes
 				objs[i] = nil
+				continue
 			}
+			// set hostSelector to choose nodes based on flavor label
+			obj.Spec.Template.Spec.HostSelector.MatchLabels = map[string]string{
+				metal3.FlavorLabel: infraFlavor,
+			}
+		} else if obj, ok := objs[i].(metav1.Object); ok {
+			gvk := gvks[i]
 			if gvk.Kind == "Metal3DataTemplate" && strings.Contains(obj.GetName(), "controlplane") {
 				// kamaji control plane doesn't need physical nodes
 				objs[i] = nil
