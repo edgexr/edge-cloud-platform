@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"strings"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
@@ -33,6 +34,8 @@ import (
 	ssh "github.com/edgexr/golang-ssh"
 	clusterctl "sigs.k8s.io/cluster-api/cmd/clusterctl/api/v1alpha3"
 )
+
+const ClusterAPIVersion = "v1.11.3"
 
 // ClusterAPI provides a platform based on Cluster API.
 // https://cluster-api.sigs.k8s.io/
@@ -113,6 +116,26 @@ func (s *ClusterAPI) ensureCAPIKubeconfig(ctx context.Context, client ssh.Client
 		return nil, fmt.Errorf("failed to ensure capi management cluster kubeconfig, %s", err)
 	}
 	return kconfNames, nil
+}
+
+func (s *ClusterAPI) ensureClusterCtl(ctx context.Context, client ssh.Client) (string, error) {
+	cmd := "which clusterctl"
+	out, err := client.Output(cmd)
+	if err == nil {
+		return strings.TrimSpace(out), nil
+	}
+	cmd = fmt.Sprintf("curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/%s/clusterctl-linux-amd64 -o clusterctl", ClusterAPIVersion)
+	log.SpanLog(ctx, log.DebugLevelInfra, "installing clusterctl", "cmd", cmd)
+	out, err = client.Output(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to download clusterctl, %s: %s, %s", cmd, out, err)
+	}
+	cmd = "install -o root -g root -m 0755 clusterctl /usr/bin/clusterctl"
+	out, err = client.Output(cmd)
+	if err != nil {
+		return "", fmt.Errorf("failed to install clusterctl, %s: %s, %s", cmd, out, err)
+	}
+	return "/usr/bin/clusterctl", nil
 }
 
 func (s *ClusterAPI) GatherCloudletInfo(ctx context.Context, info *edgeproto.CloudletInfo) error {
