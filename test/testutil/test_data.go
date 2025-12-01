@@ -2897,6 +2897,10 @@ func CreatedClusterInstData() []edgeproto.ClusterInst {
 		ci.MultiTenant = true
 		ci.CloudletKey = cloudlet.Key
 		ci.NodePools = info.NodePools
+		ci.ZoneKey = edgeproto.ZoneKey{
+			Organization: cloudlet.Key.Organization,
+			Name:         cloudlet.Zone,
+		}
 		insts = append(insts, ci)
 	}
 	addSingleKubernetesCluster(&cloudletData[4], &cloudletInfoData[4])
