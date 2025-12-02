@@ -477,9 +477,11 @@ func TestPromStats(t *testing.T) {
 	testPromStats.clusterStat.TrackAppInst(ctx, &appInst)
 	testPromStats.clusterStat.TrackAppInst(ctx, &appInst2)
 	testPromStats.clusterStat.TrackAppInst(ctx, &appInst3)
-	clusterMetrics := testPromStats.clusterStat.GetClusterStats(ctx)
-	appsMetrics := testPromStats.clusterStat.GetAppStats(ctx)
-	alerts := testPromStats.clusterStat.GetAlerts(ctx)
+	client, err := testPromStats.clusterStat.GetPromClient(ctx)
+	require.Nil(t, err)
+	clusterMetrics := testPromStats.clusterStat.GetClusterStats(ctx, client)
+	appsMetrics := testPromStats.clusterStat.GetAppStats(ctx, client)
+	alerts := testPromStats.clusterStat.GetAlerts(ctx, client)
 	require.NotNil(t, clusterMetrics, "Fill stats from json")
 	require.NotNil(t, appsMetrics, "Fill stats from json")
 	require.NotNil(t, alerts, "Fill metrics from json")
@@ -510,7 +512,13 @@ func TestPromStats(t *testing.T) {
 
 	// Check callback is called
 	require.Equal(t, int(0), testMetricSent)
-	clusterMetricsData := testPromStats.MarshalClusterMetrics(clusterMetrics, testZoneKey)
+	metricsClusterKey := shepherd_common.MetricClusterKey{
+		ClusterKey:  testPromStats.clusterKey,
+		CloudletKey: testPromStats.cloudletKey,
+		ZoneKey:     testZoneKey,
+		ReservedBy:  testClusterInst.ReservedBy,
+	}
+	clusterMetricsData := shepherd_common.MarshalClusterMetrics(clusterMetrics, metricsClusterKey)
 	testPromStats.send(ctx, clusterMetricsData[0])
 	require.Equal(t, int(1), testMetricSent)
 	// Test the autoprov cluster - marshalled clusterorg should be the same as apporg
@@ -522,8 +530,8 @@ func TestPromStats(t *testing.T) {
 		}
 	}
 	// Check null handling for Marshal functions
-	require.Nil(t, testPromStats.MarshalClusterMetrics(nil, testZoneKey), "Nil metrics should marshal into a nil")
-	require.Nil(t, MarshalAppMetrics(&testAppKey, nil, "", testZoneKey), "Nil metrics should marshal into a nil")
+	require.Nil(t, shepherd_common.MarshalClusterMetrics(nil, metricsClusterKey), "Nil metrics should marshal into a nil")
+	require.Nil(t, shepherd_common.MarshalAppMetrics(&testAppKey, nil, "", testZoneKey), "Nil metrics should marshal into a nil")
 
 	testAppKey.Pod = "testPod2"
 	testAppKey.AppInstName = appInst2.Key.Name

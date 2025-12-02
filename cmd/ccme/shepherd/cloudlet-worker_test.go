@@ -30,6 +30,7 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/platform/pc"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform/shepherd_unittest"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_test"
@@ -140,7 +141,8 @@ func TestCloudletAlerts(t *testing.T) {
 	settings = *edgeproto.GetDefaultSettings()
 
 	currentAlerts = noAlerts
-	alerts, err := getPromAlerts(ctx, CloudletPrometheusAddr, &pc.LocalClient{})
+	client := promutils.NewCurlClient(CloudletPrometheusAddr, &pc.LocalClient{})
+	alerts, err := shepherd_common.GetPromAlerts(ctx, client)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(alerts))
 	UpdateAlerts(ctx, alerts, nil, pruneCloudletForeignAlerts)
@@ -149,7 +151,7 @@ func TestCloudletAlerts(t *testing.T) {
 
 	// emulate alerts from shepherd
 	currentAlerts = failAlerts
-	alerts, err = getPromAlerts(ctx, CloudletPrometheusAddr, &pc.LocalClient{})
+	alerts, err = shepherd_common.GetPromAlerts(ctx, client)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(alerts))
 	UpdateAlerts(ctx, alerts, nil, pruneCloudletForeignAlerts)

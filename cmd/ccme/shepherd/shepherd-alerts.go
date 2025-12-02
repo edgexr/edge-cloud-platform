@@ -23,19 +23,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 )
 
-func addClusterDetailsToAlerts(alerts []edgeproto.Alert, clusterKey *edgeproto.ClusterKey, cloudletKey *edgeproto.CloudletKey, zoneKey edgeproto.ZoneKey) []edgeproto.Alert {
-	for ii := range alerts {
-		alert := &alerts[ii]
-		alert.Labels[edgeproto.ClusterKeyTagOrganization] = clusterKey.Organization
-		alert.Labels[edgeproto.CloudletKeyTagOrganization] = cloudletKey.Organization
-		alert.Labels[edgeproto.CloudletKeyTagName] = cloudletKey.Name
-		alert.Labels[edgeproto.ClusterKeyTagName] = clusterKey.Name
-		alert.Labels[edgeproto.ZoneKeyTagName] = zoneKey.Name
-		alert.Labels[edgeproto.ZoneKeyTagOrganization] = zoneKey.Organization
-	}
-	return alerts
-}
-
 // Don't consider alerts, which are not destined for this cluster Instance and not clusterInst alerts
 func pruneClusterForeignAlerts(key interface{}, keys map[edgeproto.AlertKey]struct{}) map[edgeproto.AlertKey]struct{} {
 	clusterKey, ok := key.(*edgeproto.ClusterKey)

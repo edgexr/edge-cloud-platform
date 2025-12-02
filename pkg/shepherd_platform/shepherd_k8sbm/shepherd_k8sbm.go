@@ -20,13 +20,13 @@ import (
 	"strconv"
 	"time"
 
-	k8sbm "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-baremetal"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
-	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
-	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	"github.com/edgexr/edge-cloud-platform/pkg/platform"
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform"
+	"github.com/edgexr/edge-cloud-platform/pkg/platform/common/infracommon"
+	k8sbm "github.com/edgexr/edge-cloud-platform/pkg/platform/k8s-baremetal"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
+	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
@@ -75,8 +75,9 @@ func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_commo
 	}
 
 	cloudletMetrics := shepherd_common.CloudletMetrics{}
+	client := promutils.NewCurlClient(s.promAddr, s.client)
 	// Get Cloudlet CPU Max
-	resp, err := promutils.GetPromMetrics(ctx, s.promAddr, promutils.PromQCloudletCpuTotalEncoded, s.client)
+	resp, err := promutils.GetPromMetrics(ctx, promutils.PromQCloudletCpuTotalEncoded, client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
 			cloudletMetrics.CollectTime = promutils.ParseTime(metric.Values[0].(float64))
@@ -90,7 +91,7 @@ func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_commo
 	}
 	// Get Cloudlet CPU usage
 	if cloudletMetrics.VCpuMax != 0 {
-		resp, err = promutils.GetPromMetrics(ctx, s.promAddr, promutils.PromQCpuClustUrlEncoded, s.client)
+		resp, err = promutils.GetPromMetrics(ctx, promutils.PromQCpuClustUrlEncoded, client)
 		if err == nil && resp.Status == "success" {
 			for _, metric := range resp.Data.Result {
 				if cloudletMetrics.CollectTime == nil {
@@ -111,7 +112,7 @@ func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_commo
 		}
 	}
 	// Get max mem - in MBs
-	resp, err = promutils.GetPromMetrics(ctx, s.promAddr, promutils.PromQCloudletMemTotalEncoded, s.client)
+	resp, err = promutils.GetPromMetrics(ctx, promutils.PromQCloudletMemTotalEncoded, client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
 			cloudletMetrics.CollectTime = promutils.ParseTime(metric.Values[0].(float64))
@@ -124,7 +125,7 @@ func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_commo
 		}
 	}
 	// Get mem used - in MBs
-	resp, err = promutils.GetPromMetrics(ctx, s.promAddr, promutils.PromQCloudletMemUseEncoded, s.client)
+	resp, err = promutils.GetPromMetrics(ctx, promutils.PromQCloudletMemUseEncoded, client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
 			if cloudletMetrics.CollectTime == nil {
@@ -139,7 +140,7 @@ func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_commo
 		}
 	}
 	// Get fs usage - in GBs
-	resp, err = promutils.GetPromMetrics(ctx, s.promAddr, promutils.PromQCloudletDiskUseEncoded, s.client)
+	resp, err = promutils.GetPromMetrics(ctx, promutils.PromQCloudletDiskUseEncoded, client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
 			if cloudletMetrics.CollectTime == nil {
@@ -154,7 +155,7 @@ func (s *ShepherdPlatform) GetPlatformStats(ctx context.Context) (shepherd_commo
 		}
 	}
 	// In GBs
-	resp, err = promutils.GetPromMetrics(ctx, s.promAddr, promutils.PromQCloudletDiskTotalEncoded, s.client)
+	resp, err = promutils.GetPromMetrics(ctx, promutils.PromQCloudletDiskTotalEncoded, client)
 	if err == nil && resp.Status == "success" {
 		for _, metric := range resp.Data.Result {
 			if cloudletMetrics.CollectTime == nil {

@@ -90,7 +90,7 @@ func (p *AppInstWorker) sendMetrics() {
 		return
 	}
 	log.SpanLog(ctx, log.DebugLevelMetrics, "metrics for app", "key", key, "metrics", stat)
-	appMetrics := MarshalAppMetrics(&key, &stat, "", p.zoneKey)
+	appMetrics := shepherd_common.MarshalAppMetrics(&key, &stat, "", p.zoneKey)
 	for _, metric := range appMetrics {
 		p.send(context.Background(), metric)
 	}

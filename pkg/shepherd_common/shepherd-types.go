@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	"github.com/gogo/protobuf/types"
 )
 
@@ -36,10 +37,11 @@ type AppStats interface {
 
 // Common interface to deal with ClusterMetrics
 type ClusterStats interface {
+	GetPromClient(ctx context.Context) (promutils.PromClient, error)
 	// Returns current resource usage for a cluster instance
-	GetClusterStats(ctx context.Context, ops ...StatsOp) *ClusterMetrics
-	GetAppStats(ctx context.Context) map[MetricAppInstKey]*AppMetrics
-	GetAlerts(ctx context.Context) []edgeproto.Alert
+	GetClusterStats(ctx context.Context, client promutils.PromClient, ops ...StatsOp) *ClusterMetrics
+	GetAppStats(ctx context.Context, client promutils.PromClient) map[MetricAppInstKey]*AppMetrics
+	GetAlerts(ctx context.Context, client promutils.PromClient) []edgeproto.Alert
 	// Track a new AppInst in the cluster. Must be idempotent
 	TrackAppInst(ctx context.Context, appInst *edgeproto.AppInst)
 	// Untrack an AppInst from the cluster. Must be idempotent

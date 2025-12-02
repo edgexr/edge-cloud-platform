@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package shepherd_common
 
 import (
 	"context"
@@ -72,7 +72,7 @@ func (s *AppInstLabels) trackAppInst(ctx context.Context, appInst *edgeproto.App
 	}
 }
 
-func (s *AppInstLabels) getAppInstInfoFromLabels(labels map[string]string) (AppInstLabelInfo, bool) {
+func (s *AppInstLabels) GetAppInstInfoFromLabels(labels map[string]string) (AppInstLabelInfo, bool) {
 	return s.getAppInstInfo(getAppInstLabelKeys(labels))
 }
 

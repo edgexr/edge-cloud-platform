@@ -25,6 +25,7 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	ssh "github.com/edgexr/golang-ssh"
 	"github.com/gogo/protobuf/types"
@@ -80,10 +81,15 @@ type DockerClusterStats struct {
 	client        ssh.Client
 	clusterClient ssh.Client
 	shepherd_common.ClusterMetrics
-	AppInstLabels
+	shepherd_common.AppInstLabels
 }
 
-func (c *DockerClusterStats) GetClusterStats(ctx context.Context, ops ...shepherd_common.StatsOp) *shepherd_common.ClusterMetrics {
+func (c *DockerClusterStats) GetPromClient(ctx context.Context) (promutils.PromClient, error) {
+	// Docker doesn't use the prom client at this time
+	return nil, nil
+}
+
+func (c *DockerClusterStats) GetClusterStats(ctx context.Context, client promutils.PromClient, ops ...shepherd_common.StatsOp) *shepherd_common.ClusterMetrics {
 	if err := collectDockerClusterMetrics(ctx, c); err != nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect cluster metrics", "Docker cluster", c)
 		return nil
@@ -93,7 +99,7 @@ func (c *DockerClusterStats) GetClusterStats(ctx context.Context, ops ...shepher
 
 // Currently we are collecting stats for all apps in the cluster in one shot
 // Implementing  EDGECLOUD-1183 would allow us to query by label and we can have each app be an individual metric
-func (c *DockerClusterStats) GetAppStats(ctx context.Context) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
+func (c *DockerClusterStats) GetAppStats(ctx context.Context, client promutils.PromClient) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
 	metrics := c.collectDockerAppMetrics(ctx, c)
 	if metrics == nil {
 		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect app metrics", "Docker Container", c)
@@ -271,7 +277,7 @@ func parseContainerDiskUsage(ctx context.Context, diskStr string) (uint64, error
 }
 
 // Example format: "cluster=DevOrg-AppCluster,edge-cloud=,mexAppName=devorgsdkdemo,mexAppVersion=10,cloudlet=localtest"
-func (c *DockerClusterStats) getAppInstLabel(ctx context.Context, labelStr string) (AppInstLabelInfo, bool) {
+func (c *DockerClusterStats) getAppInstLabel(ctx context.Context, labelStr string) (shepherd_common.AppInstLabelInfo, bool) {
 	labelMap := make(map[string]string)
 	labels := strings.Split(labelStr, ",")
 	for _, label := range labels {
@@ -281,7 +287,7 @@ func (c *DockerClusterStats) getAppInstLabel(ctx context.Context, labelStr strin
 		}
 		labelMap[keyVal[0]] = keyVal[1]
 	}
-	return c.getAppInstInfoFromLabels(labelMap)
+	return c.GetAppInstInfoFromLabels(labelMap)
 }
 
 // get disk stats from containers and convert them into a readable format
@@ -434,7 +440,7 @@ func collectDockerClusterMetrics(ctx context.Context, p *DockerClusterStats) err
 	return nil
 }
 
-func (c *DockerClusterStats) GetAlerts(ctx context.Context) []edgeproto.Alert {
+func (c *DockerClusterStats) GetAlerts(ctx context.Context, client promutils.PromClient) []edgeproto.Alert {
 	// no docker alerts yet
 	return nil
 }

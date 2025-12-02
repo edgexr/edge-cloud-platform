@@ -195,8 +195,8 @@ func TestDockerStats(t *testing.T) {
 	assert.Nil(t, err, "Get a patform client for unit test cloudlet")
 	testDockerStats.clusterStat.TrackAppInst(ctx, &testAppInstDocker1)
 	testDockerStats.clusterStat.TrackAppInst(ctx, &testAppInstDocker2)
-	clusterMetrics := testDockerStats.clusterStat.GetClusterStats(ctx)
-	appsMetrics := testDockerStats.clusterStat.GetAppStats(ctx)
+	clusterMetrics := testDockerStats.clusterStat.GetClusterStats(ctx, nil)
+	appsMetrics := testDockerStats.clusterStat.GetAppStats(ctx, nil)
 	assert.NotNil(t, clusterMetrics, "Fill stats from json")
 	assert.NotNil(t, appsMetrics, "Fill stats from json")
 	testAppKey.Pod = testAppInstDocker1.Key.Name

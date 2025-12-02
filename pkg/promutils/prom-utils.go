@@ -25,7 +25,6 @@ import (
 
 	"github.com/edgexr/edge-cloud-platform/pkg/cloudcommon"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	ssh "github.com/edgexr/golang-ssh"
 	"github.com/gogo/protobuf/types"
 )
 
@@ -176,12 +175,12 @@ func GetPromQueryWithK8sLabels(labelFilter, podQuery string) string {
 	return fmt.Sprintf(PromQAppLabelsWrapperFmt, labelFilter, podQuery)
 }
 
-func GetPromMetrics(ctx context.Context, addr string, query string, client ssh.Client) (*PromResp, error) {
-	reqURI := "'http://" + addr + "/api/v1/query?query=" + query + "'"
-	resp, err := client.Output("curl -s -S " + reqURI)
+func GetPromMetrics(ctx context.Context, query string, client PromClient) (*PromResp, error) {
+	path := "/api/v1/query?query=" + query
+	resp, err := client.Get(path)
 	if err != nil {
 		log.ForceLogSpan(log.SpanFromContext(ctx))
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get prom metrics", "reqURI", reqURI, "err", err, "resp", resp)
+		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get prom metrics", "path", path, "err", err, "resp", resp)
 		return nil, err
 	}
 	PromResp := &PromResp{}
