@@ -106,7 +106,7 @@ func CloudletPrometheusScraper(done chan bool) {
 						"prometheus port", intprocess.CloudletPrometheusPort, "err", err)
 				}
 				// key is nil, since we just check against the predefined set of rules
-				UpdateAlerts(actx, alerts, nil, pruneCloudletForeignAlerts)
+				shepherd_common.UpdateAlertsCache(actx, alerts, &AlertCache, nil, shepherd_common.PruneCloudletForeignAlerts)
 				// query stats
 				getCloudletPrometheusStats(actx, client)
 			} else {

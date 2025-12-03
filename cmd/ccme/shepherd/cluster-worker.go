@@ -149,7 +149,7 @@ func (p *ClusterWorker) Stop(ctx context.Context) {
 		p.client.StopPersistentConn()
 	}
 	p.waitGrp.Wait()
-	flushAlerts(ctx, &p.clusterKey)
+	shepherd_common.FlushAlerts(ctx, &p.clusterKey, &AlertCache)
 }
 
 func (p *ClusterWorker) UpdateIntervals(ctx context.Context, scrapeInterval time.Duration, pushInterval time.Duration) {
@@ -238,7 +238,7 @@ func (p *ClusterWorker) RunNotify() {
 			actx := log.ContextWithSpan(context.Background(), aspan)
 			clusterAlerts := p.clusterStat.GetAlerts(actx, promClient)
 			clusterAlerts = shepherd_common.AddClusterDetailsToAlerts(clusterAlerts, &p.clusterKey, &p.cloudletKey, zoneKey)
-			UpdateAlerts(actx, clusterAlerts, &p.clusterKey, pruneClusterForeignAlerts)
+			shepherd_common.UpdateAlertsCache(actx, clusterAlerts, &AlertCache, &p.clusterKey, shepherd_common.PruneClusterForeignAlerts)
 			aspan.Finish()
 		case <-p.stop:
 			done = true

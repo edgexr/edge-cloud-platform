@@ -145,7 +145,7 @@ func TestCloudletAlerts(t *testing.T) {
 	alerts, err := shepherd_common.GetPromAlerts(ctx, client)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(alerts))
-	UpdateAlerts(ctx, alerts, nil, pruneCloudletForeignAlerts)
+	shepherd_common.UpdateAlertsCache(ctx, alerts, &AlertCache, nil, shepherd_common.PruneCloudletForeignAlerts)
 	//should be no alerts
 	assert.Equal(t, 0, len(AlertCache.Objs))
 
@@ -154,7 +154,7 @@ func TestCloudletAlerts(t *testing.T) {
 	alerts, err = shepherd_common.GetPromAlerts(ctx, client)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(alerts))
-	UpdateAlerts(ctx, alerts, nil, pruneCloudletForeignAlerts)
+	shepherd_common.UpdateAlertsCache(ctx, alerts, &AlertCache, nil, shepherd_common.PruneCloudletForeignAlerts)
 	//should be no alerts
 	assert.Equal(t, 2, len(AlertCache.Objs))
 	// check each alert and make sure it has correct data
