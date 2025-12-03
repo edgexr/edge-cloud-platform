@@ -1927,6 +1927,7 @@ type CloudletRefsStore interface {
 	Put(ctx context.Context, m *CloudletRefs, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*CloudletRefs, int64, error)
 	Get(ctx context.Context, key *CloudletKey, buf *CloudletRefs) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *CloudletRefs, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletRefs) bool
 	STMPut(stm concurrency.STM, obj *CloudletRefs, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletKey)
@@ -2040,6 +2041,17 @@ func (s *CloudletRefsStoreImpl) Get(ctx context.Context, key *CloudletKey, buf *
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *CloudletRefsStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *CloudletRefs, modRev int64) error) error {
+	prefix := "CloudletRefs/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &CloudletRefs{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *CloudletRefsStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletRefs) bool {
@@ -2730,6 +2742,7 @@ type ClusterRefsStore interface {
 	Put(ctx context.Context, m *ClusterRefs, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*ClusterRefs, int64, error)
 	Get(ctx context.Context, key *ClusterKey, buf *ClusterRefs) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *ClusterRefs, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *ClusterKey, buf *ClusterRefs) bool
 	STMPut(stm concurrency.STM, obj *ClusterRefs, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *ClusterKey)
@@ -2843,6 +2856,17 @@ func (s *ClusterRefsStoreImpl) Get(ctx context.Context, key *ClusterKey, buf *Cl
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *ClusterRefsStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *ClusterRefs, modRev int64) error) error {
+	prefix := "ClusterRefs/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &ClusterRefs{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *ClusterRefsStoreImpl) STMGet(stm concurrency.STM, key *ClusterKey, buf *ClusterRefs) bool {
@@ -3533,6 +3557,7 @@ type AppInstRefsStore interface {
 	Put(ctx context.Context, m *AppInstRefs, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*AppInstRefs, int64, error)
 	Get(ctx context.Context, key *AppKey, buf *AppInstRefs) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *AppInstRefs, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *AppKey, buf *AppInstRefs) bool
 	STMPut(stm concurrency.STM, obj *AppInstRefs, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AppKey)
@@ -3646,6 +3671,17 @@ func (s *AppInstRefsStoreImpl) Get(ctx context.Context, key *AppKey, buf *AppIns
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *AppInstRefsStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *AppInstRefs, modRev int64) error) error {
+	prefix := "AppInstRefs/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &AppInstRefs{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *AppInstRefsStoreImpl) STMGet(stm concurrency.STM, key *AppKey, buf *AppInstRefs) bool {
@@ -4276,6 +4312,7 @@ type CloudletIPsStore interface {
 	Put(ctx context.Context, m *CloudletIPs, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*CloudletIPs, int64, error)
 	Get(ctx context.Context, key *CloudletKey, buf *CloudletIPs) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *CloudletIPs, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletIPs) bool
 	STMPut(stm concurrency.STM, obj *CloudletIPs, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletKey)
@@ -4389,6 +4426,17 @@ func (s *CloudletIPsStoreImpl) Get(ctx context.Context, key *CloudletKey, buf *C
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *CloudletIPsStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *CloudletIPs, modRev int64) error) error {
+	prefix := "CloudletIPs/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &CloudletIPs{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *CloudletIPsStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletIPs) bool {
@@ -5177,6 +5225,7 @@ type LoadBalancerStore interface {
 	Put(ctx context.Context, m *LoadBalancer, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*LoadBalancer, int64, error)
 	Get(ctx context.Context, key *LoadBalancerKey, buf *LoadBalancer) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *LoadBalancer, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *LoadBalancerKey, buf *LoadBalancer) bool
 	STMPut(stm concurrency.STM, obj *LoadBalancer, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *LoadBalancerKey)
@@ -5290,6 +5339,17 @@ func (s *LoadBalancerStoreImpl) Get(ctx context.Context, key *LoadBalancerKey, b
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *LoadBalancerStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *LoadBalancer, modRev int64) error) error {
+	prefix := "LoadBalancer/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &LoadBalancer{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *LoadBalancerStoreImpl) STMGet(stm concurrency.STM, key *LoadBalancerKey, buf *LoadBalancer) bool {

@@ -592,6 +592,7 @@ type AppInstClientKeyStore interface {
 	Put(ctx context.Context, m *AppInstClientKey, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*AppInstClientKey, int64, error)
 	Get(ctx context.Context, key *AppInstClientKey, buf *AppInstClientKey) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *AppInstClientKey, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *AppInstClientKey, buf *AppInstClientKey) bool
 	STMPut(stm concurrency.STM, obj *AppInstClientKey, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AppInstClientKey)
@@ -705,6 +706,17 @@ func (s *AppInstClientKeyStoreImpl) Get(ctx context.Context, key *AppInstClientK
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *AppInstClientKeyStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *AppInstClientKey, modRev int64) error) error {
+	prefix := "AppInstClientKey/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &AppInstClientKey{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *AppInstClientKeyStoreImpl) STMGet(stm concurrency.STM, key *AppInstClientKey, buf *AppInstClientKey) bool {

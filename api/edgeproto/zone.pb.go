@@ -1370,6 +1370,7 @@ type ZoneStore interface {
 	Put(ctx context.Context, m *Zone, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*Zone, int64, error)
 	Get(ctx context.Context, key *ZoneKey, buf *Zone) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *Zone, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *ZoneKey, buf *Zone) bool
 	STMPut(stm concurrency.STM, obj *Zone, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *ZoneKey)
@@ -1497,6 +1498,17 @@ func (s *ZoneStoreImpl) Get(ctx context.Context, key *ZoneKey, buf *Zone) bool {
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *ZoneStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *Zone, modRev int64) error) error {
+	prefix := "Zone/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &Zone{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *ZoneStoreImpl) STMGet(stm concurrency.STM, key *ZoneKey, buf *Zone) bool {

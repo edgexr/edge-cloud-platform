@@ -1785,6 +1785,7 @@ type SettingsStore interface {
 	Put(ctx context.Context, m *Settings, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*Settings, int64, error)
 	Get(ctx context.Context, key *SettingsKey, buf *Settings) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *Settings, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *SettingsKey, buf *Settings) bool
 	STMPut(stm concurrency.STM, obj *Settings, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *SettingsKey)
@@ -1912,6 +1913,17 @@ func (s *SettingsStoreImpl) Get(ctx context.Context, key *SettingsKey, buf *Sett
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *SettingsStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *Settings, modRev int64) error) error {
+	prefix := "Settings/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &Settings{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *SettingsStoreImpl) STMGet(stm concurrency.STM, key *SettingsKey, buf *Settings) bool {

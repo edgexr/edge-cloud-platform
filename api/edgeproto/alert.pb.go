@@ -543,6 +543,7 @@ type AlertStore interface {
 	Put(ctx context.Context, m *Alert, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*Alert, int64, error)
 	Get(ctx context.Context, key *AlertKey, buf *Alert) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *Alert, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *AlertKey, buf *Alert) bool
 	STMPut(stm concurrency.STM, obj *Alert, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AlertKey)
@@ -656,6 +657,17 @@ func (s *AlertStoreImpl) Get(ctx context.Context, key *AlertKey, buf *Alert) boo
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *AlertStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *Alert, modRev int64) error) error {
+	prefix := "Alert/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &Alert{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *AlertStoreImpl) STMGet(stm concurrency.STM, key *AlertKey, buf *Alert) bool {

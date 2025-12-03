@@ -1208,6 +1208,7 @@ type NetworkStore interface {
 	Put(ctx context.Context, m *Network, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*Network, int64, error)
 	Get(ctx context.Context, key *NetworkKey, buf *Network) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *Network, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *NetworkKey, buf *Network) bool
 	STMPut(stm concurrency.STM, obj *Network, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *NetworkKey)
@@ -1335,6 +1336,17 @@ func (s *NetworkStoreImpl) Get(ctx context.Context, key *NetworkKey, buf *Networ
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *NetworkStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *Network, modRev int64) error) error {
+	prefix := "Network/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &Network{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *NetworkStoreImpl) STMGet(stm concurrency.STM, key *NetworkKey, buf *Network) bool {

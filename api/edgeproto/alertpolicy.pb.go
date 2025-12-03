@@ -1196,6 +1196,7 @@ type AlertPolicyStore interface {
 	Put(ctx context.Context, m *AlertPolicy, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*AlertPolicy, int64, error)
 	Get(ctx context.Context, key *AlertPolicyKey, buf *AlertPolicy) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *AlertPolicy, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *AlertPolicyKey, buf *AlertPolicy) bool
 	STMPut(stm concurrency.STM, obj *AlertPolicy, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AlertPolicyKey)
@@ -1323,6 +1324,17 @@ func (s *AlertPolicyStoreImpl) Get(ctx context.Context, key *AlertPolicyKey, buf
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *AlertPolicyStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *AlertPolicy, modRev int64) error) error {
+	prefix := "AlertPolicy/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &AlertPolicy{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *AlertPolicyStoreImpl) STMGet(stm concurrency.STM, key *AlertPolicyKey, buf *AlertPolicy) bool {

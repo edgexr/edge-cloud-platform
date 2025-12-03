@@ -1167,6 +1167,7 @@ type FlavorStore interface {
 	Put(ctx context.Context, m *Flavor, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*Flavor, int64, error)
 	Get(ctx context.Context, key *FlavorKey, buf *Flavor) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *Flavor, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *FlavorKey, buf *Flavor) bool
 	STMPut(stm concurrency.STM, obj *Flavor, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *FlavorKey)
@@ -1294,6 +1295,17 @@ func (s *FlavorStoreImpl) Get(ctx context.Context, key *FlavorKey, buf *Flavor) 
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *FlavorStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *Flavor, modRev int64) error) error {
+	prefix := "Flavor/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &Flavor{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *FlavorStoreImpl) STMGet(stm concurrency.STM, key *FlavorKey, buf *Flavor) bool {

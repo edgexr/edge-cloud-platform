@@ -668,6 +668,7 @@ type ControllerStore interface {
 	Put(ctx context.Context, m *Controller, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*Controller, int64, error)
 	Get(ctx context.Context, key *ControllerKey, buf *Controller) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *Controller, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *ControllerKey, buf *Controller) bool
 	STMPut(stm concurrency.STM, obj *Controller, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *ControllerKey)
@@ -795,6 +796,17 @@ func (s *ControllerStoreImpl) Get(ctx context.Context, key *ControllerKey, buf *
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *ControllerStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *Controller, modRev int64) error) error {
+	prefix := "Controller/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &Controller{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *ControllerStoreImpl) STMGet(stm concurrency.STM, key *ControllerKey, buf *Controller) bool {

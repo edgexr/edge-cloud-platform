@@ -1168,6 +1168,7 @@ type SvcNodeStore interface {
 	Put(ctx context.Context, m *SvcNode, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*SvcNode, int64, error)
 	Get(ctx context.Context, key *SvcNodeKey, buf *SvcNode) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *SvcNode, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *SvcNodeKey, buf *SvcNode) bool
 	STMPut(stm concurrency.STM, obj *SvcNode, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *SvcNodeKey)
@@ -1295,6 +1296,17 @@ func (s *SvcNodeStoreImpl) Get(ctx context.Context, key *SvcNodeKey, buf *SvcNod
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *SvcNodeStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *SvcNode, modRev int64) error) error {
+	prefix := "SvcNode/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &SvcNode{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *SvcNodeStoreImpl) STMGet(stm concurrency.STM, key *SvcNodeKey, buf *SvcNode) bool {

@@ -1487,6 +1487,7 @@ type {{.Name}}Store interface {
 	Put(ctx context.Context, m *{{.Name}}, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*{{.Name}}, int64, error)
 	Get(ctx context.Context, key *{{.KeyType}}, buf *{{.Name}}) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *{{.Name}}, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *{{.KeyType}}, buf *{{.Name}}) bool
 	STMPut(stm concurrency.STM, obj *{{.Name}}, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *{{.KeyType}})
@@ -1610,6 +1611,17 @@ func (s *{{.Name}}StoreImpl) Get(ctx context.Context, key *{{.KeyType}}, buf *{{
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *{{.Name}}StoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *{{.Name}}, modRev int64) error) error {
+	prefix := "{{.Name}}/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &{{.Name}}{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *{{.Name}}StoreImpl) STMGet(stm concurrency.STM, key *{{.KeyType}}, buf *{{.Name}}) bool {

@@ -1951,6 +1951,7 @@ type FlowRateLimitSettingsStore interface {
 	Put(ctx context.Context, m *FlowRateLimitSettings, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*FlowRateLimitSettings, int64, error)
 	Get(ctx context.Context, key *FlowRateLimitSettingsKey, buf *FlowRateLimitSettings) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *FlowRateLimitSettings, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *FlowRateLimitSettingsKey, buf *FlowRateLimitSettings) bool
 	STMPut(stm concurrency.STM, obj *FlowRateLimitSettings, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *FlowRateLimitSettingsKey)
@@ -2078,6 +2079,17 @@ func (s *FlowRateLimitSettingsStoreImpl) Get(ctx context.Context, key *FlowRateL
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *FlowRateLimitSettingsStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *FlowRateLimitSettings, modRev int64) error) error {
+	prefix := "FlowRateLimitSettings/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &FlowRateLimitSettings{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *FlowRateLimitSettingsStoreImpl) STMGet(stm concurrency.STM, key *FlowRateLimitSettingsKey, buf *FlowRateLimitSettings) bool {
@@ -2979,6 +2991,7 @@ type MaxReqsRateLimitSettingsStore interface {
 	Put(ctx context.Context, m *MaxReqsRateLimitSettings, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*MaxReqsRateLimitSettings, int64, error)
 	Get(ctx context.Context, key *MaxReqsRateLimitSettingsKey, buf *MaxReqsRateLimitSettings) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *MaxReqsRateLimitSettings, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *MaxReqsRateLimitSettingsKey, buf *MaxReqsRateLimitSettings) bool
 	STMPut(stm concurrency.STM, obj *MaxReqsRateLimitSettings, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *MaxReqsRateLimitSettingsKey)
@@ -3106,6 +3119,17 @@ func (s *MaxReqsRateLimitSettingsStoreImpl) Get(ctx context.Context, key *MaxReq
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *MaxReqsRateLimitSettingsStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *MaxReqsRateLimitSettings, modRev int64) error) error {
+	prefix := "MaxReqsRateLimitSettings/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &MaxReqsRateLimitSettings{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *MaxReqsRateLimitSettingsStoreImpl) STMGet(stm concurrency.STM, key *MaxReqsRateLimitSettingsKey, buf *MaxReqsRateLimitSettings) bool {
@@ -3915,6 +3939,7 @@ type RateLimitSettingsStore interface {
 	Put(ctx context.Context, m *RateLimitSettings, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*RateLimitSettings, int64, error)
 	Get(ctx context.Context, key *RateLimitSettingsKey, buf *RateLimitSettings) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *RateLimitSettings, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *RateLimitSettingsKey, buf *RateLimitSettings) bool
 	STMPut(stm concurrency.STM, obj *RateLimitSettings, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *RateLimitSettingsKey)
@@ -4028,6 +4053,17 @@ func (s *RateLimitSettingsStoreImpl) Get(ctx context.Context, key *RateLimitSett
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *RateLimitSettingsStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *RateLimitSettings, modRev int64) error) error {
+	prefix := "RateLimitSettings/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &RateLimitSettings{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *RateLimitSettingsStoreImpl) STMGet(stm concurrency.STM, key *RateLimitSettingsKey, buf *RateLimitSettings) bool {

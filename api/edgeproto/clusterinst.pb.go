@@ -4752,6 +4752,7 @@ type ClusterInstStore interface {
 	Put(ctx context.Context, m *ClusterInst, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*ClusterInst, int64, error)
 	Get(ctx context.Context, key *ClusterKey, buf *ClusterInst) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *ClusterInst, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *ClusterKey, buf *ClusterInst) bool
 	STMPut(stm concurrency.STM, obj *ClusterInst, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *ClusterKey)
@@ -4879,6 +4880,17 @@ func (s *ClusterInstStoreImpl) Get(ctx context.Context, key *ClusterKey, buf *Cl
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *ClusterInstStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *ClusterInst, modRev int64) error) error {
+	prefix := "ClusterInst/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &ClusterInst{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *ClusterInstStoreImpl) STMGet(stm concurrency.STM, key *ClusterKey, buf *ClusterInst) bool {
@@ -6985,6 +6997,7 @@ type ClusterInstInfoStore interface {
 	Put(ctx context.Context, m *ClusterInstInfo, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*ClusterInstInfo, int64, error)
 	Get(ctx context.Context, key *ClusterKey, buf *ClusterInstInfo) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *ClusterInstInfo, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *ClusterKey, buf *ClusterInstInfo) bool
 	STMPut(stm concurrency.STM, obj *ClusterInstInfo, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *ClusterKey)
@@ -7112,6 +7125,17 @@ func (s *ClusterInstInfoStoreImpl) Get(ctx context.Context, key *ClusterKey, buf
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *ClusterInstInfoStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *ClusterInstInfo, modRev int64) error) error {
+	prefix := "ClusterInstInfo/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &ClusterInstInfo{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *ClusterInstInfoStoreImpl) STMGet(stm concurrency.STM, key *ClusterKey, buf *ClusterInstInfo) bool {

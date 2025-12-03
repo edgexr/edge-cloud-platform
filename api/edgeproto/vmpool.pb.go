@@ -2292,6 +2292,7 @@ type VMPoolStore interface {
 	Put(ctx context.Context, m *VMPool, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*VMPool, int64, error)
 	Get(ctx context.Context, key *VMPoolKey, buf *VMPool) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *VMPool, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *VMPoolKey, buf *VMPool) bool
 	STMPut(stm concurrency.STM, obj *VMPool, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *VMPoolKey)
@@ -2419,6 +2420,17 @@ func (s *VMPoolStoreImpl) Get(ctx context.Context, key *VMPoolKey, buf *VMPool) 
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *VMPoolStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *VMPool, modRev int64) error) error {
+	prefix := "VMPool/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &VMPool{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *VMPoolStoreImpl) STMGet(stm concurrency.STM, key *VMPoolKey, buf *VMPool) bool {
@@ -4030,6 +4042,7 @@ type VMPoolInfoStore interface {
 	Put(ctx context.Context, m *VMPoolInfo, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*VMPoolInfo, int64, error)
 	Get(ctx context.Context, key *VMPoolKey, buf *VMPoolInfo) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *VMPoolInfo, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *VMPoolKey, buf *VMPoolInfo) bool
 	STMPut(stm concurrency.STM, obj *VMPoolInfo, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *VMPoolKey)
@@ -4157,6 +4170,17 @@ func (s *VMPoolInfoStoreImpl) Get(ctx context.Context, key *VMPoolKey, buf *VMPo
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *VMPoolInfoStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *VMPoolInfo, modRev int64) error) error {
+	prefix := "VMPoolInfo/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &VMPoolInfo{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *VMPoolInfoStoreImpl) STMGet(stm concurrency.STM, key *VMPoolKey, buf *VMPoolInfo) bool {

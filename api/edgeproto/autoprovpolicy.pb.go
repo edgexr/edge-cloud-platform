@@ -1406,6 +1406,7 @@ type AutoProvPolicyStore interface {
 	Put(ctx context.Context, m *AutoProvPolicy, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*AutoProvPolicy, int64, error)
 	Get(ctx context.Context, key *PolicyKey, buf *AutoProvPolicy) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *AutoProvPolicy, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *PolicyKey, buf *AutoProvPolicy) bool
 	STMPut(stm concurrency.STM, obj *AutoProvPolicy, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *PolicyKey)
@@ -1533,6 +1534,17 @@ func (s *AutoProvPolicyStoreImpl) Get(ctx context.Context, key *PolicyKey, buf *
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *AutoProvPolicyStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *AutoProvPolicy, modRev int64) error) error {
+	prefix := "AutoProvPolicy/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &AutoProvPolicy{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *AutoProvPolicyStoreImpl) STMGet(stm concurrency.STM, key *PolicyKey, buf *AutoProvPolicy) bool {
@@ -2766,6 +2778,7 @@ type AutoProvInfoStore interface {
 	Put(ctx context.Context, m *AutoProvInfo, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*AutoProvInfo, int64, error)
 	Get(ctx context.Context, key *CloudletKey, buf *AutoProvInfo) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *AutoProvInfo, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *CloudletKey, buf *AutoProvInfo) bool
 	STMPut(stm concurrency.STM, obj *AutoProvInfo, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletKey)
@@ -2893,6 +2906,17 @@ func (s *AutoProvInfoStoreImpl) Get(ctx context.Context, key *CloudletKey, buf *
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *AutoProvInfoStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *AutoProvInfo, modRev int64) error) error {
+	prefix := "AutoProvInfo/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &AutoProvInfo{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *AutoProvInfoStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, buf *AutoProvInfo) bool {

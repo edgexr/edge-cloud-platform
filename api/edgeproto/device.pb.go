@@ -829,6 +829,7 @@ type DeviceReportStore interface {
 	Put(ctx context.Context, m *DeviceReport, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*DeviceReport, int64, error)
 	Get(ctx context.Context, key *DeviceKey, buf *DeviceReport) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *DeviceReport, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *DeviceKey, buf *DeviceReport) bool
 	STMPut(stm concurrency.STM, obj *DeviceReport, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *DeviceKey)
@@ -942,6 +943,17 @@ func (s *DeviceReportStoreImpl) Get(ctx context.Context, key *DeviceKey, buf *De
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *DeviceReportStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *DeviceReport, modRev int64) error) error {
+	prefix := "DeviceReport/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &DeviceReport{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *DeviceReportStoreImpl) STMGet(stm concurrency.STM, key *DeviceKey, buf *DeviceReport) bool {
@@ -1384,6 +1396,7 @@ type DeviceStore interface {
 	Put(ctx context.Context, m *Device, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*Device, int64, error)
 	Get(ctx context.Context, key *DeviceKey, buf *Device) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *Device, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *DeviceKey, buf *Device) bool
 	STMPut(stm concurrency.STM, obj *Device, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *DeviceKey)
@@ -1511,6 +1524,17 @@ func (s *DeviceStoreImpl) Get(ctx context.Context, key *DeviceKey, buf *Device) 
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *DeviceStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *Device, modRev int64) error) error {
+	prefix := "Device/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &Device{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *DeviceStoreImpl) STMGet(stm concurrency.STM, key *DeviceKey, buf *Device) bool {
