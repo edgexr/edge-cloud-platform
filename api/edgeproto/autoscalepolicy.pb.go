@@ -1025,6 +1025,7 @@ type AutoScalePolicyStore interface {
 	Put(ctx context.Context, m *AutoScalePolicy, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*AutoScalePolicy, int64, error)
 	Get(ctx context.Context, key *PolicyKey, buf *AutoScalePolicy) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *AutoScalePolicy, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *PolicyKey, buf *AutoScalePolicy) bool
 	STMPut(stm concurrency.STM, obj *AutoScalePolicy, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *PolicyKey)
@@ -1152,6 +1153,17 @@ func (s *AutoScalePolicyStoreImpl) Get(ctx context.Context, key *PolicyKey, buf 
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *AutoScalePolicyStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *AutoScalePolicy, modRev int64) error) error {
+	prefix := "AutoScalePolicy/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &AutoScalePolicy{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *AutoScalePolicyStoreImpl) STMGet(stm concurrency.STM, key *PolicyKey, buf *AutoScalePolicy) bool {

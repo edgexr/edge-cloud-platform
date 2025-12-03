@@ -402,6 +402,7 @@ type OperatorCodeStore interface {
 	Put(ctx context.Context, m *OperatorCode, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*OperatorCode, int64, error)
 	Get(ctx context.Context, key *OperatorCodeKey, buf *OperatorCode) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *OperatorCode, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *OperatorCodeKey, buf *OperatorCode) bool
 	STMPut(stm concurrency.STM, obj *OperatorCode, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *OperatorCodeKey)
@@ -515,6 +516,17 @@ func (s *OperatorCodeStoreImpl) Get(ctx context.Context, key *OperatorCodeKey, b
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *OperatorCodeStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *OperatorCode, modRev int64) error) error {
+	prefix := "OperatorCode/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &OperatorCode{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *OperatorCodeStoreImpl) STMGet(stm concurrency.STM, key *OperatorCodeKey, buf *OperatorCode) bool {

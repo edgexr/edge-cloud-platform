@@ -1338,6 +1338,7 @@ type TrustPolicyExceptionStore interface {
 	Put(ctx context.Context, m *TrustPolicyException, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*TrustPolicyException, int64, error)
 	Get(ctx context.Context, key *TrustPolicyExceptionKey, buf *TrustPolicyException) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *TrustPolicyException, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *TrustPolicyExceptionKey, buf *TrustPolicyException) bool
 	STMPut(stm concurrency.STM, obj *TrustPolicyException, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *TrustPolicyExceptionKey)
@@ -1465,6 +1466,17 @@ func (s *TrustPolicyExceptionStoreImpl) Get(ctx context.Context, key *TrustPolic
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *TrustPolicyExceptionStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *TrustPolicyException, modRev int64) error) error {
+	prefix := "TrustPolicyException/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &TrustPolicyException{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *TrustPolicyExceptionStoreImpl) STMGet(stm concurrency.STM, key *TrustPolicyExceptionKey, buf *TrustPolicyException) bool {
@@ -2358,6 +2370,7 @@ type TPEInstanceStateStore interface {
 	Put(ctx context.Context, m *TPEInstanceState, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*TPEInstanceState, int64, error)
 	Get(ctx context.Context, key *TPEInstanceKey, buf *TPEInstanceState) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *TPEInstanceState, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *TPEInstanceKey, buf *TPEInstanceState) bool
 	STMPut(stm concurrency.STM, obj *TPEInstanceState, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *TPEInstanceKey)
@@ -2471,6 +2484,17 @@ func (s *TPEInstanceStateStoreImpl) Get(ctx context.Context, key *TPEInstanceKey
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *TPEInstanceStateStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *TPEInstanceState, modRev int64) error) error {
+	prefix := "TPEInstanceState/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &TPEInstanceState{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *TPEInstanceStateStoreImpl) STMGet(stm concurrency.STM, key *TPEInstanceKey, buf *TPEInstanceState) bool {

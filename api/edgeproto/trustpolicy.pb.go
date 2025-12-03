@@ -918,6 +918,7 @@ type TrustPolicyStore interface {
 	Put(ctx context.Context, m *TrustPolicy, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*TrustPolicy, int64, error)
 	Get(ctx context.Context, key *PolicyKey, buf *TrustPolicy) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *TrustPolicy, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *PolicyKey, buf *TrustPolicy) bool
 	STMPut(stm concurrency.STM, obj *TrustPolicy, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *PolicyKey)
@@ -1045,6 +1046,17 @@ func (s *TrustPolicyStoreImpl) Get(ctx context.Context, key *PolicyKey, buf *Tru
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *TrustPolicyStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *TrustPolicy, modRev int64) error) error {
+	prefix := "TrustPolicy/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &TrustPolicy{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *TrustPolicyStoreImpl) STMGet(stm concurrency.STM, key *PolicyKey, buf *TrustPolicy) bool {

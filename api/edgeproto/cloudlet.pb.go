@@ -8077,6 +8077,7 @@ type CloudletInternalStore interface {
 	Put(ctx context.Context, m *CloudletInternal, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*CloudletInternal, int64, error)
 	Get(ctx context.Context, key *CloudletKey, buf *CloudletInternal) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *CloudletInternal, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletInternal) bool
 	STMPut(stm concurrency.STM, obj *CloudletInternal, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletKey)
@@ -8204,6 +8205,17 @@ func (s *CloudletInternalStoreImpl) Get(ctx context.Context, key *CloudletKey, b
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *CloudletInternalStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *CloudletInternal, modRev int64) error) error {
+	prefix := "CloudletInternal/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &CloudletInternal{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *CloudletInternalStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletInternal) bool {
@@ -9549,6 +9561,7 @@ type PlatformFeaturesStore interface {
 	Put(ctx context.Context, m *PlatformFeatures, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*PlatformFeatures, int64, error)
 	Get(ctx context.Context, key *PlatformFeaturesKey, buf *PlatformFeatures) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *PlatformFeatures, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *PlatformFeaturesKey, buf *PlatformFeatures) bool
 	STMPut(stm concurrency.STM, obj *PlatformFeatures, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *PlatformFeaturesKey)
@@ -9662,6 +9675,17 @@ func (s *PlatformFeaturesStoreImpl) Get(ctx context.Context, key *PlatformFeatur
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *PlatformFeaturesStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *PlatformFeatures, modRev int64) error) error {
+	prefix := "PlatformFeatures/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &PlatformFeatures{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *PlatformFeaturesStoreImpl) STMGet(stm concurrency.STM, key *PlatformFeaturesKey, buf *PlatformFeatures) bool {
@@ -11203,6 +11227,7 @@ type GPUDriverStore interface {
 	Put(ctx context.Context, m *GPUDriver, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*GPUDriver, int64, error)
 	Get(ctx context.Context, key *GPUDriverKey, buf *GPUDriver) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *GPUDriver, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *GPUDriverKey, buf *GPUDriver) bool
 	STMPut(stm concurrency.STM, obj *GPUDriver, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *GPUDriverKey)
@@ -11330,6 +11355,17 @@ func (s *GPUDriverStoreImpl) Get(ctx context.Context, key *GPUDriverKey, buf *GP
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *GPUDriverStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *GPUDriver, modRev int64) error) error {
+	prefix := "GPUDriver/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &GPUDriver{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *GPUDriverStoreImpl) STMGet(stm concurrency.STM, key *GPUDriverKey, buf *GPUDriver) bool {
@@ -14967,6 +15003,7 @@ type CloudletStore interface {
 	Put(ctx context.Context, m *Cloudlet, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*Cloudlet, int64, error)
 	Get(ctx context.Context, key *CloudletKey, buf *Cloudlet) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *Cloudlet, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *CloudletKey, buf *Cloudlet) bool
 	STMPut(stm concurrency.STM, obj *Cloudlet, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletKey)
@@ -15094,6 +15131,17 @@ func (s *CloudletStoreImpl) Get(ctx context.Context, key *CloudletKey, buf *Clou
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *CloudletStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *Cloudlet, modRev int64) error) error {
+	prefix := "Cloudlet/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &Cloudlet{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *CloudletStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, buf *Cloudlet) bool {
@@ -18937,6 +18985,7 @@ type CloudletInfoStore interface {
 	Put(ctx context.Context, m *CloudletInfo, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*CloudletInfo, int64, error)
 	Get(ctx context.Context, key *CloudletKey, buf *CloudletInfo) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *CloudletInfo, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletInfo) bool
 	STMPut(stm concurrency.STM, obj *CloudletInfo, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletKey)
@@ -19064,6 +19113,17 @@ func (s *CloudletInfoStoreImpl) Get(ctx context.Context, key *CloudletKey, buf *
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *CloudletInfoStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *CloudletInfo, modRev int64) error) error {
+	prefix := "CloudletInfo/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &CloudletInfo{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *CloudletInfoStoreImpl) STMGet(stm concurrency.STM, key *CloudletKey, buf *CloudletInfo) bool {

@@ -1161,6 +1161,7 @@ type CloudletNodeStore interface {
 	Put(ctx context.Context, m *CloudletNode, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*CloudletNode, int64, error)
 	Get(ctx context.Context, key *CloudletNodeKey, buf *CloudletNode) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *CloudletNode, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *CloudletNodeKey, buf *CloudletNode) bool
 	STMPut(stm concurrency.STM, obj *CloudletNode, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *CloudletNodeKey)
@@ -1288,6 +1289,17 @@ func (s *CloudletNodeStoreImpl) Get(ctx context.Context, key *CloudletNodeKey, b
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *CloudletNodeStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *CloudletNode, modRev int64) error) error {
+	prefix := "CloudletNode/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &CloudletNode{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *CloudletNodeStoreImpl) STMGet(stm concurrency.STM, key *CloudletNodeKey, buf *CloudletNode) bool {

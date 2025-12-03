@@ -7071,6 +7071,7 @@ type AppInstStore interface {
 	Put(ctx context.Context, m *AppInst, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*AppInst, int64, error)
 	Get(ctx context.Context, key *AppInstKey, buf *AppInst) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *AppInst, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *AppInstKey, buf *AppInst) bool
 	STMPut(stm concurrency.STM, obj *AppInst, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AppInstKey)
@@ -7198,6 +7199,17 @@ func (s *AppInstStoreImpl) Get(ctx context.Context, key *AppInstKey, buf *AppIns
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *AppInstStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *AppInst, modRev int64) error) error {
+	prefix := "AppInst/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &AppInst{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *AppInstStoreImpl) STMGet(stm concurrency.STM, key *AppInstKey, buf *AppInst) bool {
@@ -8756,6 +8768,7 @@ type AppInstInfoStore interface {
 	Put(ctx context.Context, m *AppInstInfo, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*AppInstInfo, int64, error)
 	Get(ctx context.Context, key *AppInstKey, buf *AppInstInfo) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *AppInstInfo, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *AppInstKey, buf *AppInstInfo) bool
 	STMPut(stm concurrency.STM, obj *AppInstInfo, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *AppInstKey)
@@ -8883,6 +8896,17 @@ func (s *AppInstInfoStoreImpl) Get(ctx context.Context, key *AppInstKey, buf *Ap
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *AppInstInfoStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *AppInstInfo, modRev int64) error) error {
+	prefix := "AppInstInfo/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &AppInstInfo{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *AppInstInfoStoreImpl) STMGet(stm concurrency.STM, key *AppInstKey, buf *AppInstInfo) bool {
@@ -10247,6 +10271,7 @@ type FedAppInstStore interface {
 	Put(ctx context.Context, m *FedAppInst, wait func(int64), ops ...objstore.KVOp) (*Result, error)
 	LoadOne(key string) (*FedAppInst, int64, error)
 	Get(ctx context.Context, key *FedAppInstKey, buf *FedAppInst) bool
+	List(ctx context.Context, cb func(ctx context.Context, obj *FedAppInst, modRev int64) error) error
 	STMGet(stm concurrency.STM, key *FedAppInstKey, buf *FedAppInst) bool
 	STMPut(stm concurrency.STM, obj *FedAppInst, ops ...objstore.KVOp)
 	STMDel(stm concurrency.STM, key *FedAppInstKey)
@@ -10360,6 +10385,17 @@ func (s *FedAppInstStoreImpl) Get(ctx context.Context, key *FedAppInstKey, buf *
 		return false
 	}
 	return s.parseGetData(val, buf)
+}
+
+func (s *FedAppInstStoreImpl) List(ctx context.Context, cb func(ctx context.Context, obj *FedAppInst, modRev int64) error) error {
+	prefix := "FedAppInst/"
+	return s.kvstore.List(prefix, func(key, val []byte, rev, modRev int64) error {
+		obj := &FedAppInst{}
+		if s.parseGetData(val, obj) {
+			return cb(ctx, obj, modRev)
+		}
+		return nil
+	})
 }
 
 func (s *FedAppInstStoreImpl) STMGet(stm concurrency.STM, key *FedAppInstKey, buf *FedAppInst) bool {
