@@ -90,6 +90,28 @@ func PruneCloudletForeignAlerts(key any, keys map[edgeproto.AlertKey]*edgeproto.
 	}
 }
 
+func UpdateAlertsCache(ctx context.Context, alerts []edgeproto.Alert, cache *edgeproto.AlertCache, filterKey any, pruneFunc PruneAlertsFunc) int {
+	if alerts == nil {
+		// some error occurred, do not modify existing cache set
+		return 0
+	}
+
+	stale := make(map[edgeproto.AlertKey]*edgeproto.Alert)
+	cache.GetAllLocked(ctx, func(alert *edgeproto.Alert, modRev int64) {
+		stale[alert.GetKeyVal()] = alert.Clone()
+	})
+
+	change := ResolveAlertsChange(ctx, alerts, stale, filterKey, pruneFunc)
+	for _, alert := range change.Update {
+		cache.Update(ctx, alert, 0)
+	}
+	for _, alert := range change.Delete {
+		cache.Delete(ctx, alert, 0)
+	}
+
+	return len(change.Update) + len(change.Delete)
+}
+
 type AlertsChange struct {
 	Update []*edgeproto.Alert
 	Delete []*edgeproto.Alert
@@ -123,70 +145,6 @@ func ResolveAlertsChange(ctx context.Context, newAlerts []edgeproto.Alert, exist
 		change.Delete = append(change.Delete, alert)
 	}
 	return change
-}
-
-func UpdateAlertsCache(ctx context.Context, alerts []edgeproto.Alert, cache *edgeproto.AlertCache, filterKey any, pruneFunc PruneAlertsFunc) {
-	if alerts == nil {
-		// some error occurred, do not modify existing cache set
-		return
-	}
-
-	stale := make(map[edgeproto.AlertKey]*edgeproto.Alert)
-	cache.GetAllLocked(ctx, func(alert *edgeproto.Alert, modRev int64) {
-		stale[alert.GetKeyVal()] = alert.Clone()
-	})
-
-	change := ResolveAlertsChange(ctx, alerts, stale, filterKey, pruneFunc)
-	for _, alert := range change.Update {
-		cache.Update(ctx, alert, 0)
-	}
-	for _, alert := range change.Delete {
-		cache.Delete(ctx, alert, 0)
-	}
-
-	changeCount := len(change.Update) + len(change.Delete)
-	if changeCount == 0 {
-		// suppress span log since nothing logged
-		span := log.SpanFromContext(ctx)
-		log.NoLogSpan(span)
-	}
-}
-
-func UpdateAlertsStore(ctx context.Context, alerts []edgeproto.Alert, store edgeproto.AlertStore, filterKey any, pruneFunc PruneAlertsFunc) {
-	if alerts == nil {
-		// some error occurred, do not modify existing alerts
-		return
-	}
-	existing := map[edgeproto.AlertKey]*edgeproto.Alert{}
-	err := store.List(ctx, func(ctx context.Context, alert *edgeproto.Alert, modeRev int64) error {
-		existing[alert.GetKeyVal()] = alert.Clone()
-		return nil
-	})
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to list alerts", "err", err)
-		return
-	}
-
-	change := ResolveAlertsChange(ctx, alerts, existing, filterKey, pruneFunc)
-	for _, alert := range change.Update {
-		_, err = store.Update(ctx, alert, nil)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to update alert", "alert", alert, "err", err)
-		}
-	}
-	for _, alert := range change.Delete {
-		_, err = store.Delete(ctx, alert, nil)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to delete alert", "alert", alert, "err", err)
-		}
-	}
-
-	changeCount := len(change.Update) + len(change.Delete)
-	if changeCount == 0 {
-		// suppress span log since nothing logged
-		span := log.SpanFromContext(ctx)
-		log.NoLogSpan(span)
-	}
 }
 
 // FlushAlerts removes Alerts for clusters that have been deleted

@@ -238,7 +238,11 @@ func (p *ClusterWorker) RunNotify() {
 			actx := log.ContextWithSpan(context.Background(), aspan)
 			clusterAlerts := p.clusterStat.GetAlerts(actx, promClient)
 			clusterAlerts = shepherd_common.AddClusterDetailsToAlerts(clusterAlerts, &p.clusterKey, &p.cloudletKey, zoneKey)
-			shepherd_common.UpdateAlertsCache(actx, clusterAlerts, &AlertCache, &p.clusterKey, shepherd_common.PruneClusterForeignAlerts)
+			count := shepherd_common.UpdateAlertsCache(actx, clusterAlerts, &AlertCache, &p.clusterKey, shepherd_common.PruneClusterForeignAlerts)
+			if count == 0 {
+				// suppress span log since nothing logged
+				log.NoLogSpan(aspan)
+			}
 			aspan.Finish()
 		case <-p.stop:
 			done = true

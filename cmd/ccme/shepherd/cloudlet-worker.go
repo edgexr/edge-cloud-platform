@@ -106,7 +106,11 @@ func CloudletPrometheusScraper(done chan bool) {
 						"prometheus port", intprocess.CloudletPrometheusPort, "err", err)
 				}
 				// key is nil, since we just check against the predefined set of rules
-				shepherd_common.UpdateAlertsCache(actx, alerts, &AlertCache, nil, shepherd_common.PruneCloudletForeignAlerts)
+				count := shepherd_common.UpdateAlertsCache(actx, alerts, &AlertCache, nil, shepherd_common.PruneCloudletForeignAlerts)
+				if count == 0 {
+					// suppress span log since nothing logged
+					log.NoLogSpan(aspan)
+				}
 				// query stats
 				getCloudletPrometheusStats(actx, client)
 			} else {
