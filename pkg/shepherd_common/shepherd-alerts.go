@@ -23,29 +23,34 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 )
 
-type PruneAlertsFunc func(key any, keys map[edgeproto.AlertKey]*edgeproto.Alert)
+type AlertPruner interface {
+	// Prune returns true to ignore the alert
+	Prune(alert *edgeproto.Alert) bool
+}
 
-// Don't consider alerts, which are not destined for this cluster Instance and not clusterInst alerts
-func PruneClusterForeignAlerts(key any, keys map[edgeproto.AlertKey]*edgeproto.Alert) {
-	clusterKey, ok := key.(*edgeproto.ClusterKey)
-	if !ok {
-		// just return original list
-		return
+type ClusterAlertPruner struct {
+	clusterKey edgeproto.ClusterKey
+}
+
+func NewClusterAlertPruner(key edgeproto.ClusterKey) *ClusterAlertPruner {
+	return &ClusterAlertPruner{
+		clusterKey: key,
 	}
-	alertFromKey := edgeproto.Alert{}
-	for key := range keys {
-		edgeproto.AlertKeyStringParse(string(key), &alertFromKey)
-		if !isClusterMonitoredUserAlert(alertFromKey.Labels) {
-			delete(keys, key)
-			continue
-		}
-		// Skip health-check alerts here - envoy adds "job" label
-		if _, found := alertFromKey.Labels["job"]; found ||
-			alertFromKey.Labels[edgeproto.ClusterKeyTagOrganization] != clusterKey.Organization ||
-			alertFromKey.Labels[edgeproto.ClusterKeyTagName] != clusterKey.Name {
-			delete(keys, key)
-		}
+}
+
+func (s *ClusterAlertPruner) Prune(alert *edgeproto.Alert) bool {
+	// Don't consider alerts, which are not destined for this cluster
+	// instance and not clusterInst alerts
+	if !isClusterMonitoredUserAlert(alert.Labels) {
+		return true
 	}
+	// Skip health-check alerts here - envoy adds "job" label
+	if _, found := alert.Labels["job"]; found ||
+		alert.Labels[edgeproto.ClusterKeyTagOrganization] != s.clusterKey.Organization ||
+		alert.Labels[edgeproto.ClusterKeyTagName] != s.clusterKey.Name {
+		return true
+	}
+	return false
 }
 
 // Cluster Prometheus tracked user alerts are identified by pod label (label_mexAppName)
@@ -71,26 +76,28 @@ func isCloudletMonitoredUserAlert(labels map[string]string) bool {
 	return false
 }
 
-// We have only a pre-defined set of alerts that are available at the cloudlet level
-func PruneCloudletForeignAlerts(key any, keys map[edgeproto.AlertKey]*edgeproto.Alert) {
-	cloudletKey, ok := key.(*edgeproto.CloudletKey)
-	if !ok {
-		// just return original list
-		return
-	}
-	alertFromKey := edgeproto.Alert{}
-	for key := range keys {
-		edgeproto.AlertKeyStringParse(string(key), &alertFromKey)
-		if !isCloudletMonitoredUserAlert(alertFromKey.Labels) {
-			delete(keys, key)
-		}
-		if alertFromKey.Labels[edgeproto.CloudletKeyTagName] != cloudletKey.Name || alertFromKey.Labels[edgeproto.CloudletKeyTagOrganization] != cloudletKey.Organization {
-			delete(keys, key)
-		}
+type CloudletAlertPruner struct {
+	cloudletKey edgeproto.CloudletKey
+}
+
+func NewCloudletAlertPruner(key edgeproto.CloudletKey) *CloudletAlertPruner {
+	return &CloudletAlertPruner{
+		cloudletKey: key,
 	}
 }
 
-func UpdateAlertsCache(ctx context.Context, alerts []edgeproto.Alert, cache *edgeproto.AlertCache, filterKey any, pruneFunc PruneAlertsFunc) int {
+func (s *CloudletAlertPruner) Prune(alert *edgeproto.Alert) bool {
+	// We have only a pre-defined set of alerts that are available at the cloudlet level
+	if !isCloudletMonitoredUserAlert(alert.Labels) {
+		return true
+	}
+	if alert.Labels[edgeproto.CloudletKeyTagName] != s.cloudletKey.Name || alert.Labels[edgeproto.CloudletKeyTagOrganization] != s.cloudletKey.Organization {
+		return true
+	}
+	return false
+}
+
+func UpdateAlertsCache(ctx context.Context, alerts []edgeproto.Alert, cache *edgeproto.AlertCache, alertPruner AlertPruner) int {
 	if alerts == nil {
 		// some error occurred, do not modify existing cache set
 		return 0
@@ -101,7 +108,7 @@ func UpdateAlertsCache(ctx context.Context, alerts []edgeproto.Alert, cache *edg
 		stale[alert.GetKeyVal()] = alert.Clone()
 	})
 
-	change := ResolveAlertsChange(ctx, alerts, stale, filterKey, pruneFunc)
+	change := ResolveAlertsChange(ctx, alerts, stale, alertPruner)
 	for _, alert := range change.Update {
 		cache.Update(ctx, alert, 0)
 	}
@@ -117,13 +124,16 @@ type AlertsChange struct {
 	Delete []*edgeproto.Alert
 }
 
-func ResolveAlertsChange(ctx context.Context, newAlerts []edgeproto.Alert, existingAlerts map[edgeproto.AlertKey]*edgeproto.Alert, pruneFilterKey any, pruneFunc PruneAlertsFunc) *AlertsChange {
+func ResolveAlertsChange(ctx context.Context, newAlerts []edgeproto.Alert, existingAlerts map[edgeproto.AlertKey]*edgeproto.Alert, alertPruner AlertPruner) *AlertsChange {
 	change := &AlertsChange{}
 	if newAlerts == nil {
 		// no change
 		return change
 	}
 	for _, alert := range newAlerts {
+		if alertPruner != nil && alertPruner.Prune(&alert) {
+			continue
+		}
 		existing, ok := existingAlerts[alert.GetKeyVal()]
 		if !ok || !alert.Matches(existing) {
 			// something has changed
@@ -132,10 +142,11 @@ func ResolveAlertsChange(ctx context.Context, newAlerts []edgeproto.Alert, exist
 		}
 		delete(existingAlerts, alert.GetKeyVal())
 	}
-	// filter out alerts we don't care about
-	pruneFunc(pruneFilterKey, existingAlerts)
 
 	for _, alert := range existingAlerts {
+		if alertPruner != nil && alertPruner.Prune(alert) {
+			continue
+		}
 		alertName := alert.Labels["alertname"]
 		if alertName == cloudcommon.AlertClusterAutoScale {
 			// handled by cluster autoscaler
