@@ -1174,6 +1174,7 @@ func ParseAppPorts(ports string) ([]InstPort, error) {
 			Id:              portSpec.ID,
 			PathPrefix:      portSpec.PathPrefix,
 			ServiceName:     portSpec.ServiceName,
+			HostPrefix:      portSpec.HostPrefix,
 		}
 
 		appports = append(appports, p)
