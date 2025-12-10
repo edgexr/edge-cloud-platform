@@ -15,6 +15,7 @@
 package k8smgmt
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"slices"
@@ -67,6 +68,55 @@ func GetService(ctx context.Context, client ssh.Client, names *KconfNames, name,
 	return &svc, nil
 }
 
+// InstPortKey uniquely identifies an instance port.
+// This is the information that is used to map the instance port
+// to an underlying Kubernetes service (load balancer or cluster IP).
+// If these are not unique, then it may not be possible to determine
+// the correct service to use.
+type InstPortKey struct {
+	Proto        string
+	InternalPort int32
+	ServiceName  string
+}
+
+func GetInstPortKey(s *edgeproto.InstPort) InstPortKey {
+	proto, err := edgeproto.LProtoStr(s.Proto)
+	if err != nil {
+		proto = "unknown"
+	}
+	return InstPortKey{
+		Proto:        proto,
+		InternalPort: s.InternalPort,
+		ServiceName:  s.ServiceName,
+	}
+}
+
+func (s *InstPortKey) String() string {
+	desc := edgeproto.ProtoPortToString(s.Proto, s.InternalPort)
+	if s.ServiceName != "" {
+		desc = s.ServiceName + "/" + desc
+	}
+	return desc
+}
+
+// CheckInstPortAmbiguity checks for inst ports that would map
+// to the same Kubernetes service, which would make it impossible
+// for us to determine which service to use.
+func CheckInstPortAmbiguity(ports []edgeproto.InstPort) error {
+	portMap := map[InstPortKey]*edgeproto.InstPort{}
+	for _, port := range ports {
+		if port.InternalVisOnly {
+			continue
+		}
+		key := GetInstPortKey(&port)
+		if _, found := portMap[key]; found {
+			return fmt.Errorf("duplicate access port definitions for %s, please add a service name substring to distinguish", key.String())
+		}
+		portMap[key] = &port
+	}
+	return nil
+}
+
 type PortProto string
 
 func GetSvcPortProto(port int32, protocol string) PortProto {
@@ -92,7 +142,7 @@ type AppServices struct {
 	// List of AppInst services
 	Services []*v1.Service
 	// Map of port to service (may include a service multiple times)
-	SvcsByPort map[PortProto]*v1.Service
+	SvcsByPort map[InstPortKey]*v1.Service
 	// AppInst ports for which no service was found
 	PortsWithoutServices []string
 }
@@ -134,17 +184,21 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 	// track filtered out services for logging
 	filteredByHeadless := []string{}
 	filteredByAppInstLabel := []string{}
-	filteredByPortServiceStr := []string{}
+	filteredByReqdPorts := []string{}
 
 	// Get the ports we need to get services for
-	reqdPorts := map[PortProto]*edgeproto.InstPort{}
+	reqdPorts := map[PortProto][]*edgeproto.InstPort{}
 	portsList := []string{}
-	for _, port := range mappedPorts {
+	for ii := range mappedPorts {
+		port := &mappedPorts[ii]
 		if port.InternalVisOnly {
 			continue
 		}
+		if port.ServiceName != "" {
+			port.ServiceName = strings.ReplaceAll(port.ServiceName, "{{.Name}}", names.AppInstName)
+		}
 		pp := GetSvcPortLProto(port.InternalPort, port.Proto)
-		reqdPorts[pp] = &port
+		reqdPorts[pp] = append(reqdPorts[pp], port)
 		// for logging
 		ppStr := string(pp)
 		if port.ServiceName != "" {
@@ -153,12 +207,10 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 		portsList = append(portsList, ppStr)
 	}
 	// Match services to the required ports
-	type SvcMatch struct {
-		svc       *v1.Service
-		conflicts []string
-	}
-	svcsByPort := map[PortProto]*SvcMatch{}
-	svcsByPortLabelMatch := map[PortProto]*SvcMatch{}
+	type SvcMatch []*v1.Service
+
+	svcsByPort := map[PortProto]SvcMatch{}
+	svcsByPortLabelMatch := map[PortProto]SvcMatch{}
 	for _, svc := range svcs {
 		if svc.Spec.ClusterIP == "None" {
 			// skip headless services that are meant for accessing
@@ -194,78 +246,80 @@ func GetAppServices(ctx context.Context, client ssh.Client, names *KubeNames, ma
 				proto = "tcp"
 			}
 			pp := GetSvcPortProto(port.Port, proto)
-			instPort, ok := reqdPorts[pp]
+			_, ok := reqdPorts[pp]
 			if !ok {
 				// don't need this port
+				filteredByReqdPorts = append(filteredByReqdPorts, getServiceID(&svc))
 				continue
 			}
-			if instPort.ServiceName != "" && !strings.Contains(svc.Name, instPort.ServiceName) {
-				// user specified service name substring for port doesn't match
-				filteredByPortServiceStr = append(filteredByPortServiceStr, getServiceID(&svc)+fmt.Sprintf(":%d", port.Port))
-				continue
-			}
-			var lookup map[PortProto]*SvcMatch
 			if labelMatched {
-				lookup = svcsByPortLabelMatch
+				svcsByPortLabelMatch[pp] = append(svcsByPortLabelMatch[pp], &svc)
 			} else {
-				lookup = svcsByPort
+				svcsByPort[pp] = append(svcsByPort[pp], &svc)
 			}
-			match, found := lookup[pp]
-			if !found {
-				lookup[pp] = &SvcMatch{
-					svc: &svc,
-					conflicts: []string{
-						getServiceID(&svc),
-					},
-				}
-				continue
-			}
-			if match.svc.Name == svc.Name && match.svc.Namespace == svc.Namespace {
-				// same service, don't think this is possible, but check anyway
-				continue
-			}
-			match.conflicts = append(match.conflicts, getServiceID(&svc))
 		}
 	}
-
 	appServices := &AppServices{
-		SvcsByPort: map[PortProto]*v1.Service{},
+		SvcsByPort: map[InstPortKey]*v1.Service{},
 	}
 	portsWithoutSvcs := []string{}
 	addedServices := map[string]struct{}{}
-	conflicts := []string{}
+	allConflicts := []string{}
 
-	// check for missing ports, prefers matches over non-matches,
-	// gather conflicts, and build service list.
-	for pp, _ := range reqdPorts {
-		match, found := svcsByPortLabelMatch[pp]
-		if !found {
-			match, found = svcsByPort[pp]
+	// match ports to service, filtering by service name if specified
+	// walk the list of ports grouped by tcp|udp port.
+	for pp, portList := range reqdPorts {
+		// Prefer AppInst labelled services. Note that if labelled
+		// services are present, we should ignore non-labelled services
+		// because they must belong to another AppInst.
+		svcs, ok := svcsByPortLabelMatch[pp]
+		if !ok {
+			svcs = svcsByPort[pp]
 		}
-		if !found {
-			portsWithoutSvcs = append(portsWithoutSvcs, string(pp))
-			continue
-		}
-		appServices.SvcsByPort[pp] = match.svc
-		// avoid adding the same service twice for different ports
-		svcID := getServiceID(match.svc)
-		if _, found := addedServices[svcID]; !found {
-			addedServices[svcID] = struct{}{}
-			appServices.Services = append(appServices.Services, match.svc)
-		}
-		if len(match.conflicts) > 1 {
-			sort.Strings(match.conflicts)
-			conflicts = append(conflicts, fmt.Sprintf("port %s is served by services %s", pp, strings.Join(match.conflicts, ", ")))
+		slices.SortFunc(portList, func(i, j *edgeproto.InstPort) int {
+			// sort by longest service name first as that is
+			// more specific.
+			return cmp.Compare(len(j.ServiceName), len(i.ServiceName))
+		})
+		for _, port := range portList {
+			matched := false
+			conflicts := []string{}
+			key := GetInstPortKey(port)
+			// walk services for the tcp|udp port
+			for _, svc := range svcs {
+				if port.ServiceName != "" && !strings.Contains(svc.Name, port.ServiceName) {
+					continue
+				}
+				matched = true
+				// map InstPort to service
+				appServices.SvcsByPort[key] = svc
+				// track services in use
+				svcID := getServiceID(svc)
+				if _, found := addedServices[svcID]; !found {
+					addedServices[svcID] = struct{}{}
+					appServices.Services = append(appServices.Services, svc)
+				}
+				// track potential conflicts where more than one service
+				// maps to the port
+				conflicts = append(conflicts, getServiceID(svc))
+			}
+			if !matched {
+				portsWithoutSvcs = append(portsWithoutSvcs, key.String())
+			}
+			if len(conflicts) > 1 {
+				sort.Strings(conflicts)
+				allConflicts = append(allConflicts, fmt.Sprintf("port %s is served by services %s", key.String(), strings.Join(conflicts, ", ")))
+			}
 		}
 	}
 	slices.Sort(portsWithoutSvcs)
 	appServices.PortsWithoutServices = portsWithoutSvcs
 
-	log.SpanLog(ctx, log.DebugLevelInfra, "GetAppServices", "app", names.AppName, "appinst", names.AppInstName, "helmAppName", names.HelmAppName, "namespace", names.InstanceNamespace, "ports", portsList, "filteredByHeadless", filteredByHeadless, "filteredByAppInstLabel", filteredByAppInstLabel, "filteredByPortServiceStr", filteredByPortServiceStr, "addedServices", addedServices, "missingPorts", portsWithoutSvcs, "conflicts", conflicts)
+	log.SpanLog(ctx, log.DebugLevelInfra, "GetAppServices", "app", names.AppName, "appinst", names.AppInstName, "helmAppName", names.HelmAppName, "namespace", names.InstanceNamespace, "ports", portsList, "filteredByHeadless", filteredByHeadless, "filteredByAppInstLabel", filteredByAppInstLabel, "filteredByReqdPorts", filteredByReqdPorts, "addedServices", addedServices, "missingPorts", portsWithoutSvcs, "conflicts", allConflicts)
 
-	if len(conflicts) > 0 {
-		slices.Sort(conflicts)
-		return nil, fmt.Errorf("failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): %s", strings.Join(conflicts, "; "))
+	if len(allConflicts) > 0 {
+		slices.Sort(allConflicts)
+		return nil, fmt.Errorf("failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): %s", strings.Join(allConflicts, "; "))
 	}
 	return appServices, nil
 }

@@ -62,7 +62,7 @@ func CreateIngress(ctx context.Context, client ssh.Client, names *KubeNames, app
 	return ingress, nil
 }
 
-func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst, ingressClass string) (*networkingv1.Ingress, error) {
+func GenerateIngressManifest(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst, ingressClass string) (*networkingv1.Ingress, error) {
 	kconfArg := names.GetTenantKconfArg()
 
 	ingress := networkingv1.Ingress{}
@@ -98,11 +98,11 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 		if port.Proto != distributed_match_engine.LProto_L_PROTO_HTTP {
 			continue
 		}
-		pp := GetSvcPortLProto(port.InternalPort, port.Proto)
-		svc, ok := appServices.SvcsByPort[pp]
+		key := GetInstPortKey(&port)
+		svc, ok := appServices.SvcsByPort[key]
 		if !ok {
-			log.SpanLog(ctx, log.DebugLevelApi, "failed to find service for port", "port", pp)
-			return nil, fmt.Errorf("failed to find service for port %s", string(pp))
+			log.SpanLog(ctx, log.DebugLevelApi, "failed to find service for port", "port", key)
+			return nil, fmt.Errorf("failed to find service for port %s", key.String())
 		}
 
 		host := hostName
@@ -159,10 +159,18 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 		ingress.Spec.TLS = append(ingress.Spec.TLS, tls)
 		ingress.ObjectMeta.Labels["nginx.ingress.kubernetes.io/ssl-redirect"] = "true"
 	}
+	return &ingress, nil
+}
+
+func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst, ingressClass string) (*networkingv1.Ingress, error) {
+	ingress, err := GenerateIngressManifest(ctx, client, names, appInst, ingressClass)
+	if err != nil {
+		return nil, err
+	}
 	// Apply the ingress spec
 	printer := &printers.YAMLPrinter{}
 	buf := bytes.Buffer{}
-	err = printer.PrintObj(&ingress, &buf)
+	err = printer.PrintObj(ingress, &buf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal the ingress object to yaml, %s", err)
 	}
@@ -172,7 +180,7 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 	if err != nil {
 		return nil, err
 	}
-	return &ingress, nil
+	return ingress, nil
 }
 
 func DeleteIngress(ctx context.Context, client ssh.Client, names *KubeNames, appInst *edgeproto.AppInst) error {
