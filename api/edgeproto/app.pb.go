@@ -391,7 +391,7 @@ type App struct {
 	// (4) intvis (internal-visibility)- Port is not externally accessible. Ex: "tcp:9000:intvis"
 	// (5) id - Port ID. Ex: "tcp:9000:id=p9000"
 	// (6) pathprefix (http-only) - Specifies the path prefix to use in the kubernetes ingress, required if multiple http ports are present, defaults to "/"
-	// (7) svcname - For Kubernetes apps, if there are multiple of the same port on different services, this denotes a substring of the service name, Ex: "tcp:9000:tls:svcname=myapp".
+	// (7) svcname - For Kubernetes apps, if there are multiple of the same port on different services, this denotes a substring of the service name, Ex: "tcp:9000:tls:svcname=myapp". May also include "{{.Name}}" to use AppInst normalized name.
 	// (8) hostprefix (http-only) - Specifies a prefix for the ingress host that is added to the AppInst.URI, Ex: "http:80:hostprefix=dev-"
 	AccessPorts string `protobuf:"bytes,7,opt,name=access_ports,json=accessPorts,proto3" json:"access_ports,omitempty"`
 	// Default flavor for the App, which may be overridden by the AppInst

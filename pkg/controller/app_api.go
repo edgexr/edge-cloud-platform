@@ -645,6 +645,11 @@ func (s *AppApi) configureApp(ctx context.Context, stm concurrency.STM, in *edge
 		if in.ManagesOwnNamespaces {
 			return errors.New("cannot specify Manages Own Namespaces for non-Kubernetes app")
 		}
+	} else {
+		err := k8smgmt.CheckInstPortAmbiguity(ports)
+		if err != nil {
+			return err
+		}
 	}
 
 	if in.DeploymentManifest != "" {

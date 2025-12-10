@@ -314,7 +314,7 @@ func TestGetAppServices(t *testing.T) {
 		accessPorts:             "http:80,http:443:tls,http:8888:tls",
 		deployment:              cloudcommon.DeploymentTypeKubernetes,
 		namespace:               "default",
-		expPortsWithoutServices: []string{"8888/tcp"},
+		expPortsWithoutServices: []string{"http:8888"},
 		expSvcs:                 []string{"app210-http/default"},
 	}, {
 		desc:        "app3/org2 duplicate services",
@@ -324,7 +324,7 @@ func TestGetAppServices(t *testing.T) {
 		accessPorts: "http:80,http:443:tls",
 		deployment:  cloudcommon.DeploymentTypeKubernetes,
 		namespace:   "default",
-		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port 443/tcp is served by services app310-http1/default, app310-http2/default; port 80/tcp is served by services app310-http1/default, app310-http2/default",
+		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port http:443 is served by services app310-http1/default, app310-http2/default; port http:80 is served by services app310-http1/default, app310-http2/default",
 	}, {
 		desc:        "app3/org2 duplicate services resolved",
 		appName:     "app3",
@@ -342,7 +342,7 @@ func TestGetAppServices(t *testing.T) {
 		accessPorts: "http:6379:tls",
 		deployment:  cloudcommon.DeploymentTypeHelm,
 		imagePath:   "http://bitnami.charts:8000/redis:bitnami/redis",
-		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port 6379/tcp is served by services myredis-master/myredis-devorg1, myredis-replicas/myredis-devorg1",
+		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port http:6379 is served by services myredis-master/myredis-devorg1, myredis-replicas/myredis-devorg1",
 	}, {
 		desc:        "helm inst with svcname",
 		appName:     "redis",
@@ -361,7 +361,7 @@ func TestGetAppServices(t *testing.T) {
 		deployment:  cloudcommon.DeploymentTypeHelm,
 		imagePath:   "http://bitnami.charts:8000/redis:bitnami/redis",
 		namespace:   "default",
-		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port 6379/tcp is served by services myredis-master/default, myredis-replicas/default",
+		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port http:6379 is served by services myredis-master/default, myredis-replicas/default",
 	}, {
 		desc:        "helm inst managed namespace with filter",
 		appName:     "redis",
@@ -390,7 +390,7 @@ func TestGetAppServices(t *testing.T) {
 		deployment:  cloudcommon.DeploymentTypeHelm,
 		imagePath:   "http://bitnami.charts:8000/redis:bitnami/redis",
 		namespace:   "default",
-		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port 443/tcp is served by services myhelm/default, operator-svc/default, random/default; port 6379/tcp is served by services myredis-master/default, myredis-replicas/default, operator-redis/default",
+		expErr:      "failed to determine service for port, too many services found, please add svcname annotation to App.AccessPorts to resolve (i.e. \"tcp:5432:svcname=myapp\"): port http:443 is served by services myhelm/default, operator-svc/default, random/default; port http:6379 is served by services myredis-master/default, myredis-replicas/default, operator-redis/default",
 	}, {
 		desc:        "operator multi-service managed namespace, filtered",
 		appName:     "operator",
