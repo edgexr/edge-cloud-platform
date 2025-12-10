@@ -28,7 +28,6 @@ import (
 	intprocess "github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
-	ssh "github.com/edgexr/golang-ssh"
 )
 
 var cloudletMetrics shepherd_common.CloudletMetrics
@@ -100,16 +99,21 @@ func CloudletPrometheusScraper(done chan bool) {
 			actx := log.ContextWithSpan(context.Background(), aspan)
 			if shepherd_common.ShepherdPlatformActive {
 				// platform client is a local ssh
-				client := &pc.LocalClient{}
-				alerts, err := getPromAlerts(actx, CloudletPrometheusAddr, client)
+				client := promutils.NewCurlClient(CloudletPrometheusAddr, &pc.LocalClient{})
+				alerts, err := shepherd_common.GetPromAlerts(actx, client)
 				if err != nil {
 					log.SpanLog(actx, log.DebugLevelMetrics, "Could not collect alerts",
 						"prometheus port", intprocess.CloudletPrometheusPort, "err", err)
 				}
 				// key is nil, since we just check against the predefined set of rules
-				UpdateAlerts(actx, alerts, nil, pruneCloudletForeignAlerts)
+				cloudletAlertPruner := shepherd_common.NewCloudletAlertPruner(cloudletKey)
+				count := shepherd_common.UpdateAlertsCache(actx, alerts, &AlertCache, cloudletAlertPruner)
+				if count == 0 {
+					// suppress span log since nothing logged
+					log.NoLogSpan(aspan)
+				}
 				// query stats
-				getCloudletPrometheusStats(actx, CloudletPrometheusAddr, client)
+				getCloudletPrometheusStats(actx, client)
 			} else {
 				log.SpanLog(actx, log.DebugLevelMetrics, "skipping cloudlet alerts due as shepherd is not active")
 			}
@@ -121,7 +125,7 @@ func CloudletPrometheusScraper(done chan bool) {
 	}
 }
 
-func getCloudletPrometheusStats(ctx context.Context, addr string, client ssh.Client) {
+func getCloudletPrometheusStats(ctx context.Context, client promutils.PromClient) {
 	autoScalers := make(map[edgeproto.ClusterKey]*ClusterAutoScaler)
 	workerMapMutex.Lock()
 	for _, worker := range workerMap {
@@ -146,7 +150,7 @@ func getCloudletPrometheusStats(ctx context.Context, addr string, client ssh.Cli
 		}
 		q := "max_over_time(envoy_cluster_upstream_cx_active_total:avg{" + strings.Join(tags, ",") + "}[" + fmt.Sprintf("%d", policy.StabilizationWindowSec) + "s])"
 		q = url.QueryEscape(q)
-		resp, err := promutils.GetPromMetrics(ctx, addr, q, client)
+		resp, err := promutils.GetPromMetrics(ctx, q, client)
 		if err == nil && resp.Status == "success" {
 			for _, metric := range resp.Data.Result {
 				if val, err := strconv.ParseFloat(metric.Values[1].(string), 64); err == nil {

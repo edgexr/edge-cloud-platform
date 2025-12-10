@@ -1,4 +1,4 @@
-// Copyright 2022 MobiledgeX, Inc
+// Copyright 2025 EdgeXR, Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,73 +21,33 @@ import (
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
 	"github.com/edgexr/edge-cloud-platform/pkg/k8smgmt"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	"github.com/edgexr/edge-cloud-platform/pkg/promutils"
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	ssh "github.com/edgexr/golang-ssh"
 )
 
 // K8s Cluster
 type K8sClusterStats struct {
-	key         edgeproto.ClusterKey
-	cloudletKey edgeproto.CloudletKey
-	promAddr    string // ip:port
-	promPort    int32  // only needed if we don't know the IP to generate promAddr
-	client      ssh.Client
-	shepherd_common.ClusterMetrics
+	shepherd_common.K8sStats
+	promAddr  string // ip:port
+	promPort  int32  // only needed if we don't know the IP to generate promAddr
+	client    ssh.Client
 	kubeNames *k8smgmt.KubeNames
-	AppInstLabels
 }
 
-func (c *K8sClusterStats) GetClusterStats(ctx context.Context, ops ...shepherd_common.StatsOp) *shepherd_common.ClusterMetrics {
-	if c.promAddr == "" {
-		return nil
-	}
-	opts := shepherd_common.GetStatsOptions(ops)
-
-	if err := collectClusterPrometheusMetrics(ctx, c); err != nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect cluster metrics", "K8s Cluster", c)
-		return nil
-	}
-	if opts.GetAutoScaleStats {
-		if err := collectClusterAutoScaleMetrics(ctx, c); err != nil {
-			log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect cluster auto-scale metrics", "K8s Cluster", c)
-			return nil
-		}
-	}
-	return &c.ClusterMetrics
-}
-
-// Currently we are collecting stats for all apps in the cluster in one shot
-// Implementing  EDGECLOUD-1183 would allow us to query by label and we can have each app be an individual metric
-func (c *K8sClusterStats) GetAppStats(ctx context.Context) map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics {
-	// update the prometheus address if needed
+func (c *K8sClusterStats) GetPromClient(ctx context.Context) (promutils.PromClient, error) {
 	if c.promAddr == "" {
 		err := c.UpdatePrometheusAddr(ctx)
 		if err != nil {
 			log.ForceLogSpan(log.SpanFromContext(ctx))
 			log.SpanLog(ctx, log.DebugLevelMetrics, "error updating UpdatePrometheusAddr", "err", err)
-			return make(map[shepherd_common.MetricAppInstKey]*shepherd_common.AppMetrics)
+			return nil, err
 		}
 		// Update platform if it depends on the cluster-level metrics
 		log.DebugLog(log.DebugLevelInfo, "Setting prometheus addr", "addr", c.promAddr)
 		myPlatform.SetUsageAccessArgs(ctx, c.promAddr, c.client)
 	}
-	metrics := collectAppPrometheusMetrics(ctx, c)
-	if metrics == nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect app metrics", "K8s Cluster", c)
-	}
-	return metrics
-}
-
-func (c *K8sClusterStats) GetAlerts(ctx context.Context) []edgeproto.Alert {
-	if c.promAddr == "" {
-		return nil
-	}
-	alerts, err := getPromAlerts(ctx, c.promAddr, c.client)
-	if err != nil {
-		log.SpanLog(ctx, log.DebugLevelMetrics, "Could not collect alerts", "K8s Cluster", c, "err", err)
-		return nil
-	}
-	return alerts
+	return promutils.NewCurlClient(c.promAddr, c.client), nil
 }
 
 func (c *K8sClusterStats) UpdatePrometheusAddr(ctx context.Context) error {

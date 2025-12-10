@@ -29,7 +29,6 @@ import (
 	"github.com/edgexr/edge-cloud-platform/pkg/shepherd_common"
 	platform "github.com/edgexr/edge-cloud-platform/pkg/shepherd_platform"
 	ssh "github.com/edgexr/golang-ssh"
-	"github.com/gogo/protobuf/types"
 )
 
 // For each cluster the notify worker is created
@@ -76,12 +75,14 @@ func NewClusterWorker(ctx context.Context, promAddr string, promPort int32, scra
 	// only support K8s deployments
 	if p.deployment == cloudcommon.DeploymentTypeKubernetes {
 		p.clusterStat = &K8sClusterStats{
-			key:         p.clusterKey,
-			cloudletKey: p.cloudletKey,
-			client:      p.client,
-			promAddr:    p.promAddr,
-			promPort:    promPort,
-			kubeNames:   kubeNames,
+			K8sStats: shepherd_common.K8sStats{
+				Key:         p.clusterKey,
+				CloudletKey: p.cloudletKey,
+			},
+			client:    p.client,
+			promAddr:  p.promAddr,
+			promPort:  promPort,
+			kubeNames: kubeNames,
 		}
 	} else if p.deployment == cloudcommon.DeploymentTypeDocker {
 		clusterClient, err := pf.GetClusterPlatformClient(ctx, clusterInst, cloudcommon.ClientTypeClusterVM)
@@ -148,7 +149,7 @@ func (p *ClusterWorker) Stop(ctx context.Context) {
 		p.client.StopPersistentConn()
 	}
 	p.waitGrp.Wait()
-	flushAlerts(ctx, &p.clusterKey)
+	shepherd_common.FlushAlerts(ctx, &p.clusterKey, &AlertCache)
 }
 
 func (p *ClusterWorker) UpdateIntervals(ctx context.Context, scrapeInterval time.Duration, pushInterval time.Duration) {
@@ -189,8 +190,14 @@ func (p *ClusterWorker) RunNotify() {
 			if p.autoScaler.policyName != "" {
 				statOps = append(statOps, shepherd_common.WithAutoScaleStats())
 			}
-			clusterStats := p.clusterStat.GetClusterStats(ctx, statOps...)
-			appStatsMap := p.clusterStat.GetAppStats(ctx)
+			promClient, err := p.clusterStat.GetPromClient(ctx)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelMetrics, "Failed to get prometheus client", "cluster", p.clusterKey, "err", err)
+				span.Finish()
+				continue
+			}
+			clusterStats := p.clusterStat.GetClusterStats(ctx, promClient, statOps...)
+			appStatsMap := p.clusterStat.GetAppStats(ctx, promClient)
 			log.SpanLog(ctx, log.DebugLevelMetrics, "Collected cluster metrics",
 				"cluster", p.clusterKey, "cluster stats", clusterStats)
 			if p.autoScaler.policyName != "" {
@@ -207,12 +214,18 @@ func (p *ClusterWorker) RunNotify() {
 				for key, stat := range appStatsMap {
 					log.SpanLog(ctx, log.DebugLevelMetrics, "App metrics",
 						"AppInst key", key, "stats", stat)
-					appMetrics := MarshalAppMetrics(&key, stat, p.reservedBy, zoneKey)
+					appMetrics := shepherd_common.MarshalAppMetrics(&key, stat, p.reservedBy, zoneKey)
 					for _, metric := range appMetrics {
 						p.send(context.Background(), metric)
 					}
 				}
-				clusterMetrics := p.MarshalClusterMetrics(clusterStats, zoneKey)
+				key := shepherd_common.MetricClusterKey{
+					ClusterKey:  p.clusterKey,
+					CloudletKey: p.cloudletKey,
+					ZoneKey:     zoneKey,
+					ReservedBy:  p.reservedBy,
+				}
+				clusterMetrics := shepherd_common.MarshalClusterMetrics(clusterStats, key)
 				for _, metric := range clusterMetrics {
 					p.send(context.Background(), metric)
 				}
@@ -223,136 +236,18 @@ func (p *ClusterWorker) RunNotify() {
 			aspan := log.StartSpan(log.DebugLevelMetrics, "alerts check", log.WithSuppressWithoutLogs{})
 			log.SetTags(aspan, p.clusterKey.GetTags())
 			actx := log.ContextWithSpan(context.Background(), aspan)
-			clusterAlerts := p.clusterStat.GetAlerts(actx)
-			clusterAlerts = addClusterDetailsToAlerts(clusterAlerts, &p.clusterKey, &p.cloudletKey, zoneKey)
-			UpdateAlerts(actx, clusterAlerts, &p.clusterKey, pruneClusterForeignAlerts)
+			clusterAlerts := p.clusterStat.GetAlerts(actx, promClient)
+			clusterAlerts = shepherd_common.AddClusterDetailsToAlerts(clusterAlerts, &p.clusterKey, &p.cloudletKey, zoneKey)
+			clusterAlertPruner := shepherd_common.NewClusterAlertPruner(p.clusterKey)
+			count := shepherd_common.UpdateAlertsCache(actx, clusterAlerts, &AlertCache, clusterAlertPruner)
+			if count == 0 {
+				// suppress span log since nothing logged
+				log.NoLogSpan(aspan)
+			}
 			aspan.Finish()
 		case <-p.stop:
 			done = true
 		}
 	}
 	p.waitGrp.Done()
-}
-
-// newMetric is called for both Cluster and App stats
-func newMetric(clusterKey edgeproto.ClusterKey, cloudletKey edgeproto.CloudletKey, zoneKey edgeproto.ZoneKey, reservedBy string, name string, key *shepherd_common.MetricAppInstKey, ts *types.Timestamp) *edgeproto.Metric {
-	metric := edgeproto.Metric{}
-	metric.Name = name
-	metric.Timestamp = *ts
-	cloudletKey.AddTagsByFunc(metric.AddTag)
-	zoneKey.AddTagsByFunc(metric.AddTag)
-	metric.AddTag(edgeproto.ClusterKeyTagName, clusterKey.Name)
-	// TODO: general comment for the below XXX, perhaps we should have a
-	// reservedby tag that would be better than overridding the other org tags.
-	if key != nil {
-		metric.AddStringVal("pod", key.Pod)
-		metric.AddTag(edgeproto.AppInstKeyTagName, key.AppInstName)
-		// XXX we know the appinst org, why are setting it to reservedBy
-		// field (which, if set, should always equal the appinst org)?
-		// XXX why do we set the appinst org to the cluster org?
-		// those may be different orgs.
-		if reservedBy != "" {
-			metric.AddTag(edgeproto.AppInstKeyTagOrganization, reservedBy)
-		} else {
-			metric.AddTag(edgeproto.AppInstKeyTagOrganization, clusterKey.Organization)
-		}
-		metric.AddTag(edgeproto.ClusterKeyTagOrganization, clusterKey.Organization)
-	} else {
-		// XXX why do we override the clusterorg with the reservedBy field,
-		// which is the appinst org?
-		if reservedBy != "" {
-			metric.AddTag(edgeproto.ClusterKeyTagOrganization, reservedBy)
-		} else {
-			metric.AddTag(edgeproto.ClusterKeyTagOrganization, clusterKey.Organization)
-		}
-	}
-	return &metric
-}
-
-func (p *ClusterWorker) MarshalClusterMetrics(cm *shepherd_common.ClusterMetrics, zoneKey edgeproto.ZoneKey) []*edgeproto.Metric {
-	var metrics []*edgeproto.Metric
-	var metric *edgeproto.Metric
-
-	// bail out if we get no metrics
-	if cm == nil {
-		return nil
-	}
-
-	// nil timestamps mean the curl request failed. So do not write the metric in
-	if cm.CpuTS != nil {
-		metric = newMetric(p.clusterKey, p.cloudletKey, zoneKey, p.reservedBy, "cluster-cpu", nil, cm.CpuTS)
-		metric.AddDoubleVal("cpu", cm.Cpu)
-		metrics = append(metrics, metric)
-		//reset to nil for the next collection
-		cm.CpuTS = nil
-	}
-
-	if cm.MemTS != nil {
-		metric = newMetric(p.clusterKey, p.cloudletKey, zoneKey, p.reservedBy, "cluster-mem", nil, cm.MemTS)
-		metric.AddDoubleVal("mem", cm.Mem)
-		metrics = append(metrics, metric)
-		cm.MemTS = nil
-	}
-
-	if cm.DiskTS != nil {
-		metric = newMetric(p.clusterKey, p.cloudletKey, zoneKey, p.reservedBy, "cluster-disk", nil, cm.DiskTS)
-		metric.AddDoubleVal("disk", cm.Disk)
-		metrics = append(metrics, metric)
-		cm.DiskTS = nil
-	}
-
-	if cm.TcpConnsTS != nil && cm.TcpRetransTS != nil {
-		metric = newMetric(p.clusterKey, p.cloudletKey, zoneKey, p.reservedBy, "cluster-tcp", nil, cm.TcpConnsTS)
-		metric.AddIntVal("tcpConns", cm.TcpConns)
-		metric.AddIntVal("tcpRetrans", cm.TcpRetrans)
-		metrics = append(metrics, metric)
-	}
-	cm.TcpConnsTS = nil
-	cm.TcpRetransTS = nil
-
-	if cm.UdpSentTS != nil && cm.UdpRecvTS != nil && cm.UdpRecvErrTS != nil {
-		metric = newMetric(p.clusterKey, p.cloudletKey, p.zoneKey, p.reservedBy, "cluster-udp", nil, cm.UdpSentTS)
-		metric.AddIntVal("udpSent", cm.UdpSent)
-		metric.AddIntVal("udpRecv", cm.UdpRecv)
-		metric.AddIntVal("udpRecvErr", cm.UdpRecvErr)
-		metrics = append(metrics, metric)
-	}
-	cm.UdpSentTS = nil
-	cm.UdpRecvTS = nil
-	cm.UdpRecvErrTS = nil
-
-	return metrics
-}
-
-func MarshalAppMetrics(key *shepherd_common.MetricAppInstKey, stat *shepherd_common.AppMetrics, reservedBy string, zoneKey edgeproto.ZoneKey) []*edgeproto.Metric {
-	var metrics []*edgeproto.Metric
-	var metric *edgeproto.Metric
-
-	// bail out if we get no metrics
-	if stat == nil {
-		return nil
-	}
-
-	if stat.CpuTS != nil {
-		metric = newMetric(key.ClusterKey, key.CloudletKey, zoneKey, reservedBy, "appinst-cpu", key, stat.CpuTS)
-		metric.AddDoubleVal("cpu", stat.Cpu)
-		metrics = append(metrics, metric)
-		stat.CpuTS = nil
-	}
-
-	if stat.MemTS != nil {
-		metric = newMetric(key.ClusterKey, key.CloudletKey, zoneKey, reservedBy, "appinst-mem", key, stat.MemTS)
-		metric.AddIntVal("mem", stat.Mem)
-		metrics = append(metrics, metric)
-		stat.MemTS = nil
-	}
-
-	if stat.DiskTS != nil {
-		metric = newMetric(key.ClusterKey, key.CloudletKey, zoneKey, reservedBy, "appinst-disk", key, stat.DiskTS)
-		metric.AddIntVal("disk", stat.Disk)
-		metrics = append(metrics, metric)
-		stat.DiskTS = nil
-	}
-
-	return metrics
 }
