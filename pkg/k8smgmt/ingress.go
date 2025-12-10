@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -84,22 +85,36 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 		return nil, err
 	}
 
-	// Build the ingress object
-	httpRule := networkingv1.HTTPIngressRuleValue{}
-	hasTLS := false
+	// Normally, all ports should be under the same host name
+	// set by the appInst.URI. However, if the App specifies host
+	// prefixes, then the host names per port may be different.
+	hostName := appInst.Uri
+	hostName = strings.TrimPrefix(hostName, "https://")
+	hostName = strings.TrimPrefix(hostName, "http://")
+
+	rules := map[string]*networkingv1.IngressRule{}
+	tlss := map[string]struct{}{}
 	for _, port := range appInst.MappedPorts {
 		if port.Proto != distributed_match_engine.LProto_L_PROTO_HTTP {
 			continue
-		}
-		// we do not support ranges here
-		if port.Tls {
-			hasTLS = true
 		}
 		pp := GetSvcPortLProto(port.InternalPort, port.Proto)
 		svc, ok := appServices.SvcsByPort[pp]
 		if !ok {
 			log.SpanLog(ctx, log.DebugLevelApi, "failed to find service for port", "port", pp)
 			return nil, fmt.Errorf("failed to find service for port %s", string(pp))
+		}
+
+		host := hostName
+		if port.HostPrefix != "" {
+			host = port.HostPrefix + host
+		}
+		rule, ok := rules[host]
+		if !ok {
+			rule = &networkingv1.IngressRule{}
+			rule.Host = host
+			rule.HTTP = &networkingv1.HTTPIngressRuleValue{}
+			rules[host] = rule
 		}
 		path := networkingv1.HTTPIngressPath{}
 		pathType := networkingv1.PathTypePrefix
@@ -114,19 +129,24 @@ func WriteIngressFile(ctx context.Context, client ssh.Client, names *KubeNames, 
 				Number: port.InternalPort,
 			},
 		}
-		httpRule.Paths = append(httpRule.Paths, path)
-	}
-	hostName := appInst.Uri
-	hostName = strings.TrimPrefix(hostName, "https://")
-	hostName = strings.TrimPrefix(hostName, "http://")
-	rule := networkingv1.IngressRule{}
-	rule.Host = hostName
-	rule.HTTP = &httpRule
-	ingress.Spec.Rules = []networkingv1.IngressRule{rule}
-	if hasTLS {
-		tls := networkingv1.IngressTLS{
-			Hosts: []string{hostName},
+		rule.HTTP.Paths = append(rule.HTTP.Paths, path)
+		if port.Tls {
+			tlss[host] = struct{}{}
 		}
+	}
+	for _, rule := range rules {
+		ingress.Spec.Rules = append(ingress.Spec.Rules, *rule)
+	}
+	slices.SortFunc(ingress.Spec.Rules, func(i, j networkingv1.IngressRule) int {
+		return strings.Compare(i.Host, j.Host)
+	})
+	// Note: this assumes all hosts share the same cert
+	if len(tlss) > 0 {
+		tls := networkingv1.IngressTLS{}
+		for host := range tlss {
+			tls.Hosts = append(tls.Hosts, host)
+		}
+		slices.Sort(tls.Hosts)
 		cmd := fmt.Sprintf("kubectl %s get secret %s", kconfArg, IngressDefaultCertSecret)
 		out, err := client.Output(cmd)
 		if err == nil && strings.Contains(out, IngressDefaultCertSecret) {

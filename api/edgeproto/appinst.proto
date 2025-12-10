@@ -291,6 +291,8 @@ message InstPort {
   string id = 11;
   // Service name for Kubernetes port, use with a custom manifest or Helm chart that uses same port number on different services in the app.
   string service_name = 12;
+  // Host prefix for HTTP ports in Kubernetes ingress
+  string host_prefix = 13;
 }
 
 service AppInstApi {
