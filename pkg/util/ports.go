@@ -38,6 +38,7 @@ type PortSpec struct {
 	ID              string
 	PathPrefix      string
 	ServiceName     string
+	HostPrefix      string
 }
 
 func ParsePorts(accessPorts string) ([]PortSpec, error) {
@@ -155,6 +156,8 @@ func ParsePorts(accessPorts string) ([]PortSpec, error) {
 				portSpec.PathPrefix = val
 			case "svcname":
 				portSpec.ServiceName = val
+			case "hostprefix":
+				portSpec.HostPrefix = val
 			default:
 				return nil, fmt.Errorf("unrecognized annotation %s for port %s", key+"="+val, pp[1])
 			}

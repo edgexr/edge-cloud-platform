@@ -160,9 +160,6 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 				return err
 			}
 		}
-		fqdn := names.AppURI
-		fqdn = strings.TrimPrefix(fqdn, "https://")
-		fqdn = strings.TrimPrefix(fqdn, "http://")
 		// register DNS for ingress
 		// note that we do not register DNS based on the presence of
 		// ingress objects via CreateAppDNSAndPatchKubeSvc,
@@ -171,8 +168,10 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 		action := infracommon.DnsSvcAction{
 			ExternalIP: ip,
 		}
-		if err := m.commonPf.AddDNS(ctx, fqdn, &action); err != nil {
-			return err
+		for _, fqdn := range m.getFQDNs(appInst, names) {
+			if err := m.commonPf.AddDNS(ctx, fqdn, &action); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -200,12 +199,11 @@ func (m *K8sPlatformMgr) DeleteAppInst(ctx context.Context, clusterInst *edgepro
 		}
 	}
 	if m.features.UsesIngress && appInst.UsesHTTP() {
-		fqdn := names.AppURI
-		fqdn = strings.TrimPrefix(fqdn, "https://")
-		fqdn = strings.TrimPrefix(fqdn, "http://")
-		err := m.commonPf.DeleteDNSRecords(ctx, fqdn)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete DNS record", "fqdn", fqdn, "error", err)
+		for _, fqdn := range m.getFQDNs(appInst, names) {
+			err := m.commonPf.DeleteDNSRecords(ctx, fqdn)
+			if err != nil {
+				log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete DNS record", "fqdn", fqdn, "error", err)
+			}
 		}
 		if err = k8smgmt.DeleteIngress(ctx, client, names, appInst); err != nil {
 			log.SpanLog(ctx, log.DebugLevelInfra, "warning, cannot delete ingress", "error", err)
@@ -294,4 +292,23 @@ func (m *K8sPlatformMgr) HandleFedAppInstCb(ctx context.Context, msg *edgeproto.
 
 func (v *K8sPlatformMgr) ChangeAppInstDNS(ctx context.Context, app *edgeproto.App, appInst *edgeproto.AppInst, OldURI string, updateCallback edgeproto.CacheUpdateCallback) error {
 	return fmt.Errorf("Updating DNS is not supported")
+}
+
+func (s *K8sPlatformMgr) getFQDNs(appInst *edgeproto.AppInst, names *k8smgmt.KubeNames) []string {
+	fqdn := names.AppURI
+	fqdn = strings.TrimPrefix(fqdn, "https://")
+	fqdn = strings.TrimPrefix(fqdn, "http://")
+	dups := map[string]struct{}{}
+	for _, port := range appInst.MappedPorts {
+		host := fqdn
+		if port.HostPrefix != "" {
+			host = port.HostPrefix + host
+		}
+		dups[host] = struct{}{}
+	}
+	fqdns := []string{}
+	for fqdn := range dups {
+		fqdns = append(fqdns, fqdn)
+	}
+	return fqdns
 }
