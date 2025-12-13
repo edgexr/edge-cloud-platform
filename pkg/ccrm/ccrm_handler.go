@@ -95,10 +95,7 @@ func (s *CCRMHandler) Init(ctx context.Context, nodeMgr *svcnode.SvcNodeMgr, cac
 	s.nodeAttributesCache.Init()
 	s.crmPlatforms.Init()
 	s.platformBuilders = platformBuilders
-	s.cloudletSSHKey = cloudletssh.NewSSHKey(s.vaultClient)
 	s.crmHandler = crmutil.NewCRMHandler(s.getCRMCloudletPlatform, s.nodeMgr)
-	s.proxyCertsCache = certscache.NewProxyCertsCache(s.vaultClient)
-
 	s.caches.CloudletNodeCache.AddUpdatedCb(s.cloudletNodeChanged)
 	s.crmHandler.SettingsCache.AddUpdatedCb(s.crmHandler.SettingsChanged)
 }
@@ -132,6 +129,9 @@ func (s *CCRMHandler) InitConnectivity(ctx context.Context, client *notify.Clien
 	s.stores.CloudletIPsCache.InitCacheWithSync(sync)
 	s.cloudletIPs = cloudletips.NewCloudletIPs(sync.GetKVStore(), s.stores.CloudletIPsCache.Store, s.crmHandler.CloudletCache.Store, s.crmHandler.ClusterInstCache.Store)
 	s.vaultClient = accessapi.NewVaultClient(ctx, nodeMgr.VaultConfig, s, s.cloudletIPs, flags.Region, flags.DnsZone, nodeMgr.ValidDomains)
+	s.cloudletSSHKey = cloudletssh.NewSSHKey(s.vaultClient)
+	s.proxyCertsCache = certscache.NewProxyCertsCache(s.vaultClient)
+
 	nodeMgr.CloudletLookup.GetCloudletCache(nodeMgr.Region).InitSync(sync)
 	nodeMgr.ZonePoolLookup.GetZonePoolCache(nodeMgr.Region).InitSync(sync)
 
