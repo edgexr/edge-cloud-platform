@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/edgexr/edge-cloud-platform/pkg/process"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,9 +55,9 @@ func TestJwk(t *testing.T) {
 	require.Equal(t, vaultProc.DmeSecret, jwk.Secret, "jwt secret")
 
 	claims := &TestClaims{
-		StandardClaims: jwt.StandardClaims{
-			IssuedAt:  time.Now().Unix(),
-			ExpiresAt: time.Now().AddDate(0, 0, 1).Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().AddDate(0, 0, 1)),
 		},
 	}
 	cookie, err := jwks.GenerateCookie(claims)
@@ -99,7 +99,8 @@ func TestJwk(t *testing.T) {
 }
 
 type TestClaims struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
+	vault.SourceClaims
 	Kid int
 }
 

@@ -21,12 +21,12 @@ import (
 	"io/ioutil"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 type authClaims struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 	OrgName string `json:"orgname,omitempty"`
 	AppName string `json:"appname,omitempty"`
 	AppVers string `json:"appvers,omitempty"`
@@ -70,16 +70,17 @@ func VerifyAuthToken(ctx context.Context, token string, pubkey string, devname s
 
 // GenerateAuthToken is used only for test purposes, as the DME never
 // generates auth tokens it only verifies them
-func GenerateAuthToken(privKeyFile string, appOrg string, appname string, appvers string, expireTime int64) (string, error) {
+func GenerateAuthToken(privKeyFile string, appOrg string, appname string, appvers string, expireTime time.Time) (string, error) {
 	privkey, err := ioutil.ReadFile(privKeyFile)
 	if err != nil {
 		return "", fmt.Errorf("Cannot read private key file %s -- %v", privKeyFile, err)
 	}
 	tok := jwt.NewWithClaims(jwt.SigningMethodRS256,
 		authClaims{
-			StandardClaims: jwt.StandardClaims{
-				IssuedAt:  time.Now().Unix(),
-				ExpiresAt: expireTime},
+			RegisteredClaims: jwt.RegisteredClaims{
+				IssuedAt:  jwt.NewNumericDate(time.Now()),
+				ExpiresAt: jwt.NewNumericDate(expireTime),
+			},
 			OrgName: appOrg,
 			AppName: appname,
 			AppVers: appvers,

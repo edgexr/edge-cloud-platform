@@ -22,7 +22,8 @@ import (
 
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
-	jwt "github.com/golang-jwt/jwt/v4"
+	"github.com/edgexr/edge-cloud-platform/pkg/vault"
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 type EdgeEventsCookieKey struct {
@@ -36,7 +37,8 @@ type EdgeEventsCookieKey struct {
 }
 
 type edgeEventsClaims struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
+	vault.SourceClaims
 	Key *EdgeEventsCookieKey `json:"key,omitempty"`
 }
 
@@ -98,9 +100,9 @@ func verifyEdgeEventsCookieKey(key *EdgeEventsCookieKey) bool {
 
 func GenerateEdgeEventsCookie(key *EdgeEventsCookieKey, ctx context.Context, cookieExpiration time.Duration) (string, error) {
 	claims := edgeEventsClaims{
-		StandardClaims: jwt.StandardClaims{
-			IssuedAt:  time.Now().Unix(),
-			ExpiresAt: time.Now().Add(cookieExpiration).Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(cookieExpiration)),
 		},
 		Key: key,
 	}

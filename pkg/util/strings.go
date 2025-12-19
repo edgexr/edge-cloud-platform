@@ -17,6 +17,7 @@ package util
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -203,6 +204,35 @@ func (s *FormUrlEncodedClearer) Clear(data []byte) []byte {
 		return []byte(strings.Join(body, "&"))
 	}
 	return data
+}
+
+type QueryURLClearer struct {
+	params map[string]struct{}
+}
+
+func NewQueryURLClearer(params ...string) *QueryURLClearer {
+	clearer := &QueryURLClearer{
+		params: make(map[string]struct{}),
+	}
+	for _, f := range params {
+		clearer.params[f] = struct{}{}
+	}
+	return clearer
+}
+
+func (s *QueryURLClearer) Clear(requestURI string) string {
+	u, err := url.ParseRequestURI(requestURI)
+	if err != nil {
+		return requestURI
+	}
+	values := u.Query()
+	for k := range s.params {
+		if values.Has(k) {
+			values.Set(k, "___")
+		}
+	}
+	u.RawQuery = values.Encode()
+	return u.String()
 }
 
 func StringSliceEqual(a, b []string) bool {

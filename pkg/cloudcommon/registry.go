@@ -58,6 +58,7 @@ type RegistryAuth struct {
 	ApiKey   string `json:"apikey"`
 	Hostname string `json:"hostname"`
 	Port     string `json:"port"`
+	TokenURL string `json:"tokenurl"` //oauth2 token endpoint
 }
 
 type RegistryTags struct {
@@ -374,8 +375,8 @@ func (s *RegistryAuthMgr) UpgradeRegistryAuth(ctx context.Context, internalRegis
 	return nil
 }
 
-func GetRegistryAuthToken(ctx context.Context, host string, authApi RegistryAuthApi) (string, error) {
-	log.SpanLog(ctx, log.DebugLevelApi, "GetRegistryAuthToken", "host", host)
+func GetClientCredentialsAccessToken(ctx context.Context, host string, authApi RegistryAuthApi) (string, error) {
+	log.SpanLog(ctx, log.DebugLevelApi, "GetClientCredentialsAccessToken", "host", host)
 	if authApi == nil {
 		return "", fmt.Errorf("missing registry credentials")
 	}
@@ -391,8 +392,11 @@ func GetRegistryAuthToken(ctx context.Context, host string, authApi RegistryAuth
 	if os.Getenv("E2ETEST_TLS") != "" {
 		scheme = "http"
 	}
-	url := fmt.Sprintf("%s://%s/oauth2/token", scheme, host)
-	req, err := http.NewRequest("POST", url, nil)
+	tokenURL := auth.TokenURL
+	if tokenURL == "" {
+		tokenURL = fmt.Sprintf("%s://%s/oauth2/token", scheme, host)
+	}
+	req, err := http.NewRequest("POST", tokenURL, nil)
 	if err != nil {
 		return "", err
 	}
@@ -411,6 +415,9 @@ func GetRegistryAuthToken(ctx context.Context, host string, authApi RegistryAuth
 	defer resp.Body.Close()
 	if err != nil {
 		return "", fmt.Errorf("error reading token response: %v", err)
+	}
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("get oauth2 token failed: %d, %v", resp.StatusCode, string(body))
 	}
 	tokenResp := &OauthTokenResp{}
 	err = json.Unmarshal(body, &tokenResp)

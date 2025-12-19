@@ -72,6 +72,8 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute/v6 v6.1.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/containerservice/armcontainerservice/v6 v6.1.0
 	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/MicahParks/jwkset v0.11.0
+	github.com/MicahParks/keyfunc/v3 v3.7.0
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/edgexr/dnsproviders v0.0.1
 	github.com/edgexr/edge-proto v1.2.5-0.20241203202848-1d6c23e97b28
@@ -79,7 +81,7 @@ require (
 	github.com/edgexr/jsonparser v0.0.0-20230606233159-ad7db8cef4c2
 	github.com/glendc/go-external-ip v0.1.0
 	github.com/go-redis/redis/v8 v8.11.5
-	github.com/golang-jwt/jwt/v4 v4.5.2
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/hashicorp/vault/sdk v0.10.2
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/matoous/go-nanoid/v2 v2.0.0
@@ -139,7 +141,6 @@ require (
 	github.com/go-openapi/analysis v0.21.2 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/glog v1.2.4 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect

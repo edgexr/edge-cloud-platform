@@ -389,7 +389,7 @@ func (v *VcdPlatform) uploadToVCD(ctx context.Context, imageInfo *infracommon.Im
 	}
 
 	// get a token that VCD can use to pull from the artifactory
-	token, err := cloudcommon.GetRegistryAuthToken(ctx, artifactoryHost, v.vmProperties.CommonPf.PlatformConfig.AccessApi)
+	token, err := cloudcommon.GetClientCredentialsAccessToken(ctx, artifactoryHost, v.vmProperties.CommonPf.PlatformConfig.AccessApi)
 	if err != nil {
 		return fmt.Errorf("Fail to get artifactory token - %v", err)
 	}

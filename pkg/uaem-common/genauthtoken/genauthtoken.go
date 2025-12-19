@@ -53,7 +53,7 @@ func main() {
 		printUsage()
 		os.Exit(1)
 	}
-	expTime := time.Now().Add(time.Duration(*expirationSeconds) * time.Second).Unix()
+	expTime := time.Now().Add(time.Duration(*expirationSeconds) * time.Second)
 	token, err := uaemcommon.GenerateAuthToken(*privKeyFile, *devname, *appname, *appvers, expTime)
 	if err != nil {
 		panic(err)

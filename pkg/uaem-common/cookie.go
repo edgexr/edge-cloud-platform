@@ -25,7 +25,7 @@ import (
 	dme "github.com/edgexr/edge-cloud-platform/api/distributed_match_engine"
 	"github.com/edgexr/edge-cloud-platform/pkg/log"
 	"github.com/edgexr/edge-cloud-platform/pkg/vault"
-	jwt "github.com/golang-jwt/jwt/v4"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/opentracing/opentracing-go"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -56,7 +56,8 @@ type CookieKey struct {
 }
 
 type dmeClaims struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
+	vault.SourceClaims
 	Key *CookieKey `json:"key,omitempty"`
 }
 
@@ -115,10 +116,10 @@ func GenerateCookie(key *CookieKey, ctx context.Context, cookieExpiration *time.
 	}
 	key.PeerIP = ss[0]
 	claims := dmeClaims{
-		StandardClaims: jwt.StandardClaims{
-			IssuedAt: time.Now().Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt: jwt.NewNumericDate(time.Now()),
 			// 1 day expiration for now
-			ExpiresAt: time.Now().Add(*cookieExpiration).Unix(),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(*cookieExpiration)),
 		},
 		Key: key,
 	}

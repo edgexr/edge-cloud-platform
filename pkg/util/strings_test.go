@@ -238,3 +238,23 @@ func TestSetExtension(t *testing.T) {
 		assert.Equal(t, test.out, out, "set extension for %q", test.in)
 	}
 }
+
+func TestQueryURLClearer(t *testing.T) {
+	clearer := NewQueryURLClearer("consent_challenge", "c")
+
+	type testDat struct {
+		in  string
+		out string
+	}
+	tests := []testDat{
+		{"", ""},
+		{"/some/path?a=b", "/some/path?a=b"},
+		{"/?a=b&c=d", "/?a=b&c=___"},
+		{"/idp/consent?consent_challenge=dVGID9TvrrlEeEsOJ17&foo=bar&c=v",
+			"/idp/consent?c=___&consent_challenge=___&foo=bar"},
+	}
+	for _, test := range tests {
+		out := clearer.Clear(test.in)
+		assert.Equal(t, test.out, out, "clear query for %q", test.in)
+	}
+}
