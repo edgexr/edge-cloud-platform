@@ -360,7 +360,12 @@ func testReservableClusterInst(t *testing.T, ctx context.Context, api *testutil.
 	appinst2.CloudletKey = cinst.CloudletKey
 	appinst2.AppKey = appKey2
 	appinst2.ClusterKey = cinst.Key
-	appinst2.Flavor = flavor.Key
+	appinst2.KubernetesResources = &edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalVcpus:  *edgeproto.NewUdec64(1, 0),
+			TotalMemory: 100,
+		},
+	}
 	require.NotEqual(t, appinst.Key.Organization, appinst2.Key.Organization)
 	err = apis.appInstApi.CreateAppInst(&appinst2, streamOut)
 	require.NotNil(t, err, "create AppInst on already reserved ClusterInst")
