@@ -128,10 +128,9 @@ func AppData() []edgeproto.App {
 			Name:         "Hunna Stoll Go! Go!",
 			Version:      "0.0.1",
 		},
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_DOCKER,
-		AccessPorts:   "tcp:443,udp:11111",
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[1].Key,
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_DOCKER,
+		AccessPorts: "tcp:443,udp:11111",
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		KubernetesResources: &edgeproto.KubernetesResources{
 			CpuPool: &edgeproto.NodePoolResources{
 				TotalVcpus:  *edgeproto.NewUdec64(1, 0),
@@ -160,11 +159,10 @@ func AppData() []edgeproto.App {
 			Name:         "my reality",
 			Version:      "0.0.1",
 		},
-		ImageType:     edgeproto.ImageType_IMAGE_TYPE_QCOW,
-		ImagePath:     "http://somerepo/image/path/myreality/0.0.1#md5:7e9cfcb763e83573a4b9d9315f56cc5f",
-		AccessPorts:   "udp:1024",
-		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
-		DefaultFlavor: flavorData[2].Key,
+		ImageType:   edgeproto.ImageType_IMAGE_TYPE_QCOW,
+		ImagePath:   "http://somerepo/image/path/myreality/0.0.1#md5:7e9cfcb763e83573a4b9d9315f56cc5f",
+		AccessPorts: "udp:1024",
+		AccessType:  edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		NodeResources: &edgeproto.NodeResources{
 			Vcpus: 1,
 			Ram:   1024,
@@ -355,11 +353,6 @@ func AppData() []edgeproto.App {
 		AccessPorts:   "tcp:80,tcp:443,tcp:81:tls",
 		AccessType:    edgeproto.AccessType_ACCESS_TYPE_LOAD_BALANCER,
 		DefaultFlavor: flavorData[0].Key,
-		NodeResources: &edgeproto.NodeResources{
-			Vcpus: 1,
-			Ram:   1024,
-			Disk:  1,
-		},
 	}, { // edgeproto.App // 16
 		Key: edgeproto.AppKey{
 			Organization: devData[0],
@@ -2722,13 +2715,20 @@ func CreatedAppData() []edgeproto.App {
 		case 1:
 			app.KubernetesResources = &edgeproto.KubernetesResources{}
 			app.KubernetesResources.SetFromFlavor(&flavorData[0])
+			app.DefaultFlavor = edgeproto.FlavorKey{}
 		case 3:
 			app.NodeResources = &edgeproto.NodeResources{}
 			app.NodeResources.SetFromFlavor(&flavorData[1])
+			app.DefaultFlavor = edgeproto.FlavorKey{}
 		case 4:
 			// flavor overrides KubernetesResources spec
 			app.NodeResources = &edgeproto.NodeResources{}
 			app.NodeResources.SetFromFlavor(&flavorData[2])
+			app.DefaultFlavor = edgeproto.FlavorKey{}
+		case 15:
+			app.NodeResources = &edgeproto.NodeResources{}
+			app.NodeResources.SetFromFlavor(&flavorData[0])
+			app.DefaultFlavor = edgeproto.FlavorKey{}
 		}
 		created = append(created, app)
 	}
@@ -2743,7 +2743,7 @@ func CreatedAppInstData() []edgeproto.AppInst {
 	clusterInstData := ClusterInstData()
 	clusterInstAutoData := ClusterInstAutoData()
 	cloudletData := CloudletData()
-	appData := AppData()
+	appData := CreatedAppData()
 	cloudletFromCluster := map[edgeproto.ClusterKey]edgeproto.CloudletKey{}
 	for _, cluster := range append(CreatedClusterInstData(), ClusterInstAutoData()...) {
 		cloudletFromCluster[cluster.Key] = cluster.CloudletKey

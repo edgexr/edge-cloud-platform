@@ -291,6 +291,9 @@ func (s *AppApi) resolveResourcesSpec(ctx context.Context, stm concurrency.STM, 
 	}
 	in.KubernetesResources = appResources.KubernetesResources
 	in.NodeResources = appResources.NodeResources
+	// remove default flavor, otherwise we can get out of sync
+	// between flavor and separate resources after updates.
+	in.DefaultFlavor = edgeproto.FlavorKey{}
 	return nil
 }
 
@@ -320,14 +323,18 @@ func (s *AppApi) resolveAppResourcesSpec(stm concurrency.STM, deployment string,
 			return res.FlavorKey.BeingDeletedError()
 		}
 		if cloudcommon.AppDeploysToKubernetes(deployment) {
-			if res.KubernetesResources == nil {
-				res.KubernetesResources = &edgeproto.KubernetesResources{}
+			if res.KubernetesResources != nil {
+				// cannot specify both flavor and KubernetesResources
+				return errors.New("cannot specify both flavor and KubernetesResources")
 			}
+			res.KubernetesResources = &edgeproto.KubernetesResources{}
 			res.KubernetesResources.SetFromFlavor(flavor)
 		} else {
-			if res.NodeResources == nil {
-				res.NodeResources = &edgeproto.NodeResources{}
+			if res.NodeResources != nil {
+				// cannot specify both flavor and NodeResources
+				return errors.New("cannot specify both flavor and NodeResources")
 			}
+			res.NodeResources = &edgeproto.NodeResources{}
 			res.NodeResources.SetFromFlavor(flavor)
 		}
 	}

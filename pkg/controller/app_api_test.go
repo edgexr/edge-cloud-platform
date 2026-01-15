@@ -104,6 +104,7 @@ func TestAppApi(t *testing.T) {
 
 	// image path is optional for docker deployments if
 	// deployment manifest is specified.
+	appFlavor := testutil.FlavorData()[2]
 	app := edgeproto.App{
 		Key: edgeproto.AppKey{
 			Organization: "org",
@@ -114,8 +115,9 @@ func TestAppApi(t *testing.T) {
 		AccessPorts:        "tcp:445,udp:1212",
 		Deployment:         "docker", // avoid trying to parse k8s manifest
 		DeploymentManifest: "some manifest",
-		DefaultFlavor:      testutil.FlavorData()[2].Key,
+		NodeResources:      &edgeproto.NodeResources{},
 	}
+	app.NodeResources.SetFromFlavor(&appFlavor)
 
 	_, err = apis.appApi.CreateApp(ctx, &app)
 	require.Nil(t, err, "Create app with deployment manifest")
@@ -130,6 +132,8 @@ func TestAppApi(t *testing.T) {
 	app.Deployment = cloudcommon.DeploymentTypeHelm
 	app.DeploymentManifest = testK8SManifest1
 	app.NodeResources = nil
+	app.KubernetesResources = &edgeproto.KubernetesResources{}
+	app.KubernetesResources.SetFromFlavor(&testutil.FlavorData()[2])
 	app.ImageType = edgeproto.ImageType_IMAGE_TYPE_HELM
 	app.ImagePath = "https://myhelmrepo/charts:mycharts/myhelmapp"
 	_, err = apis.appApi.CreateApp(ctx, &app)
@@ -219,6 +223,8 @@ func TestAppApi(t *testing.T) {
 	app.AccessPorts = "tcp:888,udp:1999:maxpktsize=1500"
 	app.ImageType = edgeproto.ImageType_IMAGE_TYPE_DOCKER
 	app.KubernetesResources = nil
+	app.NodeResources = &edgeproto.NodeResources{}
+	app.NodeResources.SetFromFlavor(&appFlavor)
 	_, err = apis.appApi.CreateApp(ctx, &app)
 	require.Nil(t, err, "Create app with maxpktsize")
 	_, err = apis.appApi.DeleteApp(ctx, &app)
@@ -255,7 +261,9 @@ func TestAppApi(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, app.KubernetesResources, storedApp.KubernetesResources)
 	// update resources
-	app.KubernetesResources = &edgeproto.KubernetesResources{
+	updateApp := &edgeproto.App{}
+	updateApp.Key = app.Key
+	updateApp.KubernetesResources = &edgeproto.KubernetesResources{
 		CpuPool: &edgeproto.NodePoolResources{
 			TotalVcpus:  *edgeproto.NewUdec64(1, 500*edgeproto.DecMillis),
 			TotalMemory: 1234,
@@ -268,28 +276,38 @@ func TestAppApi(t *testing.T) {
 			},
 		},
 	}
-	app.Fields = []string{
+	updateApp.Fields = []string{
 		edgeproto.AppFieldKubernetesResources,
 	}
-	_, err = apis.appApi.UpdateApp(ctx, &app)
+	_, err = apis.appApi.UpdateApp(ctx, updateApp)
 	require.Nil(t, err)
 	// check updated
-	err = app.KubernetesResources.Validate()
+	err = updateApp.KubernetesResources.Validate()
 	require.Nil(t, err)
 	found = apis.appApi.Get(app.GetKey(), &storedApp)
 	require.True(t, found)
-	require.Equal(t, app.KubernetesResources, storedApp.KubernetesResources)
+	require.Equal(t, updateApp.KubernetesResources, storedApp.KubernetesResources)
 	// update single value
-	app.KubernetesResources.CpuPool.TotalMemory = 4096
-	app.Fields = []string{
+	updateApp = &edgeproto.App{}
+	updateApp.Key = app.Key
+	updateApp.KubernetesResources = &edgeproto.KubernetesResources{
+		CpuPool: &edgeproto.NodePoolResources{
+			TotalMemory: 4096,
+		},
+	}
+	// compare entire resources to ensure only 1 value changed
+	updatedResources := storedApp.KubernetesResources.Clone()
+	updatedResources.CpuPool.TotalMemory = updateApp.KubernetesResources.CpuPool.TotalMemory
+	updateApp.Fields = []string{
 		edgeproto.AppFieldKubernetesResourcesCpuPoolTotalMemory,
 	}
-	_, err = apis.appApi.UpdateApp(ctx, &app)
+	_, err = apis.appApi.UpdateApp(ctx, updateApp)
 	require.Nil(t, err)
 	// check updated
+	storedApp = edgeproto.App{}
 	found = apis.appApi.Get(app.GetKey(), &storedApp)
 	require.True(t, found)
-	require.Equal(t, app.KubernetesResources, storedApp.KubernetesResources)
+	require.Equal(t, updatedResources, storedApp.KubernetesResources)
 
 	// clean up app
 	_, err = apis.appApi.DeleteApp(ctx, &app)
@@ -727,7 +745,7 @@ func testAppResourceConsistency(t *testing.T, ctx context.Context, apis *AllApis
 		createErr     string
 		modUpdate     func(*edgeproto.App)
 		updateErr     string
-		expectUpdated func(*edgeproto.App)
+		expectUpdated func(*edgeproto.App, string)
 	}{{
 		desc:      "k8s app without resources fails",
 		modApp:    func(app *edgeproto.App) {},
@@ -744,7 +762,7 @@ func testAppResourceConsistency(t *testing.T, ctx context.Context, apis *AllApis
 			app.DefaultFlavor.Name = "x1.medium"
 		},
 		expectCreated: func(app *edgeproto.App) {
-			require.Equal(t, "x1.medium", app.DefaultFlavor.Name)
+			require.Empty(t, app.DefaultFlavor)
 			require.Empty(t, app.NodeResources)
 			require.Equal(t, getKR("medium"), app.KubernetesResources)
 		},
@@ -755,33 +773,25 @@ func testAppResourceConsistency(t *testing.T, ctx context.Context, apis *AllApis
 			app.Deployment = cloudcommon.DeploymentTypeDocker
 		},
 		expectCreated: func(app *edgeproto.App) {
-			require.Equal(t, "x1.medium", app.DefaultFlavor.Name)
+			require.Empty(t, app.DefaultFlavor)
 			require.Equal(t, getNR("medium"), app.NodeResources)
 			require.Empty(t, app.KubernetesResources)
 		},
 	}, {
-		desc: "flavor overrides KubernetesResources",
+		desc: "flavor conflicts with KubernetesResources",
 		modApp: func(app *edgeproto.App) {
 			app.DefaultFlavor.Name = "x1.medium"
 			app.KubernetesResources = getKR("small")
 		},
-		expectCreated: func(app *edgeproto.App) {
-			require.Equal(t, "x1.medium", app.DefaultFlavor.Name)
-			require.Empty(t, app.NodeResources)
-			require.Equal(t, getKR("medium"), app.KubernetesResources)
-		},
+		createErr: "cannot specify both flavor and KubernetesResources",
 	}, {
-		desc: "flavor overrides NodeResources",
+		desc: "flavor conflicts with NodeResources",
 		modApp: func(app *edgeproto.App) {
 			app.DefaultFlavor.Name = "x1.medium"
 			app.Deployment = cloudcommon.DeploymentTypeDocker
 			app.NodeResources = getNR("small")
 		},
-		expectCreated: func(app *edgeproto.App) {
-			require.Equal(t, "x1.medium", app.DefaultFlavor.Name)
-			require.Equal(t, getNR("medium"), app.NodeResources)
-			require.Empty(t, app.KubernetesResources)
-		},
+		createErr: "cannot specify both flavor and NodeResources",
 	}, {
 		desc: "update Kubernetes Resources ok if no flavor set",
 		modApp: func(app *edgeproto.App) {
@@ -794,8 +804,8 @@ func testAppResourceConsistency(t *testing.T, ctx context.Context, apis *AllApis
 			app.KubernetesResources = getKR("medium")
 			app.Fields = append(app.Fields, edgeproto.AppFieldKubernetesResources)
 		},
-		expectUpdated: func(app *edgeproto.App) {
-			require.Equal(t, getKR("medium"), app.KubernetesResources)
+		expectUpdated: func(app *edgeproto.App, desc string) {
+			require.Equal(t, getKR("medium"), app.KubernetesResources, desc)
 		},
 	}, {
 		desc: "update Node Resources ok if no flavor set",
@@ -810,26 +820,21 @@ func testAppResourceConsistency(t *testing.T, ctx context.Context, apis *AllApis
 			app.NodeResources = getNR("medium")
 			app.Fields = append(app.Fields, edgeproto.AppFieldNodeResources)
 		},
-		expectUpdated: func(app *edgeproto.App) {
-			require.Equal(t, getNR("medium"), app.NodeResources)
+		expectUpdated: func(app *edgeproto.App, desc string) {
+			require.Equal(t, getNR("medium"), app.NodeResources, desc)
 		},
 	}, {
-		desc: "update flavor updates Kubernetes Resources, overrides specified individual resources",
+		desc: "update flavor cannot override individual kubernetes resources",
 		modApp: func(app *edgeproto.App) {
 			app.DefaultFlavor.Name = "x1.medium"
 		},
 		modUpdate: func(app *edgeproto.App) {
 			app.DefaultFlavor.Name = "x1.small"
-			app.KubernetesResources = getKR("medium")
-			app.Fields = append(app.Fields, edgeproto.AppFieldDefaultFlavor, edgeproto.AppFieldKubernetesResources)
+			app.Fields = append(app.Fields, edgeproto.AppFieldDefaultFlavor)
 		},
-		expectUpdated: func(app *edgeproto.App) {
-			require.Equal(t, "x1.small", app.DefaultFlavor.Name)
-			require.Empty(t, app.NodeResources)
-			require.Equal(t, getKR("small"), app.KubernetesResources)
-		},
+		updateErr: "cannot specify both flavor and KubernetesResources",
 	}, {
-		desc: "update flavor updates Node Resources, overrides specified individual resources",
+		desc: "update flavor cannot override individual node resources",
 		modApp: func(app *edgeproto.App) {
 			app.DefaultFlavor.Name = "x1.medium"
 			app.Deployment = cloudcommon.DeploymentTypeDocker
@@ -839,11 +844,7 @@ func testAppResourceConsistency(t *testing.T, ctx context.Context, apis *AllApis
 			app.NodeResources = getNR("medium")
 			app.Fields = append(app.Fields, edgeproto.AppFieldDefaultFlavor, edgeproto.AppFieldNodeResources)
 		},
-		expectUpdated: func(app *edgeproto.App) {
-			require.Equal(t, "x1.small", app.DefaultFlavor.Name)
-			require.Equal(t, getNR("small"), app.NodeResources)
-			require.Empty(t, app.KubernetesResources)
-		},
+		updateErr: "cannot specify both flavor and NodeResources",
 	}}
 
 	for _, test := range tests {
@@ -873,13 +874,14 @@ func testAppResourceConsistency(t *testing.T, ctx context.Context, apis *AllApis
 			if test.updateErr != "" {
 				require.NotNil(t, err, test.desc)
 				require.Contains(t, err.Error(), test.updateErr, test.desc)
+			} else {
+				require.Nil(t, err, test.desc)
+				// show updated test app
+				updatedApp := edgeproto.App{}
+				found := apis.appApi.cache.Get(&testApp.Key, &updatedApp)
+				require.True(t, found, test.desc)
+				test.expectUpdated(&updatedApp, test.desc)
 			}
-			// show updated test app
-			updatedApp := edgeproto.App{}
-			found := apis.appApi.cache.Get(&testApp.Key, &updatedApp)
-			require.True(t, found, test.desc)
-			// check created app
-			test.expectUpdated(&updatedApp)
 		}
 		// cleanup
 		_, err = apis.appApi.DeleteApp(ctx, &testApp)
