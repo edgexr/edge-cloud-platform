@@ -1559,8 +1559,7 @@ func GetCloudletResourceUsages(c *cli.Command, data []edgeproto.CloudletResource
 
 var ShowCloudletResourceUsageCmd = &cli.Command{
 	Use:          "ShowCloudletResourceUsage",
-	RequiredArgs: strings.Join(ShowCloudletResourceUsageRequiredArgs, " "),
-	OptionalArgs: strings.Join(ShowCloudletResourceUsageOptionalArgs, " "),
+	OptionalArgs: strings.Join(append(CloudletRequiredArgs, CloudletOptionalArgs...), " "),
 	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
 	SpecialArgs:  &CloudletSpecialArgs,
 	Comments:     CloudletComments,
@@ -3728,7 +3727,6 @@ var CloudletResourceQuotaPropsOptionalArgs = []string{
 	"properties:#.units",
 	"properties:#.type",
 	"properties:#.alertthreshold",
-	"organization",
 }
 var CloudletResourceQuotaPropsAliasArgs = []string{}
 var CloudletResourceQuotaPropsComments = map[string]string{
@@ -3741,7 +3739,6 @@ var CloudletResourceQuotaPropsComments = map[string]string{
 	"properties:#.units":          "Resource units",
 	"properties:#.type":           "Resource type category, i.e. gpu",
 	"properties:#.alertthreshold": "Generate alert when more than threshold percentage of resource is used",
-	"organization":                "Organization",
 }
 var CloudletResourceQuotaPropsSpecialArgs = map[string]string{}
 var CloudletResourceUsageRequiredArgs = []string{
@@ -4503,9 +4500,7 @@ var GetCloudletPropsOptionalArgs = []string{
 var GetCloudletResourceQuotaPropsRequiredArgs = []string{
 	"platformtype",
 }
-var GetCloudletResourceQuotaPropsOptionalArgs = []string{
-	"organization",
-}
+var GetCloudletResourceQuotaPropsOptionalArgs = []string{}
 var GetCloudletResourceUsageRequiredArgs = []string{
 	"cloudletorg",
 	"cloudlet",

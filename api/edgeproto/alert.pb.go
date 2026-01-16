@@ -1506,6 +1506,7 @@ var ShowMethodNames = map[string]struct{}{
 	"ShowPlatformFeatures":         struct{}{},
 	"ShowGPUDriver":                struct{}{},
 	"ShowCloudlet":                 struct{}{},
+	"ShowCloudletResourceUsage":    struct{}{},
 	"ShowCloudletGPUUsage":         struct{}{},
 	"ShowCloudletInfo":             struct{}{},
 	"ShowCloudletMetrics":          struct{}{},
