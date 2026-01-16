@@ -701,8 +701,7 @@ message CloudletResourceQuotaProps {
   string platform_type = 1;
   // Cloudlet resource properties
   repeated InfraResource properties = 2 [(gogoproto.nullable) = false];
-  // Organization
-  string organization = 3;
+  option (protogen.uses_org) = "none";
 }
 
 message CloudletResourceUsage {
@@ -716,6 +715,7 @@ message CloudletResourceUsage {
   uint64 resource_score = 4;
   option (protogen.alias) = "cloudlet=Key.Name,cloudletorg=Key.Organization,federatedorg=Key.FederatedOrganization";
   option (protogen.not_required) = "Key.FederatedOrganization";
+  option (protogen.uses_org) = "key=Organization";
 }
 
 message CloudletGPUUsage {
@@ -806,7 +806,7 @@ service CloudletApi {
       post: "/get/cloudlet/resource/props"
       body: "*"
     };
-    option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,Organization";
+    option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,skipenforce";
     option (protogen.method_noconfig) = "Properties";
     option (protogen.method_also_required) = "PlatformType";
   }
@@ -825,7 +825,6 @@ service CloudletApi {
       post: "/show/cloudlet/resource/usage"
       body: "*"
     };
-    option (protogen.non_standard_show) = true;
     option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
     option (protogen.method_not_required) = "Key.Organization,Key.Name,Key.FederatedOrganization";
   }

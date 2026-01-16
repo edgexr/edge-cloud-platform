@@ -1427,14 +1427,13 @@ func (r *Run) CloudletApi(data *[]edgeproto.Cloudlet, dataMap interface{}, dataO
 		case "showcloudletresourceusage":
 			out, err := r.client.ShowCloudletResourceUsage(r.ctx, obj)
 			if err != nil {
-				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
 				r.logErr(fmt.Sprintf("CloudletApi[%d]", ii), err)
 			} else {
-				outp, ok := dataOut.(*[][]edgeproto.CloudletResourceUsage)
+				outp, ok := dataOut.(*[]edgeproto.CloudletResourceUsage)
 				if !ok {
-					panic(fmt.Sprintf("RunCloudletApi expected dataOut type *[][]edgeproto.CloudletResourceUsage, but was %T", dataOut))
+					panic(fmt.Sprintf("RunCloudletApi expected dataOut type *[]edgeproto.CloudletResourceUsage, but was %T", dataOut))
 				}
-				*outp = append(*outp, out)
+				*outp = append(*outp, out...)
 			}
 		case "showcloudletgpuusage":
 			out, err := r.client.ShowCloudletGPUUsage(r.ctx, obj)
