@@ -1063,7 +1063,6 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 	accessVars := make(map[string]string)
 	if fmap.HasOrHasChild(edgeproto.CloudletFieldAccessVars) {
 		accessVars = in.AccessVars
-		in.AccessVars = redactAccessVars(accessVars)
 	}
 
 	singleKubernetesClusterOwnerSet := fmap.Has(edgeproto.CloudletFieldSingleKubernetesClusterOwner)
@@ -1131,10 +1130,11 @@ func (s *CloudletApi) UpdateCloudlet(in *edgeproto.Cloudlet, inCb edgeproto.Clou
 		return err
 	}
 	if fmap.HasOrHasChild(edgeproto.CloudletFieldAccessVars) {
-		err = accessvars.UpdateCloudletAccessVars(ctx, *region, in, nodeMgr.VaultConfig, accessVars, features.AccessVars)
+		newVars, err := accessvars.UpdateCloudletAccessVars(ctx, *region, in, nodeMgr.VaultConfig, accessVars, features.AccessVars)
 		if err != nil {
 			return err
 		}
+		in.AccessVars = redactAccessVars(newVars)
 	}
 
 	var newMaintenanceState dme.MaintenanceState

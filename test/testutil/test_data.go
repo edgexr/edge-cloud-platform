@@ -441,10 +441,13 @@ func PlatformFeaturesData() []edgeproto.PlatformFeatures {
 		features[ii].SupportsPlatformHighAvailabilityOnK8S = true
 		features[ii].SupportsMultipleNodePools = true
 		features[ii].AccessVars = map[string]*edgeproto.PropertyInfo{
-			"APIKey": &edgeproto.PropertyInfo{
+			"APIKey": {
 				Name:        "API Key",
 				Description: "API Key for authentication",
-				Secret:      true,
+			},
+			"Secret": {
+				Name:        "Secret",
+				Description: "Secret for testing",
 			},
 		}
 		features[ii].Properties = map[string]*edgeproto.PropertyInfo{
