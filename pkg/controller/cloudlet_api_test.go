@@ -169,16 +169,21 @@ func TestCloudletApi(t *testing.T) {
 	// any requests that don't have a registered URL will be fetched normally
 	mockTransport.RegisterNoResponder(httpmock.InitialTransport.RoundTrip)
 
+	dummyVault := vault.NewDummyServer()
+	defer dummyVault.TestServer.Close()
+	vaultConfig := dummyVault.Config
+
 	esURL := "http://dummy-es"
 	eMock = NewEventMock(esURL)
 	eMock.registerResponders(t, mockTransport)
 
 	// setup nodeMgr for events
-	nodeMgr = svcnode.SvcNodeMgr{
-		VaultAddr: vault.UnitTestIgnoreVaultAddr,
-	}
-	ctx, _, err := nodeMgr.Init(svcnode.SvcNodeTypeController, "", svcnode.WithRegion("unit-test"),
-		svcnode.WithESUrls(esURL), svcnode.WithTestTransport(mockTransport))
+	nodeMgr = svcnode.SvcNodeMgr{}
+	ctx, _, err := nodeMgr.Init(svcnode.SvcNodeTypeController, "",
+		svcnode.WithRegion("unit-test"),
+		svcnode.WithESUrls(esURL),
+		svcnode.WithTestTransport(mockTransport),
+		svcnode.WithVaultConfig(vaultConfig))
 	require.Nil(t, err)
 	require.NotNil(t, nodeMgr.OSClient)
 	defer nodeMgr.Finish()
@@ -235,6 +240,7 @@ func TestCloudletApi(t *testing.T) {
 	testCloudletEdgeboxOnly(t, ctx, cloudletData[2], apis)
 	testCloudletUpdateInfo(t, ctx, apis)
 	testCloudletManagedClusters(t, ctx, apis)
+	testCloudletUpdateAccessVars(t, ctx, apis)
 }
 
 func testBadLat(t *testing.T, ctx context.Context, clbad *edgeproto.Cloudlet, lats []float64, action string, apis *AllApis) {
@@ -1349,4 +1355,41 @@ func testCloudletManagedClusters(t *testing.T, ctx context.Context, apis *AllApi
 		found = apis.clusterInstApi.cache.Get(&cmc.ClusterKey, &ci)
 		require.False(t, found)
 	}
+}
+
+func testCloudletUpdateAccessVars(t *testing.T, ctx context.Context, apis *AllApis) {
+	cl := testutil.CloudletData()[0]
+	cl.Key.Name = "test-access-vars-update"
+	cl.AccessVars = map[string]string{
+		"APIKey": "foo",
+		"Secret": "secret",
+	}
+
+	// create cloudlet
+	log.SpanLog(ctx, log.DebugLevelApi, "creating cloudlet", "key", cl.Key)
+	err := apis.cloudletApi.CreateCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	defer func() {
+		err = apis.cloudletApi.DeleteCloudlet(&cl, testutil.NewCudStreamoutCloudlet(ctx))
+		require.Nil(t, err)
+	}()
+
+	// update single access var
+	update := cl.Clone()
+	update.AccessVars = map[string]string{
+		"Secret": "secret2",
+	}
+	update.Fields = []string{edgeproto.CloudletFieldAccessVars}
+	log.SpanLog(ctx, log.DebugLevelApi, "updating cloudlet access vars", "key", cl.Key, "update", update)
+	err = apis.cloudletApi.UpdateCloudlet(update, testutil.NewCudStreamoutCloudlet(ctx))
+	require.Nil(t, err)
+	// get updated cloudlet
+	clOut := edgeproto.Cloudlet{}
+	found := apis.cloudletApi.cache.Get(&cl.Key, &clOut)
+	require.True(t, found)
+	newVars := map[string]string{
+		"APIKey": "***",
+		"Secret": "***",
+	}
+	require.Equal(t, newVars, clOut.AccessVars)
 }

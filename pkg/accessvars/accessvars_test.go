@@ -117,6 +117,7 @@ func testCloudletAccessVars(t *testing.T, ctx context.Context, vaultConfig *vaul
 	}
 	cloudlet := &testutil.CloudletData()[0]
 	region := "local"
+	numVars := len(vars)
 
 	// check func
 	check := func(expVars map[string]string) {
@@ -132,6 +133,7 @@ func testCloudletAccessVars(t *testing.T, ctx context.Context, vaultConfig *vaul
 		}
 		require.Nil(t, err)
 		require.Equal(t, len(vars), len(varsOut))
+		require.Equal(t, numVars, len(varsOut))
 		for k, v := range vars {
 			vOut := varsOut[k]
 			require.Equal(t, v, vOut, "value should match for key "+k)
@@ -158,7 +160,7 @@ func testCloudletAccessVars(t *testing.T, ctx context.Context, vaultConfig *vaul
 	updateVars := map[string]string{
 		"clientsecret": "!adf*#*&$3vEF9X93&3",
 	}
-	err = UpdateCloudletAccessVars(ctx, region, cloudlet, vaultConfig, updateVars, nil)
+	_, err = UpdateCloudletAccessVars(ctx, region, cloudlet, vaultConfig, updateVars, nil)
 	require.Nil(t, err, errString(err))
 	for k, v := range updateVars {
 		vars[k] = v

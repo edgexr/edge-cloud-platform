@@ -76,15 +76,15 @@ func GetCloudletAccessVars(ctx context.Context, region string, cloudlet *edgepro
 	return vars, err
 }
 
-func UpdateCloudletAccessVars(ctx context.Context, region string, cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, accessVars map[string]string, props map[string]*edgeproto.PropertyInfo) error {
+func UpdateCloudletAccessVars(ctx context.Context, region string, cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config, accessVars map[string]string, props map[string]*edgeproto.PropertyInfo) (map[string]string, error) {
 	updatedVars, err := GetCloudletAccessVars(ctx, region, cloudlet, vaultConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for k, v := range accessVars {
 		updatedVars[k] = v
 	}
-	return SaveCloudletAccessVars(ctx, region, cloudlet, vaultConfig, updatedVars, props)
+	return updatedVars, SaveCloudletAccessVars(ctx, region, cloudlet, vaultConfig, updatedVars, props)
 }
 
 func DeleteCloudletAccessVars(ctx context.Context, region string, cloudlet *edgeproto.Cloudlet, vaultConfig *vault.Config) error {
