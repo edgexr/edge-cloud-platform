@@ -39,6 +39,8 @@ EDGE_CLOUD_INFRA_BASE ?= $(REGISTRY)/edge-cloud-infra-base@sha256:d251d83ad71e4a
 
 EDGE_CLOUD_IMAGE ?= $(REGISTRY)/edge-cloud
 
+ALLINONE_IMAGE ?= $(EDGE_CLOUD_IMAGE):$(VERSION)
+
 build-platform-common:
 	docker buildx build \
 		--build-arg BUILD_TAG=$(VERSION) \
@@ -47,16 +49,23 @@ build-platform-common:
 		--build-arg REGISTRY=$(REGISTRY) \
 		--build-arg KUBECTL_WRAPPER_ARCHIVES=$(KUBECTL_WRAPPER_ARCHIVES) \
 		--build-arg KUBECTL_WRAPPER_VERSION=$(KUBECTL_WRAPPER_VERSION) \
-		-t $(EDGE_CLOUD_IMAGE):$(VERSION) -f Dockerfile.edge-cloud-platform $(TOP)
+		-t $(ALLINONE_IMAGE) -f Dockerfile.edge-cloud-platform $(TOP)
 
 build-platform: build-platform-common
 	for COMP in autoprov cluster-svc controller ccrm crm dme edgeturn notifyroot; do \
-		docker buildx build $(PUSH) -t $(EDGE_CLOUD_IMAGE)-$$COMP:$(VERSION) \
-			--build-arg NON_INFRA_BASE_IMAGE=$(NON_INFRA_BASE_IMAGE) \
-			--build-arg ALLINONE=$(EDGE_CLOUD_IMAGE):$(VERSION) \
-			--build-arg EDGE_CLOUD_INFRA_BASE=$(EDGE_CLOUD_INFRA_BASE) \
-			-f Dockerfile.$$COMP . || exit 1; \
+		make build-platform-one COMP=$$COMP IMG=$(EDGE_CLOUD_IMAGE)-$$COMP:$(VERSION) || exit 1; \
 	done
+
+build-platform-one:
+	@if [ -z "$(COMP)" ]; then \
+		echo "COMP is required (e.g. make build-platform-one COMP=autoprov)"; \
+		exit 1; \
+	fi
+	docker buildx build $(PUSH) -t $(IMG) \
+		--build-arg NON_INFRA_BASE_IMAGE=$(NON_INFRA_BASE_IMAGE) \
+		--build-arg ALLINONE=$(ALLINONE_IMAGE) \
+		--build-arg EDGE_CLOUD_INFRA_BASE=$(EDGE_CLOUD_INFRA_BASE) \
+		-f Dockerfile.$$COMP .
 
 build-platform-local: PUSH =
 build-platform-local: build-platform
