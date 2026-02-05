@@ -42,7 +42,7 @@ func (s *ExecReqHandler) RecvExecRequest(ctx context.Context, msg *edgeproto.Exe
 	go func() {
 		cspan, ctx := log.ChildSpan(ctx, log.DebugLevelApi, "process exec req")
 		defer cspan.Finish()
-		err := s.cd.ProcessExecReq(ctx, platform, msg, func(reply *edgeproto.ExecRequest) {
+		err := s.cd.ProcessExecReq(ctx, platform, msg, "", func(reply *edgeproto.ExecRequest) {
 			s.cd.ExecReqSend.Update(ctx, reply)
 		})
 		if err != nil {

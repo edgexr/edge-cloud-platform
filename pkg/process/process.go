@@ -17,6 +17,7 @@ package process
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -349,4 +350,16 @@ func EnsureProcessesByName(processName string, processArgs string) bool {
 		}
 	}
 	return ensured
+}
+
+type ConditionalWriter struct {
+	writer  io.Writer
+	enabled bool
+}
+
+func (s *ConditionalWriter) Write(p []byte) (int, error) {
+	if s.enabled {
+		return s.writer.Write(p)
+	}
+	return len(p), nil
 }

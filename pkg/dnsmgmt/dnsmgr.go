@@ -28,6 +28,7 @@ import (
 )
 
 const LocalTestZone = "localtest.net"
+const Localhost = "localhost"
 
 const vaultDnsProviderPath = "secret/data/accounts/dnsprovidersbyzone"
 const vaultProviderTypeKey = "dnsprovidertype"
@@ -109,7 +110,7 @@ func (s *DNSMgr) getProvider(ctx context.Context, fqdn string) (dnsapi.Provider,
 		return provider, zone, nil
 	}
 
-	if zone == LocalTestZone || zone == "" {
+	if zone == LocalTestZone || zone == "" || zone == Localhost {
 		// special case for local testing
 		return &TestProvider{}, zone, nil
 	}

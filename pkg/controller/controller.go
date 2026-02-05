@@ -88,6 +88,7 @@ var appDNSRoot = flag.String("appDNSRoot", "appdnsroot.net", "App domain name ro
 var requireNotifyAccessKey = flag.Bool("requireNotifyAccessKey", false, "Require AccessKey authentication on notify API")
 var dnsZone = flag.String("dnsZone", "", "comma separated list of allowed dns zones for DNS update requests")
 var platformServiceAddrs arrayFlags
+var crmOnEdgeSupport = flag.Bool("crmOnEdgeSupport", true, "Enable CRM on Edge support")
 
 func init() {
 	// CCRM address, if CCRM gets split into Cloudlet/Cluster/AppInst
@@ -417,35 +418,37 @@ func startServices() error {
 	)
 	services.notifyServerMgr = true
 
-	// VaultPublicCertClient implements GetPublicCertApi
-	// Allows controller to get public certs from vault
-	var getPublicCertApi cloudcommon.GetPublicCertApi
-	if tls.IsTestTls() || *testMode {
-		getPublicCertApi = &cloudcommon.TestPublicCertApi{}
-	} else if nodeMgr.InternalPki.UseVaultPki {
-		getPublicCertApi = &cloudcommon.VaultPublicCertApi{
-			VaultConfig: vaultConfig,
+	if *crmOnEdgeSupport {
+		// VaultPublicCertClient implements GetPublicCertApi
+		// Allows controller to get public certs from vault
+		var getPublicCertApi cloudcommon.GetPublicCertApi
+		if tls.IsTestTls() || *testMode {
+			getPublicCertApi = &cloudcommon.TestPublicCertApi{}
+		} else if nodeMgr.InternalPki.UseVaultPki {
+			getPublicCertApi = &cloudcommon.VaultPublicCertApi{
+				VaultConfig: vaultConfig,
+			}
 		}
-	}
-	publicCertManager, err := svcnode.NewPublicCertManager(nodeMgr.CommonNamePrefix(), nodeMgr.ValidDomains, getPublicCertApi, "", "")
-	if err != nil {
-		span.Finish()
-		log.FatalLog("unable to get public cert manager", "err", err)
-	}
-	services.publicCertManager = publicCertManager
-	accessServerTlsConfig, err := services.publicCertManager.GetServerTlsConfig(ctx)
-	if err != nil {
-		return err
-	}
-	services.publicCertManager.StartRefresh()
-	// Start access server
-	log.SpanLog(ctx, log.DebugLevelApi, "AccessKeyServer listen", "addr", *accessApiAddr)
-	err = services.accessKeyGrpcServer.Start(*accessApiAddr, allApis.cloudletApi.accessKeyServer, accessServerTlsConfig, func(accessServer *grpc.Server) {
-		edgeproto.RegisterCloudletAccessApiServer(accessServer, allApis.cloudletApi)
-		edgeproto.RegisterCloudletAccessKeyApiServer(accessServer, allApis.cloudletApi)
-	})
-	if err != nil {
-		return err
+		publicCertManager, err := svcnode.NewPublicCertManager(nodeMgr.CommonNamePrefix(), nodeMgr.ValidDomains, getPublicCertApi, "", "")
+		if err != nil {
+			span.Finish()
+			log.FatalLog("unable to get public cert manager", "err", err)
+		}
+		services.publicCertManager = publicCertManager
+		accessServerTlsConfig, err := services.publicCertManager.GetServerTlsConfig(ctx)
+		if err != nil {
+			return err
+		}
+		services.publicCertManager.StartRefresh()
+		// Start access server
+		log.SpanLog(ctx, log.DebugLevelApi, "AccessKeyServer listen", "addr", *accessApiAddr)
+		err = services.accessKeyGrpcServer.Start(*accessApiAddr, allApis.cloudletApi.accessKeyServer, accessServerTlsConfig, func(accessServer *grpc.Server) {
+			edgeproto.RegisterCloudletAccessApiServer(accessServer, allApis.cloudletApi)
+			edgeproto.RegisterCloudletAccessKeyApiServer(accessServer, allApis.cloudletApi)
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	// External API (for clients or MC).

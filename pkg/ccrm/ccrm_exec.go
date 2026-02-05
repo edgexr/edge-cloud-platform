@@ -40,7 +40,7 @@ func (s *CCRMHandler) ProcessExecRequest(ctx context.Context, in *edgeproto.Clou
 	go func() {
 		cspan := log.StartSpan(log.DebugLevelApi, "process exec req", opentracing.ChildOf(log.SpanFromContext(ctx).Context()))
 		defer cspan.Finish()
-		err := s.crmHandler.ProcessExecReq(ctx, platform, in.ExecReq, func(reply *edgeproto.ExecRequest) {
+		err := s.crmHandler.ProcessExecReq(ctx, platform, in.ExecReq, s.flags.EdgeTurnInternalAddr, func(reply *edgeproto.ExecRequest) {
 			resp <- reply
 		})
 		if err != nil {

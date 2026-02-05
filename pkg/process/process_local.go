@@ -33,16 +33,22 @@ import (
 func StartLocal(name, bin string, args, envs []string, logfile string) (*exec.Cmd, error) {
 	log.Printf("StartLocal:\n%s %s\n", bin, strings.Join(args, " "))
 	cmd := exec.Command(bin, args...)
+
 	if len(envs) > 0 {
 		log.Printf("%s env: %v\n", name, envs)
 		// Append to the current process's env
 		cmd.Env = os.Environ()
 		cmd.Env = append(cmd.Env, envs...)
 	}
+
+	errCapture := bytes.Buffer{}
+	condWriter := &ConditionalWriter{
+		writer:  &errCapture,
+		enabled: true,
+	}
+	var writer io.Writer
 	if logfile == "" {
-		writer := NewColorWriter(name)
-		cmd.Stdout = writer
-		cmd.Stderr = writer
+		writer = NewColorWriter(name)
 	} else {
 		fmt.Printf("Creating logfile %v\n", logfile)
 		// open the out file for writing
@@ -51,14 +57,17 @@ func StartLocal(name, bin string, args, envs []string, logfile string) (*exec.Cm
 			fmt.Printf("ERROR Creating logfile %v -- %v\n", logfile, err)
 			panic(err)
 		}
-		cmd.Stdout = outfile
-		cmd.Stderr = outfile
+		writer = outfile
 	}
+	mwriter := io.MultiWriter(condWriter, writer)
+	cmd.Stdout = mwriter
+	cmd.Stderr = mwriter
 
 	err := cmd.Start()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to start process %s, %v", errCapture.String(), err)
 	}
+	condWriter.enabled = false
 	return cmd, nil
 }
 
