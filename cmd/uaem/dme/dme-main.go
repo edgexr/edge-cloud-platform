@@ -77,6 +77,7 @@ var solib = flag.String("plugin", "", "plugin file")
 var eesolib = flag.String("eeplugin", "", "plugin file") // for edge events plugin
 var testMode = flag.Bool("testMode", false, "Run controller in test mode")
 var cloudletDme = flag.Bool("cloudletDme", false, "this is a cloudlet DME deployed on cloudlet infrastructure and uses the crm access key")
+var crmOnEdgeSupport = flag.Bool("crmOnEdgeSupport", true, "Enable CRM on Edge support")
 
 // TODO: carrier arg is redundant with Organization in MyCloudletKey, and
 // should be replaced by it, but requires dealing with carrier-specific

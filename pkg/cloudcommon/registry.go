@@ -16,6 +16,7 @@ package cloudcommon
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -473,6 +474,14 @@ func SendHTTPReqAuth(ctx context.Context, method, regUrl string, auth *RegistryA
 	if os.Getenv("E2ETEST_SKIPREGISTRY") != "" {
 		dialTimeout = 10 * time.Millisecond
 	}
+	skipVerify := false
+	if u, err := url.Parse(regUrl); err == nil {
+		host := strings.Split(u.Host, ":")[0]
+		if host == "localhost" || strings.HasSuffix(host, ".localhost") {
+			log.SpanLog(ctx, log.DebugLevelApi, "Skipping TLS verification for localhost registry", "regUrl", regUrl)
+			skipVerify = true
+		}
+	}
 	client := &http.Client{
 		Transport: &http.Transport{
 			// Connection Timeout
@@ -487,6 +496,9 @@ func SendHTTPReqAuth(ctx context.Context, method, regUrl string, auth *RegistryA
 			ResponseHeaderTimeout: respHeaderTimeout,
 			// use proxy if env vars set
 			Proxy: http.ProxyFromEnvironment,
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: skipVerify,
+			},
 		},
 		// Prevent endless redirects
 		Timeout: 10 * time.Minute,

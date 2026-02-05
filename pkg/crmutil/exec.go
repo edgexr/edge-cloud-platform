@@ -35,7 +35,7 @@ import (
 	"github.com/xtaci/smux"
 )
 
-func (cd *CRMHandler) ProcessExecReq(ctx context.Context, pf platform.Platform, req *edgeproto.ExecRequest, sendReply func(msg *edgeproto.ExecRequest)) (reterr error) {
+func (cd *CRMHandler) ProcessExecReq(ctx context.Context, pf platform.Platform, req *edgeproto.ExecRequest, edgeTurnInternalAddr string, sendReply func(msg *edgeproto.ExecRequest)) (reterr error) {
 	var err error
 	log.SpanLog(ctx, log.DebugLevelApi, "ProcessExecReq", "req", req)
 
@@ -152,6 +152,12 @@ func (cd *CRMHandler) ProcessExecReq(ctx context.Context, pf platform.Platform, 
 	if req.EdgeTurnProxyAddr == "" {
 		return fmt.Errorf("no edgeturn proxy address specified")
 	}
+	if edgeTurnInternalAddr == "" {
+		// for CCRM to edgeturn, it can go via internal
+		// kubernetes connection, without needing to go
+		// out to the ingress controller.
+		edgeTurnInternalAddr = req.EdgeTurnAddr
+	}
 
 	tlsConfig, err := cd.NodeMgr.InternalPki.GetClientTlsConfig(ctx,
 		cd.NodeMgr.CommonNamePrefix(),
@@ -160,7 +166,7 @@ func (cd *CRMHandler) ProcessExecReq(ctx context.Context, pf platform.Platform, 
 	if err != nil {
 		return err
 	}
-	turnConn, err := tls.Dial("tcp", req.EdgeTurnAddr, tlsConfig)
+	turnConn, err := tls.Dial("tcp", edgeTurnInternalAddr, tlsConfig)
 	if err != nil {
 		return fmt.Errorf("failed to connect to edgeturn server: %v", err)
 	}

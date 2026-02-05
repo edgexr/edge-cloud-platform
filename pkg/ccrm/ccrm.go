@@ -80,6 +80,8 @@ type Flags struct {
 	FederationExternalAddr        string
 	DebugLevels                   string
 	TestMode                      bool
+	CRMOnEdgeSupport              bool
+	EdgeTurnInternalAddr          string
 }
 
 // NewCCRM creates a new CCRM. The nodeType identifies the service
@@ -140,6 +142,7 @@ func (s *Flags) Init() {
 	flag.StringVar(&s.AnsibleListenAddr, "ansibleListenAddr", "127.0.0.1:48880", "Address and port to serve ansible files from")
 	flag.StringVar(&s.AnsiblePublicAddr, "ansiblePublicAddr", "http://127.0.0.1:48880", "Scheme, address, and port to pass to the CRM to reach the ansible server externally")
 	flag.StringVar(&s.FederationExternalAddr, "federationExternalAddr", "", "Federation EWBI API endpoint for clients")
+	flag.StringVar(&s.EdgeTurnInternalAddr, "edgeTurnInternalAddr", "", "EdgeTurn internal address")
 
 	flag.StringVar(&s.DebugLevels, "d", "", fmt.Sprintf("comma separated list of %v", log.DebugLevelStrings))
 	flag.BoolVar(&s.TestMode, "testMode", false, "Run CCRM in test mode")
