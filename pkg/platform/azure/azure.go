@@ -16,6 +16,7 @@ package azure
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -327,4 +328,8 @@ func (a *AzurePlatform) NameSanitize(clusterName string) string {
 
 func (a *AzurePlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
+}
+
+func (a *AzurePlatform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
 }

@@ -30,12 +30,18 @@ const ImageURL = "ImageURL"
 const ImageFormat = "ImageFormat"
 const ImageChecksum = "ImageChecksum"
 const ImageChecksumType = "ImageChecksumType"
+const ConsolePassword = "ConsolePassword"
+const KubeletFeatureGates = "FeatureGates"
 
 var AccessVarProps = map[string]*edgeproto.PropertyInfo{
 	cloudcommon.Kubeconfig: {
 		Name:        "Kubernetes cluster config file data",
 		Description: "Contents of Kubernetes cluster config file used with kubectl to access the cluster running the Cluster API operator and provider metal3 operator, may be scoped to the namespace that contains the BareMetalHosts",
 		Mandatory:   true,
+	},
+	ConsolePassword: {
+		Name:        "Console Password",
+		Description: "Password for console access to the bare metal machine once provisioned",
 	},
 }
 
@@ -98,6 +104,10 @@ var Props = map[string]*edgeproto.PropertyInfo{
 		Description: "Format of the OS image, e.g. qcow2, raw; defaults to qcow2",
 		Value:       "qcow2",
 		Mandatory:   false,
+	},
+	KubeletFeatureGates: {
+		Name:        "Kubelet Feature Gates",
+		Description: "List of Kubelet feature gates, format is a comma separated list of feature=value pairs, e.g. \"KubeletCrashLoopBackOffMax=true,KubeletEnsureSecretPulledImages=true\"",
 	},
 }
 

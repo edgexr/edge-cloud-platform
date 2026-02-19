@@ -62,6 +62,8 @@ type ManagedK8sProvider interface {
 	RegisterCluster(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) (map[string]string, error)
 	// Get the load balancer API if implemented, return nil if not.
 	GetLoadBalancerAPI() platform.LoadBalancerApi
+	// Get Bare Metal Hosts
+	GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error)
 }
 
 const KconfPerms fs.FileMode = 0644
@@ -213,4 +215,8 @@ func (m *ManagedK8sPlatform) RefreshCerts(ctx context.Context, certsCache *certs
 		return fmt.Errorf("failed to refresh some cluster certificates: %s", strings.Join(errs, ", "))
 	}
 	return nil
+}
+
+func (m *ManagedK8sPlatform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return m.Provider.GetBareMetalHosts(ctx)
 }

@@ -772,3 +772,7 @@ func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgepr
 	}
 	return nil, errors.New("cloudlet managed cluster not found")
 }
+
+func (s *Platform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
+}

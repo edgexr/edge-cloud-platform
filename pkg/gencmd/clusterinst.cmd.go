@@ -736,6 +736,7 @@ var ClusterInstOptionalArgs = []string{
 	"cloudletmanagedclusterid",
 	"cloudletmanagedclustername",
 	"singlekubernetesnamespace",
+	"skipcrmcleanupontimeout",
 	"tags",
 }
 var ClusterInstAliasArgs = []string{
@@ -763,7 +764,7 @@ var ClusterInstComments = map[string]string{
 	"auto":                              "Auto is set to true when automatically created by back-end (internal use only)",
 	"state":                             "State of the cluster instance, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                            "Any errors trying to create, update, or delete the ClusterInst on the Cloudlet., specify errors:empty=true to clear",
-	"crmoverride":                       "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
+	"crmoverride":                       "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState, IgnoreCrmTimeoutError",
 	"ipaccess":                          "IP access type (RootLB Type), one of Unknown, Dedicated, Shared",
 	"allocatedip":                       "Allocated IP for dedicated access",
 	"nodeflavor":                        "(_deprecated_) Replaced by NodePools.NodeResources.InfraNodeFlavor. Cloudlet specific node flavor.",
@@ -843,6 +844,7 @@ var ClusterInstComments = map[string]string{
 	"cloudletmanagedclusterid":                     "Cloudlet managed cluster ID, if cluster based on cloudlet managed cluster",
 	"cloudletmanagedclustername":                   "Cloudlet managed cluster name, if cluster based on cloudlet managed cluster",
 	"singlekubernetesnamespace":                    "Restricted namespace for the default cluster on a single kubernetes cluster cloudlet",
+	"skipcrmcleanupontimeout":                      "Prevents cleanup of resources on timeout within CRM, used for diagnostic purposes",
 	"tags":                                         "Vendor-specific data, specify tags:empty=true to clear",
 }
 var ClusterInstSpecialArgs = map[string]string{
@@ -1106,6 +1108,7 @@ var UpdateClusterInstOptionalArgs = []string{
 	"cloudletmanagedclusterid",
 	"cloudletmanagedclustername",
 	"singlekubernetesnamespace",
+	"skipcrmcleanupontimeout",
 	"tags",
 }
 var ShowClusterResourceUsageRequiredArgs = []string{}
@@ -1164,5 +1167,6 @@ var ShowClusterResourceUsageOptionalArgs = []string{
 	"cloudletmanagedclusterid",
 	"cloudletmanagedclustername",
 	"singlekubernetesnamespace",
+	"skipcrmcleanupontimeout",
 	"tags",
 }

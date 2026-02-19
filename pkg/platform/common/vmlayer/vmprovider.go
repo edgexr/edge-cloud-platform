@@ -16,6 +16,7 @@ package vmlayer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -710,4 +711,8 @@ func (v *VMPlatform) GetClusterInfraResources(ctx context.Context, cluster *edge
 
 func (v *VMPlatform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
 	return nil
+}
+
+func (v *VMPlatform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
 }

@@ -154,6 +154,8 @@ enum CRMOverride {
   IGNORE_TRANSIENT_STATE = 3;
   // Ignore CRM and Transient State
   IGNORE_CRM_AND_TRANSIENT_STATE = 4;
+  // Ignore Timeout error
+  IGNORE_CRM_TIMEOUT_ERROR = 5;
 }
 
 // Status Information

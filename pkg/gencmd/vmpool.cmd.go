@@ -584,7 +584,7 @@ var VMPoolComments = map[string]string{
 	"vms:#.flavor.propmap":        "Infra flavor Properties, if any, specify vms:#.flavor.propmap:empty=true to clear",
 	"state":                       "Current state of the VM pool, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                      "Any errors trying to add/remove VM to/from VM Pool, specify errors:empty=true to clear",
-	"crmoverride":                 "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
+	"crmoverride":                 "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState, IgnoreCrmTimeoutError",
 	"deleteprepare":               "Preparing to be deleted",
 }
 var VMPoolSpecialArgs = map[string]string{
@@ -627,7 +627,7 @@ var VMPoolMemberComments = map[string]string{
 	"vm.flavor.gpus:#.memory":  "Memory in GB",
 	"vm.flavor.gpus:#.inuse":   "Read-only indication of how many GPUs are in use by tenants for usage APIs",
 	"vm.flavor.propmap":        "Infra flavor Properties, if any",
-	"crmoverride":              "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
+	"crmoverride":              "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState, IgnoreCrmTimeoutError",
 }
 var VMPoolMemberSpecialArgs = map[string]string{
 	"vm.flavor.propmap": "StringToString",

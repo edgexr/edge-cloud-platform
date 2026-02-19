@@ -1500,6 +1500,63 @@ func GetCloudletResourceQuotaPropss(c *cli.Command, data []edgeproto.CloudletRes
 	}
 }
 
+var RefreshCloudletResourcesCmd = &cli.Command{
+	Use:          "RefreshCloudletResources",
+	RequiredArgs: strings.Join(RefreshCloudletResourcesRequiredArgs, " "),
+	OptionalArgs: strings.Join(RefreshCloudletResourcesOptionalArgs, " "),
+	AliasArgs:    strings.Join(CloudletAliasArgs, " "),
+	SpecialArgs:  &CloudletSpecialArgs,
+	Comments:     CloudletComments,
+	ReqData:      &edgeproto.Cloudlet{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runRefreshCloudletResources,
+}
+
+func runRefreshCloudletResources(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.Cloudlet)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return RefreshCloudletResources(c, obj)
+}
+
+func RefreshCloudletResources(c *cli.Command, in *edgeproto.Cloudlet) error {
+	if CloudletApiCmd == nil {
+		return fmt.Errorf("CloudletApi client not initialized")
+	}
+	ctx := context.Background()
+	obj, err := CloudletApiCmd.RefreshCloudletResources(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("RefreshCloudletResources failed: %s", errstr)
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func RefreshCloudletResourcess(c *cli.Command, data []edgeproto.Cloudlet, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("RefreshCloudletResources %v\n", data[ii])
+		myerr := RefreshCloudletResources(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var GetCloudletResourceUsageCmd = &cli.Command{
 	Use:          "GetCloudletResourceUsage",
 	RequiredArgs: strings.Join(GetCloudletResourceUsageRequiredArgs, " "),
@@ -2497,6 +2554,7 @@ var CloudletApiCmds = []*cobra.Command{
 	GetCloudletManifestCmd.GenCmd(),
 	GetCloudletPropsCmd.GenCmd(),
 	GetCloudletResourceQuotaPropsCmd.GenCmd(),
+	RefreshCloudletResourcesCmd.GenCmd(),
 	GetCloudletResourceUsageCmd.GenCmd(),
 	ShowCloudletResourceUsageCmd.GenCmd(),
 	ShowCloudletGPUUsageCmd.GenCmd(),
@@ -3188,6 +3246,7 @@ var PlatformFeaturesOptionalArgs = []string{
 	"usesrootlb",
 	"supportscloudletmanagedclusters",
 	"resourcecalcbyflavorcounts",
+	"supportsbaremetal",
 	"resourcequotaproperties:#.name",
 	"resourcequotaproperties:#.value",
 	"resourcequotaproperties:#.inframaxvalue",
@@ -3234,6 +3293,7 @@ var PlatformFeaturesComments = map[string]string{
 	"usesrootlb":                               "Platform users a shared root load balancer",
 	"supportscloudletmanagedclusters":          "Platform supports cloudlet managed clusters",
 	"resourcecalcbyflavorcounts":               "Resource calculation done in terms of flavor counts instead of individual vcpus, ram, etc",
+	"supportsbaremetal":                        "Platform supports bare metal",
 	"resourcequotaproperties:#.name":           "Resource name",
 	"resourcequotaproperties:#.value":          "Resource value",
 	"resourcequotaproperties:#.inframaxvalue":  "Resource infra max value",
@@ -3544,7 +3604,7 @@ var CloudletComments = map[string]string{
 	"timelimits.deleteappinsttimeout":        "Override default max time to delete an app instance (duration)",
 	"errors":                                 "Any errors trying to create, update, or delete the Cloudlet., specify errors:empty=true to clear",
 	"state":                                  "Current state of the crm, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
-	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
+	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState, IgnoreCrmTimeoutError",
 	"deploymentlocal":                        "Deploy cloudlet services locally for testing purposes",
 	"platformtype":                           "Platform type",
 	"notifysrvaddr":                          "Address for the CRM notify listener to run on",
@@ -4501,6 +4561,80 @@ var GetCloudletResourceQuotaPropsRequiredArgs = []string{
 	"platformtype",
 }
 var GetCloudletResourceQuotaPropsOptionalArgs = []string{}
+var RefreshCloudletResourcesRequiredArgs = []string{}
+var RefreshCloudletResourcesOptionalArgs = []string{
+	"cloudletorg",
+	"cloudlet",
+	"federatedorg",
+	"location.latitude",
+	"location.longitude",
+	"location.altitude",
+	"zone",
+	"ipsupport",
+	"staticips",
+	"numdynamicips",
+	"timelimits.createclusterinsttimeout",
+	"timelimits.updateclusterinsttimeout",
+	"timelimits.deleteclusterinsttimeout",
+	"timelimits.createappinsttimeout",
+	"timelimits.updateappinsttimeout",
+	"timelimits.deleteappinsttimeout",
+	"crmoverride",
+	"deploymentlocal",
+	"platformtype",
+	"notifysrvaddr",
+	"flavor.name",
+	"physicalname",
+	"envvar",
+	"containerversion",
+	"accessvars",
+	"vmimageversion",
+	"deployment",
+	"infraapiaccess",
+	"infraconfig.externalnetworkname",
+	"infraconfig.flavorname",
+	"maintenancestate",
+	"overridepolicycontainerversion",
+	"vmpool",
+	"trustpolicy",
+	"resourcequotas:#.name",
+	"resourcequotas:#.value",
+	"resourcequotas:#.alertthreshold",
+	"resourcequotas:#.resourcetype",
+	"defaultresourcealertthreshold",
+	"kafkacluster",
+	"kafkauser",
+	"kafkapassword",
+	"gpuconfig.driver.name",
+	"gpuconfig.driver.organization",
+	"gpuconfig.properties",
+	"gpuconfig.licenseconfig",
+	"enabledefaultserverlesscluster",
+	"allianceorgs",
+	"singlekubernetesclusterowner",
+	"singlekubernetesnamespace",
+	"platformhighavailability",
+	"secondarynotifysrvaddr",
+	"federationconfig.federationcontextid",
+	"federationconfig.partnerfederationaddr",
+	"federationconfig.federationdbid",
+	"federationconfig.federationname",
+	"infraflavors:#.name",
+	"infraflavors:#.vcpus",
+	"infraflavors:#.ram",
+	"infraflavors:#.disk",
+	"infraflavors:#.gpus:#.modelid",
+	"infraflavors:#.gpus:#.count",
+	"infraflavors:#.gpus:#.vendor",
+	"infraflavors:#.gpus:#.memory",
+	"infraflavors:#.gpus:#.inuse",
+	"infraflavors:#.propmap",
+	"edgeboxonly",
+	"crmonedge",
+	"objid",
+	"annotations",
+	"dbmodelid",
+}
 var GetCloudletResourceUsageRequiredArgs = []string{
 	"cloudletorg",
 	"cloudlet",

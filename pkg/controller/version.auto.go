@@ -35,6 +35,7 @@ var VersionHash_UpgradeFuncs = []VersionUpgrade{
 	{59, "abec45b13db5cd29e3bcf63d3b80be29", nil, ""},
 	{60, "2d0b51b0cb6eaff42225cd1795e168e7", nil, ""},
 	{61, "a757190c1d56f9c8cd3ad43f02d6aa56", nil, ""},
+	{62, "6851436bc9cb6e0e5180d600dd9a0187", nil, ""},
 }
 
 // Auto-generated code: DO NOT EDIT

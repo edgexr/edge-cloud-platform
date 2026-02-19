@@ -1006,7 +1006,7 @@ var AppInstComments = map[string]string{
 	"cloudletflavor":                         "(_deprecated_) Cloudlet-specific flavor instead of regional flavor, replaced by NodeResources.InfraNodeFlavor.",
 	"state":                                  "Current state of the AppInst on the Cloudlet, one of TrackedStateUnknown, NotPresent, CreateRequested, Creating, CreateError, Ready, UpdateRequested, Updating, UpdateError, DeleteRequested, Deleting, DeleteError, DeletePrepare, CrmInitok, CreatingDependencies, DeleteDone",
 	"errors":                                 "Any errors trying to create, update, or delete the AppInst on the Cloudlet, specify errors:empty=true to clear",
-	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState",
+	"crmoverride":                            "Override actions to CRM, one of NoOverride, IgnoreCrmErrors, IgnoreCrm, IgnoreTransientState, IgnoreCrmAndTransientState, IgnoreCrmTimeoutError",
 	"runtimeinfo.containerids":               "List of container names, specify runtimeinfo.containerids:empty=true to clear",
 	"createdat":                              "Created at time",
 	"autoclusteripaccess":                    "(Deprecated) IpAccess for auto-clusters. Ignored otherwise., one of Unknown, Dedicated, Shared",

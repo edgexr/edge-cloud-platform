@@ -1020,6 +1020,9 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		api := edgeproto.NewClusterPlatformAPIClient(conn)
 		var outStream edgeproto.ClusterPlatformAPI_ApplyClusterInstClient
 		in.Fields = edgeproto.ClusterInstAllFields
+		if cctx.Override == edgeproto.CRMOverride_IGNORE_CRM_TIMEOUT_ERROR {
+			in.SkipCrmCleanupOnTimeout = true
+		}
 		outStream, err = api.ApplyClusterInst(reqCtx, in)
 		if err == nil {
 			err = cloudcommon.StreamRecvWithStatus(ctx, outStream, cb.Send, func(info *edgeproto.ClusterInstInfo) error {
@@ -1038,6 +1041,12 @@ func (s *ClusterInstApi) createClusterInstInternal(cctx *CallContext, in *edgepr
 		cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Create ClusterInst ignoring CRM failure: %s", err.Error())})
 		s.ReplaceErrorState(ctx, in, edgeproto.TrackedState_READY)
 		cb.Send(&edgeproto.Result{Message: "Created ClusterInst successfully"})
+		err = nil
+	}
+	if err != nil && cctx.Override == edgeproto.CRMOverride_IGNORE_CRM_TIMEOUT_ERROR && strings.Contains(strings.ToLower(err.Error()), "deadline exceeded") {
+		cb.Send(&edgeproto.Result{Message: fmt.Sprintf("Create ClusterInst ignoring CRM timeout error: %s", err.Error())})
+		s.ReplaceErrorState(ctx, in, edgeproto.TrackedState_READY)
+		cb.Send(&edgeproto.Result{Message: "Created ClusterInst may not be ready"})
 		err = nil
 	}
 	if err != nil {

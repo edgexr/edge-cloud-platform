@@ -270,3 +270,7 @@ func (s *Platform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto
 func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
 	return nil, errors.New("not supported")
 }
+
+func (s *Platform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
+}

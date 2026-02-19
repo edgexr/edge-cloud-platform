@@ -28,6 +28,7 @@ import "appinst.proto";
 import "trustpolicyexception.proto";
 import "infraresources.proto";
 import "gogoproto/gogo.proto";
+import "baremetalhost.proto";
 
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_unkeyed_all) = false;
@@ -89,8 +90,9 @@ service CloudletPlatformAPI {
     rpc NameSanitize(NameSanitizeReq) returns(Result) {}
     rpc ApplyCloudlet(Cloudlet) returns (stream CloudletInfo) {}
     rpc RefreshCerts(Cloudlet) returns (Result) {}
-    rpc GetCloudletResources(Cloudlet) returns (InfraResourceMap) {}
+    rpc GetCloudletResources(Cloudlet) returns (CloudletInfo) {}
     rpc GetCloudletManagedClusters(CloudletManagedCluster) returns (stream CloudletManagedCluster) {}
+    rpc GetBareMetalHosts(CloudletKey) returns (stream BareMetalHost) {}
     option (protogen.internal_api) = true;
 }
 

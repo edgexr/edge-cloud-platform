@@ -209,6 +209,8 @@ message PlatformFeatures {
   bool supports_cloudlet_managed_clusters = 36;
   // Resource calculation done in terms of flavor counts instead of individual vcpus, ram, etc
   bool resource_calc_by_flavor_counts = 37;
+  // Platform supports bare metal
+  bool supports_bare_metal = 38;
   // Platform access vars information
   map<string, PropertyInfo> access_vars = 22;
   // Platform properties
@@ -809,6 +811,15 @@ service CloudletApi {
     option (protogen.mc2_api) = "ResourceCloudletAnalytics,ActionView,skipenforce";
     option (protogen.method_noconfig) = "Properties";
     option (protogen.method_also_required) = "PlatformType";
+  }
+  // Refresh resources present on cloudlet as reported by cloudlet platform infrastructure.
+  rpc RefreshCloudletResources(Cloudlet) returns (Result) {
+    option (google.api.http) = {
+      post: "/refresh/cloudlet/resources"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceCloudlets,ActionManage,Key.Organization";
+    option (protogen.method_not_required) = "Key";
   }
   // Get Cloudlet resource information. Shows cloudlet resources used and their limits
   rpc GetCloudletResourceUsage(CloudletResourceUsage) returns (CloudletResourceUsage) {

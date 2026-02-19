@@ -252,3 +252,7 @@ func (m *K8sSite) GetClusterCredentials(ctx context.Context, clusterInst *edgepr
 	}
 	return []byte(kubeconfig), nil
 }
+
+func (s *K8sSite) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
+}

@@ -1424,6 +1424,18 @@ func (r *Run) CloudletApi(data *[]edgeproto.Cloudlet, dataMap interface{}, dataO
 				}
 				*outp = append(*outp, out...)
 			}
+		case "refreshcloudletresources":
+			out, err := r.client.RefreshCloudletResources(r.ctx, obj)
+			if err != nil {
+				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
+				r.logErr(fmt.Sprintf("CloudletApi[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.Result)
+				if !ok {
+					panic(fmt.Sprintf("RunCloudletApi expected dataOut type *[]edgeproto.Result, but was %T", dataOut))
+				}
+				*outp = append(*outp, *out)
+			}
 		case "showcloudletresourceusage":
 			out, err := r.client.ShowCloudletResourceUsage(r.ctx, obj)
 			if err != nil {
@@ -1786,6 +1798,13 @@ func (s *DummyServer) ShowCloudlet(in *edgeproto.Cloudlet, server edgeproto.Clou
 		return err
 	})
 	return err
+}
+
+func (s *DummyServer) RefreshCloudletResources(ctx context.Context, in *edgeproto.Cloudlet) (*edgeproto.Result, error) {
+	if s.CudNoop {
+		return &edgeproto.Result{}, nil
+	}
+	return &edgeproto.Result{}, nil
 }
 
 func (s *DummyServer) ShowCloudletResourceUsage(in *edgeproto.Cloudlet, server edgeproto.CloudletApi_ShowCloudletResourceUsageServer) error {
@@ -2354,6 +2373,18 @@ func (s *CliClient) GetCloudletResourceQuotaProps(ctx context.Context, in *edgep
 	return &out, err
 }
 
+func (s *ApiClient) RefreshCloudletResources(ctx context.Context, in *edgeproto.Cloudlet) (*edgeproto.Result, error) {
+	api := edgeproto.NewCloudletApiClient(s.Conn)
+	return api.RefreshCloudletResources(ctx, in)
+}
+
+func (s *CliClient) RefreshCloudletResources(ctx context.Context, in *edgeproto.Cloudlet) (*edgeproto.Result, error) {
+	out := edgeproto.Result{}
+	args := append(s.BaseArgs, "controller", "RefreshCloudletResources")
+	err := wrapper.RunEdgectlObjs(args, in, &out, s.RunOps...)
+	return &out, err
+}
+
 func (s *ApiClient) GetCloudletResourceUsage(ctx context.Context, in *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error) {
 	api := edgeproto.NewCloudletApiClient(s.Conn)
 	return api.GetCloudletResourceUsage(ctx, in)
@@ -2642,6 +2673,7 @@ type CloudletApiClient interface {
 	GetCloudletManifest(ctx context.Context, in *edgeproto.CloudletKey) (*edgeproto.CloudletManifest, error)
 	GetCloudletProps(ctx context.Context, in *edgeproto.CloudletProps) (*edgeproto.CloudletProps, error)
 	GetCloudletResourceQuotaProps(ctx context.Context, in *edgeproto.CloudletResourceQuotaProps) (*edgeproto.CloudletResourceQuotaProps, error)
+	RefreshCloudletResources(ctx context.Context, in *edgeproto.Cloudlet) (*edgeproto.Result, error)
 	GetCloudletResourceUsage(ctx context.Context, in *edgeproto.CloudletResourceUsage) (*edgeproto.CloudletResourceUsage, error)
 	ShowCloudletResourceUsage(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.CloudletResourceUsage, error)
 	ShowCloudletGPUUsage(ctx context.Context, in *edgeproto.Cloudlet) ([]edgeproto.CloudletGPUUsage, error)

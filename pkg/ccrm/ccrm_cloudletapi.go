@@ -170,8 +170,16 @@ func (s *CCRMHandler) RefreshCerts(ctx context.Context, in *edgeproto.Cloudlet) 
 	return &edgeproto.Result{}, err
 }
 
-func (s *CCRMHandler) GetCloudletResources(ctx context.Context, in *edgeproto.Cloudlet) (*edgeproto.InfraResourceMap, error) {
+func (s *CCRMHandler) GetCloudletResources(ctx context.Context, in *edgeproto.Cloudlet) (*edgeproto.CloudletInfo, error) {
 	pf, err := s.getCRMCloudletPlatform(ctx, &in.Key)
+	if err != nil {
+		return nil, err
+	}
+	info := edgeproto.CloudletInfo{}
+	if !s.caches.CloudletInfoCache.Store.Get(ctx, &in.Key, &info) {
+		info.Key = in.Key
+	}
+	err = pf.GatherCloudletInfo(ctx, &info)
 	if err != nil {
 		return nil, err
 	}
@@ -179,13 +187,12 @@ func (s *CCRMHandler) GetCloudletResources(ctx context.Context, in *edgeproto.Cl
 	if err != nil {
 		return nil, err
 	}
-	res := &edgeproto.InfraResourceMap{
-		InfraResources: make(map[string]edgeproto.InfraResource),
+	info.ResourcesSnapshot = *snapshot
+	info.Fields = []string{
+		edgeproto.CloudletInfoFieldResourcesSnapshot,
+		edgeproto.CloudletInfoFieldFlavors,
 	}
-	for _, infraRes := range snapshot.Info {
-		res.InfraResources[infraRes.Name] = infraRes
-	}
-	return res, nil
+	return &info, nil
 }
 
 func (s *CCRMHandler) GetCloudletManagedClusters(in *edgeproto.CloudletManagedCluster, cb edgeproto.CloudletPlatformAPI_GetCloudletManagedClustersServer) error {
@@ -200,6 +207,25 @@ func (s *CCRMHandler) GetCloudletManagedClusters(in *edgeproto.CloudletManagedCl
 	}
 	for _, cluster := range clusters {
 		err := cb.Send(cluster)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *CCRMHandler) GetBareMetalHosts(in *edgeproto.CloudletKey, cb edgeproto.CloudletPlatformAPI_GetBareMetalHostsServer) error {
+	ctx := cb.Context()
+	pf, err := s.getCRMCloudletPlatform(ctx, in)
+	if err != nil {
+		return err
+	}
+	hosts, err := pf.GetBareMetalHosts(ctx)
+	if err != nil {
+		return err
+	}
+	for _, host := range hosts {
+		err := cb.Send(host)
 		if err != nil {
 			return err
 		}
