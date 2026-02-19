@@ -2607,6 +2607,58 @@ func (s *CloudletApi) GetCloudletResourceQuotaProps(ctx context.Context, in *edg
 	return &props, nil
 }
 
+func (s *CloudletApi) RefreshCloudletResources(ctx context.Context, in *edgeproto.Cloudlet) (*edgeproto.Result, error) {
+	keys := []edgeproto.CloudletKey{}
+	err := s.all.cloudletApi.cache.Show(in, func(obj *edgeproto.Cloudlet) error {
+		keys = append(keys, obj.Key)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("no matching cloudlets found")
+	}
+	failures := []string{}
+	for _, key := range keys {
+		err := s.refreshCloudletResources(ctx, &key)
+		if err != nil {
+			failures = append(failures, fmt.Sprintf("%s: %s", key.GetKeyString(), err.Error()))
+		}
+	}
+	if len(failures) > 0 {
+		return nil, fmt.Errorf("some updates failed: %s", strings.Join(failures, ", "))
+	}
+	return &edgeproto.Result{Message: "cloudlet resources updated"}, err
+}
+
+func (s *CloudletApi) refreshCloudletResources(ctx context.Context, key *edgeproto.CloudletKey) error {
+	cloudlet := edgeproto.Cloudlet{}
+	if !s.all.cloudletApi.cache.Get(key, &cloudlet) {
+		return key.NotFoundError()
+	}
+	// only supports CCRM-based cloudlets
+	if cloudlet.CrmOnEdge {
+		return nil
+	}
+	features := edgeproto.PlatformFeatures{}
+	featuresKey := edgeproto.PlatformFeaturesKey(cloudlet.PlatformType)
+	if !s.all.platformFeaturesApi.cache.Get(&featuresKey, &features) {
+		return fmt.Errorf("platform features %s not found", cloudlet.PlatformType)
+	}
+	conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
+	if err != nil {
+		return err
+	}
+	api := edgeproto.NewCloudletPlatformAPIClient(conn)
+	info, err := api.GetCloudletResources(ctx, &cloudlet)
+	if err != nil {
+		return err
+	}
+	s.all.cloudletInfoApi.UpdateRPC(ctx, info)
+	return nil
+}
+
 func (s *CloudletApi) ShowFlavorsForZone(in *edgeproto.ZoneKey, cb edgeproto.CloudletApi_ShowFlavorsForZoneServer) error {
 	ctx := cb.Context()
 	allMetaFlavors := make(map[edgeproto.FlavorKey]struct{})

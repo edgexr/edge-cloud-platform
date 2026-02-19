@@ -16,6 +16,7 @@ package xind
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -137,4 +138,8 @@ func (s *Xind) NameSanitize(name string) string {
 
 func (s *Xind) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
 	return nil
+}
+
+func (s *Xind) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
 }

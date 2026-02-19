@@ -364,3 +364,7 @@ func (v *AwsEksPlatform) RegisterCluster(ctx context.Context, clusterName string
 func (s *AwsEksPlatform) GetLoadBalancerAPI() platform.LoadBalancerApi {
 	return nil
 }
+
+func (a *AwsEksPlatform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
+}

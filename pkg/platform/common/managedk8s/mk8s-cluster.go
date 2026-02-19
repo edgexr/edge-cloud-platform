@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -66,6 +67,10 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 	}
 	defer func() {
 		if reterr == nil || clusterInst.SkipCrmCleanupOnFailure {
+			return
+		}
+		if reterr != nil && clusterInst.SkipCrmCleanupOnTimeout && (strings.Contains(strings.ToLower(reterr.Error()), "deadline exceeded") || strings.Contains(strings.ToLower(reterr.Error()), "context canceled")) {
+			log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst skipping cleanup on CRM timeout error", "err", reterr)
 			return
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst, "err", reterr)

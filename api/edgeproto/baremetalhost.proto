@@ -1,0 +1,93 @@
+// Copyright 2026 EdgeXR, Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+package edgeproto;
+
+import "google/api/annotations.proto";
+import "tools/protogen/protogen.proto";
+import "cloudlet.proto";
+import "gogoproto/gogo.proto";
+
+option (gogoproto.goproto_unrecognized_all) = false;
+option (gogoproto.goproto_unkeyed_all) = false;
+option (gogoproto.goproto_sizecache_all) = false;
+
+message BareMetalHostKey {
+    // Name of the bare metal host
+    string name = 1 [(protogen.keytag) = "bmhname"];
+    // Name of the organization that this cluster belongs to
+    string organization = 2 [(protogen.keytag) = "bmhorg"];
+    // Cloudlet name to which this machine is associated
+    string cloudlet = 3 [(protogen.keytag) = "bmhcloudlet"];
+    option (protogen.generate_matches) = true;
+    option (protogen.obj_key) = true;
+    option (gogoproto.gostring) = true;
+}
+
+message BareMetalHost {
+    // Fields are used for the Update API to specify which fields to apply
+    repeated string fields = 1;
+    // Unique key
+    // required: true
+    BareMetalHostKey key = 2 [(gogoproto.nullable) = false];
+    // machine status
+    string status = 3;
+    // boot mac address
+    string boot_mac_address = 4;
+    // boot mode
+    string boot_mode = 5;
+    // BMC address
+    string bmc_address = 6;
+    // BMC username
+    string bmc_username = 7;
+    // BMC password
+    string bmc_password = 8;
+    // BMC disable certificate verification
+    bool bmc_disable_cert_verification = 9;
+    // hardware profile
+    string hardware_profile = 10;
+    // labels
+    map<string, string> labels = 11 [(gogoproto.nullable) = false];
+    // resources
+    FlavorInfo resources = 12;
+    // nics
+    repeated BareMetalHostNic nics = 13;
+    option (protogen.generate_matches) = true;
+    option (protogen.alias) = "name=Key.Name,org=Key.Organization,cloudlet=Key.Cloudlet";
+    option (protogen.noconfig) = "Status,Resources,Nics";
+    option (protogen.generate_cud) = true;
+}
+
+message BareMetalHostNic {
+    // Name of the network interface
+    string name = 1;
+    // MAC address of the network interface
+    string mac_address = 2;
+    // IP address of the network interface
+    string ip = 3;
+    // The vendor and product IDs of the NIC
+    string model = 4;
+}
+
+service BareMetalHostApi {
+    // Show BareMetalHosts
+    rpc ShowBareMetalHost(BareMetalHost) returns (stream BareMetalHost) {
+        option (google.api.http) = {
+            post: "/show/baremetalhost"
+            body: "*"
+        };
+        option (protogen.mc2_api) = "ResourceCloudlets,ActionView,Key.Organization";
+    }
+}

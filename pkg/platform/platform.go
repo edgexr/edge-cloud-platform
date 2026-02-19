@@ -206,6 +206,8 @@ type Platform interface {
 	GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto.CloudletManagedCluster, error)
 	// GetCloudletManagedClusterInfo gets info about a managed cluster
 	GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error)
+	// GetBareMetalHosts gets information about bare metal hosts if the platform is based on bare metal.
+	GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error)
 }
 
 type ClusterSvc interface {

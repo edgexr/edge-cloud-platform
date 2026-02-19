@@ -167,6 +167,8 @@ message ClusterInst {
   string cloudlet_managed_cluster_name = 51 [(protogen.backend) = true];
   // Restricted namespace for the default cluster on a single kubernetes cluster cloudlet
   string single_kubernetes_namespace = 52 [(protogen.backend) = true];
+  // Prevents cleanup of resources on timeout within CRM, used for diagnostic purposes
+  bool skip_crm_cleanup_on_timeout = 53 [(protogen.backend) = true];
   // Vendor-specific data
   map<string, string> tags = 100;
 

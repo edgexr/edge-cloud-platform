@@ -241,21 +241,38 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 	bootComands := []string{
 		"cloud-init-per once ssh-users-ca echo \"TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem\" >> /etc/ssh/sshd_config",
 	}
-	append := true
+	appendValTrue := true
 	trustUserCAKeysFile := bootstrapv1.File{
 		Path:    "/etc/ssh/trusted-user-ca-keys.pem",
 		Content: caCert,
-		Append:  &append,
+		Append:  &appendValTrue,
+	}
+	dhcpAllInterfaces := `network:
+  version: 2
+  ethernets:
+    all-en:
+      match:
+        name: "en*"
+      dhcp4: true
+      dhcp6: true
+      optional: true
+`
+	appendValFalse := false
+	netplan60 := bootstrapv1.File{
+		Path:        "/etc/netplan/99-all-en-dhcp.yaml",
+		Content:     dhcpAllInterfaces,
+		Permissions: "0600",
+		Append:      &appendValFalse,
 	}
 	user := bootstrapv1.User{
 		Name:  "ubuntu",
 		Shell: "/bin/bash",
 		Sudo:  "ALL=(ALL) NOPASSWD:ALL",
 	}
-	// Setting a user password is for debug only
-	passwd, set := s.properties.GetValue(DebugUserPassword)
-	if set && passwd != "" {
-		passwdHash, err := bcrypt.GenerateFromPassword([]byte(passwd), bcrypt.DefaultCost)
+	// configure console password if specified by operator
+	consolePassword := s.accessVars[ConsolePassword]
+	if consolePassword != "" {
+		passwdHash, err := bcrypt.GenerateFromPassword([]byte(consolePassword), bcrypt.DefaultCost)
 		if err != nil {
 			return "", fmt.Errorf("failed to generate password hash, %s", err)
 		}
@@ -263,7 +280,48 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 		user.Passwd = string(passwdHash)
 		user.LockPassword = &lockPassword
 	}
-
+	featureGatesVals, _ := s.properties.GetValue(KubeletFeatureGates)
+	featureGates := map[string]bool{}
+	kubeletExtraArgs := []bootstrapv1.Arg{}
+	if featureGatesVals != "" {
+		parts := strings.SplitSeq(featureGatesVals, ",")
+		for part := range parts {
+			kv := strings.SplitN(part, "=", 2)
+			if len(kv) == 2 {
+				if kv[1] == "true" {
+					featureGates[kv[0]] = true
+				} else {
+					featureGates[kv[0]] = false
+				}
+			}
+		}
+	}
+	// it appears that the patch that clusterapi applies to the
+	// kubelet config adds default values for feature options that
+	// are not enabled by default. This causes kubelet.service to
+	// fail with an invalid kubelet config. To avoid this, enable
+	// the feature gates. This behavior was seen for clusterapi
+	// 1.12.2 using KubeadmBootstrap provider 1.12.2, and
+	// kubeadm/kubelet 1.34.1.
+	if _, ok := featureGates["KubeletCrashLoopBackOffMax"]; !ok {
+		featureGates["KubeletCrashLoopBackOffMax"] = true
+	}
+	if _, ok := featureGates["KubeletEnsureSecretPulledImages"]; !ok {
+		featureGates["KubeletEnsureSecretPulledImages"] = true
+	}
+	fgs := []string{}
+	for fg, val := range featureGates {
+		fgs = append(fgs, fmt.Sprintf("%s=%t", fg, val))
+	}
+	if len(fgs) > 0 {
+		featureGatesVals = strings.Join(fgs, ",")
+		kubeletExtraArgs = append(kubeletExtraArgs,
+			bootstrapv1.Arg{
+				Name:  "feature-gates",
+				Value: &featureGatesVals,
+			},
+		)
+	}
 	for i := range objs {
 		if _, ok := objs[i].(*controlplanev1.KubeadmControlPlane); ok {
 			// replace with KamajiControlPlane
@@ -275,11 +333,21 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 			obj.Spec.ClusterNetwork.APIServerPort = int32(apiPort)
 		} else if obj, ok := objs[i].(*bootstrapv1.KubeadmConfigTemplate); ok {
 			obj.Spec.Template.Spec.BootCommands = bootComands
+			obj.Spec.Template.Spec.PreKubeadmCommands = []string{
+				"netplan apply",
+			}
 			obj.Spec.Template.Spec.Files = []bootstrapv1.File{
 				trustUserCAKeysFile,
+				netplan60,
 			}
 			obj.Spec.Template.Spec.Users = []bootstrapv1.User{
 				user,
+			}
+			if len(featureGates) > 0 {
+				obj.Spec.Template.Spec.ClusterConfiguration.FeatureGates = featureGates
+			}
+			if len(kubeletExtraArgs) > 0 {
+				obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.KubeletExtraArgs = append(obj.Spec.Template.Spec.JoinConfiguration.NodeRegistration.KubeletExtraArgs, kubeletExtraArgs...)
 			}
 		} else if obj, ok := objs[i].(*metal3provv1.Metal3MachineTemplate); ok {
 			if strings.Contains(obj.GetName(), "controlplane") {
@@ -291,6 +359,9 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 			obj.Spec.Template.Spec.HostSelector.MatchLabels = map[string]string{
 				metal3.FlavorLabel: infraFlavor,
 			}
+			//obj.Spec.Template.Spec.NetworkData = &v1.SecretReference{
+			//	Name: "node1-networkdata2",
+			//}
 		} else if obj, ok := objs[i].(metav1.Object); ok {
 			gvk := gvks[i]
 			if gvk.Kind == "Metal3DataTemplate" && strings.Contains(obj.GetName(), "controlplane") {

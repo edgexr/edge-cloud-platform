@@ -75,6 +75,7 @@ func (s *ClusterAPI) GetFeatures() *edgeproto.PlatformFeatures {
 		RequiresCrmOffEdge:            true,
 		UsesIngress:                   true,
 		ResourceCalcByFlavorCounts:    true,
+		SupportsBareMetal:             true,
 		ResourceQuotaProperties:       cloudcommon.CommonResourceQuotaProps,
 		AccessVars:                    AccessVarProps,
 		Properties:                    Props,
@@ -219,4 +220,22 @@ func (s *ClusterAPI) getProviders(ctx context.Context, capiNames *k8smgmt.KconfN
 		return nil, fmt.Errorf("failed to unmarshal provider data, %s", err)
 	}
 	return providers.Items, nil
+}
+
+func (s *ClusterAPI) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	client := s.getClient()
+	names, err := s.ensureCAPIKubeconfig(ctx, client)
+	if err != nil {
+		return nil, err
+	}
+	hosts, err := metal3.GetBareMetalHosts(ctx, client, names, s.namespace, "")
+	if err != nil {
+		return nil, err
+	}
+	out := []*edgeproto.BareMetalHost{}
+	for _, host := range hosts {
+		h := metal3.ConvertUp(ctx, &host, &s.cloudletKey)
+		out = append(out, h)
+	}
+	return out, nil
 }

@@ -17,6 +17,7 @@ package gcp
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -201,4 +202,8 @@ func (g *GCPPlatform) NameSanitize(clusterName string) string {
 
 func (g *GCPPlatform) GetRootLBClients(ctx context.Context) (map[string]platform.RootLBClient, error) {
 	return nil, nil
+}
+
+func (a *GCPPlatform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
 }

@@ -16,6 +16,7 @@ package k8sbm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -247,4 +248,8 @@ func (k *K8sBareMetalPlatform) GetVersionProperties(ctx context.Context) map[str
 
 func (s *K8sBareMetalPlatform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {
 	return nil
+}
+
+func (s *K8sBareMetalPlatform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
 }

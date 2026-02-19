@@ -20,6 +20,7 @@ package osmk8s
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/edgexr/edge-cloud-platform/api/edgeproto"
@@ -117,4 +118,8 @@ func (s *Platform) GetRootLBClients(ctx context.Context) (map[string]platform.Ro
 
 func (s *Platform) getClient(ctx context.Context) (*osmapi.ClientWithResponses, error) {
 	return s.osmClient.GetClient(ctx)
+}
+
+func (s *Platform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
+	return nil, errors.New("not supported")
 }

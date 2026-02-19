@@ -437,6 +437,7 @@ func RegisterDummyServer(server *grpc.Server) *DummyServer {
 	edgeproto.RegisterCloudletIPsApiServer(server, d)
 	edgeproto.RegisterRateLimitSettingsApiServer(server, d)
 	edgeproto.RegisterAppInstClientApiServer(server, d)
+	edgeproto.RegisterBareMetalHostApiServer(server, d)
 	edgeproto.RegisterCloudletNodeApiServer(server, d)
 	edgeproto.RegisterControllerApiServer(server, d)
 	edgeproto.RegisterSvcNodeApiServer(server, d)
@@ -496,6 +497,7 @@ type Client interface {
 	CloudletIPsApiClient
 	RateLimitSettingsApiClient
 	AppInstClientApiClient
+	BareMetalHostApiClient
 	ExecApiClient
 	CloudletAccessApiClient
 	CloudletNodeApiClient

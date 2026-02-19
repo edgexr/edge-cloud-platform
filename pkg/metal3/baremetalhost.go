@@ -78,29 +78,8 @@ func UpdateBareMetalHostFlavors(ctx context.Context, client ssh.Client, names *k
 		hw := host.Status.HardwareDetails
 		data.Vcpus.AddUint64(uint64(hw.CPU.Count))
 		data.Ram.AddUint64(uint64(hw.RAMMebibytes))
-		diskTotalGb := uint64(0)
-		for _, st := range hw.Storage {
-			diskTotalGb += uint64(st.SizeBytes / 1024 / 1024 / 1024)
-		}
-		data.Disk.AddUint64(diskTotalGb)
-		// We require that the operator adds GPU labels to the
-		// BareMetalHosts when they are creating them. These labels
-		// should follow the standard labels that an Nvidia/AMD GPU
-		// operator would apply to kubernetes nodes. This will be
-		// used for resource tracking and allocation.
-		gpus, _, err := k8smgmt.GetNodeGPUInfo(host.Labels)
-		if err != nil {
-			log.SpanLog(ctx, log.DebugLevelInfra, "failed to get GPU info from labels on bare metal host", "name", host.Name, "namespace", host.Namespace, "labels", host.Labels, "err", err)
-			return nil, fmt.Errorf("failed to get GPU info from labels on bare metal host %s.%s, %v", host.Namespace, host.Name, err)
-		}
-		// generate ff for the node
-		ff := &edgeproto.FlavorInfo{
-			Vcpus: uint64(hw.CPU.Count),
-			Ram:   uint64(hw.RAMMebibytes),
-			Disk:  diskTotalGb,
-			Gpus:  gpus,
-		}
-		ff.Name = ff.ResBasedName()
+		ff := getHostFlavorInfo(&host)
+		data.Disk.AddUint64(ff.Disk)
 		if _, found := flavors[ff.Name]; !found {
 			flavors[ff.Name] = ff
 		}
@@ -128,4 +107,67 @@ func UpdateBareMetalHostFlavors(ctx context.Context, client ssh.Client, names *k
 		return strings.Compare(i.Name, j.Name)
 	})
 	return &data, nil
+}
+
+func getHostFlavorInfo(host *v1alpha1.BareMetalHost) *edgeproto.FlavorInfo {
+	if host.Status.HardwareDetails == nil {
+		return &edgeproto.FlavorInfo{}
+	}
+	hw := host.Status.HardwareDetails
+	diskTotalGb := uint64(0)
+	for _, st := range hw.Storage {
+		diskTotalGb += uint64(st.SizeBytes / 1024 / 1024 / 1024)
+	}
+	// generate ff for the node
+	ff := &edgeproto.FlavorInfo{
+		Vcpus: uint64(hw.CPU.Count),
+		Ram:   uint64(hw.RAMMebibytes),
+		Disk:  diskTotalGb,
+	}
+	// We require that the operator adds GPU labels to the
+	// BareMetalHosts when they are creating them. These labels
+	// should follow the standard labels that an Nvidia/AMD GPU
+	// operator would apply to kubernetes nodes. This will be
+	// used for resource tracking and allocation.
+	gpus, _, err := k8smgmt.GetNodeGPUInfo(host.Labels)
+	if err != nil {
+		ff.PropMap = map[string]string{}
+		ff.PropMap["invalid-gpu-label"] = err.Error()
+	} else {
+		ff.Gpus = gpus
+	}
+	ff.Name = ff.ResBasedName()
+	return ff
+}
+
+// ConvertUp converts a Metal3 BareMetalHost to an edgeproto BareMetalHost
+func ConvertUp(ctx context.Context, host *v1alpha1.BareMetalHost, cloudletKey *edgeproto.CloudletKey) *edgeproto.BareMetalHost {
+	status := string(host.Status.OperationalStatus) + "," + string(host.Status.Provisioning.State)
+	h := edgeproto.BareMetalHost{
+		Key: edgeproto.BareMetalHostKey{
+			Name:         host.Name,
+			Organization: cloudletKey.Organization,
+			Cloudlet:     cloudletKey.Name,
+		},
+		Labels: host.Labels,
+		Status: status,
+	}
+	h.BootMacAddress = host.Spec.BootMACAddress
+	h.BootMode = string(host.Spec.BootMode)
+	h.BmcAddress = host.Spec.BMC.Address
+	h.BmcDisableCertVerification = host.Spec.BMC.DisableCertificateVerification
+	h.HardwareProfile = host.Spec.HardwareProfile
+	h.Resources = getHostFlavorInfo(host)
+	if host.Status.HardwareDetails != nil {
+		for _, nic := range host.Status.HardwareDetails.NIC {
+			n := edgeproto.BareMetalHostNic{
+				Name:       nic.Name,
+				MacAddress: nic.MAC,
+				Ip:         nic.IP,
+				Model:      nic.Model,
+			}
+			h.Nics = append(h.Nics, &n)
+		}
+	}
+	return &h
 }

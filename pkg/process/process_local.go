@@ -41,11 +41,6 @@ func StartLocal(name, bin string, args, envs []string, logfile string) (*exec.Cm
 		cmd.Env = append(cmd.Env, envs...)
 	}
 
-	errCapture := bytes.Buffer{}
-	condWriter := &ConditionalWriter{
-		writer:  &errCapture,
-		enabled: true,
-	}
 	var writer io.Writer
 	if logfile == "" {
 		writer = NewColorWriter(name)
@@ -59,15 +54,13 @@ func StartLocal(name, bin string, args, envs []string, logfile string) (*exec.Cm
 		}
 		writer = outfile
 	}
-	mwriter := io.MultiWriter(condWriter, writer)
-	cmd.Stdout = mwriter
-	cmd.Stderr = mwriter
+	cmd.Stdout = writer
+	cmd.Stderr = writer
 
 	err := cmd.Start()
 	if err != nil {
-		return nil, fmt.Errorf("failed to start process %s, %v", errCapture.String(), err)
+		return nil, err
 	}
-	condWriter.enabled = false
 	return cmd, nil
 }
 
