@@ -258,7 +258,7 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
       optional: true
 `
 	appendValFalse := false
-	netplan60 := bootstrapv1.File{
+	netplan99 := bootstrapv1.File{
 		Path:        "/etc/netplan/99-all-en-dhcp.yaml",
 		Content:     dhcpAllInterfaces,
 		Permissions: "0600",
@@ -338,7 +338,7 @@ func (s *ClusterAPI) generateClusterManifest(ctx context.Context, names *k8smgmt
 			}
 			obj.Spec.Template.Spec.Files = []bootstrapv1.File{
 				trustUserCAKeysFile,
-				netplan60,
+				netplan99,
 			}
 			obj.Spec.Template.Spec.Users = []bootstrapv1.User{
 				user,

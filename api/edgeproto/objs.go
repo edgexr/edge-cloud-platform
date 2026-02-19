@@ -513,13 +513,13 @@ func (s *CloudletNode) Validate(fmap objstore.FieldMap) error {
 
 func (key *BareMetalHostKey) ValidateKey() error {
 	if !util.ValidName(key.Organization) {
-		return errors.New("Invalid zone pool organization")
+		return errors.New("invalid organization")
 	}
 	if !util.ValidName(key.Name) {
-		return fmt.Errorf("Invalid zone pool name")
+		return fmt.Errorf("invalid bare metal host name")
 	}
 	if !util.ValidName(key.Cloudlet) {
-		return errors.New("Invalid cloudlet name")
+		return errors.New("invalid cloudlet name")
 	}
 	return nil
 }
