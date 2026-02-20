@@ -40,6 +40,7 @@ const (
 	ActionNone                     = "none"
 	cleanupClusterRetryWaitSeconds = 60
 	updateClusterSetupMaxTime      = time.Minute * 15
+	FlavorLabel                    = "kubernetes.io/flavor"
 )
 
 // ClusterNodeFlavor contains details of flavor for the node
@@ -86,7 +87,7 @@ func GetClusterMasterName(ctx context.Context, clusterInst *edgeproto.ClusterIns
 func GetClusterMasterNameFromNodeList(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst) (string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetClusterMasterNameFromNodeList")
 	kconfArg := k8smgmt.GetKconfArg(clusterInst)
-	cmd := fmt.Sprintf("kubectl %s get nodes --no-headers -l node-role.kubernetes.io/master -o custom-columns=Name:.metadata.name", kconfArg)
+	cmd := fmt.Sprintf("kubectl %s get nodes --no-headers -l node-role.kubernetes.io/control-plane -o custom-columns=Name:.metadata.name", kconfArg)
 	out, err := client.Output(cmd)
 	if err != nil {
 		return "", fmt.Errorf("run kubectl command failed, %q, %s, %s", cmd, out, err)
@@ -571,6 +572,15 @@ func (v *VMPlatform) setupClusterRootLBAndNodes(ctx context.Context, rootLBName 
 			return err
 		}
 		updateCallback(edgeproto.UpdateTask, fmt.Sprintf("Wait Cluster Complete time: %s", cloudcommon.FormatDuration(time.Since(k8sTime), 2)))
+
+		// set up flavor label for all nodes
+		if clusterInst.Flavor.Name != "" {
+			log.SpanLog(ctx, log.DebugLevelInfra, "Setting flavor node label on all nodes", "clusterInst", clusterInst.Key, "Label", FlavorLabel, "nodeFlavor", clusterInst.Flavor.Name)
+			err = k8smgmt.SetNodeLabels(ctx, client, k8smgmt.GetKconfArg(clusterInst), "--all", FlavorLabel, clusterInst.Flavor.Name)
+			if err != nil {
+				return fmt.Errorf("failed to set node labels for cluster %s: %v", clusterInst.Key, err)
+			}
+		}
 		updateCallback(edgeproto.UpdateTask, "Creating config map")
 
 		if err := infracommon.CreateClusterConfigMap(ctx, client, clusterInst); err != nil {

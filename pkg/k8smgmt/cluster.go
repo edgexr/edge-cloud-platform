@@ -542,3 +542,14 @@ func WaitNodesReady(ctx context.Context, client ssh.Client, clusterInst *edgepro
 	log.SpanLog(ctx, log.DebugLevelInfra, "wait nodes ready timed out", "cluster", clusterInst.Key)
 	return fmt.Errorf("timed out waiting for %s nodes to be ready", clusterInst.Key.GetKeyString())
 }
+
+// SetNodeLabels Create a function to set node labels
+func SetNodeLabels(ctx context.Context, client ssh.Client, kconfArg string, nodeName string, labelKey string, labelVal string) error {
+	cmd := fmt.Sprintf("kubectl %s label node %s %s=%s --overwrite", kconfArg, nodeName, labelKey, labelVal)
+	log.SpanLog(ctx, log.DebugLevelInfra, "k8smgmt set node labels", "node", nodeName, "labelKey", labelKey, "labelVal", labelVal, "cmd", cmd)
+	out, err := client.Output(cmd)
+	if err != nil {
+		return fmt.Errorf("failed to set node labels, %s, %s, %v", cmd, out, err)
+	}
+	return nil
+}
