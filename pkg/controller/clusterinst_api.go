@@ -2381,3 +2381,25 @@ func (s *ClusterInstApi) ShowClusterResourceUsage(in *edgeproto.ClusterInst, cb 
 	}
 	return nil
 }
+
+func (s *ClusterInstApi) GetClusterCredentials(ctx context.Context, in *edgeproto.ClusterCredentialsRequest) (*edgeproto.Result, error) {
+	clusterInst := edgeproto.ClusterInst{}
+	if !s.cache.Get(&in.Key, &clusterInst) {
+		return nil, in.Key.NotFoundError()
+	}
+	cloudlet := edgeproto.Cloudlet{}
+	if !s.all.cloudletApi.cache.Get(&clusterInst.CloudletKey, &cloudlet) {
+		return nil, clusterInst.CloudletKey.NotFoundError()
+	}
+	features := edgeproto.PlatformFeatures{}
+	featuresKey := edgeproto.PlatformFeaturesKey(cloudlet.PlatformType)
+	if !s.all.platformFeaturesApi.cache.Get(&featuresKey, &features) {
+		return nil, fmt.Errorf("platform features %s not found", cloudlet.PlatformType)
+	}
+	conn, err := services.platformServiceConnCache.GetConn(ctx, features.NodeType)
+	if err != nil {
+		return nil, err
+	}
+	api := edgeproto.NewCloudletPlatformAPIClient(conn)
+	return api.GetClusterCredentials(ctx, in)
+}

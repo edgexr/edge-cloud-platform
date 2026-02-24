@@ -625,6 +625,27 @@ func FindClusterInstInfoData(key *edgeproto.ClusterKey, testData []edgeproto.Clu
 	return nil, false
 }
 
+func (r *Run) ClusterInstApi_ClusterCredentialsRequest(data *[]edgeproto.ClusterCredentialsRequest, dataMap interface{}, dataOut interface{}) {
+	log.DebugLog(log.DebugLevelApi, "API for ClusterCredentialsRequest", "mode", r.Mode)
+	for ii, objD := range *data {
+		obj := &objD
+		switch r.Mode {
+		case "getclustercredentials":
+			out, err := r.client.GetClusterCredentials(r.ctx, obj)
+			if err != nil {
+				err = ignoreExpectedErrors(r.Mode, obj.GetKey(), err)
+				r.logErr(fmt.Sprintf("ClusterInstApi_ClusterCredentialsRequest[%d]", ii), err)
+			} else {
+				outp, ok := dataOut.(*[]edgeproto.Result)
+				if !ok {
+					panic(fmt.Sprintf("RunClusterInstApi_ClusterCredentialsRequest expected dataOut type *[]edgeproto.Result, but was %T", dataOut))
+				}
+				*outp = append(*outp, *out)
+			}
+		}
+	}
+}
+
 func (r *Run) ClusterInstApi(data *[]edgeproto.ClusterInst, dataMap interface{}, dataOut interface{}) {
 	log.DebugLog(log.DebugLevelApi, "API for ClusterInst", "mode", r.Mode)
 	if r.Mode == "show" {
@@ -1031,6 +1052,18 @@ func (s *CliClient) ShowClusterResourceUsage(ctx context.Context, in *edgeproto.
 	return output, err
 }
 
+func (s *ApiClient) GetClusterCredentials(ctx context.Context, in *edgeproto.ClusterCredentialsRequest) (*edgeproto.Result, error) {
+	api := edgeproto.NewClusterInstApiClient(s.Conn)
+	return api.GetClusterCredentials(ctx, in)
+}
+
+func (s *CliClient) GetClusterCredentials(ctx context.Context, in *edgeproto.ClusterCredentialsRequest) (*edgeproto.Result, error) {
+	out := edgeproto.Result{}
+	args := append(s.BaseArgs, "controller", "GetClusterCredentials")
+	err := wrapper.RunEdgectlObjs(args, in, &out, s.RunOps...)
+	return &out, err
+}
+
 type ClusterInstApiClient interface {
 	CreateClusterInst(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.Result, error)
 	DeleteClusterInst(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.Result, error)
@@ -1038,6 +1071,7 @@ type ClusterInstApiClient interface {
 	ShowClusterInst(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.ClusterInst, error)
 	DeleteIdleReservableClusterInsts(ctx context.Context, in *edgeproto.IdleReservableClusterInsts) (*edgeproto.Result, error)
 	ShowClusterResourceUsage(ctx context.Context, in *edgeproto.ClusterInst) ([]edgeproto.ClusterResourceUsage, error)
+	GetClusterCredentials(ctx context.Context, in *edgeproto.ClusterCredentialsRequest) (*edgeproto.Result, error)
 }
 
 type ClusterInstInfoStream interface {

@@ -41,7 +41,7 @@ type ManagedK8sProvider interface {
 	Init(accessVars map[string]string, properties *infracommon.InfraProperties, commonPf *infracommon.CommonPlatform, caches *platform.Caches) error
 	Login(ctx context.Context) error
 	// GetCredentials retrieves kubeconfig credentials from the cluster
-	GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error)
+	GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error)
 	NameSanitize(name string) string
 	CreateClusterPrerequisites(ctx context.Context, clusterName string) error
 	// RunClusterCreateCommand creates the specified cluster, returning any infra annotations to add to the cluster.
@@ -175,9 +175,9 @@ func (m *ManagedK8sPlatform) GetRootLBFlavor(ctx context.Context) (*edgeproto.Fl
 	return &edgeproto.Flavor{}, nil
 }
 
-func (m *ManagedK8sPlatform) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
+func (m *ManagedK8sPlatform) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
 	clusterName := m.Provider.NameSanitize(k8smgmt.GetCloudletClusterName(clusterInst))
-	return m.Provider.GetCredentials(ctx, clusterName, clusterInst)
+	return m.Provider.GetCredentials(ctx, clusterName, clusterInst, config)
 }
 
 func (m *ManagedK8sPlatform) RefreshCerts(ctx context.Context, certsCache *certscache.ProxyCertsCache) error {

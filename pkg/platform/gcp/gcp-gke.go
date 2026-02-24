@@ -84,7 +84,7 @@ func (g *GCPPlatform) RunClusterDeleteCommand(ctx context.Context, clusterName s
 }
 
 // GetCredentials retrieves kubeconfig credentials from gcloud.
-func (g *GCPPlatform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
+func (g *GCPPlatform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
 	kconf := "/tmp/" + clusterName + ".kubeconfig"
 	envVars := make(map[string]string)
 	for k, v := range g.accessVars {

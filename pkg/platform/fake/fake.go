@@ -776,3 +776,7 @@ func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgepr
 func (s *Platform) GetBareMetalHosts(ctx context.Context) ([]*edgeproto.BareMetalHost, error) {
 	return nil, errors.New("not supported")
 }
+
+func (s *Platform) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
+	return []byte("fake-cluster-credentials"), nil
+}

@@ -148,7 +148,7 @@ func (a *AzurePlatform) RunClusterDeleteCommand(ctx context.Context, clusterName
 }
 
 // GetCredentials retrieves kubeconfig credentials from azure for the cluster just created
-func (a *AzurePlatform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
+func (a *AzurePlatform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "GetCredentials", "clusterName", clusterName)
 	resourceGroup := a.accessVars[AZURE_RESOURCE_GROUP]
 	managedClustersClient, err := a.getManagedClusterClient(ctx)

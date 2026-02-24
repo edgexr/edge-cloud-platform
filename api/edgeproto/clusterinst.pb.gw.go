@@ -192,6 +192,40 @@ func request_ClusterInstApi_ShowClusterResourceUsage_0(ctx context.Context, mars
 
 }
 
+func request_ClusterInstApi_GetClusterCredentials_0(ctx context.Context, marshaler runtime.Marshaler, client ClusterInstApiClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ClusterCredentialsRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.GetClusterCredentials(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_ClusterInstApi_GetClusterCredentials_0(ctx context.Context, marshaler runtime.Marshaler, server ClusterInstApiServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ClusterCredentialsRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.GetClusterCredentials(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 func request_ClusterInstInfoApi_ShowClusterInstInfo_0(ctx context.Context, marshaler runtime.Marshaler, client ClusterInstInfoApiClient, req *http.Request, pathParams map[string]string) (ClusterInstInfoApi_ShowClusterInstInfoClient, runtime.ServerMetadata, error) {
 	var protoReq ClusterInstInfo
 	var metadata runtime.ServerMetadata
@@ -279,6 +313,29 @@ func RegisterClusterInstApiHandlerServer(ctx context.Context, mux *runtime.Serve
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
+	})
+
+	mux.Handle("POST", pattern_ClusterInstApi_GetClusterCredentials_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_ClusterInstApi_GetClusterCredentials_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ClusterInstApi_GetClusterCredentials_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
 	})
 
 	return nil
@@ -458,6 +515,26 @@ func RegisterClusterInstApiHandlerClient(ctx context.Context, mux *runtime.Serve
 
 	})
 
+	mux.Handle("POST", pattern_ClusterInstApi_GetClusterCredentials_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_ClusterInstApi_GetClusterCredentials_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_ClusterInstApi_GetClusterCredentials_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -473,6 +550,8 @@ var (
 	pattern_ClusterInstApi_DeleteIdleReservableClusterInsts_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"delete", "idlereservableclusterinsts"}, "", runtime.AssumeColonVerbOpt(true)))
 
 	pattern_ClusterInstApi_ShowClusterResourceUsage_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"show", "clusterinst", "resource", "usage"}, "", runtime.AssumeColonVerbOpt(true)))
+
+	pattern_ClusterInstApi_GetClusterCredentials_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"get", "clusterinst", "kubeconfig"}, "", runtime.AssumeColonVerbOpt(true)))
 )
 
 var (
@@ -487,6 +566,8 @@ var (
 	forward_ClusterInstApi_DeleteIdleReservableClusterInsts_0 = runtime.ForwardResponseMessage
 
 	forward_ClusterInstApi_ShowClusterResourceUsage_0 = runtime.ForwardResponseStream
+
+	forward_ClusterInstApi_GetClusterCredentials_0 = runtime.ForwardResponseMessage
 )
 
 // RegisterClusterInstInfoApiHandlerFromEndpoint is same as RegisterClusterInstInfoApiHandler but

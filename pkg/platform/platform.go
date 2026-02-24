@@ -145,6 +145,10 @@ type Platform interface {
 	GetClusterAdditionalResourceMetric(ctx context.Context, cloudlet *edgeproto.Cloudlet, resMetric *edgeproto.Metric, resources []edgeproto.VMResource) error
 	// Get resources used by the cluster
 	GetClusterInfraResources(ctx context.Context, cluster *edgeproto.ClusterInst) (*edgeproto.InfraResources, error)
+	// Get credentails for accessing the cluster. The format of the
+	// returned data depends on the cluster type. For Kubernetes,
+	// it will return the contents of a kubeconfig file.
+	GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error)
 	// Create an AppInst on a Cluster
 	CreateAppInst(ctx context.Context, clusterInst *edgeproto.ClusterInst, app *edgeproto.App, appInst *edgeproto.AppInst, flavor *edgeproto.Flavor, updateSender edgeproto.AppInstInfoSender) error
 	// Delete an AppInst on a Cluster

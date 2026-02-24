@@ -90,6 +90,24 @@ func (s *CCRMHandler) GetClusterAdditionalResourceMetric(ctx context.Context, in
 	return in.ResMetric, nil
 }
 
+func (s *CCRMHandler) GetClusterCredentials(ctx context.Context, in *edgeproto.ClusterCredentialsRequest) (*edgeproto.Result, error) {
+	clusterInst := &edgeproto.ClusterInst{}
+	if !s.crmHandler.ClusterInstCache.Get(&in.Key, clusterInst) {
+		return nil, in.Key.NotFoundError()
+	}
+	pf, err := s.getCRMCloudletPlatform(ctx, &clusterInst.CloudletKey)
+	if err != nil {
+		return nil, err
+	}
+	creds, err := pf.GetClusterCredentials(ctx, clusterInst, in.Config)
+	if err != nil {
+		return nil, err
+	}
+	return &edgeproto.Result{
+		Message: string(creds),
+	}, nil
+}
+
 func (s *CCRMHandler) GetRestrictedCloudletStatus(key *edgeproto.CloudletKey, stream edgeproto.CloudletPlatformAPI_GetRestrictedCloudletStatusServer) error {
 	ctx := stream.Context()
 	cloudlet, cloudletPlatform, err := s.getCloudletPlatform(ctx, key)

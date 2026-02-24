@@ -219,8 +219,9 @@ func (m *ManagedK8sPlatform) ensureKubeconfig(ctx context.Context, clusterInst *
 	if err != nil {
 		return nil, err
 	}
+	config := &edgeproto.ClusterCredentialsConfig{}
 	client := m.getClient()
-	kconfData, err := m.Provider.GetCredentials(ctx, clusterName, clusterInst)
+	kconfData, err := m.Provider.GetCredentials(ctx, clusterName, clusterInst, config)
 	if err != nil {
 		return nil, err
 	}

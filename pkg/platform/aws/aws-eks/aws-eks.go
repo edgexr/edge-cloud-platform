@@ -113,7 +113,7 @@ func (a *AwsEksPlatform) RunClusterDeleteCommand(ctx context.Context, clusterNam
 }
 
 // GetCredentials retrieves kubeconfig credentials from AWS
-func (a *AwsEksPlatform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
+func (a *AwsEksPlatform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
 	// TODO: this needs to return the kubeconfig contents
 	return nil, fmt.Errorf("AWS EKS get credentials needs update")
 	/*

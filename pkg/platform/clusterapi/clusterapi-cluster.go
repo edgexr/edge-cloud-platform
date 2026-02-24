@@ -60,7 +60,7 @@ func init() {
 	kamajiControlPlaneTemplate = template.Must(template.New("kcp").Parse(kamajiControlPlaneTemplateString))
 }
 
-func (s *ClusterAPI) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
+func (s *ClusterAPI) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
 	names, err := s.ensureCAPIKubeconfig(ctx, s.getClient())
 	if err != nil {
 		return nil, err

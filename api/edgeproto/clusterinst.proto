@@ -219,6 +219,19 @@ message ClusterResourceUsage {
   string ReservedBy = 10;
 }
 
+message ClusterCredentialsRequest {
+  // Cluster Key
+  ClusterKey key = 1 [(gogoproto.nullable) = false];
+  // Credentials configuration
+  ClusterCredentialsConfig config = 2;
+  option (protogen.alias) = "cluster=Key.Name,clusterorg=Key.Organization";
+}
+
+// ClusterCredentaislConfig is currently empty, but in the future
+// may specify the scope and permissions of the credentials.
+message ClusterCredentialsConfig {
+}
+
 service ClusterInstApi {
   // Create Cluster Instance. Creates an instance of a Cluster on a Cloudlet,
   // defined by a Cluster Key and a Cloudlet Key. ClusterInst is a collection of
@@ -278,6 +291,14 @@ service ClusterInstApi {
     option (protogen.mc2_api) = "ResourceClusterInsts,ActionView,Key.Organization";
     option (protogen.method_not_required) = "Key.Organization,Key.Name";
     option (protogen.mc2_show_custom_authz) = true;
+  }
+  // Get credentials to access the cluster. Currently this only supports Kubernetes clusters, and returns the kubeconfig contents.
+  rpc GetClusterCredentials(ClusterCredentialsRequest) returns (Result) {
+    option (google.api.http) = {
+      post: "/get/clusterinst/kubeconfig"
+      body: "*"
+    };
+    option (protogen.mc2_api) = "ResourceClusterInsts,ActionManage,Key.Organization";
   }
 }
 

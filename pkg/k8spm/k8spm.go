@@ -37,7 +37,7 @@ type ClusterAccess interface {
 	// node that will have the local kubeconfig and manifest files.
 	GetClusterClient(ctx context.Context, clusterInst *edgeproto.ClusterInst) (ssh.Client, error)
 	// GetClusterCredentials retrieves kubeconfig credentials from the cluster
-	GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error)
+	GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error)
 	// GetClusterName gets the name used for the cluster
 	GetClusterName(clusterInst *edgeproto.ClusterInst) string
 }
@@ -271,7 +271,8 @@ func (m *K8sPlatformMgr) UpdateAppInst(ctx context.Context, clusterInst *edgepro
 }
 
 func (m *K8sPlatformMgr) ensureKubeconfigs(ctx context.Context, client ssh.Client, clusterInst *edgeproto.ClusterInst, names *k8smgmt.KubeNames) error {
-	kconfData, err := m.clusterAccess.GetClusterCredentials(ctx, clusterInst)
+	config := &edgeproto.ClusterCredentialsConfig{}
+	kconfData, err := m.clusterAccess.GetClusterCredentials(ctx, clusterInst, config)
 	if err != nil {
 		return fmt.Errorf("unable to get cluster %s credentials %v", clusterInst.Key.GetKeyString(), err)
 	}

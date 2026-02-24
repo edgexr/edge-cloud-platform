@@ -242,7 +242,7 @@ func (k *K8sSite) GetClusterAdditionalResourceMetric(ctx context.Context, cloudl
 	return nil
 }
 
-func (m *K8sSite) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
+func (m *K8sSite) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
 	kubeconfig, ok := m.accessVars[cloudcommon.Kubeconfig]
 	if !ok {
 		return nil, errors.New(cloudcommon.Kubeconfig + " access var not set")
