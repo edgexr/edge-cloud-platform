@@ -308,3 +308,22 @@ func (s *Platform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto
 func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
 	return nil, errors.New("not supported")
 }
+
+func (s *Platform) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
+	name := k8smgmt.GetK8sNodeNameSuffix(clusterInst)
+	configFile := name + "-config.yaml"
+	cmd := fmt.Sprintf("kind export kubeconfig --name %s --kubeconfig %s", name, configFile)
+	client, err := s.Xind.GetClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out, err := client.Output(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to export kubeconfig, %s, %s", out, err)
+	}
+	out, err = client.Output("cat " + configFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read kubeconfig file, %s, %s", out, err)
+	}
+	return []byte(out), nil
+}

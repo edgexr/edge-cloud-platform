@@ -60,7 +60,7 @@ func (s *Platform) RunClusterUpdateCommand(ctx context.Context, clusterName stri
 	return nil, nil
 }
 
-func (s *Platform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst) ([]byte, error) {
+func (s *Platform) GetCredentials(ctx context.Context, clusterName string, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
 	return s.osmClient.GetCredentials(ctx, clusterName, clusterInst)
 }
 

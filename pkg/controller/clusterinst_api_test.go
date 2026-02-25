@@ -102,13 +102,22 @@ func TestClusterInstApi(t *testing.T) {
 	// after cluster insts create, check that cloudlet refs data is correct.
 	testutil.InternalCloudletRefsTest(t, "show", apis.cloudletRefsApi, testutil.CloudletRefsData())
 
+	// check getting cluster credentials
+	credsReq := edgeproto.ClusterCredentialsRequest{
+		Key:    testutil.ClusterInstData()[0].Key,
+		Config: &edgeproto.ClusterCredentialsConfig{},
+	}
+	res, err := apis.clusterInstApi.GetClusterCredentials(ctx, &credsReq)
+	require.Nil(t, err, "get cluster credentials")
+	require.Equal(t, "fake-cluster-credentials", res.Message)
+
 	commonApi := testutil.NewInternalClusterInstApi(apis.clusterInstApi)
 
 	// Set responder to fail delete.
 	responder.SetSimulateClusterDeleteFailure(true)
 	ccrm.SetSimulateClusterDeleteFailure(true)
 	obj := testutil.ClusterInstData()[0]
-	err := apis.clusterInstApi.DeleteClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
+	err = apis.clusterInstApi.DeleteClusterInst(&obj, testutil.NewCudStreamoutClusterInst(ctx))
 	require.NotNil(t, err, "Delete ClusterInst responder failure")
 	responder.SetSimulateClusterDeleteFailure(false)
 	ccrm.SetSimulateClusterDeleteFailure(false)

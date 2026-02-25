@@ -84,6 +84,7 @@ service CloudletPlatformAPI {
     rpc GetCloudletManifest(CloudletKey) returns (CloudletManifest) {}
     rpc GetClusterAdditionalResources(ClusterResourcesReq) returns (InfraResourceMap) {}
     rpc GetClusterAdditionalResourceMetric(ClusterResourceMetricReq) returns (Metric) {}
+    rpc GetClusterCredentials(ClusterCredentialsRequest) returns (Result) {}
     rpc GetRestrictedCloudletStatus(CloudletKey) returns (stream StreamStatus) {}
     rpc GetRootLbFlavor(CloudletKey) returns (Flavor) {}
     rpc ProcessExecRequest(CloudletExecReq) returns (ExecRequest) {}

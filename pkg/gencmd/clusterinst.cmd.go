@@ -550,6 +550,63 @@ func ShowClusterResourceUsages(c *cli.Command, data []edgeproto.ClusterInst, err
 	}
 }
 
+var GetClusterCredentialsCmd = &cli.Command{
+	Use:          "GetClusterCredentials",
+	RequiredArgs: strings.Join(ClusterCredentialsRequestRequiredArgs, " "),
+	OptionalArgs: strings.Join(ClusterCredentialsRequestOptionalArgs, " "),
+	AliasArgs:    strings.Join(ClusterCredentialsRequestAliasArgs, " "),
+	SpecialArgs:  &ClusterCredentialsRequestSpecialArgs,
+	Comments:     ClusterCredentialsRequestComments,
+	ReqData:      &edgeproto.ClusterCredentialsRequest{},
+	ReplyData:    &edgeproto.Result{},
+	Run:          runGetClusterCredentials,
+}
+
+func runGetClusterCredentials(c *cli.Command, args []string) error {
+	if cli.SilenceUsage {
+		c.CobraCmd.SilenceUsage = true
+	}
+	obj := c.ReqData.(*edgeproto.ClusterCredentialsRequest)
+	_, err := c.ParseInput(args)
+	if err != nil {
+		return err
+	}
+	return GetClusterCredentials(c, obj)
+}
+
+func GetClusterCredentials(c *cli.Command, in *edgeproto.ClusterCredentialsRequest) error {
+	if ClusterInstApiCmd == nil {
+		return fmt.Errorf("ClusterInstApi client not initialized")
+	}
+	ctx := context.Background()
+	obj, err := ClusterInstApiCmd.GetClusterCredentials(ctx, in)
+	if err != nil {
+		errstr := err.Error()
+		st, ok := status.FromError(err)
+		if ok {
+			errstr = st.Message()
+		}
+		return fmt.Errorf("GetClusterCredentials failed: %s", errstr)
+	}
+	c.WriteOutput(c.CobraCmd.OutOrStdout(), obj, cli.OutputFormat)
+	return nil
+}
+
+// this supports "Create" and "Delete" commands on ApplicationData
+func GetClusterCredentialss(c *cli.Command, data []edgeproto.ClusterCredentialsRequest, err *error) {
+	if *err != nil {
+		return
+	}
+	for ii, _ := range data {
+		fmt.Printf("GetClusterCredentials %v\n", data[ii])
+		myerr := GetClusterCredentials(c, &data[ii])
+		if myerr != nil {
+			*err = myerr
+			break
+		}
+	}
+}
+
 var ClusterInstApiCmds = []*cobra.Command{
 	CreateClusterInstCmd.GenCmd(),
 	DeleteClusterInstCmd.GenCmd(),
@@ -557,6 +614,7 @@ var ClusterInstApiCmds = []*cobra.Command{
 	ShowClusterInstCmd.GenCmd(),
 	DeleteIdleReservableClusterInstsCmd.GenCmd(),
 	ShowClusterResourceUsageCmd.GenCmd(),
+	GetClusterCredentialsCmd.GenCmd(),
 }
 
 var ClusterInstInfoApiCmd edgeproto.ClusterInstInfoApiClient
@@ -949,6 +1007,25 @@ var ClusterResourceUsageComments = map[string]string{
 	"reservedby":                         "For reservable clusters in use, the organization that has reserved the cluster",
 }
 var ClusterResourceUsageSpecialArgs = map[string]string{}
+var ClusterCredentialsRequestRequiredArgs = []string{
+	"cluster",
+	"clusterorg",
+}
+var ClusterCredentialsRequestOptionalArgs = []string{}
+var ClusterCredentialsRequestAliasArgs = []string{
+	"cluster=key.name",
+	"clusterorg=key.organization",
+}
+var ClusterCredentialsRequestComments = map[string]string{
+	"cluster":    "Cluster name",
+	"clusterorg": "Name of the organization that this cluster belongs to",
+}
+var ClusterCredentialsRequestSpecialArgs = map[string]string{}
+var ClusterCredentialsConfigRequiredArgs = []string{}
+var ClusterCredentialsConfigOptionalArgs = []string{}
+var ClusterCredentialsConfigAliasArgs = []string{}
+var ClusterCredentialsConfigComments = map[string]string{}
+var ClusterCredentialsConfigSpecialArgs = map[string]string{}
 var CloudletManagedClusterInfoRequiredArgs = []string{}
 var CloudletManagedClusterInfoOptionalArgs = []string{
 	"kubernetesversion",

@@ -238,3 +238,7 @@ func (s *Platform) GetCloudletManagedClusters(ctx context.Context) ([]*edgeproto
 func (s *Platform) GetCloudletManagedClusterInfo(ctx context.Context, in *edgeproto.ClusterInst) (*edgeproto.CloudletManagedClusterInfo, error) {
 	return nil, errors.New("not supported")
 }
+
+func (s *Platform) GetClusterCredentials(ctx context.Context, clusterInst *edgeproto.ClusterInst, config *edgeproto.ClusterCredentialsConfig) ([]byte, error) {
+	return nil, errors.New("not supported")
+}

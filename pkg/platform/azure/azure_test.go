@@ -81,7 +81,8 @@ func TestClusterCreate(t *testing.T) {
 	require.Nil(t, err)
 	fmt.Printf("Cluster create took %s\n", time.Since(start).String())
 
-	creds, err := a.GetCredentials(ctx, clusterName, &ci)
+	config := &edgeproto.ClusterCredentialsConfig{}
+	creds, err := a.GetCredentials(ctx, clusterName, &ci, config)
 	require.Nil(t, err)
 	kubeconfig := "/tmp/" + clusterName + ".kubeconfig"
 	err = os.WriteFile(kubeconfig, creds, 0644)

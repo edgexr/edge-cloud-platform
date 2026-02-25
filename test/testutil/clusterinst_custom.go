@@ -23,3 +23,7 @@ import (
 func (s *DummyServer) DeleteIdleReservableClusterInsts(ctx context.Context, in *edgeproto.IdleReservableClusterInsts) (*edgeproto.Result, error) {
 	return &edgeproto.Result{}, nil
 }
+
+func (s *DummyServer) GetClusterCredentials(ctx context.Context, in *edgeproto.ClusterCredentialsRequest) (*edgeproto.Result, error) {
+	return &edgeproto.Result{}, nil
+}
