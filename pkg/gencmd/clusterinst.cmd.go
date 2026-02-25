@@ -1008,14 +1008,17 @@ var ClusterResourceUsageComments = map[string]string{
 }
 var ClusterResourceUsageSpecialArgs = map[string]string{}
 var ClusterCredentialsRequestRequiredArgs = []string{
-	"key.name",
-	"key.organization",
+	"cluster",
+	"clusterorg",
 }
 var ClusterCredentialsRequestOptionalArgs = []string{}
-var ClusterCredentialsRequestAliasArgs = []string{}
+var ClusterCredentialsRequestAliasArgs = []string{
+	"cluster=key.name",
+	"clusterorg=key.organization",
+}
 var ClusterCredentialsRequestComments = map[string]string{
-	"key.name":         "Cluster name",
-	"key.organization": "Name of the organization that this cluster belongs to",
+	"cluster":    "Cluster name",
+	"clusterorg": "Name of the organization that this cluster belongs to",
 }
 var ClusterCredentialsRequestSpecialArgs = map[string]string{}
 var ClusterCredentialsConfigRequiredArgs = []string{}

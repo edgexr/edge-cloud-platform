@@ -85,7 +85,7 @@ type BareMetalHost struct {
 	Key BareMetalHostKey `protobuf:"bytes,2,opt,name=key,proto3" json:"key"`
 	// machine status
 	Status string `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
-	// boot mac address
+	// boot mac address used to provision host, not the BMC mac
 	BootMacAddress string `protobuf:"bytes,4,opt,name=boot_mac_address,json=bootMacAddress,proto3" json:"boot_mac_address,omitempty"`
 	// boot mode
 	BootMode string `protobuf:"bytes,5,opt,name=boot_mode,json=bootMode,proto3" json:"boot_mode,omitempty"`

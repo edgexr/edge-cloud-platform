@@ -69,9 +69,19 @@ func (m *ManagedK8sPlatform) CreateClusterInst(ctx context.Context, clusterInst 
 		if reterr == nil || clusterInst.SkipCrmCleanupOnFailure {
 			return
 		}
-		if reterr != nil && clusterInst.SkipCrmCleanupOnTimeout && (strings.Contains(strings.ToLower(reterr.Error()), "deadline exceeded") || strings.Contains(strings.ToLower(reterr.Error()), "context canceled")) {
-			log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst skipping cleanup on CRM timeout error", "err", reterr)
-			return
+		if reterr != nil && (strings.Contains(strings.ToLower(reterr.Error()), "deadline exceeded") || strings.Contains(strings.ToLower(reterr.Error()), "context canceled")) {
+			if clusterInst.SkipCrmCleanupOnTimeout {
+				log.SpanLog(ctx, log.DebugLevelInfra, "CreateClusterInst skipping cleanup on CRM timeout error", "err", reterr)
+				return
+			} else {
+				// Reset timeout on context so process continues
+				// until cleanup is complete. This allows streaming
+				// back messages of cleanup process and lets the user
+				// know when the cleanup is done.
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithTimeout(ctx, timeout)
+				defer cancel()
+			}
 		}
 		log.SpanLog(ctx, log.DebugLevelInfra, "Cleaning up clusterInst after failure", "clusterInst", clusterInst, "err", reterr)
 		updateCallback(edgeproto.UpdateTask, "Aborting create, deleting clusterInst due to failure: "+reterr.Error())

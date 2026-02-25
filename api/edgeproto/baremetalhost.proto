@@ -44,7 +44,7 @@ message BareMetalHost {
     BareMetalHostKey key = 2 [(gogoproto.nullable) = false];
     // machine status
     string status = 3;
-    // boot mac address
+    // boot mac address used to provision host, not the BMC mac
     string boot_mac_address = 4;
     // boot mode
     string boot_mode = 5;

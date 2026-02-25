@@ -95,6 +95,8 @@ func (s *BareMetalHostApi) showBareMetalHosts(ctx context.Context, key *edgeprot
 	}
 	return cloudcommon.StreamRecv(ctx, outStream, func(obj *edgeproto.BareMetalHost) error {
 		if obj.Matches(filter, edgeproto.MatchFilter()) {
+			obj.Key.Cloudlet = key.Name
+			obj.Key.Organization = key.Organization
 			return cb.Send(obj)
 		}
 		return nil

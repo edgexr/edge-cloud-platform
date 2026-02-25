@@ -146,7 +146,7 @@ var BareMetalHostComments = map[string]string{
 	"org":                        "Name of the organization that this cluster belongs to",
 	"cloudlet":                   "Cloudlet name to which this machine is associated",
 	"status":                     "machine status",
-	"bootmacaddress":             "boot mac address",
+	"bootmacaddress":             "boot mac address used to provision host, not the BMC mac",
 	"bootmode":                   "boot mode",
 	"bmcaddress":                 "BMC address",
 	"bmcusername":                "BMC username",

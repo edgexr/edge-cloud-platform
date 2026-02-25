@@ -45,6 +45,7 @@ func (s *PlatformBareMetal) GetFeatures() *edgeproto.PlatformFeatures {
 	features.IpAllocatedPerService = true
 	features.RequiresCrmOffEdge = true
 	features.UsesIngress = true
+	features.SupportsBareMetal = true
 	return features
 }
 
