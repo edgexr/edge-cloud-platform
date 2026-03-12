@@ -154,12 +154,15 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 		// set the IP address on the ingress object, so the operator
 		// will need to specify the IP address for the ingress.
 		ip, found := m.commonPf.Properties.GetValue(cloudcommon.IngressIPV4)
+		var hostname string
 		if !found || ip == "" {
-			ip, err = k8smgmt.GetIngressExternalIP(ctx, client, names, ingress.ObjectMeta.Name)
+			ip, hostname, err = k8smgmt.GetIngressExternalIP(ctx, client, names, ingress.ObjectMeta.Name)
 			if err != nil {
 				return err
 			}
-			ip = m.commonPf.GetMappedExternalIP(ip)
+			if ip != "" {
+				ip = m.commonPf.GetMappedExternalIP(ip)
+			}
 		}
 		// register DNS for ingress
 		// note that we do not register DNS based on the presence of
@@ -168,9 +171,10 @@ func (m *K8sPlatformMgr) CreateAppInst(ctx context.Context, clusterInst *edgepro
 		// won't be using our host names.
 		action := infracommon.DnsSvcAction{
 			ExternalIP: ip,
+			Hostname:   hostname,
 		}
 		fqdns := m.getFQDNs(appInst, names)
-		log.SpanLog(ctx, log.DebugLevelInfra, "registering ingress DNS", "ip", action.ExternalIP, "fqdns", fqdns)
+		log.SpanLog(ctx, log.DebugLevelInfra, "registering ingress DNS", "ip", action.ExternalIP, "hostname", action.Hostname, "fqdns", fqdns)
 		for _, fqdn := range fqdns {
 			if err := m.commonPf.AddDNS(ctx, fqdn, &action); err != nil {
 				return err

@@ -213,7 +213,7 @@ func GetIngresses(ctx context.Context, client ssh.Client, names *KconfNames, ops
 	return data.Items, nil
 }
 
-func GetIngressExternalIP(ctx context.Context, client ssh.Client, names *KubeNames, name string) (string, error) {
+func GetIngressExternalIP(ctx context.Context, client ssh.Client, names *KubeNames, name string) (string, string, error) {
 	log.SpanLog(ctx, log.DebugLevelInfra, "get ingress IP", "kconf", names.KconfName)
 	for i := 0; i < IngressExternalIPRetries; i++ {
 		ingress := &networkingv1.Ingress{}
@@ -224,14 +224,17 @@ func GetIngressExternalIP(ctx context.Context, client ssh.Client, names *KubeNam
 				time.Sleep(IngressExternalIPRetry)
 				continue
 			}
-			return "", err
+			return "", "", err
 		}
 		if len(ingress.Status.LoadBalancer.Ingress) > 0 {
-			if ingress.Status.LoadBalancer.Ingress[0].IP != "" {
-				return ingress.Status.LoadBalancer.Ingress[0].IP, nil
+			ingressStatus := ingress.Status.LoadBalancer.Ingress[0]
+			ip := ingressStatus.IP
+			hostname := ingressStatus.Hostname
+			if ip != "" || hostname != "" {
+				return ip, hostname, nil
 			}
 		}
 		time.Sleep(IngressExternalIPRetry)
 	}
-	return "", fmt.Errorf("unable to get external IP for ingress %s", name)
+	return "", "", fmt.Errorf("unable to get external IP for ingress %s", name)
 }
