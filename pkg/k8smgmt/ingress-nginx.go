@@ -102,7 +102,9 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 	}
 	// This annotation is needed for ingress to work if deploying
 	// on Azure
-	azureArgs := `--set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz`
+	extraArgs := `--set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz`
+	// AWS annotation for LB to get external IP
+	extraArgs += ` --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing`
 	if os.Getenv("E2ETEST_TLS") != "" {
 		// for e2e tests, change the status update interval from 60s
 		// default to 2s, this avoids a 60s wait for the external IP check.
@@ -111,7 +113,7 @@ func InstallIngressNginx(ctx context.Context, client ssh.Client, names *KconfNam
 
 	// This specifies a default certificate, which should be a
 	// wildcard cert for the entire cluster/cloudlet.
-	cmd := fmt.Sprintf("helm %s upgrade --install %s %s --repo %s --namespace %s --create-namespace --version %s --set controller.extraArgs.default-ssl-certificate=%s/%s %s %s", names.KconfArg, IngressNginxName, IngressNginxChart, IngressNginxRepoURL, IngressNginxNamespace, IngressNginxChartVersion, IngressNginxNamespace, IngressDefaultCertSecret, azureArgs, strings.Join(opts.helmSetCmds, " "))
+	cmd := fmt.Sprintf("helm %s upgrade --install %s %s --repo %s --namespace %s --create-namespace --version %s --set controller.extraArgs.default-ssl-certificate=%s/%s %s %s", names.KconfArg, IngressNginxName, IngressNginxChart, IngressNginxRepoURL, IngressNginxNamespace, IngressNginxChartVersion, IngressNginxNamespace, IngressDefaultCertSecret, extraArgs, strings.Join(opts.helmSetCmds, " "))
 	log.SpanLog(ctx, log.DebugLevelInfra, "install ingress nginx", "cmd", cmd)
 	out, err := client.Output(cmd)
 	if err != nil {
